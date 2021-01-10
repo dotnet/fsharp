@@ -138,7 +138,6 @@ let checkFileResults =
 
 *)
 // 最後の引数に指定する、IDENTトークンのタグを取得
-open FSharp.Compiler
 
 // 特定の位置におけるツールチップを取得
 let tip = checkFileResults.GetToolTipText(4, 7, inputLines.[1], ["foo"], FSharpTokenTag.Identifier)

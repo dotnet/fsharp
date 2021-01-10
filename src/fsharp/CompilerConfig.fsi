@@ -15,7 +15,8 @@ open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 open Microsoft.DotNet.DependencyManager
 
@@ -144,7 +145,7 @@ type TcConfigBuilder =
       mutable implicitOpens: string list
       mutable useFsiAuxLib: bool
       mutable framework: bool
-      mutable resolutionEnvironment: ReferenceResolver.ResolutionEnvironment
+      mutable resolutionEnvironment: LegacyResolutionEnvironment
       mutable implicitlyResolveAssemblies: bool
       /// Set if the user has explicitly turned indentation-aware syntax on/off
       mutable light: bool option
@@ -161,7 +162,7 @@ type TcConfigBuilder =
       mutable useHighEntropyVA: bool
       mutable inputCodePage: int option
       mutable embedResources: string list
-      mutable errorSeverityOptions: FSharpErrorSeverityOptions
+      mutable errorSeverityOptions: FSharpDiagnosticOptions
       mutable mlCompatibility:bool
       mutable checkOverflow:bool
       mutable showReferenceResolutions:bool
@@ -212,7 +213,7 @@ type TcConfigBuilder =
       mutable win32manifest: string
       mutable includewin32manifest: bool
       mutable linkResources: string list
-      mutable legacyReferenceResolver: ReferenceResolver.Resolver 
+      mutable legacyReferenceResolver: LegacyReferenceResolver
       mutable showFullPaths: bool
       mutable errorStyle: ErrorStyle
       mutable utf8output: bool
@@ -255,6 +256,9 @@ type TcConfigBuilder =
       mutable copyFSharpCore: CopyFSharpCoreFlag
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
+      mutable fxResolver: FxResolver
+      mutable rangeForErrors: range
+      mutable sdkDirOverride: string option
 
       /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
       /// and from which we can read the metadata. Only used when metadataOnly=true.
@@ -273,15 +277,17 @@ type TcConfigBuilder =
 
     static member Initial: TcConfigBuilder
 
-    static member CreateNew: 
-        legacyReferenceResolver: ReferenceResolver.Resolver *
+    static member CreateNew:
+        legacyReferenceResolver: LegacyReferenceResolver *
         defaultFSharpBinariesDir: string * 
         reduceMemoryUsage: ReduceMemoryFlag * 
         implicitIncludeDir: string * 
         isInteractive: bool * 
         isInvalidationSupported: bool *
         defaultCopyFSharpCore: CopyFSharpCoreFlag *
-        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
+        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
+        sdkDirOverride: string option *
+        rangeForErrors: range
           -> TcConfigBuilder
 
     member DecideNames: string list -> outfile: string * pdbfile: string option * assemblyName: string 
@@ -313,6 +319,9 @@ type TcConfigBuilder =
 
     member AddLoadedSource: m: range * originalPath: string * pathLoadedFrom: string -> unit
 
+    member FxResolver: FxResolver
+
+
 /// Immutable TcConfig, modifications are made via a TcConfigBuilder
 [<Sealed>]
 type TcConfig =
@@ -339,7 +348,7 @@ type TcConfig =
     member reduceMemoryUsage: ReduceMemoryFlag
     member inputCodePage: int option
     member embedResources: string list
-    member errorSeverityOptions: FSharpErrorSeverityOptions
+    member errorSeverityOptions: FSharpDiagnosticOptions
     member mlCompatibility:bool
     member checkOverflow:bool
     member showReferenceResolutions:bool
@@ -428,6 +437,8 @@ type TcConfig =
     member isInteractive: bool
     member isInvalidationSupported: bool 
 
+    member FxResolver: FxResolver
+
     member ComputeLightSyntaxInitialStatus: string -> bool
 
     member GetTargetFrameworkDirectories: unit -> string list
@@ -443,7 +454,7 @@ type TcConfig =
     /// File system query based on TcConfig settings
     member MakePathAbsolute: string -> string
 
-    member resolutionEnvironment: ReferenceResolver.ResolutionEnvironment
+    member resolutionEnvironment: LegacyResolutionEnvironment
 
     member copyFSharpCore: CopyFSharpCoreFlag
 
@@ -451,7 +462,9 @@ type TcConfig =
 
     member useSdkRefs: bool
 
-    member legacyReferenceResolver: ReferenceResolver.Resolver
+    member sdkDirOverride: string option
+
+    member legacyReferenceResolver: LegacyReferenceResolver
 
     member emitDebugInfoInQuotations: bool
 
@@ -485,6 +498,15 @@ type TcConfig =
 
     /// Allow forking and subsuequent modification of the TcConfig via a new TcConfigBuilder
     member CloneToBuilder: unit -> TcConfigBuilder
+
+    /// Indicates if the compilation will result in F# signature data resource in the generated binary
+    member GenerateSignatureData: bool 
+
+    /// Indicates if the compilation will result in an F# optimization data resource in the generated binary
+    member GenerateOptimizationData: bool
+
+    /// Check if the primary assembly is mscorlib
+    member assumeDotNetFramework: bool
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

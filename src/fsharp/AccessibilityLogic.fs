@@ -7,10 +7,10 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -19,11 +19,9 @@ open FSharp.Compiler.ExtensionTyping
 /// Represents the 'keys' a particular piece of code can use to access other constructs?.
 [<NoEquality; NoComparison>]
 type AccessorDomain = 
-    /// AccessibleFrom(cpaths, tyconRefOpt)
-    ///
     /// cpaths: indicates we have the keys to access any members private to the given paths 
     /// tyconRefOpt:  indicates we have the keys to access any protected members of the super types of 'TyconRef' 
-    | AccessibleFrom of CompilationPath list * TyconRef option        
+    | AccessibleFrom of cpaths: CompilationPath list * tyconRefOpt: TyconRef option        
 
     /// An AccessorDomain which returns public items
     | AccessibleFromEverywhere
@@ -46,6 +44,7 @@ type AccessorDomain =
         | AccessibleFromEverywhere -> 2
         | AccessibleFromSomeFSharpCode  -> 3
         | AccessibleFromSomewhere  -> 4
+
     static member CustomEquals(g:TcGlobals, ad1:AccessorDomain, ad2:AccessorDomain) = 
         match ad1, ad2 with 
         | AccessibleFrom(cs1, tc1), AccessibleFrom(cs2, tc2) -> (cs1 = cs2) && (match tc1, tc2 with None, None -> true | Some tc1, Some tc2 -> tyconRefEq g tc1 tc2 | _ -> false)
@@ -224,7 +223,6 @@ let ComputeILAccess isPublic isFamily isFamilyOrAssembly isFamilyAndAssembly =
     elif isFamilyAndAssembly then ILMemberAccess.FamilyAndAssembly
     else ILMemberAccess.Private
 
-/// IndiCompute the accessibility of a provided member
 let IsILFieldInfoAccessible g amap m ad x = 
     match x with 
     | ILFieldInfo (tinfo, fd) -> IsILTypeAndMemberAccessible g amap m ad ad tinfo fd.Access

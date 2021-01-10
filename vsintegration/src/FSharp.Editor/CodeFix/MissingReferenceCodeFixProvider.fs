@@ -14,8 +14,8 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
 type private ReferenceType =
-| AddProjectRef of ProjectReference
-| AddMetadataRef of MetadataReference
+    | AddProjectRef of ProjectReference
+    | AddMetadataRef of MetadataReference
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "MissingReference"); Shared>]
 type internal MissingReferenceCodeFixProvider() =
@@ -46,9 +46,9 @@ type internal MissingReferenceCodeFixProvider() =
                 ),
             title)
 
-    override __.FixableDiagnosticIds = Seq.toImmutableArray [fixableDiagnosticId]
+    override _.FixableDiagnosticIds = Seq.toImmutableArray [fixableDiagnosticId]
 
-    override __.RegisterCodeFixesAsync context : Task =
+    override _.RegisterCodeFixesAsync context : Task =
         async { 
             let solution = context.Document.Project.Solution
 

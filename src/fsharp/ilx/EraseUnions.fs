@@ -419,13 +419,13 @@ let genWith g : ILCode =
     let instrs = ResizeArray() 
     let lab2pc = Dictionary() 
     g { new ICodeGen<ILCodeLabel> with 
-            member __.CodeLabel(m) = m
-            member __.GenerateDelayMark() = generateCodeLabel()
-            member __.GenLocal(ilty) = failwith "not needed"
-            member __.SetMarkToHere(m) = lab2pc.[m] <- instrs.Count
-            member __.EmitInstr x = instrs.Add x
+            member _.CodeLabel(m) = m
+            member _.GenerateDelayMark() = generateCodeLabel()
+            member _.GenLocal(ilty) = failwith "not needed"
+            member _.SetMarkToHere(m) = lab2pc.[m] <- instrs.Count
+            member _.EmitInstr x = instrs.Add x
             member cg.EmitInstrs xs = for i in xs do cg.EmitInstr i 
-            member __.MkInvalidCastExnNewobj () = failwith "not needed" }
+            member _.MkInvalidCastExnNewobj () = failwith "not needed" }
 
     { Labels = lab2pc
       Instrs = instrs.ToArray()

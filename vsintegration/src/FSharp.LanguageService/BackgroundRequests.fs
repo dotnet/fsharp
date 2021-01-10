@@ -10,6 +10,7 @@ open System
 open Microsoft.VisualStudio.TextManager.Interop 
 open Microsoft.VisualStudio.Text
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 open Microsoft.VisualStudio.FSharp.Interactive.Session
 
@@ -240,8 +241,10 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                                 let span = new TextSpan(iStartLine=error.StartLineAlternate-1,iStartIndex=error.StartColumn,iEndLine=error.EndLineAlternate-1,iEndIndex=error.EndColumn)                             
                                 let sev = 
                                     match error.Severity with 
-                                    | FSharpErrorSeverity.Warning -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning
-                                    | FSharpErrorSeverity.Error -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error
+                                    | FSharpDiagnosticSeverity.Hidden -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Hint
+                                    | FSharpDiagnosticSeverity.Info -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Hint
+                                    | FSharpDiagnosticSeverity.Warning -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning
+                                    | FSharpDiagnosticSeverity.Error -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error
                                 req.ResultSink.AddError(req.FileName, error.Subcategory, error.Message, span, sev)
                           
 
@@ -291,7 +294,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
             // OK, the last request is still active, so try to wait again
             lastParseFileRequest.Result.TryWaitForBackgroundRequestCompletion(millisecondsTimeout) 
 
-    member __.OnActiveViewChanged(_textView: IVsTextView) =
+    member _.OnActiveViewChanged(_textView: IVsTextView) =
         parseFileResults <- None
         lastParseFileRequest <- null // abandon any request for untyped parse information, without cancellation
 
@@ -300,7 +303,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
     //
     // THIS MUST ONLY RETURN TRUE IF ---> ExecuteBackgroundRequest is equivalent to fetching a recent,
     // perhaps out-of-date scope.
-    member __.IsRecentScopeSufficientForBackgroundRequest(reason:BackgroundRequestReason) = 
+    member _.IsRecentScopeSufficientForBackgroundRequest(reason:BackgroundRequestReason) = 
     
         match reason with 
         | BackgroundRequestReason.MatchBraces 

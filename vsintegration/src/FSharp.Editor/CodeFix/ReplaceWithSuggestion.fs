@@ -8,9 +8,8 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ReplaceWithSuggestion"); Shared>]
 type internal FSharpReplaceWithSuggestionCodeFixProvider
@@ -26,9 +25,9 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
     let fixableDiagnosticIds = set ["FS0039"; "FS1129"; "FS0495"]
     let checker = checkerProvider.Checker
         
-    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
-    override __.RegisterCodeFixesAsync context : Task =
+    override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             do! Option.guard settings.CodeFixes.SuggestNamesForErrors
 
@@ -56,7 +55,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
                 |> Seq.toImmutableArray
 
             for suggestion in ErrorResolutionHints.getSuggestedNames addNames unresolvedIdentifierText do
-                let replacement = Keywords.QuoteIdentifierIfNeeded suggestion
+                let replacement = FSharpKeywords.QuoteIdentifierIfNeeded suggestion
                 let codeFix =
                     CodeFixHelpers.createTextChangeCodeFix(
                         CompilerDiagnostics.getErrorMessage (ReplaceWithSuggestion suggestion),

@@ -31,8 +31,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
@@ -59,7 +59,7 @@ let private getSpans (sourceText: SourceText) (caretPosition: int) =
     |> Option.defaultValue [||]
 
 let private span sourceText isDefinition (startLine, startCol) (endLine, endCol) =
-    let range = Range.mkRange filePath (Range.mkPos startLine startCol) (Range.mkPos endLine endCol)
+    let range = Range.mkRange filePath (Pos.mkPos startLine startCol) (Pos.mkPos endLine endCol)
     { IsDefinition = isDefinition
       TextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range) }
 

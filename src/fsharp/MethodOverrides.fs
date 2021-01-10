@@ -12,10 +12,12 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Features
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -87,7 +89,7 @@ module DispatchSlotChecking =
            match argTys with 
            | [] -> [[(denv.g.unit_ty, ValReprInfo.unnamedTopArg1)]]
            | _ -> argTys |> List.mapSquared (fun ty -> (ty, ValReprInfo.unnamedTopArg1)) 
-       Layout.bufferL os (NicePrint.prettyLayoutOfMemberSig denv (memberToParentInst, id.idText, mtps, argInfos, retTy))
+       LayoutRender.bufferL os (NicePrint.prettyLayoutOfMemberSig denv (memberToParentInst, id.idText, mtps, argInfos, retTy))
 
     /// Print the signature of a MethInfo to a buffer as part of an error message
     let PrintMethInfoSigToBuffer g amap m denv os minfo =
@@ -96,7 +98,7 @@ module DispatchSlotChecking =
         let retTy = (retTy  |> GetFSharpViewOfReturnType g)
         let argInfos = argTys |> List.mapSquared (fun ty -> (ty, ValReprInfo.unnamedTopArg1))
         let nm = minfo.LogicalName
-        Layout.bufferL os (NicePrint.prettyLayoutOfMemberSig denv (ttpinst, nm, fmtps, argInfos, retTy))
+        LayoutRender.bufferL os (NicePrint.prettyLayoutOfMemberSig denv (ttpinst, nm, fmtps, argInfos, retTy))
 
     /// Format the signature of an override as a string as part of an error message
     let FormatOverride denv d = bufs (fun buf -> PrintOverrideToBuffer denv buf d)

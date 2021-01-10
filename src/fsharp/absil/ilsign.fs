@@ -7,15 +7,16 @@ module internal FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 open System
 open System.IO
 open System.Collections.Immutable
-open System.Reflection
 open System.Reflection.PortableExecutable
 open System.Security.Cryptography
-open System.Runtime.InteropServices
+open System.Reflection
 open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 
-
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
+open FSharp.Compiler.SourceCodeServices
 
     type KeyType =
     | Public

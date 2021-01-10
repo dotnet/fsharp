@@ -33,6 +33,7 @@ open System
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Compiler.Text
 
 let stringMethods = 
     ["Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
@@ -112,25 +113,25 @@ let ``Intro test`` () =
 
 
 // TODO: check if this can be enabled in .NET Core testing of FSharp.Compiler.Service
-#if !INTERACTIVE && !NETCOREAPP // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
-[<Test>]
-let ``Basic cancellation test`` () = 
-   try 
-    printfn "locally injecting a cancellation condition in incremental building"
-    use _holder = IncrementalBuild.LocallyInjectCancellationFault()
-    
-    // Split the input & define file name
-    let inputLines = input.Split('\n')
-    let file = "/home/user/Test.fsx"
-    async { 
-        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-        let! checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, FSharp.Compiler.Text.SourceText.ofString input) 
-        let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, FSharp.Compiler.Text.SourceText.ofString input, checkOptions) 
-        return parseResult, typedRes
-    } |> Async.RunSynchronously
-      |> ignore
-    Assert.Fail("expected a cancellation")
-   with :? OperationCanceledException -> ()
+#if !INTERACTIVE // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
+//[<Test>]
+//let ``Basic cancellation test`` () = 
+//   try 
+//    printfn "locally injecting a cancellation condition in incremental building"
+//    use _holder = IncrementalBuild.LocallyInjectCancellationFault()
+//    
+//    // Split the input & define file name
+//    let inputLines = input.Split('\n')
+//    let file = "/home/user/Test.fsx"
+//    async { 
+//        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+//        let! checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) 
+//        let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, checkOptions) 
+//        return parseResult, typedRes
+//    } |> Async.RunSynchronously
+//      |> ignore
+//    Assert.Fail("expected a cancellation")
+//   with :? OperationCanceledException -> ()
 #endif
 
 [<Test>]
@@ -860,7 +861,7 @@ let f x =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
     let lines = input.Replace("\r", "").Split( [| '\n' |])
-    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Range.mkPos (Range.Line.fromZ i) j, line ]
+    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Pos.mkPos (Line.fromZ i) j, line ]
     let results = [ for pos, line in positions do 
                         match parseResult.ValidateBreakpointLocation pos with 
                         | Some r -> yield ((line, pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))  
@@ -914,7 +915,7 @@ type FooImpl() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
     let lines = input.Replace("\r", "").Split( [| '\n' |])
-    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Range.mkPos (Range.Line.fromZ i) j, line ]
+    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Pos.mkPos (Line.fromZ i) j, line ]
     let results = [ for pos, line in positions do 
                         match parseResult.ValidateBreakpointLocation pos with 
                         | Some r -> yield ((line, pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))  

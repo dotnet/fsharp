@@ -74,7 +74,7 @@ let private getQuickInfoText (FSharpToolTipText elements) : string =
             let remarksText = (match remarks with [] -> "" | _ -> "\n" + String.concat "\n" remarks)
             text + remarksText + tpText
         | FSharpToolTipElement.CompositionError(error) -> error
-    elements |> List.map (Tooltips.ToFSharpToolTipElement >> parseElement) |> String.concat "\n" |> normalizeLineEnds
+    elements |> List.map (FSharpToolTip.ToFSharpToolTipElement >> parseElement) |> String.concat "\n" |> normalizeLineEnds
 
 [<Test>]
 let ShouldShowQuickInfoAtCorrectPositions() =

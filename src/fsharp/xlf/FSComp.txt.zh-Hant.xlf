@@ -94,7 +94,7 @@
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
-        <target state="new">more types support units of measure</target>
+        <target state="translated">更多支援測量單位的類型</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
@@ -254,7 +254,7 @@
       </trans-unit>
       <trans-unit id="optsVersion">
         <source>Display compiler version banner and exit</source>
-        <target state="new">Display compiler version banner and exit</target>
+        <target state="translated">顯示編譯器版本橫幅並結束</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -289,7 +289,7 @@
       </trans-unit>
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
+        <target state="translated">型別定義中出現非預期的權杖。類型 '{0}' 之後應該要有 '='。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -310,6 +310,11 @@
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
         <source>#i is not supported by the registered PackageManagers</source>
         <target state="translated">註冊的 PackageManagers 不支援 #i</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDetermined">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
+        <target state="translated">無法判斷這個指令碼的 .NET SDK。如果指令碼位於使用 'global.json' 的目錄中，請確認已安裝相關的 .NET SDK。目錄 '{1}' 中 '{0} --version' 的輸出為: '{2}'，結束代碼為 '{3}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -360,6 +365,11 @@
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">use! 不可與 and! 合併</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
+        <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
+        <target state="new">A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
@@ -2724,7 +2734,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
         <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
-        <target state="translated">只有 float、float32、decimal 和有正負號的整數類型支援測量單位</target>
+        <target state="translated">只有浮點數、float32、十進位和整數類型支援測量單位。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">
@@ -6334,7 +6344,7 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeZip">
         <source>{0} var in collection</source>
-        <target state="translated">集合中的 {0} var</target>
+        <target state="translated">{0} var in collection</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBinaryOperatorRequiresVariable">

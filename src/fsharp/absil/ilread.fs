@@ -21,6 +21,7 @@ open System.Text
 open Internal.Utilities
 open Internal.Utilities.Collections
 open FSharp.NativeInterop
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
@@ -29,7 +30,9 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Support
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text.Range
 open System.Reflection
 
 #nowarn "9"
@@ -121,17 +124,17 @@ type BinaryFile =
 type RawMemoryFile(fileName: string, obj: obj, addr: nativeint, length: int) =
     do stats.rawMemoryFileCount <- stats.rawMemoryFileCount + 1
     let view = ByteMemory.FromUnsafePointer(addr, length, obj).AsReadOnly()
-    member __.HoldObj() = obj // make sure we capture 'obj'
-    member __.FileName = fileName
+    member _.HoldObj() = obj // make sure we capture 'obj'
+    member _.FileName = fileName
     interface BinaryFile with
-        override __.GetView() = view
+        override _.GetView() = view
 
 /// A BinaryFile backed by an array of bytes held strongly as managed memory
 [<DebuggerDisplay("{FileName}")>]
 type ByteFile(fileName: string, bytes: byte[]) = 
     let view = ByteMemory.FromArray(bytes).AsReadOnly()
     do stats.byteFileCount <- stats.byteFileCount + 1
-    member __.FileName = fileName
+    member _.FileName = fileName
     interface BinaryFile with
         override bf.GetView() = view
  
@@ -149,7 +152,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
     /// The weak handle to the bytes for the file
     let weakBytes = new WeakReference<byte[]> (null)
 
-    member __.FileName = fileName
+    member _.FileName = fileName
 
     /// Get the bytes for the file
     interface BinaryFile with
@@ -673,15 +676,15 @@ let simpleIndexCompare (idx1: int) (idx2: int) =
 
 type TypeDefAsTypIdx = TypeDefAsTypIdx of ILBoxity * ILGenericArgs * int
 type TypeRefAsTypIdx = TypeRefAsTypIdx of ILBoxity * ILGenericArgs * int
-type BlobAsMethodSigIdx = BlobAsMethodSigIdx of int * int32
-type BlobAsFieldSigIdx = BlobAsFieldSigIdx of int * int32
-type BlobAsPropSigIdx = BlobAsPropSigIdx of int * int32
-type BlobAsLocalSigIdx = BlobAsLocalSigIdx of int * int32
-type MemberRefAsMspecIdx = MemberRefAsMspecIdx of int * int
-type MethodSpecAsMspecIdx = MethodSpecAsMspecIdx of int * int
-type MemberRefAsFspecIdx = MemberRefAsFspecIdx of int * int
-type CustomAttrIdx = CustomAttrIdx of CustomAttributeTypeTag * int * int32
-type GenericParamsIdx = GenericParamsIdx of int * TypeOrMethodDefTag * int
+type BlobAsMethodSigIdx = BlobAsMethodSigIdx of numtypars: int * blobIdx: int32
+type BlobAsFieldSigIdx = BlobAsFieldSigIdx of numtypars: int * blobIdx: int32
+type BlobAsPropSigIdx = BlobAsPropSigIdx of numtypars: int * blobIdx: int32
+type BlobAsLocalSigIdx = BlobAsLocalSigIdx of numtypars: int * blobIdx: int32
+type MemberRefAsMspecIdx = MemberRefAsMspecIdx of numtypars: int * idx: int
+type MethodSpecAsMspecIdx = MethodSpecAsMspecIdx of numtypars: int * idx: int
+type MemberRefAsFspecIdx = MemberRefAsFspecIdx of numtypars: int * idx: int
+type CustomAttrIdx = CustomAttrIdx of CustomAttributeTypeTag * idx: int * valIdx: int32
+type GenericParamsIdx = GenericParamsIdx of numtypars: int * TypeOrMethodDefTag * idx: int
 
 //---------------------------------------------------------------------
 // Polymorphic caches for row and heap readers
@@ -834,8 +837,8 @@ let seekReadIndexedRow info =
 // IL Reading proper
 //---------------------------------------------------------------------
 
-type MethodData = MethodData of ILType * ILCallingConv * string * ILTypes * ILType * ILTypes
-type VarArgMethodData = VarArgMethodData of ILType * ILCallingConv * string * ILTypes * ILVarArgs * ILType * ILTypes
+type MethodData = MethodData of enclTy: ILType * ILCallingConv * name: string * argtys: ILTypes * retty: ILType * minst: ILTypes
+type VarArgMethodData = VarArgMethodData of enclTy: ILType * ILCallingConv * name: string * argtys: ILTypes * ILVarArgs * retty: ILType * minst: ILTypes
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type PEReader = 
@@ -3815,14 +3818,12 @@ type ILReaderOptions =
       metadataOnly: MetadataOnlyFlag
       tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot }
 
-
 type ILModuleReader =
     abstract ILModuleDef: ILModuleDef
     abstract ILAssemblyRefs: ILAssemblyRef list
     
     /// ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
     inherit System.IDisposable
-
 
 [<Sealed>]
 type ILModuleReaderImpl(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRef list>, dispose: unit -> unit) =
@@ -4009,7 +4010,7 @@ module Shim =
     [<Sealed>]
     type DefaultAssemblyReader() =
         interface IAssemblyReader with
-            member __.GetILModuleReader(filename, readerOptions) =
+            member _.GetILModuleReader(filename, readerOptions) =
                 OpenILModuleReader filename readerOptions
 
     let mutable AssemblyReader = DefaultAssemblyReader() :> IAssemblyReader

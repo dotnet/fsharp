@@ -6,11 +6,11 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
 open FSharp.Compiler.QuotationTranslator
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -78,7 +78,7 @@ module ExprTranslationImpl =
         member env.BindCurriedVals vsl = 
             (env, vsl) ||> List.fold (fun env vs -> env.BindVals vs) 
 
-    exception IgnoringPartOfQuotedTermWarning of string * Range.range
+    exception IgnoringPartOfQuotedTermWarning of string * range
 
     let wfail (msg, m: range) = failwith (msg + sprintf " at %s" (m.ToString()))
 
@@ -135,10 +135,10 @@ type E =
 
 /// Used to represent the information at an object expression member 
 and [<Sealed>]  FSharpObjectExprOverride(sgn: FSharpAbstractSignature, gps: FSharpGenericParameter list, args: FSharpMemberOrFunctionOrValue list list, body: FSharpExpr) = 
-    member __.Signature = sgn
-    member __.GenericParameters = gps
-    member __.CurriedParameterGroups = args
-    member __.Body = body
+    member _.Signature = sgn
+    member _.GenericParameters = gps
+    member _.CurriedParameterGroups = args
+    member _.Body = body
 
 /// The type of expressions provided through the compiler API.
 and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: range, ty) =
@@ -232,6 +232,15 @@ module FSharpExprConvert =
         | AI_not -> Some mkCallUnaryNotOperator
         | _ -> None
 
+    let (|ILMulDivOp|_|) e = 
+        match e with 
+        | AI_mul        -> Some (mkCallMultiplyOperator, true)
+        | AI_mul_ovf
+        | AI_mul_ovf_un -> Some (mkCallMultiplyChecked, true)
+        | AI_div
+        | AI_div_un     -> Some (mkCallDivisionOperator, false)
+        | _ -> None
+
     let (|ILBinaryOp|_|) e = 
         match e with 
         | AI_add        -> Some mkCallAdditionOperator
@@ -240,11 +249,6 @@ module FSharpExprConvert =
         | AI_sub        -> Some mkCallSubtractionOperator
         | AI_sub_ovf
         | AI_sub_ovf_un -> Some mkCallSubtractionChecked
-        | AI_mul        -> Some mkCallMultiplyOperator
-        | AI_mul_ovf
-        | AI_mul_ovf_un -> Some mkCallMultiplyChecked
-        | AI_div
-        | AI_div_un     -> Some mkCallDivisionOperator
         | AI_rem
         | AI_rem_un     -> Some mkCallModulusOperator
         | AI_ceq        -> Some mkCallEqualsOperator
@@ -749,6 +753,19 @@ module FSharpExprConvert =
             | TOp.ILAsm ([ ILBinaryOp binaryOp ], _), _, [arg1;arg2] -> 
                 let ty = tyOfExpr cenv.g arg1
                 let op = binaryOp cenv.g m ty arg1 arg2
+                ConvExprPrim cenv env op
+
+            // For units of measure some binary operators change their return type, e.g. a * b where each is int<kg> gives int<kg*kg>
+            | TOp.ILAsm ([ ILMulDivOp (binaryOp, isMul) ], _), _, [arg1;arg2] -> 
+                let argty1 = tyOfExpr cenv.g arg1
+                let argty2 = tyOfExpr cenv.g arg2
+                let rty = 
+                    match getMeasureOfType cenv.g argty1, getMeasureOfType cenv.g argty2 with
+                    | Some (tcref, ms1), Some (_tcref2, ms2)  ->  mkAppTy tcref [TType_measure (Measure.Prod(ms1, if isMul then ms2 else Measure.Inv ms2))]
+                    | Some _, None  -> argty1
+                    | None, Some _ -> argty2
+                    | None, None -> argty1
+                let op = binaryOp cenv.g m argty1 argty2 rty arg1 arg2
                 ConvExprPrim cenv env op
 
             | TOp.ILAsm ([ ILConvertOp convertOp1; ILConvertOp convertOp2 ], _), _, [arg] -> 
@@ -1294,13 +1311,13 @@ type FSharpAssemblyContents(cenv: SymbolEnv, mimpls: TypedImplFile list) =
 
     new (tcGlobals, thisCcu, thisCcuType, tcImports, mimpls) = FSharpAssemblyContents(SymbolEnv(tcGlobals, thisCcu, thisCcuType, tcImports), mimpls)
 
-    member __.ImplementationFiles = 
+    member _.ImplementationFiles = 
         [ for mimpl in mimpls -> FSharpImplementationFileContents(cenv, mimpl)]
 
 and FSharpImplementationFileDeclaration = 
-    | Entity of FSharpEntity * FSharpImplementationFileDeclaration list
-    | MemberOrFunctionOrValue  of FSharpMemberOrFunctionOrValue * FSharpMemberOrFunctionOrValue list list * FSharpExpr
-    | InitAction of FSharpExpr
+    | Entity of entity: FSharpEntity * declarations: FSharpImplementationFileDeclaration list
+    | MemberOrFunctionOrValue of value: FSharpMemberOrFunctionOrValue * curriedArgs: FSharpMemberOrFunctionOrValue list list * body: FSharpExpr
+    | InitAction of action: FSharpExpr
 
 and FSharpImplementationFileContents(cenv, mimpl) = 
     let (TImplFile (qname, _pragmas, ModuleOrNamespaceExprWithSig(_, mdef, _), hasExplicitEntryPoint, isScript, _anonRecdTypes)) = mimpl 
@@ -1340,11 +1357,11 @@ and FSharpImplementationFileContents(cenv, mimpl) =
         | TMDefs mdefs -> 
             [ for mdef in mdefs do yield! getDecls mdef ]
 
-    member __.QualifiedName = qname.Text
-    member __.FileName = qname.Range.FileName
-    member __.Declarations = getDecls mdef 
-    member __.HasExplicitEntryPoint = hasExplicitEntryPoint
-    member __.IsScript = isScript
+    member _.QualifiedName = qname.Text
+    member _.FileName = qname.Range.FileName
+    member _.Declarations = getDecls mdef 
+    member _.HasExplicitEntryPoint = hasExplicitEntryPoint
+    member _.IsScript = isScript
 
 
 module BasicPatterns = 

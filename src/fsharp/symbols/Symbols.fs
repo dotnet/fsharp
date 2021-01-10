@@ -2,6 +2,7 @@
 
 namespace rec FSharp.Compiler.SourceCodeServices
 
+open System
 open System.Collections.Generic
 
 open FSharp.Compiler
@@ -13,11 +14,11 @@ open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
@@ -208,6 +209,11 @@ type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) =
     member x.WithShortTypeNames shortNames =
          FSharpDisplayContext(fun g -> { denv g with shortTypeNames = shortNames })
 
+    member x.WithPrefixGenericParameters () =
+        FSharpDisplayContext(fun g -> { denv g with genericParameterStyle = GenericParameterStyle.Prefix }  )
+
+    member x.WithSuffixGenericParameters () =
+        FSharpDisplayContext(fun g -> { denv g with genericParameterStyle = GenericParameterStyle.Suffix }  )
 
 // delay the realization of 'item' in case it is unresolved
 type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -> CcuThunk -> AccessorDomain -> bool)) =
@@ -762,6 +768,46 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                 let item = Item.ActivePatternCase apref
                 FSharpActivePatternCase(cenv, apref.ActivePatternInfo, apref.ActivePatternVal.Type, apref.CaseIndex, Some apref.ActivePatternVal, item))
 
+    member x.TryGetFullName() =
+        try x.TryFullName 
+        with _ -> 
+            try Some(String.Join(".", x.AccessPath, x.DisplayName))
+            with _ -> None
+
+    member x.TryGetFullDisplayName() =
+        let fullName = x.TryGetFullName() |> Option.map (fun fullName -> fullName.Split '.')
+        let res = 
+            match fullName with
+            | Some fullName ->
+                match Option.attempt (fun _ -> x.DisplayName) with
+                | Some shortDisplayName when not (shortDisplayName.Contains ".") ->
+                    Some (fullName |> Array.replace (fullName.Length - 1) shortDisplayName)
+                | _ -> Some fullName
+            | None -> None 
+            |> Option.map (fun fullDisplayName -> String.Join (".", fullDisplayName))
+        //debug "GetFullDisplayName: FullName = %A, Result = %A" fullName res
+        res
+
+    member x.TryGetFullCompiledName() =
+        let fullName = x.TryGetFullName() |> Option.map (fun fullName -> fullName.Split '.')
+        let res = 
+            match fullName with
+            | Some fullName ->
+                match Option.attempt (fun _ -> x.CompiledName) with
+                | Some shortCompiledName when not (shortCompiledName.Contains ".") ->
+                    Some (fullName |> Array.replace (fullName.Length - 1) shortCompiledName)
+                | _ -> Some fullName
+            | None -> None 
+            |> Option.map (fun fullDisplayName -> String.Join (".", fullDisplayName))
+        //debug "GetFullCompiledName: FullName = %A, Result = %A" fullName res
+        res
+
+    member x.GetPublicNestedEntities() =
+        x.NestedEntities |> Seq.filter (fun entity -> entity.Accessibility.IsPublic)
+
+    member x.TryGetMembersFunctionsAndValues() = 
+        try x.MembersFunctionsAndValues with _ -> [||] :> _
+
     override x.Equals(other: obj) =
         box x === other ||
         match other with
@@ -955,7 +1001,7 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         if isUnresolved() then None else 
         match d.TryRecdField with 
         | Choice1Of3 r -> getLiteralValue r.LiteralValue
-        | Choice2Of3 f -> f.LiteralValue |> Option.map AbstractIL.ILRuntimeWriter.convFieldInit 
+        | Choice2Of3 f -> f.LiteralValue |> Option.map (fun v -> v.AsObject())
         | Choice3Of3 _ -> None
 
     member _.IsVolatile = 
@@ -1170,6 +1216,8 @@ type FSharpGenericParameter(cenv, v:Typar) =
     inherit FSharpSymbol (cenv, 
                           (fun () -> Item.TypeVar(v.Name, v)), 
                           (fun _ _ _ad -> true))
+
+    member _.Range = v.Range
 
     member _.Name = v.DisplayName
 
@@ -2127,6 +2175,29 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         let witnessMethName = PrettyNaming.ExtraWitnessMethodName x.CompiledName
         Some (witnessMethName, makeReadOnlyCollection witnessParams)
 
+    // FullType may raise exceptions (see https://github.com/fsharp/fsharp/issues/307). 
+    member x.FullTypeSafe = Option.attempt (fun _ -> x.FullType)
+
+    member x.TryGetFullDisplayName() =
+        let fullName = Option.attempt (fun _ -> x.FullName.Split '.')
+        match fullName with
+        | Some fullName ->
+            match Option.attempt (fun _ -> x.DisplayName) with
+            | Some shortDisplayName when not (shortDisplayName.Contains ".") ->
+                Some (fullName |> Array.replace (fullName.Length - 1) shortDisplayName)
+            | _ -> Some fullName
+        | None -> None
+        |> Option.map (fun fullDisplayName -> String.Join (".", fullDisplayName))
+
+    member x.TryGetFullCompiledOperatorNameIdents() : string[] option =
+        // For operator ++ displayName is ( ++ ) compiledName is op_PlusPlus
+        if PrettyNaming.IsOperatorName x.DisplayName && x.DisplayName <> x.CompiledName then
+            x.DeclaringEntity
+            |> Option.bind (fun e -> e.TryGetFullName())
+            |> Option.map (fun enclosingEntityFullName -> 
+                    Array.append (enclosingEntityFullName.Split '.') [| x.CompiledName |])
+        else None
+
 type FSharpType(cenv, ty:TType) =
 
     let isUnresolved() = 
@@ -2543,6 +2614,8 @@ type FSharpAssemblySignature (cenv, topAttribs: TopAttribs option, optViewedCcu:
              ||> List.fold (fun a x -> findNested x a)  
              |> Option.map (fun e -> FSharpEntity(cenv, rescopeEntity optViewedCcu e))
         | _ -> None
+
+    member x.TryGetEntities() = try x.Entities :> _ seq with _ -> Seq.empty
 
     override x.ToString() = "<assembly signature>"
 

@@ -10,7 +10,7 @@ open FSharp.Compiler.SourceCodeServices
 [<AutoOpen>]
 module TestHelpers =
 
-    let getValue ((value: Result<FsiValue option, exn>), (errors: FSharpErrorInfo[])) =
+    let getValue ((value: Result<FsiValue option, exn>), (errors: FSharpDiagnostic[])) =
         if errors.Length > 0 then
             failwith <| sprintf "Evaluation returned %d errors:\r\n\t%s" errors.Length (String.Join("\r\n\t", errors))
         match value with
@@ -25,8 +25,8 @@ module TestHelpers =
         let fullDirName = Path.Combine(sysTempDir, customTempDirName)
         let dirInfo = Directory.CreateDirectory(fullDirName)
         { new Object() with
-            member __.ToString() = dirInfo.FullName
+            member _.ToString() = dirInfo.FullName
           interface IDisposable with
-            member __.Dispose() =
+            member _.Dispose() =
                 dirInfo.Delete(true)
         }

@@ -9,8 +9,9 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open System.Collections.Generic
 
-open FSharp.Compiler.Range
+open FSharp.Compiler
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 
 [<Sealed>]
 /// Represents the results of parsing an F# file
@@ -19,15 +20,37 @@ type public FSharpParseFileResults =
     /// The syntax tree resulting from the parse
     member ParseTree : ParsedInput option
 
+    /// Attempts to find the range of the name of the nearest outer binding that contains a given position.
+    member TryRangeOfNameOfNearestOuterBindingContainingPos: pos: pos -> range option
+
+    /// Attempts to find the range of an attempted lambda expression or pattern, the argument range, and the expr range when writing a C#-style "lambda" (which is actually an operator application)
+    member TryRangeOfParenEnclosingOpEqualsGreaterUsage: opGreaterEqualPos: pos -> (range * range * range) option
+
+    /// Attempts to find the range of an expression `expr` contained in a `yield expr`  or `return expr` expression (and bang-variants).
+    member TryRangeOfExprInYieldOrReturn: pos: pos -> range option
+
     /// Attempts to find the range of a record expression containing the given position.
-    member TryRangeOfRecordExpressionContainingPos: pos: pos -> Option<range>
+    member TryRangeOfRecordExpressionContainingPos: pos: pos -> range option
+
+    /// Attempts to find an Ident of a pipeline containing the given position, and the number of args already applied in that pipeline.
+    /// For example, '[1..10] |> List.map ' would give back the ident of '|>' and 1, because it applied 1 arg (the list) to 'List.map'.
+    member TryIdentOfPipelineContainingPosAndNumArgsApplied: pos: pos -> (Ident * int) option
+
+    /// Determines if the given position is inside a function or method application.
+    member IsPosContainedInApplication: pos: pos -> bool
+
+    /// Attempts to find the range of a function or method that is being applied. Also accounts for functions in pipelines.
+    member TryRangeOfFunctionOrMethodBeingApplied: pos: pos -> range option
+
+    /// Gets the ranges of all arguments, if they can be found, for a function application at the given position.
+    member GetAllArgumentsForFunctionApplicationAtPostion: pos: pos -> range list option
 
     /// <summary>
     /// Given the position of an expression, attempts to find the range of the
     /// '!' in a derefence operation of that expression, like:
     /// '!expr', '!(expr)', etc.
     /// </summary>
-    member TryRangeOfRefCellDereferenceContainingPos: expressionPos: pos -> Option<range>
+    member TryRangeOfRefCellDereferenceContainingPos: expressionPos: pos -> range option
 
     /// Notable parse info for ParameterInfo at a given location
     member FindNoteworthyParamInfoLocations : pos:pos -> FSharpNoteworthyParamInfoLocations option
@@ -48,12 +71,12 @@ type public FSharpParseFileResults =
     member DependencyFiles : string[]
 
     /// Get the errors and warnings for the parse
-    member Errors : FSharpErrorInfo[]
+    member Errors : FSharpDiagnostic[]
 
     /// Indicates if any errors occurred during the parse
     member ParseHadErrors : bool
 
-    internal new: errors: FSharpErrorInfo[] * input: ParsedInput option * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
+    internal new: errors: FSharpDiagnostic[] * input: ParsedInput option * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
 
 /// Information about F# source file names
 module public SourceFile =
@@ -74,25 +97,24 @@ type public InheritanceContext =
 
 [<RequireQualifiedAccess>]
 type public RecordContext =
-    | CopyOnUpdate of range * CompletionPath // range
-    | Constructor of string // typename
-    | New of CompletionPath
+    | CopyOnUpdate of range: range * path: CompletionPath
+    | Constructor of typeName: string
+    | New of path: CompletionPath
 
 [<RequireQualifiedAccess>]
 type public CompletionContext = 
-
-    /// completion context cannot be determined due to errors
+    /// Completion context cannot be determined due to errors
     | Invalid
 
-    /// completing something after the inherit keyword
-    | Inherit of InheritanceContext * CompletionPath
+    /// Completing something after the inherit keyword
+    | Inherit of context: InheritanceContext * path: CompletionPath
 
-    /// completing records field
-    | RecordField of RecordContext
+    /// Completing records field
+    | RecordField of context: RecordContext
 
     | RangeOperator
 
-    /// completing named parameters\setters in parameter list of constructor\method calls
+    /// Completing named parameters\setters in parameter list of constructor\method calls
     /// end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
 
@@ -100,8 +122,9 @@ type public CompletionContext =
 
     | OpenDeclaration of isOpenType: bool
 
-    /// completing pattern type (e.g. foo (x: |))
+    /// Completing pattern type (e.g. foo (x: |))
     | PatternType
+
 
 type public ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
 

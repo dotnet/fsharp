@@ -94,7 +94,7 @@
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
-        <target state="new">more types support units of measure</target>
+        <target state="translated">更多类型支持度量单位</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
@@ -254,7 +254,7 @@
       </trans-unit>
       <trans-unit id="optsVersion">
         <source>Display compiler version banner and exit</source>
-        <target state="new">Display compiler version banner and exit</target>
+        <target state="translated">显示编译器版本横幅并退出</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -289,7 +289,7 @@
       </trans-unit>
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
+        <target state="translated">类型定义中出现意外标记。类型“{0}”后应为 "="。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -310,6 +310,11 @@
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
         <source>#i is not supported by the registered PackageManagers</source>
         <target state="translated">注册的 PackageManager 不支持 #i</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDetermined">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
+        <target state="translated">无法确定此脚本的 .NET SDK。如果脚本在使用 "global.json" 的目录中，请确保已安装相关的 .NET SDK。目录“{1}”中 "{0} --version" 的输出为“{2}”，退出代码为“{3}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -360,6 +365,11 @@
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">use! 不得与 and! 结合使用</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
+        <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
+        <target state="new">A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
@@ -2709,7 +2719,7 @@
       </trans-unit>
       <trans-unit id="tcNonZeroConstantCannotHaveGenericUnit">
         <source>Non-zero constants cannot have generic units. For generic zero, write 0.0&lt;_&gt;.</source>
-        <target state="translated">非零常量不能具有泛型单位。对于泛型零，请编写  0.0&lt;_&gt;。</target>
+        <target state="translated">非零常量不能具有泛型单位。对于泛型零，请编写 0.0&lt;_&gt;。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSeqResultsUseYield">
@@ -2724,7 +2734,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
         <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
-        <target state="translated">仅 float、float32、decimal 和带符号整数类型支持度量单位</target>
+        <target state="translated">仅 float、float32、decimal 和整数类型支持度量单位。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">
@@ -3244,7 +3254,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
-        <target state="translated">记录、序列或计算表达式无效。序列表达式的格式应为“seq {{ ... }}”}}'</target>
+        <target state="translated">记录、序列或计算表达式无效。序列表达式的格式应为“seq {{ ... }}”</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionWithIfRequiresParenthesis">
@@ -6334,7 +6344,7 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeZip">
         <source>{0} var in collection</source>
-        <target state="translated">集合中的 {0} var</target>
+        <target state="translated">{0} var in collection</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBinaryOperatorRequiresVariable">

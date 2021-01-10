@@ -5,12 +5,16 @@ module internal FSharp.Compiler.CompilerDiagnostics
 
 open System.Text
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 
 #if DEBUG
 module internal CompilerService =
     val showAssertForUnexpectedException: bool ref
+
+/// For extra diagnostics 
+val mutable showParserStackOnParseError: bool
 #endif // DEBUG
 
 /// This exception is an old-style way of reporting a diagnostic
@@ -98,9 +102,9 @@ val GetErrorLoggerFilteringByScopedPragmas: checkFile:bool * ScopedPragma list *
 val SanitizeFileName: fileName: string -> implicitIncludeDir: string -> string
 
 /// Indicates if we should report a warning
-val ReportWarning: FSharpErrorSeverityOptions -> PhasedDiagnostic -> bool
+val ReportWarning: FSharpDiagnosticOptions -> PhasedDiagnostic -> bool
 
 /// Indicates if we should report a warning as an error
-val ReportWarningAsError: FSharpErrorSeverityOptions -> PhasedDiagnostic -> bool
+val ReportWarningAsError: FSharpDiagnosticOptions -> PhasedDiagnostic -> bool
 
 

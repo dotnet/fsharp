@@ -94,7 +94,7 @@
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
-        <target state="new">more types support units of measure</target>
+        <target state="translated">Maßeinheitenunterstützung durch weitere Typen</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
@@ -254,7 +254,7 @@
       </trans-unit>
       <trans-unit id="optsVersion">
         <source>Display compiler version banner and exit</source>
-        <target state="new">Display compiler version banner and exit</target>
+        <target state="translated">Banner zur Compilerversion anzeigen und beenden</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -289,7 +289,7 @@
       </trans-unit>
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
+        <target state="translated">Unerwartetes Token in Typdefinition. Nach Typ "{0}" wurde "=" erwartet.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -310,6 +310,11 @@
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
         <source>#i is not supported by the registered PackageManagers</source>
         <target state="translated">#i wird von den registrierten PackageManagers nicht unterstützt.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDetermined">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
+        <target state="translated">Das .NET SDK für dieses Skript konnte nicht ermittelt werden. Wenn sich das Skript in einem Verzeichnis mit "global.json" befindet, stellen Sie sicher, dass das entsprechende .NET SDK installiert ist. Ausgabe von "{0} --version" im Verzeichnis "{1}": {2}. Exitcode: {3}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -360,6 +365,11 @@
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">"use!" darf nicht mit "and!" kombiniert werden.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
+        <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
+        <target state="new">A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
@@ -2724,7 +2734,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
         <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
-        <target state="translated">Maßeinheiten werden nur für die Typen "float", "float32", "decimal" und "signed integer" unterstützt.</target>
+        <target state="translated">Maßeinheiten werden nur für die Typen "float", "float32", "decimal" und "integer" unterstützt.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">
@@ -4799,7 +4809,7 @@
       </trans-unit>
       <trans-unit id="optsHelpBannerInputFiles">
         <source>- INPUT FILES -</source>
-        <target state="translated">– EINGABEDATEIEN –</target>
+        <target state="translated">- EINGABEDATEIEN -</target>
         <note />
       </trans-unit>
       <trans-unit id="optsHelpBannerResources">
@@ -4819,17 +4829,17 @@
       </trans-unit>
       <trans-unit id="optsHelpBannerMisc">
         <source>- MISCELLANEOUS -</source>
-        <target state="translated">– VERSCHIEDENES –</target>
+        <target state="translated">- VERSCHIEDENES -</target>
         <note />
       </trans-unit>
       <trans-unit id="optsHelpBannerLanguage">
         <source>- LANGUAGE -</source>
-        <target state="translated">– SPRACHE –</target>
+        <target state="translated">- SPRACHE -</target>
         <note />
       </trans-unit>
       <trans-unit id="optsHelpBannerErrsAndWarns">
         <source>- ERRORS AND WARNINGS -</source>
-        <target state="translated">– FEHLER UND WARNUNGEN –</target>
+        <target state="translated">- FEHLER UND WARNUNGEN -</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownArgumentToTheTestSwitch">
@@ -6114,7 +6124,7 @@
       </trans-unit>
       <trans-unit id="etUnexpectedNullFromProvidedTypeMember">
         <source>Unexpected 'null' return value from provided type '{0}' member '{1}'</source>
-        <target state="translated">Unerwarteter NULL-Rückgabewert vom angegebenen Typ '{0}' Member '{1}':</target>
+        <target state="translated">Unerwarteter NULL-Rückgabewert vom angegebenen Typ '{0}' Member '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="etUnexpectedExceptionFromProvidedMemberMember">
@@ -6334,7 +6344,7 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeZip">
         <source>{0} var in collection</source>
-        <target state="translated">{0}-Variable in der Sammlung</target>
+        <target state="translated">{0} var in collection</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBinaryOperatorRequiresVariable">

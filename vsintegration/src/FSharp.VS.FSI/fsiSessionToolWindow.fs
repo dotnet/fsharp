@@ -4,10 +4,8 @@ namespace Microsoft.VisualStudio.FSharp.Interactive
 
 open System
 open System.Diagnostics
-open System.Globalization
 open System.Runtime.InteropServices
 open System.ComponentModel.Design
-open Microsoft.Win32
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.OLE.Interop
@@ -19,7 +17,6 @@ open EnvDTE
 open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Text.Editor
-open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Utilities
 
 type VSStd2KCmdID = VSConstants.VSStd2KCmdID // nested type
@@ -39,12 +36,12 @@ module internal Locals =
     let defaultVSRegistryRoot = @"Software\Microsoft\VisualStudio\15.0"
     let settingsRegistrySubKey = @"General"
     let debugPromptRegistryValue = "FSharpHideScriptDebugWarning"
+    // Prompts come through as "SERVER-PROMPT>\n" (when in "server mode").
+    // In fsi.exe, the newline is needed to get the output send through to VS.
+    // Here the reverse mapping is applied.
+    let prompt = "SERVER-PROMPT>"
 
     let fixServerPrompt (str:string) =
-        // Prompts come through as "SERVER-PROMPT>\n" (when in "server mode").
-        // In fsi.exe, the newline is needed to get the output send through to VS.
-        // Here the reverse mapping is applied.
-        let prompt = "SERVER-PROMPT>" in
         (* Replace 'prompt' by ">" throughout string, add newline, unless ending in prompt *)
         let str = if str.EndsWith(prompt) then str + " " else str + Environment.NewLine
         let str = str.Replace(prompt,">")
@@ -197,14 +194,18 @@ type internal FsiToolWindow() as this =
     let history  = HistoryBuffer()
     let sessions = Session.FsiSessions()
     do  fsiLangService.Sessions <- sessions    
-    let writeTextAndScroll (str:string) =
+
+    let writeText scroll (str:string) =
         if str <> null && textLines <> null then
             lock textLines (fun () ->
                 textStream.DirectWrite(fixServerPrompt str)
-                setScrollToEndOfBuffer()    // I'm not convinced that users want jump to end on output.
-            )                               // IP sample did it. Previously, VFSI did not.
-                                            // What if there is scrolling output on a timer and a user wants to look over it??                                        
-                                            // Maybe, if already at the end, then stay at the end?
+                if scroll then 
+                    setScrollToEndOfBuffer()
+            )
+
+    let writeTextAndScroll (str:string) = writeText true str
+
+    let writeTextNoScroll (str:string) = writeText false str
 
     // Merge stdout/stderr events prior to buffering. Paired with StdOut/StdErr keys so we can split them afterwards.  
     let responseE = Observable.merge (Observable.map (pair StdOut) sessions.Output) (Observable.map (pair StdErr) sessions.Error)
@@ -222,19 +223,27 @@ type internal FsiToolWindow() as this =
         | StdErr,strs -> writeTextAndScroll (String.concat Environment.NewLine strs)  // later: hence keep them split.
     do  responseBufferE.Add(fun keyStrings -> let keyChunks : (Response * string list) list = chunkKeyValues keyStrings
                                               List.iter writeKeyChunk keyChunks)
+    let showInitialMessageNetCore scroll =
+        if Session.SessionsProperties.fsiUseNetCore then
+            writeText scroll ((VFSIstrings.SR.sessionInitialMessageNetCore()+Environment.NewLine+prompt))
 
     // Write message on a session termination. Should be called on Gui thread.
     let recordTermination () = 
         if not sessions.Alive then // check is likely redundant
             synchronizationContext.Post(
                 System.Threading.SendOrPostCallback(
-                    fun _ -> writeTextAndScroll ((VFSIstrings.SR.sessionTerminationDetected())+Environment.NewLine)
+                    fun _ -> 
+                        writeTextAndScroll ((VFSIstrings.SR.sessionTerminationDetected())+Environment.NewLine)
+                        showInitialMessageNetCore true
             ), null)
             
     do  sessions.Exited.Add(fun _ -> recordTermination())
-    
-    // finally, start the session
-    do  sessions.Restart()
+
+    // For .NET Core the session doesn't start automatically.  Rather it may optionally be started by an Alt-Enter from a script,
+    // or else by pressing Enter in the REPL window.
+    do  showInitialMessageNetCore false
+        if not Session.SessionsProperties.fsiUseNetCore then 
+            sessions.Restart(null)
 
     let clearUndoStack (textLines:IVsTextLines) = // Clear the UNDO stack.
         let undoManager = textLines.GetUndoManager() |> throwOnFailure1
@@ -291,19 +300,15 @@ type internal FsiToolWindow() as this =
                 strHandle.Free()
         )
 
-    let executeTextNoHistory (text:string) =
+    let executeTextNoHistory sourceFile (text:string) =
+        sessions.Ensure(sourceFile)
         textStream.DirectWriteLine()
         sessions.SendInput(text)
         setCursorAtEndOfBuffer()
         
-    let executeText (text:string) =
-        textStream.DirectWriteLine()
-        history.Add(text)
-        sessions.SendInput(text)
-        setCursorAtEndOfBuffer()
-
     let executeUserInput() = 
         if isCurrentPositionInInputArea() then
+            sessions.Ensure(null)
             let text = getInputAreaText()
             textStream.ExtendReadOnlyMarker()
             textStream.DirectWriteLine()
@@ -317,7 +322,8 @@ type internal FsiToolWindow() as this =
     let supportWhenInInputArea (sender:obj) (args:EventArgs) =    
         let command = sender :?> MenuCommand
         if null <> command then // are these null checks needed?
-            command.Supported <- not source.IsCompletorActive && isCurrentPositionInInputArea()
+            let enabled = not source.IsCompletorActive && isCurrentPositionInInputArea()
+            command.Supported <- enabled
 
     /// Support command except when completion is active.    
     let supportUnlessCompleting (sender:obj) (args:EventArgs) =    
@@ -333,13 +339,13 @@ type internal FsiToolWindow() as this =
     let supportWhenAtStartOfInputArea (sender:obj) (e:EventArgs) =
         let command = sender :?> MenuCommand       
         if command <> null then
-            command.Supported  <- isCurrentPositionAtStartOfInputArea()
+            command.Supported <- not source.IsCompletorActive && isCurrentPositionInInputArea()
 
     /// Support when at the start of the input area AND no-selection (e.g. to enable NoAction on BACKSPACE).
     let supportWhenAtStartOfInputAreaAndNoSelection (sender:obj) (e:EventArgs) =
         let command = sender :?> MenuCommand
         if command <> null then
-            command.Supported  <- isCurrentPositionAtStartOfInputArea() && not (haveTextViewSelection())
+            command.Supported  <- isCurrentPositionAtStartOfInputArea()
             
     let supportWhenSelectionIntersectsWithReadonlyOrNoSelection (sender:obj) (_:EventArgs) =
         let command = sender :?> MenuCommand
@@ -414,13 +420,15 @@ type internal FsiToolWindow() as this =
             textLines.ReplaceLines(0, 0, lastLine, lastColumn, IntPtr.Zero, 0, null) |> throwOnFailure0
         )
         clearUndoStack textLines // The reset clear should not be undoable.
-        sessions.Restart()
+        showInitialMessageNetCore true
+        if not Session.SessionsProperties.fsiUseNetCore then 
+            sessions.Restart(null)
 
     /// Handle RETURN, unless Intelisense completion is in progress.
     let onReturn (sender:obj) (e:EventArgs) =    
         lock textLines (fun () ->
             if not sessions.Alive then
-                sessions.Restart()
+                sessions.Restart(null)
             else
                 if isCurrentPositionInInputArea() then                                            
                     executeUserInput()
@@ -520,10 +528,10 @@ type internal FsiToolWindow() as this =
             showNoActivate()
             let directiveC  = sprintf "# 1 \"stdin\""    (* stdin line number reset code *)                
             let text = "\n" + text + "\n" + directiveC + "\n;;\n"
-            executeTextNoHistory text
+            executeTextNoHistory null text
         with _ -> ()
 
-    let executeInteraction dbgBreak dir filename topLine text =
+    let executeInteraction dbgBreak dir (filename: string) topLine text =
         // Preserving previous functionality, including the #directives...
         let interaction =
             "\n"
@@ -534,7 +542,7 @@ type internal FsiToolWindow() as this =
           + "# 1 \"stdin\"" + "\n" (* stdin line number reset code *)
           + ";;" + "\n"
 
-        executeTextNoHistory interaction
+        executeTextNoHistory filename interaction
 
     let sendSelectionToFSI action =
         let dbgBreak,selectLine = 
@@ -713,7 +721,7 @@ type internal FsiToolWindow() as this =
                     context.AddAttribute(VSUSERCONTEXTATTRIBUTEUSAGE.VSUC_Usage_LookupF1, "Keyword", "VS.FSharpInteractive") |> ignore
             |   _ -> Debug.Assert(false)
 
-    member __.QueryCommandStatus(guidCmdGroup:Guid, nCmdId:uint32) =
+    member _.QueryCommandStatus(guidCmdGroup:Guid, nCmdId:uint32) =
         match () with
         | _ when guidCmdGroup = Guids.guidFsiConsoleCmdSet && nCmdId = uint32 Guids.cmdIDAttachDebugger ->
             if debuggerIsRunning () then Some(OLECMDF.OLECMDF_INVISIBLE)

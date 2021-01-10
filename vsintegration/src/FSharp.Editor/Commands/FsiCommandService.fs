@@ -82,7 +82,7 @@ type internal FsiCommandFilterProvider [<ImportingConstructor>]
     ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,
      editorFactory: IVsEditorAdaptersFactoryService) =
     interface IWpfTextViewCreationListener with
-        member __.TextViewCreated(textView) = 
+        member _.TextViewCreated(textView) = 
             match editorFactory.GetViewAdapter(textView) with
             | null -> ()
             | textViewAdapter ->

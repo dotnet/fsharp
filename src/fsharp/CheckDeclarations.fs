@@ -25,16 +25,14 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lib
-open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.PatternMatchCompilation
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
-open FSharp.Compiler.Rational
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -3252,6 +3250,23 @@ module EstablishTypeDefinitionCores =
         let paramNames =
             match synTyconRepr with 
             | SynTypeDefnSimpleRepr.General (TyconDelegate (_ty, arity), _, _, _, _, _, _, _) -> arity.ArgNames
+            | SynTypeDefnSimpleRepr.General (TyconUnspecified, _, _, _, _, _, Some synPats, _) ->
+                let rec patName (p: SynSimplePat) =
+                    match p with
+                    | SynSimplePat.Id (id, _, _, _, _, _) -> id.idText
+                    | SynSimplePat.Typed(pat, _, _) -> patName pat
+                    | SynSimplePat.Attrib(pat, _, _) -> patName pat
+
+                let rec pats (p: SynSimplePats) =
+                    match p with
+                    | SynSimplePats.SimplePats (ps, _) -> ps
+                    | SynSimplePats.Typed (ps, _, _) -> pats ps
+
+                let patNames =
+                    pats synPats
+                    |> List.map patName
+
+                patNames
             | _ -> []
         let doc = doc.ToXmlDoc(true, Some paramNames )
         Construct.NewTycon
@@ -3327,6 +3342,7 @@ module EstablishTypeDefinitionCores =
                 TNoRepr
 
             | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (s, m) -> 
+                let s = (s :?> ILType)
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind cenv.g (TyconILAssemblyCode, attrs, [], [], inSig, true, m) |> ignore
                 TAsmRepr s
@@ -3931,6 +3947,7 @@ module EstablishTypeDefinitionCores =
                     TRecdRepr (Construct.MakeRecdFieldsTable recdFields), None, NoSafeInitInfo
 
                 | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (s, _) -> 
+                    let s = (s :?> ILType)
                     noCLIMutableAttributeCheck()
                     noMeasureAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedAssemblyCode
@@ -4221,7 +4238,12 @@ module EstablishTypeDefinitionCores =
             and accStructFieldType structTycon structTyInst fspec fieldTy (doneTypes, acc) =
                 let fieldTy = stripTyparEqns fieldTy
                 match fieldTy with
-                | TType_app (tcref2, tinst2) when tcref2.IsStructOrEnumTycon ->
+                | TType_tuple (_isStruct , tinst2) when isStructTupleTy cenv.g fieldTy ->
+                    // The field is a struct tuple. Check each element of the tuple.
+                    // This case was added to resolve issues/3916
+                    ((doneTypes, acc), tinst2)
+                    ||> List.fold (fun acc' x -> accStructFieldType structTycon structTyInst fspec x acc')
+                | TType_app (tcref2 , tinst2) when tcref2.IsStructOrEnumTycon ->
                     // The field is a struct.
                     // An edge (tycon, tycon2) should be recorded, unless it is the "static self-typed field" case.
                     let tycon2 = tcref2.Deref
@@ -5788,7 +5810,7 @@ let TypeCheckOneImplFile
     let envinner, mtypeAcc = MakeInitialEnv env 
 
     let defs = [ for x in implFileFrags -> SynModuleDecl.NamespaceFragment x ]
-    let! mexpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDocEmpty None defs
+    let! mexpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None defs
 
     let implFileTypePriorToSig = !mtypeAcc 
 
@@ -5895,7 +5917,7 @@ let TypeCheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, condition
     let envinner, mtypeAcc = MakeInitialEnv tcEnv 
 
     let specs = [ for x in sigFileFrags -> SynModuleSigDecl.NamespaceFragment x ]
-    let! tcEnv = TcSignatureElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDocEmpty None specs
+    let! tcEnv = TcSignatureElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None specs
     
     let sigFileType = !mtypeAcc 
     

@@ -3,6 +3,7 @@
 module internal Internal.Utilities.Filename
 
 open System.IO
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.AbstractIL.Internal.Library 
 
 exception IllegalFileNameChar of string * char

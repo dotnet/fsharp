@@ -22,27 +22,29 @@ open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
-open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Layout
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.OptimizeInputs
-open FSharp.Compiler.Range
 open FSharp.Compiler.ScriptClosure
-open FSharp.Compiler.TypedTree
-open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.SourceCodeServices.SymbolHelpers 
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Text
-open FSharp.Compiler.SourceCodeServices.SymbolHelpers 
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -76,10 +78,10 @@ type FSharpFindDeclFailureReason =
     | NoSourceCode
 
     // trying to find declaration of ProvidedType without TypeProviderDefinitionLocationAttribute
-    | ProvidedType of string
+    | ProvidedType of typeName: string
 
     // trying to find declaration of ProvidedMember without TypeProviderDefinitionLocationAttribute
-    | ProvidedMember of string
+    | ProvidedMember of memberName: string
 
 [<RequireQualifiedAccess>]
 type FSharpFindDeclResult = 
@@ -88,10 +90,10 @@ type FSharpFindDeclResult =
     | DeclNotFound of FSharpFindDeclFailureReason
 
     /// found declaration
-    | DeclFound of range
+    | DeclFound of location: range
 
     /// Indicates an external declaration was found
-    | ExternalDecl of assembly : string * externalSym : ExternalSymbol
+    | ExternalDecl of assembly : string * externalSym : FSharpExternalSymbol
 
 /// This type is used to describe what was found during the name resolution.
 /// (Depending on the kind of the items, we may stop processing or continue to find better items)
@@ -502,7 +504,10 @@ type internal TypeCheckInfo
                 nameMatchesResidue n1 ||
                 meths |> List.exists (fun meth ->
                     let tcref = meth.ApparentEnclosingTyconRef
-                    tcref.IsProvided || nameMatchesResidue tcref.DisplayName)
+#if !NO_EXTENSIONTYPING
+                    tcref.IsProvided || 
+#endif
+                    nameMatchesResidue tcref.DisplayName)
             | _ -> residue = n1)
             
     /// Post-filter items to make sure they have precisely the right name
@@ -546,21 +551,21 @@ type internal TypeCheckInfo
     let CompletionItem (ty: ValueOption<TyconRef>) (assemblySymbol: ValueOption<AssemblySymbol>) (item: ItemWithInst) =
         let kind = 
             match item.Item with
-            | Item.MethodGroup (_, minfo :: _, _) -> CompletionItemKind.Method minfo.IsExtensionMember
+            | Item.MethodGroup (_, minfo :: _, _) -> FSharpCompletionItemKind.Method minfo.IsExtensionMember
             | Item.RecdField _
-            | Item.Property _ -> CompletionItemKind.Property
-            | Item.Event _ -> CompletionItemKind.Event
+            | Item.Property _ -> FSharpCompletionItemKind.Property
+            | Item.Event _ -> FSharpCompletionItemKind.Event
             | Item.ILField _ 
-            | Item.Value _ -> CompletionItemKind.Field
-            | Item.CustomOperation _ -> CompletionItemKind.CustomOperation
-            | _ -> CompletionItemKind.Other
+            | Item.Value _ -> FSharpCompletionItemKind.Field
+            | Item.CustomOperation _ -> FSharpCompletionItemKind.CustomOperation
+            | _ -> FSharpCompletionItemKind.Other
 
         { ItemWithInst = item
           MinorPriority = 0
           Kind = kind
           IsOwnMember = false
           Type = match ty with ValueSome x -> Some x | _ -> None
-          Unresolved = match assemblySymbol with ValueSome x -> Some x.UnresolvedSymbol | _ -> None }
+          Unresolved = match assemblySymbol with ValueSome x -> Some x.FSharpUnresolvedSymbol | _ -> None }
 
     let DefaultCompletionItem item = CompletionItem ValueNone ValueNone item
     
@@ -816,7 +821,7 @@ type internal TypeCheckInfo
                         |> List.filter (fun item -> not (fields.Contains item.Item.DisplayName))
                         |> List.map (fun item -> 
                             { ItemWithInst = item
-                              Kind = CompletionItemKind.Argument
+                              Kind = FSharpCompletionItemKind.Argument
                               MinorPriority = 0
                               IsOwnMember = false
                               Type = None 
@@ -884,14 +889,14 @@ type internal TypeCheckInfo
         | _ -> false
     
     /// Find the most precise display context for the given line and column.
-    member __.GetBestDisplayEnvForPos cursorPos  = GetBestEnvForPos cursorPos
+    member _.GetBestDisplayEnvForPos cursorPos  = GetBestEnvForPos cursorPos
 
-    member __.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
+    member _.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
         let (nenv, ad), m = GetBestEnvForPos cursorPos
         NameResolution.GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
 
     /// Determines if a long ident is resolvable at a specific point.
-    member __.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
+    member _.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
         ErrorScope.Protect
             Range.range0
             (fun () ->
@@ -907,7 +912,7 @@ type internal TypeCheckInfo
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
         
     /// Get the auto-complete items at a location
-    member __.GetDeclarations (parseResultsOpt, line, lineStr, partialName, getAllEntities) =
+    member _.GetDeclarations (parseResultsOpt, line, lineStr, partialName, getAllEntities) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () ->
@@ -934,7 +939,7 @@ type internal TypeCheckInfo
                 FSharpDeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location
-    member __.GetDeclarationListSymbols (parseResultsOpt, line, lineStr, partialName, getAllEntities) =
+    member _.GetDeclarationListSymbols (parseResultsOpt, line, lineStr, partialName, getAllEntities) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () -> 
@@ -1017,7 +1022,7 @@ type internal TypeCheckInfo
                 [])
             
     /// Get the "reference resolution" tooltip for at a location
-    member __.GetReferenceResolutionStructuredToolTipText(line,col) = 
+    member _.GetReferenceResolutionStructuredToolTipText(line,col) = 
 
         let pos = mkPos line col
         let isPosMatch(pos, ar:AssemblyReference) : bool = 
@@ -1038,7 +1043,7 @@ type internal TypeCheckInfo
             match matches with 
             | resolved::_ // Take the first seen
             | [resolved] -> 
-                let tip = wordL (TaggedTextOps.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
+                let tip = wordL (TaggedText.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
                 FSharpStructuredToolTipText.FSharpToolTipText [FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
 
             | [] -> 
@@ -1054,7 +1059,7 @@ type internal TypeCheckInfo
                     let lines = lines |> List.filter (fun line -> not (line.StartsWith("//")) && not (String.IsNullOrEmpty line))
                     FSharpStructuredToolTipText.FSharpToolTipText 
                        [ for line in lines -> 
-                            let tip = wordL (TaggedTextOps.tagStringLiteral line)
+                            let tip = wordL (TaggedText.tagStringLiteral line)
                             FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
                                     
         ErrorScope.Protect Range.range0 
@@ -1064,7 +1069,7 @@ type internal TypeCheckInfo
                 FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
 
     // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
-    member __.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names) = 
+    member _.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names) = 
         let Compute() = 
             ErrorScope.Protect Range.range0 
                 (fun () -> 
@@ -1091,7 +1096,7 @@ type internal TypeCheckInfo
              getToolTipTextCache.Put(AnyCallerThread, key,res)
              res
 
-    member __.GetF1Keyword (line, lineStr, colAtEndOfNames, names) : string option =
+    member _.GetF1Keyword (line, lineStr, colAtEndOfNames, names) : string option =
         ErrorScope.Protect Range.range0
             (fun () ->
 
@@ -1129,7 +1134,7 @@ type internal TypeCheckInfo
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetF1Keyword: '%s'" msg)
                 None)
 
-    member __.GetMethods (line, lineStr, colAtEndOfNames, namesOpt) =
+    member _.GetMethods (line, lineStr, colAtEndOfNames, namesOpt) =
         ErrorScope.Protect Range.range0
             (fun () -> 
 
@@ -1153,7 +1158,7 @@ type internal TypeCheckInfo
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetMethods: '%s'" msg)
                 FSharpMethodGroup(msg,[| |]))
 
-    member __.GetMethodsAsSymbols (line, lineStr, colAtEndOfNames, names) =
+    member _.GetMethodsAsSymbols (line, lineStr, colAtEndOfNames, names) =
         ErrorScope.Protect Range.range0
             (fun () -> 
                 let declItemsOpt =
@@ -1173,7 +1178,7 @@ type internal TypeCheckInfo
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetMethodsAsSymbols: '%s'" msg)
                 None)
            
-    member __.GetDeclarationLocation (line, lineStr, colAtEndOfNames, names, preferFlag) =
+    member _.GetDeclarationLocation (line, lineStr, colAtEndOfNames, names, preferFlag) =
         ErrorScope.Protect Range.range0 
             (fun () -> 
                 
@@ -1199,7 +1204,7 @@ type internal TypeCheckInfo
                             let typeVarNames = getTypeVarNames ilinfo
                             ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
                             |> Option.map (fun args ->
-                                let externalSym = ExternalSymbol.Constructor (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, args)
+                                let externalSym = FSharpExternalSymbol.Constructor (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, args)
                                 FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                         | _ -> None
 
@@ -1209,7 +1214,7 @@ type internal TypeCheckInfo
                             let typeVarNames = getTypeVarNames ilinfo
                             ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
                             |> Option.map (fun args ->
-                                let externalSym = ExternalSymbol.Method (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, name, args, ilinfo.ILMethodRef.GenericArity)
+                                let externalSym = FSharpExternalSymbol.Method (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, name, args, ilinfo.ILMethodRef.GenericArity)
                                 FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                         | _ -> None
 
@@ -1223,7 +1228,7 @@ type internal TypeCheckInfo
                         | Some methInfo ->
                             match methInfo.MetadataScope with
                             | ILScopeRef.Assembly assemblyRef ->
-                                let externalSym = ExternalSymbol.Property (methInfo.ILMethodRef.DeclaringTypeRef.FullName, name)
+                                let externalSym = FSharpExternalSymbol.Property (methInfo.ILMethodRef.DeclaringTypeRef.FullName, name)
                                 Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                             | _ -> None
                         | None -> None
@@ -1231,14 +1236,14 @@ type internal TypeCheckInfo
                     | Item.ILField (ILFieldInfo (typeInfo, fieldDef)) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                         match typeInfo.ILScopeRef with
                         | ILScopeRef.Assembly assemblyRef ->
-                            let externalSym = ExternalSymbol.Field (typeInfo.ILTypeRef.FullName, fieldDef.Name)
+                            let externalSym = FSharpExternalSymbol.Field (typeInfo.ILTypeRef.FullName, fieldDef.Name)
                             Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                         | _ -> None
                   
                     | Item.Event (ILEvent (ILEventInfo (typeInfo, eventDef))) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                         match typeInfo.ILScopeRef with
                         | ILScopeRef.Assembly assemblyRef ->
-                            let externalSym = ExternalSymbol.Event (typeInfo.ILTypeRef.FullName, eventDef.Name)
+                            let externalSym = FSharpExternalSymbol.Event (typeInfo.ILTypeRef.FullName, eventDef.Name)
                             Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                         | _ -> None
 
@@ -1252,7 +1257,7 @@ type internal TypeCheckInfo
                         match tr.TypeReprInfo, tr.PublicPath with
                         | TILObjectRepr(TILObjectReprData (ILScopeRef.Assembly assemblyRef, _, _)), Some (PubPath parts) ->
                             let fullName = parts |> String.concat "."
-                            Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, ExternalSymbol.Type fullName))
+                            Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, FSharpExternalSymbol.Type fullName))
                         | _ -> None
                     | _ -> None
                 match result with
@@ -1282,7 +1287,7 @@ type internal TypeCheckInfo
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarationLocation: '%s'" msg)
                 FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown msg))
 
-    member __.GetSymbolUseAtLocation (line, lineStr, colAtEndOfNames, names) =
+    member _.GetSymbolUseAtLocation (line, lineStr, colAtEndOfNames, names) =
         ErrorScope.Protect Range.range0 
             (fun () -> 
                 let declItemsOpt =
@@ -1300,50 +1305,50 @@ type internal TypeCheckInfo
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetSymbolUseAtLocation: '%s'" msg)
                 None)
 
-    member __.PartialAssemblySignatureForFile = 
+    member _.PartialAssemblySignatureForFile = 
         FSharpAssemblySignature(g, thisCcu, ccuSigForFile, tcImports, None, ccuSigForFile)
 
-    member __.AccessRights =  tcAccessRights
+    member _.AccessRights =  tcAccessRights
 
-    member __.GetReferencedAssemblies() = 
+    member _.GetReferencedAssemblies() = 
         [ for x in tcImports.GetImportedAssemblies() do 
                 yield FSharpAssembly(g, tcImports, x.FSharpViewOfMetadata) ]
 
-    member __.GetFormatSpecifierLocationsAndArity() = 
+    member _.GetFormatSpecifierLocationsAndArity() = 
          sSymbolUses.GetFormatSpecifierLocationsAndArity()
 
-    member __.GetSemanticClassification(range: range option) : struct (range * SemanticClassificationType) [] =
+    member _.GetSemanticClassification(range: range option) : struct (range * SemanticClassificationType) [] =
         sResolutions.GetSemanticClassification(g, amap, sSymbolUses.GetFormatSpecifierLocationsAndArity(), range)
 
     /// The resolutions in the file
-    member __.ScopeResolutions = sResolutions
+    member _.ScopeResolutions = sResolutions
 
     /// The uses of symbols in the analyzed file
-    member __.ScopeSymbolUses = sSymbolUses
+    member _.ScopeSymbolUses = sSymbolUses
 
-    member __.TcGlobals = g
+    member _.TcGlobals = g
 
-    member __.TcImports = tcImports
+    member _.TcImports = tcImports
 
     /// The inferred signature of the file
-    member __.CcuSigForFile = ccuSigForFile
+    member _.CcuSigForFile = ccuSigForFile
 
     /// The assembly being analyzed
-    member __.ThisCcu = thisCcu
+    member _.ThisCcu = thisCcu
 
-    member __.ImplementationFile = implFileOpt
+    member _.ImplementationFile = implFileOpt
 
     /// All open declarations in the file, including auto open modules
-    member __.OpenDeclarations = openDeclarations
+    member _.OpenDeclarations = openDeclarations
 
-    member __.SymbolEnv = cenv
+    member _.SymbolEnv = cenv
 
-    override __.ToString() = "TypeCheckInfo(" + mainInputFileName + ")"
+    override _.ToString() = "TypeCheckInfo(" + mainInputFileName + ")"
 
 type FSharpParsingOptions =
     { SourceFiles: string []
       ConditionalCompilationDefines: string list
-      ErrorSeverityOptions: FSharpErrorSeverityOptions
+      ErrorSeverityOptions: FSharpDiagnosticOptions
       IsInteractive: bool
       LightSyntax: bool option
       CompilingFsLib: bool
@@ -1356,7 +1361,7 @@ type FSharpParsingOptions =
     static member Default =
         { SourceFiles = Array.empty
           ConditionalCompilationDefines = []
-          ErrorSeverityOptions = FSharpErrorSeverityOptions.Default
+          ErrorSeverityOptions = FSharpDiagnosticOptions.Default
           IsInteractive = false
           LightSyntax = None
           CompilingFsLib = false
@@ -1385,7 +1390,7 @@ type FSharpParsingOptions =
 module internal ParseAndCheckFile = 
 
     /// Error handler for parsing & type checking while processing a single file
-    type ErrorHandler(reportErrors, mainInputFileName, errorSeverityOptions: FSharpErrorSeverityOptions, sourceText: ISourceText, suggestNamesForErrors: bool) =
+    type ErrorHandler(reportErrors, mainInputFileName, errorSeverityOptions: FSharpDiagnosticOptions, sourceText: ISourceText, suggestNamesForErrors: bool) =
         let mutable options = errorSeverityOptions
         let errorsAndWarningsCollector = new ResizeArray<_>()
         let mutable errorCount = 0
@@ -1407,7 +1412,7 @@ module internal ParseAndCheckFile =
                 let report exn =
                     for ei in ErrorHelpers.ReportError (options, false, mainInputFileName, fileInfo, (exn, sev), suggestNamesForErrors) do
                         errorsAndWarningsCollector.Add ei
-                        if sev = FSharpErrorSeverity.Error then
+                        if sev = FSharpDiagnosticSeverity.Error then
                             errorCount <- errorCount + 1
 
                 match exn with
@@ -1418,19 +1423,19 @@ module internal ParseAndCheckFile =
 
         let errorLogger =
             { new ErrorLogger("ErrorHandler") with
-                member x.DiagnosticSink (exn, isError) = diagnosticSink (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) exn
+                member x.DiagnosticSink (exn, isError) = diagnosticSink (if isError then FSharpDiagnosticSeverity.Error else FSharpDiagnosticSeverity.Warning) exn
                 member x.ErrorCount = errorCount }
 
         // Public members
-        member __.ErrorLogger = errorLogger
+        member _.ErrorLogger = errorLogger
 
-        member __.CollectedDiagnostics = errorsAndWarningsCollector.ToArray()
+        member _.CollectedDiagnostics = errorsAndWarningsCollector.ToArray()
 
-        member __.ErrorCount = errorCount
+        member _.ErrorCount = errorCount
 
-        member __.ErrorSeverityOptions with set opts = options <- opts
+        member _.ErrorSeverityOptions with set opts = options <- opts
 
-        member __.AnyErrors = errorCount > 0
+        member _.AnyErrors = errorCount > 0
 
     let getLightSyntaxStatus fileName options =
         let lower = String.lowercase fileName
@@ -1454,13 +1459,13 @@ module internal ParseAndCheckFile =
         let lexargs = { lexargs with applyLineDirectives = false }
 
         let tokenizer = LexFilter.LexFilter(lightStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
-        tokenizer.Lexer
+        (fun _ -> tokenizer.GetToken())
 
     // Public callers are unable to answer LanguageVersion feature support questions.
     // External Tools including the VS IDE will enable the default LanguageVersion 
     let isFeatureSupported (_featureId:LanguageFeature) = true
 
-    let createLexbuf sourceText isFeatureSupported =
+    let createLexbuf sourceText =
         UnicodeLexing.SourceTextAsLexbuf(isFeatureSupported, sourceText)
 
     let matchBraces(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
@@ -1476,7 +1481,7 @@ module internal ParseAndCheckFile =
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         
         let matchingBraces = new ResizeArray<_>()
-        Lexhelp.usingLexbufForParsing(createLexbuf sourceText isFeatureSupported, fileName) (fun lexbuf ->
+        Lexhelp.usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
             let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
             let lexfun = createLexerFunction fileName options lexbuf errHandler
             let parenTokensBalance t1 t2 =
@@ -1553,16 +1558,20 @@ module internal ParseAndCheckFile =
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let parseResult =
-            Lexhelp.usingLexbufForParsing(createLexbuf sourceText isFeatureSupported, fileName) (fun lexbuf ->
+            Lexhelp.usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
+
                 let lexfun = createLexerFunction fileName options lexbuf errHandler
                 let isLastCompiland =
                     fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase) ||
                     ParseAndCheckInputs.IsScript(fileName)
                 let isExe = options.IsExe
-                try Some (ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe)))
+
+                try 
+                    Some (ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe)))
                 with e ->
                     errHandler.ErrorLogger.StopProcessingRecovery e Range.range0 // don't re-raise any exceptions, we must return None.
                     None)
+
         errHandler.CollectedDiagnostics, parseResult, errHandler.AnyErrors
 
 
@@ -1607,8 +1616,8 @@ module internal ParseAndCheckFile =
                     if sameFile file fileOfHashLoad then
                         for rangeOfHashLoad in rangesOfHashLoad do // Handle the case of two #loads of the same file
                             let diagnostics = errorGroupedByFileName |> Array.map(fun (_,(pe,f)) -> pe.Exception,f) // Strip the build phase here. It will be replaced, in total, with TypeCheck
-                            let errors = [ for err, sev in diagnostics do if sev = FSharpErrorSeverity.Error then yield err ]
-                            let warnings = [ for err, sev in diagnostics do if sev = FSharpErrorSeverity.Warning then yield err ]
+                            let errors = [ for err, sev in diagnostics do if sev = FSharpDiagnosticSeverity.Error then yield err ]
+                            let warnings = [ for err, sev in diagnostics do if sev = FSharpDiagnosticSeverity.Warning then yield err ]
                                     
                             let message = HashLoadedSourceHasIssues(warnings,errors,rangeOfHashLoad)
                             if isNil errors then 
@@ -1618,7 +1627,7 @@ module internal ParseAndCheckFile =
             
             // Replay other background errors.
             for phasedError, sev in otherBackgroundDiagnostics do
-                if sev = FSharpErrorSeverity.Warning then 
+                if sev = FSharpDiagnosticSeverity.Warning then 
                     warning phasedError.Exception 
                 else 
                     errorR phasedError.Exception
@@ -1640,7 +1649,7 @@ module internal ParseAndCheckFile =
            moduleNamesDict: ModuleNamesDict,
            loadClosure: LoadClosure option,
            // These are the errors and warnings seen by the background compiler for the entire antecedent 
-           backgroundDiagnostics: (PhasedDiagnostic * FSharpErrorSeverity)[],    
+           backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[],    
            reactorOps: IReactorOperations,
            userOpName: string,
            suggestNamesForErrors: bool) = async {
@@ -1668,7 +1677,7 @@ module internal ParseAndCheckFile =
             
         // Play background errors and warnings for this file.
         for err, sev in backgroundDiagnostics do
-            diagnosticSink (err, (sev = FSharpErrorSeverity.Error))
+            diagnosticSink (err, (sev = FSharpDiagnosticSeverity.Error))
             
         // If additional references were brought in by the preprocessor then we need to process them
         ApplyLoadClosure(tcConfig, parsedMainInput, mainInputFileName, loadClosure, tcImports, backgroundDiagnostics)
@@ -1711,7 +1720,7 @@ module internal ParseAndCheckFile =
                     return result
                 with e ->
                     errorR e
-                    let mty = Construct.NewEmptyModuleOrNamespaceType Namespace
+                    let mty = Construct.NewEmptyModuleOrNamespaceType ModuleOrNamespaceKind.Namespace
                     return Some((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
             }
                 
@@ -1744,9 +1753,9 @@ module internal ParseAndCheckFile =
 type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad: AccessorDomain) =
 
     /// Get the assemblies referenced
-    member __.GetReferencedAssemblies() = assemblies
+    member _.GetReferencedAssemblies() = assemblies
 
-    member __.AccessibilityRights = FSharpAccessibilityRights(thisCcu, ad)
+    member _.AccessibilityRights = FSharpAccessibilityRights(thisCcu, ad)
 
 
 [<Sealed>]
@@ -1756,7 +1765,7 @@ type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad
 // the corresponding background builder to be alive. That is, they are simply plain-old-data through pre-formatting of all result text.
 type FSharpCheckFileResults
         (filename: string, 
-         errors: FSharpErrorInfo[], 
+         errors: FSharpDiagnostic[], 
          scopeOptX: TypeCheckInfo option, 
          dependencyFiles: string[], 
          builderX: IncrementalBuilder option, 
@@ -1770,28 +1779,28 @@ type FSharpCheckFileResults
         | None -> dflt()
         | Some (scope, _builderOpt) -> f scope
 
-    member __.Errors = errors
+    member _.Errors = errors
 
-    member __.HasFullTypeCheckInfo = details.IsSome
+    member _.HasFullTypeCheckInfo = details.IsSome
     
-    member __.TryGetCurrentTcImports () =
+    member _.TryGetCurrentTcImports () =
         match builderX with
         | Some builder -> builder.TryGetCurrentTcImports ()
         | _ -> None
 
     /// Intellisense autocompletions
-    member __.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities) = 
+    member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities) = 
         let getAllEntities = defaultArg getAllEntities (fun() -> [])
         threadSafeOp (fun () -> FSharpDeclarationListInfo.Empty) (fun scope -> 
             scope.GetDeclarations(parsedFileResults, line, lineText, partialName, getAllEntities))
 
-    member __.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, ?getAllEntities) = 
+    member _.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, ?getAllEntities) = 
         let getAllEntities = defaultArg getAllEntities (fun() -> [])
         threadSafeOp (fun () -> []) (fun scope -> 
             scope.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, getAllEntities))
 
     /// Resolve the names at the given location to give a data tip 
-    member __.GetStructuredToolTipText(line, colAtEndOfNames, lineText, names, tokenTag) = 
+    member _.GetStructuredToolTipText(line, colAtEndOfNames, lineText, names, tokenTag) = 
         let dflt = FSharpToolTipText []
         match tokenTagToTokenId tokenTag with 
         | TOKEN_IDENT -> 
@@ -1805,35 +1814,35 @@ type FSharpCheckFileResults
 
     member info.GetToolTipText(line, colAtEndOfNames, lineText, names, tokenTag) = 
         info.GetStructuredToolTipText(line, colAtEndOfNames, lineText, names, tokenTag)
-        |> Tooltips.ToFSharpToolTipText
+        |> FSharpToolTip.ToFSharpToolTipText
 
-    member __.GetF1Keyword (line, colAtEndOfNames, lineText, names) =
+    member _.GetF1Keyword (line, colAtEndOfNames, lineText, names) =
         threadSafeOp (fun () -> None) (fun scope -> 
             scope.GetF1Keyword (line, lineText, colAtEndOfNames, names))
 
     // Resolve the names at the given location to a set of methods
-    member __.GetMethods(line, colAtEndOfNames, lineText, names) =
+    member _.GetMethods(line, colAtEndOfNames, lineText, names) =
         let dflt = FSharpMethodGroup("",[| |])
         threadSafeOp (fun () -> dflt) (fun scope -> 
             scope.GetMethods (line, lineText, colAtEndOfNames, names))
             
-    member __.GetDeclarationLocation (line, colAtEndOfNames, lineText, names, ?preferFlag) = 
+    member _.GetDeclarationLocation (line, colAtEndOfNames, lineText, names, ?preferFlag) = 
         let dflt = FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown "")
         threadSafeOp (fun () -> dflt) (fun scope -> 
             scope.GetDeclarationLocation (line, lineText, colAtEndOfNames, names, preferFlag))
 
-    member __.GetSymbolUseAtLocation (line, colAtEndOfNames, lineText, names) = 
+    member _.GetSymbolUseAtLocation (line, colAtEndOfNames, lineText, names) = 
         threadSafeOp (fun () -> None) (fun scope -> 
             scope.GetSymbolUseAtLocation (line, lineText, colAtEndOfNames, names)
             |> Option.map (fun (sym,denv,m) -> FSharpSymbolUse(scope.TcGlobals,denv,sym,ItemOccurence.Use,m)))
 
-    member __.GetMethodsAsSymbols (line, colAtEndOfNames, lineText, names) = 
+    member _.GetMethodsAsSymbols (line, colAtEndOfNames, lineText, names) = 
         threadSafeOp (fun () -> None) (fun scope -> 
             scope.GetMethodsAsSymbols (line, lineText, colAtEndOfNames, names)
             |> Option.map (fun (symbols,denv,m) ->
                 symbols |> List.map (fun sym -> FSharpSymbolUse(scope.TcGlobals,denv,sym,ItemOccurence.Use,m))))
 
-    member __.GetSymbolAtLocation (line, colAtEndOfNames, lineStr, names) = 
+    member _.GetSymbolAtLocation (line, colAtEndOfNames, lineStr, names) = 
         threadSafeOp (fun () -> None) (fun scope -> 
             scope.GetSymbolUseAtLocation (line, lineStr, colAtEndOfNames, names)
             |> Option.map (fun (sym,_,_) -> sym))
@@ -1841,37 +1850,37 @@ type FSharpCheckFileResults
     member info.GetFormatSpecifierLocations() = 
         info.GetFormatSpecifierLocationsAndArity() |> Array.map fst
 
-    member __.GetFormatSpecifierLocationsAndArity() = 
+    member _.GetFormatSpecifierLocationsAndArity() = 
         threadSafeOp 
             (fun () -> [| |]) 
             (fun scope -> 
                 // This operation is not asynchronous - GetFormatSpecifierLocationsAndArity can be run on the calling thread
                 scope.GetFormatSpecifierLocationsAndArity())
 
-    member __.GetSemanticClassification(range: range option) =
+    member _.GetSemanticClassification(range: range option) =
         threadSafeOp 
             (fun () -> [| |]) 
             (fun scope -> 
                 // This operation is not asynchronous - GetSemanticClassification can be run on the calling thread
                 scope.GetSemanticClassification(range))
      
-    member __.PartialAssemblySignature = 
+    member _.PartialAssemblySignature = 
         threadSafeOp 
             (fun () -> failwith "not available") 
             (fun scope -> 
                 // This operation is not asynchronous - PartialAssemblySignature can be run on the calling thread
                 scope.PartialAssemblySignatureForFile)
 
-    member __.ProjectContext = 
+    member _.ProjectContext = 
         threadSafeOp 
             (fun () -> failwith "not available") 
             (fun scope -> 
                 // This operation is not asynchronous - GetReferencedAssemblies can be run on the calling thread
                 FSharpProjectContext(scope.ThisCcu, scope.GetReferencedAssemblies(), scope.AccessRights))
 
-    member __.DependencyFiles = dependencyFiles
+    member _.DependencyFiles = dependencyFiles
 
-    member __.GetAllUsesOfAllSymbolsInFile(?cancellationToken: CancellationToken ) = 
+    member _.GetAllUsesOfAllSymbolsInFile(?cancellationToken: CancellationToken ) = 
         threadSafeOp
             (fun () -> Seq.empty)
             (fun scope ->
@@ -1885,7 +1894,7 @@ type FSharpCheckFileResults
                                 FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range)
                 })
 
-    member __.GetUsesOfSymbolInFile(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) = 
+    member _.GetUsesOfSymbolInFile(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) = 
         threadSafeOp 
             (fun () -> [| |]) 
             (fun scope -> 
@@ -1894,25 +1903,25 @@ type FSharpCheckFileResults
                      if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
                         yield FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
 
-    member __.GetVisibleNamespacesAndModulesAtPoint(pos: pos) = 
+    member _.GetVisibleNamespacesAndModulesAtPoint(pos: pos) = 
         threadSafeOp 
             (fun () -> [| |]) 
             (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
 
-    member __.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) = 
+    member _.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) = 
         threadSafeOp (fun () -> true) (fun scope -> 
             scope.IsRelativeNameResolvable(cursorPos, plid, item))
 
-    member __.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) = 
+    member _.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) = 
         threadSafeOp (fun () -> true) (fun scope -> 
             scope.IsRelativeNameResolvableFromSymbol(cursorPos, plid, symbol))
     
-    member __.GetDisplayContextForPos(cursorPos: pos) =
+    member _.GetDisplayContextForPos(cursorPos: pos) =
         threadSafeOp (fun () -> None) (fun scope -> 
             let (nenv, _), _ = scope.GetBestDisplayEnvForPos cursorPos
             Some(FSharpDisplayContext(fun _ -> nenv.DisplayEnv)))
             
-    member __.ImplementationFile =
+    member _.ImplementationFile =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
         scopeOptX 
         |> Option.map (fun scope -> 
@@ -1920,7 +1929,7 @@ type FSharpCheckFileResults
             scope.ImplementationFile |> Option.map (fun implFile -> FSharpImplementationFileContents(cenv, implFile)))
         |> Option.defaultValue None
 
-    member __.OpenDeclarations =
+    member _.OpenDeclarations =
         scopeOptX 
         |> Option.map (fun scope -> 
             let cenv = scope.SymbolEnv
@@ -1930,15 +1939,15 @@ type FSharpCheckFileResults
                 FSharpOpenDeclaration(x.Target, x.Range, modules, types, x.AppliedScope, x.IsOwnNamespace)))
         |> Option.defaultValue [| |]
 
-    override __.ToString() = "FSharpCheckFileResults(" + filename + ")"
+    override _.ToString() = "FSharpCheckFileResults(" + filename + ")"
 
-    static member MakeEmpty(filename: string, creationErrors: FSharpErrorInfo[], keepAssemblyContents) = 
+    static member MakeEmpty(filename: string, creationErrors: FSharpDiagnostic[], keepAssemblyContents) = 
         FSharpCheckFileResults (filename, creationErrors, None, [| |], None, keepAssemblyContents)
 
     static member JoinErrors(isIncompleteTypeCheckEnvironment, 
-                             creationErrors: FSharpErrorInfo[], 
-                             parseErrors: FSharpErrorInfo[], 
-                             tcErrors: FSharpErrorInfo[]) =
+                             creationErrors: FSharpDiagnostic[], 
+                             parseErrors: FSharpDiagnostic[], 
+                             tcErrors: FSharpDiagnostic[]) =
         [| yield! creationErrors 
            yield! parseErrors
            if isIncompleteTypeCheckEnvironment then 
@@ -1953,9 +1962,9 @@ type FSharpCheckFileResults
          isIncompleteTypeCheckEnvironment: bool, 
          builder: IncrementalBuilder, 
          dependencyFiles, 
-         creationErrors: FSharpErrorInfo[], 
-         parseErrors: FSharpErrorInfo[], 
-         tcErrors: FSharpErrorInfo[], 
+         creationErrors: FSharpDiagnostic[], 
+         parseErrors: FSharpDiagnostic[], 
+         tcErrors: FSharpDiagnostic[], 
          keepAssemblyContents,
          ccuSigForFile, 
          thisCcu, tcImports, tcAccessRights, 
@@ -1984,14 +1993,14 @@ type FSharpCheckFileResults
          tcState: TcState,
          moduleNamesDict: ModuleNamesDict,
          loadClosure: LoadClosure option,
-         backgroundDiagnostics: (PhasedDiagnostic * FSharpErrorSeverity)[],    
+         backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[],    
          reactorOps: IReactorOperations,
          userOpName: string,
          isIncompleteTypeCheckEnvironment: bool, 
          builder: IncrementalBuilder, 
          dependencyFiles: string[], 
-         creationErrors: FSharpErrorInfo[], 
-         parseErrors: FSharpErrorInfo[], 
+         creationErrors: FSharpDiagnostic[], 
+         parseErrors: FSharpDiagnostic[], 
          keepAssemblyContents: bool,
          suggestNamesForErrors: bool) = 
         async {
@@ -2020,7 +2029,7 @@ type FSharpCheckProjectResults
          (projectFileName:string, 
           tcConfigOption: TcConfig option, 
           keepAssemblyContents: bool, 
-          errors: FSharpErrorInfo[], 
+          errors: FSharpDiagnostic[], 
           details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list *
                    TopAttribs option * IRawFSharpAssemblyData option * ILAssemblyRef *
                    AccessorDomain * TypedImplFile list option * string[]) option) =
@@ -2035,15 +2044,15 @@ type FSharpCheckProjectResults
         | None -> invalidOp ("The project has no results due to critical errors in the project options. Check the HasCriticalErrors before accessing the detailed results. Errors: " + String.concat "\n" [ for e in errors -> e.Message ])
         | Some d -> d
 
-    member __.Errors = errors
+    member _.Errors = errors
 
-    member __.HasCriticalErrors = details.IsNone
+    member _.HasCriticalErrors = details.IsNone
 
-    member __.AssemblySignature =  
+    member _.AssemblySignature =  
         let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
         FSharpAssemblySignature(tcGlobals, thisCcu, ccuSig, tcImports, topAttribs, ccuSig)
 
-    member __.TypedImplementationFiles =
+    member _.TypedImplementationFiles =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
         let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles) = getDetails()
         let mimpls = 
@@ -2061,7 +2070,7 @@ type FSharpCheckProjectResults
             | Some mimpls -> mimpls
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
 
-    member __.GetOptimizedAssemblyContents() =  
+    member _.GetOptimizedAssemblyContents() =  
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
         let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles) = getDetails()
         let mimpls = 
@@ -2081,7 +2090,7 @@ type FSharpCheckProjectResults
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
-    member __.GetUsesOfSymbol(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) = 
+    member _.GetUsesOfSymbol(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) = 
         let (tcGlobals, _tcImports, _thisCcu, _ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
 
         tcSymbolUses
@@ -2094,7 +2103,7 @@ type FSharpCheckProjectResults
         |> Seq.toArray
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
-    member __.GetAllUsesOfAllSymbols(?cancellationToken: CancellationToken) = 
+    member _.GetAllUsesOfAllSymbols(?cancellationToken: CancellationToken) = 
         let (tcGlobals, tcImports, thisCcu, ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
         let cenv = SymbolEnv(tcGlobals, thisCcu, Some ccuSig, tcImports)
 
@@ -2106,26 +2115,26 @@ type FSharpCheckProjectResults
                       let symbol = FSharpSymbol.Create(cenv, symbolUse.Item)
                       yield FSharpSymbolUse(tcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |]
 
-    member __.ProjectContext = 
+    member _.ProjectContext = 
         let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
         let assemblies = 
             tcImports.GetImportedAssemblies()
             |> List.map (fun x -> FSharpAssembly(tcGlobals, tcImports, x.FSharpViewOfMetadata))
         FSharpProjectContext(thisCcu, assemblies, ad) 
 
-    member __.RawFSharpAssemblyData = 
+    member _.RawFSharpAssemblyData = 
         let (_tcGlobals, _tcImports, _thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
         tcAssemblyData
 
-    member __.DependencyFiles = 
+    member _.DependencyFiles = 
         let (_tcGlobals, _tcImports, _thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, dependencyFiles) = getDetails()
         dependencyFiles
 
-    member __.AssemblyFullName = 
+    member _.AssemblyFullName = 
         let (_tcGlobals, _tcImports, _thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
         ilAssemRef.QualifiedName
 
-    override __.ToString() = "FSharpCheckProjectResults(" + projectFileName + ")"
+    override _.ToString() = "FSharpCheckProjectResults(" + projectFileName + ")"
 
 type FsiInteractiveChecker(legacyReferenceResolver, 
                            ops: IReactorOperations,
@@ -2136,7 +2145,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
 
     let keepAssemblyContents = false
 
-    member __.ParseAndCheckInteraction (ctok, sourceText: ISourceText, ?userOpName: string) =
+    member _.ParseAndCheckInteraction (ctok, sourceText: ISourceText, ?userOpName: string) =
         async {
             let userOpName = defaultArg userOpName "Unknown"
             let filename = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
@@ -2149,7 +2158,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
             
             let backgroundDiagnostics = [| |]
             let reduceMemoryUsage = ReduceMemoryFlag.Yes
-            let assumeDotNetFramework = tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib
+            let assumeDotNetFramework = (tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib)
 
             let applyCompilerOptions tcConfigB  = 
                 let fsiCompilerOptions = CompilerOptions.GetCoreFsiCompilerOptions tcConfigB 
@@ -2159,7 +2168,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                 LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
                     filename, sourceText, CodeContext.Editing,
                     tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib,
-                    tcConfig.useSdkRefs, new Lexhelp.LexResourceManager(),
+                    tcConfig.useSdkRefs, tcConfig.sdkDirOverride, new Lexhelp.LexResourceManager(),
                     applyCompilerOptions, assumeDotNetFramework,
                     tryGetMetadataSnapshot=(fun _ -> None),
                     reduceMemoryUsage=reduceMemoryUsage,

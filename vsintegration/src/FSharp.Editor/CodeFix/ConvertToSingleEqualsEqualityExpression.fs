@@ -16,7 +16,7 @@ type internal FSharpConvertToSingleEqualsEqualityExpressionCodeFixProvider() =
 
     let fixableDiagnosticIds = set ["FS0043"]
 
-    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override this.RegisterCodeFixesAsync context : Task =
         asyncMaybe {

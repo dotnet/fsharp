@@ -17,11 +17,9 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Utilities
 
+open FSharp.Compiler.Text
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Range
-open FSharp.Compiler
-
-open Internal.Utilities.StructuredFormat
 
 type internal QuickInfo =
     { StructuredText: FSharpStructuredToolTipText
@@ -175,12 +173,6 @@ type internal FSharpAsyncQuickInfoSource
         _settings: EditorOptions
     ) =
 
-    static let joinWithLineBreaks segments =
-        let lineBreak = TaggedTextOps.Literals.lineBreak
-        match segments |> List.filter (Seq.isEmpty >> not) with
-        | [] -> Seq.empty
-        | xs -> xs |> List.reduce (fun acc elem -> seq { yield! acc; yield lineBreak; yield! elem })
-
     // test helper
     static member ProvideQuickInfo(checker:FSharpChecker, documentId:DocumentId, sourceText:SourceText, filePath:string, position:int, parsingOptions:FSharpParsingOptions, options:FSharpProjectOptions, textVersionHash:int, languageServicePerformanceOptions: LanguageServicePerformanceOptions) =
         asyncMaybe {
@@ -205,15 +197,15 @@ type internal FSharpAsyncQuickInfoSource
     static member BuildSingleQuickInfoItem (documentationBuilder:IDocumentationBuilder) (quickInfo:QuickInfo) =
         let mainDescription, documentation, typeParameterMap, usage, exceptions = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
         XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, quickInfo.StructuredText)
-        let docs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
+        let docs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
         (mainDescription, docs)
 
     interface IAsyncQuickInfoSource with
-        override __.Dispose() = () // no cleanup necessary
+        override _.Dispose() = () // no cleanup necessary
 
         // This method can be called from the background thread.
         // Do not call IServiceProvider.GetService here.
-        override __.GetQuickInfoItemAsync(session:IAsyncQuickInfoSession, cancellationToken:CancellationToken) : Task<QuickInfoItem> =
+        override _.GetQuickInfoItemAsync(session:IAsyncQuickInfoSession, cancellationToken:CancellationToken) : Task<QuickInfoItem> =
             let triggerPoint = session.GetTriggerPoint(textBuffer.CurrentSnapshot)
             match triggerPoint.HasValue with
             | false -> Task.FromResult<QuickInfoItem>(null)
@@ -242,7 +234,7 @@ type internal FSharpAsyncQuickInfoSource
                         XmlDocumentation.BuildDataTipText(documentationBuilder, ignore, sigDocumentation.Add, ignore, ignore, ignore, sigQuickInfo.StructuredText)
                         XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, targetDocumentation.Add, typeParameterMap.Add, exceptions.Add, usage.Add, targetQuickInfo.StructuredText)
                         // get whitespace nomalized documentation text
-                        let getText (tts: seq<Layout.TaggedText>) =
+                        let getText (tts: seq<TaggedText>) =
                             let text =
                                 (StringBuilder(), tts)
                                 ||> Seq.fold (fun sb tt ->
@@ -258,9 +250,9 @@ type internal FSharpAsyncQuickInfoSource
                               | Some implText, Some sigText when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) ->
                                     yield! sigDocumentation
                               | Some _  , Some _ ->
-                                    yield! joinWithLineBreaks [ sigDocumentation; [ TaggedTextOps.tagText "-------------" ]; targetDocumentation ]
+                                    yield! RoslynHelpers.joinWithLineBreaks [ sigDocumentation; [ TaggedText.tagText "-------------" ]; targetDocumentation ]
                             ] |> ResizeArray
-                        let docs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
+                        let docs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
                         let imageId = Tokenizer.GetImageIdForSymbol(targetQuickInfo.Symbol, targetQuickInfo.SymbolKind)
                         let navigation = QuickInfoNavigation(statusBar, checkerProvider.Checker, projectInfoManager, document, symbolUseRange)
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
@@ -283,7 +275,7 @@ type internal FSharpAsyncQuickInfoSourceProvider
     ) =
 
     interface IAsyncQuickInfoSourceProvider with
-        override __.TryCreateQuickInfoSource(textBuffer:ITextBuffer) : IAsyncQuickInfoSource =
+        override _.TryCreateQuickInfoSource(textBuffer:ITextBuffer) : IAsyncQuickInfoSource =
             // GetService calls must be made on the UI thread
             // It is safe to do it here (see #4713)
             let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())

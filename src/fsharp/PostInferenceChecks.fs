@@ -17,11 +17,12 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -98,7 +99,7 @@ type env =
       isInAppExpr: bool
     } 
 
-    override __.ToString() = "<env>"
+    override _.ToString() = "<env>"
 
 let BindTypar env (tp: Typar) = 
     { env with 
@@ -2151,8 +2152,8 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
             if ( (pinfo.HasGetter && 
                   pinfo.HasSetter && 
-                  let setterArgs = pinfo.DropGetter.GetParamTypes(cenv.amap, m)
-                  let getterArgs = pinfo.DropSetter.GetParamTypes(cenv.amap, m)
+                  let setterArgs = pinfo.DropGetter().GetParamTypes(cenv.amap, m)
+                  let getterArgs = pinfo.DropSetter().GetParamTypes(cenv.amap, m)
                   setterArgs.Length <> getterArgs.Length)
                 || 
                  (let nargs = pinfo.GetParamTypes(cenv.amap, m).Length
@@ -2163,8 +2164,8 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             // Check to see if the signatures of the both getter and the setter imply the same property type
 
             if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer then
-                let ty1 = pinfo.DropSetter.GetPropertyType(cenv.amap, m)
-                let ty2 = pinfo.DropGetter.GetPropertyType(cenv.amap, m)
+                let ty1 = pinfo.DropSetter().GetPropertyType(cenv.amap, m)
+                let ty2 = pinfo.DropGetter().GetPropertyType(cenv.amap, m)
                 if not (typeEquivAux EraseNone cenv.amap.g ty1 ty2) then
                     errorR(Error(FSComp.SR.chkGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
 

@@ -12,6 +12,7 @@ open System.IO
 
 open Internal.Utilities
 open Internal.Utilities.Collections
+open Internal.Utilities.FSharpEnvironment
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
@@ -24,14 +25,14 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
-open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.Range
-open FSharp.Compiler.ReferenceResolver
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -43,7 +44,7 @@ open Microsoft.DotNet.DependencyManager
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
-open Microsoft.FSharp.Core.CompilerServices
+open FSharp.Core.CompilerServices
 #endif
 
 let (++) x s = x @ [s]
@@ -372,7 +373,7 @@ type TcConfig with
             | Some IA64 -> "ia64"
  
         try 
-            tcConfig.legacyReferenceResolver.Resolve
+            tcConfig.legacyReferenceResolver.Impl.Resolve
                (tcConfig.resolutionEnvironment, 
                 references, 
                 tcConfig.targetFrameworkVersion, 
@@ -383,7 +384,7 @@ type TcConfig with
                 tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)
                 logMessage showMessages, logDiagnostic showMessages)
         with 
-            ReferenceResolver.ResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(), errorAndWarningRange))
+            LegacyResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(), errorAndWarningRange))
 
 
     // NOTE!! if mode=Speculative then this method must not report ANY warnings or errors through 'warning' or 'error'. Instead
@@ -554,7 +555,8 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                     if found then yield asm
 
             if tcConfig.framework then
-                for s in defaultReferencesForScriptsAndOutOfProjectSources tcConfig.useFsiAuxLib assumeDotNetFramework tcConfig.useSdkRefs do
+                let references, _useDotNetFramework = tcConfig.FxResolver.GetDefaultReferences(tcConfig.useFsiAuxLib, assumeDotNetFramework)
+                for s in references do
                     yield AssemblyReference(rangeStartup, (if s.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then s else s+".dll"), None)
 
             yield! tcConfig.referencedDLLs
@@ -628,13 +630,13 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
     let externalSigAndOptData = ["FSharp.Core"]
     interface IRawFSharpAssemblyData with 
 
-         member __.GetAutoOpenAttributes ilg = GetAutoOpenAttributes ilg ilModule 
+         member _.GetAutoOpenAttributes ilg = GetAutoOpenAttributes ilg ilModule 
 
-         member __.GetInternalsVisibleToAttributes ilg = GetInternalsVisibleToAttributes ilg ilModule 
+         member _.GetInternalsVisibleToAttributes ilg = GetInternalsVisibleToAttributes ilg ilModule 
 
-         member __.TryGetILModuleDef() = Some ilModule 
+         member _.TryGetILModuleDef() = Some ilModule 
 
-         member __.GetRawFSharpSignatureData(m, ilShortAssemName, filename) = 
+         member _.GetRawFSharpSignatureData(m, ilShortAssemName, filename) = 
             let resources = ilModule.Resources.AsList
             let sigDataReaders = 
                 [ for iresource in resources do
@@ -652,7 +654,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                     sigDataReaders
             sigDataReaders
 
-         member __.GetRawFSharpOptimizationData(m, ilShortAssemName, filename) =             
+         member _.GetRawFSharpOptimizationData(m, ilShortAssemName, filename) =             
             let optDataReaders = 
                 ilModule.Resources.AsList
                 |> List.choose (fun r -> if IsOptimizationDataResource r then Some(GetOptimizationDataResourceName r, (fun () -> r.GetBytes())) else None)
@@ -668,22 +670,22 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                     optDataReaders
             optDataReaders
 
-         member __.GetRawTypeForwarders() =
+         member _.GetRawTypeForwarders() =
             match ilModule.Manifest with 
             | Some manifest -> manifest.ExportedTypes
             | None -> mkILExportedTypes []
 
-         member __.ShortAssemblyName = GetNameOfILModule ilModule 
+         member _.ShortAssemblyName = GetNameOfILModule ilModule 
 
-         member __.ILScopeRef = MakeScopeRefForILModule ilModule
+         member _.ILScopeRef = MakeScopeRefForILModule ilModule
 
-         member __.ILAssemblyRefs = ilAssemblyRefs
+         member _.ILAssemblyRefs = ilAssemblyRefs
 
-         member __.HasAnyFSharpSignatureDataAttribute = 
+         member _.HasAnyFSharpSignatureDataAttribute = 
             let attrs = GetCustomAttributesOfILModule ilModule
             List.exists IsSignatureDataVersionAttr attrs
 
-         member __.HasMatchingFSharpSignatureDataAttribute ilg = 
+         member _.HasMatchingFSharpSignatureDataAttribute ilg = 
             let attrs = GetCustomAttributesOfILModule ilModule
             List.exists (IsMatchingSignatureDataVersionAttr ilg (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
 
@@ -692,12 +694,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
 //--------------------------------------------------------------------------
 
 [<Sealed>]
-type TcImportsSafeDisposal
-    (disposeActions: ResizeArray<unit -> unit>,
-#if !NO_EXTENSIONTYPING
-     disposeTypeProviderActions: ResizeArray<unit -> unit>
-#endif
-    ) =
+type TcImportsSafeDisposal(disposeActions: ResizeArray<unit -> unit>,disposeTypeProviderActions: ResizeArray<unit -> unit>) =
 
     let mutable isDisposed = false
 
@@ -706,9 +703,7 @@ type TcImportsSafeDisposal
         isDisposed <- true        
         if verbose then 
             dprintf "disposing of TcImports, %d binaries\n" disposeActions.Count
-#if !NO_EXTENSIONTYPING
         for action in disposeTypeProviderActions do action()
-#endif
         for action in disposeActions do action()
 
     override _.Finalize() =
@@ -735,10 +730,10 @@ type TcImportsDllInfoHack =
 and TcImportsWeakHack (tcImports: WeakReference<TcImports>) =
     let mutable dllInfos: TcImportsDllInfoHack list = []
 
-    member __.SetDllInfos (value: ImportedBinary list) =
+    member _.SetDllInfos (value: ImportedBinary list) =
         dllInfos <- value |> List.map (fun x -> { FileName = x.FileName })
 
-    member __.Base: TcImportsWeakHack option =
+    member _.Base: TcImportsWeakHack option =
         match tcImports.TryGetTarget() with
         | true, strong ->
             match strong.Base with
@@ -749,7 +744,7 @@ and TcImportsWeakHack (tcImports: WeakReference<TcImports>) =
         | _ -> 
             None
 
-    member __.SystemRuntimeContainsType typeName =
+    member _.SystemRuntimeContainsType typeName =
         match tcImports.TryGetTarget () with
         | true, strong -> strong.SystemRuntimeContainsType typeName
         | _ -> false
@@ -758,7 +753,11 @@ and TcImportsWeakHack (tcImports: WeakReference<TcImports>) =
 /// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
 /// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.
 and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolutions, importsBase: TcImports option,
-                         ilGlobalsOpt, dependencyProviderOpt: DependencyProvider option) as this = 
+                         ilGlobalsOpt, dependencyProviderOpt: DependencyProvider option) 
+#if !NO_EXTENSIONTYPING
+                         as this  
+#endif
+       =
 
     let mutable resolutions = initialResolutions
     let mutable importsBase: TcImports option = importsBase
@@ -777,8 +776,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     let mutable disposed = false
     let mutable ilGlobalsOpt = ilGlobalsOpt
     let mutable tcGlobals = None
-#if !NO_EXTENSIONTYPING
     let disposeTypeProviderActions = ResizeArray()
+#if !NO_EXTENSIONTYPING
     let mutable generatedTypeRoots = new System.Collections.Generic.Dictionary<ILTypeRef, int * ProviderGeneratedType>()
     let mutable tcImportsWeak = TcImportsWeakHack (WeakReference<_> this)
 #endif
@@ -1837,7 +1836,3 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, referenceRa
         AddCcuToTcEnv(g, amap, referenceRange, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes)
     let tcEnv = (tcEnv, asms) ||> List.fold buildTcEnv
     tcEnv, (dllinfos, asms)
-
-// Existing public APIs delegate to newer implementations
-let DefaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework =
-    defaultReferencesForScriptsAndOutOfProjectSources (*useFsiAuxLib*)false assumeDotNetFramework (*useSdkRefs*)false

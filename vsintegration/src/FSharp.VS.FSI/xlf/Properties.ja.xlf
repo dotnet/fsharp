@@ -12,6 +12,11 @@
         <target state="translated">true に設定されていて、現在のコンピューターが 64 ビットである場合は、F# インタラクティブを 64 ビット プロセスで実行してください (そうしないと、F# インタラクティブは 32 ビット プロセスになります)。</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpInteractiveMisc">
+        <source>Misc</source>
+        <target state="translated">その他</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
         <source>F# Interactive options</source>
         <target state="translated">F# インタラクティブ オプション</target>
@@ -20,11 +25,6 @@
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
         <target state="translated">追加のコマンド ライン引数が Visual Studio によって F# インタラクティブ実行可能ファイルに渡されました。(スクリプト デバッグが有効な場合、最適化とデバッグのフラグは無視されます)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpInteractiveMisc">
-        <source>Misc</source>
-        <target state="translated">その他</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreview">
@@ -65,6 +65,16 @@
       <trans-unit id="FSharpInteractiveDebugging">
         <source>Debugging</source>
         <target state="translated">デバッグ中</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCore">
+        <source>Use .NET Core Scripting</source>
+        <target state="translated">.Net Core スクリプトの使用</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCoreDescr">
+        <source>Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</source>
+        <target state="translated">すべての F# スクリプトと F# インタラクティブ ウィンドウで、.NET Core スクリプトの編集と実行を有効にします</target>
         <note />
       </trans-unit>
     </body>

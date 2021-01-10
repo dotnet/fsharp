@@ -43,6 +43,7 @@ F# Interactiveの開始
 
 #r "FSharp.Compiler.Service.dll"
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 open FSharp.Compiler.Interactive.Shell
 
 (**
@@ -127,7 +128,7 @@ fsiSession.EvalScript "sample.fsx"
 `EvalExpression` 、 `EvalInteraction` そして `EvalScript` ではあまりうまく処理されません。
 これらのケースでは、 `EvalExpressionNonThrowing` 、 `EvalInteractionNonThrowing`
 そして `EvalScriptNonThrowing` を使うことが出来ます。
-これらは結果と `FSharpErrorInfo` 値の配列の組を返します。
+これらは結果と `FSharpDiagnostic` 値の配列の組を返します。
 これらはエラーと警告を表します。結果の部分は実際の結果と例外のいずれかを表す
 `Choice<_,_>` です。
 
@@ -244,7 +245,6 @@ checkResults.Errors.Length // 1
 要求することもできます:
 
 *)
-open FSharp.Compiler
 
 // ツールチップを取得する
 checkResults.GetToolTipText(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT) 

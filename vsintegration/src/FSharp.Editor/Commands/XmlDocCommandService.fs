@@ -51,7 +51,7 @@ type internal XmlDocCommandFilter
             ErrorHandler.ThrowOnFailure errorCode |> ignore
 
     interface IOleCommandTarget with
-        member __.Exec(pguidCmdGroup: byref<Guid>, nCmdID: uint32, nCmdexecopt: uint32, pvaIn: IntPtr, pvaOut: IntPtr) =
+        member _.Exec(pguidCmdGroup: byref<Guid>, nCmdID: uint32, nCmdexecopt: uint32, pvaIn: IntPtr, pvaOut: IntPtr) =
             if pguidCmdGroup = VSConstants.VSStd2K && nCmdID = uint32 VSConstants.VSStd2KCmdID.TYPECHAR then
                 match getTypedChar pvaIn with
                 | ('/' | '<') as lastChar ->
@@ -106,7 +106,7 @@ type internal XmlDocCommandFilter
             else
                 VSConstants.E_FAIL
 
-        member __.QueryStatus(pguidCmdGroup: byref<Guid>, cCmds: uint32, prgCmds: OLECMD [], pCmdText: IntPtr) =
+        member _.QueryStatus(pguidCmdGroup: byref<Guid>, cCmds: uint32, prgCmds: OLECMD [], pCmdText: IntPtr) =
             if not (isNull nextTarget) then
                 nextTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText)
             else
@@ -127,7 +127,7 @@ type internal XmlDocCommandFilterProvider
      textDocumentFactoryService: ITextDocumentFactoryService,
      editorFactory: IVsEditorAdaptersFactoryService) =
     interface IWpfTextViewCreationListener with
-        member __.TextViewCreated(textView) = 
+        member _.TextViewCreated(textView) = 
             match editorFactory.GetViewAdapter(textView) with
             | null -> ()
             | textViewAdapter ->

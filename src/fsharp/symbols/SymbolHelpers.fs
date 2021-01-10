@@ -20,12 +20,17 @@ open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Layout
-open FSharp.Compiler.Layout.TaggedTextOps
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.TextLayout.LayoutRender
+open FSharp.Compiler.TextLayout.TaggedText
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -39,57 +44,60 @@ module EnvMisc2 =
 // Object model for diagnostics
 
 [<RequireQualifiedAccess>]
-type FSharpErrorSeverity = 
+type FSharpDiagnosticSeverity = 
+    | Hidden
+    | Info
     | Warning 
     | Error
 
-module FSharpErrorInfo =
-    let [<Literal>] ObsoleteMessage = "Use FSharpErrorInfo.Range. This API will be removed in a future update."
+module FSharpDiagnostic =
+    let [<Literal>] ObsoleteMessage = "Use FSharpDiagnostic.Range. This API will be removed in a future update."
+  
 
-type FSharpErrorInfo(m: range, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) =
+type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: string, subcategory: string, errorNum: int) =
     member _.Range = m
     member _.Severity = severity
     member _.Message = message
     member _.Subcategory = subcategory
     member _.ErrorNumber = errorNum
 
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.Start = m.Start
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.End = m.End
+    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.Start = m.Start
+    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.End = m.End
 
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartLine = Line.toZ m.Start.Line
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartLineAlternate = m.Start.Line
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndLine = Line.toZ m.End.Line
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndLineAlternate = m.End.Line
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartColumn = m.Start.Column
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndColumn = m.End.Column
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.FileName = m.FileName
+    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.StartLine = Line.toZ m.Start.Line
+    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.StartLineAlternate = m.Start.Line
+    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.EndLine = Line.toZ m.End.Line
+    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.EndLineAlternate = m.End.Line
+    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.StartColumn = m.Start.Column
+    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.EndColumn = m.End.Column
+    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.FileName = m.FileName
 
     member _.WithStart newStart =
         let m = mkFileIndexRange m.FileIndex newStart m.End
-        FSharpErrorInfo(m, severity, message, subcategory, errorNum)
+        FSharpDiagnostic(m, severity, message, subcategory, errorNum)
 
     member _.WithEnd newEnd =
         let m = mkFileIndexRange m.FileIndex m.Start newEnd
-        FSharpErrorInfo(m, severity, message, subcategory, errorNum)
+        FSharpDiagnostic(m, severity, message, subcategory, errorNum)
 
     override _.ToString() =
         let fileName = m.FileName
         let s = m.Start
         let e = m.End
-        let severity = if severity=FSharpErrorSeverity.Warning then "warning" else "error"
+        let severity = if severity=FSharpDiagnosticSeverity.Warning then "warning" else "error"
         sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
 
     /// Decompose a warning or error into parts: position, severity, message, error number
     static member CreateFromException(exn, isError, fallbackRange: range, suggestNames: bool) =
         let m = match GetRangeOfDiagnostic exn with Some m -> m | None -> fallbackRange 
-        let severity = if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning
+        let severity = if isError then FSharpDiagnosticSeverity.Error else FSharpDiagnosticSeverity.Warning
         let msg = bufs (fun buf -> OutputPhasedDiagnostic buf exn false suggestNames)
         let errorNum = GetDiagnosticNumber exn
-        FSharpErrorInfo(m, severity, msg, exn.Subcategory(), errorNum)
+        FSharpDiagnostic(m, severity, msg, exn.Subcategory(), errorNum)
 
     /// Decompose a warning or error into parts: position, severity, message, error number
     static member CreateFromExceptionAndAdjustEof(exn, isError, fallbackRange: range, (linesCount: int, lastLength: int), suggestNames: bool) =
-        let r = FSharpErrorInfo.CreateFromException(exn, isError, fallbackRange, suggestNames)
+        let r = FSharpDiagnostic.CreateFromException(exn, isError, fallbackRange, suggestNames)
 
         // Adjust to make sure that errors reported at Eof are shown at the linesCount
         let startline, schange = min (r.Range.StartLine, false) (linesCount, true)
@@ -100,6 +108,9 @@ type FSharpErrorInfo(m: range, severity: FSharpErrorSeverity, message: string, s
             let r = if schange then r.WithStart(mkPos startline lastLength) else r
             if echange then r.WithEnd(mkPos  endline (1 + lastLength)) else r
 
+    static member NewlineifyErrorString(message) = ErrorLogger.NewlineifyErrorString(message)
+
+    static member NormalizeErrorString(text) = ErrorLogger.NormalizeErrorString(text)
     
 /// Use to reset error and warning handlers            
 [<Sealed>]
@@ -111,14 +122,14 @@ type ErrorScope()  =
         PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> 
             { new ErrorLogger("ErrorScope") with 
                 member x.DiagnosticSink(exn, isError) = 
-                      let err = FSharpErrorInfo.CreateFromException(exn, isError, range.Zero, false)
+                      let err = FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false)
                       errors <- err :: errors
                       if isError && firstError.IsNone then 
                           firstError <- Some err.Message
                 member x.ErrorCount = errors.Length })
         
-    member x.Errors = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Error)
-    member x.Warnings = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Warning)
+    member x.Errors = errors |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Error)
+    member x.Warnings = errors |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Warning)
     member x.Diagnostics = errors
     member x.TryGetFirstErrorText() =
         match x.Errors with 
@@ -163,7 +174,7 @@ type ErrorScope()  =
             | None -> err ""
 
 /// An error logger that capture errors, filtering them according to warning levels etc.
-type internal CompilationErrorLogger (debugName: string, options: FSharpErrorSeverityOptions) = 
+type internal CompilationErrorLogger (debugName: string, options: FSharpDiagnosticOptions) = 
     inherit ErrorLogger("CompilationErrorLogger("+debugName+")")
             
     let mutable errorCount = 0
@@ -171,10 +182,10 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpErrorSev
 
     override x.DiagnosticSink(exn, isError) = 
         if isError || ReportWarningAsError options exn then
-            diagnostics.Add(exn, FSharpErrorSeverity.Error)
+            diagnostics.Add(exn, FSharpDiagnosticSeverity.Error)
             errorCount <- errorCount + 1
         else if ReportWarning options exn then
-            diagnostics.Add(exn, FSharpErrorSeverity.Warning)
+            diagnostics.Add(exn, FSharpDiagnosticSeverity.Warning)
 
     override x.ErrorCount = errorCount
 
@@ -195,13 +206,13 @@ type CompilationGlobalsScope(errorLogger: ErrorLogger, phase: BuildPhase) =
 
 module ErrorHelpers =                            
     let ReportError (options, allErrors, mainInputFileName, fileInfo, (exn, sev), suggestNames) = 
-        [ let isError = (sev = FSharpErrorSeverity.Error) || ReportWarningAsError options exn                
+        [ let isError = (sev = FSharpDiagnosticSeverity.Error) || ReportWarningAsError options exn                
           if (isError || ReportWarning options exn) then 
             let oneError exn =
                 [ // We use the first line of the file as a fallbackRange for reporting unexpected errors.
                   // Not ideal, but it's hard to see what else to do.
                   let fallbackRange = rangeN mainInputFileName 1
-                  let ei = FSharpErrorInfo.CreateFromExceptionAndAdjustEof (exn, isError, fallbackRange, fileInfo, suggestNames)
+                  let ei = FSharpDiagnostic.CreateFromExceptionAndAdjustEof (exn, isError, fallbackRange, fileInfo, suggestNames)
                   let fileName = ei.Range.FileName
                   if allErrors || fileName = mainInputFileName || fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation then
                       yield ei ]
@@ -220,14 +231,12 @@ module ErrorHelpers =
 //----------------------------------------------------------------------------
 // Object model for tooltips and helpers for their generation from items
 
-type public Layout = Internal.Utilities.StructuredFormat.Layout
-
 /// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
 [<RequireQualifiedAccess>]
 type FSharpXmlDoc =
     | None
     | Text of unprocessedLines: string[] * elaboratedXmlLines: string[]
-    | XmlDocFileSignature of (*File and Signature*) string * string
+    | XmlDocFileSignature of file: string * xmlSig: string
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]
@@ -238,6 +247,7 @@ type FSharpToolTipElementData<'T> =
       TypeMapping: 'T list
       Remarks: 'T option
       ParamName : string option }
+
     static member Create(layout:'T, xml, ?typeMapping, ?paramName, ?remarks) = 
         { MainDescription=layout; XmlDoc=xml; TypeMapping=defaultArg typeMapping []; ParamName=paramName; Remarks=remarks }
 
@@ -247,17 +257,16 @@ type FSharpToolTipElement<'T> =
     | None
 
     /// A single type, method, etc with comment. May represent a method overload group.
-    | Group of FSharpToolTipElementData<'T> list
+    | Group of elements: FSharpToolTipElementData<'T> list
 
     /// An error occurred formatting this element
-    | CompositionError of string
+    | CompositionError of errorText: string
 
     static member Single(layout, xml, ?typeMapping, ?paramName, ?remarks) = 
         Group [ FSharpToolTipElementData<'T>.Create(layout, xml, ?typeMapping=typeMapping, ?paramName=paramName, ?remarks=remarks) ]
 
 /// A single data tip display element with where text is expressed as string
 type public FSharpToolTipElement = FSharpToolTipElement<string>
-
 
 /// A single data tip display element with where text is expressed as <see cref="Layout"/>
 type public FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
@@ -270,11 +279,12 @@ type FSharpToolTipText<'T> =
 type public FSharpToolTipText = FSharpToolTipText<string>
 type public FSharpStructuredToolTipText = FSharpToolTipText<Layout>
 
-module Tooltips =
+module FSharpToolTip =
     let ToFSharpToolTipElement tooltip = 
         match tooltip with
         | FSharpStructuredToolTipElement.None -> 
             FSharpToolTipElement.None
+
         | FSharpStructuredToolTipElement.Group l -> 
             FSharpToolTipElement.Group(l |> List.map(fun x -> 
                 { MainDescription=showL x.MainDescription
@@ -282,6 +292,7 @@ module Tooltips =
                   TypeMapping=List.map showL x.TypeMapping
                   ParamName=x.ParamName
                   Remarks= Option.map showL x.Remarks }))
+
         | FSharpStructuredToolTipElement.CompositionError text -> 
             FSharpToolTipElement.CompositionError text
 
@@ -290,7 +301,7 @@ module Tooltips =
     
 
 [<RequireQualifiedAccess>]
-type CompletionItemKind =
+type FSharpCompletionItemKind =
     | Field
     | Property
     | Method of isExtension : bool
@@ -299,20 +310,19 @@ type CompletionItemKind =
     | CustomOperation
     | Other
 
-type UnresolvedSymbol =
+type FSharpUnresolvedSymbol =
     { FullName: string
       DisplayName: string
       Namespace: string[] }
 
 type CompletionItem =
     { ItemWithInst: ItemWithInst
-      Kind: CompletionItemKind
+      Kind: FSharpCompletionItemKind
       IsOwnMember: bool
       MinorPriority: int
       Type: TyconRef option
-      Unresolved: UnresolvedSymbol option }
+      Unresolved: FSharpUnresolvedSymbol option }
     member x.Item = x.ItemWithInst.Item
-      
 
 [<AutoOpen>]
 module internal SymbolHelpers = 
@@ -335,7 +345,6 @@ module internal SymbolHelpers =
         | None -> eref.Range 
         | Some false -> eref.DefinitionRange 
         | Some true -> eref.SigRange
-
    
     let rangeOfPropInfo preferFlag (pinfo: PropInfo) =
         match pinfo with
@@ -417,7 +426,6 @@ module internal SymbolHelpers =
             minfo.ArbitraryValRef 
             |> Option.bind ccuOfValRef 
             |> Option.orElseWith (fun () -> minfo.DeclaringTyconRef |> computeCcuOfTyconRef)
-
 
     let rec ccuOfItem (g: TcGlobals) d = 
         match d with
@@ -1514,6 +1522,7 @@ module internal SymbolHelpers =
 
     /// Get rid of groups of overloads an replace them with single items.
     let FlattenItems g (m: range) item =
+        ignore m
         match item with 
         | Item.MethodGroup(nm, minfos, orig) -> minfos |> List.map (fun minfo -> Item.MethodGroup(nm, [minfo], orig))  
         | Item.CtorGroup(nm, cinfos) -> cinfos |> List.map (fun minfo -> Item.CtorGroup(nm, [minfo])) 

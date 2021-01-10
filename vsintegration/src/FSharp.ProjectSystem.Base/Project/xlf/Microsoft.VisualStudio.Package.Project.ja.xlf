@@ -287,7 +287,7 @@
       </trans-unit>
       <trans-unit id="ProjectContainsCircularReferences">
         <source>A reference to library '{0}' cannot be added. Adding this project as a reference would cause a circular dependency. </source>
-        <target state="translated">ライブラリ '{0}' への参照を追加できません。このプロジェクトを参照として追加すると、循環する依存関係が発生します。</target>
+        <target state="translated">ライブラリ '{0}' への参照を追加できません。このプロジェクトを参照として追加すると、循環する依存関係が発生します。 </target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectFile">
@@ -627,7 +627,7 @@
       </trans-unit>
       <trans-unit id="ProjectLocationNotTrusted">
         <source>The project location is not trusted:{0}{0}{1}{0}{0}Running the application may result in security exceptions when it attempts to perform actions which require full trust.{0}{0}Click OK to ignore and continue.</source>
-        <target state="translated">プロジェクトの場所が信頼されていません: {0}{0}{1}{0}{0}このアプリケーションを実行すると、完全な信頼が必要なアクションが試行されたときに、セキュリティ例外が発生する可能性があります。{0}{0}無視して続行するには、[OK]5D; をクリックしてください。</target>
+        <target state="translated">プロジェクトの場所が信頼されていません: {0}{0}{1}{0}{0}このアプリケーションを実行すると、完全な信頼が必要なアクションが試行されたときに、セキュリティ例外が発生する可能性があります。{0}{0}無視して続行するには、[OK] をクリックしてください。</target>
         <note />
       </trans-unit>
       <trans-unit id="BuildEventError">
@@ -672,7 +672,7 @@
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">
         <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
-        <target state="translated">Microsoft Visual F# では、影響のないプロジェクトをサポートしていません。F# プロジェクトをこのプロジェクト テンプレートから作成するには、Visual Studio メニューの [ツール]5D; の [オプション]5D; をクリックし、[プロジェクトおよびソリューション]5D; の [全般]5D; の [作成時に新しいプロジェクトを保存]5D; チェック ボックスをオンにするか、またはプロジェクト テンプレートの .vstemplate ファイルの &lt;TemplateData&gt; セクションで &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; を指定し、この操作を再試行してください。</target>
+        <target state="translated">Microsoft Visual F# では、影響のないプロジェクトをサポートしていません。F# プロジェクトをこのプロジェクト テンプレートから作成するには、Visual Studio メニューの [ツール] の [オプション] をクリックし、[プロジェクトおよびソリューション] の [全般] の [作成時に新しいプロジェクトを保存] チェック ボックスをオンにするか、またはプロジェクト テンプレートの .vstemplate ファイルの &lt;TemplateData&gt; セクションで &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; を指定し、この操作を再試行してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="NoWildcardsInProject">

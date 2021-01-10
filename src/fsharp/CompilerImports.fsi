@@ -12,10 +12,10 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Core.CompilerServices
 
 #if !NO_EXTENSIONTYPING
@@ -195,6 +195,3 @@ type TcImports =
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
 val RequireDLL: ctok: CompilationThreadToken * tcImports: TcImports * tcEnv: TcEnv * thisAssemblyName: string * referenceRange: range * file: string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
-
-/// This list is the default set of references for "non-project" files. 
-val DefaultReferencesForScriptsAndOutOfProjectSources: bool -> string list

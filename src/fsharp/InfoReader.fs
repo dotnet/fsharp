@@ -14,13 +14,14 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Features
 open FSharp.Compiler.TypeRelations
 
 /// Use the given function to select some of the member values from the members of an F# type
@@ -624,8 +625,6 @@ let rec GetIntrinsicConstructorInfosOfTypeAux (infoReader: InfoReader) m origTy 
 
 let GetIntrinsicConstructorInfosOfType infoReader m ty = 
     GetIntrinsicConstructorInfosOfTypeAux infoReader m ty ty
-
-
 
 //-------------------------------------------------------------------------
 // Collecting methods and properties taking into account hiding rules in the hierarchy

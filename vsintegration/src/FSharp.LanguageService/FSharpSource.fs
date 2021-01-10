@@ -20,8 +20,8 @@ open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Text.Formatting
 open Microsoft.VisualStudio.TextManager.Interop 
 open Microsoft.VisualStudio.OLE.Interop
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
 
@@ -334,12 +334,12 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
 
         let iSource = new FSharpSourceTestable_DEPRECATED(recolorizeWholeFile,recolorizeLine,(fun () -> VsTextLines.GetFilename textLines),(fun () -> source.IsClosed),vsFileWatch, depFileChange) :> IFSharpSource_DEPRECATED
 
-        override source.NormalizeErrorString(message) = ErrorLogger.NormalizeErrorString message
-        override source.NewlineifyErrorString(message) = ErrorLogger.NewlineifyErrorString message
+        override source.NormalizeErrorString(message) = FSharpDiagnostic.NormalizeErrorString message
+        override source.NewlineifyErrorString(message) = FSharpDiagnostic.NewlineifyErrorString message
 
         override source.GetExpressionAtPosition(line, col) = 
             let upi = source.GetParseTree()
-            match UntypedParseImpl.TryFindExpressionIslandInPosition(Range.Pos.fromZ line col, upi.ParseTree) with
+            match UntypedParseImpl.TryFindExpressionIslandInPosition(Pos.fromZ line col, upi.ParseTree) with
             | Some islandToEvaluate -> islandToEvaluate
             | None -> null
 
@@ -445,7 +445,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                 if reason = BackgroundRequestReason.CompleteWord then
                     let upi = source.GetParseTree()
                     let isBetweenDotAndIdent =
-                        match FSharp.Compiler.SourceCodeServices.UntypedParseImpl.TryFindExpressionASTLeftOfDotLeftOfCursor(Range.Pos.fromZ !line !idx, upi.ParseTree) with
+                        match FSharp.Compiler.SourceCodeServices.UntypedParseImpl.TryFindExpressionASTLeftOfDotLeftOfCursor(Pos.fromZ !line !idx, upi.ParseTree) with
                         | Some(_,isBetweenDotAndIdent) -> isBetweenDotAndIdent
                         | None -> false
                     if isBetweenDotAndIdent then

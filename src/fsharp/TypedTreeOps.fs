@@ -9,22 +9,25 @@ open Internal.Utilities
 
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.AbstractIL.Extensions.ILX 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Layout
-open FSharp.Compiler.Layout.TaggedTextOps
 open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.TextLayout.LayoutRender
+open FSharp.Compiler.TextLayout.TaggedText
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
@@ -1058,6 +1061,15 @@ let returnTypesAEquiv g aenv t1 t2 = returnTypesAEquivAux EraseNone g aenv t1 t2
 
 let measureEquiv g m1 m2 = measureAEquiv g TypeEquivEnv.Empty m1 m2
 
+// Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
+let getMeasureOfType g ty =
+    match ty with 
+    | AppTy g (tcref, [tyarg]) ->
+        match stripTyEqns g tyarg with  
+        | TType_measure ms when not (measureEquiv g ms Measure.One) -> Some (tcref, ms)
+        | _ -> None
+    | _ -> None
+
 let isErasedType g ty = 
   match stripTyEqns g ty with
 #if !NO_EXTENSIONTYPING
@@ -1086,18 +1098,18 @@ let rec getErasedTypes g ty =
 // Standard orderings, e.g. for order set/map keys
 //---------------------------------------------------------------------------
 
-let valOrder = { new IComparer<Val> with member __.Compare(v1, v2) = compare v1.Stamp v2.Stamp }
-let tyconOrder = { new IComparer<Tycon> with member __.Compare(tc1, tc2) = compare tc1.Stamp tc2.Stamp }
+let valOrder = { new IComparer<Val> with member _.Compare(v1, v2) = compare v1.Stamp v2.Stamp }
+let tyconOrder = { new IComparer<Tycon> with member _.Compare(tc1, tc2) = compare tc1.Stamp tc2.Stamp }
 let recdFieldRefOrder = 
     { new IComparer<RecdFieldRef> with 
-         member __.Compare(RecdFieldRef(tcref1, nm1), RecdFieldRef(tcref2, nm2)) = 
+         member _.Compare(RecdFieldRef(tcref1, nm1), RecdFieldRef(tcref2, nm2)) = 
             let c = tyconOrder.Compare (tcref1.Deref, tcref2.Deref) 
             if c <> 0 then c else 
             compare nm1 nm2 }
 
 let unionCaseRefOrder = 
     { new IComparer<UnionCaseRef> with 
-         member __.Compare(UnionCaseRef(tcref1, nm1), UnionCaseRef(tcref2, nm2)) = 
+         member _.Compare(UnionCaseRef(tcref1, nm1), UnionCaseRef(tcref2, nm2)) = 
             let c = tyconOrder.Compare (tcref1.Deref, tcref2.Deref) 
             if c <> 0 then c else 
             compare nm1 nm2 }
@@ -1190,7 +1202,7 @@ type Expr with
 
 let primMkMatch(spBind, exprm, tree, targets, matchm, ty) = Expr.Match (spBind, exprm, tree, targets, matchm, ty)
 
-type MatchBuilder(spBind, inpRange: Range.range) = 
+type MatchBuilder(spBind, inpRange: range) = 
 
     let targets = new ResizeArray<_>(10) 
     member x.AddTarget tg = 
@@ -2728,6 +2740,11 @@ module SimplifyTypes =
 // Print Signatures/Types
 //-------------------------------------------------------------------------- 
 
+type GenericParameterStyle =
+    | Implicit
+    | Prefix
+    | Suffix
+
 [<NoEquality; NoComparison>]
 type DisplayEnv = 
     { includeStaticParametersInTypeNames: bool
@@ -2754,7 +2771,8 @@ type DisplayEnv =
       printVerboseSignatures : bool
       g: TcGlobals
       contextAccessibility: Accessibility
-      generatedValueLayout : (Val -> layout option) }
+      generatedValueLayout : (Val -> Layout option)
+      genericParameterStyle: GenericParameterStyle }
 
     member x.SetOpenPaths paths = 
         { x with 
@@ -2787,7 +2805,8 @@ type DisplayEnv =
         printVerboseSignatures = false
         g = tcGlobals
         contextAccessibility = taccessPublic
-        generatedValueLayout = (fun _ -> None) }
+        generatedValueLayout = (fun _ -> None)
+        genericParameterStyle = GenericParameterStyle.Implicit }
 
 
     member denv.AddOpenPath path = 
@@ -2798,6 +2817,9 @@ type DisplayEnv =
 
     member denv.AddAccessibility access =
         { denv with contextAccessibility = combineAccess denv.contextAccessibility access }
+
+    member denv.UseGenericParameterStyle style =
+        { denv with genericParameterStyle = style }
 
 let (+.+) s1 s2 = if s1 = "" then s2 else s1+"."+s2
 
@@ -3063,7 +3085,7 @@ let TryFindILAttributeOpt attr attrs =
 /// provided attributes.
 //
 // This is used for AttributeUsageAttribute, DefaultMemberAttribute and ConditionalAttribute (on attribute types)
-let TryBindTyconRefAttribute g (m: range) (AttribInfo (atref, _) as args) (tcref: TyconRef) f1 f2 f3 = 
+let TryBindTyconRefAttribute g (m: range) (AttribInfo (atref, _) as args) (tcref: TyconRef) f1 f2 (f3: (obj option list * (string * obj option) list -> 'a option)) : 'a option = 
     ignore m; ignore f3
     match metadataOfTycon tcref.Deref with 
 #if !NO_EXTENSIONTYPING
@@ -3405,11 +3427,11 @@ module DebugPrint =
 
     let squareAngleL x = LeftL.leftBracketAngle ^^ x ^^ RightL.rightBracketAngle
 
-    let angleL x = sepL Literals.leftAngle ^^ x ^^ rightL Literals.rightAngle
+    let angleL x = sepL TaggedText.leftAngle ^^ x ^^ rightL TaggedText.rightAngle
 
-    let braceL x = leftL Literals.leftBrace ^^ x ^^ rightL Literals.rightBrace
+    let braceL x = leftL TaggedText.leftBrace ^^ x ^^ rightL TaggedText.rightBrace
 
-    let braceBarL x = leftL Literals.leftBraceBar ^^ x ^^ rightL Literals.rightBraceBar
+    let braceBarL x = leftL TaggedText.leftBraceBar ^^ x ^^ rightL TaggedText.rightBraceBar
 
     let boolL = function true -> WordL.keywordTrue | false -> WordL.keywordFalse
 
@@ -4074,9 +4096,9 @@ module DebugPrint =
 
     and iimplL g (ty, tmeths) = wordL(tagText "impl") ^^ aboveListL (typeL ty :: List.map (tmethodL g) tmeths) 
 
-    let showType x = Layout.showL (typeL x)
+    let showType x = LayoutRender.showL (typeL x)
 
-    let showExpr g x = Layout.showL (exprL g x)
+    let showExpr g x = LayoutRender.showL (exprL g x)
 
     let traitL x = auxTraitL SimplifyTypes.typeSimplificationInfo0 x
 
@@ -6959,9 +6981,9 @@ let mkCallAdditionOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForInt
 
 let mkCallSubtractionOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
 
-let mkCallMultiplyOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_multiply_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallMultiplyOperator (g: TcGlobals) m ty1 ty2 rty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_multiply_info, [[ty1; ty2; rty]], [e1;e2], m)
 
-let mkCallDivisionOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_division_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallDivisionOperator (g: TcGlobals) m ty1 ty2 rty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_division_info, [[ty1; ty2; rty]], [e1;e2], m)
 
 let mkCallModulusOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_modulus_info, [[ty; ty; ty]], [e1;e2], m)
 
@@ -6985,7 +7007,7 @@ let mkCallAdditionChecked (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntr
 
 let mkCallSubtractionChecked (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
 
-let mkCallMultiplyChecked (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_multiply_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallMultiplyChecked (g: TcGlobals) m ty1 ty2 rty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_multiply_info, [[ty1; ty2; rty]], [e1;e2], m)
 
 let mkCallUnaryNegChecked (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.checked_unary_minus_info, [[ty]], [e1], m)
 
@@ -9319,8 +9341,8 @@ type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
 let EmptyTraitWitnessInfoHashMap g : TraitWitnessInfoHashMap<'T> =
     ImmutableDictionary.Create(
          { new IEqualityComparer<_> with 
-                member __.Equals(a, b) = traitKeysAEquiv g TypeEquivEnv.Empty a b
-                member __.GetHashCode(a) = hash a.MemberName
+                member _.Equals(a, b) = traitKeysAEquiv g TypeEquivEnv.Empty a b
+                member _.GetHashCode(a) = hash a.MemberName
          })
 
 let (|WhileExpr|_|) expr = 

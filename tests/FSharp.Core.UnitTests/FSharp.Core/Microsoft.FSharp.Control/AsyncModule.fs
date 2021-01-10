@@ -304,7 +304,7 @@ type AsyncModule() =
             use disp =
                 cts.Cancel()
                 { new IDisposable with
-                    override __.Dispose() = incr flag }
+                    override _.Dispose() = incr flag }
             while true do
                 do! Async.Sleep 50
             }

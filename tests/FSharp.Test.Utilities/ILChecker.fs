@@ -15,20 +15,11 @@ module ILChecker =
     let config = initializeSuite ()
 
     let private exec exe args =
-        let startInfo = ProcessStartInfo(exe, String.concat " " args)
-        startInfo.RedirectStandardError <- true
-        startInfo.UseShellExecute <- false
-        let p = Process.Start(startInfo)
-
-        let errors = p.StandardError.ReadToEnd()
-
+        let arguments = args |> String.concat " "
         let timeout = 30000
-        let exited = p.WaitForExit(timeout)
-
-        if not exited then
-            failwith (sprintf "Process hasn't exited after %d milliseconds" timeout)
-
-        errors, p.ExitCode
+        let exitCode, _output, errors = Commands.executeProcess (Some exe) arguments "" timeout
+        let errors = errors |> String.concat Environment.NewLine
+        errors, exitCode
 
     /// Filters i.e ['The system type \'System.ReadOnlySpan`1\' was required but no referenced system DLL contained this type']
     let private filterSpecialComment (text: string) =

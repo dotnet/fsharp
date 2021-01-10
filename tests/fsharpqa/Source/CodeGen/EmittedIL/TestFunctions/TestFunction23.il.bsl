@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly TestFunction23
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.TestFunction23
 {
-  // Offset: 0x00000000 Length: 0x00000346
+  // Offset: 0x00000000 Length: 0x0000033A
 }
 .mresource public FSharpOptimizationData.TestFunction23
 {
-  // Offset: 0x00000350 Length: 0x000000E3
+  // Offset: 0x00000340 Length: 0x000000E3
 }
 .module TestFunction23.exe
-// MVID: {59B19208-A643-451C-A745-03830892B159}
+// MVID: {5FCFFD21-A643-451C-A745-038321FDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02D60000
+// Image base: 0x07570000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,7 +63,7 @@
       // Code size       31 (0x1f)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction23.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction23.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -112,6 +112,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit g@13
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
   {
+    .field static assembly initonly class TestFunction23/g@13 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -142,6 +143,16 @@
       IL_0021:  ret
     } // end of method g@13::Invoke
 
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void TestFunction23/g@13::.ctor()
+      IL_0005:  stsfld     class TestFunction23/g@13 TestFunction23/g@13::@_instance
+      IL_000a:  ret
+    } // end of method g@13::.cctor
+
   } // end of class g@13
 
   .method public static class [mscorlib]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> 
@@ -151,7 +162,7 @@
     .maxstack  5
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> g)
     .line 100001,100001 : 0,0 ''
-    IL_0000:  newobj     instance void TestFunction23/g@13::.ctor()
+    IL_0000:  ldsfld     class TestFunction23/g@13 TestFunction23/g@13::@_instance
     IL_0005:  stloc.0
     .line 15,15 : 5,13 ''
     IL_0006:  ldloc.0

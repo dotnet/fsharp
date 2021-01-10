@@ -11,8 +11,9 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
@@ -56,7 +57,15 @@ type FSharpDisplayContext =
 
     member WithShortTypeNames: bool -> FSharpDisplayContext
 
-/// Represents a symbol in checked F# source code or a compiled .NET component. 
+    /// Causes type signatures to be formatted with prefix-style generic parameters,
+    /// for example `list<int>`.
+    member WithPrefixGenericParameters: unit -> FSharpDisplayContext
+
+    /// Causes type signatures to be formatted with suffix-style generic parameters,
+    /// for example `int list`
+    member WithSuffixGenericParameters: unit -> FSharpDisplayContext
+
+/// Represents a symbol in checked F# source code or a compiled .NET component.
 ///
 /// The subtype of the symbol may reveal further information and can be one of FSharpEntity, FSharpUnionCase
 /// FSharpField, FSharpGenericParameter, FSharpStaticParameter, FSharpMemberOrFunctionOrValue, FSharpParameter,
@@ -145,6 +154,8 @@ type FSharpAssemblySignature =
     /// Find entity using compiled names
     member FindEntityByPath: string list -> FSharpEntity option
 
+    /// Safe version of `Entities`.
+    member TryGetEntities : unit -> seq<FSharpEntity>
 
 /// A subtype of FSharpSymbol that represents a type definition or module as seen by the F# language
 type FSharpEntity = 
@@ -331,6 +342,21 @@ type FSharpEntity =
 
     /// Get all active pattern cases defined in all active patterns in the module.
     member ActivePatternCases: FSharpActivePatternCase list
+
+    /// Safe version of `FullName`.
+    member TryGetFullName: unit -> string option
+
+    /// Safe version of `DisplayName`.
+    member TryGetFullDisplayName: unit -> string option
+
+    /// Safe version of `CompiledName`.
+    member TryGetFullCompiledName: unit -> string option
+
+    /// Public nested entities (methods, functions, values, nested modules).
+    member GetPublicNestedEntities: unit -> seq<FSharpEntity>
+
+    /// Safe version of `GetMembersFunctionsAndValues`.
+    member TryGetMembersFunctionsAndValues: unit -> IList<FSharpMemberOrFunctionOrValue>
 
 /// Represents a delegate signature in an F# symbol
 [<Class>] 
@@ -910,6 +936,15 @@ type FSharpMemberOrFunctionOrValue =
     /// Check if this method has an entrpoint that accepts witness arguments and if so return
     /// the name of that entrypoint and information about the additional witness arguments
     member GetWitnessPassingInfo: unit -> (string * IList<FSharpParameter>) option
+
+    /// Safe version of `FullType`.
+    member FullTypeSafe : FSharpType option
+
+    /// Full name with last part replaced with display name.
+    member TryGetFullDisplayName : unit -> string option
+
+    /// Full operator compiled name.
+    member TryGetFullCompiledOperatorNameIdents : unit -> string[] option 
 
 /// A subtype of FSharpSymbol that represents a parameter 
 [<Class>]
