@@ -531,7 +531,9 @@ module internal SetTree =
             else -1
         else
             if isEmpty t2 then 1
-            else compareStacks [t1] [t2]
+            else
+                let c = compareStacks [t1] [t2]
+                if c > 0 then 1 else if c = 0 then 0 else -1
 
     let choose s =
         minimumElement s
