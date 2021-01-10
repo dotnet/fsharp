@@ -325,9 +325,9 @@ module internal SetTree =
         else
             if t1.Height = 1 then add comparer t1.Key t2
             else
-                let t1n = asNode t1
                 if t2.Height = 1 then add comparer t2.Key t1
                 else
+                    let t1n = asNode t1
                     let t2n = asNode t2 // (t1l < k < t1r) AND (t2l < k2 < t2r) 
                     // Divide and Conquer:
                     //   Suppose t1 is largest.
@@ -541,7 +541,7 @@ module internal SetTree =
             else
                 if t'.Height = 1 then t'.Key :: acc
                 else
-                    let tn = asNode t
+                    let tn = asNode t'
                     loop tn.Left (tn.Key :: loop tn.Right acc)
         loop t []
 
