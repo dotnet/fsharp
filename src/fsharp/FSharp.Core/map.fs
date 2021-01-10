@@ -46,23 +46,23 @@ module MapTree =
                 let dlg =
                     let ty = typeof<'T>
                     try 
-                        if not (typeof<IStructuralComparable>.IsAssignableFrom(ty))
-                             && isNull (Attribute.GetCustomAttribute(ty, typeof<NoComparisonAttribute>))
-                             && isNull (Attribute.GetCustomAttribute(ty, typeof<StructuralComparisonAttribute>))
-                             && not (ty.IsArray) then
-                        
-                            // See #816, IComparable<'T> actually does not satisfy comparison constraint, but it should be preferred 
-                            if typeof<IComparable<'T>>.IsAssignableFrom(ty) then 
-                                let m =
-                                    typeof<CompareHelper<'T>>.GetMethod("CompareCG", BindingFlags.NonPublic ||| BindingFlags.Static)
-                                        .MakeGenericMethod([|ty|])
-                                Delegate.CreateDelegate(typeof<Func<'T,'T,int>>, m) :?> Func<'T,'T,int>
-                            elif typeof<IComparable>.IsAssignableFrom(ty) then 
-                                let m =
-                                    typeof<CompareHelper<'T>>.GetMethod("CompareC", BindingFlags.NonPublic ||| BindingFlags.Static)
-                                        .MakeGenericMethod([|typeof<'T>|])
-                                Delegate.CreateDelegate(typeof<Func<'T,'T,int>>, m) :?> Func<'T,'T,int>
-                            else null
+                        let normalCmp =
+                            not (typeof<IStructuralComparable>.IsAssignableFrom(ty))
+                            && isNull (Attribute.GetCustomAttribute(ty, typeof<NoComparisonAttribute>))
+                            && isNull (Attribute.GetCustomAttribute(ty, typeof<StructuralComparisonAttribute>))
+                            && not (ty.IsArray)
+                             
+                        // See #816, IComparable<'T> actually does not satisfy comparison constraint, but it should be preferred 
+                        if typeof<IComparable<'T>>.IsAssignableFrom(ty) then 
+                            let m =
+                                typeof<CompareHelper<'T>>.GetMethod("CompareCG", BindingFlags.NonPublic ||| BindingFlags.Static)
+                                    .MakeGenericMethod([|ty|])
+                            Delegate.CreateDelegate(typeof<Func<'T,'T,int>>, m) :?> Func<'T,'T,int>
+                        elif typeof<IComparable>.IsAssignableFrom(ty) && normalCmp then 
+                            let m =
+                                typeof<CompareHelper<'T>>.GetMethod("CompareC", BindingFlags.NonPublic ||| BindingFlags.Static)
+                                    .MakeGenericMethod([|typeof<'T>|])
+                            Delegate.CreateDelegate(typeof<Func<'T,'T,int>>, m) :?> Func<'T,'T,int>
                         else null
                     with _ -> null
                 dlg
