@@ -73,11 +73,11 @@ module MapTree =
                (totalSizeOnMapLookup / float numLookups))
            System.Console.WriteLine("#largestMapSize = {0}, largestMapStackTrace = {1}", largestMapSize, largestMapStackTrace)
 
-    let MapTree n = 
+    let MapTree (k,v) = 
         report()
         numOnes <- numOnes + 1
         totalSizeOnNodeCreation <- totalSizeOnNodeCreation + 1.0
-        MapTree n
+        MapTree (k,v)
 
     let MapTreeNode (x, l, v, r, h) = 
         report()
