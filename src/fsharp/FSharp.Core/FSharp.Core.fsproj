@@ -108,6 +108,9 @@
     <Compile Include="array3.fs">
       <Link>Collections/array3.fs</Link>
     </Compile>
+    <Compile Include="mapsetcmp.fs">
+      <Link>Collections/mapsetcmp.fs</Link>
+    </Compile>
     <Compile Include="map.fsi">
       <Link>Collections/map.fsi</Link>
     </Compile>
