@@ -17,7 +17,7 @@ open System.Runtime.Loader
 type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe) as this =
 
     let nativeHandler =
-        new NativeDllResolveHandler(nativeProbingRoots) :> IRegisterResolvers
+        new NativeDllResolveHandler(nativeProbingRoots)
 
     let assemblyLoadContextType: Type = Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
 
@@ -65,7 +65,7 @@ type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProb
 
     interface IDisposable with
         member _.Dispose() =
-            (nativeHandler :> IDisposable).Dispose()
+            nativeHandler.Dispose()
             eventInfo.RemoveEventHandler(defaultAssemblyLoadContext, handler)
 
 /// Type that encapsulates AssemblyResolveHandler for managed packages
