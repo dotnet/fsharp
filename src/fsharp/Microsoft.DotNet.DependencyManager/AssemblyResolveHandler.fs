@@ -17,7 +17,7 @@ open System.Runtime.Loader
 type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe) as this =
 
     let nativeHandler =
-        new NativeDllResolveHandler(nativeProbingRoots)
+        new NativeDllResolveHandler(nativeProbingRoots) :> IRegisterResolvers
 
     let assemblyLoadContextType: Type = Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
 
