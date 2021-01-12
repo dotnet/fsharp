@@ -472,7 +472,7 @@ printfn ""%A"" result
         resolverPackageRoots <- result.Roots
         resolverReferences <- result.Resolutions
 
-        use _assemblyResolver = new AssemblyResolveHandler(AssemblyResolutionProbe(assemblyProbingPaths))
+        use _assemblyResolver = new AssemblyResolveHandler(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots))
 
         // Build and execute script
         let referenceText =
@@ -643,9 +643,14 @@ x |> Seq.iter(fun r ->
             assemblyFound <- true
             Seq.empty<string>
 
+        let mutable nativeFound = false
+        let nativeProbingRoots () =
+            nativeFound <- true
+            Seq.empty<string>
+
         // Set up AssemblyResolver to resolve dll's
         do
-            use dp = new AssemblyResolveHandler(AssemblyResolutionProbe(assemblyProbingPaths))
+            use dp = new AssemblyResolveHandler(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots))
 
             // Invoking a non-existent assembly causes a probe. which should invoke the call back
             try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()

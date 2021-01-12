@@ -14,7 +14,11 @@ type AssemblyResolutionProbe = delegate of Unit -> seq<string>
 open System.Runtime.Loader
 
 /// Type that encapsulates AssemblyResolveHandler for managed packages
-type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProbe) as this =
+type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe) as this =
+
+    let nativeHandler =
+        new NativeDllResolveHandler(nativeProbingRoots) :> IRegisterResolvers
+
     let assemblyLoadContextType: Type = Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
 
     let loadFromAssemblyPathMethod =
@@ -52,8 +56,16 @@ type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProb
 
         with | _ -> Unchecked.defaultof<Assembly>
 
+    interface IRegisterResolvers with
+        member _.RegisterAssemblyNativeResolvers(assembly: Assembly) =
+            ignore assembly
+
+        member _.RegisterPackageRoots(roots: string seq) =
+            nativeHandler.RegisterPackageRoots(roots)
+
     interface IDisposable with
-        member _x.Dispose() =
+        member _.Dispose() =
+            (nativeHandler :> IDisposable).Dispose()
             eventInfo.RemoveEventHandler(defaultAssemblyLoadContext, handler)
 
 /// Type that encapsulates AssemblyResolveHandler for managed packages
@@ -83,17 +95,28 @@ type AssemblyResolveHandlerDeskTop (assemblyProbingPaths: AssemblyResolutionProb
     let handler = new ResolveEventHandler(fun _ (args: ResolveEventArgs) -> resolveAssemblyNET (new AssemblyName(args.Name)))
     do AppDomain.CurrentDomain.add_AssemblyResolve(handler)
 
+    interface IRegisterResolvers with
+        member _.RegisterAssemblyNativeResolvers(assembly: Assembly) =
+            ignore assembly
+
+        member _.RegisterPackageRoots(roots: string seq) =
+            ignore roots
+
     interface IDisposable with
         member _x.Dispose() =
             AppDomain.CurrentDomain.remove_AssemblyResolve(handler)
 
-type AssemblyResolveHandler (assemblyProbingPaths: AssemblyResolutionProbe) =
+type AssemblyResolveHandler (assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe) =
 
     let handler =
         if isRunningOnCoreClr then
-            new AssemblyResolveHandlerCoreclr(assemblyProbingPaths) :> IDisposable
+            (new AssemblyResolveHandlerCoreclr(assemblyProbingPaths, nativeProbingRoots)) :> IRegisterResolvers
         else
-            new AssemblyResolveHandlerDeskTop(assemblyProbingPaths) :> IDisposable
+            (new AssemblyResolveHandlerDeskTop(assemblyProbingPaths)) :> IRegisterResolvers
+
+    member this.RefreshPathsInEnvironment(roots: string seq) =
+        handler.RegisterPackageRoots(roots)
 
     interface IDisposable with
-        member _.Dispose() = handler.Dispose()
+        member _.Dispose() =
+            handler.Dispose()

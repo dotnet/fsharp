@@ -665,17 +665,17 @@
     <Compile Include="..\FxResolver.fs">
       <Link>Driver\FxResolver.fs</Link>
     </Compile>
+    <Compile Include="..\Microsoft.DotNet.DependencyManager/NativeDllResolveHandler.fsi">
+        <Link>Driver\NativeDllResolveHandler.fsi</Link>
+    </Compile>
+    <Compile Include="..\Microsoft.DotNet.DependencyManager/NativeDllResolveHandler.fs">
+        <Link>Driver\NativeDllResolveHandler.fs</Link>
+    </Compile>
     <Compile Include="..\Microsoft.DotNet.DependencyManager/AssemblyResolveHandler.fsi">
       <Link>Driver\AssemblyResolveHandler.fsi</Link>
     </Compile>
     <Compile Include="..\Microsoft.DotNet.DependencyManager/AssemblyResolveHandler.fs">
       <Link>Driver\AssemblyResolveHandler.fs</Link>
-    </Compile>
-    <Compile Include="..\Microsoft.DotNet.DependencyManager/NativeDllResolveHandler.fsi">
-      <Link>Driver\NativeDllResolveHandler.fsi</Link>
-    </Compile>
-    <Compile Include="..\Microsoft.DotNet.DependencyManager/NativeDllResolveHandler.fs">
-      <Link>Driver\NativeDllResolveHandler.fs</Link>
     </Compile>
     <Compile Include="..\Microsoft.DotNet.DependencyManager/DependencyProvider.fsi">
       <Link>Driver\DependencyProvider.fsi</Link>

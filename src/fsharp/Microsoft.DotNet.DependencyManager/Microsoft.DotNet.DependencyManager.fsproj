@@ -24,10 +24,10 @@
     <EmbeddedText Include="..\utils\UtilsStrings.txt" />
     <Compile Include="..\utils\RidHelpers.fs" />
     <Compile Include="..\utils\CompilerLocationUtils.fs" />
-    <Compile Include="AssemblyResolveHandler.fsi" />
-    <Compile Include="AssemblyResolveHandler.fs" />
     <Compile Include="NativeDllResolveHandler.fsi" />
     <Compile Include="NativeDllResolveHandler.fs" />
+    <Compile Include="AssemblyResolveHandler.fsi" />
+    <Compile Include="AssemblyResolveHandler.fs" />
     <Compile Include="DependencyProvider.fsi" />
     <Compile Include="DependencyProvider.fs" />
   </ItemGroup>

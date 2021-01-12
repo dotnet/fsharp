@@ -14,8 +14,15 @@ open Internal.Utilities.FSharpEnvironment
 /// host implements this, it's job is to return a list of package roots to probe.
 type NativeResolutionProbe = delegate of Unit -> seq<string>
 
+type IRegisterResolvers =
+    inherit IDisposable
+    abstract RegisterAssemblyNativeResolvers: Assembly -> unit
+    abstract RegisterPackageRoots: string seq -> unit
+
 /// Type that encapsulates Native library probing for managed packages
 type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) =
+
+    static let pathLock = new obj()
 
     let nativeLibraryTryLoad =
         let nativeLibraryType: Type = Type.GetType("System.Runtime.InteropServices.NativeLibrary, System.Runtime.InteropServices", false)
@@ -100,17 +107,6 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
 
     do eventInfo.AddEventHandler(defaultAssemblyLoadContext, handler)
 
-    interface IDisposable with
-        member _x.Dispose() = eventInfo.RemoveEventHandler(defaultAssemblyLoadContext, handler)
-
-
-type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =
-    let handler: IDisposable option =
-        if isRunningOnCoreClr then
-            Some (new NativeDllResolveHandlerCoreClr(nativeProbingRoots) :> IDisposable)
-        else
-            None
-
     let ensureTrailingPathSeparator (p: string) =
         if not(p.EndsWith(Path.PathSeparator.ToString(), StringComparison.OrdinalIgnoreCase)) then
             p + Path.PathSeparator.ToString()
@@ -124,27 +120,54 @@ type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =
 
     let addProbeToProcessPath probePath =
         let probe = useOSSpecificDirectorySeparator (ensureTrailingPathSeparator probePath)
-        let path = ensureTrailingPathSeparator (Environment.GetEnvironmentVariable("PATH"))
-        if not (path.Contains(probe)) then
-            Environment.SetEnvironmentVariable("PATH", probe + path)
-            addedPaths.Add probe
+        lock pathLock (fun () ->
+            let path = ensureTrailingPathSeparator (Environment.GetEnvironmentVariable("PATH"))
+            if not (path.Contains(probe)) then
+                Environment.SetEnvironmentVariable("PATH", probe + path)
+                addedPaths.Add probe)
 
     let removeProbeFromProcessPath probePath =
-        if not(String.IsNullOrWhiteSpace(probePath)) then
-            let probe = useOSSpecificDirectorySeparator (ensureTrailingPathSeparator probePath)
-            let path = ensureTrailingPathSeparator (Environment.GetEnvironmentVariable("PATH"))
-            if path.Contains(probe) then Environment.SetEnvironmentVariable("PATH", path.Replace(probe, ""))
+        lock pathLock (fun () ->
+            if not(String.IsNullOrWhiteSpace(probePath)) then
+                let probe = useOSSpecificDirectorySeparator (ensureTrailingPathSeparator probePath)
+                let path = ensureTrailingPathSeparator (Environment.GetEnvironmentVariable("PATH"))
+                if path.Contains(probe) then Environment.SetEnvironmentVariable("PATH", path.Replace(probe, "")))
 
-    member internal _.RefreshPathsInEnvironment(roots: string seq) =
-        for probePath in roots do
-            addProbeToProcessPath probePath
+    interface IRegisterResolvers with
+        member _.RegisterAssemblyNativeResolvers(assembly: Assembly) =
+            ignore assembly
+
+        member _.RegisterPackageRoots(roots: string seq) =
+            for probePath in roots do
+                addProbeToProcessPath probePath
+
+    interface IDisposable with
+        member _x.Dispose() =
+            eventInfo.RemoveEventHandler(defaultAssemblyLoadContext, handler)
+            let mutable probe:string = null
+            while (addedPaths.TryTake(&probe)) do
+                removeProbeFromProcessPath probe
+
+type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =
+    let handler: IRegisterResolvers option =
+        if isRunningOnCoreClr then
+            Some (new NativeDllResolveHandlerCoreClr(nativeProbingRoots) :> IRegisterResolvers)
+        else
+            None
+
+    interface IRegisterResolvers with
+        member _.RegisterAssemblyNativeResolvers(assembly: Assembly) =
+            match handler with
+            | None -> ()
+            | Some handler -> handler.RegisterAssemblyNativeResolvers(assembly)
+
+        member _.RegisterPackageRoots(roots: string seq) =
+            match handler with
+            | None -> ()
+            | Some handler -> handler.RegisterPackageRoots(roots)
 
     interface IDisposable with
         member _.Dispose() =
             match handler with
             | None -> ()
             | Some handler -> handler.Dispose()
-
-            let mutable probe:string = null
-            while (addedPaths.TryTake(&probe)) do
-                removeProbeFromProcessPath probe

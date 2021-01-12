@@ -284,14 +284,9 @@ type ReflectionDependencyManagerProvider(theType: Type,
 /// Class is IDisposable
 type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe) =
 
-    // Note: creating a NativeDllResolveHandler currently installs process-wide handlers
-    let dllResolveHandler = new NativeDllResolveHandler(nativeProbingRoots)
-
-    // Note: creating a AssemblyResolveHandler currently installs process-wide handlers
-    let assemblyResolveHandler = 
-        match assemblyProbingPaths with 
-        | null -> { new IDisposable with member _.Dispose() = () }
-        | _ -> new AssemblyResolveHandler(assemblyProbingPaths) :> IDisposable
+    // Note: creating a DependencyProvider currently installs process-wide handlers
+    let assemblyResolveHandler =
+        new AssemblyResolveHandler(assemblyProbingPaths, nativeProbingRoots)
 
     // Resolution Path = Location of FSharp.Compiler.Private.dll
     let assemblySearchPaths = lazy (
@@ -433,7 +428,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
             ))
         match result with
         | Ok res ->
-            dllResolveHandler.RefreshPathsInEnvironment(res.Roots)
+            assemblyResolveHandler.RefreshPathsInEnvironment(res.Roots)
             res
         | Error (errorNumber, errorData) ->
             reportError.Invoke(ErrorReportType.Error, errorNumber, errorData)
@@ -445,5 +440,4 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
 
             // Unregister everything
             registeredDependencyManagers <- None
-            (dllResolveHandler :> IDisposable).Dispose()
-            assemblyResolveHandler.Dispose()
+            (assemblyResolveHandler :> IDisposable).Dispose()
