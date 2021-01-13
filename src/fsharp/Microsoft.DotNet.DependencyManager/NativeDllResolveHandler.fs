@@ -24,9 +24,14 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
 
     static let pathLock = new obj()
 
+    let nativeLibraryType: Type = Type.GetType("System.Runtime.InteropServices.NativeLibrary, System.Runtime.InteropServices", false)
+    let nativeDllImportResolverType: Type = Type.GetType("System.Runtime.InteropServices.DllImportResolver, System.Runtime.InteropServices", false)
+
     let nativeLibraryTryLoad =
-        let nativeLibraryType: Type = Type.GetType("System.Runtime.InteropServices.NativeLibrary, System.Runtime.InteropServices", false)
         nativeLibraryType.GetMethod("TryLoad", [| typeof<string>; typeof<IntPtr>.MakeByRefType() |])
+
+    let _nativeLibrarySetDllImportResolver =
+        nativeLibraryType.GetMethod("SetDllImportResolver", [| typeof<Assembly>; nativeDllImportResolverType |])
 
     let loadNativeLibrary path =
         let arguments = [| path:>obj; IntPtr.Zero:>obj |]
@@ -132,6 +137,22 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
                 let probe = useOSSpecificDirectorySeparator (ensureTrailingPathSeparator probePath)
                 let path = ensureTrailingPathSeparator (Environment.GetEnvironmentVariable("PATH"))
                 if path.Contains(probe) then Environment.SetEnvironmentVariable("PATH", path.Replace(probe, "")))
+
+    static member private ImportResolver<'T>(libraryName:string, assembly:Assembly, searchPath: 'T) : IntPtr =
+     //(*DllImportSearchPath? searchPath*)
+     (*
+            IntPtr libHandle = IntPtr.Zero;
+            if (libraryName == MyLibrary)
+            {
+                // Try using the system library 'libmylibrary.so.5'
+                NativeLibrary.TryLoad("libmylibrary.so.5", assembly, DllImportSearchPath.System32, out libHandle);
+            }
+            return libHandle;
+     *)
+        ignore libraryName
+        ignore assembly
+        ignore searchPath
+        IntPtr.Zero
 
     interface IRegisterResolvers with
         member _.RegisterAssemblyNativeResolvers(assembly: Assembly) =

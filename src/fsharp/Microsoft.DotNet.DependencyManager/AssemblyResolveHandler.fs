@@ -36,9 +36,11 @@ type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProb
 
     do eventInfo.AddEventHandler(defaultAssemblyLoadContext, handler)
 
-    member _.ResolveAssemblyNetStandard (ctxt: 'T) (assemblyName: AssemblyName): Assembly =
+    member this.ResolveAssemblyNetStandard (ctxt: 'T) (assemblyName: AssemblyName): Assembly =
         let loadAssembly path =
-            loadFromAssemblyPathMethod.Invoke(ctxt, [| path |]) :?> Assembly
+            let assembly = loadFromAssemblyPathMethod.Invoke(ctxt, [| path |]) :?> Assembly
+            (this :> IRegisterResolvers).RegisterAssemblyNativeResolvers(assembly)
+            assembly
 
         let assemblyPaths =
             match assemblyProbingPaths with
@@ -58,7 +60,7 @@ type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProb
 
     interface IRegisterResolvers with
         member _.RegisterAssemblyNativeResolvers(assembly: Assembly) =
-            ignore assembly
+            nativeHandler.RegisterAssemblyNativeResolvers(assembly)
 
         member _.RegisterPackageRoots(roots: string seq) =
             nativeHandler.RegisterPackageRoots(roots)
