@@ -5616,8 +5616,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) star
 
         CommitStartScope cgbuf startScopeMarkOpt
 
-        // if we have any expression recursion depth, we should delay the generation of a method to prevent stack overflows
-        let generator = if cenv.exprRecursionDepth > 0 then DelayGenMethodForBinding else GenMethodForBinding
+        let generator = GenMethodForBinding
         let hasWitnessEntry = cenv.g.generateWitnesses && not witnessInfos.IsEmpty
 
         generator cenv cgbuf.mgbuf eenv (vspec, mspec, hasWitnessEntry, false, access, ctps, mtps, [], curriedArgInfos, paramInfos, argTys, retInfo, topValInfo, methLambdaCtorThisValOpt, methLambdaBaseValOpt, methLambdaTypars, methLambdaVars, methLambdaBody, methLambdaBodyTy)
