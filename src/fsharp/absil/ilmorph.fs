@@ -216,7 +216,9 @@ let ilmbody_instr2instr_ty2ty fs (il: ILMethodBody) =
 let morphILMethodBody (filmbody) (x: ILLazyMethodBody) = 
     let c = 
         match x.Contents with
-        | MethodBody.IL il -> MethodBody.IL (filmbody il)
+        | MethodBody.IL il -> 
+            let ilCode = filmbody il.Value // Eager
+            MethodBody.IL (lazy ilCode)
         | x -> x
     mkMethBodyAux c
 

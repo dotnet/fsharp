@@ -2447,7 +2447,8 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
         else cenv.entrypoint <- Some (true, midx)
     let codeAddr = 
       (match md.Body.Contents with 
-      | MethodBody.IL ilmbody -> 
+      | MethodBody.IL ilmbodyLazy ->
+          let ilmbody = ilmbodyLazy.Value
           let addr = cenv.nextCodeAddr
           let (localToken, code, seqpoints, rootScope) = GenILMethodBody md.Name cenv env ilmbody
 

@@ -2878,14 +2878,15 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
            (* Convert the linear code format to the nested code format *)
            let localPdbInfos2 = List.map (fun f -> f raw2nextLab) localPdbInfos
            let code = buildILCode nm lab2pc instrs [] localPdbInfos2
-           MethodBody.IL
-             { IsZeroInit=false
-               MaxStack= 8
-               NoInlining=noinline
-               AggressiveInlining=aggressiveinline
-               Locals=List.empty
-               SourceMarker=methRangePdbInfo 
-               Code=code }
+           MethodBody.IL(
+             lazy
+                 { IsZeroInit=false
+                   MaxStack= 8
+                   NoInlining=noinline
+                   AggressiveInlining=aggressiveinline
+                   Locals=List.empty
+                   SourceMarker=methRangePdbInfo 
+                   Code=code })
 
        elif (b &&& e_CorILMethod_FormatMask) = e_CorILMethod_FatFormat then 
            let hasMoreSections = (b &&& e_CorILMethod_MoreSects) <> 0x0uy
@@ -3002,14 +3003,15 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
            if logging then dprintn ("done localPdbInfos2, checking code...") 
            let code = buildILCode nm lab2pc instrs !seh localPdbInfos2
            if logging then dprintn ("done checking code.") 
-           MethodBody.IL
-             { IsZeroInit=initlocals
-               MaxStack= maxstack
-               NoInlining=noinline
-               AggressiveInlining=aggressiveinline
-               Locals = locals
-               Code=code
-               SourceMarker=methRangePdbInfo}
+           MethodBody.IL(
+             lazy
+                 { IsZeroInit=initlocals
+                   MaxStack= maxstack
+                   NoInlining=noinline
+                   AggressiveInlining=aggressiveinline
+                   Locals = locals
+                   Code=code
+                   SourceMarker=methRangePdbInfo})
        else 
            if logging then failwith "unknown format"
            MethodBody.Abstract)

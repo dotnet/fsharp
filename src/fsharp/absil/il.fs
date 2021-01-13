@@ -1547,8 +1547,7 @@ type ILMethodVirtualInfo =
 
 [<RequireQualifiedAccess>]
 type MethodBody =
-    | IL of ILMethodBody
-    | LazyIL of Lazy<ILMethodBody>
+    | IL of Lazy<ILMethodBody>
     | PInvoke of PInvokeMethod (* platform invoke to native *)
     | Abstract
     | Native
@@ -1682,14 +1681,14 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
 
     member md.Code =
           match md.Body.Contents with
-          | MethodBody.IL il-> Some il.Code
+          | MethodBody.IL il-> Some il.Value.Code
           | _ -> None
 
     member x.IsIL = match x.Body.Contents with | MethodBody.IL _ -> true | _ -> false
 
-    member x.Locals = match x.Body.Contents with | MethodBody.IL il -> il.Locals | _ -> []
+    member x.Locals = match x.Body.Contents with | MethodBody.IL il -> il.Value.Locals | _ -> []
 
-    member x.MethodBody = match x.Body.Contents with MethodBody.IL il -> il | _ -> failwith "not IL"
+    member x.MethodBody = match x.Body.Contents with MethodBody.IL il -> il.Value | _ -> failwith "not IL"
 
     member x.SourceMarker = x.MethodBody.SourceMarker
 
@@ -2939,7 +2938,9 @@ let mkILMethodBody (initlocals, locals, maxstack, code, tag) : ILMethodBody =
       Code= code
       SourceMarker=tag }
 
-let mkMethodBody (zeroinit, locals, maxstack, code, tag) = MethodBody.IL (mkILMethodBody (zeroinit, locals, maxstack, code, tag))
+let mkMethodBody (zeroinit, locals, maxstack, code, tag) = 
+    let ilCode = mkILMethodBody (zeroinit, locals, maxstack, code, tag)
+    MethodBody.IL (lazy ilCode)
 
 // --------------------------------------------------------------------
 // Make a constructor
@@ -3084,7 +3085,8 @@ let mdef_code2code f (md: ILMethodDef) =
         match md.Body.Contents with
         | MethodBody.IL il-> il
         | _ -> failwith "mdef_code2code - method not IL"
-    let b = MethodBody.IL (ilmbody_code2code f il)
+    let ilCode = ilmbody_code2code f il.Value
+    let b = MethodBody.IL (lazy ilCode)
     md.With(body = mkMethBodyAux b)
 
 let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
@@ -4171,7 +4173,7 @@ and refs_of_local s loc = refs_of_typ s loc.Type
 
 and refs_of_mbody s x =
     match x with
-    | MethodBody.IL il -> refs_of_ilmbody s il
+    | MethodBody.IL il -> refs_of_ilmbody s il.Value
     | MethodBody.PInvoke (attr) -> refs_of_modref s attr.Where
     | _ -> ()
 
