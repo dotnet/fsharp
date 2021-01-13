@@ -110,6 +110,11 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
         Func<Assembly, string, IntPtr> (resolveUnmanagedDll), 
         assemblyLoadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public).GetValue(null, null)
 
+    let loadHandler = new AssemblyLoadEventHandler(fun _ (args: AssemblyLoadEventArgs) ->
+        printfn "Loaded: %s" (args.LoadedAssembly.Location))
+
+    do AppDomain.CurrentDomain.add_AssemblyLoad(loadHandler)
+
     do eventInfo.AddEventHandler(defaultAssemblyLoadContext, handler)
 
     let ensureTrailingPathSeparator (p: string) =
