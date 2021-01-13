@@ -6187,10 +6187,10 @@ and GenMethodForBinding
                 else
                     body
             
-            let ilCode = CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
+            let ilCode = lazy CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
 
             // This is the main code generation for most methods
-            false, MethodBody.IL ilCode, false
+            false, MethodBody.LazyIL(ilCode), false
 
     // Do not generate DllImport attributes into the code - they are implicit from the P/Invoke
     let attrs =

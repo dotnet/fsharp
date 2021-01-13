@@ -1548,6 +1548,7 @@ type ILMethodVirtualInfo =
 [<RequireQualifiedAccess>]
 type MethodBody =
     | IL of ILMethodBody
+    | LazyIL of Lazy<ILMethodBody>
     | PInvoke of PInvokeMethod (* platform invoke to native *)
     | Abstract
     | Native

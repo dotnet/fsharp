@@ -936,6 +936,7 @@ type internal ILOverridesSpec =
 [<RequireQualifiedAccess>]
 type internal MethodBody =
     | IL of ILMethodBody
+    | LazyIL of Lazy<ILMethodBody>
     | PInvoke of PInvokeMethod 
     | Abstract
     | Native

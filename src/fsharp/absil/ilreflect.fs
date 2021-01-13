@@ -1380,6 +1380,7 @@ let emitILMethodBody cenv modB emEnv (ilG: ILGenerator) (ilmbody: ILMethodBody) 
 let emitMethodBody cenv modB emEnv ilG _name (mbody: ILLazyMethodBody) =
     match mbody.Contents with
     | MethodBody.IL ilmbody -> emitILMethodBody cenv modB emEnv (ilG()) ilmbody
+    | MethodBody.LazyIL ilmbody -> emitILMethodBody cenv modB emEnv (ilG()) ilmbody.Value
     | MethodBody.PInvoke _pinvoke -> ()
     | MethodBody.Abstract -> ()
     | MethodBody.Native -> failwith "emitMethodBody: native"               
