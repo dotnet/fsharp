@@ -321,8 +321,8 @@ let convMethodBody thisClo = function
     | x -> x
 
 let convMethodDef thisClo (md: ILMethodDef)  =
-    let b' = convMethodBody thisClo (md.Body.Contents)
-    md.With(body=mkMethBodyAux b')
+    let b' = convMethodBody thisClo (md.Body)
+    md.With(body=b')
 
 // -------------------------------------------------------------------- 
 // Make fields for free variables of a type abstraction.

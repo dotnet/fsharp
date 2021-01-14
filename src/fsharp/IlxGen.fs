@@ -6406,7 +6406,7 @@ and GenPInvokeMethod (nm, dll, namedArgs) =
 
     let hasPreserveSigNamedArg = decoder.FindBool "PreserveSig" true
     hasPreserveSigNamedArg,
-    MethodBody.PInvoke
+    let pinvoke =
       { Where=mkSimpleModRef dll
         Name=decoder.FindString "EntryPoint" nm
         CallingConv=
@@ -6427,7 +6427,8 @@ and GenPInvokeMethod (nm, dll, namedArgs) =
         NoMangle= decoder.FindBool "ExactSpelling" false
         LastError= decoder.FindBool "SetLastError" false
         ThrowOnUnmappableChar= if (decoder.FindBool "ThrowOnUnmappableChar" false) then PInvokeThrowOnUnmappableChar.Enabled else PInvokeThrowOnUnmappableChar.UseAssembly
-        CharBestFit=if (decoder.FindBool "BestFitMapping" false) then PInvokeCharBestFit.Enabled else PInvokeCharBestFit.UseAssembly }
+        CharBestFit=if (decoder.FindBool "BestFitMapping" false) then PInvokeCharBestFit.Enabled else PInvokeCharBestFit.UseAssembly } : PInvokeMethod
+    MethodBody.PInvoke(lazy pinvoke)
   
 and GenBindings cenv cgbuf eenv binds = List.iter (GenBinding cenv cgbuf eenv) binds
 

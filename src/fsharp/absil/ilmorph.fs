@@ -213,14 +213,12 @@ let ilmbody_instr2instr_ty2ty fs (il: ILMethodBody) =
     {il with Code=code_instr2instr_ty2ty (finstr,ftye) il.Code
              Locals = locals_ty2ty ftye il.Locals }
 
-let morphILMethodBody (filmbody) (x: ILLazyMethodBody) = 
-    let c = 
-        match x.Contents with
-        | MethodBody.IL il -> 
-            let ilCode = filmbody il.Value // Eager
-            MethodBody.IL (lazy ilCode)
-        | x -> x
-    mkMethBodyAux c
+let morphILMethodBody (filmbody) (x: MethodBody) = 
+    match x with
+    | MethodBody.IL il -> 
+        let ilCode = filmbody il.Value // Eager
+        MethodBody.IL (lazy ilCode)
+    | x -> x
 
 let ospec_ty2ty f (OverridesSpec(mref,ty)) = OverridesSpec(mref_ty2ty f mref, f ty)
 
