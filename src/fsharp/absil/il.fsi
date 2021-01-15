@@ -977,12 +977,12 @@ type ILMethodDef =
     /// Functional creation of a value, with delayed reading of some elements via a metadata index
     internal new:
          name: string * attributes: MethodAttributes * implAttributes: MethodImplAttributes * callingConv: ILCallingConv * 
-         parameters: ILParameters * ret: ILReturn * body: MethodBody * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
+         parameters: ILParameters * ret: ILReturn * body: Lazy<MethodBody> * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
          securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILMethodDef
 
     /// Functional creation of a value, immediate
     new: name: string * attributes: MethodAttributes * implAttributes: MethodImplAttributes * callingConv: ILCallingConv * 
-         parameters: ILParameters * ret: ILReturn * body: MethodBody * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
+         parameters: ILParameters * ret: ILReturn * body: Lazy<MethodBody> * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
          securityDecls: ILSecurityDecls * customAttrs: ILAttributes -> ILMethodDef
       
     member Name: string
@@ -1048,7 +1048,7 @@ type ILMethodDef =
     /// Functional update of the value
     member internal 
         With: ?name: string * ?attributes: MethodAttributes * ?implAttributes: MethodImplAttributes * ?callingConv: ILCallingConv * 
-                 ?parameters: ILParameters * ?ret: ILReturn * ?body: MethodBody * ?securityDecls: ILSecurityDecls * ?isEntryPoint:bool * 
+                 ?parameters: ILParameters * ?ret: ILReturn * ?body: Lazy<MethodBody> * ?securityDecls: ILSecurityDecls * ?isEntryPoint:bool * 
                  ?genericParams: ILGenericParameterDefs * ?customAttrs: ILAttributes -> ILMethodDef
     member internal WithSpecialName: ILMethodDef
     member internal WithHideBySig: unit -> ILMethodDef
@@ -1813,9 +1813,9 @@ val internal mkILEmptyGenericParams: ILGenericParameterDefs
 /// Make method definitions.
 val internal mkILMethodBody: initlocals:bool * ILLocals * int * ILCode * ILSourceMarker option -> ILMethodBody
 val internal mkMethodBody: bool * ILLocals * int * ILCode * ILSourceMarker option -> MethodBody
-val internal methBodyNotAvailable: MethodBody 
-val internal methBodyAbstract: MethodBody 
-val internal methBodyNative: MethodBody 
+val internal methBodyNotAvailable: Lazy<MethodBody> 
+val internal methBodyAbstract: Lazy<MethodBody> 
+val internal methBodyNative: Lazy<MethodBody> 
 
 val internal mkILCtor: ILMemberAccess * ILParameter list * MethodBody -> ILMethodDef
 val internal mkILClassCtor: MethodBody -> ILMethodDef

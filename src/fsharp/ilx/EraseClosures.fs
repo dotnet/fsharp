@@ -322,7 +322,7 @@ let convMethodBody thisClo = function
 
 let convMethodDef thisClo (md: ILMethodDef)  =
     let b' = convMethodBody thisClo (md.Body)
-    md.With(body=b')
+    md.With(body=notlazy b')
 
 // -------------------------------------------------------------------- 
 // Make fields for free variables of a type abstraction.

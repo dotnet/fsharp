@@ -2494,6 +2494,7 @@ and seekReadConstant (ctxt: ILMetadataReader) idx =
   | _ -> ILFieldInit.Null
 
 and seekReadImplMap (ctxt: ILMetadataReader) nm midx = 
+ lazy
    MethodBody.PInvoke
       (lazy 
             let mdv = ctxt.mdfile.GetView()
@@ -2797,6 +2798,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (_idx, nm, _in
 #else
 and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _internalcall, noinline, aggressiveinline, numtypars) rva = 
 #endif
+ lazy
   let pev = pectxt.pefile.GetView()
   let baseRVA = pectxt.anyV2P("method rva", rva)
   // ": reading body of method "+nm+" at rva "+string rva+", phys "+string baseRVA
