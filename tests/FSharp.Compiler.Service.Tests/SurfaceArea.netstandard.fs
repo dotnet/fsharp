@@ -588,8 +588,6 @@ FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILCallingConv CallingConv
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILCallingConv get_CallingConv()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILCallingSignature CallingSignature
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILCallingSignature get_CallingSignature()
-FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILLazyMethodBody Body
-FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILLazyMethodBody get_Body()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILMemberAccess Access
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILMemberAccess get_Access()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILMethodBody MethodBody
@@ -600,6 +598,8 @@ FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILSecurityDecls SecurityDecls
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILSecurityDecls get_SecurityDecls()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Int32 MaxStack
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Int32 get_MaxStack()
+FSharp.Compiler.AbstractIL.IL+ILMethodDef: MethodBody Body
+FSharp.Compiler.AbstractIL.IL+ILMethodDef: MethodBody get_Body()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef] GenericParams
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef] get_GenericParams()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILLocal] Locals
@@ -616,7 +616,7 @@ FSharp.Compiler.AbstractIL.IL+ILMethodDef: System.Reflection.MethodImplAttribute
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: System.Reflection.MethodImplAttributes get_ImplAttributes()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: System.String Name
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: System.String get_Name()
-FSharp.Compiler.AbstractIL.IL+ILMethodDef: Void .ctor(System.String, System.Reflection.MethodAttributes, System.Reflection.MethodImplAttributes, ILCallingConv, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILParameter], ILReturn, ILLazyMethodBody, Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef], ILSecurityDecls, ILAttributes)
+FSharp.Compiler.AbstractIL.IL+ILMethodDef: Void .ctor(System.String, System.Reflection.MethodAttributes, System.Reflection.MethodImplAttributes, ILCallingConv, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILParameter], ILReturn, System.Lazy`1[FSharp.Compiler.AbstractIL.IL+MethodBody], Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef], ILSecurityDecls, ILAttributes)
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: ILMethodDef[] AsArray
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: ILMethodDef[] get_AsArray()
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef] AsList
