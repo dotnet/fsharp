@@ -9653,7 +9653,7 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute) =
                 let meths = minfos |> List.map (fun minfo -> minfo, None) 
                 let afterResolution = ForNewConstructors cenv.tcSink env tyid.idRange methodName minfos
                 let (expr, attributeAssignedNamedItems, _), _ = 
-                  TcMethodApplication true cenv env tpenv None [] mAttr mAttr methodName None ad PossiblyMutates false meths afterResolution NormalValUse [arg] (MustEqual (NewInferenceType ())) []
+                  TcMethodApplication true cenv env tpenv None [] mAttr mAttr methodName None ad PossiblyMutates false meths afterResolution NormalValUse [arg] (MustEqual ty) []
 
                 UnifyTypes cenv env mAttr ty (tyOfExpr cenv.g expr)
                 
