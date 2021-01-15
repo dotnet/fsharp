@@ -159,6 +159,17 @@ val TcFieldInit : range -> ILFieldInit -> Const
 
 val LightweightTcValForUsingInBuildMethodCall : g : TcGlobals -> vref:ValRef -> vrefFlags : ValUseFlag -> vrefTypeInst : TTypes -> m : range -> Expr * TType
 
+/// Represents known information prior to checking an expression or pattern, e.g. it's expected type
+type OverallTy = 
+    /// Each branch of the expression must have the type indicated
+    | MustEqual of TType
+
+    /// Each branch of the expression must convert to the type indicated
+    | MustConvertTo of ty: TType
+
+    /// Represents a point where no subsumption/widening is possible
+    member Commit: TType 
+
 //-------------------------------------------------------------------------
 // The rest are all helpers needed for declaration checking (CheckDeclarations.fs)
 //------------------------------------------------------------------------- 
@@ -649,28 +660,28 @@ val TcAttributesCanFail: cenv:TcFileState -> env:TcEnv -> attrTgt:AttributeTarge
 val TcAttributesWithPossibleTargets: canFail: bool -> cenv: TcFileState -> env: TcEnv -> attrTgt: AttributeTargets -> synAttribs: SynAttribute list -> (AttributeTargets * Attrib) list * bool
 
 /// Check a constant value, e.g. a literal
-val TcConst: cenv: TcFileState -> ty: TType -> m: range -> env: TcEnv -> c: SynConst -> Const
+val TcConst: cenv: TcFileState -> overallTy:OverallTy -> m: range -> env: TcEnv -> c: SynConst -> Const
 
 /// Check a syntactic expression and convert it to a typed tree expression
-val TcExpr: cenv:TcFileState -> ty:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    
+val TcExpr: cenv:TcFileState -> ty:OverallTy -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    
 
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExprOfUnknownType: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * TType * UnscopedTyparEnv    
 
 /// Check a syntactic expression and convert it to a typed tree expression. Possibly allow for subsumption flexibility
 /// and insert a coercion if necessary.
-val TcExprFlex: cenv:TcFileState -> flex:bool -> compat:bool -> ty:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> e:SynExpr -> Expr * UnscopedTyparEnv    
+val TcExprFlex: cenv:TcFileState -> flex:bool -> compat:bool -> desiredTy:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> e:SynExpr -> Expr * UnscopedTyparEnv    
 
 /// Check a syntactic statement and convert it to a typed tree expression.
 val TcStmtThatCantBeCtorBody: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    
 
 /// Check a syntactic expression and convert it to a typed tree expression
-val TcExprUndelayed: cenv:TcFileState -> overallTy:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> synExpr:SynExpr -> Expr * UnscopedTyparEnv    
+val TcExprUndelayed: cenv:TcFileState -> overallTy:OverallTy -> env:TcEnv -> tpenv:UnscopedTyparEnv -> synExpr:SynExpr -> Expr * UnscopedTyparEnv    
 
 /// Check a linear expression (e.g. a sequence of 'let') in a tail-recursive way
 /// and convert it to a typed tree expression, using the bodyChecker to check the parts
 /// that are not linear.
-val TcLinearExprs: bodyChecker:(TType -> TcEnv -> UnscopedTyparEnv -> SynExpr -> Expr * UnscopedTyparEnv) -> cenv:TcFileState -> env:TcEnv -> overallTy:TType -> tpenv:UnscopedTyparEnv -> isCompExpr:bool -> expr:SynExpr -> cont:(Expr * UnscopedTyparEnv -> Expr * UnscopedTyparEnv) -> Expr * UnscopedTyparEnv
+val TcLinearExprs: bodyChecker:(OverallTy -> TcEnv -> UnscopedTyparEnv -> SynExpr -> Expr * UnscopedTyparEnv) -> cenv:TcFileState -> env:TcEnv -> overallTy:OverallTy -> tpenv:UnscopedTyparEnv -> isCompExpr:bool -> expr:SynExpr -> cont:(Expr * UnscopedTyparEnv -> Expr * UnscopedTyparEnv) -> Expr * UnscopedTyparEnv
 
 /// Try to check a syntactic statement and indicate if it's type is not unit without emitting a warning
 val TryTcStmt: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> synExpr:SynExpr -> bool * Expr * UnscopedTyparEnv    
