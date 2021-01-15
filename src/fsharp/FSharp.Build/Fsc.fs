@@ -77,6 +77,7 @@ type public Fsc () as this =
     let mutable warningsNotAsErrors : string = null
     let mutable versionFile : string = null
     let mutable warningLevel : string = null
+    let mutable warnOn : string = null
     let mutable win32res : string = null
     let mutable win32manifest : string = null
     let mutable vserrors : bool = false
@@ -198,17 +199,23 @@ type public Fsc () as this =
         // WarningLevel
         builder.AppendSwitchIfNotNull("--warn:", warningLevel)
 
+        // warnOn
+        let warnOnArray =
+            match warnOn with
+            | null -> [||]
+            | _ -> warnOn.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+
+        builder.AppendSwitchIfNotNull("--warnon:", warnOnArray, ",")
+
         // TreatWarningsAsErrors
         if treatWarningsAsErrors then
             builder.AppendSwitch("--warnaserror")
 
         // WarningsAsErrors
-        // Change warning 76, HashReferenceNotAllowedInNonScript/HashDirectiveNotAllowedInNonScript/HashIncludeNotAllowedInNonScript, into an error
-        // REVIEW: why is this logic here? In any case these are errors already by default!
         let warningsAsErrorsArray =
             match warningsAsErrors with
-            | null -> [|"76"|]
-            | _ -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+            | null -> [||]
+            | _ -> warningsAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
         builder.AppendSwitchIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
 
@@ -504,6 +511,10 @@ type public Fsc () as this =
     member fsc.WarningsNotAsErrors
         with get() = warningsNotAsErrors
         and set(s) = warningsNotAsErrors <- s
+
+    member fsc.WarnOn 
+        with get() = warnOn
+        and set(s) = warnOn <- s
 
     member fsc.VisualStudioStyleErrors
         with get() = vserrors
