@@ -4371,7 +4371,7 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
                GenGenericParams cenv eenvUnderTypars methTyparsOfOverridingMethod,
                ilParamsOfOverridingMethod,
                ilReturnOfOverridingMethod,
-               MethodBody.IL ilMethodBody)
+               MethodBody.IL (lazy ilMethodBody))
         // fixup attributes to generate a method impl
         let mdef = if useMethodImpl then fixupMethodImplFlags mdef else mdef
         let mdef = fixupVirtualSlotFlags mdef
@@ -4473,20 +4473,20 @@ and GenSequenceExpr
                     CG.EmitInstr cgbuf (pop ilCloAllFreeVars.Length) (Push [ilCloRetTyInner]) (I_newobj (formalClospec.Constructor, None))
                     GenSequel cenv eenv.cloc cgbuf Return),
                  m)
-        mkILNonGenericVirtualMethod("GetFreshEnumerator", ILMemberAccess.Public, [], mkILReturn ilCloEnumeratorTy, MethodBody.IL mbody)
+        mkILNonGenericVirtualMethod("GetFreshEnumerator", ILMemberAccess.Public, [], mkILReturn ilCloEnumeratorTy, MethodBody.IL (lazy mbody))
         |> AddNonUserCompilerGeneratedAttribs g
 
     let closeMethod =
         // Note: We suppress the first sequence point in the body of this method since it is the initial state machine jump
         let spReq = SPSuppress
         let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq, [], "Close", eenvinner, 1, closeExpr, discardAndReturnVoid)
-        mkILNonGenericVirtualMethod("Close", ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL ilCode)
+        mkILNonGenericVirtualMethod("Close", ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL (lazy ilCode))
 
     let checkCloseMethod =
         // Note: We suppress the first sequence point in the body of this method since it is the initial state machine jump
         let spReq = SPSuppress
         let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq, [], "get_CheckClose", eenvinner, 1, checkCloseExpr, Return)
-        mkILNonGenericVirtualMethod("get_CheckClose", ILMemberAccess.Public, [], mkILReturn g.ilg.typ_Bool, MethodBody.IL ilCode)
+        mkILNonGenericVirtualMethod("get_CheckClose", ILMemberAccess.Public, [], mkILReturn g.ilg.typ_Bool, MethodBody.IL (lazy ilCode))
 
     let generateNextMethod =
         // Note: We suppress the first sequence point in the body of this method since it is the initial state machine jump
@@ -4495,12 +4495,12 @@ and GenSequenceExpr
         let eenvinner = eenvinner |> AddStorageForLocalVals g [ (nextEnumeratorValRef.Deref, Arg 1) ]
         let ilParams = [mkILParamNamed("next", ILType.Byref ilCloEnumerableTy)]
         let ilReturn = mkILReturn g.ilg.typ_Int32
-        let ilCode = MethodBody.IL (CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq, [], "GenerateNext", eenvinner, 2, generateNextExpr, Return))
+        let ilCode = MethodBody.IL (lazy (CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq, [], "GenerateNext", eenvinner, 2, generateNextExpr, Return)))
         mkILNonGenericVirtualMethod("GenerateNext", ILMemberAccess.Public, ilParams, ilReturn, ilCode)
 
     let lastGeneratedMethod =
         let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], "get_LastGenerated", eenvinner, 1, exprForValRef m currvref, Return)
-        mkILNonGenericVirtualMethod("get_LastGenerated", ILMemberAccess.Public, [], mkILReturn ilCloSeqElemTy, MethodBody.IL ilCode)
+        mkILNonGenericVirtualMethod("get_LastGenerated", ILMemberAccess.Public, [], mkILReturn ilCloSeqElemTy, MethodBody.IL (lazy ilCode))
         |> AddNonUserCompilerGeneratedAttribs g
 
     let ilCtorBody =
@@ -4543,7 +4543,7 @@ and GenClosureTypeDefs cenv (tref: ILTypeRef, ilGenParams, attrs, ilCloAllFreeVa
           let fspec = mkILFieldSpec (cloSpec.GetStaticFieldSpec().FieldRef, cloTy)
           let ctorSpec = mkILMethSpecForMethRefInTy (cloSpec.Constructor.MethodRef, cloTy, [])
           let ilCode = mkILMethodBody (true, [], 8, nonBranchingInstrsToCode ([ I_newobj (ctorSpec, None); mkNormalStsfld fspec ]), None)
-          let cctor = mkILClassCtor (MethodBody.IL ilCode)
+          let cctor = mkILClassCtor (MethodBody.IL (lazy ilCode))
           let ilFieldDef = mkILStaticField(fspec.Name, fspec.FormalType, None, None, ILMemberAccess.Assembly).WithInitOnly(true)
           (cctor :: mdefs), [ ilFieldDef ]
       else
@@ -4642,7 +4642,7 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc thisVars e
                 cgbuf.mgbuf.AddTypeDef(ilContractTypeRef, ilContractTypeDef, false, false, None)
 
                 let ilCtorBody = mkILMethodBody (true, [], 8, nonBranchingInstrsToCode (mkCallBaseConstructor(ilContractTy, [])), None )
-                let cloMethods = [ mkILGenericVirtualMethod("DirectInvoke", ILMemberAccess.Assembly, cloinfo.localTypeFuncDirectILGenericParams, [], mkILReturn (cloinfo.ilCloFormalReturnTy), MethodBody.IL ilCloBody) ]
+                let cloMethods = [ mkILGenericVirtualMethod("DirectInvoke", ILMemberAccess.Assembly, cloinfo.localTypeFuncDirectILGenericParams, [], mkILReturn (cloinfo.ilCloFormalReturnTy), MethodBody.IL(lazy ilCloBody)) ]
                 let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, cloinfo.cloILGenericParams, [], cloinfo.ilCloAllFreeVars, cloinfo.ilCloLambdas, ilCtorBody, cloMethods, [], ilContractTy, [], Some cloinfo.cloSpec)
                 cloTypeDefs
 
@@ -5039,7 +5039,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
              ILMemberAccess.Assembly,
              ilDelegeeParams,
              ilDelegeeRet,
-             MethodBody.IL ilMethodBody)
+             MethodBody.IL(lazy ilMethodBody))
     let delegeeCtorMeth = mkILSimpleStorageCtor(None, Some g.ilg.typ_Object.TypeSpec, ilDelegeeTyInner, [], [], ILMemberAccess.Assembly)
     let ilCtorBody = delegeeCtorMeth.MethodBody
     
@@ -5616,8 +5616,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) star
 
         CommitStartScope cgbuf startScopeMarkOpt
 
-        // if we have any expression recursion depth, we should delay the generation of a method to prevent stack overflows
-        let generator = if cenv.exprRecursionDepth > 0 then DelayGenMethodForBinding else GenMethodForBinding
+        let generator = GenMethodForBinding
         let hasWitnessEntry = cenv.g.generateWitnesses && not witnessInfos.IsEmpty
 
         generator cenv cgbuf.mgbuf eenv (vspec, mspec, hasWitnessEntry, false, access, ctps, mtps, [], curriedArgInfos, paramInfos, argTys, retInfo, topValInfo, methLambdaCtorThisValOpt, methLambdaBaseValOpt, methLambdaTypars, methLambdaVars, methLambdaBody, methLambdaBodyTy)
@@ -5645,7 +5644,8 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) star
         cgbuf.mgbuf.AddOrMergePropertyDef(ilGetterMethSpec.MethodRef.DeclaringTypeRef, ilPropDef, m)
 
         let ilMethodDef =
-            let ilMethodBody = MethodBody.IL(CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], ilGetterMethSpec.Name, eenv, 0, rhsExpr, Return))
+            let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], ilGetterMethSpec.Name, eenv, 0, rhsExpr, Return)
+            let ilMethodBody = MethodBody.IL(lazy ilCode)
             (mkILStaticMethod ([], ilGetterMethSpec.Name, access, [], mkILReturn ilTy, ilMethodBody)).WithSpecialName
             |> AddNonUserCompilerGeneratedAttribs g
 
@@ -6188,10 +6188,20 @@ and GenMethodForBinding
                 else
                     body
             
-            let ilCode = CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
+            let ilCodeLazy = lazy CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
 
             // This is the main code generation for most methods
-            false, MethodBody.IL ilCode, false
+            false, MethodBody.IL(ilCodeLazy), false
+
+    match ilMethodBody with
+    | MethodBody.IL(ilCodeLazy) ->
+        if cenv.exprRecursionDepth > 0 then
+            cenv.delayedGenMethods.Enqueue(fun _ -> ilCodeLazy.Force() |> ignore)
+        else
+            // Eagerly codegen if we are not in an expression depth.
+            ilCodeLazy.Force() |> ignore
+    | _ ->
+        ()
 
     // Do not generate DllImport attributes into the code - they are implicit from the P/Invoke
     let attrs =
@@ -6396,7 +6406,7 @@ and GenPInvokeMethod (nm, dll, namedArgs) =
 
     let hasPreserveSigNamedArg = decoder.FindBool "PreserveSig" true
     hasPreserveSigNamedArg,
-    MethodBody.PInvoke
+    let pinvoke =
       { Where=mkSimpleModRef dll
         Name=decoder.FindString "EntryPoint" nm
         CallingConv=
@@ -6417,7 +6427,8 @@ and GenPInvokeMethod (nm, dll, namedArgs) =
         NoMangle= decoder.FindBool "ExactSpelling" false
         LastError= decoder.FindBool "SetLastError" false
         ThrowOnUnmappableChar= if (decoder.FindBool "ThrowOnUnmappableChar" false) then PInvokeThrowOnUnmappableChar.Enabled else PInvokeThrowOnUnmappableChar.UseAssembly
-        CharBestFit=if (decoder.FindBool "BestFitMapping" false) then PInvokeCharBestFit.Enabled else PInvokeCharBestFit.UseAssembly }
+        CharBestFit=if (decoder.FindBool "BestFitMapping" false) then PInvokeCharBestFit.Enabled else PInvokeCharBestFit.UseAssembly } : PInvokeMethod
+    MethodBody.PInvoke(lazy pinvoke)
   
 and GenBindings cenv cgbuf eenv binds = List.iter (GenBinding cenv cgbuf eenv) binds
 
@@ -7033,7 +7044,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
                     // This adds the explicit init of the .cctor to the explicit entry point main method
                     mgbuf.AddExplicitInitToSpecificMethodDef((fun md -> md.IsEntryPoint), tref, fspec, GenPossibleILSourceMarker cenv m, feefee, seqpt))
 
-                let cctorMethDef = mkILClassCtor (MethodBody.IL topCode)
+                let cctorMethDef = mkILClassCtor (MethodBody.IL (lazy topCode))
                 mgbuf.AddMethodDef(initClassTy.TypeRef, cctorMethDef)
 
         // Final file, implicit entry point. We generate no .cctor.
@@ -7048,7 +7059,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
 
             // generate main@
             let ilMainMethodDef =
-                let mdef = mkILNonGenericStaticMethod(mainMethName, ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL topCode)
+                let mdef = mkILNonGenericStaticMethod(mainMethName, ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL (lazy topCode))
                 mdef.With(isEntryPoint= true, customAttrs = ilAttrs)
 
             mgbuf.AddMethodDef(initClassTy.TypeRef, ilMainMethodDef)
@@ -7058,7 +7069,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
     | None ->
         if doesSomething then
             // Add the cctor
-            let cctorMethDef = mkILClassCtor (MethodBody.IL topCode)
+            let cctorMethDef = mkILClassCtor (MethodBody.IL (lazy topCode))
             mgbuf.AddMethodDef(initClassTy.TypeRef, cctorMethDef)
 
     // Commit the directed initializations

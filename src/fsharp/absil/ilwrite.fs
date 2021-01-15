@@ -2446,8 +2446,9 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
         if cenv.entrypoint <> None then failwith "duplicate entrypoint"
         else cenv.entrypoint <- Some (true, midx)
     let codeAddr = 
-      (match md.Body.Contents with 
-      | MethodBody.IL ilmbody -> 
+      (match md.Body with 
+      | MethodBody.IL ilmbodyLazy ->
+          let ilmbody = ilmbodyLazy.Value
           let addr = cenv.nextCodeAddr
           let (localToken, code, seqpoints, rootScope) = GenILMethodBody md.Name cenv env ilmbody
 
@@ -2518,8 +2519,9 @@ let GenMethodDefPass3 cenv env (md: ILMethodDef) =
     md.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_MethodDef, midx) 
     md.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_MethodDef, midx)
     md.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp) 
-    match md.Body.Contents with 
-    | MethodBody.PInvoke attr ->
+    match md.Body with 
+    | MethodBody.PInvoke attrLazy ->
+        let attr = attrLazy.Value
         let flags = 
           begin match attr.CallingConv with 
           | PInvokeCallingConvention.None -> 0x0000

@@ -935,8 +935,8 @@ type internal ILOverridesSpec =
 
 [<RequireQualifiedAccess>]
 type internal MethodBody =
-    | IL of ILMethodBody
-    | PInvoke of PInvokeMethod 
+    | IL of Lazy<ILMethodBody>
+    | PInvoke of Lazy<PInvokeMethod> 
     | Abstract
     | Native
     | NotAvailable
@@ -970,12 +970,6 @@ type ILGenericParameterDef =
 
 type ILGenericParameterDefs = ILGenericParameterDef list
 
-[<NoComparison; NoEquality; Sealed>]
-type internal ILLazyMethodBody = 
-    member internal Contents: MethodBody 
-
-    static member NotAvailable: ILLazyMethodBody
-
 /// IL Method definitions. 
 [<NoComparison; NoEquality>]
 type ILMethodDef = 
@@ -983,12 +977,12 @@ type ILMethodDef =
     /// Functional creation of a value, with delayed reading of some elements via a metadata index
     internal new:
          name: string * attributes: MethodAttributes * implAttributes: MethodImplAttributes * callingConv: ILCallingConv * 
-         parameters: ILParameters * ret: ILReturn * body: ILLazyMethodBody * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
+         parameters: ILParameters * ret: ILReturn * body: Lazy<MethodBody> * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
          securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILMethodDef
 
     /// Functional creation of a value, immediate
     new: name: string * attributes: MethodAttributes * implAttributes: MethodImplAttributes * callingConv: ILCallingConv * 
-         parameters: ILParameters * ret: ILReturn * body: ILLazyMethodBody * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
+         parameters: ILParameters * ret: ILReturn * body: Lazy<MethodBody> * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
          securityDecls: ILSecurityDecls * customAttrs: ILAttributes -> ILMethodDef
       
     member Name: string
@@ -997,7 +991,7 @@ type ILMethodDef =
     member CallingConv: ILCallingConv
     member Parameters: ILParameters
     member Return: ILReturn
-    member Body: ILLazyMethodBody
+    member Body: MethodBody
     member SecurityDecls: ILSecurityDecls
     member IsEntryPoint:bool
     member GenericParams: ILGenericParameterDefs
@@ -1054,7 +1048,7 @@ type ILMethodDef =
     /// Functional update of the value
     member internal 
         With: ?name: string * ?attributes: MethodAttributes * ?implAttributes: MethodImplAttributes * ?callingConv: ILCallingConv * 
-                 ?parameters: ILParameters * ?ret: ILReturn * ?body: ILLazyMethodBody * ?securityDecls: ILSecurityDecls * ?isEntryPoint:bool * 
+                 ?parameters: ILParameters * ?ret: ILReturn * ?body: Lazy<MethodBody> * ?securityDecls: ILSecurityDecls * ?isEntryPoint:bool * 
                  ?genericParams: ILGenericParameterDefs * ?customAttrs: ILAttributes -> ILMethodDef
     member internal WithSpecialName: ILMethodDef
     member internal WithHideBySig: unit -> ILMethodDef
@@ -1819,9 +1813,9 @@ val internal mkILEmptyGenericParams: ILGenericParameterDefs
 /// Make method definitions.
 val internal mkILMethodBody: initlocals:bool * ILLocals * int * ILCode * ILSourceMarker option -> ILMethodBody
 val internal mkMethodBody: bool * ILLocals * int * ILCode * ILSourceMarker option -> MethodBody
-val internal methBodyNotAvailable: ILLazyMethodBody 
-val internal methBodyAbstract: ILLazyMethodBody 
-val internal methBodyNative: ILLazyMethodBody 
+val internal methBodyNotAvailable: Lazy<MethodBody> 
+val internal methBodyAbstract: Lazy<MethodBody> 
+val internal methBodyNative: Lazy<MethodBody> 
 
 val internal mkILCtor: ILMemberAccess * ILParameter list * MethodBody -> ILMethodDef
 val internal mkILClassCtor: MethodBody -> ILMethodDef
@@ -1889,9 +1883,6 @@ val internal mkILSecurityDecls: ILSecurityDecl list -> ILSecurityDecls
 val emptyILSecurityDecls: ILSecurityDecls
 val internal storeILSecurityDecls: ILSecurityDecls -> ILSecurityDeclsStored
 val internal mkILSecurityDeclsReader: (int32 -> ILSecurityDecl[]) -> ILSecurityDeclsStored
-
-val internal mkMethBodyAux: MethodBody -> ILLazyMethodBody
-val internal mkMethBodyLazyAux: Lazy<MethodBody> -> ILLazyMethodBody
 
 val internal mkILEvents: ILEventDef list -> ILEventDefs
 val internal mkILEventsLazy: Lazy<ILEventDef list> -> ILEventDefs

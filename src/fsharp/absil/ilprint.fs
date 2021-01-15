@@ -807,8 +807,8 @@ let goutput_mbody is_entrypoint env os (md: ILMethodDef) =
   output_string os " \n{ \n"
   goutput_security_decls env os md.SecurityDecls
   goutput_custom_attrs env os md.CustomAttrs
-  match md.Body.Contents with
-    | MethodBody.IL il -> goutput_ilmbody env os il
+  match md.Body with
+    | MethodBody.IL il -> goutput_ilmbody env os il.Value
     | _ -> ()
   if is_entrypoint then output_string os " .entrypoint"
   output_string os "\n"
@@ -827,8 +827,9 @@ let goutput_mdef env os (md:ILMethodDef) =
       elif md.IsConstructor then "rtspecialname"
       elif md.IsStatic then
             "static " +
-            (match md.Body.Contents with
-              MethodBody.PInvoke (attr) ->
+            (match md.Body with
+              MethodBody.PInvoke (attrLazy) ->
+                let attr = attrLazy.Value
                 "pinvokeimpl(\"" + attr.Where.Name + "\" as \"" + attr.Name + "\"" +
                 (match attr.CallingConv with
                 | PInvokeCallingConvention.None -> ""
