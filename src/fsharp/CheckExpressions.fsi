@@ -159,17 +159,6 @@ val TcFieldInit : range -> ILFieldInit -> Const
 
 val LightweightTcValForUsingInBuildMethodCall : g : TcGlobals -> vref:ValRef -> vrefFlags : ValUseFlag -> vrefTypeInst : TTypes -> m : range -> Expr * TType
 
-/// Represents known information prior to checking an expression or pattern, e.g. it's expected type
-type OverallTy = 
-    /// Each branch of the expression must have the type indicated
-    | MustEqual of TType
-
-    /// Each branch of the expression must convert to the type indicated
-    | MustConvertTo of ty: TType
-
-    /// Represents a point where no subsumption/widening is possible
-    member Commit: TType 
-
 //-------------------------------------------------------------------------
 // The rest are all helpers needed for declaration checking (CheckDeclarations.fs)
 //------------------------------------------------------------------------- 
@@ -660,7 +649,7 @@ val TcAttributesCanFail: cenv:TcFileState -> env:TcEnv -> attrTgt:AttributeTarge
 val TcAttributesWithPossibleTargets: canFail: bool -> cenv: TcFileState -> env: TcEnv -> attrTgt: AttributeTargets -> synAttribs: SynAttribute list -> (AttributeTargets * Attrib) list * bool
 
 /// Check a constant value, e.g. a literal
-val TcConst: cenv: TcFileState -> overallTy:OverallTy -> m: range -> env: TcEnv -> c: SynConst -> Const
+val TcConst: cenv: TcFileState -> overallTy: TType -> m: range -> env: TcEnv -> c: SynConst -> Const
 
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExpr: cenv:TcFileState -> ty:OverallTy -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    

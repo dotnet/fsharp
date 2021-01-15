@@ -521,7 +521,7 @@ module TcRecdUnionAndEnumDeclarations =
         | SynConst.UInt16s _
         | SynConst.UserNum _ -> error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), m))
         | _ -> 
-            let v = TcConst cenv (MustEqual fieldTy) m env v
+            let v = TcConst cenv fieldTy m env v
             let vis, _ = ComputeAccessAndCompPath env None m None None parent
             let vis = CombineReprAccess parent vis
             if id.idText = "value__" then errorR(Error(FSComp.SR.tcNotValidEnumCaseName(), id.idRange))
