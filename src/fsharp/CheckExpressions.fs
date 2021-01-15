@@ -5636,10 +5636,10 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
       )
             
     | SynExpr.Record (inherits, optOrigExpr, flds, mWholeExpr) -> 
-      TcExprLeafProtect cenv overallTy env mWholeExpr (fun overallTy ->        
-        CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy, env.AccessRights)
+      //TcExprLeafProtect cenv overallTy env mWholeExpr (fun overallTy ->        
+        CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr)
-      )
+      //)
 
     | SynExpr.While (spWhile, synGuardExpr, synBodyExpr, m) ->
         UnifyTypes cenv env m overallTy.Commit cenv.g.unit_ty
@@ -6899,7 +6899,9 @@ and TcAssertExpr cenv overallTy env (m: range) tpenv x =
     TcExpr cenv overallTy env tpenv callDiagnosticsExpr
 
 
-and TcRecdExpr cenv (overallTy: TType) env tpenv (inherits, optOrigExpr, flds, mWholeExpr) =
+and TcRecdExpr cenv (overallTy: OverallTy) env tpenv (inherits, optOrigExpr, flds, mWholeExpr) =
+
+    let overallTy = overallTy.Commit // Type directed resolution of record expressions means must subsume explicitly with upcast or box or :>
 
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors 
     let haveCtor = Option.isSome inherits
