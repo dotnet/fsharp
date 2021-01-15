@@ -2330,7 +2330,7 @@ and CanMemberSigsMatchUpToCheck
                 //      -- methods using tupling of unfilled out args
                 // - Never take into account return type information for constructors 
                 match reqdRetTyOpt with
-                | Some _  when (minfo.IsConstructor || not alwaysCheckReturn && isNil unnamedCalledOutArgs) -> ()
+                | Some _  when ( (* minfo.IsConstructor || *) not alwaysCheckReturn && isNil unnamedCalledOutArgs) -> ()
                 | Some (MustConvertTo(overallTy)) when isAppTy g overallTy && not (isSealedTy g overallTy) ->
                     let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
                     return! subsumeTypes overallTy methodRetTy
@@ -2868,7 +2868,7 @@ and ResolveOverloading
                             // Unify return type
                             match reqdRetTyOpt with 
                             | None -> () 
-                            | Some _  when calledMeth.Method.IsConstructor -> ()
+                            //| Some _  when calledMeth.Method.IsConstructor -> ()
                             | Some (MustConvertTo(reqdRetTy)) when isAppTy g reqdRetTy && not (isSealedTy g reqdRetTy) ->
                                 let actualRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
                                 return! TypesMustSubsumeOrConvertInsideUndo csenv ndeep trace cxsln m reqdRetTy actualRetTy
