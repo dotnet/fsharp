@@ -347,6 +347,19 @@ let TryFindUnscopedTypar n (UnscopedTyparEnv tab) = Map.tryFind n tab
 let HideUnscopedTypars typars (UnscopedTyparEnv tab) = 
     UnscopedTyparEnv (List.fold (fun acc (tp: Typar) -> Map.remove tp.Name acc) tab typars)
 
+type OverallTy = 
+    /// Each branch of the expression must have the type indicated
+    | MustEqual of TType
+
+    /// Each branch of the expression must convert to the type indicated
+    | MustConvertTo of ty: TType
+
+    /// Represents a point where no subsumption/widening is possible
+    member x.Commit = 
+        match x with 
+        | MustEqual ty -> ty
+        | MustConvertTo ty -> ty
+
 /// Represents the compilation environment for typechecking a single file in an assembly. 
 [<NoEquality; NoComparison>]
 type TcFileState = 
@@ -404,11 +417,11 @@ type TcFileState =
             
       isInternalTestSpanStackReferring: bool
       // forward call 
-      TcSequenceExpressionEntry: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * bool ref * SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * bool ref * SynExpr -> range -> Expr * UnscopedTyparEnv
       // forward call 
-      TcArrayOrListSequenceExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcArrayOrListSequenceExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
       // forward call 
-      TcComputationExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
+      TcComputationExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
     } 
 
     /// Create a new compilation environment
@@ -512,19 +525,6 @@ let LocateEnv ccu env enclosingNamespacePath =
     let env = List.fold (fun env id -> MakeInnerEnv false env id Namespace |> fst) env enclosingNamespacePath
     let env = { env with eNameResEnv = { env.NameEnv with eDisplayEnv = env.DisplayEnv.AddOpenPath (pathOfLid env.ePath) } }
     env
-
-type OverallTy = 
-    /// Each branch of the expression must have the type indicated
-    | MustEqual of TType
-
-    /// Each branch of the expression must convert to the type indicated
-    | MustConvertTo of ty: TType
-
-    /// Represents a point where no subsumption/widening is possible
-    member x.Commit = 
-        match x with 
-        | MustEqual ty -> ty
-        | MustConvertTo ty -> ty
 
 //-------------------------------------------------------------------------
 // Helpers for unification
@@ -5667,13 +5667,13 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.CompExpr (isArrayOrList, isNotNakedRefCell, comp, m) ->
       TcExprLeafProtect cenv overallTy env m (fun overallTy ->        
         let env = ExitFamilyRegion env
-        cenv.TcSequenceExpressionEntry cenv env overallTy.Commit tpenv (isArrayOrList, isNotNakedRefCell, comp) m
+        cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (isArrayOrList, isNotNakedRefCell, comp) m
       )
         
     | SynExpr.ArrayOrListOfSeqExpr (isArray, comp, m) ->
       TcExprLeafProtect cenv overallTy env m (fun overallTy ->        
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.eAccessRights)
-        cenv.TcArrayOrListSequenceExpression cenv env overallTy.Commit tpenv (isArray, comp)  m
+        cenv.TcArrayOrListSequenceExpression cenv env overallTy tpenv (isArray, comp)  m
       )
 
     | SynExpr.LetOrUse _ ->
@@ -7594,7 +7594,7 @@ and TcFunctionApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg 
         // OK, 'expr' doesn't have function type, but perhaps 'expr' is a computation expression builder, and 'arg' is '{ ... }' 
         match synArg with 
         | SynExpr.CompExpr (false, _isNotNakedRefCell, comp, _m) -> 
-            let bodyOfCompExpr, tpenv = cenv.TcComputationExpression cenv env overallTy.Commit tpenv (mFunExpr, expr.Expr, exprty, comp)
+            let bodyOfCompExpr, tpenv = cenv.TcComputationExpression cenv env overallTy tpenv (mFunExpr, expr.Expr, exprty, comp)
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr cenv.g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed 
         | _ -> 
             error (NotAFunction(denv, overallTy.Commit, mFunExpr, mArg)) 
