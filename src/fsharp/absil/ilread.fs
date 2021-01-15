@@ -2812,6 +2812,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
 
   MethodBody.IL 
    (lazy
+       let pev = pectxt.pefile.GetView()
        let mdv = ctxt.mdfile.GetView()
 
        // Read any debug information for this method into temporary data structures 
