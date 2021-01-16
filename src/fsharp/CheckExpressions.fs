@@ -465,9 +465,9 @@ let UnifyOverallType cenv (env: TcEnv) m overallTy actualTy =
         elif AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy actualTy then
             ()
         else
-            UnifyTypes cenv env m actualTy overallTy
+            UnifyTypes cenv env m overallTy actualTy
     | _ ->
-        UnifyTypes cenv env m actualTy overallTy.Commit
+        UnifyTypes cenv env m overallTy.Commit actualTy
 
 let UnifyOverallTypeAndRecover cenv env m overallTy actualTy =
     try
