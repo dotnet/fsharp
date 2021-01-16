@@ -6602,8 +6602,6 @@ and TcObjectExpr cenv (overallTy: TType) env tpenv (synObjTy, argopt, binds, ext
         let expr = mkCoerceIfNeeded cenv.g realObjTy objTy' expr
         expr, tpenv
 
-
-
 //-------------------------------------------------------------------------
 // TcConstStringExpr
 //------------------------------------------------------------------------- 
@@ -8901,13 +8899,13 @@ and TcMethodApplication
         BuildPossiblyConditionalMethodCall cenv env mut mMethExpr isProp finalCalledMethInfo isSuperInit finalCalledMethInst objArgs allArgsCoerced
         
     // Handle byref returns
-    let callExpr1 = 
+    let callExpr1, exprty = 
         // byref-typed returns get implicitly dereferenced 
         let vty = tyOfExpr cenv.g callExpr0
         if isByrefTy cenv.g vty then 
-            mkDerefAddrExpr mMethExpr callExpr0 mMethExpr vty
+            mkDerefAddrExpr mMethExpr callExpr0 mMethExpr vty, destByrefTy cenv.g vty
         else 
-            callExpr0
+            callExpr0, exprty
 
     // Bind "out" parameters as part of the result tuple 
     let callExpr2, exprty = 
@@ -8923,9 +8921,12 @@ and TcMethodApplication
             let expr = mkLetsBind mMethExpr outArgTmpBinds expr
             expr, tyOfExpr cenv.g expr
 
+    // Subsumption to return type
+    let callExpr2b = mkCoerceIfNeeded cenv.g returnTy.Commit exprty callExpr2
+    
     // Handle post-hoc property assignments 
     let setterExprPrebinders, callExpr3 = 
-        let expr = callExpr2
+        let expr = callExpr2b
         if isCheckingAttributeCall then 
             [], expr 
         elif isNil finalAssignedItemSetters then 
@@ -8944,12 +8945,9 @@ and TcMethodApplication
             let expr = mkCompGenLet mMethExpr objv expr (mkCompGenSequential mMethExpr propSetExpr objExpr)
             setterExprPrebinders, expr
 
-    // Subsumption to return type
-    let callExpr3b = mkCoerceIfNeeded cenv.g returnTy.Commit exprty callExpr3
-    
     // Build the lambda expression if any, if the method is used as a first-class value
     let callExpr4 = 
-        let expr = callExpr3b
+        let expr = callExpr3
         match lambdaVars with 
         | None -> expr
         | Some curriedLambdaVars -> 
