@@ -34,9 +34,8 @@ type internal FSharpFixIndexerAccessCodeFixProvider() =
                             let mutable span = context.Span
 
                             let notStartOfBracket (span: TextSpan) =
-                                let t = TextSpan(span.Start, span.Length + 1)
-                                let s = sourceText.GetSubText(t).ToString()
-                                s.[s.Length-1] <> '['
+                                let t = sourceText.GetSubText(TextSpan(span.Start, span.Length + 1))
+                                t.[t.Length-1] <> '['
 
                             // skip all braces and blanks until we find [
                             while span.End < sourceText.Length && notStartOfBracket span do
