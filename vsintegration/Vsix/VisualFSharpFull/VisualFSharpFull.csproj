@@ -66,9 +66,9 @@
       <Private>True</Private>
       <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj">
-      <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
-      <Name>FSharp.Compiler.Private</Name>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj">
+      <Project>{A59DB8AE-8044-41A5-848A-800A7FF31C93}</Project>
+      <Name>FSharp.Compiler.Service</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Ngen>true</Ngen>
@@ -76,26 +76,6 @@
       <NgenPriority>2</NgenPriority>
       <Private>True</Private>
       <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj">
-      <Name>FSharp.DependencyManager.Nuget</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
-      <Ngen>true</Ngen>
-      <NgenArchitecture>All</NgenArchitecture>
-      <NgenPriority>2</NgenPriority>
-      <Private>True</Private>
-      <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\Microsoft.DotNet.DependencyManager\Microsoft.DotNet.DependencyManager.fsproj">
-      <Name>Microsoft.DotNet.DependencyManager</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
-      <Ngen>true</Ngen>
-      <NgenArchitecture>All</NgenArchitecture>
-      <NgenPriority>2</NgenPriority>
-      <Private>True</Private>
-      <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
