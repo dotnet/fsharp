@@ -136,9 +136,13 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
     let m = lexbuf.LexemeRange 
     let startp = lexbuf.StartPos 
     let fin =
-        LexerStringFinisher (fun buf kind isPart isVerbatim isTripleQuote cont -> 
+        LexerStringFinisher (fun buf kind context cont -> 
             // Adjust the start-of-token mark back to the true start of the token 
             lexbuf.StartPos <- startp
+            let isPart = context.HasFlag(LexerStringFinisherContext.InterpolatedPart)
+            let isVerbatim = context.HasFlag(LexerStringFinisherContext.Verbatim)
+            let isTripleQuote = context.HasFlag(LexerStringFinisherContext.TripleQuote)
+            
             if kind.IsByteString then            
                 if kind.IsInterpolated then 
                     fail args lexbuf (FSComp.SR.lexByteStringMayNotBeInterpolated()) ()
@@ -1124,13 +1128,13 @@ and singleQuoteString sargs skip = parse
  |  '"' 
     { let (buf, fin, _m, kind, args) = sargs 
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf kind false false false cont
+      fin.Finish buf kind (enum<LexerStringFinisherContext>(0)) cont
     }
 
  |  '"''B' 
     { let (buf, fin, _m, kind, args) = sargs 
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf { kind with IsByteString = true } false false false cont
+      fin.Finish buf { kind with IsByteString = true } (enum<LexerStringFinisherContext>(0)) cont
     }
 
  | ("{{" | "}}")
@@ -1147,7 +1151,7 @@ and singleQuoteString sargs skip = parse
           let m2 = lexbuf.LexemeRange
           args.stringNest <- (1, LexerStringStyle.SingleQuote, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-          fin.Finish buf kind true false false cont
+          fin.Finish buf kind LexerStringFinisherContext.InterpolatedPart cont
       else
           addUnicodeString buf (lexeme lexbuf) 
           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
@@ -1214,13 +1218,13 @@ and verbatimString sargs skip = parse
  |  '"' 
     { let (buf, fin, _m, kind, args) = sargs 
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf kind false true false cont
+      fin.Finish buf kind LexerStringFinisherContext.Verbatim cont
     }
 
  |  '"''B' 
     { let (buf, fin, _m, kind, args) = sargs 
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf { kind with IsByteString = true } false true false cont
+      fin.Finish buf { kind with IsByteString = true } LexerStringFinisherContext.Verbatim cont
     }
 
  | newline 
@@ -1244,7 +1248,7 @@ and verbatimString sargs skip = parse
           let m2 = lexbuf.LexemeRange
           args.stringNest <- (1, LexerStringStyle.Verbatim, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-          fin.Finish buf kind true true false cont
+          fin.Finish buf kind (enum<LexerStringFinisherContext>(3)) cont
       else
           addUnicodeString buf (lexeme lexbuf) 
           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
@@ -1297,7 +1301,7 @@ and tripleQuoteString sargs skip = parse
  |  '"' '"' '"' 
     { let (buf, fin, _m, kind, args) = sargs 
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf kind false false true cont }
+      fin.Finish buf kind (enum<LexerStringFinisherContext>(4)) cont }
 
  | newline 
     { let (buf, _fin, m, kind, args) = sargs 
@@ -1340,7 +1344,7 @@ and tripleQuoteString sargs skip = parse
           let m2 = lexbuf.LexemeRange
           args.stringNest <- (1, LexerStringStyle.TripleQuote, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-          fin.Finish buf kind true false true cont
+          fin.Finish buf kind (enum<LexerStringFinisherContext>(5)) cont
       else
           addUnicodeString buf (lexeme lexbuf) 
           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))

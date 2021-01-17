@@ -119,15 +119,25 @@ let stringBufferAsBytes (buf: ByteBuffer) =
     let bytes = buf.Close()
     Array.init (bytes.Length / 2) (fun i -> bytes.[i*2]) 
 
-type LexerStringFinisher =
-    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> bool -> bool -> LexerContinuation -> token)
+[<Flags>]
+type LexerStringFinisherContext = 
+    | InterpolatedPart = 1
+    | Verbatim = 2
+    | TripleQuote = 4
 
-    member fin.Finish (buf: ByteBuffer) kind isInterpolatedStringPart isVerbatim isTripleQuote cont =
+type LexerStringFinisher =
+    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> LexerStringFinisherContext -> LexerContinuation -> token)
+
+    member fin.Finish (buf: ByteBuffer) kind context cont =
         let (LexerStringFinisher f)  = fin
-        f buf kind isInterpolatedStringPart isVerbatim isTripleQuote cont
+        f buf kind context cont
 
     static member Default =
-        LexerStringFinisher (fun buf kind isPart isVerbatim isTripleQuote cont ->
+        LexerStringFinisher (fun buf kind context cont ->
+            let isPart = context.HasFlag(LexerStringFinisherContext.InterpolatedPart)
+            let isVerbatim = context.HasFlag(LexerStringFinisherContext.Verbatim)
+            let isTripleQuote = context.HasFlag(LexerStringFinisherContext.TripleQuote)
+
             if kind.IsInterpolated then 
                 let s = stringBufferAsString buf
                 if kind.IsInterpolatedFirst then 
