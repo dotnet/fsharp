@@ -55,8 +55,17 @@ module Commands =
                 else
                     p.WaitForExit()
     #if DEBUG
-            File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), outputList)
-            File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), errorsList)
+            let workingDir' =
+                if workingDir = ""
+                then
+                    // Assign working dir to prevent default to C:\Windows\System32
+                    let executionLocation = Assembly.GetExecutingAssembly().Location
+                    Path.GetDirectoryName executionLocation
+                else
+                    workingDir
+
+            File.WriteAllLines(Path.Combine(workingDir', "StandardOutput.txt"), outputList)
+            File.WriteAllLines(Path.Combine(workingDir', "StandardError.txt"), errorsList)
     #endif
             p.ExitCode, outputList.ToArray(), errorsList.ToArray()
         | None -> -1, Array.empty, Array.empty
