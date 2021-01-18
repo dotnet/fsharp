@@ -5283,7 +5283,7 @@ and TcExprFlex cenv flex compat (desiredTy: TType) (env: TcEnv) tpenv (e: SynExp
         if compat then 
             (destTyparTy cenv.g argty).SetIsCompatFlex(true)
         AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css  e.Range NoTrace desiredTy argty 
-        let e', tpenv = TcExpr cenv (MustEqual argty) env tpenv e 
+        let e', tpenv = TcExpr cenv (MustConvertTo argty) env tpenv e 
         let e' = mkCoerceIfNeeded cenv.g desiredTy argty e'
         e', tpenv
     else
@@ -5521,7 +5521,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.Typed (synBodyExpr, synType, m) ->
         let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synType
         UnifyTypes cenv env m overallTy.Commit tgtTy
-        let expr, tpenv = TcExpr cenv (MustConvertTo tgtTy) env tpenv synBodyExpr 
+        let expr, tpenv = TcExpr cenv (MustEqual tgtTy) env tpenv synBodyExpr 
         expr, tpenv
 
     // e :? ty
@@ -5578,7 +5578,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.Lazy (synInnerExpr, m) ->
         let innerTy = NewInferenceType ()
         UnifyTypes cenv env m overallTy.Commit (mkLazyTy cenv.g innerTy)
-        let innerExpr, tpenv = TcExpr cenv (MustConvertTo innerTy) env tpenv synInnerExpr 
+        let innerExpr, tpenv = TcExpr cenv (MustEqual innerTy) env tpenv synInnerExpr 
         let expr = mkLazyDelayed cenv.g m innerTy (mkUnitDelayLambda cenv.g m innerExpr)
         expr, tpenv
 
