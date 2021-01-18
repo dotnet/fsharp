@@ -112,12 +112,12 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
     | TType_tuple _, TType_tuple _
     | TType_anon _, TType_anon _
     | TType_fun _, TType_fun _ -> TypesFeasiblyEquiv ndeep g amap m ty1 ty2
-    | TType_app _, TType_erased_union (_, l2) ->
-        List.forall (TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce) l2
-    | TType_erased_union (_, l1), TType_app _ ->
-        List.exists (fun x1 -> TypeFeasiblySubsumesType ndeep g amap m x1 canCoerce ty2) l1
     | TType_erased_union (_, l1), TType_erased_union (_, l2) ->
         ListSet.isSupersetOf (fun x1 x2 -> TypeFeasiblySubsumesType ndeep g amap m x1 canCoerce x2) l1 l2
+    | _, TType_erased_union (_, l2) ->
+        List.forall (TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce) l2
+    | TType_erased_union (_, l1), _ ->
+        List.exists (fun x1 -> TypeFeasiblySubsumesType ndeep g amap m x1 canCoerce ty2) l1
     | TType_measure _, TType_measure _ ->
         true
 

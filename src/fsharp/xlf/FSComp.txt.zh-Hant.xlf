@@ -22,6 +22,11 @@
         <target state="translated">可用的多載:\n{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csErasedUnionTypeNotContained">
+        <source>The erased union type '{0}' is not compatible with the erased union type '{1}'</source>
+        <target state="new">The erased union type '{0}' is not compatible with the erased union type '{1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
         <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
         <target state="translated">泛型建構要求泛型型別參數必須指定為結構或參考型別。請考慮新增型別註解。</target>

@@ -299,6 +299,10 @@ let isSubTypeOf g amap m typeToSearchFrom typeToLookFor =
 let isSuperTypeOf g amap m typeToSearchFrom typeToLookFor =
     isSubTypeOf g amap m typeToLookFor typeToSearchFrom 
     
+let getCommonAncestorOfTys g amap tys m = 
+    let superTypes = List.map (AllPrimarySuperTypesOfType g amap m AllowMultiIntfInstantiations.No) tys
+    List.fold (ListSet.intersect (typeEquiv g)) (List.head superTypes) (List.tail superTypes) |> List.head
+
 /// choose if a type exists somewhere in the hierarchy which has the same head type as the given type (note, the given type need not have a head type at all)
 let ChooseSameHeadTypeInHierarchy g amap m typeToSearchFrom typeToLookFor =
     SearchEntireHierarchyOfType (HaveSameHeadType g typeToLookFor)  g amap m typeToSearchFrom

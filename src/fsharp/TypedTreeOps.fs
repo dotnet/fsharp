@@ -791,6 +791,7 @@ let rec stripTyEqnsAndErase eraseFuncAndTuple (g: TcGlobals) ty =
             ty
     | TType_fun(a, b) when eraseFuncAndTuple -> TType_app(g.fastFunc_tcr, [ a; b]) 
     | TType_tuple(tupInfo, l) when eraseFuncAndTuple -> mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l
+    | TType_erased_union(unionInfo, _) -> stripTyEqnsAndErase eraseFuncAndTuple g unionInfo.CommonAncestorTy
     | ty -> ty
 
 let stripTyEqnsAndMeasureEqns g ty =
@@ -831,7 +832,6 @@ let isFSharpObjModelTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, 
 let isRecdTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsRecordTycon | _ -> false)
 let isFSharpStructOrEnumTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsFSharpStructOrEnumTycon | _ -> false)
 let isErasedUnionTy g ty = ty |> stripTyEqns g |> (function TType_erased_union _ -> true | _ -> false)
-let isStructErasedUnionTy g ty = ty |> stripTyEqns g |> (function TType_erased_union (unionInfo, _) -> isFSharpStructOrEnumTy g unionInfo.CommonAncestorTy | _ -> false)
 let isFSharpEnumTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsFSharpEnumTycon | _ -> false)
 let isTyparTy g ty = ty |> stripTyEqns g |> (function TType_var _ -> true | _ -> false)
 let isAnyParTy g ty = ty |> stripTyEqns g |> (function TType_var _ -> true | TType_measure unt -> isUnitParMeasure g unt | _ -> false)
@@ -1845,7 +1845,7 @@ let isStructTy g ty =
     | ValueSome tcref -> 
         isStructTyconRef tcref
     | _ -> 
-        isStructAnonRecdTy g ty || isStructTupleTy g ty || isStructErasedUnionTy g ty
+        isStructAnonRecdTy g ty || isStructTupleTy g ty
 
 let isRefTy g ty = 
     not (isStructOrEnumTyconTy g ty) &&
@@ -1859,7 +1859,7 @@ let isRefTy g ty =
         isFSharpObjModelRefTy g ty || 
         isUnitTy g ty ||
         (isAnonRecdTy g ty && not (isStructAnonRecdTy g ty)) ||
-        (isErasedUnionTy g ty && not (isStructErasedUnionTy g ty))
+        isErasedUnionTy g ty
     )
 
 let isForallFunctionTy g ty =
@@ -8093,9 +8093,7 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
         typarEnc g (gtpsType, gtpsMethod) typar
 
     | TType_measure _ -> "?"
-    | TType_erased_union (_, tys) ->
-        // SWOORUP TODO idk
-        typeEnc g (gtpsType, gtpsMethod) (List.head tys) + "|"
+    | TType_erased_union _ -> failwith "unreachable" // always erased by stripTyEqnsAndMeasureEqns
 
 and tyargsEnc g (gtpsType, gtpsMethod) args = 
      match args with     
@@ -8416,13 +8414,9 @@ let MemberIsCompiledAsInstance g parent isExtensionMember (membInfo: ValMemberIn
 
 let isSealedTy g ty =
     let ty = stripTyEqnsAndMeasureEqns g ty
-    let isRefTy' = isRefTy g ty
-    let isUnitTy' = isUnitTy g ty
-    let isArrayTy' = isArrayTy g ty
-    
-    not (isRefTy') ||
-    isUnitTy' || 
-    isArrayTy' || 
+    not (isRefTy g ty) ||
+    isUnitTy g ty || 
+    isArrayTy g ty || 
 
     match metadataOfTy g ty with 
 #if !NO_EXTENSIONTYPING

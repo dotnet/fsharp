@@ -4069,6 +4069,7 @@ type AnonRecdTypeInfo =
 type ErasedUnionInfo =
     { /// Common ancestor type for all cases in this union, used for ILgen
       CommonAncestorTy: TType
+
       /// Indices representing order of cases they were defined in
       UnsortedCaseSourceIndices: int [] }
     static member Create(commonAncestorTy: TType, unsortedCaseSourceIndices: int[]) =
