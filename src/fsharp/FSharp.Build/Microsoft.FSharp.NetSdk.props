@@ -40,7 +40,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <TreatWarningsAsErrors Condition="'$(TreatWarningsAsErrors)' == '' ">false</TreatWarningsAsErrors>
     <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
     <WarningsAsErrors>3239;$(WarningsAsErrors)</WarningsAsErrors>
-    <WarnOn>$(WarnOn);3390</WarnOn>
     <UseStandardResourceNames Condition=" '$(UseStandardResourceNames)' == '' ">true</UseStandardResourceNames>
     <FsiExec Condition=" '$(FsiExec)' == '' ">true</FsiExec>
   </PropertyGroup>
