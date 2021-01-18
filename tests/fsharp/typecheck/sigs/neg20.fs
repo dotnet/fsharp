@@ -73,7 +73,7 @@ module NoSubsumptionForLists =
     // Q: how about on sequence expressions?
     let controls2 = [ yield (new B())
                       yield (new C()) ]
-    StaticClass2.DisplayControls controls2 // bang
+    StaticClass2.DisplayControls controls2
 
     // Q: how about on sequence expressions?
     let controls3 = [ yield! [new B()]
@@ -81,14 +81,14 @@ module NoSubsumptionForLists =
     StaticClass2.DisplayControls controls3 // bang
 
     let controls4 = if true then new B() else new C()
-    StaticClass2.DisplayControls [controls4] // bang
+    StaticClass2.DisplayControls [controls4] // allowed
 
-    // Q: how about on matches? Not covered. Decision: disallow
+    // Q: how about on matches? allowed
     let controls5 = match 1 with 1 -> new B() | _ -> new C()
-    StaticClass2.DisplayControls [controls5] // bang
+    StaticClass2.DisplayControls [controls5] // allowed
 
 
-    // Q. subsumption on 'let v = expr'? Not covered. Disallow
+    // Q. subsumption on 'let v = expr'? Allowed
     let x76 : A = new B()
 
 module NoSubsumptionForLists2 = 
