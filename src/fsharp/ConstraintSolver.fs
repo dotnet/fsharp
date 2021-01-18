@@ -727,6 +727,7 @@ let rec SimplifyMeasuresInType g resultFirst ((generalizable, generalized) as pa
     | TType_ucase(_, l)
     | TType_app (_, l) 
     | TType_anon (_,l)
+    | TType_erased_union (_,l)
     | TType_tuple (_, l) -> SimplifyMeasuresInTypes g param l
 
     | TType_fun (d, r) -> if resultFirst then SimplifyMeasuresInTypes g param [r;d] else SimplifyMeasuresInTypes g param [d;r]        
@@ -765,6 +766,7 @@ let rec GetMeasureVarGcdInType v ty =
     | TType_ucase(_, l)
     | TType_app (_, l) 
     | TType_anon (_,l)
+    | TType_erased_union (_,l)
     | TType_tuple (_, l) -> GetMeasureVarGcdInTypes v l
 
     | TType_fun (d, r) -> GcdRational (GetMeasureVarGcdInType v d) (GetMeasureVarGcdInType v r)
@@ -981,7 +983,7 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
         ErrorD (ConstraintSolverError(message, csenv.m,m2)) 
     else 
         ResultD ())
-
+        
 /// Add the constraint "ty1 = ty2" to the constraint problem. 
 /// Propagate all effects of adding this constraint, e.g. to solve type variables 
 and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) (cxsln:(TraitConstraintInfo * TraitConstraintSln) option) ty1 ty2 = 
@@ -1018,6 +1020,7 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         -> SolveTypeEqualsType csenv ndeep m2 trace None ms (TType_measure Measure.One)
 
     | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
+    
     | TType_app (_, _), TType_app (_, _)   ->  localAbortD
     | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
@@ -1035,6 +1038,8 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty1 rty2 
 
     | TType_ucase (uc1, l1), TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
+    | TType_erased_union _, TType_erased_union _ when typeAEquiv g aenv sty1 sty2 -> 
+        CompleteD
     | _  -> localAbortD
 
 
@@ -1134,7 +1139,15 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
 
     | TType_ucase (uc1, l1), TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> 
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2
-
+        
+    | TType_erased_union (_,l1), TType_erased_union (_,l2) when typeAEquiv g aenv sty1 sty2 ->
+        SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2
+        
+    | TType_erased_union _, TType_app _ 
+    | TType_app _, TType_erased_union _ 
+    | TType_erased_union _, TType_erased_union _ when
+        TypeFeasiblySubsumesType ndeep csenv.g csenv.amap m2 sty1 CanCoerce sty2 ->
+        CompleteD
     | _ ->  
         // By now we know the type is not a variable type 
 
