@@ -5521,15 +5521,16 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         error(Error(FSComp.SR.tcFixedNotAllowed(), m))
 
     // e: ty
-    | SynExpr.Typed (synBodyExpr, synType, isFromReturnAnnotation, m) ->
+    | SynExpr.Typed (synBodyExpr, synType, _isFromReturnAnnotation, m) ->
         let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synType
         UnifyOverallType cenv env m overallTy tgtTy
-        // Type annotations stemming from binding/return position allow conversion, e.g.
-        //     let _ : obj = 1
-        // Type annotations stemming from expression annotations are rigid, e.g. this is
-        // not allowed:
-        //     (1 : obj)
-        let overallTyInner = if isFromReturnAnnotation then MustConvertTo tgtTy else MustEqual tgtTy
+        // Possible rule (not currently activated):
+        //   Type annotations stemming from binding/return position allow conversion, e.g.
+        //       let _ : obj = 1
+        //   Type annotations stemming from expression annotations are rigid, e.g. this is
+        //   not allowed:
+        //       (1 : obj)
+        let overallTyInner = (* if isFromReturnAnnotation then *) MustConvertTo tgtTy (* else MustEqual tgtTy *)
         let expr, tpenv = TcExpr cenv overallTyInner env tpenv synBodyExpr 
         let expr = mkCoerceIfNeeded cenv.g overallTy.Commit overallTyInner.Commit expr
         expr, tpenv
