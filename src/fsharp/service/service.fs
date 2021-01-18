@@ -18,6 +18,7 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
@@ -27,8 +28,6 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals 
-
-open Microsoft.DotNet.DependencyManager
 
 open Internal.Utilities
 open Internal.Utilities.Collections
