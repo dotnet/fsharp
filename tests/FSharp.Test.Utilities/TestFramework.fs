@@ -5,6 +5,7 @@ module TestFramework
 open Microsoft.Win32
 open System
 open System.IO
+open System.Reflection
 open System.Text.RegularExpressions
 open System.Diagnostics
 open Scripting
