@@ -8784,6 +8784,28 @@ FSharp.Compiler.SyntaxTree+SynType+WithGlobalConstraints: Microsoft.FSharp.Colle
 FSharp.Compiler.SyntaxTree+SynType+WithGlobalConstraints: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynTypeConstraint] get_constraints()
 FSharp.Compiler.SyntaxTree+SynType+WithGlobalConstraints: SynType get_typeName()
 FSharp.Compiler.SyntaxTree+SynType+WithGlobalConstraints: SynType typeName
+FSharp.Compiler.SyntaxTree+SynErasedUnionCase: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.SyntaxTree+SynErasedUnionCase: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.SyntaxTree+SynErasedUnionCase: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.SyntaxTree+SynErasedUnionCase: FSharp.Compiler.Text.Range range
+FSharp.Compiler.SyntaxTree+SynErasedUnionCase: Int32 Tag
+FSharp.Compiler.SyntaxTree+SynErasedUnionCase: Int32 get_Tag()
+FSharp.Compiler.SyntaxTree+SynErasedUnionCase: PreXmlDoc get_xmlDoc()
+FSharp.Compiler.SyntaxTree+SynErasedUnionCase: PreXmlDoc xmlDoc
+FSharp.Compiler.SyntaxTree+SynErasedUnionCase: SynErasedUnionCase NewErasedUnionCase(SynType, PreXmlDoc, FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTree+SynErasedUnionCase: SynType get_typ()
+FSharp.Compiler.SyntaxTree+SynErasedUnionCase: SynType typ
+FSharp.Compiler.SyntaxTree+SynErasedUnionCase: System.String ToString()
+FSharp.Compiler.SyntaxTree+SynType+ErasedUnion: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.SyntaxTree+SynType+ErasedUnion: FSharp.Compiler.Text.Range range
+FSharp.Compiler.SyntaxTree+SynType+ErasedUnion: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynErasedUnionCase] erasedUnionCases
+FSharp.Compiler.SyntaxTree+SynType+ErasedUnion: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynErasedUnionCase] get_erasedUnionCases()
+FSharp.Compiler.SyntaxTree+SynType+Tags: Int32 ErasedUnion
+FSharp.Compiler.SyntaxTree+SynType: Boolean IsErasedUnion
+FSharp.Compiler.SyntaxTree+SynType: Boolean get_IsErasedUnion()
+FSharp.Compiler.SyntaxTree+SynType: FSharp.Compiler.SyntaxTree+SynType+ErasedUnion
+FSharp.Compiler.SyntaxTree+SynType: SynType NewErasedUnion(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynErasedUnionCase], FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynErasedUnionCase
 FSharp.Compiler.SyntaxTree+SynType: Boolean IsAnon
 FSharp.Compiler.SyntaxTree+SynType: Boolean IsAnonRecd
 FSharp.Compiler.SyntaxTree+SynType: Boolean IsApp
