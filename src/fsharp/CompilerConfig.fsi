@@ -273,6 +273,8 @@ type TcConfigBuilder =
       mutable pathMap : PathMap
 
       mutable langVersion : LanguageVersion
+
+      mutable filesystem: IFileSystem
     }
 
     static member Initial: TcConfigBuilder
@@ -320,6 +322,8 @@ type TcConfigBuilder =
     member AddLoadedSource: m: range * originalPath: string * pathLoadedFrom: string -> unit
 
     member FxResolver: FxResolver
+
+    member FileSystem: IFileSystem
 
 
 /// Immutable TcConfig, modifications are made via a TcConfigBuilder
@@ -507,6 +511,9 @@ type TcConfig =
 
     /// Check if the primary assembly is mscorlib
     member assumeDotNetFramework: bool
+
+    /// File system shim implementation.
+    member FileSystem: IFileSystem
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.
