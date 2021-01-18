@@ -7336,6 +7336,8 @@ FSharp.Compiler.SyntaxTree+SynExpr+Typed: SynExpr expr
 FSharp.Compiler.SyntaxTree+SynExpr+Typed: SynExpr get_expr()
 FSharp.Compiler.SyntaxTree+SynExpr+Typed: SynType get_targetType()
 FSharp.Compiler.SyntaxTree+SynExpr+Typed: SynType targetType
+FSharp.Compiler.SyntaxTree+SynExpr+Typed: Boolean get_isFromReturnAnnotation()
+FSharp.Compiler.SyntaxTree+SynExpr+Typed: Boolean isFromReturnAnnotation
 FSharp.Compiler.SyntaxTree+SynExpr+Upcast: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.SyntaxTree+SynExpr+Upcast: FSharp.Compiler.Text.Range range
 FSharp.Compiler.SyntaxTree+SynExpr+Upcast: SynExpr expr
@@ -7620,7 +7622,7 @@ FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewTryWith(SynExpr, FSharp.Compiler.
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewTuple(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynExpr], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewTypeApp(SynExpr, FSharp.Compiler.Text.Range, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynType], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewTypeTest(SynExpr, SynType, FSharp.Compiler.Text.Range)
-FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewTyped(SynExpr, SynType, FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewTyped(SynExpr, SynType, Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewUpcast(SynExpr, SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewWhile(DebugPointAtWhile, SynExpr, SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewYieldOrReturn(System.Tuple`2[System.Boolean,System.Boolean], SynExpr, FSharp.Compiler.Text.Range)

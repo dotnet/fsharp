@@ -97,7 +97,7 @@ let rec IsControlFlowExpression e =
     | SynExpr.For _
     | SynExpr.ForEach _
     | SynExpr.While _ -> true
-    | SynExpr.Typed (e, _, _) -> IsControlFlowExpression e
+    | SynExpr.Typed (e, _, _, _) -> IsControlFlowExpression e
     | _ -> false
 
 let mkAnonField (ty: SynType) = Field([], false, None, ty, false, PreXmlDoc.Empty, None, ty.Range)
@@ -554,7 +554,8 @@ let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
     let rhsExpr = List.foldBack (fun (c, e1) e2 -> SynExpr.LibraryOnlyStaticOptimization (c, e1, e2, mRhs)) staticOptimizations rhsExpr
     let rhsExpr, retTyOpt =
         match retInfo with
-        | Some (SynReturnInfo((ty, SynArgInfo(rAttribs, _, _)), tym)) -> SynExpr.Typed (rhsExpr, ty, rhsExpr.Range), Some(SynBindingReturnInfo(ty, tym, rAttribs) )
+        | Some (SynReturnInfo((ty, SynArgInfo(rAttribs, _, _)), tym)) ->
+            SynExpr.Typed (rhsExpr, ty, true, rhsExpr.Range), Some(SynBindingReturnInfo(ty, tym, rAttribs) )
         | None -> rhsExpr, None
     rhsExpr, retTyOpt
 
@@ -641,7 +642,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.AddressOf (_, e, _, _)
           | SynExpr.CompExpr (_, _, e, _)
           | SynExpr.ArrayOrListOfSeqExpr (_, e, _)
-          | SynExpr.Typed (e, _, _)
+          | SynExpr.Typed (e, _, _, _)
           | SynExpr.FromParseError (e, _)
           | SynExpr.Do (e, _)
           | SynExpr.Assert (e, _)

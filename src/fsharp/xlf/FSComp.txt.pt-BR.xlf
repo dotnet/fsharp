@@ -107,6 +107,11 @@
         <target state="translated">divisão começando no final</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImplicitConversion">
+        <source>implicit upcasts and other conversions for function returns, bindings and other expressions</source>
+        <target state="new">implicit upcasts and other conversions for function returns, bindings and other expressions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureImplicitYield">
         <source>implicit yield</source>
         <target state="translated">yield implícito</target>

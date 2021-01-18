@@ -208,6 +208,19 @@ type OverloadResolutionFailure =
                         * candidates: OverloadInformation list // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
                         * cx: TraitConstraintInfo option
 
+type OverallTy = 
+    /// Each branch of the expression must have the type indicated
+    | MustEqual of TType
+
+    /// Each branch of the expression must convert to the type indicated
+    | MustConvertTo of ty: TType
+
+    /// Represents a point where no subsumption/widening is possible
+    member x.Commit = 
+        match x with 
+        | MustEqual ty -> ty
+        | MustConvertTo ty -> ty
+
 exception ConstraintSolverTupleDiffLengths of displayEnv: DisplayEnv * TType list * TType list * range * range
 
 exception ConstraintSolverInfiniteTypes of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
@@ -1577,7 +1590,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
               let methOverloadResult, errors = 
                   trace.CollectThenUndoOrCommit
                       (fun (a, _) -> Option.isSome a)
-                      (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) CallerArgs.Empty AccessibleFromEverywhere calledMethGroup false (Some rty))
+                      (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) CallerArgs.Empty AccessibleFromEverywhere calledMethGroup false (Some (MustEqual rty)))
 
               match anonRecdPropSearch, recdPropSearch, methOverloadResult with 
               | Some (anonInfo, tinst, i), None, None -> 
@@ -2255,7 +2268,7 @@ and CanMemberSigsMatchUpToCheck
       unifyTypes   // used to equate the formal method instantiation with the actual method instantiation for a generic method, and the return types
       subsumeTypes  // used to compare the "obj" type 
       (subsumeArg: CalledArg -> CallerArg<_> -> OperationResult<unit>)    // used to compare the arguments for compatibility
-      reqdRetTyOpt 
+      (reqdRetTyOpt: OverallTy option) 
       (calledMeth: CalledMeth<_>): ImperativeOperationResult =
         trackErrors {
             let g    = csenv.g
@@ -2325,15 +2338,18 @@ and CanMemberSigsMatchUpToCheck
                             rfinfo.Name, calledArgTy
             
                     do! subsumeArg (CalledArg((-1, 0), false, NotOptional, NoCallerInfo, false, false, Some (mkSynId m name), ReflectedArgInfo.None, calledArgTy)) caller
-                // - Always take the return type into account for
+                // - Always take the return type into account for resolving overloading of
                 //      -- op_Explicit, op_Implicit
                 //      -- methods using tupling of unfilled out args
                 // - Never take into account return type information for constructors 
                 match reqdRetTyOpt with
-                | Some _  when (minfo.IsConstructor || not alwaysCheckReturn && isNil unnamedCalledOutArgs) -> ()
+                | Some _  when ( (* minfo.IsConstructor || *) not alwaysCheckReturn && isNil unnamedCalledOutArgs) -> ()
+                | Some (MustConvertTo(overallTy)) when isAppTy g overallTy && not (isSealedTy g overallTy) ->
+                    let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
+                    return! subsumeTypes overallTy methodRetTy
                 | Some reqdRetTy ->
                     let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
-                    return! unifyTypes reqdRetTy methodRetTy
+                    return! unifyTypes reqdRetTy.Commit methodRetTy
                 | _ -> ()
         }
 
@@ -2536,7 +2552,7 @@ and ResolveOverloading
          ad              // The access domain of the caller, e.g. a module, type etc. 
          calledMethGroup // The set of methods being called 
          permitOptArgs   // Can we supply optional arguments?
-         reqdRetTyOpt    // The expected return type, if known 
+         (reqdRetTyOpt: OverallTy option) // The expected return type, if known 
      =
     let g = csenv.g
     let amap = csenv.amap
@@ -2610,7 +2626,7 @@ and ResolveOverloading
 
                 match convOpData with 
                 | Some (fromTy, toTy) -> 
-                    UnresolvedConversionOperator (denv, fromTy, toTy, m)
+                    UnresolvedConversionOperator (denv, fromTy, toTy.Commit, m)
                 | None -> 
                     // Otherwise pass the overload resolution failure for error printing in CompileOps
                     UnresolvedOverloading (denv, callerArgs, overloadResolutionFailure, m)
@@ -2865,8 +2881,12 @@ and ResolveOverloading
                             // Unify return type
                             match reqdRetTyOpt with 
                             | None -> () 
-                            | Some _  when calledMeth.Method.IsConstructor -> ()
+                            //| Some _  when calledMeth.Method.IsConstructor -> ()
+                            | Some (MustConvertTo(reqdRetTy)) when isAppTy g reqdRetTy && not (isSealedTy g reqdRetTy) ->
+                                let actualRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
+                                return! TypesMustSubsumeOrConvertInsideUndo csenv ndeep trace cxsln m reqdRetTy actualRetTy
                             | Some reqdRetTy ->
+                                let reqdRetTy = reqdRetTy.Commit
                                 let actualRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
                                 if isByrefTy g reqdRetTy then 
                                     return! ErrorD(Error(FSComp.SR.tcByrefReturnImplicitlyDereferenced(), m))

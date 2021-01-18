@@ -136,7 +136,7 @@ module NavigationImpl =
         let processBinding isMember enclosingEntityKind isAbstract (Binding(_, _, _, _, _, _, SynValData(memberOpt, _, _), synPat, _, synExpr, _, _)) =
             let m = 
                 match synExpr with 
-                | SynExpr.Typed (e, _, _) -> e.Range // fix range for properties with type annotations
+                | SynExpr.Typed (e, _, _, _) -> e.Range // fix range for properties with type annotations
                 | _ -> synExpr.Range
 
             match synPat, memberOpt with

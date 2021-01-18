@@ -359,7 +359,7 @@ type CalledMeth<'T>
        tyargsOpt : TType option)    
     =
     let g = infoReader.g
-    let methodRetTy = minfo.GetFSharpReturnTy(infoReader.amap, m, calledTyArgs)
+    let methodRetTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnTy(infoReader.amap, m, calledTyArgs)
 
     let fullCurriedCalledArgs = MakeCalledArgs infoReader.amap m minfo calledTyArgs
     do assert (fullCurriedCalledArgs.Length = fullCurriedCalledArgs.Length)
@@ -430,7 +430,7 @@ type CalledMeth<'T>
                     []
 
             let assignedNamedProps, unassignedNamedItems = 
-                let returnedObjTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else methodRetTy
+                let returnedObjTy = methodRetTy
                 unassignedNamedItems |> List.splitChoose (fun (CallerNamedArg(id, e) as arg) -> 
                     let nm = id.idText
                     let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides id.idRange returnedObjTy
@@ -511,8 +511,7 @@ type CalledMeth<'T>
 
     /// The return type after implicit deference of byref returns is taken into account
     member x.CalledReturnTypeAfterByrefDeref = 
-        let retTy = methodRetTy
-        if isByrefTy g retTy then destByrefTy g retTy else retTy
+        if isByrefTy g methodRetTy then destByrefTy g methodRetTy else methodRetTy
 
     /// Return type after tupling of out args is taken into account
     member x.CalledReturnTypeAfterOutArgTupling = 
