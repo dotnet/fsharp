@@ -222,7 +222,7 @@ module public AstTraversal =
                               yield dive fillExpr fillExpr.Range traverseSynExpr ]
                     |> pick expr
 
-                | SynExpr.Typed (synExpr, synType, _range) ->
+                | SynExpr.Typed (synExpr, synType, _, _range) ->
                     [ traverseSynExpr synExpr; traverseSynType synType ] |> List.tryPick id
 
                 | SynExpr.Tuple (_, synExprList, _, _range) 

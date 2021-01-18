@@ -19,11 +19,6 @@ neg20.fs(32,32,32,35): typecheck error FS0001: This expression was expected to h
 but here has type
     'obj'    
 
-neg20.fs(34,24,34,27): typecheck error FS0001: This expression was expected to have type
-    'obj'    
-but here has type
-    'string'    
-
 neg20.fs(35,24,35,27): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
@@ -53,16 +48,6 @@ neg20.fs(48,11,48,14): typecheck error FS0001: This expression was expected to h
     'string'    
 but here has type
     'obj'    
-
-neg20.fs(52,24,52,31): typecheck error FS0001: This expression was expected to have type
-    'A'    
-but here has type
-    'B'    
-
-neg20.fs(53,38,53,39): typecheck error FS0001: This expression was expected to have type
-    'System.ValueType'    
-but here has type
-    'int'    
 
 neg20.fs(60,26,60,33): typecheck error FS0001: The type 'A' is not compatible with the type 'B'
 
@@ -120,11 +105,6 @@ neg20.fs(128,19,128,22): typecheck error FS0001: This expression was expected to
     'string'    
 but here has type
     'obj'    
-
-neg20.fs(129,19,129,22): typecheck error FS0001: This expression was expected to have type
-    'obj'    
-but here has type
-    'string'    
 
 neg20.fs(131,5,131,24): typecheck error FS0041: No overloads match for method 'OM3'.
 

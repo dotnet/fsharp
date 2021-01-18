@@ -3298,7 +3298,7 @@ typedSeqExprBlockR:
 
 typedSeqExpr: 
   | seqExpr COLON typeWithTypeConstraints
-    { SynExpr.Typed ($1, $3, unionRanges $1.Range $3.Range) }
+    { SynExpr.Typed ($1, $3, false, unionRanges $1.Range $3.Range) }
 
   | seqExpr
     { $1 }

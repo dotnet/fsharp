@@ -7336,6 +7336,8 @@ FSharp.Compiler.SyntaxTree+SynExpr+Typed: SynExpr expr
 FSharp.Compiler.SyntaxTree+SynExpr+Typed: SynExpr get_expr()
 FSharp.Compiler.SyntaxTree+SynExpr+Typed: SynType get_targetType()
 FSharp.Compiler.SyntaxTree+SynExpr+Typed: SynType targetType
+FSharp.Compiler.SyntaxTree+SynExpr+Typed: Boolean get_isFromReturnAnnotation()
+FSharp.Compiler.SyntaxTree+SynExpr+Typed: Boolean isFromReturnAnnotation
 FSharp.Compiler.SyntaxTree+SynExpr+Upcast: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.SyntaxTree+SynExpr+Upcast: FSharp.Compiler.Text.Range range
 FSharp.Compiler.SyntaxTree+SynExpr+Upcast: SynExpr expr

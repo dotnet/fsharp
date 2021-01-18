@@ -764,7 +764,7 @@ module InterfaceStubGenerator =
 
                 | SynExpr.Paren (synExpr, _, _, _parenRange) ->
                     walkExpr synExpr
-                | SynExpr.Typed (synExpr, _synType, _range) -> 
+                | SynExpr.Typed (synExpr, _synType, _, _range) -> 
                     walkExpr synExpr
 
                 | SynExpr.Tuple (_, synExprList, _, _range)

@@ -555,7 +555,7 @@ module ParsedInput =
         and walkExpr = function
             | SynExpr.Paren (e, _, _, _)
             | SynExpr.Quote (_, _, e, _, _)
-            | SynExpr.Typed (e, _, _)
+            | SynExpr.Typed (e, _, _, _)
             | SynExpr.InferredUpcast (e, _)
             | SynExpr.InferredDowncast (e, _)
             | SynExpr.AddressOf (_, e, _, _)

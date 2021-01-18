@@ -426,7 +426,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                   | SynExpr.AddressOf (_, e, _, _)
                   | SynExpr.CompExpr (_, _, e, _) 
                   | SynExpr.ArrayOrListOfSeqExpr (_, e, _)
-                  | SynExpr.Typed (e, _, _)
+                  | SynExpr.Typed (e, _, _, _)
                   | SynExpr.FromParseError (e, _) 
                   | SynExpr.DiscardAfterMissingQualificationAfterDot (e, _) 
                   | SynExpr.Do (e, _)
@@ -1073,7 +1073,7 @@ module UntypedParseImpl =
                 | _ -> None
             | SynExpr.Paren (e, _, _, _) -> walkExprWithKind parentKind e
             | SynExpr.Quote (_, _, e, _, _) -> walkExprWithKind parentKind e
-            | SynExpr.Typed (e, _, _) -> walkExprWithKind parentKind e
+            | SynExpr.Typed (e, _, _, _) -> walkExprWithKind parentKind e
             | SynExpr.Tuple (_, es, _, _) -> List.tryPick (walkExprWithKind parentKind) es
             | SynExpr.ArrayOrList (_, es, _) -> List.tryPick (walkExprWithKind parentKind) es
             | SynExpr.Record (_, _, fields, r) -> 

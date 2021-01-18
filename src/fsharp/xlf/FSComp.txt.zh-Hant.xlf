@@ -107,6 +107,11 @@
         <target state="translated">從尾端切割</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImplicitConversion">
+        <source>implicit upcasts and other conversions for function returns, bindings and other expressions</source>
+        <target state="new">implicit upcasts and other conversions for function returns, bindings and other expressions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureImplicitYield">
         <source>implicit yield</source>
         <target state="translated">隱含 yield</target>

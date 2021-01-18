@@ -4932,7 +4932,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             | SynPat.FromParseError(p, _) -> convSynPatToSynExpr p
             | SynPat.Const (c, m) -> SynExpr.Const (c, m)
             | SynPat.Named (SynPat.Wild _, id, _, None, _) -> SynExpr.Ident id
-            | SynPat.Typed (p, cty, m) -> SynExpr.Typed (convSynPatToSynExpr p, cty, m)
+            | SynPat.Typed (p, cty, m) -> SynExpr.Typed (convSynPatToSynExpr p, cty, false, m)
             | SynPat.LongIdent (LongIdentWithDots(longId, dotms) as lidwd, _, _tyargs, args, None, m) ->
                 let args = match args with SynArgPats.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
                 let e =
@@ -5278,16 +5278,21 @@ and TcExprOfUnknownType cenv env tpenv expr =
     expr', exprty, tpenv
 
 and TcExprFlex cenv flex compat (desiredTy: TType) (env: TcEnv) tpenv (e: SynExpr) =
+    // This is the old way of introducing flexibility via subtype constraints, still active
+    // for compat reasons.
     if flex then
         let argty = NewInferenceType ()
         if compat then 
             (destTyparTy cenv.g argty).SetIsCompatFlex(true)
         AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css  e.Range NoTrace desiredTy argty 
-        let e', tpenv = TcExpr cenv (MustConvertTo argty) env tpenv e 
+        let e', tpenv = TcExprFlex2 cenv argty env tpenv e 
         let e' = mkCoerceIfNeeded cenv.g desiredTy argty e'
         e', tpenv
     else
-        TcExpr cenv (MustConvertTo desiredTy) env tpenv e
+        TcExprFlex2 cenv desiredTy env tpenv e
+
+and TcExprFlex2 cenv desiredTy env tpenv e =
+    TcExpr cenv (MustConvertTo desiredTy) env tpenv e
 
 and TcExpr cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
     // Start an error recovery handler 
@@ -5476,10 +5481,8 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         )
 
     | SynExpr.Const (synConst, m) -> 
-        TcExprLeafProtect cenv overallTy env m (fun overallTy ->        
-            CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
-            TcConstExpr cenv overallTy env m tpenv synConst
-        )
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
+        TcConstExpr cenv overallTy env m tpenv synConst
 
     | SynExpr.Lambda _ -> 
         TcIteratedLambdas cenv true env overallTy Set.empty tpenv synExpr
@@ -5518,10 +5521,17 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         error(Error(FSComp.SR.tcFixedNotAllowed(), m))
 
     // e: ty
-    | SynExpr.Typed (synBodyExpr, synType, m) ->
+    | SynExpr.Typed (synBodyExpr, synType, isFromReturnAnnotation, m) ->
         let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synType
-        UnifyTypes cenv env m overallTy.Commit tgtTy
-        let expr, tpenv = TcExpr cenv (MustEqual tgtTy) env tpenv synBodyExpr 
+        UnifyOverallType cenv env m overallTy tgtTy
+        // Type annotations stemming from binding/return position allow conversion, e.g.
+        //     let _ : obj = 1
+        // Type annotations stemming from expression annotations are rigid, e.g. this is
+        // not allowed:
+        //     (1 : obj)
+        let overallTyInner = if isFromReturnAnnotation then MustConvertTo tgtTy else MustEqual tgtTy
+        let expr, tpenv = TcExpr cenv overallTyInner env tpenv synBodyExpr 
+        let expr = mkCoerceIfNeeded cenv.g overallTy.Commit overallTyInner.Commit expr
         expr, tpenv
 
     // e :? ty
@@ -6836,15 +6846,17 @@ and TcInterpolatedStringExpr cenv (overallTy: TType) env m tpenv (parts: SynInte
 //------------------------------------------------------------------------- 
 
 /// Check a constant expression. 
-and TcConstExpr cenv (overallTy: TType) env m tpenv c =
+and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
     match c with 
 
     // NOTE: these aren't "really" constants 
     | SynConst.Bytes (bytes, m) -> 
+      TcExprLeafProtect cenv overallTy env m <| fun overallTy ->        
        UnifyTypes cenv env m overallTy (mkByteArrayTy cenv.g) 
        Expr.Op (TOp.Bytes bytes, [], [], m), tpenv
 
     | SynConst.UInt16s arr -> 
+      TcExprLeafProtect cenv overallTy env m <| fun overallTy ->        
        UnifyTypes cenv env m overallTy (mkArrayType cenv.g cenv.g.uint16_ty); Expr.Op (TOp.UInt16s arr, [], [], m), tpenv
 
     | SynConst.UserNum (s, suffix) -> 
@@ -6873,13 +6885,14 @@ and TcConstExpr cenv (overallTy: TType) env m tpenv c =
                 else    
                     match ccuOfTyconRef mref with
                     | Some ccu when ccuEq ccu cenv.g.fslibCcu ->
-                        SynExpr.Typed (expr, SynType.LongIdent(LongIdentWithDots(pathToSynLid m ["System";"Numerics";"BigInteger"], [])), m)
+                        SynExpr.Typed (expr, SynType.LongIdent(LongIdentWithDots(pathToSynLid m ["System";"Numerics";"BigInteger"], [])), false, m)
                     | _ ->
                         expr
 
-        TcExpr cenv (MustEqual overallTy) env tpenv expr
+        TcExpr cenv overallTy env tpenv expr
 
     | _ -> 
+      TcExprLeafProtect cenv overallTy env m <| fun overallTy ->        
         let c' = TcConst cenv overallTy m env c
         Expr.Const (c', m, overallTy), tpenv
 
@@ -6895,7 +6908,6 @@ and TcAssertExpr cenv overallTy env (m: range) tpenv x =
                                            SynExpr.Paren (x, range0, None, synm), synm)
 
     TcExpr cenv overallTy env tpenv callDiagnosticsExpr
-
 
 and TcRecdExpr cenv (overallTy: OverallTy) env tpenv (inherits, optOrigExpr, flds, mWholeExpr) =
 
@@ -7530,7 +7542,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
             check overallTyOpt resultOpt expr delayed
 
         // expr : type" allowed with no subsequent qualifications
-        | SynExpr.Typed (synBodyExpr, synType, _m) when delayed.IsEmpty && overallTyOpt.IsNone ->
+        | SynExpr.Typed (synBodyExpr, synType, _, _m) when delayed.IsEmpty && overallTyOpt.IsNone ->
             let tgtTy, _tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType  env tpenv synType
             check (Some (MustEqual tgtTy)) resultOpt synBodyExpr delayed
 
@@ -7574,7 +7586,7 @@ and TcFunctionApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg 
                      | _ -> false)
             | _ -> ()
             
-            let arg, tpenv = TcExpr cenv (MustEqual domainTy) env tpenv synArg
+            let arg, tpenv = TcExprFlex2 cenv domainTy env tpenv synArg
             let exprAndArg, resultTy = buildApp cenv expr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
             
@@ -7931,7 +7943,7 @@ and TcItemThen cenv (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mIte
             match e with
             | SynExpr.New (_, _, synExpr, _)  
             | SynExpr.Paren (synExpr, _, _, _) 
-            | SynExpr.Typed (synExpr, _, _) 
+            | SynExpr.Typed (synExpr, _, _, _) 
             | SynExpr.TypeApp (synExpr, _, _, _, _, _, _) 
             | SynExpr.TypeTest (synExpr, _, _) 
             | SynExpr.Upcast (synExpr, _, _) 
@@ -9080,7 +9092,7 @@ and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoFo
                                 | _ -> ()
                     loop argTy 0
 
-    let e', tpenv = TcExpr cenv (MustEqual argTy) env tpenv argExpr
+    let e', tpenv = TcExprFlex2 cenv argTy env tpenv argExpr
 
     // After we have checked, propagate the info from argument into the overloads that receive it. 
     //

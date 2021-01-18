@@ -49,7 +49,7 @@ module BiGenericFunctionTests =
 
 
 module NoSubsumptionOnApplication = 
-    (fun (x:A) -> 1)  (new B())  // no: subsumption comes from de-condensation, not application!
+    (fun (x:A) -> 1)  (new B())  // now permitted
     (fun (x:System.ValueType) -> 1)  1  // coercion on application!
 
 
@@ -126,7 +126,7 @@ module BiGenericMethodsInGenericClassTests =
     let str = ""
 
     C<obj>.M3("a",obj)  // this is not permitted since 'b is inferred to be "string". Fair enough
-    C<obj>.M3(obj,"a") 
+    C<obj>.M3(obj,"a") // now permitted
 
     C<obj>.OM3("a",obj)  // this is not permitted since 'b is inferred to be "string". Fair enough
 

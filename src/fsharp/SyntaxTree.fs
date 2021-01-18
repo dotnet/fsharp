@@ -573,6 +573,7 @@ type SynExpr =
     | Typed of
         expr: SynExpr *
         targetType: SynType *
+        isFromReturnAnnotation: bool *
         range: range
 
     /// F# syntax: e1, ..., eN
