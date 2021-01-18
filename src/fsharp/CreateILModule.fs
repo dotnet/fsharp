@@ -332,7 +332,7 @@ module MainModuleBuilder =
                  let name, bytes, pub = 
                          let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo file
                          let file = tcConfig.ResolveSourceFile(rangeStartup, file, tcConfig.implicitIncludeDir)
-                         let bytes = FileSystem.ReadAllBytesShim file
+                         let bytes = tcConfig.FileSystem.ReadAllBytesShim file
                          name, bytes, pub
                  yield { Name=name 
                          Location=ILResourceLocation.Local(ByteStorage.FromByteArray(bytes))
@@ -346,7 +346,7 @@ module MainModuleBuilder =
               for ri in tcConfig.linkResources do 
                  let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo ri
                  yield { Name=name 
-                         Location=ILResourceLocation.File(ILModuleRef.Create(name=file, hasMetadata=false, hash=Some (sha1HashBytes (FileSystem.ReadAllBytesShim file))), 0)
+                         Location=ILResourceLocation.File(ILModuleRef.Create(name=file, hasMetadata=false, hash=Some (sha1HashBytes (tcConfig.FileSystem.ReadAllBytesShim file))), 0)
                          Access=pub 
                          CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
                          MetadataIndex = NoMetadataIdx } ]

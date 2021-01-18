@@ -485,6 +485,8 @@ type TcConfigBuilder =
       mutable pathMap: PathMap
 
       mutable langVersion: LanguageVersion
+
+      mutable filesystem: IFileSystem
       }
 
     static member Initial =
@@ -624,6 +626,7 @@ type TcConfigBuilder =
           noConditionalErasure = false
           pathMap = PathMap.empty
           langVersion = LanguageVersion("default")
+          filesystem = Unchecked.defaultof<IFileSystem>
         }
 
     // Directories to start probing in
@@ -831,6 +834,15 @@ type TcConfigBuilder =
     member tcConfigB.AddPathMapping (oldPrefix, newPrefix) =
         tcConfigB.pathMap <- tcConfigB.pathMap |> PathMap.addMapping oldPrefix newPrefix
 
+    member tcConfigB.FileSystem =
+                if tcConfigB.filesystem = Unchecked.defaultof<IFileSystem> then
+                    lock tcConfigB (fun () ->
+                        if tcConfigB.filesystem = Unchecked.defaultof<IFileSystem> then
+                            tcConfigB.filesystem <- DefaultFileSystem() :> IFileSystem
+                    )
+
+                tcConfigB.filesystem
+
     static member SplitCommandLineResourceInfo (ri: string) =
         let p = ri.IndexOf ','
         if p <> -1 then
@@ -846,7 +858,7 @@ type TcConfigBuilder =
             else 
                 file, rest, ILResourceAccess.Public
         else 
-            ri, fileNameOfPath ri, ILResourceAccess.Public 
+            ri, fileNameOfPath ri, ILResourceAccess.Public
 
 
 //----------------------------------------------------------------------------
@@ -1038,6 +1050,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
     member x.internalTestSpanStackReferring = data.internalTestSpanStackReferring
     member x.noConditionalErasure = data.noConditionalErasure
+    member x.FileSystem = data.FileSystem
 
     static member Create(builder, validate) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
