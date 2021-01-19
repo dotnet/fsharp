@@ -293,7 +293,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
         | null -> { new IDisposable with member _.Dispose() = () }
         | _ -> new AssemblyResolveHandler(assemblyProbingPaths) :> IDisposable
 
-    // Resolution Path = Location of FSharp.Compiler.Private.dll
+    // Resolution Path = Location of FSharp.Compiler.Service.dll
     let assemblySearchPaths = lazy (
         [
             let assemblyLocation = typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly.Location

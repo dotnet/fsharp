@@ -2465,7 +2465,14 @@ module TypecheckTests =
     let ``type check neg19`` () = singleNegTest (testConfig' "typecheck/sigs") "neg19"
 
     [<Test>]
-    let ``type check neg20`` () = singleNegTest (testConfig' "typecheck/sigs") "neg20"
+    let ``type check neg20 version 5_0`` () =
+        let cfg = testConfig' "typecheck/sigs/version50"
+        singleVersionedNegTest cfg "5.0" "neg20"
+
+    [<Test>]
+    let ``type check neg20 version preview`` () =
+        let cfg = testConfig' "typecheck/sigs"
+        singleVersionedNegTest cfg "preview" "neg20"
 
     [<Test>]
     let ``type check neg21`` () = singleNegTest (testConfig' "typecheck/sigs") "neg21"
@@ -2477,15 +2484,22 @@ module TypecheckTests =
     let ``type check neg23`` () = singleNegTest (testConfig' "typecheck/sigs") "neg23"
 
     [<Test>]
-    let ``type check neg24 version 4.6`` () =
+    let ``type check neg24 version 4_6`` () =
         let cfg = testConfig' "typecheck/sigs/version46"
         // For some reason this warning is off by default in the test framework but in this case we are testing for it
         let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
         singleVersionedNegTest cfg "4.6" "neg24"
 
     [<Test>]
-    let ``type check neg24 version 4.7`` () =
+    let ``type check neg24 version 4_7`` () =
         let cfg = testConfig' "typecheck/sigs/version47"
+        // For some reason this warning is off by default in the test framework but in this case we are testing for it
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
+        singleVersionedNegTest cfg "4.7" "neg24"
+
+    [<Test>]
+    let ``type check neg24 version preview`` () =
+        let cfg = testConfig' "typecheck/sigs"
         // For some reason this warning is off by default in the test framework but in this case we are testing for it
         let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
         singleVersionedNegTest cfg "preview" "neg24"

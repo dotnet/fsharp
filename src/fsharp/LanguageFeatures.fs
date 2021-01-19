@@ -33,6 +33,7 @@ type LanguageFeature =
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
     | ImplicitConversion
+    | ErasedUnions
     | InterfacesWithMultipleGenericInstantiation
     | StringInterpolation
     | OverloadsForCustomOperations
@@ -76,6 +77,7 @@ type LanguageVersion (specifiedVersionAsString) =
 
             // F# preview
             LanguageFeature.ImplicitConversion, previewVersion
+            LanguageFeature.ErasedUnions, previewVersion
             LanguageFeature.OverloadsForCustomOperations, previewVersion
             LanguageFeature.ExpandedMeasurables, previewVersion
             LanguageFeature.FromEndSlicing, previewVersion
@@ -149,6 +151,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing()
         | LanguageFeature.ImplicitConversion -> FSComp.SR.featureImplicitConversion()
+        | LanguageFeature.ErasedUnions -> FSComp.SR.featureErasedUnions()
         | LanguageFeature.InterfacesWithMultipleGenericInstantiation -> FSComp.SR.featureInterfacesWithMultipleGenericInstantiation()
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation()
         | LanguageFeature.OverloadsForCustomOperations -> FSComp.SR.featureOverloadsForCustomOperations()

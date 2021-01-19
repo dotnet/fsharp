@@ -12,8 +12,7 @@ open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-        
-#if !FX_NO_INDENTED_TEXT_WRITER
+
 [<AutoOpen>]
 module internal CodeGenerationUtils =
     open System.IO
@@ -928,4 +927,3 @@ module InterfaceStubGenerator =
             None
         | ParsedInput.ImplFile input -> 
             walkImplFileInput input
-#endif

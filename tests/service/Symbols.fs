@@ -254,3 +254,37 @@ let tester2: int Group = []
                         |> should equal expectedTypeFormat
                 | _ -> failwithf "Couldn't get member: %s" entityName
             )
+
+module SyntaxExpressions =
+    [<Test>]
+    let ``SynExpr.Do contains the range of the do keyword`` () =
+        let ast = """let a =
+    do
+        foobar
+    do!
+        foobarBang
+"""
+                        |> getParseResults
+
+        let assertRange
+            expectedStartLine
+            expectedStartColumn
+            expectedEndLine
+            expectedEndColumn
+            (actualRange: FSharp.Compiler.Text.range)
+            =
+                Assert.AreEqual(FSharp.Compiler.Text.Pos.mkPos expectedStartLine expectedStartColumn, actualRange.Start)
+                Assert.AreEqual(FSharp.Compiler.Text.Pos.mkPos expectedEndLine expectedEndColumn, actualRange.End)
+
+        match ast with
+        | Some(ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.Let(bindings = [
+                            SynBinding.Binding(expr = SynExpr.Sequential(expr1 = SynExpr.Do(_, doRange) ; expr2 = SynExpr.DoBang(_, doBangRange)))
+                        ])
+                    ])
+                ]))) ->
+            assertRange 2 4 3 14 doRange
+            assertRange 4 4 5 18 doBangRange
+        | _ ->
+            failwith "Could not find SynExpr.Do"

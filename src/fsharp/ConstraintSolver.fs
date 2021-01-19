@@ -2352,7 +2352,7 @@ and CanMemberSigsMatchUpToCheck
                 // - Never take into account return type information for constructors 
                 match reqdRetTyOpt with
                 | Some _  when ( (* minfo.IsConstructor || *) not alwaysCheckReturn && isNil unnamedCalledOutArgs) -> ()
-                | Some (MustConvertTo(overallTy)) when isAppTy g overallTy && not (isSealedTy g overallTy) ->
+                | Some (MustConvertTo(overallTy)) when g.langVersion.SupportsFeature LanguageFeature.ImplicitConversion && not (isSealedTy g overallTy) ->
                     let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
                     return! subsumeTypes overallTy methodRetTy
                 | Some reqdRetTy ->
@@ -2889,8 +2889,7 @@ and ResolveOverloading
                             // Unify return type
                             match reqdRetTyOpt with 
                             | None -> () 
-                            //| Some _  when calledMeth.Method.IsConstructor -> ()
-                            | Some (MustConvertTo(reqdRetTy)) when isAppTy g reqdRetTy && not (isSealedTy g reqdRetTy) ->
+                            | Some (MustConvertTo(reqdRetTy)) when g.langVersion.SupportsFeature LanguageFeature.ImplicitConversion && not (isSealedTy g reqdRetTy) ->
                                 let actualRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
                                 return! TypesMustSubsumeOrConvertInsideUndo csenv ndeep trace cxsln m reqdRetTy actualRetTy
                             | Some reqdRetTy ->

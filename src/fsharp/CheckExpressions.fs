@@ -457,7 +457,7 @@ let UnifyTypes cenv (env: TcEnv) m actualTy expectedTy =
 // then allow subsumption.
 let UnifyOverallType cenv (env: TcEnv) m overallTy actualTy =
     match overallTy with 
-    | MustConvertTo(overallTy) when not (isSealedTy cenv.g overallTy) ->
+    | MustConvertTo(overallTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitConversion &&  not (isSealedTy cenv.g overallTy) ->
         let actualTy = tryNormalizeMeasureInType cenv.g actualTy
         let overallTy = tryNormalizeMeasureInType cenv.g overallTy
         if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy actualTy then
@@ -4271,6 +4271,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
         TType_anon(anonInfo, sortedCheckedArgTys),tpenv
         
     | SynType.ErasedUnion(synCases, m) ->
+        checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ErasedUnions m
         // Helper method for eliminating duplicate types from lists of types that form a union type,
         // create a disjoint set of cases
         // taking into account that a subtype is a "duplicate" of its supertype.
@@ -5541,7 +5542,7 @@ and TcExprUndelayedNoType cenv env tpenv synExpr: Expr * TType * _ =
 
 and TcExprLeafProtectExcept p cenv (overallTy: OverallTy) (env: TcEnv) m f =
     match overallTy with 
-    | MustConvertTo(oty) when not (p oty) && not (isSealedTy cenv.g oty) ->
+    | MustConvertTo(oty) when cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitConversion && not (p oty) && not (isSealedTy cenv.g oty) ->
         let oty2 = NewInferenceType()
         AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace oty oty2
         let expr, tpenv = f oty2
