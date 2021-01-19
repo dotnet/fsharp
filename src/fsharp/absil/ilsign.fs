@@ -17,6 +17,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.SourceCodeServices
+open Internal.Utilities
 
     type KeyType =
     | Public
@@ -53,11 +54,11 @@ open FSharp.Compiler.SourceCodeServices
         val UnderlyingArray: byte[]
 
         [<FieldOffset(0)>]
-        val ImmutableArray: ImmutableArray<byte>
+        val ImmutableArray: block<byte>
 
         new (immutableArray: ImmutableArray<byte>) = { UnderlyingArray = Array.empty<byte>; ImmutableArray = immutableArray}
 
-    let getUnderlyingArray (array: ImmutableArray<byte>) =ByteArrayUnion(array).UnderlyingArray
+    let getUnderlyingArray (array: block<byte>) = ByteArrayUnion(array).UnderlyingArray
 
     // Compute a hash over the elements of an assembly manifest file that should
     // remain static (skip checksum, Authenticode signatures and strong name signature blob)

@@ -109,6 +109,12 @@
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
     </EmbeddedResource>
+    <Compile Include="..\utils\Block.fsi">
+      <Link>Utilities\Block.fsi</Link>
+    </Compile>
+    <Compile Include="..\utils\Block.fs">
+      <Link>Utilities\Block.fs</Link>
+    </Compile>
     <Compile Include="..\utils\sformat.fsi">
       <Link>ErrorText\sformat.fsi</Link>
     </Compile>

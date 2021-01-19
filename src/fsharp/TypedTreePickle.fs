@@ -727,12 +727,12 @@ let p_ccuref s st = p_int (encode_ccuref st.occus s) st
 
 // References to public items in this module
 // A huge number of these occur in pickled F# data, so make them unique
-let decode_pubpath st stringTab a = PubPath(Array.map (lookup_string st stringTab) a)
+let decode_pubpath st stringTab a = PubPath(Array.map (lookup_string st stringTab) a |> Block.ofArray)
 let lookup_pubpath st pubpathTab x = lookup_uniq st pubpathTab x
 let u_encoded_pubpath = u_array u_int
 let u_pubpath st = lookup_uniq st st.ipubpaths (u_int st)
 
-let encode_pubpath stringTab pubpathTab (PubPath a) = encode_uniq pubpathTab (Array.map (encode_string stringTab) a)
+let encode_pubpath stringTab pubpathTab (PubPath a) = encode_uniq pubpathTab (Array.map (encode_string stringTab) (Block.toArray a))
 let p_encoded_pubpath = p_array p_int
 let p_pubpath x st = p_int (encode_pubpath st.ostrings st.opubpaths x) st
 

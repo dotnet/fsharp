@@ -2828,16 +2828,16 @@ let layoutOfPath p =
 
 let fullNameOfParentOfPubPath pp = 
     match pp with 
-    | PubPath([| _ |]) -> ValueNone 
+    | PubPath(Block [| _ |]) -> ValueNone 
     | pp -> ValueSome(textOfPath pp.EnclosingPath)
 
 let fullNameOfParentOfPubPathAsLayout pp = 
     match pp with 
-    | PubPath([| _ |]) -> ValueNone 
-    | pp -> ValueSome(layoutOfPath (Array.toList pp.EnclosingPath))
+    | PubPath(Block [| _ |]) -> ValueNone 
+    | pp -> ValueSome(layoutOfPath (Block.toList pp.EnclosingPath))
 
 let fullNameOfPubPath (PubPath p) = textOfPath p
-let fullNameOfPubPathAsLayout (PubPath p) = layoutOfPath (Array.toList p)
+let fullNameOfPubPathAsLayout (PubPath p) = layoutOfPath (Block.toList p)
 
 let fullNameOfParentOfNonLocalEntityRef (nlr: NonLocalEntityRef) = 
     if nlr.Path.Length < 2 then ValueNone
@@ -2948,7 +2948,7 @@ let fullDisplayTextOfValRefAsLayout (vref: ValRef) =
 
 let fullMangledPathToTyconRef (tcref:TyconRef) = 
     match tcref with 
-    | ERefLocal _ -> (match tcref.PublicPath with None -> [| |] | Some pp -> pp.EnclosingPath)
+    | ERefLocal _ -> (match tcref.PublicPath with None -> [| |] | Some pp -> Block.toArray pp.EnclosingPath)
     | ERefNonLocal nlr -> nlr.EnclosingMangledPath
     
 /// generates a name like 'System.IComparable<System.Int32>.Get'

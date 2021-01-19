@@ -489,12 +489,11 @@ type ModuleOrNamespaceKind =
 /// A public path records where a construct lives within the global namespace
 /// of a CCU.
 type PublicPath = 
-    | PubPath of string[] 
+    | PubPath of string block 
     member x.EnclosingPath = 
         let (PubPath pp) = x 
         assert (pp.Length >= 1)
         pp.[0..pp.Length-2]
-
 
 /// The information ILXGEN needs about the location of an item
 type CompilationPath = 
@@ -506,7 +505,7 @@ type CompilationPath =
 
     member x.MangledPath = List.map fst x.AccessPath
 
-    member x.NestedPublicPath (id: Ident) = PubPath(Array.append (Array.ofList x.MangledPath) [| id.idText |])
+    member x.NestedPublicPath (id: Ident) = PubPath(Block.append (Block.ofList x.MangledPath) (Block.ofArray [| id.idText |]))
 
     member x.ParentCompPath = 
         let a, _ = List.frontAndBack x.AccessPath

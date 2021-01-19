@@ -68,6 +68,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
+open Internal.Utilities
 
 //-------------------------------------------------------------------------
 // Generate type variables and record them in within the scope of the
@@ -2655,7 +2656,7 @@ and ResolveOverloading
                             match tryTcrefOfAppTy csenv.g ty1 with 
                             | ValueSome tcref1 when 
                                 tcref1.DisplayName = "Func" &&  
-                                (match tcref1.PublicPath with Some p -> p.EnclosingPath = [| "System" |] | _ -> false) && 
+                                (match tcref1.PublicPath with Some p -> Block.toArray p.EnclosingPath = [| "System" |] | _ -> false) && 
                                 isDelegateTy g ty1 &&
                                 isDelegateTy g ty2 -> true
 

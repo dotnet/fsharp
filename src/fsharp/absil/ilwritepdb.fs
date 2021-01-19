@@ -350,7 +350,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                     let dbgInfo = 
                         (serializeDocumentName doc.File,
                          metadata.GetOrAddGuid(System.Guid.Empty),
-                         metadata.GetOrAddBlob(ImmutableArray<byte>.Empty),
+                         metadata.GetOrAddBlob(block<byte>.Empty),
                          metadata.GetOrAddGuid corSymLanguageTypeId) |> metadata.AddDocument
                     dbgInfo
             index.Add(doc.File, handle)
