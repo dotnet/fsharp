@@ -109,11 +109,11 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
 
     let getInterfaces ty (tcref:TyconRef) tinst =
         match metadataOfTy g ty with
-        #if !NO_EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedTypeMetadata info ->
             [ for ity in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
                 yield Import.ImportProvidedType amap m ity ]
-        #endif
+#endif
         | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
             // ImportILType may fail for an interface if the assembly load set is incomplete and the interface
             // comes from another assembly. In this case we simply skip the interface:
