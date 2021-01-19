@@ -457,7 +457,7 @@ let UnifyTypes cenv (env: TcEnv) m actualTy expectedTy =
 // then allow subsumption.
 let UnifyOverallType cenv (env: TcEnv) m overallTy actualTy =
     match overallTy with 
-    | MustConvertTo(overallTy) when isAppTy cenv.g overallTy && not (isSealedTy cenv.g overallTy) ->
+    | MustConvertTo(overallTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitConversion &&  not (isSealedTy cenv.g overallTy) ->
         let actualTy = tryNormalizeMeasureInType cenv.g actualTy
         let overallTy = tryNormalizeMeasureInType cenv.g overallTy
         if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy actualTy then
@@ -5440,7 +5440,7 @@ and TcExprUndelayedNoType cenv env tpenv synExpr: Expr * TType * _ =
 
 and TcExprLeafProtectExcept p cenv (overallTy: OverallTy) (env: TcEnv) m f =
     match overallTy with 
-    | MustConvertTo(oty) when not (p oty) && isAppTy cenv.g oty && not (isSealedTy cenv.g oty) ->
+    | MustConvertTo(oty) when cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitConversion && not (p oty) && not (isSealedTy cenv.g oty) ->
         let oty2 = NewInferenceType()
         AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace oty oty2
         let expr, tpenv = f oty2
@@ -5531,9 +5531,9 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         //   not allowed:
         //       (1 : obj)
         let overallTyInner = (* if isFromReturnAnnotation then *) MustConvertTo tgtTy (* else MustEqual tgtTy *)
-        let expr, tpenv = TcExpr cenv overallTyInner env tpenv synBodyExpr 
-        let expr = mkCoerceIfNeeded cenv.g overallTy.Commit overallTyInner.Commit expr
-        expr, tpenv
+        let bodyExpr, tpenv = TcExpr cenv overallTyInner env tpenv synBodyExpr 
+        let bodyExpr = mkCoerceIfNeeded cenv.g overallTy.Commit overallTyInner.Commit bodyExpr
+        bodyExpr, tpenv
 
     // e :? ty
     | SynExpr.TypeTest (synInnerExpr, tgtTy, m) ->
