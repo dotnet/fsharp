@@ -15,7 +15,7 @@ open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Text
 
-[<Dependency("FSharp.Compiler.Private",LoadHint.Always)>] 
+[<Dependency("FSharp.Compiler.Service",LoadHint.Always)>] 
 do ()
 
 [<EntryPoint>]
