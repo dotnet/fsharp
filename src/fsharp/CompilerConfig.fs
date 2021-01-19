@@ -228,10 +228,12 @@ type AssemblyReference =
 
     member x.SimpleAssemblyNameIs name = 
         (String.Compare(fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase) = 0) ||
-        (let text = x.Text.ToLowerInvariant()
-         not (text.Contains "/") && not (text.Contains "\\") && not (text.Contains ".dll") && not (text.Contains ".exe") &&
-           try let aname = System.Reflection.AssemblyName x.Text in aname.Name = name 
-           with _ -> false) 
+        not (x.Text.Contains "/") &&
+        not (x.Text.Contains "\\") &&
+        not (x.Text.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase)) &&
+        not (x.Text.EndsWith(".exe", StringComparison.InvariantCultureIgnoreCase)) &&
+        (try let aname = System.Reflection.AssemblyName x.Text in aname.Name = name 
+         with _ -> false)
 
     override x.ToString() = sprintf "AssemblyReference(%s)" x.Text
 
