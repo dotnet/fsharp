@@ -97,6 +97,11 @@
         <target state="translated">無點號的 float32 常值</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErasedUnions">
+        <source>erased unions</source>
+        <target state="new">erased unions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">更多支援測量單位的類型</target>
@@ -113,8 +118,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureImplicitConversion">
-        <source>implicit upcasts and other conversions for function returns, bindings and other expressions</source>
-        <target state="new">implicit upcasts and other conversions for function returns, bindings and other expressions</target>
+        <source>additional implicit conversions</source>
+        <target state="new">additional implicit conversions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureImplicitYield">

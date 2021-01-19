@@ -97,6 +97,11 @@
         <target state="translated">punktloses float32-Literal</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErasedUnions">
+        <source>erased unions</source>
+        <target state="new">erased unions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">Maßeinheitenunterstützung durch weitere Typen</target>
@@ -113,8 +118,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureImplicitConversion">
-        <source>implicit upcasts and other conversions for function returns, bindings and other expressions</source>
-        <target state="new">implicit upcasts and other conversions for function returns, bindings and other expressions</target>
+        <source>additional implicit conversions</source>
+        <target state="new">additional implicit conversions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureImplicitYield">
