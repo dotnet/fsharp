@@ -15,6 +15,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
+open Internal.Utilities
 
 [<AutoOpen>]
 module ExprTranslationImpl = 
@@ -1142,7 +1143,7 @@ module FSharpExprConvert =
                 let argCount = List.sum (List.map List.length argtys)  + (if isStatic then 0 else 1)
                 let key = ValLinkageFullKey({ MemberParentMangledName=memberParentName; MemberIsOverride=false; LogicalName=logicalName; TotalArgCount= argCount }, Some linkageType)
 
-                let (PubPath p) = tcref.PublicPath.Value
+                let (PubPath (Block p)) = tcref.PublicPath.Value
                 let enclosingNonLocalRef = mkNonLocalEntityRef tcref.nlr.Ccu p
                 let vref = mkNonLocalValRef enclosingNonLocalRef key
                 makeFSExpr isMember vref 

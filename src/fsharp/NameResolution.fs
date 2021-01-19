@@ -882,7 +882,7 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
     match modref.TypeReprInfo with
     | TProvidedNamespaceExtensionPoint(resolutionEnvironment, resolvers) ->
         match modref.Deref.PublicPath with
-        | Some(PubPath path) ->
+        | Some(PubPath (Block path)) ->
             resolvers
             |> List.choose (fun r-> ExtensionTyping.TryResolveProvidedType(r, m, path, typeName))
             |> List.map (fun st -> AddEntityForProvidedType (amap, modref, resolutionEnvironment, st, m))

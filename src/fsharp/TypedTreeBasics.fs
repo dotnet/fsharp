@@ -12,6 +12,7 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Text
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TypedTree
+open Internal.Utilities
 
 #if DEBUG
 assert (sizeof<ValFlags> = 8)
@@ -276,10 +277,10 @@ let mkNestedValRef (cref: EntityRef) (v: Val) : ValRef =
         mkNonLocalValRefPreResolved v nlr key
 
 /// From Ref_private to Ref_nonlocal when exporting data.
-let rescopePubPathToParent viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p.[0..p.Length-2])
+let rescopePubPathToParent viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, Block.toArray p.[0..p.Length-2])
 
 /// From Ref_private to Ref_nonlocal when exporting data.
-let rescopePubPath viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p)
+let rescopePubPath viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, Block.toArray p)
 
 //---------------------------------------------------------------------------
 // Equality between TAST items.
@@ -313,6 +314,20 @@ let arrayPathEq (y1: string[]) (y2: string[]) =
     (let rec loop i = (i >= len1) || (y1.[i] = y2.[i] && loop (i+1)) 
      loop 0)
 
+let blockPathEq (y1: string block) (y2: string block) =
+    let len1 = y1.Length 
+    let len2 = y2.Length 
+    (len1 = len2) && 
+    (let rec loop i = (i >= len1) || (y1.[i] = y2.[i] && loop (i+1)) 
+     loop 0)
+
+let arrayBlockPathEq (y1: string[]) (y2: string block) =
+    let len1 = y1.Length 
+    let len2 = y2.Length 
+    (len1 = len2) && 
+    (let rec loop i = (i >= len1) || (y1.[i] = y2.[i] && loop (i+1)) 
+     loop 0)
+
 let nonLocalRefEq (NonLocalEntityRef(x1, y1) as smr1) (NonLocalEntityRef(x2, y2) as smr2) = 
     smr1 === smr2 || (ccuEq x1 x2 && arrayPathEq y1 y2)
 
@@ -324,10 +339,10 @@ let nonLocalRefEq (NonLocalEntityRef(x1, y1) as smr1) (NonLocalEntityRef(x2, y2)
 let nonLocalRefDefinitelyNotEq (NonLocalEntityRef(_, y1)) (NonLocalEntityRef(_, y2)) = 
     not (arrayPathEq y1 y2)
 
-let pubPathEq (PubPath path1) (PubPath path2) = arrayPathEq path1 path2
+let pubPathEq (PubPath path1) (PubPath path2) = blockPathEq path1 path2
 
 let fslibRefEq (nlr1: NonLocalEntityRef) (PubPath path2) =
-    arrayPathEq nlr1.Path path2
+    arrayBlockPathEq nlr1.Path path2
 
 // Compare two EntityRef's for equality when compiling fslib (FSharp.Core.dll)
 //
