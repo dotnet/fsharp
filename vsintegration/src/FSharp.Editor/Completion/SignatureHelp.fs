@@ -447,8 +447,6 @@ type internal FSharpSignatureHelpProvider
         ) =
         asyncMaybe {
             let textLines = sourceText.Lines
-            let caretLinePos = textLines.GetLinePosition(caretPosition)
-            let caretLineColumn = caretLinePos.Character
             let perfOptions = document.FSharpOptions.LanguageServicePerformance
 
             let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, perfOptions, userOpName = userOpName)
@@ -459,9 +457,11 @@ type internal FSharpSignatureHelpProvider
                         loop sourceText.[pos - 1] (pos - 1)
                     else
                         pos
-                loop sourceText.[caretPosition - 1] caretPosition
+                loop sourceText.[caretPosition] caretPosition
 
             let adjustedColumnChar = sourceText.[adjustedColumnInSource]
+            let caretLinePos = textLines.GetLinePosition(adjustedColumnInSource)
+            let caretLineColumn = caretLinePos.Character
 
             match triggerTypedChar with
             // Generally ' ' indicates a function application, but it's also used commonly after a comma in a method call.
