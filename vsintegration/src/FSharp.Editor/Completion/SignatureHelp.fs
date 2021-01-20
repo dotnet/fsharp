@@ -459,7 +459,7 @@ type internal FSharpSignatureHelpProvider
                         loop sourceText.[pos - 1] (pos - 1)
                     else
                         pos
-                loop sourceText.[caretPosition] caretPosition
+                loop sourceText.[caretPosition - 1] (caretPosition - 1)
 
             let adjustedColumnChar = sourceText.[adjustedColumnInSource]
 
