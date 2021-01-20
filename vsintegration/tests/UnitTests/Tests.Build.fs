@@ -560,7 +560,7 @@ type Build() =
         tool.DebugType <- "full"
         tool.DefineConstants <- [| MakeTaskItem "FOO=3"
                                    MakeTaskItem "BAR=4" |]
-        tool.DisabledWarnings <- "52 109"
+        tool.DisabledWarnings <- "52,109"
         tool.VersionFile <- "src/version"
         tool.DocumentationFile <- "foo.xml"
         tool.GenerateInterfaceFile <- "foo.fsi"
@@ -667,3 +667,29 @@ type Build() =
         AssertEqual expectedFlags hostObject.Flags 
         let expectedSources = [| "foo.fs"; "C:\\Program Files\\spaces.fs" |]
         AssertEqual expectedSources hostObject.Sources
+
+    [<Test>]
+    member public this.``DisabledWarnings build property``() =
+        let tool = new FSharp.Build.Fsc()
+        tool.DisabledWarnings <- "
+        
+        \n52,,\n,,,109,110;\r73
+        
+        ,
+        
+        ;
+        85;
+        "
+        let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
+
+        let expected =
+            "--optimize+" + Environment.NewLine +
+            "--nowarn:52,109,110,73,85" + Environment.NewLine +
+            "--fullpaths" + Environment.NewLine +
+            "--flaterrors" + Environment.NewLine +
+            "--highentropyva-" + Environment.NewLine  +
+            "--nocopyfsharpcore"
+
+        AssertEqual expected cmd
+
