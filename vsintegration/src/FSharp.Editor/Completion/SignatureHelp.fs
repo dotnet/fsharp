@@ -81,7 +81,7 @@ type internal FSharpSignatureHelpProvider
             let isStaticArgTip =
                 let parenLine, parenCol = Pos.toZ paramLocations.OpenParenLocation 
                 assert (parenLine < textLines.Count)
-                let parenLineText = textLines.[parenLine].ToString()
+                let parenLineText = sourceText.GetSubText(textLines.[parenLine].Span)
                 parenCol < parenLineText.Length && parenLineText.[parenCol] = '<'
 
             let filteredMethods =
@@ -232,6 +232,7 @@ type internal FSharpSignatureHelpProvider
         asyncMaybe {
             let textLine = sourceText.Lines.GetLineFromPosition(adjustedColumnInSource)
             let textLinePos = sourceText.Lines.GetLinePosition(adjustedColumnInSource)
+            let textLineText = textLine.ToString()
             let pos = mkPos (Line.fromZ textLinePos.Line) textLinePos.Character
             let textLinePos = sourceText.Lines.GetLinePosition(adjustedColumnInSource)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
@@ -247,7 +248,7 @@ type internal FSharpSignatureHelpProvider
                 }
 
             let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentId, sourceText, possibleApplicableSymbolEndColumn, filePath, defines, SymbolLookupKind.Greedy, false, false)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineText, lexerSymbol.FullIsland)
 
             let isValid (mfv: FSharpMemberOrFunctionOrValue) =
                 not (PrettyNaming.IsOperatorName mfv.DisplayName) &&
@@ -256,7 +257,7 @@ type internal FSharpSignatureHelpProvider
 
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as mfv when isValid mfv ->
-                let tooltip = checkFileResults.GetStructuredToolTipText(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
+                let tooltip = checkFileResults.GetStructuredToolTipText(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineText, lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
                 match tooltip with
                 | FSharpToolTipText []
                 | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
@@ -446,33 +447,27 @@ type internal FSharpSignatureHelpProvider
         ) =
         asyncMaybe {
             let textLines = sourceText.Lines
+            let perfOptions = document.FSharpOptions.LanguageServicePerformance
             let caretLinePos = textLines.GetLinePosition(caretPosition)
             let caretLineColumn = caretLinePos.Character
-            let perfOptions = document.FSharpOptions.LanguageServicePerformance
 
             let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, perfOptions, userOpName = userOpName)
 
             let adjustedColumnInSource =
-                let rec loop s c =
-                    if String.IsNullOrWhiteSpace(s.ToString()) then
-                        loop (sourceText.GetSubText(c - 1)) (c - 1)
+                let rec loop ch pos =
+                    if Char.IsWhiteSpace(ch) then
+                        loop sourceText.[pos - 1] (pos - 1)
                     else
-                        c
-                let startText =
-                    if caretPosition = sourceText.Length then
-                        sourceText.GetSubText(caretPosition)
-                    else
-                        sourceText.GetSubText(TextSpan(caretPosition, 1))
-                
-                loop startText caretPosition
+                        pos
+                loop sourceText.[caretPosition - 1] (caretPosition - 1)
 
-            let adjustedColumnString = sourceText.GetSubText(TextSpan(adjustedColumnInSource, 1)).ToString()
+            let adjustedColumnChar = sourceText.[adjustedColumnInSource]
 
             match triggerTypedChar with
             // Generally ' ' indicates a function application, but it's also used commonly after a comma in a method call.
-            // This means that the adjusted position relative to the caret could be a ',' or a ')' or '>',
+            // This means that the adjusted position relative to the caret could be a ',' or a '(' or '<',
             // which would mean we're already inside of a method call - not a function argument. So we bail if that's the case.
-            | Some ' ' when adjustedColumnString <> "," && adjustedColumnString <> ")" && adjustedColumnString <> ">" ->
+            | Some ' ' when adjustedColumnChar <> ',' && adjustedColumnChar <> '(' && adjustedColumnChar <> '<' ->
                 return!
                     FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
                         parseResults,
@@ -494,7 +489,7 @@ type internal FSharpSignatureHelpProvider
                         checkFileResults,
                         documentationBuilder,
                         sourceText,
-                        caretPosition,
+                        adjustedColumnInSource,
                         triggerTypedChar)
         }
 

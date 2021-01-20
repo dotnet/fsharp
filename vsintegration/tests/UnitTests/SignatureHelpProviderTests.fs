@@ -258,7 +258,7 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
             
     match sb.ToString() with
     | "" -> ()
-    | errorText -> Assert.Fail errorText
+    | errorText -> Assert.Fail errorText    
 
 [<Test>]
 let ``single argument function application``() =

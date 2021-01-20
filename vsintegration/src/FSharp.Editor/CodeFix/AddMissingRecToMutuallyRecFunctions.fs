@@ -49,13 +49,13 @@ type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
 
             let funcStartPos =
-                let rec loop str pos =
-                    if not (String.IsNullOrWhiteSpace(str)) then
+                let rec loop ch pos =
+                    if not (Char.IsWhiteSpace(ch)) then
                         pos
                     else
-                        loop (sourceText.GetSubText(TextSpan(pos + 1, 1)).ToString()) (pos + 1)
+                        loop sourceText.[pos + 1] (pos + 1)
 
-                loop (sourceText.GetSubText(TextSpan(context.Span.End + 1, 1)).ToString()) (context.Span.End  + 1)
+                loop sourceText.[context.Span.End + 1] (context.Span.End  + 1)
 
             let! funcLexerSymbol = Tokenizer.getSymbolAtPosition (context.Document.Id, sourceText, funcStartPos, context.Document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let! funcNameSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, funcLexerSymbol.Range)
