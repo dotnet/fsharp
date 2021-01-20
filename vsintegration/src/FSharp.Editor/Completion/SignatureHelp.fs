@@ -81,7 +81,7 @@ type internal FSharpSignatureHelpProvider
             let isStaticArgTip =
                 let parenLine, parenCol = Pos.toZ paramLocations.OpenParenLocation 
                 assert (parenLine < textLines.Count)
-                let parenLineText = textLines.[parenLine].Text
+                let parenLineText = sourceText.GetSubText(textLines.[parenLine].Span)
                 parenCol < parenLineText.Length && parenLineText.[parenCol] = '<'
 
             let filteredMethods =
@@ -448,6 +448,8 @@ type internal FSharpSignatureHelpProvider
         asyncMaybe {
             let textLines = sourceText.Lines
             let perfOptions = document.FSharpOptions.LanguageServicePerformance
+            let caretLinePos = textLines.GetLinePosition(caretPosition)
+            let caretLineColumn = caretLinePos.Character
 
             let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, perfOptions, userOpName = userOpName)
 
@@ -460,12 +462,10 @@ type internal FSharpSignatureHelpProvider
                 loop sourceText.[caretPosition] caretPosition
 
             let adjustedColumnChar = sourceText.[adjustedColumnInSource]
-            let caretLinePos = textLines.GetLinePosition(adjustedColumnInSource)
-            let caretLineColumn = caretLinePos.Character
 
             match triggerTypedChar with
             // Generally ' ' indicates a function application, but it's also used commonly after a comma in a method call.
-            // This means that the adjusted position relative to the caret could be a ',' or a ')' or '>',
+            // This means that the adjusted position relative to the caret could be a ',' or a '(' or '<',
             // which would mean we're already inside of a method call - not a function argument. So we bail if that's the case.
             | Some ' ' when adjustedColumnChar <> ',' && adjustedColumnChar <> '(' && adjustedColumnChar <> '<' ->
                 return!
@@ -489,7 +489,7 @@ type internal FSharpSignatureHelpProvider
                         checkFileResults,
                         documentationBuilder,
                         sourceText,
-                        caretPosition,
+                        adjustedColumnInSource,
                         triggerTypedChar)
         }
 
