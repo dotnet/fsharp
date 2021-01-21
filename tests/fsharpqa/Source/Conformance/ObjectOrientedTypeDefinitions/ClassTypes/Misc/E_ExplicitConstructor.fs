@@ -7,9 +7,3 @@
 type A =
   inherit System.Exception 
   new (x : string) as y = { inherit System.Exception(x) }; 1
-
-type B() =
-    static member M([<ReflectedDefinition(includeValue=true)>] x: Quotations.Expr<int>) = printfn "x = %A" x
-
-B.M(1+1)
-
