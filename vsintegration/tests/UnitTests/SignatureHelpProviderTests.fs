@@ -132,8 +132,6 @@ let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (e
                     caretPosition,
                     triggerChar)
                 |> Async.RunSynchronously
-                       
-            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             match triggered with 
             | None -> None
             | Some data -> Some (data.ApplicableSpan.ToString(),data.ArgumentIndex,data.ArgumentCount,data.ArgumentName)
@@ -176,9 +174,6 @@ let assertSignatureHelpForFunctionApplication (fileContents: string) (marker: st
             adjustedColumnInSource,
             filePath)
         |> Async.RunSynchronously
-
-    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-
     match sigHelp with
     | None -> Assert.Fail("Expected signature help")
     | Some sigHelp ->
