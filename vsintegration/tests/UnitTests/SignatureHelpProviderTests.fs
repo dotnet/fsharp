@@ -1,37 +1,14 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-//
-// To run the tests in this file:
-//
-// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
-//
-// Technique 2:
-//
-//   Enable some tests in the #if EXE section at the end of the file, 
-//   then compile this file as an EXE that has InternalsVisibleTo access into the
-//   appropriate DLLs.  This can be the quickest way to get turnaround on updating the tests
-//   and capturing large amounts of structured output.
-(*
-    cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Service.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\SignatureHelpProviderTests.fs 
-    .\VisualFSharp.UnitTests.exe 
-*)
-// Technique 3: 
-// 
-//    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
 [<NUnit.Framework.Category "Roslyn Services">]
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.SignatureHelpProvider
 
 open System
 open System.IO
-open System.Text
 
 open NUnit.Framework
 
-open Microsoft.CodeAnalysis.Text
+open Microsoft.VisualStudio.FSharp.Editor
 
 open VisualFSharp.UnitTests.Roslyn
-
-open Microsoft.VisualStudio.FSharp.Editor
 
 open UnitTests.TestLib.LanguageService
 
@@ -179,20 +156,13 @@ let assertSignatureHelpForFunctionApplication (fileContents: string) (marker: st
             Assert.Fail("Could not parse and check document.")
         x.Value
 
-    
     let adjustedColumnInSource =
-        let rec loop s c =
-            if String.IsNullOrWhiteSpace(s.ToString()) then
-                loop (sourceText.GetSubText(c - 1)) (c - 1)
+        let rec loop ch pos =
+            if Char.IsWhiteSpace(ch) then
+                loop sourceText.[pos - 1] (pos - 1)
             else
-                c
-        let startText =
-            if caretPosition = sourceText.Length then
-                sourceText.GetSubText(caretPosition)
-            else
-                sourceText.GetSubText(TextSpan(caretPosition, 1))
-        
-        loop startText caretPosition
+                pos
+        loop sourceText.[caretPosition - 1] (caretPosition - 1)
     
     let sigHelp =
         FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
@@ -214,7 +184,6 @@ let assertSignatureHelpForFunctionApplication (fileContents: string) (marker: st
     | Some sigHelp ->
         Assert.AreEqual(expectedArgumentCount, sigHelp.ArgumentCount)
         Assert.AreEqual(expectedArgumentIndex, sigHelp.ArgumentIndex)
-
 
 [<TestFixture>]
 module ``Gives signature help in method calls`` =
@@ -475,18 +444,12 @@ M.f
             x.Value
     
         let adjustedColumnInSource =
-            let rec loop s c =
-                if String.IsNullOrWhiteSpace(s.ToString()) then
-                    loop (sourceText.GetSubText(c - 1)) (c - 1)
+            let rec loop ch pos =
+                if Char.IsWhiteSpace(ch) then
+                    loop sourceText.[pos - 1] (pos - 1)
                 else
-                    c
-            let startText =
-                if caretPosition = sourceText.Length then
-                    sourceText.GetSubText(caretPosition)
-                else
-                    sourceText.GetSubText(TextSpan(caretPosition, 1))
-    
-            loop startText caretPosition
+                    pos
+            loop sourceText.[caretPosition - 1] (caretPosition - 1)
 
         let sigHelp =
             FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
