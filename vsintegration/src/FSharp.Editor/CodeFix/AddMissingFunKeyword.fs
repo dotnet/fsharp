@@ -37,13 +37,13 @@ type internal FSharpAddMissingFunKeywordCodeFixProvider
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
 
             let adjustedPosition =
-                let rec loop str pos =
-                    if not (String.IsNullOrWhiteSpace(str)) then
+                let rec loop ch pos =
+                    if not (Char.IsWhiteSpace(ch)) then
                         pos
                     else
-                        loop (sourceText.GetSubText(TextSpan(pos - 1, 1)).ToString()) (pos - 1)
+                        loop sourceText.[pos] (pos - 1)
 
-                loop (sourceText.GetSubText(TextSpan(context.Span.Start - 1, 1)).ToString()) context.Span.Start
+                loop sourceText.[context.Span.Start - 1] context.Span.Start
 
             let! intendedArgLexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, adjustedPosition, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let! intendedArgSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, intendedArgLexerSymbol.Range)

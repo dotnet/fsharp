@@ -53,12 +53,12 @@ type internal FSharpUseMutationWhenValueIsMutableFixProvider
                 let title = SR.UseMutationWhenValueIsMutable()
                 let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
                 let mutable pos = symbolSpan.End
-                let mutable ch = sourceText.GetSubText(pos).ToString()
+                let mutable ch = sourceText.[pos]
 
                 // We're looking for the possibly erroneous '='
-                while pos <= context.Span.Length && ch <> "=" do
+                while pos <= context.Span.Length && ch <> '=' do
                     pos <- pos + 1
-                    ch <- sourceText.GetSubText(pos).ToString()
+                    ch <- sourceText.[pos]
 
                 let codeFix =
                     CodeFixHelpers.createTextChangeCodeFix(
