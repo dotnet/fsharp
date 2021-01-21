@@ -180,6 +180,10 @@ let assertSignatureHelpForFunctionApplication (fileContents: string) (marker: st
         Assert.AreEqual(expectedArgumentCount, sigHelp.ArgumentCount)
         Assert.AreEqual(expectedArgumentIndex, sigHelp.ArgumentIndex)
 
+[<TearDown>]
+let ClearCaches() =
+    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+
 [<TestFixture>]
 module ``Gives signature help in method calls`` =
 
