@@ -99,9 +99,6 @@
     <EmbeddedText Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
     </EmbeddedText>
-    <EmbeddedText Include="..\Microsoft.DotNet.DependencyManager\DependencyManager.txt">
-      <Link>DependencyManager.txt</Link>
-    </EmbeddedText>
     <EmbeddedText Include="..\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
     </EmbeddedText>
@@ -717,22 +714,22 @@
     <Compile Include="..\FxResolver.fs">
       <Link>Driver\FxResolver.fs</Link>
     </Compile>
-    <Compile Include="..\Microsoft.DotNet.DependencyManager/AssemblyResolveHandler.fsi">
+    <Compile Include="..\DependencyManager/AssemblyResolveHandler.fsi">
       <Link>Driver\AssemblyResolveHandler.fsi</Link>
     </Compile>
-    <Compile Include="..\Microsoft.DotNet.DependencyManager/AssemblyResolveHandler.fs">
+    <Compile Include="..\DependencyManager/AssemblyResolveHandler.fs">
       <Link>Driver\AssemblyResolveHandler.fs</Link>
     </Compile>
-    <Compile Include="..\Microsoft.DotNet.DependencyManager/NativeDllResolveHandler.fsi">
+    <Compile Include="..\DependencyManager/NativeDllResolveHandler.fsi">
       <Link>Driver\NativeDllResolveHandler.fsi</Link>
     </Compile>
-    <Compile Include="..\Microsoft.DotNet.DependencyManager/NativeDllResolveHandler.fs">
+    <Compile Include="..\DependencyManager/NativeDllResolveHandler.fs">
       <Link>Driver\NativeDllResolveHandler.fs</Link>
     </Compile>
-    <Compile Include="..\Microsoft.DotNet.DependencyManager/DependencyProvider.fsi">
+    <Compile Include="..\DependencyManager/DependencyProvider.fsi">
       <Link>Driver\DependencyProvider.fsi</Link>
     </Compile>
-    <Compile Include="..\Microsoft.DotNet.DependencyManager/DependencyProvider.fs">
+    <Compile Include="..\DependencyManager/DependencyProvider.fs">
       <Link>Driver\DependencyProvider.fs</Link>
     </Compile>
     <Compile Include="..\CompilerConfig.fsi">

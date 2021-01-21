@@ -10,12 +10,12 @@ open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
-open Microsoft.DotNet.DependencyManager
 
 val IsScript: string -> bool
 

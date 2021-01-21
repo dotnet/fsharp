@@ -3,11 +3,11 @@
 namespace FSharp.Test.Utilities
 
 open FSharp.Compiler.Interactive.Shell
-open FSharp.Compiler.Scripting
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Assert
 open FSharp.Test.Utilities.Utilities
+open FSharp.Test.ScriptHelpers
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open NUnit.Framework

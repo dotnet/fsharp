@@ -36,6 +36,7 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
@@ -60,8 +61,6 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.XmlDoc
 open Internal.Utilities
-
-open Microsoft.DotNet.DependencyManager
 
 // Prevents warnings of experimental APIs - we are using FSharpLexer
 #nowarn "57"

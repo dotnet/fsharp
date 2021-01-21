@@ -22,6 +22,7 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CreateILModule
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
@@ -32,8 +33,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TypedTreeOps
-
-open Microsoft.DotNet.DependencyManager
 
 open Internal.Utilities
 open Internal.Utilities.Collections

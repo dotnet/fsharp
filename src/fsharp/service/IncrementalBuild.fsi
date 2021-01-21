@@ -10,6 +10,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
@@ -19,8 +20,6 @@ open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
-
-open Microsoft.DotNet.DependencyManager
 
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 
