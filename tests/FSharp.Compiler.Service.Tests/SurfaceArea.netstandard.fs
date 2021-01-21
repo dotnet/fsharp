@@ -9949,76 +9949,76 @@ FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc Merge(XmlDoc, XmlDoc)
 FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc get_Empty()
 FSharp.Compiler.XmlDoc: FSharp.Compiler.XmlDoc+PreXmlDoc
 FSharp.Compiler.XmlDoc: FSharp.Compiler.XmlDoc+XmlDoc
-Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe
-Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] EndInvoke(System.IAsyncResult)
-Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] Invoke()
-Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe: System.IAsyncResult BeginInvoke(System.AsyncCallback, System.Object)
-Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe: Void .ctor(System.Object, IntPtr)
-Microsoft.DotNet.DependencyManager.AssemblyResolveHandler
-Microsoft.DotNet.DependencyManager.AssemblyResolveHandler: Void .ctor(Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe)
-Microsoft.DotNet.DependencyManager.DependencyProvider
-Microsoft.DotNet.DependencyManager.DependencyProvider: Microsoft.DotNet.DependencyManager.IDependencyManagerProvider TryFindDependencyManagerByKey(System.Collections.Generic.IEnumerable`1[System.String], System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport, System.String)
-Microsoft.DotNet.DependencyManager.DependencyProvider: Microsoft.DotNet.DependencyManager.IResolveDependenciesResult Resolve(Microsoft.DotNet.DependencyManager.IDependencyManagerProvider, System.String, System.Collections.Generic.IEnumerable`1[System.Tuple`2[System.String,System.String]], Microsoft.DotNet.DependencyManager.ResolvingErrorReport, System.String, System.String, System.String, System.String, System.String, Int32)
-Microsoft.DotNet.DependencyManager.DependencyProvider: System.String[] GetRegisteredDependencyManagerHelpText(System.Collections.Generic.IEnumerable`1[System.String], System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport)
-Microsoft.DotNet.DependencyManager.DependencyProvider: System.Tuple`2[System.Int32,System.String] CreatePackageManagerUnknownError(System.Collections.Generic.IEnumerable`1[System.String], System.String, System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport)
-Microsoft.DotNet.DependencyManager.DependencyProvider: System.Tuple`2[System.String,Microsoft.DotNet.DependencyManager.IDependencyManagerProvider] TryFindDependencyManagerInPath(System.Collections.Generic.IEnumerable`1[System.String], System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport, System.String)
-Microsoft.DotNet.DependencyManager.DependencyProvider: Void .ctor()
-Microsoft.DotNet.DependencyManager.DependencyProvider: Void .ctor(Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe, Microsoft.DotNet.DependencyManager.NativeResolutionProbe)
-Microsoft.DotNet.DependencyManager.DependencyProvider: Void .ctor(Microsoft.DotNet.DependencyManager.NativeResolutionProbe)
-Microsoft.DotNet.DependencyManager.ErrorReportType
-Microsoft.DotNet.DependencyManager.ErrorReportType+Tags: Int32 Error
-Microsoft.DotNet.DependencyManager.ErrorReportType+Tags: Int32 Warning
-Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean Equals(Microsoft.DotNet.DependencyManager.ErrorReportType)
-Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean Equals(System.Object)
-Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean IsError
-Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean IsWarning
-Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean get_IsError()
-Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean get_IsWarning()
-Microsoft.DotNet.DependencyManager.ErrorReportType: Int32 CompareTo(Microsoft.DotNet.DependencyManager.ErrorReportType)
-Microsoft.DotNet.DependencyManager.ErrorReportType: Int32 CompareTo(System.Object)
-Microsoft.DotNet.DependencyManager.ErrorReportType: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.DotNet.DependencyManager.ErrorReportType: Int32 GetHashCode()
-Microsoft.DotNet.DependencyManager.ErrorReportType: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.DotNet.DependencyManager.ErrorReportType: Int32 Tag
-Microsoft.DotNet.DependencyManager.ErrorReportType: Int32 get_Tag()
-Microsoft.DotNet.DependencyManager.ErrorReportType: Microsoft.DotNet.DependencyManager.ErrorReportType Error
-Microsoft.DotNet.DependencyManager.ErrorReportType: Microsoft.DotNet.DependencyManager.ErrorReportType Warning
-Microsoft.DotNet.DependencyManager.ErrorReportType: Microsoft.DotNet.DependencyManager.ErrorReportType get_Error()
-Microsoft.DotNet.DependencyManager.ErrorReportType: Microsoft.DotNet.DependencyManager.ErrorReportType get_Warning()
-Microsoft.DotNet.DependencyManager.ErrorReportType: Microsoft.DotNet.DependencyManager.ErrorReportType+Tags
-Microsoft.DotNet.DependencyManager.ErrorReportType: System.String ToString()
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: Microsoft.DotNet.DependencyManager.IResolveDependenciesResult ResolveDependencies(System.String, System.String, System.String, System.String, System.Collections.Generic.IEnumerable`1[System.Tuple`2[System.String,System.String]], System.String, System.String, Int32)
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: System.String Key
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: System.String Name
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: System.String get_Key()
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: System.String get_Name()
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: System.String[] HelpMessages
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: System.String[] get_HelpMessages()
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: Boolean Success
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: Boolean get_Success()
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] Resolutions
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] Roots
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] SourceFiles
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] get_Resolutions()
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] get_Roots()
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] get_SourceFiles()
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.String[] StdError
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.String[] StdOut
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.String[] get_StdError()
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.String[] get_StdOut()
-Microsoft.DotNet.DependencyManager.NativeDllResolveHandler
-Microsoft.DotNet.DependencyManager.NativeDllResolveHandler: Void .ctor(Microsoft.DotNet.DependencyManager.NativeResolutionProbe)
-Microsoft.DotNet.DependencyManager.NativeResolutionProbe
-Microsoft.DotNet.DependencyManager.NativeResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] EndInvoke(System.IAsyncResult)
-Microsoft.DotNet.DependencyManager.NativeResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] Invoke()
-Microsoft.DotNet.DependencyManager.NativeResolutionProbe: System.IAsyncResult BeginInvoke(System.AsyncCallback, System.Object)
-Microsoft.DotNet.DependencyManager.NativeResolutionProbe: Void .ctor(System.Object, IntPtr)
-Microsoft.DotNet.DependencyManager.ResolvingErrorReport
-Microsoft.DotNet.DependencyManager.ResolvingErrorReport: System.IAsyncResult BeginInvoke(Microsoft.DotNet.DependencyManager.ErrorReportType, Int32, System.String, System.AsyncCallback, System.Object)
-Microsoft.DotNet.DependencyManager.ResolvingErrorReport: Void .ctor(System.Object, IntPtr)
-Microsoft.DotNet.DependencyManager.ResolvingErrorReport: Void EndInvoke(System.IAsyncResult)
-Microsoft.DotNet.DependencyManager.ResolvingErrorReport: Void Invoke(Microsoft.DotNet.DependencyManager.ErrorReportType, Int32, System.String)"
+FSharp.Compiler.DependencyManager.AssemblyResolutionProbe
+FSharp.Compiler.DependencyManager.AssemblyResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] EndInvoke(System.IAsyncResult)
+FSharp.Compiler.DependencyManager.AssemblyResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] Invoke()
+FSharp.Compiler.DependencyManager.AssemblyResolutionProbe: System.IAsyncResult BeginInvoke(System.AsyncCallback, System.Object)
+FSharp.Compiler.DependencyManager.AssemblyResolutionProbe: Void .ctor(System.Object, IntPtr)
+FSharp.Compiler.DependencyManager.AssemblyResolveHandler
+FSharp.Compiler.DependencyManager.AssemblyResolveHandler: Void .ctor(FSharp.Compiler.DependencyManager.AssemblyResolutionProbe)
+FSharp.Compiler.DependencyManager.DependencyProvider
+FSharp.Compiler.DependencyManager.DependencyProvider: FSharp.Compiler.DependencyManager.IDependencyManagerProvider TryFindDependencyManagerByKey(System.Collections.Generic.IEnumerable`1[System.String], System.String, FSharp.Compiler.DependencyManager.ResolvingErrorReport, System.String)
+FSharp.Compiler.DependencyManager.DependencyProvider: FSharp.Compiler.DependencyManager.IResolveDependenciesResult Resolve(FSharp.Compiler.DependencyManager.IDependencyManagerProvider, System.String, System.Collections.Generic.IEnumerable`1[System.Tuple`2[System.String,System.String]], FSharp.Compiler.DependencyManager.ResolvingErrorReport, System.String, System.String, System.String, System.String, System.String, Int32)
+FSharp.Compiler.DependencyManager.DependencyProvider: System.String[] GetRegisteredDependencyManagerHelpText(System.Collections.Generic.IEnumerable`1[System.String], System.String, FSharp.Compiler.DependencyManager.ResolvingErrorReport)
+FSharp.Compiler.DependencyManager.DependencyProvider: System.Tuple`2[System.Int32,System.String] CreatePackageManagerUnknownError(System.Collections.Generic.IEnumerable`1[System.String], System.String, System.String, FSharp.Compiler.DependencyManager.ResolvingErrorReport)
+FSharp.Compiler.DependencyManager.DependencyProvider: System.Tuple`2[System.String,FSharp.Compiler.DependencyManager.IDependencyManagerProvider] TryFindDependencyManagerInPath(System.Collections.Generic.IEnumerable`1[System.String], System.String, FSharp.Compiler.DependencyManager.ResolvingErrorReport, System.String)
+FSharp.Compiler.DependencyManager.DependencyProvider: Void .ctor()
+FSharp.Compiler.DependencyManager.DependencyProvider: Void .ctor(FSharp.Compiler.DependencyManager.AssemblyResolutionProbe, FSharp.Compiler.DependencyManager.NativeResolutionProbe)
+FSharp.Compiler.DependencyManager.DependencyProvider: Void .ctor(FSharp.Compiler.DependencyManager.NativeResolutionProbe)
+FSharp.Compiler.DependencyManager.ErrorReportType
+FSharp.Compiler.DependencyManager.ErrorReportType+Tags: Int32 Error
+FSharp.Compiler.DependencyManager.ErrorReportType+Tags: Int32 Warning
+FSharp.Compiler.DependencyManager.ErrorReportType: Boolean Equals(FSharp.Compiler.DependencyManager.ErrorReportType)
+FSharp.Compiler.DependencyManager.ErrorReportType: Boolean Equals(System.Object)
+FSharp.Compiler.DependencyManager.ErrorReportType: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DependencyManager.ErrorReportType: Boolean IsError
+FSharp.Compiler.DependencyManager.ErrorReportType: Boolean IsWarning
+FSharp.Compiler.DependencyManager.ErrorReportType: Boolean get_IsError()
+FSharp.Compiler.DependencyManager.ErrorReportType: Boolean get_IsWarning()
+FSharp.Compiler.DependencyManager.ErrorReportType: Int32 CompareTo(FSharp.Compiler.DependencyManager.ErrorReportType)
+FSharp.Compiler.DependencyManager.ErrorReportType: Int32 CompareTo(System.Object)
+FSharp.Compiler.DependencyManager.ErrorReportType: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.DependencyManager.ErrorReportType: Int32 GetHashCode()
+FSharp.Compiler.DependencyManager.ErrorReportType: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DependencyManager.ErrorReportType: Int32 Tag
+FSharp.Compiler.DependencyManager.ErrorReportType: Int32 get_Tag()
+FSharp.Compiler.DependencyManager.ErrorReportType: FSharp.Compiler.DependencyManager.ErrorReportType Error
+FSharp.Compiler.DependencyManager.ErrorReportType: FSharp.Compiler.DependencyManager.ErrorReportType Warning
+FSharp.Compiler.DependencyManager.ErrorReportType: FSharp.Compiler.DependencyManager.ErrorReportType get_Error()
+FSharp.Compiler.DependencyManager.ErrorReportType: FSharp.Compiler.DependencyManager.ErrorReportType get_Warning()
+FSharp.Compiler.DependencyManager.ErrorReportType: FSharp.Compiler.DependencyManager.ErrorReportType+Tags
+FSharp.Compiler.DependencyManager.ErrorReportType: System.String ToString()
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider: FSharp.Compiler.DependencyManager.IResolveDependenciesResult ResolveDependencies(System.String, System.String, System.String, System.String, System.Collections.Generic.IEnumerable`1[System.Tuple`2[System.String,System.String]], System.String, System.String, Int32)
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String Key
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String Name
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String get_Key()
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String get_Name()
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String[] HelpMessages
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String[] get_HelpMessages()
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: Boolean Success
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: Boolean get_Success()
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] Resolutions
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] Roots
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] SourceFiles
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] get_Resolutions()
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] get_Roots()
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] get_SourceFiles()
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.String[] StdError
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.String[] StdOut
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.String[] get_StdError()
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.String[] get_StdOut()
+FSharp.Compiler.DependencyManager.NativeDllResolveHandler
+FSharp.Compiler.DependencyManager.NativeDllResolveHandler: Void .ctor(FSharp.Compiler.DependencyManager.NativeResolutionProbe)
+FSharp.Compiler.DependencyManager.NativeResolutionProbe
+FSharp.Compiler.DependencyManager.NativeResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] EndInvoke(System.IAsyncResult)
+FSharp.Compiler.DependencyManager.NativeResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] Invoke()
+FSharp.Compiler.DependencyManager.NativeResolutionProbe: System.IAsyncResult BeginInvoke(System.AsyncCallback, System.Object)
+FSharp.Compiler.DependencyManager.NativeResolutionProbe: Void .ctor(System.Object, IntPtr)
+FSharp.Compiler.DependencyManager.ResolvingErrorReport
+FSharp.Compiler.DependencyManager.ResolvingErrorReport: System.IAsyncResult BeginInvoke(FSharp.Compiler.DependencyManager.ErrorReportType, Int32, System.String, System.AsyncCallback, System.Object)
+FSharp.Compiler.DependencyManager.ResolvingErrorReport: Void .ctor(System.Object, IntPtr)
+FSharp.Compiler.DependencyManager.ResolvingErrorReport: Void EndInvoke(System.IAsyncResult)
+FSharp.Compiler.DependencyManager.ResolvingErrorReport: Void Invoke(FSharp.Compiler.DependencyManager.ErrorReportType, Int32, System.String)"
         SurfaceArea.verify expected "netstandard" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))
