@@ -79,9 +79,9 @@
       <CodeBase>$PackageFolder$\FSharp.ProjectSystem.FSharp.dll</CodeBase>
     </AssemblyAttribute>
     <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
-      <AssemblyName>FSharp.Compiler.Private</AssemblyName>
-      <Version>$(FSProductVersion)</Version>
-      <CodeBase>$PackageFolder$\FSharp.Compiler.Private.dll</CodeBase>
+      <AssemblyName>FSharp.Compiler.Service</AssemblyName>
+      <Version>$(FSharpCompilerServiceVersion)</Version>
+      <CodeBase>$PackageFolder$\FSharp.Compiler.Service.dll</CodeBase>
     </AssemblyAttribute>
     <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
       <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
@@ -104,7 +104,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
     <ProjectReference Include="..\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj" />
     <ProjectReference Include="..\FSharp.ProjectSystem.PropertyPages\FSharp.PropertiesPages.vbproj" />

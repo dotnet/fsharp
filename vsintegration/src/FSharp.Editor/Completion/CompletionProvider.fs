@@ -114,13 +114,13 @@ type internal FSharpCompletionProvider
             let caretLine = textLines.GetLineFromPosition(caretPosition)
             let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
             let caretLineColumn = caretLinePos.Character
-            let partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
+            let line = caretLine.ToString()
+            let partialName = QuickParse.GetPartialLongNameEx(line, caretLineColumn - 1) 
             let getAllSymbols() =
                 getAllSymbols checkFileResults 
                 |> List.filter (fun assemblySymbol ->
                      assemblySymbol.FullName.Contains "." && not (PrettyNaming.IsOperatorName assemblySymbol.Symbol.DisplayName))
-            let declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLine.ToString(), 
-                                                                       partialName, getAllSymbols)
+            let declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, line, partialName, getAllSymbols)
             let results = List<Completion.CompletionItem>()
             
             declarationItems <-
@@ -192,12 +192,10 @@ type internal FSharpCompletionProvider
 
             
             if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
-                let lineStr = textLines.[caretLinePos.Line].ToString()
-
                 let completionContext =
                     parseResults.ParseTree 
                     |> Option.bind (fun parseTree ->
-                         UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, parseTree, lineStr))
+                         UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, parseTree, line))
 
                 match completionContext with
                 | None -> results.AddRange(keywordCompletionItems)

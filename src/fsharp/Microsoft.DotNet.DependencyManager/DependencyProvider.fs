@@ -11,10 +11,10 @@ open Internal.Utilities.FSharpEnvironment
 open Microsoft.FSharp.Reflection
 open System.Collections.Concurrent
 
-module Option = 
+module Option =
 
     /// Convert string into Option string where null and String.Empty result in None
-    let ofString s = 
+    let ofString s =
         if String.IsNullOrEmpty(s) then None
         else Some(s)
 
@@ -293,7 +293,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
         | null -> { new IDisposable with member _.Dispose() = () }
         | _ -> new AssemblyResolveHandler(assemblyProbingPaths) :> IDisposable
 
-    // Resolution Path = Location of FSharp.Compiler.Private.dll
+    // Resolution Path = Location of FSharp.Compiler.Service.dll
     let assemblySearchPaths = lazy (
         [
             let assemblyLocation = typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly.Location

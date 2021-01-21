@@ -179,14 +179,15 @@ type internal FSharpAsyncQuickInfoSource
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, languageServicePerformanceOptions, userOpName=FSharpQuickInfo.userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
+            let textLineString = textLine.ToString()
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! symbol = Tokenizer.getSymbolAtPosition (documentId, sourceText, position, filePath, defines, SymbolLookupKind.Precise, true, true)
-            let res = checkFileResults.GetStructuredToolTipText (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, FSharpTokenTag.IDENT)
+            let res = checkFileResults.GetStructuredToolTipText (textLineNumber, symbol.Ident.idRange.EndColumn, textLineString, symbol.FullIsland, FSharpTokenTag.IDENT)
             match res with
             | FSharpToolTipText []
             | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
             | _ ->
-                let! symbolUse = checkFileResults.GetSymbolUseAtLocation (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
+                let! symbolUse = checkFileResults.GetSymbolUseAtLocation (textLineNumber, symbol.Ident.idRange.EndColumn, textLineString, symbol.FullIsland)
                 let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, symbol.Range)
                 return { StructuredText = res
                          Span = symbolSpan
