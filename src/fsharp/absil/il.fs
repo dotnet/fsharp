@@ -1547,27 +1547,17 @@ type ILMethodVirtualInfo =
 
 [<RequireQualifiedAccess>]
 type MethodBody =
-    | IL of ILMethodBody
-    | PInvoke of PInvokeMethod (* platform invoke to native *)
+    | IL of Lazy<ILMethodBody>
+    | PInvoke of Lazy<PInvokeMethod> (* platform invoke to native *)
     | Abstract
     | Native
     | NotAvailable
-
-type ILLazyMethodBody =
-    | ILLazyMethodBody of Lazy<MethodBody >
-
-    member x.Contents = let (ILLazyMethodBody mb) = x in mb.Force()
-    static member NotAvailable = ILLazyMethodBody (notlazy MethodBody.NotAvailable)
 
 [<RequireQualifiedAccess>]
 type MethodCodeKind =
     | IL
     | Native
     | Runtime
-
-let mkMethBodyAux mb = ILLazyMethodBody (notlazy mb)
-
-let mkMethBodyLazyAux mb = ILLazyMethodBody mb
 
 let typesOfILParams (ps: ILParameters) : ILTypes = ps |> List.map (fun p -> p.Type)
 
@@ -1624,12 +1614,14 @@ let NoMetadataIdx = -1
 
 [<NoComparison; NoEquality>]
 type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: MethodImplAttributes, callingConv: ILCallingConv,
-                  parameters: ILParameters, ret: ILReturn, body: ILLazyMethodBody, isEntryPoint: bool, genericParams: ILGenericParameterDefs,
+                  parameters: ILParameters, ret: ILReturn, body: Lazy<MethodBody>, isEntryPoint: bool, genericParams: ILGenericParameterDefs,
                   securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =
 
     new (name, attributes, implAttributes, callingConv, parameters, ret, body, isEntryPoint, genericParams, securityDecls, customAttrs) =
        ILMethodDef (name, attributes, implAttributes, callingConv, parameters, ret, body, isEntryPoint, genericParams,
                     storeILSecurityDecls securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
+
+    member private _.LazyBody = body
 
     // The captured data - remember the object will be as large as the data captured by these members
     member _.Name = name
@@ -1644,7 +1636,7 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
 
     member _.Return = ret
 
-    member _.Body = body
+    member _.Body = body.Value
 
     member _.SecurityDeclsStored = securityDeclsStored
 
@@ -1658,7 +1650,7 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
 
     member x.With (?name: string, ?attributes: MethodAttributes, ?implAttributes: MethodImplAttributes,
                    ?callingConv: ILCallingConv, ?parameters: ILParameters, ?ret: ILReturn,
-                   ?body: ILLazyMethodBody, ?securityDecls: ILSecurityDecls, ?isEntryPoint: bool,
+                   ?body: Lazy<MethodBody>, ?securityDecls: ILSecurityDecls, ?isEntryPoint: bool,
                    ?genericParams: ILGenericParameterDefs, ?customAttrs: ILAttributes) =
 
         ILMethodDef (name = defaultArg name x.Name,
@@ -1667,7 +1659,7 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
                      callingConv = defaultArg callingConv x.CallingConv,
                      parameters = defaultArg parameters x.Parameters,
                      ret = defaultArg ret x.Return,
-                     body = defaultArg body x.Body,
+                     body = defaultArg body x.LazyBody,
                      securityDecls = (match securityDecls with None -> x.SecurityDecls | Some attrs -> attrs),
                      isEntryPoint = defaultArg isEntryPoint x.IsEntryPoint,
                      genericParams = defaultArg genericParams x.GenericParams,
@@ -1680,15 +1672,15 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
     member x.ParameterTypes = typesOfILParams x.Parameters
 
     member md.Code =
-          match md.Body.Contents with
-          | MethodBody.IL il-> Some il.Code
+          match md.Body with
+          | MethodBody.IL il-> Some il.Value.Code
           | _ -> None
 
-    member x.IsIL = match x.Body.Contents with | MethodBody.IL _ -> true | _ -> false
+    member x.IsIL = match x.Body with | MethodBody.IL _ -> true | _ -> false
 
-    member x.Locals = match x.Body.Contents with | MethodBody.IL il -> il.Locals | _ -> []
+    member x.Locals = match x.Body with | MethodBody.IL il -> il.Value.Locals | _ -> []
 
-    member x.MethodBody = match x.Body.Contents with MethodBody.IL il -> il | _ -> failwith "not IL"
+    member x.MethodBody = match x.Body with MethodBody.IL il -> il.Value | _ -> failwith "not IL"
 
     member x.SourceMarker = x.MethodBody.SourceMarker
 
@@ -2938,7 +2930,9 @@ let mkILMethodBody (initlocals, locals, maxstack, code, tag) : ILMethodBody =
       Code= code
       SourceMarker=tag }
 
-let mkMethodBody (zeroinit, locals, maxstack, code, tag) = MethodBody.IL (mkILMethodBody (zeroinit, locals, maxstack, code, tag))
+let mkMethodBody (zeroinit, locals, maxstack, code, tag) = 
+    let ilCode = mkILMethodBody (zeroinit, locals, maxstack, code, tag)
+    MethodBody.IL (lazy ilCode)
 
 // --------------------------------------------------------------------
 // Make a constructor
@@ -2946,11 +2940,11 @@ let mkMethodBody (zeroinit, locals, maxstack, code, tag) = MethodBody.IL (mkILMe
 
 let mkILVoidReturn = mkILReturn ILType.Void
 
-let methBodyNotAvailable = mkMethBodyAux MethodBody.NotAvailable
+let methBodyNotAvailable = notlazy MethodBody.NotAvailable
 
-let methBodyAbstract = mkMethBodyAux MethodBody.Abstract
+let methBodyAbstract = notlazy MethodBody.Abstract
 
-let methBodyNative = mkMethBodyAux MethodBody.Native
+let methBodyNative = notlazy MethodBody.Native
 
 let mkILCtor (access, args, impl) =
     ILMethodDef(name=".ctor",
@@ -2959,7 +2953,7 @@ let mkILCtor (access, args, impl) =
                 callingConv=ILCallingConv.Instance,
                 parameters = args,
                 ret= mkILVoidReturn,
-                body= mkMethBodyAux impl,
+                body= notlazy impl,
                 securityDecls=emptyILSecurityDecls,
                 isEntryPoint=false,
                 genericParams=mkILEmptyGenericParams,
@@ -3008,7 +3002,7 @@ let mkILStaticMethod (genparams, nm, access, args, ret, impl) =
                 securityDecls=emptyILSecurityDecls,
                 isEntryPoint=false,
                 customAttrs = emptyILCustomAttrs,
-                body= mkMethBodyAux impl)
+                body= notlazy impl)
 
 let mkILNonGenericStaticMethod (nm, access, args, ret, impl) =
     mkILStaticMethod (mkILEmptyGenericParams, nm, access, args, ret, impl)
@@ -3024,7 +3018,7 @@ let mkILClassCtor impl =
                 isEntryPoint=false,
                 securityDecls=emptyILSecurityDecls,
                 customAttrs=emptyILCustomAttrs,
-                body= mkMethBodyAux impl)
+                body= notlazy impl)
 
 // --------------------------------------------------------------------
 // Make a virtual method, where the overriding is simply the default
@@ -3048,7 +3042,7 @@ let mkILGenericVirtualMethod (nm, access, genparams, actual_args, actual_ret, im
                 isEntryPoint=false,
                 securityDecls=emptyILSecurityDecls,
                 customAttrs = emptyILCustomAttrs,
-                body= mkMethBodyAux impl)
+                body= notlazy impl)
 
 let mkILNonGenericVirtualMethod (nm, access, args, ret, impl) =
     mkILGenericVirtualMethod (nm, access, mkILEmptyGenericParams, args, ret, impl)
@@ -3064,7 +3058,7 @@ let mkILGenericNonVirtualMethod (nm, access, genparams, actual_args, actual_ret,
                 isEntryPoint=false,
                 securityDecls=emptyILSecurityDecls,
                 customAttrs = emptyILCustomAttrs,
-                body= mkMethBodyAux impl)
+                body= notlazy impl)
 
 let mkILNonGenericInstanceMethod (nm, access, args, ret, impl) =
   mkILGenericNonVirtualMethod (nm, access, mkILEmptyGenericParams, args, ret, impl)
@@ -3080,11 +3074,12 @@ let ilmbody_code2code f (il: ILMethodBody) =
 
 let mdef_code2code f (md: ILMethodDef) =
     let il =
-        match md.Body.Contents with
+        match md.Body with
         | MethodBody.IL il-> il
         | _ -> failwith "mdef_code2code - method not IL"
-    let b = MethodBody.IL (ilmbody_code2code f il)
-    md.With(body = mkMethBodyAux b)
+    let ilCode = ilmbody_code2code f il.Value
+    let b = MethodBody.IL (notlazy ilCode)
+    md.With(body = notlazy b)
 
 let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
     let instrs = Array.ofList instrs
@@ -4170,14 +4165,14 @@ and refs_of_local s loc = refs_of_typ s loc.Type
 
 and refs_of_mbody s x =
     match x with
-    | MethodBody.IL il -> refs_of_ilmbody s il
-    | MethodBody.PInvoke (attr) -> refs_of_modref s attr.Where
+    | MethodBody.IL il -> refs_of_ilmbody s il.Value
+    | MethodBody.PInvoke (attr) -> refs_of_modref s attr.Value.Where
     | _ -> ()
 
 and refs_of_mdef s (md: ILMethodDef) =
     List.iter (refs_of_param s) md.Parameters
     refs_of_return s md.Return
-    refs_of_mbody s md.Body.Contents
+    refs_of_mbody s md.Body
     refs_of_custom_attrs s md.CustomAttrs
     refs_of_genparams s md.GenericParams
 

@@ -315,12 +315,14 @@ let convILMethodBody (thisClo, boxReturnTy) (il: ILMethodBody) =
     {il with MaxStack=newMax; IsZeroInit=true; Code= code }
 
 let convMethodBody thisClo = function
-    | MethodBody.IL il -> MethodBody.IL (convILMethodBody (thisClo, None) il)
+    | MethodBody.IL il -> 
+        let convil = convILMethodBody (thisClo, None) il.Value
+        MethodBody.IL (lazy convil)
     | x -> x
 
 let convMethodDef thisClo (md: ILMethodDef)  =
-    let b' = convMethodBody thisClo (md.Body.Contents)
-    md.With(body=mkMethBodyAux b')
+    let b' = convMethodBody thisClo (md.Body)
+    md.With(body=notlazy b')
 
 // -------------------------------------------------------------------- 
 // Make fields for free variables of a type abstraction.
@@ -466,6 +468,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
           else 
               // CASE 1b. Build a type application. 
               let boxReturnTy = Some nowReturnTy (* box prior to all I_ret *)
+              let convil = convILMethodBody (Some nowCloSpec, boxReturnTy) (Lazy.force clo.cloCode)
               let nowApplyMethDef =
                 mkILGenericVirtualMethod
                   ("Specialize", 
@@ -473,7 +476,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                    addedGenParams,  (* method is generic over added ILGenericParameterDefs *)
                    [], 
                    mkILReturn(cenv.ilg.typ_Object), 
-                   MethodBody.IL (convILMethodBody (Some nowCloSpec, boxReturnTy) (Lazy.force clo.cloCode)))
+                   MethodBody.IL (lazy convil))
               let ctorMethodDef = 
                   mkILStorageCtor 
                     (None, 
@@ -565,12 +568,13 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 let nowEnvParentClass = typ_Func cenv (typesOfILParams nowParams) nowReturnTy 
 
                 let cloTypeDef = 
+                    let convil = convILMethodBody (Some nowCloSpec, None)  (Lazy.force clo.cloCode)
                     let nowApplyMethDef =
                         mkILNonGenericVirtualMethod
                           ("Invoke", ILMemberAccess.Public, 
                            nowParams, 
                            mkILReturn nowReturnTy, 
-                           MethodBody.IL (convILMethodBody (Some nowCloSpec, None)  (Lazy.force clo.cloCode)))
+                           MethodBody.IL (lazy convil))
 
                     let ctorMethodDef = 
                         mkILStorageCtor 
