@@ -15,7 +15,7 @@
     <!-- F# Version components -->
     <FSMajorVersion>5</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>0</FSBuildVersion>
+    <FSBuildVersion>2</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- F# Language version -->
     <FSLanguageVersion>$(FSMajorVersion).$(FSMinorVersion)</FSLanguageVersion>
@@ -29,16 +29,16 @@
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>39</FCSMajorVersion>
     <FCSMinorVersion>0</FCSMinorVersion>
-    <FCSBuildVersion>2</FCSBuildVersion>
+    <FCSBuildVersion>3</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
     <FSharpCompilerServiceReleaseNotesVersion>$(FCSMajorVersion)$(FCSMinorVersion)$(FCSBuildVersion)</FSharpCompilerServiceReleaseNotesVersion>
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersion>4.7.2</FSharpCoreShippedPackageVersion>
+    <FSharpCoreShippedPackageVersion>5.0.0</FSharpCoreShippedPackageVersion>
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
     <FSToolsMajorVersion>11</FSToolsMajorVersion>
-    <FSToolsMinorVersion>2</FSToolsMinorVersion>
+    <FSToolsMinorVersion>3</FSToolsMinorVersion>
     <FSToolsBuildVersion>$(FSBuildVersion)</FSToolsBuildVersion>
     <FSToolsRevisionVersion>$(FSRevisionVersion)</FSToolsRevisionVersion>
     <FSProductVersionPrefix>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion)</FSProductVersionPrefix>
