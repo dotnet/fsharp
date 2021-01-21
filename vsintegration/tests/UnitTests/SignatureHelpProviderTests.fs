@@ -337,7 +337,8 @@ let _ = System.DateTime(1L,
         assertSignatureHelpForMethodCalls fileContents marker (Some ("[10..31)", 1, 2, None ))
 
 [<Test>]
-let ShouldGiveSignatureHelpAtCorrectMarkers() =
+let ``type provider static parameter tests``() =
+    // This is old code and I'm too lazy to move it all out. - Phillip Carter
     let manyTestCases = 
         [
           ( """
