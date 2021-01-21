@@ -22,6 +22,7 @@
     <Compile Include="Utilities.fs" />
     <Compile Include="CompilerAssert.fs" />
     <Compile Include="Assert.fs" />
+    <Compile Include="ScriptHelpers.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="Xunit\Attributes\DirectoryAttribute.fs" />
   </ItemGroup>
@@ -32,7 +33,6 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private.Scripting\FSharp.Compiler.Private.Scripting.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\fsharpqa\testenv\src\PEVerify\PEVerify.csproj" />
   </ItemGroup>
 
