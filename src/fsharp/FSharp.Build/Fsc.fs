@@ -77,11 +77,22 @@ type public Fsc () as this =
     let mutable warningsNotAsErrors : string = null
     let mutable versionFile : string = null
     let mutable warningLevel : string = null
+    let mutable warnOn : string = null
     let mutable win32res : string = null
     let mutable win32manifest : string = null
     let mutable vserrors : bool = false
     let mutable vslcid : string = null
     let mutable utf8output : bool = false
+
+
+    /// Trim whitespace ... spaces, tabs, newlines,returns, Double quotes and single quotes
+    let wsCharsToTrim = [| ' '; '\t'; '\"'; '\'' |]
+    let splitAndWsTrim (s:string) =
+        match s with
+        | null -> [||]
+        | _ ->
+            let array = s.Split([| ';'; ','; '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
+            array |> Array.map(fun item -> item.Trim(wsCharsToTrim)) |> Array.filter(fun s -> not (String.IsNullOrEmpty s))
 
     // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
     do this.YieldDuringToolExecution <- true
@@ -173,13 +184,11 @@ type public Fsc () as this =
         if references <> null then 
             for item in references do
                 builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
-        // ReferencePath
-        let referencePathArray = // create a array of strings
-            match referencePath with
-            | null -> null
-            | _ -> referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
-        builder.AppendSwitchIfNotNull("--lib:", referencePathArray, ",")   
+        match referencePath with
+        | null -> ()
+        | _ -> builder.AppendSwitchIfNotNull("--lib:", referencePath |> splitAndWsTrim, ",")
+
         // TargetType
         builder.AppendSwitchIfNotNull("--target:", 
             if targetType = null then null else
@@ -193,29 +202,28 @@ type public Fsc () as this =
         // NoWarn
         match disabledWarnings with
         | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
+        | _ -> builder.AppendSwitchIfNotNull("--nowarn:", disabledWarnings |> splitAndWsTrim, ",")
         
         // WarningLevel
         builder.AppendSwitchIfNotNull("--warn:", warningLevel)
+
+        match warnOn with
+        | null -> ()
+        | _ -> builder.AppendSwitchIfNotNull("--warnon:", warnOn |> splitAndWsTrim, ",")
 
         // TreatWarningsAsErrors
         if treatWarningsAsErrors then
             builder.AppendSwitch("--warnaserror")
 
-        // WarningsAsErrors
-        // Change warning 76, HashReferenceNotAllowedInNonScript/HashDirectiveNotAllowedInNonScript/HashIncludeNotAllowedInNonScript, into an error
-        // REVIEW: why is this logic here? In any case these are errors already by default!
-        let warningsAsErrorsArray =
-            match warningsAsErrors with
-            | null -> [|"76"|]
-            | _ -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
-
-        builder.AppendSwitchIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
+        // WarnAsErrors
+        match warningsAsErrors with
+        | null -> ()
+        | _ -> builder.AppendSwitchIfNotNull("--warnaserror:", warningsAsErrors |> splitAndWsTrim, ",")
 
         // WarningsNotAsErrors
         match warningsNotAsErrors with
         | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
+        | _ -> builder.AppendSwitchIfNotNull("--warnaserror-:", warningsNotAsErrors |> splitAndWsTrim, ",")
 
         // Win32ResourceFile
         builder.AppendSwitchIfNotNull("--win32res:", win32res)
@@ -253,7 +261,7 @@ type public Fsc () as this =
         
         match pathMap with
         | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--pathmap:", pathMap.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
+        | _ -> builder.AppendSwitchIfNotNull("--pathmap:", pathMap |> splitAndWsTrim, ",")
 
         if deterministic then
             builder.AppendSwitch("--deterministic+")
@@ -504,6 +512,10 @@ type public Fsc () as this =
     member fsc.WarningsNotAsErrors
         with get() = warningsNotAsErrors
         and set(s) = warningsNotAsErrors <- s
+
+    member fsc.WarnOn 
+        with get() = warnOn
+        and set(s) = warnOn <- s
 
     member fsc.VisualStudioStyleErrors
         with get() = vserrors
