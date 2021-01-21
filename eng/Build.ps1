@@ -193,7 +193,7 @@ function Update-Arguments() {
 }
 
 function BuildSolution([string] $solutionName) {
-    Write-Host "$( $solutionName):"
+    Write-Host "${solutionName}:"
 
     $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.binlog") } else { "" }
 
