@@ -195,7 +195,7 @@ type TcInfoOptional =
       itemKeyStore: ItemKeyStore option
       
       /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-      semanticClassification: struct (range * SemanticClassificationType) []
+      semanticClassificationKeyStore: SemanticClassificationKeyStore option
     }
 
     member x.TcSymbolUses = 
@@ -371,7 +371,7 @@ type BoundModel private (tcConfig: TcConfig,
                         tcOpenDeclarationsRev = []
                         latestImplFile = None
                         itemKeyStore = None
-                        semanticClassification = [||]
+                        semanticClassificationKeyStore = None
                     }
         }
 
@@ -463,12 +463,17 @@ type BoundModel private (tcConfig: TcConfig,
                                                 let r = cnr.Range
                                                 if preventDuplicates.Add struct(r.Start, r.End) then
                                                     builder.Write(cnr.Range, cnr.Item))
+                                            
+                                            let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
 
-                                            let res = builder.TryBuildAndReset(), sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
+                                            let sckBuilder = SemanticClassificationKeyStoreBuilder()
+                                            sckBuilder.WriteAll semanticClassification
+
+                                            let res = builder.TryBuildAndReset(), sckBuilder.TryBuildAndReset()
                                             Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
                                             res
                                         else
-                                            None, [||]
+                                            None, None
 
                                     let tcInfoOptional =
                                         {
@@ -478,7 +483,7 @@ type BoundModel private (tcConfig: TcConfig,
                                             tcSymbolUsesRev = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: prevTcInfoOptional.tcSymbolUsesRev
                                             tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: prevTcInfoOptional.tcOpenDeclarationsRev
                                             itemKeyStore = itemKeyStore
-                                            semanticClassification = semanticClassification
+                                            semanticClassificationKeyStore = semanticClassification
                                         }
 
                                     return FullState(tcInfo, tcInfoOptional)
@@ -601,7 +606,7 @@ type PartialCheckResults private (boundModel: BoundModel, timeStamp: DateTime) =
 
     member _.GetSemanticClassification ctok =
         let _, info = boundModel.TcInfoWithOptional |> eval ctok
-        info.semanticClassification
+        info.semanticClassificationKeyStore
 
     static member Create (boundModel: BoundModel, timestamp) = 
         PartialCheckResults(boundModel, timestamp)
@@ -786,7 +791,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 tcOpenDeclarationsRev=[]
                 latestImplFile=None
                 itemKeyStore = None
-                semanticClassification = [||] 
+                semanticClassificationKeyStore = None 
             }
         return 
             BoundModel.Create(
