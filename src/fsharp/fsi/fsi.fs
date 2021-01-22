@@ -61,6 +61,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.XmlDoc
 open Internal.Utilities
+open Internal.Utilities.FSharpEnvironment
 
 // Prevents warnings of experimental APIs - we are using FSharpLexer
 #nowarn "57"
@@ -1938,21 +1939,29 @@ module internal MagicAssemblyResolution =
 
                    // As a last resort, try to find the reference without an extension
                    match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, ILAssemblyRef.Create(simpleAssemName,None,None,false,None,None)) with
-                   | Some(resolvedPath) -> 
+                   | Some(resolvedPath) ->
                        OkResult([],Choice1Of2 resolvedPath)
-                   | None -> 
+                   | None ->
 
                    ErrorResult([],Failure (FSIstrings.SR.fsiFailedToResolveAssembly(simpleAssemName)))
 
-               match overallSearchResult with 
+               match overallSearchResult with
                | ErrorResult _ -> null
-               | OkResult _ -> 
+               | OkResult _ ->
                    let res = CommitOperationResult overallSearchResult
-                   match res with 
-                   | Choice1Of2 assemblyName -> 
+                   match res with
+                   | Choice1Of2 assemblyName ->
                        if simpleAssemName <> "Mono.Posix" then fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiBindingSessionTo(assemblyName))
-                       assemblyLoadFrom assemblyName
-                   | Choice2Of2 assembly -> 
+                       if isRunningOnCoreClr then
+                         assemblyLoadFrom assemblyName
+                       else
+                         try
+                           let an = AssemblyName.GetAssemblyName(assemblyName)
+                           an.CodeBase <- assemblyName
+                           Assembly.Load an
+                         with | _ ->
+                           assemblyLoadFrom assemblyName
+                   | Choice2Of2 assembly ->
                        assembly
 
            with e ->
