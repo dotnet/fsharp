@@ -8,18 +8,121 @@ open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
 open System.Linq
+open System.Text
 open System.Runtime.InteropServices
+open System.Reflection.PortableExecutable
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.FindSymbols
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
+open Microsoft.VisualStudio.ComponentModelHost
 
+open Microsoft.VisualStudio
+open Microsoft.VisualStudio.Threading
+open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.TextManager.Interop
 
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
+
+module private CSharpDecompiler =
+
+    open Microsoft.CodeAnalysis.CSharp
+    open ICSharpCode.Decompiler
+    open ICSharpCode.Decompiler.CSharp
+    open ICSharpCode.Decompiler.Metadata
+    open ICSharpCode.Decompiler.CSharp.Transforms
+    open ICSharpCode.Decompiler.TypeSystem
+
+    let GenerateTemporaryCSharpDocument (asmIdentity: AssemblyIdentity, name: string, metadataReferences) =
+        let rootPath = Path.Combine(Path.GetTempPath(), "MetadataAsSource")
+        let extension = ".cs"
+        let directoryName = Guid.NewGuid().ToString("N")
+        let temporaryFilePath = Path.Combine(rootPath, directoryName, name + extension)
+
+        let projectId = ProjectId.CreateNewId()
+
+        let parseOptions = CSharpParseOptions.Default.WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+        // Just say it's always a DLL since we probably won't have a Main method
+        let compilationOptions = Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+
+        let extension = ".cs"
+
+        // We need to include the version information of the assembly so InternalsVisibleTo and stuff works
+        let assemblyInfoDocumentId = DocumentId.CreateNewId(projectId)
+        let assemblyInfoFileName = "AssemblyInfo" + extension
+        let assemblyInfoString = String.Format(@"[assembly: System.Reflection.AssemblyVersion(""{0}"")]", asmIdentity.Version)
+
+        let assemblyInfoSourceTextContainer = SourceText.From(assemblyInfoString, Encoding.UTF8).Container
+
+        let assemblyInfoDocument = 
+            DocumentInfo.Create(
+                assemblyInfoDocumentId,
+                assemblyInfoFileName,
+                loader = TextLoader.From(assemblyInfoSourceTextContainer, VersionStamp.Default))
+
+        let generatedDocumentId = DocumentId.CreateNewId(projectId)
+        let generatedDocument = 
+            DocumentInfo.Create(
+                generatedDocumentId,
+                Path.GetFileName(temporaryFilePath),
+                filePath = temporaryFilePath,
+                loader = FileTextLoader(temporaryFilePath, Encoding.UTF8))
+
+        let projectInfo = 
+            ProjectInfo.Create(
+                projectId,
+                VersionStamp.Default,
+                name = asmIdentity.Name,
+                assemblyName = asmIdentity.Name,
+                language = LanguageNames.CSharp,
+                compilationOptions = compilationOptions,
+                parseOptions = parseOptions,
+                documents = [|assemblyInfoDocument;generatedDocument|],
+                metadataReferences = metadataReferences)
+
+        (projectInfo, generatedDocumentId)
+
+    let Decompile (document: Document, symbolFullName: string, assemblyLocation: string) =
+        let logger = new StringBuilder();
+
+        // Initialize a decompiler with default settings.
+        let decompiler = CSharpDecompiler(assemblyLocation, DecompilerSettings())
+        // Escape invalid identifiers to prevent Roslyn from failing to parse the generated code.
+        // (This happens for example, when there is compiler-generated code that is not yet recognized/transformed by the decompiler.)
+        decompiler.AstTransforms.Add(new EscapeInvalidIdentifiers())
+
+        let fullTypeName = FullTypeName(symbolFullName)
+
+        // Try to decompile; if an exception is thrown the caller will handle it
+        let mutable text = decompiler.DecompileTypeAsString(fullTypeName);
+
+        text <- text + "#if false // " + Environment.NewLine;
+        text <- text + logger.ToString();
+        text <- text + "#endif" + Environment.NewLine;
+
+        document.WithText(SourceText.From(text));
+
+    let ShowDocument (document: Document, serviceProvider: IServiceProvider) =
+        let vsRunningDocumentTable4 = serviceProvider.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable4>()
+        let fileAlreadyOpen = vsRunningDocumentTable4.IsMonikerValid(document.FilePath)
+
+        let openDocumentService = serviceProvider.GetService<SVsUIShellOpenDocument, IVsUIShellOpenDocument>()
+        let mutable localServiceProvider = Unchecked.defaultof<_>
+        let mutable hierarchy = Unchecked.defaultof<_>
+        let mutable itemId = Unchecked.defaultof<_>
+        let mutable windowFrame = Unchecked.defaultof<_>
+        openDocumentService.OpenDocumentViaProject(document.FilePath, ref VSConstants.LOGVIEWID.TextView_guid, &localServiceProvider, &hierarchy, &itemId, &windowFrame) |> ignore
+
+        if not fileAlreadyOpen then
+            ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_IsProvisional, true)) |> ignore
+            ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideCaption, document.Name)) |> ignore
+            ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideToolTip, document.Name)) |> ignore
+
+        windowFrame.Show() |> ignore
 
 module private Symbol =
     let fullName (root: ISymbol) : string =
@@ -343,7 +446,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
 
     /// Navigate to the positon of the textSpan in the provided document
     /// used by quickinfo link navigation when the tooltip contains the correct destination range.
-    member _.TryNavigateToTextSpan(document: Document, textSpan: TextSpan, statusBar: StatusBar) =
+    member _.TryNavigateToTextSpan(document: Document, textSpan: Microsoft.CodeAnalysis.Text.TextSpan, statusBar: StatusBar) =
         let navigableItem = FSharpGoToDefinitionNavigableItem(document, textSpan)
         let workspace = document.Project.Solution.Workspace
         let navigationService = workspace.Services.GetService<IFSharpDocumentNavigationService>()
