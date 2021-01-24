@@ -900,6 +900,9 @@ type FSharpMemberOrFunctionOrValue =
 
     /// Indicated if this is a value compiled to a method
     member IsValCompiledAsMethod: bool
+
+    /// Indicates if this is a value
+    member IsFunction: bool
     
     /// Indicated if this is a value
     member IsValue: bool
