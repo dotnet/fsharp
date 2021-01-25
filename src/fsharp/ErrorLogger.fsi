@@ -259,7 +259,7 @@ val CompleteD: OperationResult<unit>
 
 val ResultD: x:'a -> OperationResult<'a>
 
-val CheckNoErrorsAndGetWarnings: res:OperationResult<'a> -> exn list option
+val CheckNoErrorsAndGetWarnings: res:OperationResult<'a> -> (exn list * 'a) option
 
 val ( ++ ): res:OperationResult<'a> -> f:('a -> OperationResult<'b>) -> OperationResult<'b>
 
@@ -306,6 +306,8 @@ val TryD: f:(unit -> OperationResult<'a>) -> g:(exn -> OperationResult<'a>) -> O
 val RepeatWhileD: nDeep:int -> body:(int -> OperationResult<bool>) -> OperationResult<unit>
 
 val AtLeastOneD: f:('a -> OperationResult<bool>) -> l:'a list -> OperationResult<bool>
+
+val AtLeastOne2D: f:('a -> 'b -> OperationResult<bool>) -> xs:'a list -> ys:'b list -> OperationResult<bool>
 
 module OperationResult =
     val inline ignore: res:OperationResult<'a> -> OperationResult<unit>

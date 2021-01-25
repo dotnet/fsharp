@@ -98,7 +98,10 @@ type CallerArgs<'T> =
     static member Empty: CallerArgs<'T>
   
 /// F# supports some adhoc conversions at method callsites
-val AdjustCalledArgType: infoReader:InfoReader -> isConstraint:bool -> enforceNullableOptionalsKnownTypes:bool -> calledArg:CalledArg -> callerArg:CallerArg<'a> -> TType
+val AdjustCalledArgType: infoReader:InfoReader -> isConstraint:bool -> enforceNullableOptionalsKnownTypes:bool -> calledArg:CalledArg -> callerArg:CallerArg<'a> -> TType * bool
+
+/// F# supports some adhoc conversions to make expression fit known overall type
+val AdjustRequiredTypeForTypeDirectedConversions: infoReader:InfoReader -> isConstraint:bool -> reqdTy: TType -> actualTy:TType -> m: range -> TType * bool
 
 type CalledMethArgSet<'T> =
     { /// The called arguments corresponding to "unnamed" arguments
@@ -143,13 +146,21 @@ type CalledMeth<'T> =
          allowParamArgs:bool *
          allowOutAndOptArgs:bool *
          tyargsOpt:TType option -> CalledMeth<'T>
+
     static member GetMethod: x:CalledMeth<'T> -> MethInfo
+
     member CalledObjArgTys: m:range -> TType list
+
     member GetParamArrayElementType: unit -> TType
+
     member HasCorrectObjArgs: m:range -> bool
+
     member IsAccessible: m:range * ad:AccessorDomain -> bool
+
     member IsCandidate: m:range * ad:AccessorDomain -> bool
+
     member AllCalledArgs: CalledArg list list
+
     member AllUnnamedCalledArgs: CalledArg list
 
     /// The argument analysis for each set of curried arguments
@@ -157,8 +168,11 @@ type CalledMeth<'T> =
 
     /// Named setters
     member AssignedItemSetters: AssignedItemSetter<'T> list
+
     member AssignedNamedArgs: AssignedCalledArg<'T> list list
+
     member AssignedUnnamedArgs: AssignedCalledArg<'T> list list
+
     member AssignsAllNamedArgs: bool
 
     /// The property related to the method we're attempting to call, if any  
@@ -184,21 +198,34 @@ type CalledMeth<'T> =
 
     /// The formal instantiation of the method we're attempting to call 
     member CallerTyArgs: TType list
+
     member HasCorrectArity: bool
+
     member HasCorrectGenericArity: bool
+
     member HasOptArgs: bool
+
     member HasOutArgs: bool
 
     /// The method we're attempting to call 
     member Method: MethInfo
+
     member NumArgSets: int
+
     member NumAssignedProps: int
+
     member NumCalledTyArgs: int
+
     member NumCallerTyArgs: int
+
     member ParamArrayCalledArgOpt: CalledArg option
+
     member ParamArrayCallerArgs: CallerArg<'T> list option
+
     member TotalNumAssignedNamedArgs: int
+
     member TotalNumUnnamedCalledArgs: int
+
     member TotalNumUnnamedCallerArgs: int
 
     /// Unassigned args
@@ -209,8 +236,11 @@ type CalledMeth<'T> =
 
     /// Unnamed called out args: return these as part of the return tuple
     member UnnamedCalledOutArgs: CalledArg list
+
     member UsesParamArrayConversion: bool
+
     member amap: ImportMap
+
     member infoReader: InfoReader
   
 val NamesOfCalledArgs: calledArgs:CalledArg list -> Ident list
@@ -262,7 +292,9 @@ val BuildNewDelegateExpr: eventInfoOpt:EventInfo option * g:TcGlobals * amap:Imp
 
 val CoerceFromFSharpFuncToDelegate: g:TcGlobals -> amap:ImportMap -> infoReader:InfoReader -> ad:AccessorDomain -> callerArgTy:TType -> m:range -> callerArgExpr:Expr -> delegateTy:TType -> Expr
 
-val AdjustCallerArgExprForCoercions: g:TcGlobals -> amap:ImportMap -> infoReader:InfoReader -> ad:AccessorDomain -> isOutArg:bool -> calledArgTy:TType -> reflArgInfo:ReflectedArgInfo -> callerArgTy:TType -> m:range -> callerArgExpr:Expr -> 'a option * Expr
+val AdjustExprForTypeDirectedConversions: g: TcGlobals -> amap:ImportMap -> infoReader:InfoReader -> ad:AccessorDomain -> reqdTy:TType -> actualTy:TType -> m:range -> expr:Expr -> Expr
+
+val AdjustCallerArgExpr: g:TcGlobals -> amap:ImportMap -> infoReader:InfoReader -> ad:AccessorDomain -> isOutArg:bool -> calledArgTy:TType -> reflArgInfo:ReflectedArgInfo -> callerArgTy:TType -> m:range -> callerArgExpr:Expr -> 'a option * Expr
 
 /// Build the argument list for a method call. Adjust for param array, optional arguments, byref arguments and coercions.
 /// For example, if you pass an F# reference cell to a byref then we must get the address of the 
