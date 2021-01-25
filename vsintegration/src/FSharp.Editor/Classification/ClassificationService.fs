@@ -20,6 +20,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 open Microsoft.CodeAnalysis
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 
 // IEditorClassificationService is marked as Obsolete, but is still supported. The replacement (IClassificationService)
 // is internal to Microsoft.CodeAnalysis.Workspaces which we don't have internals visible to. Rather than add yet another
@@ -28,8 +29,8 @@ open FSharp.Compiler.Text
 
 #nowarn "57"
 
-type SemanticClassificationData = (struct(Range * SemanticClassificationType)[])
-type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<struct(range * SemanticClassificationType)>>
+type SemanticClassificationData = FSharpSemanticClassificationView option
+type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<FSharpSemanticClassificationItem>>
 
 [<Sealed>]
 type DocumentCache<'Value when 'Value : not struct>() =
@@ -98,17 +99,17 @@ type internal FSharpClassificationService
 
         result.ToImmutable()
 
-    static let addSemanticClassification sourceText (targetSpan: TextSpan) items (outputResult: List<ClassifiedSpan>) =
-        for struct(range, classificationType) in items do
-            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
+    static let addSemanticClassification sourceText (targetSpan: TextSpan) (items: seq<FSharpSemanticClassificationItem>) (outputResult: List<ClassifiedSpan>) =
+        for item in items do
+            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with
             | None -> ()
             | Some span -> 
                 let span = 
-                    match classificationType with
+                    match item.Type with
                     | SemanticClassificationType.Printf -> span
                     | _ -> Tokenizer.fixupSpan(sourceText, span)
                 if targetSpan.Contains span then
-                    outputResult.Add(ClassifiedSpan(span, FSharpClassificationTypes.getClassificationTypeName(classificationType)))
+                    outputResult.Add(ClassifiedSpan(span, FSharpClassificationTypes.getClassificationTypeName(item.Type)))
 
     static let addSemanticClassificationByLookup sourceText (targetSpan: TextSpan) (lookup: SemanticClassificationLookup) (outputResult: List<ClassifiedSpan>) =
         let r = RoslynHelpers.TextSpanToFSharpRange("", targetSpan, sourceText)
@@ -118,17 +119,23 @@ type internal FSharpClassificationService
             | _ -> ()
 
     static let toSemanticClassificationLookup (data: SemanticClassificationData) =
-        let lookup = System.Collections.Generic.Dictionary<int, ResizeArray<struct(Range * SemanticClassificationType)>>()
-        for i = 0 to data.Length - 1 do
-            let (struct(r, _) as dataItem) = data.[i]
-            let items =
-                match lookup.TryGetValue r.StartLine with
-                | true, items -> items
-                | _ ->
-                    let items = ResizeArray()
-                    lookup.[r.StartLine] <- items
-                    items
-            items.Add dataItem
+        let lookup = System.Collections.Generic.Dictionary<int, ResizeArray<FSharpSemanticClassificationItem>>()
+        match data with
+        | None -> ()
+        | Some d ->
+            let f (dataItem: FSharpSemanticClassificationItem) =
+                let items =
+                    match lookup.TryGetValue dataItem.Range.StartLine with
+                    | true, items -> items
+                    | _ ->
+                        let items = ResizeArray()
+                        lookup.[dataItem.Range.StartLine] <- items
+                        items
+
+                items.Add dataItem
+
+            d.ForEach(f)
+                    
         System.Collections.ObjectModel.ReadOnlyDictionary lookup :> IReadOnlyDictionary<_, _>
 
     let semanticClassificationCache = new DocumentCache<SemanticClassificationLookup>()
