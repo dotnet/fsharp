@@ -39,7 +39,7 @@ type internal FSharpAddExplicitTypeToParameterRefactoring
             let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
 
-            let isValidValueWithoutExplicitType (funcOrValue: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
+            let isValidParameterWithoutTypeAnnotation (funcOrValue: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
                 let isLambdaIfFunction =
                     funcOrValue.IsFunction &&
                     parseFileResults.IsBindingALambdaAtPosition symbolUse.RangeAlternate.Start
@@ -53,7 +53,7 @@ type internal FSharpAddExplicitTypeToParameterRefactoring
                 not (PrettyNaming.IsOperatorName funcOrValue.DisplayName)
 
             match symbolUse.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as v when isValidValueWithoutExplicitType v symbolUse ->
+            | :? FSharpMemberOrFunctionOrValue as v when isValidParameterWithoutTypeAnnotation v symbolUse ->
                 let typeString = v.FullType.FormatWithConstraints symbolUse.DisplayContext
                 let title = SR.AddTypeAnnotation()
 
