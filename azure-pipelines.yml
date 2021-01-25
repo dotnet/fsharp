@@ -498,6 +498,6 @@ stages:
   - template: eng/release/insert-into-vs.yml
     parameters:
       componentBranchName: refs/heads/release/dev16.9
-      insertTargetBranch: main
+      insertTargetBranch: rel/d16.9
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
