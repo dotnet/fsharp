@@ -444,6 +444,25 @@ module rec Compiler =
 
     let compileExeAndRun = asExe >> compileAndRun
 
+    let private compileOfAstFSharp (fsSource: FSharpCompilationSource) : TestResult =
+
+        let source = getSource fsSource.Source
+        let isExe = fsSource.OutputType = CompileOutput.Exe
+
+        let outputPath = CompilerAssert.CompileOfAst isExe source
+
+        Success { OutputPath   = Some outputPath
+                  Dependencies = []
+                  Adjust       = 0
+                  Diagnostics  = []
+                  Output       = None }
+
+
+    let compileOfAst (cUnit: CompilationUnit) : TestResult =
+        match cUnit with
+        | FS fs -> compileFSharp fs
+        | _ -> failwith "AST Compilation is only supported in F#"
+
     let private evalFSharp (fs: FSharpCompilationSource) : TestResult =
         let source = getSource fs.Source
         let options = fs.Options |> Array.ofList

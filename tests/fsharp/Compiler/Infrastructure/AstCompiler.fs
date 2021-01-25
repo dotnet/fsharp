@@ -11,7 +11,7 @@ module ``AST Compiler Smoke Tests`` =
 
     [<Test>]
     let ``Simple E2E module compilation``() =
-        let assembly = 
+        let assembly =
             CompilerAssert.CompileOfAstToDynamicAssembly
                 """
 module TestModule
@@ -22,20 +22,3 @@ module TestModule
         let method = assembly.GetType("TestModule").GetMethod("fib", BindingFlags.Static ||| BindingFlags.Public)
         Assert.NotNull(method)
         Assert.AreEqual(55, method.Invoke(null, [|10|]))
-
-    [<Test>]
-    let ``Compile to Assembly``() =
-        let assembly = 
-            CompilerAssert.CompileOfAst false
-                """
-module LiteralValue
-
-[<Literal>]
-let x = 7
-"""
-
-        (ILVerifier assembly).VerifyIL [
-            """
-.field public static literal int32 x = int32(0x00000007)
-            """
-        ]

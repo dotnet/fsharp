@@ -24,3 +24,17 @@ let main _ =
          |> verifyIL ["""
 .field public static literal int32 x = int32(0x00000007)
 .custom instance void [FSharp.Core]Microsoft.FSharp.Core.LiteralAttribute::.ctor() = ( 01 00 00 00 )"""]
+
+
+    [<Fact>]
+    let ``Compile ast to Assembly``() =
+        FSharp """
+module LiteralValue
+
+[<Literal>]
+let x = 7
+        """
+        |> asLibrary
+        |> compileOfAst
+        |> verifyIL [
+            ".field public static literal int32 x = int32(0x00000007)"]

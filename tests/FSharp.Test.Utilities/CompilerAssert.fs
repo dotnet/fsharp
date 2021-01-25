@@ -503,8 +503,8 @@ let main argv = 0"""
         let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then "exe" else ".dll")
         let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
 
-        let parseResults = 
-            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions) 
+        let parseResults =
+            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions)
             |> Async.RunSynchronously
 
         Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
@@ -517,8 +517,8 @@ let main argv = 0"""
             []
         #endif
 
-        let compileErrors, statusCode = 
-            checker.Compile([parseResults.ParseTree.Value], "test", outputFilePath, dependencies, executable = isExe, noframework = true) 
+        let compileErrors, statusCode =
+            checker.Compile([parseResults.ParseTree.Value], "test", outputFilePath, dependencies, executable = isExe, noframework = true)
             |> Async.RunSynchronously
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
@@ -528,10 +528,10 @@ let main argv = 0"""
     static member CompileOfAstToDynamicAssembly source =
         let assemblyName = sprintf "test-%O" (Guid.NewGuid())
         let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
-        let parseResults = 
-            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions) 
+        let parseResults =
+            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions)
             |> Async.RunSynchronously
-    
+
         Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
         Assert.IsTrue(parseResults.ParseTree.IsSome, "no parse tree returned")
 
@@ -542,8 +542,8 @@ let main argv = 0"""
                 []
             #endif
 
-        let compileErrors, statusCode, assembly = 
-            checker.CompileToDynamicAssembly([parseResults.ParseTree.Value], assemblyName, dependencies, None, noframework = true) 
+        let compileErrors, statusCode, assembly =
+            checker.CompileToDynamicAssembly([parseResults.ParseTree.Value], assemblyName, dependencies, None, noframework = true)
             |> Async.RunSynchronously
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)

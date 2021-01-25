@@ -89,7 +89,7 @@ module ILChecker =
                                 errors.Add(sprintf "\n==\nName: '%s'\n\nExpected:\t %s\nActual:\t\t %s\n==" actualLines.[0] expected actual)
 
                         if errors.Count > 0 then
-                            let msg = String.concat "\n" errors + "\n\n\Expected:\n" + ilCode + "\n"
+                            let msg = String.concat "\n" errors + "\n\n\nExpected:\n" + ilCode + "\n"
                             errorMsgOpt <- Some(msg + "\n\n\nActual:\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
             )
 
