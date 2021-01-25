@@ -31,7 +31,7 @@ type SemanticClassificationServiceTests() =
     let checker = FSharpChecker.Create()
     let perfOptions = { LanguageServicePerformanceOptions.Default with AllowStaleCompletionResults = false }
 
-    let getRanges (source: string) : struct (range * SemanticClassificationType) list =
+    let getRanges (source: string) : FSharpSemanticClassificationItem list =
         asyncMaybe {
 
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0, SourceText.From(source), projectOptions, perfOptions, "")
@@ -46,16 +46,16 @@ type SemanticClassificationServiceTests() =
         let ranges = getRanges fileContents
         let line = text.Lines.GetLinePosition (fileContents.IndexOf(marker) + marker.Length - 1)
         let markerPos = Pos.mkPos (Line.fromZ line.Line) (line.Character + marker.Length - 1)
-        match ranges |> List.tryFind (fun struct (range, _) -> Range.rangeContainsPos range markerPos) with
+        match ranges |> List.tryFind (fun item -> Range.rangeContainsPos item.Range markerPos) with
         | None -> Assert.Fail("Cannot find colorization data for end of marker")
-        | Some(_, ty) -> Assert.AreEqual(classificationType, FSharpClassificationTypes.getClassificationTypeName ty, "Classification data doesn't match for end of marker")
+        | Some item -> Assert.AreEqual(classificationType, FSharpClassificationTypes.getClassificationTypeName item.Type, "Classification data doesn't match for end of marker")
 
     let verifyNoClassificationDataAtEndOfMarker(fileContents: string, marker: string, classificationType: string) =
         let text = SourceText.From(fileContents)
         let ranges = getRanges fileContents
         let line = text.Lines.GetLinePosition (fileContents.IndexOf(marker) + marker.Length - 1)
         let markerPos = Pos.mkPos (Line.fromZ line.Line) (line.Character + marker.Length - 1)
-        let anyData = ranges |> List.exists (fun struct (range, sct) -> Range.rangeContainsPos range markerPos && ((FSharpClassificationTypes.getClassificationTypeName sct) = classificationType))
+        let anyData = ranges |> List.exists (fun item -> Range.rangeContainsPos item.Range markerPos && ((FSharpClassificationTypes.getClassificationTypeName item.Type) = classificationType))
         Assert.False(anyData, "Classification data was found when it wasn't expected.")
 
     [<TestCase("(*1*)", ClassificationTypeNames.StructName)>]

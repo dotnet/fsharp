@@ -20,43 +20,50 @@ open FSharp.Compiler.TypedTreeOps
 
 [<RequireQualifiedAccess>]
 type SemanticClassificationType =
-    | ReferenceType
-    | ValueType
-    | UnionCase
-    | UnionCaseField
-    | Function
-    | Property
-    | MutableVar
-    | Module
-    | Namespace
-    | Printf
-    | ComputationExpression
-    | IntrinsicFunction
-    | Enumeration
-    | Interface
-    | TypeArgument
-    | Operator
-    | DisposableType
-    | DisposableTopLevelValue
-    | DisposableLocalValue
-    | Method
-    | ExtensionMethod
-    | ConstructorForReferenceType
-    | ConstructorForValueType
-    | Literal
-    | RecordField
-    | MutableRecordField
-    | RecordFieldAsFunction
-    | Exception
-    | Field
-    | Event
-    | Delegate
-    | NamedArgument
-    | Value
-    | LocalValue
-    | Type
-    | TypeDef
-    | Plaintext
+    | ReferenceType = 0
+    | ValueType = 1
+    | UnionCase = 2
+    | UnionCaseField = 3
+    | Function = 4
+    | Property = 5
+    | MutableVar = 6
+    | Module = 7
+    | Namespace = 8
+    | Printf = 9
+    | ComputationExpression = 10
+    | IntrinsicFunction = 11
+    | Enumeration = 12
+    | Interface = 13
+    | TypeArgument = 14
+    | Operator = 15
+    | DisposableType = 16
+    | DisposableTopLevelValue = 17
+    | DisposableLocalValue = 18
+    | Method = 19
+    | ExtensionMethod = 20
+    | ConstructorForReferenceType = 21
+    | ConstructorForValueType = 22
+    | Literal = 23
+    | RecordField = 24
+    | MutableRecordField = 25
+    | RecordFieldAsFunction = 26
+    | Exception = 27
+    | Field = 28
+    | Event = 29
+    | Delegate = 30
+    | NamedArgument = 31
+    | Value = 32
+    | LocalValue = 33
+    | Type = 34
+    | TypeDef = 35
+    | Plaintext = 36
+
+[<RequireQualifiedAccess>]
+[<Struct>]
+type FSharpSemanticClassificationItem =
+    val Range: range
+    val Type: SemanticClassificationType
+    new((range, ty)) = { Range = range; Type = ty }
 
 [<AutoOpen>]
 module TcResolutionsExtensions =
@@ -64,7 +71,7 @@ module TcResolutionsExtensions =
         (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.NameResolutionEnv, cnr.AccessorDomain, cnr.Range)
 
     type TcResolutions with
-        member sResolutions.GetSemanticClassification(g: TcGlobals, amap: Import.ImportMap, formatSpecifierLocations: (range * int) [], range: range option) : struct(range * SemanticClassificationType) [] =
+        member sResolutions.GetSemanticClassification(g: TcGlobals, amap: Import.ImportMap, formatSpecifierLocations: (range * int) [], range: range option) : FSharpSemanticClassificationItem [] =
             ErrorScope.Protect Range.range0 (fun () ->
                 let (|LegitTypeOccurence|_|) = function
                     | ItemOccurence.UseInType
@@ -149,9 +156,9 @@ module TcResolutionsExtensions =
                 let duplicates = HashSet<range>(Range.comparer)
 
                 let results = ImmutableArray.CreateBuilder()
-                let inline add m typ =
+                let inline add m (typ: SemanticClassificationType) =
                     if duplicates.Add m then
-                        results.Add struct(m, typ)
+                        results.Add (new FSharpSemanticClassificationItem((m, typ)))
 
                 resolutions
                 |> Array.iter (fun cnr ->
@@ -368,7 +375,7 @@ module TcResolutionsExtensions =
 
                     | _, _, _, _, _, m ->
                         add m SemanticClassificationType.Plaintext)
-                results.AddRange(formatSpecifierLocations |> Array.map (fun (m, _) -> struct(m, SemanticClassificationType.Printf)))
+                results.AddRange(formatSpecifierLocations |> Array.map (fun (m, _) -> new FSharpSemanticClassificationItem((m, SemanticClassificationType.Printf))))
                 results.ToArray()
                ) 
                (fun msg -> 

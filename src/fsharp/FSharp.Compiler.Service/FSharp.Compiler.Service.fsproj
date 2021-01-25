@@ -850,6 +850,12 @@
     <Compile Include="..\service\ItemKey.fs">
       <Link>Service/ItemKey.fs</Link>
     </Compile>
+	<Compile Include="..\service\SemanticClassificationKey.fsi">
+		<Link>Service/SemanticClassificationKey.fsi</Link>
+	</Compile>
+	<Compile Include="..\service\SemanticClassificationKey.fs">
+		<Link>Service/SemanticClassificationKey.fs</Link>
+	</Compile>
     <Compile Include="..\service\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>

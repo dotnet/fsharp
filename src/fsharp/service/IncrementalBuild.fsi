@@ -86,7 +86,7 @@ type internal TcInfoOptional =
       itemKeyStore: ItemKeyStore option
       
       /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-      semanticClassification: struct (range * SemanticClassificationType) []
+      semanticClassificationKeyStore: SemanticClassificationKeyStore option
     }
 
     member TcSymbolUses: TcSymbolUses list
@@ -115,7 +115,7 @@ type internal PartialCheckResults =
 
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetSemanticClassification: CompilationThreadToken -> struct(range * SemanticClassificationType) []
+    member GetSemanticClassification: CompilationThreadToken -> SemanticClassificationKeyStore option
 
     member TimeStamp: DateTime 
 

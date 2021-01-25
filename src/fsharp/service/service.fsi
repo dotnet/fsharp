@@ -312,7 +312,7 @@ type public FSharpChecker =
     /// <param name="filename">The filename for the file.</param>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetBackgroundSemanticClassificationForFile: filename: string * options: FSharpProjectOptions * ?userOpName: string -> Async<struct(range * SemanticClassificationType) []>
+    member GetBackgroundSemanticClassificationForFile : filename : string * options : FSharpProjectOptions * ?userOpName: string -> Async<FSharpSemanticClassificationView option>
 
     /// <summary>
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API.
