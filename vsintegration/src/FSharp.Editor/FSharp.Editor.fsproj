@@ -89,8 +89,8 @@
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
     <Compile Include="Commands\XmlDocCommandService.fs" />
+    <Compile Include="Refactor\AddExplicitTypeForParameter.fs" />
     <Compile Include="CodeFix\CodeFixHelpers.fs" />
-    <Compile Include="CodeFix\AddExplicitTypeForParameter.fs" />
     <Compile Include="CodeFix\AddMissingRecToMutuallyRecFunctions.fs" />
     <Compile Include="CodeFix\ConvertCSharpLambdaToFSharpLambda.fs" />
     <Compile Include="CodeFix\MakeOuterBindingRecursive.fs" />
@@ -191,6 +191,10 @@
       <Version>$(VSAssemblyVersion)</Version>
       <CodeBase>$PackageFolder$\FSharp.UIResources.dll</CodeBase>
     </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Refactor\" />
   </ItemGroup>
 
 </Project>
