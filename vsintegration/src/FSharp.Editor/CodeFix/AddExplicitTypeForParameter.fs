@@ -2,15 +2,18 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Composition
 open System.Threading
-open System.Threading.Tasks
+open System.Collections.Immutable
+
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
-
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 
 [<RequireQualifiedAccess>]
@@ -47,12 +50,18 @@ type internal FSharpAddExplicitTypeToParameterRefactoring
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, CancellationToken.None, userOpName)
             let! sourceText = document.GetTextAsync () |> liftTaskAsync
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
-            let textLine = sourceText.Lines.GetLineFromPosition position
+            let _textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
-            let fcsTextLineNumber = Line.fromZ textLinePos.Line
+            let _fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! parseFileResults, _, checkFileResults = checker.ParseAndCheckDocument (document, projectOptions, sourceText=sourceText, userOpName=userOpName)
             let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
+            // TODO - this is what I'd like to use, but can't ... I think
+            //let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
+            let symbolUses =
+                checkFileResults.GetAllUsesOfAllSymbolsInFile(context.CancellationToken)
+                |> Seq.filter (fun su -> Range.rangeContainsPos su.RangeAlternate lexerSymbol.Range.End)
+                |> Seq.toArray
+
 
             let isValidValueWithoutExplicitType (funcOrValue: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
                 let isLambdaIfFunction =
@@ -68,15 +77,34 @@ type internal FSharpAddExplicitTypeToParameterRefactoring
                 not funcOrValue.IsConstructorThisValue &&
                 not (PrettyNaming.IsOperatorName funcOrValue.DisplayName)
 
-            match symbolUse.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as v when isValidValueWithoutExplicitType v symbolUse ->
-                let codeAction =
-                    CodeActionHelpers.createTextChangeCodeFix(
-                        "yeet",
-                        context,
-                        (fun () -> asyncMaybe.Return [| TextChange(TextSpan(lexerSymbol.Ident.idRange.EndColumn + 1, 1), ": int" + parameter.Type.Format symbolUse.DisplayContext) |]))
-                context.RegisterRefactoring(codeAction)
-            | _ -> ()
+            for symbolUse in symbolUses do
+                match symbolUse.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as v when isValidValueWithoutExplicitType v symbolUse ->
+
+                    // TODO - need one that retains constraints
+                    let turd = v.FullType.FormatWithConstraints symbolUse.DisplayContext
+                    let title = "Add type annotation"
+
+                    let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+                    
+                    
+                    // TODO: Handle if there were already parens
+                    let getChangedText (sourceText: SourceText) =
+
+                        sourceText.WithChanges(TextChange(TextSpan(symbolSpan.Start, 0), "("))
+                                    .WithChanges(TextChange(TextSpan(symbolSpan.End + 1, 0), ": " + turd + ")"))
+
+                    let codeAction =
+                        CodeAction.Create(
+                            title,
+                            (fun (cancellationToken: CancellationToken) ->
+                                async {
+                                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                                    return context.Document.WithText(getChangedText sourceText)
+                                } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                            title)
+                    context.RegisterRefactoring(codeAction)
+                | _ -> ()
         }
         |> Async.Ignore
         |>RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

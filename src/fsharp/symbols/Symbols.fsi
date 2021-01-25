@@ -1046,8 +1046,11 @@ type FSharpType =
     /// Get the generic parameter data for a generic parameter type
     member GenericParameter: FSharpGenericParameter
 
-    /// Format the type using the rules of the given display context
+    /// Format the type using the rules of the given display context, skipping type constraints
     member Format: context: FSharpDisplayContext -> string
+
+     /// Format the type using the rules of the given display context
+    member FormatWithConstraints: context: FSharpDisplayContext -> string
 
     /// Format the type using the rules of the given display context
     member FormatLayout: context: FSharpDisplayContext -> TaggedText[]
