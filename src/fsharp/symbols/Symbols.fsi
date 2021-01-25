@@ -1054,6 +1054,9 @@ type FSharpType =
 
     /// Format the type using the rules of the given display context
     member FormatLayout: context: FSharpDisplayContext -> TaggedText[]
+    
+    /// Format the type using the rules of the given display context
+    member FormatLayoutWithConstraints: context: FSharpDisplayContext -> TaggedText[]
 
     /// Instantiate generic type parameters in a type
     member Instantiate: (FSharpGenericParameter * FSharpType) list -> FSharpType

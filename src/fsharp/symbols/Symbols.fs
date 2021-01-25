@@ -2352,16 +2352,19 @@ type FSharpType(cenv, ty:TType) =
 
     member _.Format(context: FSharpDisplayContext) = 
        protect <| fun () -> 
-        NicePrint.prettyStringOfTyNoCx (context.Contents cenv.g) ty 
+            NicePrint.prettyStringOfTyNoCx (context.Contents cenv.g) ty 
 
-    member x.FormatWithConstraints(context: FSharpDisplayContext) = 
+    member _.FormatWithConstraints(context: FSharpDisplayContext) = 
         protect <| fun () -> 
-         NicePrint.prettyStringOfTy (context.Contents cenv.g) ty 
+            NicePrint.prettyStringOfTy (context.Contents cenv.g) ty 
 
-    member x.FormatLayout(context: FSharpDisplayContext) =
+    member _.FormatLayout(context: FSharpDisplayContext) =
        protect <| fun () -> 
-        NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
-        |> LayoutRender.toArray
+            NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
+
+    member _.FormatLayoutWithConstraints(context: FSharpDisplayContext) =
+        protect <| fun () -> 
+            NicePrint.prettyLayoutOfType (context.Contents cenv.g) ty
 
     override _.ToString() = 
        protect <| fun () -> 

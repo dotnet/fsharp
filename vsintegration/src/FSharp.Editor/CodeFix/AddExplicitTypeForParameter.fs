@@ -5,7 +5,6 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Composition
 open System.Threading
-open System.Collections.Immutable
 
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
@@ -13,23 +12,6 @@ open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text
-
-[<RequireQualifiedAccess>]
-module internal CodeActionHelpers =
-    let createTextChangeCodeFix (title: string, context: CodeRefactoringContext, computeTextChanges: unit -> Async<TextChange[] option>) =
-        CodeAction.Create(
-            title,
-            (fun (cancellationToken: CancellationToken) ->
-                async {
-                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let! changesOpt = computeTextChanges()
-                    match changesOpt with
-                    | None -> return context.Document
-                    | Some textChanges -> return context.Document.WithText(sourceText.WithChanges(textChanges))
-                } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-            title)
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "AddExplicitTypeToParameter"); Shared>]
 type internal FSharpAddExplicitTypeToParameterRefactoring
@@ -55,8 +37,10 @@ type internal FSharpAddExplicitTypeToParameterRefactoring
             let _fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! parseFileResults, _, checkFileResults = checker.ParseAndCheckDocument (document, projectOptions, sourceText=sourceText, userOpName=userOpName)
             let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
-            // TODO - this is what I'd like to use, but can't ... I think
+            
+            // This is what I'd like to use, but can't because there's no way to get the actual ItemOccurence in this call.
             //let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
+            
             let symbolUses =
                 checkFileResults.GetAllUsesOfAllSymbolsInFile(context.CancellationToken)
                 |> Seq.filter (fun su -> Range.rangeContainsPos su.RangeAlternate lexerSymbol.Range.End)
@@ -80,19 +64,34 @@ type internal FSharpAddExplicitTypeToParameterRefactoring
             for symbolUse in symbolUses do
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as v when isValidValueWithoutExplicitType v symbolUse ->
-
-                    // TODO - need one that retains constraints
-                    let turd = v.FullType.FormatWithConstraints symbolUse.DisplayContext
+                    let typeString = v.FullType.FormatWithConstraints symbolUse.DisplayContext
                     let title = "Add type annotation"
 
                     let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
-                    
-                    
-                    // TODO: Handle if there were already parens
-                    let getChangedText (sourceText: SourceText) =
 
-                        sourceText.WithChanges(TextChange(TextSpan(symbolSpan.Start, 0), "("))
-                                    .WithChanges(TextChange(TextSpan(symbolSpan.End + 1, 0), ": " + turd + ")"))
+                    let alreadyWrappedInParens =
+                        let rec leftLoop ch pos =
+                            if not (Char.IsWhiteSpace(ch)) then
+                                ch = '('
+                            else
+                                leftLoop sourceText.[pos - 1] (pos - 1)
+
+                        let rec rightLoop ch pos =
+                            if not (Char.IsWhiteSpace(ch)) then
+                                ch = ')'
+                            else
+                                leftLoop sourceText.[pos + 1] (pos + 1)
+
+                        let hasLeftParen = leftLoop sourceText.[symbolSpan.Start - 1] (symbolSpan.Start - 1)
+                        let hasRightParen = rightLoop sourceText.[symbolSpan.End] symbolSpan.End
+                        hasLeftParen && hasRightParen
+                    
+                    let getChangedText (sourceText: SourceText) =
+                        if alreadyWrappedInParens then
+                            sourceText.WithChanges(TextChange(TextSpan(symbolSpan.End, 0), ": " + typeString))
+                        else
+                            sourceText.WithChanges(TextChange(TextSpan(symbolSpan.Start, 0), "("))
+                                      .WithChanges(TextChange(TextSpan(symbolSpan.End + 1, 0), ": " + typeString + ")"))
 
                     let codeAction =
                         CodeAction.Create(
