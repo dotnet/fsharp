@@ -61,7 +61,7 @@ x.ToString()
   }
             """
             """
-  .property valuetype [mscorlib]System.TimeSpan
+  .property callconv(8) valuetype [mscorlib]System.TimeSpan
           x()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 )
@@ -110,7 +110,7 @@ x.Day
   }
             """
             """
-  .property valuetype [mscorlib]System.DateTime
+  .property callconv(8) valuetype [mscorlib]System.DateTime
           x()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 )
@@ -158,7 +158,7 @@ x.ToString()
   }
             """
             """
-  .property valuetype [mscorlib]System.Decimal
+  .property callconv(8) valuetype [mscorlib]System.Decimal
           x()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 )
@@ -252,7 +252,7 @@ type StaticC() =
       IL_0009:  ret
     }
 
-    .property instance int32 X()
+    .property callconv(8) instance int32 X()
     {
       .set instance void Mutation05/C::set_X(int32)
       .get instance int32 Mutation05/C::get_X()
@@ -342,7 +342,7 @@ type StaticC() =
       IL_000c:  ret
     }
 
-    .property int32 X()
+    .property callconv(8) int32 X()
     {
       .set void Mutation05/StaticC::set_X(int32)
       .get int32 Mutation05/StaticC::get_X()
