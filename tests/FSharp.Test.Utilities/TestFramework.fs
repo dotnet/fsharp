@@ -412,11 +412,6 @@ type public InitializeSuiteAttribute () =
 
     override x.Targets = ActionTargets.Test ||| ActionTargets.Suite
 
-
-[<assembly:ParallelizableAttribute(ParallelScope.Fixtures)>]
-[<assembly:InitializeSuite()>]
-()
-
 let fsharpSuiteDirectory = __SOURCE_DIRECTORY__
 
 let testConfig testDir =

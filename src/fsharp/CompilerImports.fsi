@@ -11,6 +11,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -21,8 +22,6 @@ open FSharp.Core.CompilerServices
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif
-
-open Microsoft.DotNet.DependencyManager
 
 /// This exception is an old-style way of reporting a diagnostic
 exception AssemblyNotResolved of (*originalName*) string * range

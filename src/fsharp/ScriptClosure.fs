@@ -14,6 +14,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseAndCheckInputs
@@ -21,8 +22,6 @@ open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-
-open Microsoft.DotNet.DependencyManager
 
 [<RequireQualifiedAccess>]
 type LoadClosureInput = 

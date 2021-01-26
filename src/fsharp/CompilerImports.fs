@@ -25,6 +25,7 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.Lib
@@ -39,8 +40,6 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.XmlDoc
-
-open Microsoft.DotNet.DependencyManager
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
