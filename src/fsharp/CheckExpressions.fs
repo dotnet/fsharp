@@ -5289,22 +5289,22 @@ and TcExprOfUnknownType cenv env tpenv expr =
     let expr', tpenv = TcExpr cenv (MustEqual exprty) env tpenv expr
     expr', exprty, tpenv
 
-and TcExprFlex cenv flex compat (desiredTy: TType) (env: TcEnv) tpenv (e: SynExpr) =
+and TcExprFlex cenv flex compat (desiredTy: TType) (env: TcEnv) tpenv (synExpr: SynExpr) =
     // This is the old way of introducing flexibility via subtype constraints, still active
     // for compat reasons.
     if flex then
         let argty = NewInferenceType ()
         if compat then 
             (destTyparTy cenv.g argty).SetIsCompatFlex(true)
-        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css  e.Range NoTrace desiredTy argty 
-        let e', tpenv = TcExprFlex2 cenv argty env tpenv e 
-        let e' = mkCoerceIfNeeded cenv.g desiredTy argty e'
-        e', tpenv
+        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css synExpr.Range NoTrace desiredTy argty 
+        let expr2, tpenv = TcExprFlex2 cenv argty env tpenv synExpr 
+        let expr3 = mkCoerceIfNeeded cenv.g desiredTy argty expr2
+        expr3, tpenv
     else
-        TcExprFlex2 cenv desiredTy env tpenv e
+        TcExprFlex2 cenv desiredTy env tpenv synExpr
 
-and TcExprFlex2 cenv desiredTy env tpenv e =
-    TcExpr cenv (MustConvertTo desiredTy) env tpenv e
+and TcExprFlex2 cenv desiredTy env tpenv synExpr =
+    TcExpr cenv (MustConvertTo desiredTy) env tpenv synExpr
 
 and TcExpr cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
     // Start an error recovery handler 
@@ -9009,9 +9009,11 @@ and TcMethodApplication
             let expr = mkLetsBind mMethExpr outArgTmpBinds expr
             expr, tyOfExpr cenv.g expr
 
-    // Subsumption to return type
-    let callExpr2b = mkCoerceIfNeeded cenv.g returnTy.Commit exprty callExpr2
-    
+    // Subsumption or conversion to return type
+    let callExpr2b = 
+        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+        AdjustExprForTypeDirectedConversions tcVal cenv.g cenv.amap cenv.infoReader env.AccessRights returnTy.Commit exprty mMethExpr callExpr2
+
     // Handle post-hoc property assignments 
     let setterExprPrebinders, callExpr3 = 
         let expr = callExpr2b

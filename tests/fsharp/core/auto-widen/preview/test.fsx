@@ -1,8 +1,8 @@
-(*
+
 #r "System.Xml.Linq.dll"
 #r "System.Xml.XDocument.dll"
 
-let failures = ref []
+let mutable failures : string list = []
 
 open System
 
@@ -160,7 +160,6 @@ module ConvertViaOpImplicit4 =
         static member M1(C:C) = 1
     let x = C.M1(2)
 
-*)
 module ConvertViaOpImplicit5 =
     type X() = 
         static member M1(x:X) = 1
@@ -168,7 +167,6 @@ module ConvertViaOpImplicit5 =
         static member op_Implicit(y:Y) = X()
     let x = X.M1(Y())
 
-(*
 module ConvertViaOpImplicitGeneric =
     type C<'T>() = 
         static member op_Implicit(x: 'T) = C<'T>()
@@ -291,13 +289,12 @@ let f3 x = if true then 1 else 3.0
 printfn "test done"
 
 let aa =
-  match !failures with 
+  match failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
       System.IO.File.WriteAllText("test.ok","ok")
       exit 0
   | _ -> 
-      stdout.WriteLine "Test Failed"
+      printfn "Test Failed, failures = %A" failures
       exit 1
 
-*)
