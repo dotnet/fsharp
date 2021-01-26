@@ -457,14 +457,22 @@ let UnifyTypes cenv (env: TcEnv) m actualTy expectedTy =
 // then allow subsumption.
 let UnifyOverallType cenv (env: TcEnv) m overallTy actualTy =
     match overallTy with 
-    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitConversion ->
+    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions ->
         let actualTy = tryNormalizeMeasureInType cenv.g actualTy
         let reqdTy = tryNormalizeMeasureInType cenv.g reqdTy
         if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m reqdTy actualTy then
             ()
         else
             // try adhoc type-directed conversions
-            let reqdTy2, _usesTDC = AdjustRequiredTypeForTypeDirectedConversions cenv.infoReader false reqdTy actualTy m
+            let reqdTy2, usesTDC, eqn = AdjustRequiredTypeForTypeDirectedConversions cenv.infoReader env.eAccessRights false reqdTy actualTy m
+            match eqn with 
+            | Some (ty1, ty2, msg) ->
+                UnifyTypes cenv env m ty1 ty2
+                msg env.DisplayEnv
+            | None -> ()
+            match usesTDC with 
+            | TypeDirectedConversionUsed.Yes warn -> warning(warn env.DisplayEnv)
+            | TypeDirectedConversionUsed.No -> ()
             if AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m reqdTy2 actualTy then
                 ()
             else
@@ -5444,7 +5452,7 @@ and TcExprUndelayedNoType cenv env tpenv synExpr: Expr * TType * _ =
 
 and TcExprLeafProtectExcept2 p cenv (overallTy: OverallTy) actualTy (env: TcEnv) canAdhoc m f =
     match overallTy with 
-    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitConversion && not (p reqdTy) ->
+    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && not (p reqdTy) ->
         // Note about the cases where canAdhoc=false:
         //    Some constructs (list expressions etc) require placing the subtype constraint down
         //    before processing in order to propagate into the construct.
@@ -5461,9 +5469,18 @@ and TcExprLeafProtectExcept2 p cenv (overallTy: OverallTy) actualTy (env: TcEnv)
             AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace reqdTy actualTy
         let expr, tpenv = f ()
         if canAdhoc then 
-            let reqdTy2, _usesTDC = AdjustRequiredTypeForTypeDirectedConversions cenv.infoReader false reqdTy actualTy m
+            let reqdTy2, usesTDC, eqn = AdjustRequiredTypeForTypeDirectedConversions cenv.infoReader env.eAccessRights false reqdTy actualTy m
+            match eqn with 
+            | Some (ty1, ty2, msg) ->
+                UnifyTypes cenv env m ty1 ty2
+                msg env.DisplayEnv
+            | None -> ()
+            match usesTDC with 
+            | TypeDirectedConversionUsed.Yes warn -> warning(warn env.DisplayEnv)
+            | TypeDirectedConversionUsed.No -> ()
             AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace reqdTy2 actualTy
-        let expr2 = AdjustExprForTypeDirectedConversions cenv.g cenv.amap cenv.infoReader env.AccessRights reqdTy actualTy m expr
+        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+        let expr2 = AdjustExprForTypeDirectedConversions tcVal cenv.g cenv.amap cenv.infoReader env.AccessRights reqdTy actualTy m expr
         expr2, tpenv
     | _ ->
         UnifyTypes cenv env m overallTy.Commit actualTy
@@ -5471,7 +5488,7 @@ and TcExprLeafProtectExcept2 p cenv (overallTy: OverallTy) actualTy (env: TcEnv)
 
 and TcExprLeafProtectExcept p cenv (overallTy: OverallTy) (env: TcEnv) canAdhoc m f =
     match overallTy with 
-    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitConversion && not (p reqdTy) ->
+    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && not (p reqdTy) ->
         let actualTy = NewInferenceType()
         TcExprLeafProtectExcept2 p cenv overallTy actualTy env canAdhoc m (fun () -> f actualTy)
     | _ ->
@@ -5559,7 +5576,8 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         //       (1 : obj)
         //let overallTyInner = (* if isFromReturnAnnotation then *) MustConvertTo tgtTy (* else MustEqual tgtTy *)
         let bodyExpr, tpenv = TcExpr cenv (MustConvertTo tgtTy) env tpenv synBodyExpr 
-        let bodyExpr2 = AdjustExprForTypeDirectedConversions cenv.g cenv.amap cenv.infoReader env.AccessRights overallTy.Commit tgtTy m bodyExpr
+        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+        let bodyExpr2 = AdjustExprForTypeDirectedConversions tcVal cenv.g cenv.amap cenv.infoReader env.AccessRights overallTy.Commit tgtTy m bodyExpr
         bodyExpr2, tpenv
 
     // e :? ty
@@ -7460,7 +7478,8 @@ and TcDelayed cenv (overallTy: OverallTy) env tpenv mExpr expr exprty (atomicFla
     | DelayedDot :: _ -> 
         // at the end of the application chain allow coercion introduction
         UnifyOverallTypeAndRecover cenv env mExpr overallTy exprty 
-        let expr2 = AdjustExprForTypeDirectedConversions cenv.g cenv.amap cenv.infoReader env.AccessRights overallTy.Commit exprty mExpr expr.Expr
+        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+        let expr2 = AdjustExprForTypeDirectedConversions tcVal cenv.g cenv.amap cenv.infoReader env.AccessRights overallTy.Commit exprty mExpr expr.Expr
         expr2, tpenv
 
     // Expr.M (args) where x.M is a .NET method or index property 
@@ -8814,7 +8833,7 @@ and TcMethodApplication
             let lambdaPropagationInfo = 
                 if preArgumentTypeCheckingCalledMethGroup.Length > 1 then 
                     [| for meth in preArgumentTypeCheckingCalledMethGroup do 
-                        match ExamineMethodForLambdaPropagation meth with
+                        match ExamineMethodForLambdaPropagation meth ad with
                         | Some (unnamedInfo, namedInfo) ->
                             let calledObjArgTys = meth.CalledObjArgTys mMethExpr
                             if (calledObjArgTys, callerObjArgTys) ||> Seq.forall2 (fun calledTy callerTy -> AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv cenv.css mMethExpr calledTy callerTy) then
@@ -8949,7 +8968,8 @@ and TcMethodApplication
     /// STEP 5. Build the argument list. Adjust for optional arguments, byref arguments and coercions.
 
     let objArgPreBinder, objArgs, allArgsPreBinders, allArgs, allArgsCoerced, optArgPreBinder, paramArrayPreBinders, outArgExprs, outArgTmpBinds =
-        AdjustCallerArgs TcFieldInit env.eCallerMemberName cenv.infoReader ad finalCalledMeth objArgs lambdaVars mItem mMethExpr
+        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+        AdjustCallerArgs tcVal TcFieldInit env.eCallerMemberName cenv.infoReader ad finalCalledMeth objArgs lambdaVars mItem mMethExpr
 
     // Record the resolution of the named argument for the Language Service
     allArgs |> List.iter (fun assignedArg ->
@@ -9059,7 +9079,8 @@ and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, Cal
         | AssignedPropSetter (pinfo, pminfo, pminst) -> 
             MethInfoChecks cenv.g cenv.amap true None [objExpr] ad m pminfo
             let calledArgTy = List.head (List.head (pminfo.GetParamTypes(cenv.amap, m, pminst)))
-            let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExpr cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
+            let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+            let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExpr tcVal cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
             let mut = (if isStructTy cenv.g (tyOfExpr cenv.g objExpr) then DefinitelyMutates else PossiblyMutates)
             let action = BuildPossiblyConditionalMethodCall cenv env mut m true pminfo NormalValUse pminst [objExpr] [argExpr] |> fst 
             argExprPrebinder, action, Item.Property (pinfo.PropertyName, [pinfo])
@@ -9068,7 +9089,8 @@ and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, Cal
             // Get or set instance IL field 
             ILFieldInstanceChecks cenv.g cenv.amap ad m finfo
             let calledArgTy = finfo.FieldType (cenv.amap, m)
-            let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExpr cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
+            let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+            let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExpr tcVal cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
             let action = BuildILFieldSet cenv.g m objExpr finfo argExpr 
             argExprPrebinder, action, Item.ILField finfo
                         
@@ -9076,7 +9098,8 @@ and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, Cal
             RecdFieldInstanceChecks cenv.g cenv.amap ad m rfinfo 
             let calledArgTy = rfinfo.FieldType
             CheckRecdFieldMutation m denv rfinfo
-            let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExpr cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
+            let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+            let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExpr tcVal cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
             let action = BuildRecdFieldSet cenv.g m objExpr rfinfo argExpr 
             argExprPrebinder, action, Item.RecdField rfinfo
 

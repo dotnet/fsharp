@@ -77,6 +77,11 @@
         <target state="translated">'{0}' bütünleştirilmiş kod özniteliği, yüklenemeyen veya mevcut olmayan '{1}' tasarımcı bütünleştirilmiş koduna başvuruyor. Bildirilen özel durum: {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAdditionalImplicitConversions">
+        <source>implicit upcasts and other conversions for function returns, bindings and other expressions</source>
+        <target state="new">implicit upcasts and other conversions for function returns, bindings and other expressions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">uygulama hesaplama ifadeleri</target>
@@ -105,11 +110,6 @@
       <trans-unit id="featureFromEndSlicing">
         <source>from-end slicing</source>
         <target state="translated">uçtan dilimleme</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureImplicitConversion">
-        <source>implicit upcasts and other conversions for function returns, bindings and other expressions</source>
-        <target state="new">implicit upcasts and other conversions for function returns, bindings and other expressions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureImplicitYield">
@@ -322,6 +322,11 @@
         <target state="translated">Bu betik için .NET SDK belirlenemedi. Betik 'global.json' kullanan bir dizindeyse, ilgili .NET SDK'nın yüklü olduğundan emin olun. '{1}' dizinindeki '{0} --version' çıkışı: '{2}' ve çıkış kodu: '{3}'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAmbiguousImplicitConversion">
+        <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'.</source>
+        <target state="new">This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
         <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
         <target state="translated">Bu özellik, bu F# sürümünde desteklenmiyor. Bu özelliği kullanabilmeniz için /langversion:preview eklemeniz gerekebilir.</target>
@@ -355,6 +360,11 @@
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">Açık tür bildiriminde Byref türlerine izin verilmez.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsed">
+        <source>This expression uses an implicit conversion to convert type '{0}' to type '{1}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</source>
+        <target state="new">This expression uses an implicit conversion to convert type '{0}' to type '{1}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">

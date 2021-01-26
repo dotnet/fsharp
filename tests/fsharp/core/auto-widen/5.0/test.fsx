@@ -1,3 +1,6 @@
+#r "System.Xml.Linq.dll"
+#r "System.Xml.XDocument.dll"
+
 open System
 
 module BasicTypeDirectedConversionsToObj =
@@ -73,31 +76,31 @@ module Overloads1 =
 module Overloads2 =
     type C() = 
         static member M1(x:int) = failwith "nope"
-        static member M1(x:int64) = 1
+        static member M1(x:int64) = printfn "ok at line %s" __LINE__
     let x = C.M1(2L)
 
 module Overloads3 =
     type C() = 
         static member M1(x:string) = failwith "nope"
-        static member M1(x:int64) = 1
+        static member M1(x:int64) = printfn "ok at line %s" __LINE__
     let x = C.M1(2)
 
 module OverloadedOptionals1 =
     type C() = 
         static member M1(x:string) = failwith "nope"
-        static member M1(?x:int64) = 1
+        static member M1(?x:int64) = printfn "ok at line %s" __LINE__
     let x = C.M1(x=2)
 
 module OverloadedOptionals2 =
     type C() = 
-        static member M1(?x:int) = 1
+        static member M1(?x:int) = printfn "ok at line %s" __LINE__
         static member M1(?x:int64) = failwith "nope"
     let x = C.M1(x=2)
 
 module OverloadedOptionals3 =
     type C() = 
         static member M1(?x:int) =  failwith "nope"
-        static member M1(?x:int64) =  1
+        static member M1(?x:int64) =  printfn "ok at line %s" __LINE__
     let x = C.M1(x=2L)
 
 module Optionals1 =
@@ -116,6 +119,66 @@ module ParamArray2 =
         static member M1([<System.ParamArray>] x:double[]) = Array.sum x
     let x1 = C.M1(2)
     let x2 = C.M1(2, 3, 5.0)
+
+module ConvertToSealedViaOpImplicit =
+    [<Sealed>]
+    type C() = 
+        static member op_Implicit(x:int) = C()
+        static member M1(C:C) = 1
+    let x = C.M1(2)
+
+module ConvertNoOverloadin =
+    type C() = 
+        static member M1(x:int64) = 1
+    let x = C.M1(2)
+
+module ConvertNoOverloadingViaOpImplicit =
+    type C() = 
+        static member M1(x:decimal) = ()
+    let x = C.M1(2)
+
+let d: decimal = 3
+
+let ns : System.Xml.Linq.XNamespace = ""
+
+module ConvertViaOpImplicit2 =
+    type C() = 
+        static member M1(ns:System.Xml.Linq.XNamespace) = 1
+    let x = C.M1("")
+
+module ConvertViaOpImplicit3 =
+    type C() = 
+        static member M1(ns:System.Xml.Linq.XName) = 1
+    let x = C.M1("a")
+
+module ConvertViaOpImplicit4 =
+    type C() = 
+        static member op_Implicit(x:int) = C()
+        static member M1(C:C) = 1
+    let x = C.M1(2)
+
+module rec ConvertViaOpImplicit5 =
+    type Y() =
+        static member op_Implicit(y:Y) = X()
+    type X() = 
+        static member M1(x:X) = 1
+    let x = X.M1(Y())
+
+module ConvertViaOpImplicitGeneric =
+    type C<'T>() = 
+        static member op_Implicit(x: 'T) = C<'T>()
+    
+    let c:C<int> = 1
+    let f (c:C<int>) = 1
+    let x = f 2
+
+module ConvertViaNullable =
+    type C<'T>() = 
+        static member op_Implicit(x: 'T) = C<'T>()
+    
+    let c:Nullable<int> = 1
+    let f (c:Nullable<int>) = 1
+    let x = f 2
 
 let annotations = 
     let _ : obj = (1,2)
