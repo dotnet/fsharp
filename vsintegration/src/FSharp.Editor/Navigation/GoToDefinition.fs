@@ -20,6 +20,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 open Microsoft.VisualStudio.ComponentModelHost
 
 open Microsoft.VisualStudio
+open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Threading
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
@@ -28,7 +29,7 @@ open Microsoft.VisualStudio.TextManager.Interop
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 
-module private CSharpDecompiler =
+module internal CSharpDecompiler =
 
     open Microsoft.CodeAnalysis.CSharp
     open ICSharpCode.Decompiler
@@ -86,7 +87,7 @@ module private CSharpDecompiler =
 
         (projectInfo, generatedDocumentId)
 
-    let Decompile (document: Document, symbolFullName: string, assemblyLocation: string) =
+    let Decompile (symbolFullName: string, assemblyLocation: string) =
         let logger = new StringBuilder();
 
         // Initialize a decompiler with default settings.
@@ -98,31 +99,49 @@ module private CSharpDecompiler =
         let fullTypeName = FullTypeName(symbolFullName)
 
         // Try to decompile; if an exception is thrown the caller will handle it
-        let mutable text = decompiler.DecompileTypeAsString(fullTypeName);
+        let mutable text = decompiler.DecompileTypeAsString(fullTypeName)
 
-        text <- text + "#if false // " + Environment.NewLine;
-        text <- text + logger.ToString();
-        text <- text + "#endif" + Environment.NewLine;
+        text <- text + "#if false // " + Environment.NewLine
+        text <- text + logger.ToString()
+        text <- text + "#endif" + Environment.NewLine
 
-        document.WithText(SourceText.From(text));
+        SourceText.From(text)
 
-    let ShowDocument (document: Document, serviceProvider: IServiceProvider) =
+    let ShowDocument (filePath, name, serviceProvider: IServiceProvider) =
         let vsRunningDocumentTable4 = serviceProvider.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable4>()
-        let fileAlreadyOpen = vsRunningDocumentTable4.IsMonikerValid(document.FilePath)
+        let fileAlreadyOpen = vsRunningDocumentTable4.IsMonikerValid(filePath)
 
         let openDocumentService = serviceProvider.GetService<SVsUIShellOpenDocument, IVsUIShellOpenDocument>()
         let mutable localServiceProvider = Unchecked.defaultof<_>
         let mutable hierarchy = Unchecked.defaultof<_>
         let mutable itemId = Unchecked.defaultof<_>
         let mutable windowFrame = Unchecked.defaultof<_>
-        openDocumentService.OpenDocumentViaProject(document.FilePath, ref VSConstants.LOGVIEWID.TextView_guid, &localServiceProvider, &hierarchy, &itemId, &windowFrame) |> ignore
+        openDocumentService.OpenDocumentViaProject(filePath, ref VSConstants.LOGVIEWID.TextView_guid, &localServiceProvider, &hierarchy, &itemId, &windowFrame) |> ignore
+
+        let componentModel = serviceProvider.GetService<SComponentModel, IComponentModel>()
+        let editorAdaptersFactory = componentModel.GetService<IVsEditorAdaptersFactoryService>();
+        let documentCookie = vsRunningDocumentTable4.GetDocumentCookie(filePath)
+        let vsTextBuffer = vsRunningDocumentTable4.GetDocumentData(documentCookie) :?> IVsTextBuffer
+        let textBuffer = editorAdaptersFactory.GetDataBuffer(vsTextBuffer)
 
         if not fileAlreadyOpen then
             ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_IsProvisional, true)) |> ignore
-            ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideCaption, document.Name)) |> ignore
-            ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideToolTip, document.Name)) |> ignore
+            ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideCaption, name)) |> ignore
+            ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideToolTip, name)) |> ignore
 
         windowFrame.Show() |> ignore
+
+        let textContainer = textBuffer.AsTextContainer()
+        let mutable workspace = Unchecked.defaultof<_>
+        if Workspace.TryGetWorkspace(textContainer, &workspace) then
+            let solution = workspace.CurrentSolution
+            let documentId = workspace.GetDocumentIdInCurrentContext(textContainer)
+            match box documentId with
+            | null -> None
+            | _ -> solution.GetDocument(documentId) |> Some
+        else
+            None
+
 
 module private Symbol =
     let fullName (root: ISymbol) : string =
@@ -248,6 +267,11 @@ type internal StatusBar(statusBar: IVsStatusbar) =
 type internal FSharpGoToDefinitionNavigableItem(document, sourceSpan) =
     inherit FSharpNavigableItem(Glyph.BasicFile, ImmutableArray.Empty, document, sourceSpan)
 
+[<RequireQualifiedAccess>]
+type internal FSharpGoToDefinitionResult =
+    | NavigableItem of FSharpNavigableItem
+    | ExternalAssembly of ProjectInfo * DocumentId * FSharpSymbolUse
+
 type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager) =
     let userOpName = "GoToDefinition"
 
@@ -344,23 +368,28 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
 
             match declarations with
             | FSharpFindDeclResult.ExternalDecl (assembly, targetExternalSym) ->
-                let! project = originDocument.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName.Equals(assembly, StringComparison.OrdinalIgnoreCase))
-                let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, fun _ -> true)
+                let projectOpt = originDocument.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName.Equals(assembly, StringComparison.OrdinalIgnoreCase))
+                if projectOpt.IsSome then
+                    let project = projectOpt.Value
+                    let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, fun _ -> true)
 
-                let roslynSymbols =
-                    symbols
-                    |> Seq.collect ExternalSymbol.ofRoslynSymbol
-                    |> Array.ofSeq
+                    let roslynSymbols =
+                        symbols
+                        |> Seq.collect ExternalSymbol.ofRoslynSymbol
+                        |> Array.ofSeq
 
-                let! symbol =
-                    roslynSymbols
-                    |> Seq.tryPick (fun (sym, externalSym) ->
-                        if externalSym = targetExternalSym then Some sym
-                        else None
-                        )
- 
-                let! location = symbol.Locations |> Seq.tryHead
-                return (FSharpGoToDefinitionNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan), idRange)
+                    let! symbol =
+                        roslynSymbols
+                        |> Seq.tryPick (fun (sym, externalSym) ->
+                            if externalSym = targetExternalSym then Some sym
+                            else None
+                            )
+
+                    let! location = symbol.Locations |> Seq.tryHead
+                    return (FSharpGoToDefinitionResult.NavigableItem(FSharpGoToDefinitionNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan)), idRange)
+                else
+                    let tmpProjInfo, tmpDocId = CSharpDecompiler.GenerateTemporaryCSharpDocument(AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName), targetSymbolUse.Symbol.DisplayName, originDocument.Project.MetadataReferences)
+                    return (FSharpGoToDefinitionResult.ExternalAssembly(tmpProjInfo, tmpDocId, targetSymbolUse), idRange)
 
             | FSharpFindDeclResult.DeclFound targetRange -> 
                 // if goto definition is called at we are alread at the declaration location of a symbol in
@@ -378,7 +407,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
 
                         let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
                         let navItem = FSharpGoToDefinitionNavigableItem (implDocument, implTextSpan)
-                        return (navItem, idRange)
+                        return (FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
                     else // jump from implementation to the corresponding signature
                         let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineString, lexerSymbol.FullIsland, true)
                         match declarations with
@@ -387,7 +416,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                             let! sigSourceText = sigDocument.GetTextAsync () |> liftTaskAsync
                             let! sigTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sigSourceText, targetRange)
                             let navItem = FSharpGoToDefinitionNavigableItem (sigDocument, sigTextSpan)
-                            return (navItem, idRange)
+                            return (FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
                         | _ ->
                             return! None
                 // when the target range is different follow the navigation convention of 
@@ -400,7 +429,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                     // if the gotodef call originated from a signature and the returned target is a signature, navigate there
                     if isSignatureFile targetRange.FileName && preferSignature then 
                         let navItem = FSharpGoToDefinitionNavigableItem (sigDocument, sigTextSpan)
-                        return (navItem, idRange)
+                        return (FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
                     else // we need to get an FSharpSymbol from the targetRange found in the signature
                          // that symbol will be used to find the destination in the corresponding implementation file
                         let implFilePath =
@@ -417,7 +446,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                         
                         let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
                         let navItem = FSharpGoToDefinitionNavigableItem (implDocument, implTextSpan)
-                        return (navItem, idRange)
+                        return (FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
                 | _ ->
                     return! None
         }
@@ -433,8 +462,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     member this.FindDefinitionsForPeekTask(originDocument: Document, position: int, cancellationToken: CancellationToken) =
         this.FindDefinitionAtPosition(originDocument, position)
         |> Async.map (
-                Option.map (fun (navItem, _) -> navItem :> FSharpNavigableItem)
-                >> Option.toArray
+                Option.toArray
                 >> Array.toSeq)
         |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
