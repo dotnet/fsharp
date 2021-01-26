@@ -252,6 +252,10 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
        g.int32_ty, TypeDirectedConversionUsed.Yes(warn), None
 
+    // Adhoc float32--> float64
+    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.float32_ty actualTy then 
+       g.float32_ty, TypeDirectedConversionUsed.Yes(warn), None
+
     // Adhoc based on op_Implicit, perhaps returing a new equational type constraint to 
     // eliminate articifical constrained type variables.
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions then
@@ -1138,12 +1142,19 @@ let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap infoReade
    // Adhoc int32 --> int64
    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
        mkCallToInt64Operator g m actualTy expr
+
    // Adhoc int32 --> float32
    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && typeEquiv g g.float32_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
        mkCallToSingleOperator g m actualTy expr
+
    // Adhoc int32 --> float64
    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
        mkCallToDoubleOperator g m actualTy expr
+
+   // Adhoc float32 --> float64
+   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.float32_ty actualTy then 
+       mkCallToDoubleOperator g m actualTy expr
+
    else
        match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
        | Some (minfo, _) -> 
@@ -1330,9 +1341,12 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
                 //  T --> Nullable<T> widening at callsites
                 if isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(), m))
                 if isNullableTy g calledArgTy then 
-                    let calledNonOptTy = destNullableTy g calledArgTy
-                    let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
-                    MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy callerArgExpr2 m
+                    if isNullableTy g callerArgTy then
+                        callerArgExpr
+                    else
+                        let calledNonOptTy = destNullableTy g calledArgTy
+                        let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
+                        MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy callerArgExpr2 m
                 else
                     failwith "unreachable" // see case above
             
