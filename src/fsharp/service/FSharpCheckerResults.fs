@@ -1317,7 +1317,7 @@ type internal TypeCheckInfo
     member _.GetFormatSpecifierLocationsAndArity() = 
          sSymbolUses.GetFormatSpecifierLocationsAndArity()
 
-    member _.GetSemanticClassification(range: range option) : struct (range * SemanticClassificationType) [] =
+    member _.GetSemanticClassification(range: range option) : FSharpSemanticClassificationItem [] =
         sResolutions.GetSemanticClassification(g, amap, sSymbolUses.GetFormatSpecifierLocationsAndArity(), range)
 
     /// The resolutions in the file

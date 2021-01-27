@@ -10,7 +10,7 @@ open System.Runtime.InteropServices
 open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.Interactive.Shell
-open FSharp.Compiler.Scripting
+open FSharp.Test.ScriptHelpers
 
 open Xunit
 

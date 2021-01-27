@@ -18,6 +18,7 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
@@ -27,8 +28,6 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals 
-
-open Microsoft.DotNet.DependencyManager
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -786,10 +785,13 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             cancellable {
                 let! builderOpt, _ = getOrCreateBuilder (ctok, options, userOpName)
                 match builderOpt with
-                | None -> return [||]
+                | None -> return None
                 | Some builder -> 
                     let! checkResults = builder.GetFullCheckResultsAfterFileInProject (ctok, filename)
-                    return checkResults.GetSemanticClassification ctok })
+                    let scopt = checkResults.GetSemanticClassification ctok 
+                    match scopt with
+                    | None -> return None
+                    | Some sc -> return Some (sc.GetView ()) })
 
     /// Try to get recent approximate type check results for a file. 
     member _.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, sourceText: ISourceText option, _userOpName: string) =

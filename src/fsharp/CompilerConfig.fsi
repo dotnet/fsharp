@@ -13,12 +13,11 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
-
-open Microsoft.DotNet.DependencyManager
 
 exception FileNameNotResolved of (*filename*) string * (*description of searched locations*) string * range
 exception LoadedSourceNotFoundIgnoring of (*filename*) string * range

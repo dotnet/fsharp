@@ -55,16 +55,31 @@ module CoreTests =
     let ``array-FSI_BASIC`` () = singleTestBuildAndRun' "core/array" FSI_BASIC
 
     [<Test>]
+    let ``auto-widen-version-5_0``() = 
+        let cfg = testConfig' "core/auto-widen/5.0"
+        singleVersionedNegTest cfg "5.0" "test"
+
+    [<Test>]
+    let ``auto-widen-version-preview``() =
+        singleTestBuildAndRunVersion' "core/auto-widen/preview" FSC_BASIC "preview"
+
+    [<Test>]
+    let ``auto-widen-version-preview-warns-on``() = 
+        let cfg = testConfig' "core/auto-widen/preview"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --warnon:3386 --warnaserror+" }
+        singleVersionedNegTest cfg "preview" "test"
+
+    [<Test>]
     let ``comprehensions-FSC_BASIC`` () = singleTestBuildAndRun' "core/comprehensions" FSC_BASIC
 
     [<Test>]
     let ``comprehensions-FSI_BASIC`` () = singleTestBuildAndRun' "core/comprehensions" FSI_BASIC
 
     [<Test>]
-    let ``comprehensionshw-FSC_BASIC`` () = singleTestBuildAndRun' "core/comprehensions-hw" FSC_BASIC
+    let ``comprehensions-hw-FSC_BASIC`` () = singleTestBuildAndRun' "core/comprehensions-hw" FSC_BASIC
 
     [<Test>]
-    let ``comprehensionshw-FSI_BASIC`` () = singleTestBuildAndRun' "core/comprehensions-hw" FSI_BASIC
+    let ``comprehensions-hw-FSI_BASIC`` () = singleTestBuildAndRun' "core/comprehensions-hw" FSI_BASIC
 
     [<Test>]
     let ``genericmeasures-FSC_BASIC`` () = singleTestBuildAndRun' "core/genericmeasures" FSC_BASIC
@@ -870,35 +885,35 @@ module CoreTests =
         | diffs -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" diffFileErr expectedFileErr diffs)
 
     [<Test>]
-    let ``printing-1 --langversion:4.7`` () =
+    let ``printing-1 --langversion:4_7`` () =
          printing "--langversion:4.7" "z.output.test.default.stdout.47.txt" "z.output.test.default.stdout.47.bsl" "z.output.test.default.stderr.txt" "z.output.test.default.stderr.bsl"
 
     [<Test>]
-    let ``printing-1 --langversion:5.0`` () =
+    let ``printing-1 --langversion:5_0`` () =
          printing "--langversion:5.0" "z.output.test.default.stdout.50.txt" "z.output.test.default.stdout.50.bsl" "z.output.test.default.stderr.txt" "z.output.test.default.stderr.bsl"
 
     [<Test>]
-    let ``printing-2 --langversion:4.7`` () =
+    let ``printing-2 --langversion:4_7`` () =
          printing "--langversion:4.7 --use:preludePrintSize1000.fsx" "z.output.test.1000.stdout.47.txt" "z.output.test.1000.stdout.47.bsl" "z.output.test.1000.stderr.txt" "z.output.test.1000.stderr.bsl"
 
     [<Test>]
-    let ``printing-2 --langversion:5.0`` () =
+    let ``printing-2 --langversion:5_0`` () =
          printing "--langversion:5.0 --use:preludePrintSize1000.fsx" "z.output.test.1000.stdout.50.txt" "z.output.test.1000.stdout.50.bsl" "z.output.test.1000.stderr.txt" "z.output.test.1000.stderr.bsl"
 
     [<Test>]
-    let ``printing-3  --langversion:4.7`` () =
+    let ``printing-3  --langversion:4_7`` () =
          printing "--langversion:4.7 --use:preludePrintSize200.fsx" "z.output.test.200.stdout.47.txt" "z.output.test.200.stdout.47.bsl" "z.output.test.200.stderr.txt" "z.output.test.200.stderr.bsl"
 
     [<Test>]
-    let ``printing-3  --langversion:5.0`` () =
+    let ``printing-3  --langversion:5_0`` () =
          printing "--langversion:5.0 --use:preludePrintSize200.fsx" "z.output.test.200.stdout.50.txt" "z.output.test.200.stdout.50.bsl" "z.output.test.200.stderr.txt" "z.output.test.200.stderr.bsl"
 
     [<Test>]
-    let ``printing-4  --langversion:4.7`` () =
+    let ``printing-4  --langversion:4_7`` () =
          printing "--langversion:4.7 --use:preludeShowDeclarationValuesFalse.fsx" "z.output.test.off.stdout.47.txt" "z.output.test.off.stdout.47.bsl" "z.output.test.off.stderr.txt" "z.output.test.off.stderr.bsl"
 
     [<Test>]
-    let ``printing-4  --langversion:5.0`` () =
+    let ``printing-4  --langversion:5_0`` () =
          printing "--langversion:5.0 --use:preludeShowDeclarationValuesFalse.fsx" "z.output.test.off.stdout.50.txt" "z.output.test.off.stdout.50.bsl" "z.output.test.off.stderr.txt" "z.output.test.off.stderr.bsl"
 
     [<Test>]
@@ -2465,14 +2480,7 @@ module TypecheckTests =
     let ``type check neg19`` () = singleNegTest (testConfig' "typecheck/sigs") "neg19"
 
     [<Test>]
-    let ``type check neg20 version 5_0`` () =
-        let cfg = testConfig' "typecheck/sigs/version50"
-        singleVersionedNegTest cfg "5.0" "neg20"
-
-    [<Test>]
-    let ``type check neg20 version preview`` () =
-        let cfg = testConfig' "typecheck/sigs"
-        singleVersionedNegTest cfg "preview" "neg20"
+    let ``type check neg20`` () = singleNegTest (testConfig' "typecheck/sigs") "neg20"
 
     [<Test>]
     let ``type check neg21`` () = singleNegTest (testConfig' "typecheck/sigs") "neg21"

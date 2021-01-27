@@ -66,6 +66,7 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.DisposableLocalValue
         | SemanticClassificationType.LocalValue -> ClassificationTypeNames.LocalName
         | SemanticClassificationType.Plaintext -> ClassificationTypeNames.Text
+        | _ -> failwith "Compiler Bug: Unknown classification type"
 
 module internal ClassificationDefinitions =
 

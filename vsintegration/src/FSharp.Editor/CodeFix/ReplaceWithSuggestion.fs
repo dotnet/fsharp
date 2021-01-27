@@ -42,9 +42,10 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
             let caretLinePos = sourceText.Lines.GetLinePosition(pos)            
             let caretLine = sourceText.Lines.GetLineFromPosition(pos)
             let fcsCaretLineNumber = Line.fromZ caretLinePos.Line
-            let partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLinePos.Character - 1)
+            let lineText = caretLine.ToString()
+            let partialName = QuickParse.GetPartialLongNameEx(lineText, caretLinePos.Character - 1)
                 
-            let declInfo = checkFileResults.GetDeclarationListInfo(Some parseFileResults, fcsCaretLineNumber, caretLine.ToString(), partialName)
+            let declInfo = checkFileResults.GetDeclarationListInfo(Some parseFileResults, fcsCaretLineNumber, lineText, partialName)
             let addNames (addToBuffer:string -> unit) = 
                 for item in declInfo.Items do
                     addToBuffer item.Name
