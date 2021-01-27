@@ -33,11 +33,34 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
         projectContext.AddSourceFile(filePath, sourceCodeKind = createSourceCodeKind filePath)
         projectContext
 
+    let createCSharpMetadataProjectContext (projInfo: ProjectInfo) (docInfo: DocumentInfo) =
+        let projectContext = projectContextFactory.CreateProjectContext(LanguageNames.CSharp, projInfo.Id.ToString(), projInfo.FilePath, Guid.NewGuid(), null, null)
+        projectContext.DisplayName <- projInfo.Name
+        projectContext.AddSourceFile(docInfo.FilePath, sourceCodeKind = SourceCodeKind.Regular)
+        
+        projInfo.MetadataReferences
+        |> Seq.iter (function
+            | :? PortableExecutableReference as peRef ->
+                projectContext.AddMetadataReference(peRef.FilePath, MetadataReferenceProperties.Assembly)
+            | _ ->
+                ()
+        )
+
+        projectContext
+
     do
         miscFilesWorkspace.DocumentOpened.Add(fun args ->
             let document = args.Document
+
             if document.Project.Language = FSharpConstants.FSharpLanguageName && workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath).Length = 0 then
                 files.[document.FilePath] <- createProjectContext document.FilePath
+
+            if optionsManager.MetadataAsSource.CSharpFiles.ContainsKey(document.FilePath) && workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath).Length = 0 then
+                match optionsManager.MetadataAsSource.CSharpFiles.TryGetValue(document.FilePath) with
+                | true, (projInfo, docInfo) ->
+                    files.[document.FilePath] <- createCSharpMetadataProjectContext projInfo docInfo
+                | _ ->
+                    ()
         )
 
         workspace.DocumentOpened.Add(fun args ->
@@ -57,6 +80,8 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
                 optionsManager.ClearSingleFileOptionsCache(document.Id)
                 projectContext.Dispose()
             | _ -> ()
+
+            optionsManager.MetadataAsSource.CSharpFiles.TryRemove(document.FilePath) |> ignore
         )
 
         do

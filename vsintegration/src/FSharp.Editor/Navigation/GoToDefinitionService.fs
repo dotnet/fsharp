@@ -2,12 +2,14 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Composition
 open System.IO
 open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
@@ -15,7 +17,9 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
-open System
+open Microsoft.VisualStudio.LanguageServices
+
+open FSharp.Compiler.SourceCodeServices
 
 [<Export(typeof<IFSharpGoToDefinitionService>)>]
 [<Export(typeof<FSharpGoToDefinitionService>)>]
@@ -27,7 +31,8 @@ type internal FSharpGoToDefinitionService
     ) =
 
     let gtd = GoToDefinition(checkerProvider.Checker, projectInfoManager)
-    let statusBar = StatusBar(ServiceProvider.GlobalProvider.GetService<SVsStatusbar,IVsStatusbar>())  
+    let statusBar = StatusBar(ServiceProvider.GlobalProvider.GetService<SVsStatusbar,IVsStatusbar>())
+    let metadataAsSourceService = checkerProvider.MetadataAsSource
    
     interface IFSharpGoToDefinitionService with
         /// Invoked with Peek Definition.
@@ -63,28 +68,30 @@ type internal FSharpGoToDefinitionService
                         gtd.NavigateToItem(navItem, statusBar)
                         // 'true' means do it, like Sheev Palpatine would want us to.
                         true
-                    | FSharpGoToDefinitionResult.ExternalAssembly(tmpProjInfo, tmpDocId, targetSymbolUse) ->
+                    | FSharpGoToDefinitionResult.ExternalAssembly(tmpProjInfo, tmpDocInfo, targetSymbolUse, targetExternalSymbol) ->
                         match targetSymbolUse.Symbol.Assembly.FileName with
                         | Some targetSymbolAssemblyFileName ->
-                            let text = CSharpDecompiler.Decompile(targetSymbolUse.Symbol.FullName, targetSymbolAssemblyFileName)
-                            let workspace = new AdhocWorkspace(document.Project.Solution.Workspace.Services.HostServices, WorkspaceKind.MetadataAsSource)
-                            let proj = workspace.AddProject(tmpProjInfo)                         
-                            let tmpDoc = proj.GetDocument(tmpDocId)
-                            let _ =
-                                let directoryName = Path.GetDirectoryName(tmpDoc.FilePath)
-                                if Directory.Exists(directoryName) |> not then
-                                    Directory.CreateDirectory(directoryName) |> ignore
-                                use fileStream = new FileStream(tmpDoc.FilePath, IO.FileMode.Create)
-                                use writer = new StreamWriter(fileStream)
-                                text.Write(writer)
-                            
-                            workspace.OpenDocument(tmpDoc.Id, true)
-                            let tmpShownDocOpt = CSharpDecompiler.ShowDocument(tmpDoc.FilePath, tmpDoc.Name, ServiceProvider.GlobalProvider)
-                            match tmpShownDocOpt with
-                            | Some tmpShownDoc ->                             
-                                let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, Text.TextSpan())                               
-                                gtd.NavigateToItem(navItem, statusBar)
-                                true
+                            try
+                                let symbolFullTypeName =
+                                    match targetExternalSymbol with
+                                    | FSharpExternalSymbol.Constructor(tyName, _)
+                                    | FSharpExternalSymbol.Event(tyName, _)
+                                    | FSharpExternalSymbol.Field(tyName, _)
+                                    | FSharpExternalSymbol.Method(tyName, _, _, _)
+                                    | FSharpExternalSymbol.Property(tyName, _)
+                                    | FSharpExternalSymbol.Type(tyName) -> tyName
+
+                                let text = MetadataAsSource.DecompileCSharp(symbolFullTypeName, targetSymbolAssemblyFileName)
+                                let tmpShownDocOpt = metadataAsSourceService.ShowCSharpDocument(tmpProjInfo, tmpDocInfo, text)
+                                match tmpShownDocOpt with
+                                | Some tmpShownDoc ->
+                                    let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, TextSpan())                               
+                                    gtd.NavigateToItem(navItem, statusBar)
+                                    true
+                                | _ ->
+                                    statusBar.TempMessage (SR.CannotDetermineSymbol())
+                                    false
+                            with
                             | _ ->
                                 statusBar.TempMessage (SR.CannotDetermineSymbol())
                                 false
