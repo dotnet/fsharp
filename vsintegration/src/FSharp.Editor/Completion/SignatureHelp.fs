@@ -251,6 +251,8 @@ type internal FSharpSignatureHelpProvider
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineText, lexerSymbol.FullIsland)
 
             let isValid (mfv: FSharpMemberOrFunctionOrValue) =
+                // TODO check if it is a keyword - nested inside parens case!
+                // TODO check classification data similar to completion provider
                 not (PrettyNaming.IsOperatorName mfv.DisplayName) &&
                 not mfv.IsProperty &&
                 mfv.CurriedParameterGroups.Count > 0
