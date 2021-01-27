@@ -48,7 +48,11 @@ module BasicTypeDirectedConversionsForFuncReturn =
     let x7 () : obj * obj = (1,2)
 
 type R = { mutable F1: (obj * obj) }
-
+[<Struct>]
+type SR = { mutable SF1: (obj * obj) }
+type U = UnionCase0 | UnionCase1 of int
+[<Struct>]
+type SU = StructUnionCase0 | StructUnionCase1 of int
 module IntegerWidening =
     let i1 = 0
     let x0 : int64 = i1 // integer value
@@ -184,95 +188,122 @@ module ConvertViaNullable =
     let x = f 2
 
 let annotations = 
-    let _ : obj = (1,2)
-    let _ : obj * obj = (1,2)
+    let v1 : obj = (1,2)
+    let v2 : obj * obj = (1,2)
 
     // structure through let
-    let _ : (obj * obj) = (let x = 1 in let y = 2 in (x,y))
+    let v3 : (obj * obj) = (let x = 1 in let y = 2 in (x,y))
 
     // structure through let rec
-    let _ : (obj * obj) = (let rec f x = x in (3,4.0))
+    let v4 : (obj * obj) = (let rec f x = x in (3,4.0))
 
     // structure through sequence
-    let _ : (obj * obj) = (); (3,4.0)
+    let v5 : (obj * obj) = (); (3,4.0)
 
     // struct tuple
-    let _ : struct (obj * obj) = struct (1,2)
+    let v6 : struct (obj * obj) = struct (1,2)
     
     // record (both field and overall result)
-    // let _ : obj = { F1 = (1, 2) } // TODO
+    let v7 : obj = { F1 = (1, 2) }
+    
+    // record 
+    let v7a : obj = ({ F1 = (1, 2) } : R)
+    
+    // struct record (both field and overall result)
+    let v8 : obj = { SF1 = (1, 2) }
+    
+    // struct record (both field and overall result)
+    let v8a : obj = ({ SF1 = (1, 2) } : SR)
+    
+    // union
+    let v9 : obj = UnionCase1(3)
+    
+    // union
+    let v10 : obj = UnionCase0
+    
+    // union as first-class
+    let v11 : obj = UnionCase1
+    
+    // struct union
+    let v12 : obj = StructUnionCase1(3)
+    
+    // struct union
+    let v13 : obj = StructUnionCase0
+    
+    // struct union as first-class
+    let v14 : obj = StructUnionCase1
     
     // record (both field and overall result)
     { F1 = (1, 2uy) }.F1 <- (3.0, 4)
     
     // anon record
-    let _ : {| A: obj |} = {| A = 1 |}
+    let v15 : {| A: obj |} = {| A = 1 |}
     
     // lambda return
-    let _ : (unit -> obj) = (fun () -> 1)
+    let v16 : (unit -> obj) = (fun () -> 1)
 
     // function lambda return
-    let _ : (int -> obj) = (function 1 -> 1 | 2 -> 3.0 | _ -> 4uy)
+    let v17 : (int -> obj) = (function 1 -> 1 | 2 -> 3.0 | _ -> 4uy)
 
-    let _ : (unit -> obj * obj) = (fun () -> (1,2))
+    let v18 : (unit -> obj * obj) = (fun () -> (1,2))
 
     // constants
     (1 :> System.IComparable) |> ignore
 
-    let _ : System.IComparable = 1 
+    let v19 : System.IComparable = 1 
 
     // array constants
-    let _ : System.Array = [| 1us |] 
+    let v20 : System.Array = [| 1us |] 
 
-    let _ : System.Array = [| 1I |] 
+    let v21 : System.Array = [| 1I |] 
 
-    let _ : System.IComparable = 1I
+    let v22 : System.IComparable = 1I
     
     // property
-    let _ : System.IComparable<string> = System.String.Empty 
+    let v23 : System.IComparable<string> = System.String.Empty 
     
     // method
-    let _ : System.IComparable<string> = System.String.Format("")
+    let v24 : System.IComparable<string> = System.String.Format("")
 
-    let _ : obj = System.String.Format("")
+    let v25 : obj = System.String.Format("")
 
-    let _ : System.IComparable = System.String.Format("")
+    let v26 : System.IComparable = System.String.Format("")
     
     // array constants
 
-    let _ : obj[] = [| 1 |] 
-    let _ : (obj * obj)[] = [| (1,1) |]
-    let _ : (obj * obj)[] = [| ("abc",1) |]
-    let _ : (string * obj)[] = [| ("abc",1) |]
-    let _ : (string * obj)[] = [| ("abc",1); ("abc",3.0) |]
-    let _ : (string * obj)[] = [| Unchecked.defaultof<_>; ("abc",3.0) |]
-    let _ : struct (string * obj)[] = [| Unchecked.defaultof<_>; struct ("abc",3.0) |]
+    let v27 : obj[] = [| 1 |] 
+    let v28 : (obj * obj)[] = [| (1,1) |]
+    let v29 : (obj * obj)[] = [| ("abc",1) |]
+    let v30 : (string * obj)[] = [| ("abc",1) |]
+    let v31 : (string * obj)[] = [| ("abc",1); ("abc",3.0) |]
+    let v32 : (string * obj)[] = [| Unchecked.defaultof<_>; ("abc",3.0) |]
+    let v33 : struct (string * obj)[] = [| Unchecked.defaultof<_>; struct ("abc",3.0) |]
 
-    let _ : obj = 1
-    let _ : obj = (1 : int)
-    let _ : obj = ""
-    let _ : obj = ("" : string)
-    let _ : obj = ("" : System.IComparable)
-    let _ : obj = ("" : _)
-    let _ : obj = ("" : obj)
-    let _ : obj = { new System.ICloneable with member x.Clone() = obj() }
-    let _ : obj = ""
-    let _ : obj = string ""
-    let _ : obj = id ""
+    let v34 : obj = 1
+    let v35 : obj = (1 : int)
+    let v36 : obj = ""
+    let v37 : obj = ("" : string)
+    let v38 : obj = ("" : System.IComparable)
+    let v39 : obj = ("" : _)
+    let v40 : obj = ("" : obj)
+    let v41 : obj = { new System.ICloneable with member x.Clone() = obj() }
+    let v42 : obj = ""
+    let v43 : obj = string ""
+    let v44 : obj = id ""
     
     // conditional
-    let _ : obj = if true then 1 else 3.0
-    let _ : obj = (if true then 1 else 3.0)
-    let _ : obj = (if true then 1 elif true then 2uy else 3.0) 
+    let v45 : obj = if true then 1 else 3.0
+    let v46 : obj = (if true then 1 else 3.0)
+    let v47 : obj = (if true then 1 elif true then 2uy else 3.0) 
     
     // try-with
-    let _ : obj = try 1 with _ -> 3.0
+    let v48 : obj = try 1 with _ -> 3.0
     
     // try-finally
-    let _ : obj = try 1 finally ()
+    let v49 : obj = try 1 finally ()
 
     // match
-    let _ : obj = match true with true -> 1 | _ -> 3.0
+    let v50 : obj = match true with true -> 1 | _ -> 3.0
     ()
 
 let f1 () : obj = 1

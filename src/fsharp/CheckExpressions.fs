@@ -5718,13 +5718,12 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
             
     | SynExpr.Record (inherits, optOrigExpr, flds, mWholeExpr) -> 
 
-      // NOTE: TcExprLeafProtect is not used here because record expressions are used for class initialization where placing the subtype constraint is not enough
-      // TODO: allow subsumption for normal record expressions 
-
-      //TcExprLeafProtect cenv overallTy env mWholeExpr (fun overallTy ->        
-        CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy.Commit, env.AccessRights)
+      CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy.Commit, env.AccessRights)
+      let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors 
+      let haveCtor = Option.isSome inherits
+      TcExprLeafProtectExcept (fun ty -> requiresCtor || haveCtor || isRecdTy cenv.g ty) cenv overallTy env true mWholeExpr (fun overallTy ->
         TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr)
-      //)
+      )
 
     | SynExpr.While (spWhile, synGuardExpr, synBodyExpr, m) ->
         UnifyTypes cenv env m overallTy.Commit cenv.g.unit_ty
@@ -6982,9 +6981,7 @@ and TcAssertExpr cenv overallTy env (m: range) tpenv x =
 
     TcExpr cenv overallTy env tpenv callDiagnosticsExpr
 
-and TcRecdExpr cenv (overallTy: OverallTy) env tpenv (inherits, optOrigExpr, flds, mWholeExpr) =
-
-    let overallTy = overallTy.Commit // Type directed resolution of record expressions means must subsume explicitly with upcast or box or :>
+and TcRecdExpr cenv (overallTy: TType) env tpenv (inherits, optOrigExpr, flds, mWholeExpr) =
 
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors 
     let haveCtor = Option.isSome inherits
@@ -7732,6 +7729,7 @@ and TcItemThen cenv (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mIte
           | _ -> 
               ApplyUnionCaseOrExnTypes mItem cenv env ucaseAppTy item
         let numArgTys = List.length argTys
+
         // Subsumption at data constructions if argument type is nominal prior to equations for any arguments or return types
         let flexes = argTys |> List.map (isTyparTy g >> not)
         
@@ -7748,7 +7746,7 @@ and TcItemThen cenv (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mIte
         | ((DelayedApp (atomicFlag, (FittedArgs args as origArg), mExprAndArg)) :: otherDelayed) ->
             // assert the overall result type if possible
             if isNil otherDelayed then 
-                UnifyTypes cenv env mExprAndArg overallTy.Commit ucaseAppTy 
+                UnifyOverallType cenv env mExprAndArg overallTy ucaseAppTy 
 
             let numArgs = List.length args
             UnionCaseOrExnCheck env numArgTys numArgs mExprAndArg
