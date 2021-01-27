@@ -224,9 +224,6 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                 | SynExpr.Paren(SynExpr.Lambda(_, _, _args, body, _, _), _, _, _) when rangeContainsPos body.Range pos -> 
                     getIdentRangeForFuncExprInApp traverseSynExpr body pos
 
-                // Figure out a way to generalize this around parens?
-                //| SynExpr.Paren(expr, _, _, _) when rangeContainsPos expr.Range pos -> 
-                //    getIdentRangeForFuncExprInApp traverseSynExpr expr pos
                 | _ ->
                     match funcExpr with
                     | SynExpr.App (_, true, _, _, _) when rangeContainsPos argExpr.Range pos ->
