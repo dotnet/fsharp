@@ -170,14 +170,18 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                 member _.VisitExpr(_, _, defaultTraverse, expr) =
                     match expr with
                     | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.Ident ident, _, _), argExpr, _) when rangeContainsPos argExpr.Range pos ->
-                        if ident.idText = "op_PipeRight" then
-                            Some (ident, 1)
-                        elif ident.idText = "op_PipeRight2" then
-                            Some (ident, 2)
-                        elif ident.idText = "op_PipeRight3" then
-                            Some (ident, 3)
-                        else
+                        match argExpr with
+                        | SynExpr.App(_, _, _, SynExpr.Paren(expr, _, _, _), _) when rangeContainsPos expr.Range pos ->
                             None
+                        | _ ->
+                            if ident.idText = "op_PipeRight" then
+                                Some (ident, 1)
+                            elif ident.idText = "op_PipeRight2" then
+                                Some (ident, 2)
+                            elif ident.idText = "op_PipeRight3" then
+                                Some (ident, 3)
+                            else
+                                None
                     | _ -> defaultTraverse expr
             })
         | None -> None
@@ -216,6 +220,10 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                 match argExpr with
                 | SynExpr.App (_, _, _, _, range) when rangeContainsPos range pos ->
                     getIdentRangeForFuncExprInApp traverseSynExpr argExpr pos
+
+                | SynExpr.Paren(SynExpr.Lambda(_, _, _args, body, _, _), _, _, _) when rangeContainsPos body.Range pos -> 
+                    getIdentRangeForFuncExprInApp traverseSynExpr body pos
+
                 | _ ->
                     match funcExpr with
                     | SynExpr.App (_, true, _, _, _) when rangeContainsPos argExpr.Range pos ->
@@ -227,6 +235,17 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                         // Generally, we want to dive into the func expr to get the range
                         // of the identifier of the function we're after
                         getIdentRangeForFuncExprInApp traverseSynExpr funcExpr pos
+
+            | SynExpr.LetOrUse(_, _, bindings, body, range) when rangeContainsPos range pos  ->
+                let binding =
+                    bindings
+                    |> List.tryFind (fun x -> rangeContainsPos x.RangeOfBindingAndRhs pos)
+                match binding with
+                | Some(SynBinding.Binding(_, _, _, _, _, _, _, _, _, expr, _, _)) ->
+                    getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+                | None ->
+                    getIdentRangeForFuncExprInApp traverseSynExpr body pos
+
             | expr ->
                 traverseSynExpr expr
                 |> Option.map (fun expr -> expr)
