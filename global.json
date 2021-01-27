@@ -1,10 +1,9 @@
 {
   "sdk": {
-    "version": "5.0.200-preview.20614.14",
-    "rollForward": "minor"
+    "version": "5.0.100"
   },
   "tools": {
-    "dotnet": "5.0.200-preview.20614.14",
+    "dotnet": "5.0.100",
     "vs": {
       "version": "16.8",
       "components": [
