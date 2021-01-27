@@ -1369,12 +1369,15 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
                         callerArgExpr
                 else
                     if isNullableTy g calledArgTy  then 
-                        // CSharpMethod(x=b) when 'x' has nullable type
-                        // CSharpMethod(x=b) when both 'x' and 'b' have nullable type --> CSharpMethod(x=b)
-                        // CSharpMethod(x=b) when 'x' has nullable type and 'b' does not --> CSharpMethod(x=Nullable(b))
-                        let calledNonOptTy = destNullableTy g calledArgTy
-                        let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
-                        MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy callerArgExpr2 m
+                        if isNullableTy g callerArgTy then
+                            // CSharpMethod(x=b) when 'x' has nullable type
+                            // CSharpMethod(x=b) when both 'x' and 'b' have nullable type --> CSharpMethod(x=b)
+                            callerArgExpr
+                        else
+                            // CSharpMethod(x=b) when 'x' has nullable type and 'b' does not --> CSharpMethod(x=Nullable(b))
+                            let calledNonOptTy = destNullableTy g calledArgTy
+                            let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
+                            MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy callerArgExpr2 m
                     else 
                         // CSharpMethod(x=b) --> CSharpMethod(?x=b)
                         let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledArgTy reflArgInfo callerArgTy m callerArgExpr
