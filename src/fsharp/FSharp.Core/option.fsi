@@ -15,6 +15,12 @@ module Option =
     /// <summary>Returns true if the option is not None.</summary>
     /// <param name="option">The input option.</param>
     ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.isSome = false
+    /// Some 42 |> Option.isSome = true
+    /// </code></remarks>
+    ///
     /// <returns>True if the option is not None.</returns>
     [<CompiledName("IsSome")>]
     val inline isSome: option:'T option -> bool
@@ -22,6 +28,12 @@ module Option =
     /// <summary>Returns true if the option is None.</summary>
     ///
     /// <param name="option">The input option.</param>
+    ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.isNone = true
+    /// Some 42 |> Option.isNone = false
+    /// </code></remarks>
     ///
     /// <returns>True if the option is None.</returns>
     [<CompiledName("IsNone")>]
@@ -33,7 +45,12 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <returns>The option if the option is Some, else the default value.</returns>
-    /// <remarks>Identical to the built-in <see cref="defaultArg"/> operator, except with the arguments swapped.</remarks>
+    ///
+    /// <remarks>Identical to the built-in <see cref="defaultArg"/> operator, except with the arguments swapped.
+    /// <code>
+    /// None |> Option.defaultValue 99 = 99
+    /// Some 42 |> Option.defaultValue 99 = 42
+    /// </code></remarks>
     [<CompiledName("DefaultValue")>]
     val defaultValue: value:'T -> option:'T option -> 'T
 
@@ -43,7 +60,11 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <returns>The option if the option is Some, else the result of evaluating <paramref name="defThunk"/>.</returns>
-    /// <remarks><paramref name="defThunk"/> is not evaluated unless <paramref name="option"/> is <c>None</c>.</remarks>
+    /// <remarks><paramref name="defThunk"/> is not evaluated unless <paramref name="option"/> is <c>None</c>.
+    /// <code>
+    /// None |> Option.defaultWith (fun () -> 99) = 99
+    /// Some 42 |> Option.defaultWith (fun () -> 99) = 42
+    /// </code></remarks>
     [<CompiledName("DefaultWith")>]
     val defaultWith: defThunk:(unit -> 'T) -> option:'T option -> 'T
 
@@ -51,6 +72,14 @@ module Option =
     ///
     /// <param name="ifNone">The value to use if <paramref name="option"/> is <c>None</c>.</param>
     /// <param name="option">The input option.</param>
+    ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.orElse None = None
+    /// None |> Option.orElse (Some 99) = Some 99
+    /// Some 42 |> Option.orElse None = Some 42
+    /// Some 42 |> Option.orElse (Some 99) = Some 42
+    /// </code></remarks>
     ///
     /// <returns>The option if the option is Some, else the alternate option.</returns>
     [<CompiledName("OrElse")>]
@@ -62,13 +91,24 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <returns>The option if the option is Some, else the result of evaluating <paramref name="ifNoneThunk"/>.</returns>
-    /// <remarks><paramref name="ifNoneThunk"/> is not evaluated unless <paramref name="option"/> is <c>None</c>.</remarks>
+    /// <remarks><paramref name="ifNoneThunk"/> is not evaluated unless <paramref name="option"/> is <c>None</c>./// <code>
+    /// None |> Option.orElseWith (fun () -> None) = None
+    /// None |> Option.orElseWith (fun () -> (Some 99)) = Some 99
+    /// Some 42 |> Option.orElseWith (fun () -> None) = Some 42
+    /// Some 42 |> Option.orElseWith (fun () -> (Some 99)) = Some 42
+    /// </code></remarks>
     [<CompiledName("OrElseWith")>]
     val orElseWith: ifNoneThunk:(unit -> 'T option) -> option:'T option -> 'T option
 
     /// <summary>Gets the value associated with the option.</summary>
     ///
     /// <param name="option">The input option.</param>
+    ///
+    /// <remarks>
+    /// <code>
+    /// Some 42 |> Option.get = 42
+    /// None |> Option.get // throws exception!
+    /// </code></remarks>
     ///
     /// <returns>The value within the option.</returns>
     /// <exception href="System.ArgumentException">Thrown when the option is None.</exception>
@@ -79,6 +119,12 @@ module Option =
     ///
     /// <param name="option">The input option.</param>
     ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.count = 0
+    /// Some 99 |> Option.count = 1
+    /// </code></remarks>
+    ///
     /// <returns>A zero if the option is None, a one otherwise.</returns>
     [<CompiledName("Count")>]
     val count: option:'T option -> int
@@ -88,6 +134,13 @@ module Option =
     /// <param name="folder">A function to update the state data when given a value from an option.</param>
     /// <param name="state">The initial state.</param>
     /// <param name="option">The input option.</param>
+    ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.fold (fun accum x -> accum + x * 2) 0 = 0
+    /// Some 1 |> Option.fold (fun accum x -> accum + x * 2) 0 = 2
+    /// Some 1 |> Option.fold (fun accum x -> accum + x * 2) 10 = 12
+    /// </code></remarks>
     ///
     /// <returns>The original state if the option is None, otherwise it returns the updated state with the folder
     /// and the option value.</returns>
@@ -100,6 +153,13 @@ module Option =
     /// <param name="option">The input option.</param>
     /// <param name="state">The initial state.</param>
     ///
+    /// <remarks>
+    /// <code>
+    /// Option.foldBack (fun x accum -> accum + x * 2) None 0 = 0
+    /// Option.foldBack (fun x accum -> accum + x * 2) (Some 1) 0 = 2
+    /// Option.foldBack (fun x accum -> accum + x * 2) (Some 1) 10 = 12
+    /// </code></remarks>
+    ///
     /// <returns>The original state if the option is None, otherwise it returns the updated state with the folder
     /// and the option value.</returns>
     [<CompiledName("FoldBack")>]
@@ -109,6 +169,13 @@ module Option =
     ///
     /// <param name="predicate">A function that evaluates to a boolean when given a value from the option type.</param>
     /// <param name="option">The input option.</param>
+    ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.exists (fun x -> x >= 5) = false
+    /// Some 42 |> Option.exists (fun x -> x >= 5) = true
+    /// Some 4 |> Option.exists (fun x -> x >= 5) = false
+    /// </code></remarks>
     ///
     /// <returns>False if the option is None, otherwise it returns the result of applying the predicate
     /// to the option value.</returns>
@@ -120,6 +187,13 @@ module Option =
     /// <param name="predicate">A function that evaluates to a boolean when given a value from the option type.</param>
     /// <param name="option">The input option.</param>
     ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.forall (fun x -> x >= 5) = true
+    /// Some 42 |> Option.forall (fun x -> x >= 5) = true
+    /// Some 4 |> Option.forall (fun x -> x >= 5) = false
+    /// </code></remarks>
+    ///
     /// <returns>True if the option is None, otherwise it returns the result of applying the predicate
     /// to the option value.</returns>
     [<CompiledName("ForAll")>]
@@ -130,6 +204,13 @@ module Option =
     /// <param name="value">The value to test for equality.</param>
     /// <param name="option">The input option.</param>
     ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.contains 99 = false
+    /// Some 99 |> Option.contains 99 = true
+    /// Some 100 |> Option.contains 99 = false
+    /// </code></remarks>
+    ///
     /// <returns>True if the option is <c>Some</c> and contains a value equal to <paramref name="value"/>, otherwise false.</returns>
     [<CompiledName("Contains")>]
     val inline contains: value:'T -> option:'T option -> bool when 'T : equality
@@ -138,6 +219,12 @@ module Option =
     ///
     /// <param name="action">A function to apply to the option value.</param>
     /// <param name="option">The input option.</param>
+    ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.iter (printfn "%s") // does nothing
+    /// Some "Hello world" |> Option.iter (printfn "%s") // prints "Hello world"
+    /// </code></remarks>
     ///
     /// <returns>Unit if the option is None, otherwise it returns the result of applying the predicate
     /// to the option value.</returns>
@@ -149,6 +236,12 @@ module Option =
     /// <param name="mapping">A function to apply to the option value.</param>
     /// <param name="option">The input option.</param>
     ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.map (fun x -> x * 2) = None
+    /// Some 42 |> Option.map (fun x -> x * 2) = Some 84
+    /// </code></remarks>
+    ///
     /// <returns>An option of the input value after applying the mapping function, or None if the input is None.</returns>
     [<CompiledName("Map")>]
     val map: mapping:('T -> 'U) -> option:'T option -> 'U option
@@ -158,6 +251,14 @@ module Option =
     /// <param name="mapping">A function to apply to the option values.</param>
     /// <param name="option1">The first option.</param>
     /// <param name="option2">The second option.</param>
+    ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.map2 (fun x y -> x + y) None = None
+    /// None |> Option.map2 (fun x y -> x + y) (Some 5) = None
+    /// Some 10 |> Option.map2 (fun x y -> x + y) None = None
+    /// Some 10 |> Option.map2 (fun x y -> x + y) (Some 5) = Some 15
+    /// </code></remarks>
     ///
     /// <returns>An option of the input values after applying the mapping function, or None if either input is None.</returns>
     [<CompiledName("Map2")>]
@@ -170,6 +271,15 @@ module Option =
     /// <param name="option2">The second option.</param>
     /// <param name="option3">The third option.</param>
     ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.map3 (fun x y z -> x + y + z) None None = None
+    /// None |> Option.map3 (fun x y z -> x + y + z) None (Some 100) = None
+    /// None |> Option.map3 (fun x y z -> x + y + z) (Some 5) None = None
+    /// Some 10 |> Option.map3 (fun x y z -> x + y + z) None None = None
+    /// Some 10 |> Option.map3 (fun x y z -> x + y + z) (Some 5) (Some 100) = Some 115
+    /// </code></remarks>
+    ///
     /// <returns>An option of the input values after applying the mapping function, or None if any input is None.</returns>
     [<CompiledName("Map3")>]
     val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> option1: 'T1 option -> option2: 'T2 option -> option3: 'T3 option -> 'U option
@@ -180,6 +290,17 @@ module Option =
     /// an option containing a value of type U.</param>
     /// <param name="option">The input option.</param>
     ///
+    /// <remarks>
+    /// <code>
+    /// let tryParse input =
+    ///     match System.Int32.TryParse input with
+    ///     | true, v -> Some v
+    ///     | false, _ -> None
+    /// None |> Option.bind tryParse = None
+    /// Some "42" |> Option.bind tryParse = Some 42
+    /// Some "Forty-two" |> Option.bind tryParse = None
+    /// </code></remarks>
+    ///
     /// <returns>An option of the output type of the binder.</returns>
     [<CompiledName("Bind")>]
     val bind: binder:('T -> 'U option) -> option:'T option -> 'U option
@@ -189,7 +310,12 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <returns>An option of the output type of the binder.</returns>
-    /// <remarks><c>flatten</c> is equivalent to <c>bind id</c>.</remarks>
+    /// <remarks><c>flatten</c> is equivalent to <c>bind id</c>.
+    /// <code>
+    /// None |> Option.flatten = None
+    /// Some None |> Option.flatten = None
+    /// Some (Some 42) |> Option.flatten = Some 42
+    /// </code></remarks>
     [<CompiledName("Flatten")>]
     val flatten: option:'T option option -> 'T option
 
@@ -197,6 +323,13 @@ module Option =
     ///
     /// <param name="predicate">A function that evaluates whether the value contained in the option should remain, or be filtered out.</param>
     /// <param name="option">The input option.</param>
+    ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.filter (fun x -> x >= 5) = None
+    /// Some 42 |> Option.filter (fun x -> x >= 5) = Some 42
+    /// Some 4 |> Option.filter (fun x -> x >= 5) = None
+    /// </code></remarks>
     ///
     /// <returns>The input if the predicate evaluates to true; otherwise, None.</returns>
     [<CompiledName("Filter")>]
@@ -206,6 +339,12 @@ module Option =
     ///
     /// <param name="option">The input option.</param>
     ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.toArray = [||]
+    /// Some 42 |> Option.toArray = [| 42 |]
+    /// </code></remarks>
+    ///
     /// <returns>The result array.</returns>
     [<CompiledName("ToArray")>]
     val toArray: option:'T option -> 'T[]
@@ -213,6 +352,12 @@ module Option =
     /// <summary>Convert the option to a list of length 0 or 1.</summary>
     ///
     /// <param name="option">The input option.</param>
+    ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.toList = []
+    /// Some 42 |> Option.toList = [ 42 ]
+    /// </code></remarks>
     ///
     /// <returns>The result list.</returns>
     [<CompiledName("ToList")>]
@@ -222,6 +367,12 @@ module Option =
     ///
     /// <param name="option">The input option.</param>
     ///
+    /// <remarks>
+    /// <code>
+    /// (None |> Option.toNullable).HasValue = false
+    /// (Some 42 |> Option.toNullable).HasValue = true
+    /// </code></remarks>
+    ///
     /// <returns>The result value.</returns>
     [<CompiledName("ToNullable")>]
     val toNullable: option:'T option -> Nullable<'T>
@@ -230,13 +381,27 @@ module Option =
     ///
     /// <param name="value">The input nullable value.</param>
     ///
+    /// <remarks>
+    /// <code>
+    /// let nullVariable = System.Nullable()
+    /// nullVariable |> Option.ofNullable = None
+    /// System.Nullable(42) |> Option.ofNullable = Some 42
+    /// </code></remarks>
+    ///
     /// <returns>The result option.</returns>
     [<CompiledName("OfNullable")>]
-    val ofNullable: value:Nullable<'T> -> 'T option 
+    val ofNullable: value:Nullable<'T> -> 'T option
 
     /// <summary>Convert a potentially null value to an option.</summary>
     ///
     /// <param name="value">The input value.</param>
+    ///
+    /// <remarks>
+    /// <code>
+    /// let nullString : string = null
+    /// nullString |> Option.ofObj = None
+    /// "not a null string" |> Option.ofObj = Some "not a null string"
+    /// </code></remarks>
     ///
     /// <returns>The result option.</returns>
     [<CompiledName("OfObj")>]
@@ -245,6 +410,12 @@ module Option =
     /// <summary>Convert an option to a potentially null value.</summary>
     ///
     /// <param name="value">The input value.</param>
+    ///
+    /// <remarks>
+    /// <code>
+    /// None |> Option.toObj = null
+    /// Some "not a null string" |> Option.toObj = "not a null string"
+    /// </code></remarks>
     ///
     /// <returns>The result value, which is null if the input was None.</returns>
     [<CompiledName("ToObj")>]
