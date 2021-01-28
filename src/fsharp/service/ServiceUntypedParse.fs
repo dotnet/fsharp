@@ -600,7 +600,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                           yield! walkExpr true e ]
             
             // Process a class declaration or F# type declaration
-            let rec walkTycon (TypeDefn(ComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, m)) =
+            let rec walkTycon (TypeDefn(ComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, _, m)) =
                 if not (isMatchRange m) then [] else
                 [ for memb in membDefns do yield! walkMember memb
                   match repr with
@@ -1236,7 +1236,7 @@ module UntypedParseImpl =
             | SynTypeDefnSigRepr.Simple(defn, _) -> walkTypeDefnSimple defn
             | SynTypeDefnSigRepr.Exception(_) -> None
 
-        and walkTypeDefn (TypeDefn (info, repr, members, _)) =
+        and walkTypeDefn (TypeDefn (info, repr, members, _, _)) =
             walkComponentInfo false info
             |> Option.orElse (walkTypeDefnRepr repr)
             |> Option.orElse (List.tryPick walkMember members)
@@ -1489,7 +1489,7 @@ module UntypedParseImpl =
                         let contextFromTreePath completionPath = 
                             // detect records usage in constructor
                             match path with
-                            | TS.Expr(_) :: TS.Binding(_) :: TS.MemberDefn(_) :: TS.TypeDefn(SynTypeDefn.TypeDefn(ComponentInfo(_, _, _, [id], _, _, _, _), _, _, _)) :: _ ->  
+                            | TS.Expr(_) :: TS.Binding(_) :: TS.MemberDefn(_) :: TS.TypeDefn(SynTypeDefn.TypeDefn(ComponentInfo(_, _, _, [id], _, _, _, _), _, _, _, _)) :: _ ->  
                                 RecordContext.Constructor(id.idText)
                             | _ -> RecordContext.New completionPath
                         match field with
