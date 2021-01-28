@@ -5,7 +5,7 @@
   <PropertyGroup>
     <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
     <OutputType>Library</OutputType>
-    <NoWarn>$(NoWarn);44;45;54;55;61;62;69;65;75;1204;2003;NU5125</NoWarn>
+    <NoWarn>$(NoWarn);44;45;54;55;57;61;62;69;65;75;1204;2003;NU5125</NoWarn>
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
@@ -285,7 +285,7 @@
       <Link>AbsIL\illex.fsl</Link>
     </None>
     <FsYacc Include="..\absil\ilpars.fsy">
-      <OtherFlags>--module FSharp.Compiler.AbstractIL.Internal.AsciiParser --open FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiParser --open FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>AbsIL\ilpars.fsy</Link>
     </FsYacc>
     <None Include="..\..\absil\ilpars.fsy">

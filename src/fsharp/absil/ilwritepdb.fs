@@ -13,7 +13,7 @@ open System.Reflection.Metadata.Ecma335
 open System.Text
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Support 
+open FSharp.Compiler.AbstractIL.Support 
 open Internal.Utilities.Library 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IO

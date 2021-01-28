@@ -6,22 +6,22 @@ module internal FSharp.Compiler.TypedTreeOps
 open System.Collections.Generic
 open System.Collections.Immutable
 open Internal.Utilities
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
+open Internal.Utilities.Rational
 
-open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal 
-open Internal.Utilities.Library
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Internal.Features
-open Internal.Utilities.Library.Extras
-open Internal.Utilities.Rational
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Features
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TextLayout
@@ -30,8 +30,6 @@ open FSharp.Compiler.TextLayout.LayoutRender
 open FSharp.Compiler.TextLayout.TaggedText
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Syntax.XmlDoc
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif

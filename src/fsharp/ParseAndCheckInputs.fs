@@ -7,27 +7,29 @@ open System
 open System.IO
 
 open Internal.Utilities
+open Internal.Utilities.Collections
 open Internal.Utilities.Filename
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
-open Internal.Utilities.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.IO
 open FSharp.Compiler.Lexhelp
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Pos
@@ -35,8 +37,6 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Syntax.XmlDoc
-
 
 let CanonicalizeFilename filename = 
     let basic = fileNameOfPath filename

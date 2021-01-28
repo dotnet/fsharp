@@ -7,14 +7,13 @@ open System.IO
 open System.Reflection
 
 open Internal.Utilities
-
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
-open Internal.Utilities.Library
-open FSharp.Compiler.AbstractIL.Internal.Utils
-open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.StrongNameSign
 open FSharp.Compiler.BinaryResourceFormats
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
@@ -22,9 +21,8 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IlxGen
-open Internal.Utilities.Library.Extras
+open FSharp.Compiler.IO
 open FSharp.Compiler.OptimizeInputs
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps

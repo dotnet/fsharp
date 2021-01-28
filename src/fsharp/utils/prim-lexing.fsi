@@ -37,7 +37,7 @@ namespace Internal.Utilities.Text.Lexing
 
 open System.Collections.Generic
 open FSharp.Compiler.Text
-open FSharp.Compiler.Internal.Features
+open FSharp.Compiler.Features
 
 /// Position information stored for lexing tokens
 [<Struct>]

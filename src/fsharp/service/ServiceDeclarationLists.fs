@@ -16,7 +16,7 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout

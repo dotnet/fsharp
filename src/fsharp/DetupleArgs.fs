@@ -2,17 +2,16 @@
 
 module internal FSharp.Compiler.Detuple 
 
-open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal 
+open Internal.Utilities.Collections
 open Internal.Utilities.Library 
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.Syntax.XmlDoc
 
 // This pass has one aim.
 // - to eliminate tuples allocated at call sites (due to uncurried style)

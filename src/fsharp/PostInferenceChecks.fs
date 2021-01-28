@@ -7,18 +7,18 @@ module internal FSharp.Compiler.PostTypeCheckSemanticChecks
 open System
 open System.Collections.Generic
 
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
-open Internal.Utilities.Library
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Internal.Features
+open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
-open Internal.Utilities.Library.Extras
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text

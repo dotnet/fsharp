@@ -2,17 +2,13 @@
 
 module public FSharp.Compiler.SyntaxTreeOps
 
-open Internal.Utilities.Text.Parsing
-
-open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open Internal.Utilities.Library
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Syntax.XmlDoc
 
 //----------------------------------------------------------------------
 // Construct syntactic AST nodes

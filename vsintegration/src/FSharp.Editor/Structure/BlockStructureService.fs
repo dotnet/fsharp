@@ -14,7 +14,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Structure
 
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SourceCodeServices.Structure
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 
 module internal BlockStructure =
     let scopeToBlockType = function

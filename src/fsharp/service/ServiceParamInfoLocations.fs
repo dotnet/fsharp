@@ -6,7 +6,7 @@ open FSharp.Compiler
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Pos
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.SyntaxTreeOps
 
 [<Sealed>]

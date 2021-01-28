@@ -25,7 +25,9 @@ type OptimizationSettings =
     }
 
     member jitOpt: unit -> bool 
+
     member localOpt: unit -> bool 
+
     static member Defaults: OptimizationSettings
 
 /// Optimization information 

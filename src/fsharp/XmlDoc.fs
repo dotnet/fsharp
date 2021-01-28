@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public FSharp.Compiler.Syntax.XmlDoc
+namespace FSharp.Compiler.Syntax
 
 open System
 open System.Xml.Linq
-open FSharp.Compiler.ErrorLogger
 open Internal.Utilities.Library
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Pos
 open FSharp.Compiler.Text.Range

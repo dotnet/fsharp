@@ -89,7 +89,7 @@ module IncrementalBuilderEventTesting =
 
 module Tc = FSharp.Compiler.CheckExpressions
 
-// This module is only here to contain the SyntaxTree type as to avoid amiguity with the module FSharp.Compiler.SyntaxTree.
+// This module is only here to contain the SyntaxTree type as to avoid amiguity with the module FSharp.Compiler.Syntax.SyntaxTreeInternal.
 [<AutoOpen>]
 module IncrementalBuildSyntaxTree =
 

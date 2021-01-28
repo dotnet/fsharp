@@ -1,5 +1,5 @@
 
-module internal FSharp.Compiler.AbstractIL.Internal.NativeRes
+module internal FSharp.Compiler.AbstractIL.NativeRes
 
 open System
 open System.Collections.Generic

@@ -4,6 +4,8 @@ module internal FSharp.Compiler.Infos
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.Import
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
@@ -188,7 +190,7 @@ type ReflectedArgInfo =
 /// Partial information about a parameter returned for use by the Language Service
 [<NoComparison; NoEquality>]
 type ParamNameAndType =
-    | ParamNameAndType of SyntaxTree.Ident option * TType
+    | ParamNameAndType of Ident option * TType
 
     static member FromArgInfo: ty:TType * argInfo:ArgReprInfo -> ParamNameAndType
 
@@ -207,7 +209,7 @@ type ParamData =
       isOut: bool *
       optArgInfo: OptionalArgInfo * 
       callerInfo: CallerInfo *
-      nameOpt: SyntaxTree.Ident option * 
+      nameOpt: Ident option * 
       reflArgInfo: ReflectedArgInfo *
       ttype: TType
 

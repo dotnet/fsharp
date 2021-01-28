@@ -4,23 +4,19 @@
 module internal FSharp.Compiler.TypedTreeOps 
 
 open System.Collections.Generic
+open System.Collections.Immutable
 
-open Internal.Utilities
+open Internal.Utilities.Rational
+open Internal.Utilities.Collections
 
-open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.Text.Range
-open Internal.Utilities.Rational
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Syntax.XmlDoc
-open System.Collections.Immutable
 
 type Erasure = EraseAll | EraseMeasures | EraseNone
 

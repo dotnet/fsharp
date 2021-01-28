@@ -50,16 +50,16 @@ This is a big update to FCS. There are significant trimmings and renamings of th
 Renamings:
 
 ```diff
--type FSharp.Compiler.AbstractIL.Internal.Library.IFileSystem
+-type FSharp.Compiler.AbstractIL.Library.IFileSystem
 +type FSharp.Compiler.SourceCodeServices.IFileSystem
 
--module FSharp.Compiler.AbstractIL.Internal.Library.Shim
+-module FSharp.Compiler.AbstractIL.Library.Shim
 +FSharp.Compiler.SourceCodeServices.FileSystemAutoOpens
 
--type FSharp.Compiler.AbstractIL.Internal.Layout
+-type FSharp.Compiler.AbstractIL.Layout
 +type FSharp.Compiler.TextLayout.Layout
 
--type FSharp.Compiler.AbstractIL.Internal.TaggedText
+-type FSharp.Compiler.AbstractIL.TaggedText
 +type FSharp.Compiler.TextLayout.TaggedText
 
 -type FSharp.Compiler.Layout.layout

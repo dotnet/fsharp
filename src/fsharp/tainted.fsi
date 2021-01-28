@@ -4,9 +4,9 @@ namespace FSharp.Compiler
 
 #if !NO_EXTENSIONTYPING
 
+open Internal.Utilities.Library
 open FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
-open Internal.Utilities.Library
 open FSharp.Compiler.Text
 
 [<Sealed>]

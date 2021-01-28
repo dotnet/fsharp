@@ -9,24 +9,23 @@ open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
 open System.Text
-
 open Internal.Utilities
 open Internal.Utilities.Filename
 open Internal.Utilities.FSharpEnvironment
-
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
-open FSharp.Compiler.AbstractIL.Internal
-open Internal.Utilities.Library
-open FSharp.Compiler.AbstractIL.Internal.Utils
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Internal.Features
-open Internal.Utilities.Library.Extras
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Features
+open FSharp.Compiler.IO
+open FSharp.Compiler.Legacy
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree

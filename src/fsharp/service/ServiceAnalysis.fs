@@ -7,7 +7,7 @@ open System.Runtime.CompilerServices
 
 open Internal.Utilities.Library
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 
 module UnusedOpens =

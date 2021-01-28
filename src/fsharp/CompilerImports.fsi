@@ -5,10 +5,9 @@
 module internal FSharp.Compiler.CompilerImports
 
 open System
-
+open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open Internal.Utilities.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.DependencyManager

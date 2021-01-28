@@ -2,7 +2,7 @@
 
 module internal FSharp.Compiler.AutoBox 
 
-open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TypedTree

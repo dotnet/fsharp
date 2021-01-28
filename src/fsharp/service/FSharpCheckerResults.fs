@@ -23,7 +23,7 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Internal.Features
+open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lexhelp
@@ -35,7 +35,7 @@ open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SourceCodeServices.SymbolHelpers 
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Text

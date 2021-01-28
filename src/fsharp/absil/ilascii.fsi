@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Various constants and utilities used when parsing the ILASM format for IL
-module internal FSharp.Compiler.AbstractIL.Internal.AsciiConstants
+module internal FSharp.Compiler.AbstractIL.AsciiConstants
 
 open FSharp.Compiler.AbstractIL.IL 
 

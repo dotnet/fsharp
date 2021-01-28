@@ -7,19 +7,19 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Text
-
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open Internal.Utilities.Library
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
-open Internal.Utilities.Library.Extras
+open FSharp.Compiler.IO
+open FSharp.Compiler.Legacy
 open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 

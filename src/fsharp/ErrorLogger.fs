@@ -2,7 +2,7 @@
 
 module public FSharp.Compiler.ErrorLogger
 
-open FSharp.Compiler.Internal.Features
+open FSharp.Compiler.Features
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
 open System

@@ -228,7 +228,8 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Pos
@@ -241,7 +242,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals 
-open FSharp.Compiler.Syntax.XmlDoc
 
 module EnvMisc2 =
     let maxMembers = GetEnvInteger "FCS_MaxMembersInQuickInfo" 10

@@ -1,7 +1,7 @@
 ﻿module Tests.Parser
 
 open FSharp.Compiler.Service.Tests.Common
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open NUnit.Framework
 
 module Recovery =

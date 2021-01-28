@@ -3,12 +3,11 @@
 module internal FSharp.Compiler.CheckFormatStrings
 
 open System.Text
-open FSharp.Compiler 
 open Internal.Utilities.Library 
-open FSharp.Compiler.ConstraintSolver
 open Internal.Utilities.Library.Extras
+open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree

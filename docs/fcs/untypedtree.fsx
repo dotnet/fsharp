@@ -84,7 +84,7 @@ code](https://github.com/fsharp/fsharp/blob/master/src/fsharp/ast.fs#L464).
 
 The relevant parts are in the following namespace:
 *)
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 (**
 
 When processing the AST, you will typically write a number of mutually recursive functions

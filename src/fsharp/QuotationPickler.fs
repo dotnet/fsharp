@@ -3,8 +3,8 @@
 module internal FSharp.Compiler.QuotationPickler
 
 open System.Text
+open Internal.Utilities
 open Internal.Utilities.Collections
-open FSharp.Compiler.AbstractIL.Internal
 open Internal.Utilities.Library.Extras
 
 let mkRLinear mk (vs, body) = List.foldBack (fun v acc -> mk (v, acc)) vs body 
@@ -13,7 +13,7 @@ type TypeVarData = { tvName: string }
 
 type NamedTypeData = 
     | Idx of int
-    | Named of (* tcName: *) string *  (* tcAssembly:  *) string 
+    | Named of tcName: string * tcAssembly: string 
 
 type TypeCombOp = 
     | ArrayTyOp of int (* rank *) 
@@ -25,8 +25,11 @@ type TypeData =
     | AppType of TypeCombOp * TypeData list
 
 let mkVarTy v = VarType v 
+
 let mkFunTy (x1, x2) = AppType(FunTyOp, [x1; x2])  
+
 let mkArrayTy (n, x) = AppType(ArrayTyOp n, [x]) 
+
 let mkILNamedTy (r, l) = AppType(NamedTyOp r, l) 
 
 type CtorData = 

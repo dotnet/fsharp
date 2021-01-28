@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 open System.Globalization
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Syntax.PrettyNaming
 
 module internal CompletionUtils =
 

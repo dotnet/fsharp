@@ -10,7 +10,7 @@ namespace FSharp.Compiler.SourceCodeServices
 open System.Collections.Generic
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.SyntaxTreeOps
 
 /// Represents the different kinds of items that can appear in the navigation bar

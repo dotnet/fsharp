@@ -10,7 +10,7 @@ namespace FSharp.Compiler.SourceCodeServices
 open System.Collections.Generic
 
 open FSharp.Compiler
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.Text
 
 [<Sealed>]

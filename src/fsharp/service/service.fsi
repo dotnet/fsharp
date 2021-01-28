@@ -9,7 +9,7 @@ open System.IO
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 

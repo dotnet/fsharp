@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Compiler use only.  Code and constants shared between binary reader/writer.
-module internal FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
+module internal FSharp.Compiler.AbstractIL.BinaryConstants 
 
 open FSharp.Compiler.AbstractIL.IL 
 

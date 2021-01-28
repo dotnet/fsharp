@@ -22,18 +22,32 @@ val GetEnvInteger: e:string -> dflt:int -> int
 val dispose: x:System.IDisposable -> unit
 
 module Bits =
+    /// Get the least significant byte of a 32-bit integer
     val b0: n:int -> int
+
+    /// Get the 2nd least significant byte of a 32-bit integer
     val b1: n:int -> int
+
+    /// Get the 3rd least significant byte of a 32-bit integer
     val b2: n:int -> int
+
+    /// Get the most significant byte of a 32-bit integer
     val b3: n:int -> int
+
     val pown32: n:int -> int
+
     val pown64: n:int -> int64
+
     val mask32: m:int32 -> n:int -> int
+
     val mask64: m:int32 -> n:int -> int64
 
 module Filename =
+
     val fullpath: cwd:string -> nm:string -> string
+
     val hasSuffixCaseInsensitive: suffix:string -> filename:string -> bool
+
     val isDll: file:string -> bool
 
 module Bool =
@@ -52,11 +66,13 @@ module Pair =
         IComparer<'T1 * 'T2>
 
 type NameSet = Zset<string>
+
 module NameSet =
     val ofList: l:string list -> NameSet
 
 module NameMap =
     val domain: m:Map<string,'a> -> Zset<string>
+
     val domainL: m:Map<string,'a> -> string list
 
 module Check =

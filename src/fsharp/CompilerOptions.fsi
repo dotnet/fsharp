@@ -1,13 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
+/// Compiler Option Parser
 module internal FSharp.Compiler.CompilerOptions
 
 open System
 open FSharp.Compiler.CompilerConfig
-
-//----------------------------------------------------------------------------
-// Compiler Option Parser
-//----------------------------------------------------------------------------
 
 // For command-line options that can be suffixed with +/-
 [<RequireQualifiedAccess>]

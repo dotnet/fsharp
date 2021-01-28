@@ -2,9 +2,8 @@
 
 module internal FSharp.Compiler.OptimizeInputs
 
-open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.IL
 open Internal.Utilities.Library
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.IlxGen

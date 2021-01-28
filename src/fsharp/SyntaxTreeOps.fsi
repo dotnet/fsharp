@@ -2,10 +2,9 @@
 
 module internal FSharp.Compiler.SyntaxTreeOps
 
-open FSharp.Compiler
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 
 [<Class>]
 type SynArgNameGenerator =
@@ -240,7 +239,7 @@ module SynInfo =
 val mkSynBindingRhs: staticOptimizations:(SynStaticOptimizationConstraint list * SynExpr) list -> rhsExpr:SynExpr -> mRhs:range -> retInfo:SynReturnInfo option -> SynExpr * SynBindingReturnInfo option
 
 val mkSynBinding:
-    xmlDoc:XmlDoc.PreXmlDoc * headPat:SynPat ->
+    xmlDoc:PreXmlDoc * headPat:SynPat ->
       vis:SynAccess option * isInline:bool * isMutable:bool * mBind:range * 
       spBind:DebugPointForBinding * retInfo:SynReturnInfo option * origRhsExpr:SynExpr * mRhs:range *
       staticOptimizations:(SynStaticOptimizationConstraint list * SynExpr) list * attrs:SynAttributes * memberFlagsOpt:MemberFlags option 

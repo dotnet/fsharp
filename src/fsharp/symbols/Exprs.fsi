@@ -4,7 +4,7 @@ namespace rec FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler
 open FSharp.Compiler.CompilerImports
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree

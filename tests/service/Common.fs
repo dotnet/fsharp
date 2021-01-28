@@ -6,7 +6,7 @@ open System.Diagnostics
 open System.IO
 open System.Collections.Generic
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.Text
 open FsUnit
 open NUnit.Framework

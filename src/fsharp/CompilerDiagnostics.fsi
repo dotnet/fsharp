@@ -6,7 +6,7 @@ module internal FSharp.Compiler.CompilerDiagnostics
 open System.Text
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.Text
 
 #if DEBUG

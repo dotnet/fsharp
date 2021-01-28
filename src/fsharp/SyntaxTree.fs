@@ -1,13 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public rec FSharp.Compiler.SyntaxTree
+[<Experimental("The types in this module are considered internal to FSharp.Compiler.Service but are available for experimental use. They are subject to change in future versions of FSharp.Compiler.Service.")>]
+module public rec FSharp.Compiler.Syntax.SyntaxTreeInternal
 
 open System.Diagnostics
 
 open Internal.Utilities.Library
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Syntax.XmlDoc
 
 /// Represents an identifier in F# code
 [<Struct; NoEquality; NoComparison; DebuggerDisplay("{idText}")>]

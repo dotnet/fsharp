@@ -9,7 +9,7 @@ module Tests.Service.Symbols
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FsUnit
 open NUnit.Framework
 

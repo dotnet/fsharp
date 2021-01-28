@@ -2,7 +2,7 @@
 
 /// Some general F# utilities for mangling / unmangling / manipulating names.
 /// Anything to do with special names of identifiers and other lexical rules 
-module public FSharp.Compiler.SourceCodeServices.PrettyNaming
+module public FSharp.Compiler.Syntax.PrettyNaming
 
 open System
 open System.Collections.Generic

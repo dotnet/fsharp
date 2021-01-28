@@ -3,22 +3,20 @@
 /// Print Signatures/Types, for signatures, intellisense, quick info, FSI responses
 module internal FSharp.Compiler.NicePrint
 
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
+open Internal.Utilities.Rational
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Internal 
-open Internal.Utilities.Library
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
-open Internal.Utilities.Library.Extras
-open Internal.Utilities.Rational
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout
 open FSharp.Compiler.TextLayout.LayoutRender
@@ -125,7 +123,7 @@ module internal PrintUtilities =
 module private PrintIL = 
 
     let fullySplitILTypeRef (tref: ILTypeRef) = 
-        (List.collect IL.splitNamespace (tref.Enclosing @ [PrettyNaming.DemangleGenericTypeName tref.Name])) 
+        (List.collect IL.splitNamespace (tref.Enclosing @ [DemangleGenericTypeName tref.Name])) 
 
     let layoutILTypeRefName denv path =
         let path = 
@@ -201,7 +199,7 @@ module private PrintIL =
         let res = 
             match cons with
             | Some className -> 
-                let names = SplitNamesForILPath (PrettyNaming.DemangleGenericTypeName className)
+                let names = SplitNamesForILPath (DemangleGenericTypeName className)
                 // special case for constructor return-type (viz., the class itself)
                 layoutILTypeRefName denv names ^^ (pruneParams className ilTyparSubst |> paramsL) 
             | None -> 

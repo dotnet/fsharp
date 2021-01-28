@@ -8,19 +8,17 @@
 /// comparison and hashing functions.  
 module internal FSharp.Compiler.TcGlobals
 
-open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Diagnostics
 
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.ILX 
-open Internal.Utilities.Library
 open FSharp.Compiler.CompilerGlobalState
-open Internal.Utilities.Library.Extras
-open FSharp.Compiler.Internal.Features
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.Text
+open FSharp.Compiler.Features
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text.FileIndex
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree

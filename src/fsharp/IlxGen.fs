@@ -13,8 +13,8 @@ open Internal.Utilities.Collections
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.BinaryConstants
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.BinaryConstants
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.ILX.Types
@@ -25,20 +25,19 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.LowerCallsAndSeqs
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.Text.Range
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout.LayoutRender
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
-open FSharp.Compiler.Syntax.XmlDoc
 
 let IsNonErasedTypar (tp: Typar) = 
     not tp.IsErased
@@ -430,7 +429,6 @@ type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int) =
     static member ForTyconRef (tycon: TyconRef) =
         TypeReprEnv.ForTycon tycon.Deref
     
-
 //--------------------------------------------------------------------------
 // Generate type references
 //--------------------------------------------------------------------------
@@ -5632,7 +5630,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) star
         let ilAttribs = GenAttrs cenv eenv vspec.Attribs
         let ilTy = ilGetterMethSpec.FormalReturnType
         let ilPropDef =
-            ILPropertyDef(name = PrettyNaming.ChopPropertyName ilGetterMethSpec.Name,
+            ILPropertyDef(name = ChopPropertyName ilGetterMethSpec.Name,
                           attributes = PropertyAttributes.None,
                           setMethod = None,
                           getMethod = Some ilGetterMethSpec.MethodRef,

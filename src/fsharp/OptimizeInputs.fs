@@ -4,10 +4,9 @@
 
 module internal FSharp.Compiler.OptimizeInputs
 
-open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.IL
 open Internal.Utilities.Library 
+open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
@@ -20,11 +19,8 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps 
 open FSharp.Compiler.CheckDeclarations
 
-//----------------------------------------------------------------------------
-// PrintWholeAssemblyImplementation
-//----------------------------------------------------------------------------
-
 let mutable showTermFileCount = 0    
+
 let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
     if tcConfig.showTerms then
         if tcConfig.writeTermsToFiles then 
@@ -36,6 +32,7 @@ let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
             dprintf "\n------------------\nshowTerm: %s:\n" header
             LayoutRender.outL stderr (Display.squashTo 192 (DebugPrint.implFilesL g expr))
             dprintf "\n------------------\n"
+
 let AddExternalCcuToOptimizationEnv tcGlobals optEnv (ccuinfo: ImportedAssembly) =
     match ccuinfo.FSharpOptimizationData.Force() with 
     | None -> optEnv

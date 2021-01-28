@@ -3,14 +3,15 @@
 /// Compute the load closure of a set of script files
 module internal FSharp.Compiler.ScriptClosure
 
+open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open Internal.Utilities.Library
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Legacy
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.Text
 
 [<RequireQualifiedAccess>]
@@ -21,10 +22,15 @@ type CodeContext =
 
 [<RequireQualifiedAccess>]
 type LoadClosureInput = 
-    { FileName: string
+    {
+      FileName: string
+      
       SyntaxTree: ParsedInput option
+      
       ParseDiagnostics: (PhasedDiagnostic * bool) list 
-      MetaCommandDiagnostics: (PhasedDiagnostic * bool) list  }
+      
+      MetaCommandDiagnostics: (PhasedDiagnostic * bool) list 
+    }
 
 [<RequireQualifiedAccess>]
 type LoadClosure = 

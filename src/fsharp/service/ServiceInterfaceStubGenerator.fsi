@@ -4,7 +4,7 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.Text
 
 /// Capture information about an interface in ASTs

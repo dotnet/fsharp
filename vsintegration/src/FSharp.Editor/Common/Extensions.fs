@@ -13,7 +13,7 @@ open Microsoft.CodeAnalysis.Host
 
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 
 type private FSharpGlyph = FSharp.Compiler.SourceCodeServices.FSharpGlyph
 type private FSharpRoslynGlyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph

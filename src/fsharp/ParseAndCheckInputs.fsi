@@ -3,7 +3,6 @@
 /// Contains logic to coordinate the parsing and checking of one or a group of files
 module internal FSharp.Compiler.ParseAndCheckInputs
 
-open FSharp.Compiler
 open Internal.Utilities.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
@@ -12,7 +11,8 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
+open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
@@ -30,7 +30,7 @@ type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>
 val DeduplicateParsedInputModuleName: ModuleNamesDict -> ParsedInput -> ParsedInput * ModuleNamesDict
 
 /// Parse a single input (A signature file or implementation file)
-val ParseInput: (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland:(bool * bool) -> ParsedInput
+val ParseInput: (Lexbuf -> Parser.token) * ErrorLogger * Lexbuf * string option * string * isLastCompiland:(bool * bool) -> ParsedInput
 
 /// A general routine to process hash directives
 val ProcessMetaCommandsFromInput : 
@@ -130,7 +130,7 @@ val ParseOneInputLexbuf:
     tcConfig: TcConfig *
     lexResourceManager: Lexhelp.LexResourceManager *
     conditionalCompilationDefines: string list *
-    lexbuf: UnicodeLexing.Lexbuf *
+    lexbuf: Lexbuf *
     filename: string *
     isLastCompiland: (bool * bool) *
     errorLogger: ErrorLogger

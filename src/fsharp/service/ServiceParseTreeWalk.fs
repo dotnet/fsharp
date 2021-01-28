@@ -8,7 +8,7 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Pos

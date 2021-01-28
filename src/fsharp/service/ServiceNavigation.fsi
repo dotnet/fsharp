@@ -9,7 +9,7 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler
 open FSharp.Compiler.Text
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 
 /// Indicates a kind of item to show in an F# navigation bar
 type public FSharpNavigationDeclarationItemKind =

@@ -6,13 +6,14 @@ module internal FSharp.Compiler.SignatureConformance
 
 open System.Text
 
-open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal 
+open Internal.Utilities.Collections
 open Internal.Utilities.Library 
-open FSharp.Compiler.ErrorLogger
 open Internal.Utilities.Library.Extras
+open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range

@@ -11,10 +11,10 @@ open System.Collections.Generic
 open System.Threading
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL
 open Internal.Utilities.Library
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Internal.Features
+open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.ParseAndCheckInputs

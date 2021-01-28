@@ -5,7 +5,7 @@
 /// Runtime, e.g. between the SSCLI, Mono and the Microsoft CLR.
 ///
 /// The implementation of the functions can be found in ilsupp-*.fs
-module internal FSharp.Compiler.AbstractIL.Internal.Support
+module internal FSharp.Compiler.AbstractIL.Support
 
 open System
 open System.Runtime.InteropServices
@@ -15,7 +15,7 @@ open System.Diagnostics.SymbolStore
 
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL 
 
 #if !FX_NO_PDB_WRITER

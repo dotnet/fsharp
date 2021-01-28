@@ -111,7 +111,7 @@ namespace Internal.Utilities.Text.Lexing
     open FSharp.Compiler.Text
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
-    open FSharp.Compiler.Internal.Features
+    open FSharp.Compiler.Features
     open System.Collections.Generic
 
     [<Struct>]
