@@ -7576,7 +7576,7 @@ and TcDelayed cenv (overallTy: OverallTy) env tpenv mExpr expr exprty (atomicFla
     | []  
     | DelayedDot :: _ -> 
         // at the end of the application chain allow coercion introduction
-        UnifyOverallTypeAndRecover cenv env mExpr overallTy exprty 
+        UnifyOverallType cenv env mExpr overallTy exprty 
         let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
         let expr2 = AdjustExprForTypeDirectedConversions tcVal cenv.g cenv.amap cenv.infoReader env.AccessRights overallTy.Commit exprty mExpr expr.Expr
         expr2, tpenv
