@@ -212,10 +212,6 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
             | SynExpr.Paren (expr, _, _, range) when rangeContainsPos range pos ->
                 getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
-            // This matches computation expressions like 'async { ... }'
-            | SynExpr.App (_, _, _, SynExpr.CompExpr (_, _, expr, range), _) when rangeContainsPos range pos ->
-                getIdentRangeForFuncExprInApp traverseSynExpr expr pos
-
             | SynExpr.App (_, _, funcExpr, argExpr, _) ->
                 match argExpr with
                 | SynExpr.App (_, _, _, _, range) when rangeContainsPos range pos ->
