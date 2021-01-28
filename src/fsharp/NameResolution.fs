@@ -10,8 +10,8 @@ open Internal.Utilities
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.Library.ResultOrException
+open Internal.Utilities.Library
+open Internal.Utilities.Library.ResultOrException
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
@@ -20,8 +20,8 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Features
-open FSharp.Compiler.Lib
+open FSharp.Compiler.Internal.Features
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.Text.Pos
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.Text.Range

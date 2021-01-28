@@ -7,21 +7,9 @@
 /// The implementation of the functions can be found in ilsupp-*.fs
 module internal FSharp.Compiler.AbstractIL.Internal.Support
 
-#if !FX_NO_PDB_WRITER
-type PdbWriter
-val pdbInitialize : string -> string -> PdbWriter
-#endif
-#if !FX_NO_PDB_READER
-type PdbReader
-val pdbReadClose: PdbReader -> unit
-#endif
-
-val absilWriteGetTimeStamp: unit -> int32
-
 open System
 open System.Runtime.InteropServices
-#if FX_NO_SYMBOLSTORE
-#else
+#if !FX_NO_SYMBOLSTORE
 open System.Diagnostics.SymbolStore
 #endif
 
@@ -29,6 +17,18 @@ open Internal.Utilities
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.IL 
+
+#if !FX_NO_PDB_WRITER
+type PdbWriter
+val pdbInitialize : string -> string -> PdbWriter
+#endif
+
+#if !FX_NO_PDB_READER
+type PdbReader
+val pdbReadClose: PdbReader -> unit
+#endif
+
+val absilWriteGetTimeStamp: unit -> int32
 
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
 

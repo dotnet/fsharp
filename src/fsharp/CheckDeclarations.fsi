@@ -3,7 +3,7 @@
 module internal FSharp.Compiler.CheckDeclarations
 
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.NameResolution

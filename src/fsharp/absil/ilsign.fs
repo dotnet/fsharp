@@ -4,19 +4,18 @@ module internal FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 
 #nowarn "9"
 
-open System
-open System.IO
-open System.Collections.Immutable
-open System.Reflection.PortableExecutable
-open System.Security.Cryptography
-open System.Reflection
-open System.Runtime.CompilerServices
-open System.Runtime.InteropServices
+    open System
+    open System.IO
+    open System.Collections.Immutable
+    open System.Reflection.PortableExecutable
+    open System.Security.Cryptography
+    open System.Reflection
+    open System.Runtime.CompilerServices
+    open System.Runtime.InteropServices
 
-open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.Utils
-open FSharp.Compiler.SourceCodeServices
+    open Internal.Utilities
+    open Internal.Utilities.Library
+    open FSharp.Compiler.IO
 
     type KeyType =
     | Public

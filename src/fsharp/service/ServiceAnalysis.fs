@@ -5,7 +5,7 @@ namespace FSharp.Compiler.SourceCodeServices
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.Text

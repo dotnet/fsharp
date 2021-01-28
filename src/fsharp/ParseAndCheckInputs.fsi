@@ -4,7 +4,7 @@
 module internal FSharp.Compiler.ParseAndCheckInputs
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState

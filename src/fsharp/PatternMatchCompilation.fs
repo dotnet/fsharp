@@ -5,13 +5,13 @@ module internal FSharp.Compiler.PatternMatchCompilation
 open System.Collections.Generic
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.SyntaxTree

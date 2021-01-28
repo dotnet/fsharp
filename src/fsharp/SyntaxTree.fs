@@ -4,10 +4,10 @@ module public rec FSharp.Compiler.SyntaxTree
 
 open System.Diagnostics
 
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.XmlDoc
+open FSharp.Compiler.Syntax.XmlDoc
 
 /// Represents an identifier in F# code
 [<Struct; NoEquality; NoComparison; DebuggerDisplay("{idText}")>]

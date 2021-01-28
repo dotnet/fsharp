@@ -14,7 +14,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 
 /// A NameResolver is a context for name resolution. It primarily holds an InfoReader.
 type NameResolver =

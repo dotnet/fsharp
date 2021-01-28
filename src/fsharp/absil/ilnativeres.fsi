@@ -3,8 +3,6 @@ module internal FSharp.Compiler.AbstractIL.Internal.NativeRes
 
 open System
 open System.Collections.Generic
-open System.Linq
-open System.Diagnostics
 open System.IO
 open System.Reflection.Metadata
 

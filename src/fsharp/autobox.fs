@@ -8,7 +8,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 

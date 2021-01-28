@@ -9,15 +9,15 @@ open Internal.Utilities
 
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Extensions.ILX
+open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Features
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Rational
+open FSharp.Compiler.Internal.Features
+open Internal.Utilities.Library.Extras
+open Internal.Utilities.Rational
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.SyntaxTree
@@ -31,7 +31,7 @@ open FSharp.Compiler.TextLayout.TaggedText
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.XmlDoc
+open FSharp.Compiler.Syntax.XmlDoc
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif

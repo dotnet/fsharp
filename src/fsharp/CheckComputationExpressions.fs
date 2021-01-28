@@ -5,13 +5,13 @@
 module internal FSharp.Compiler.CheckComputationExpressions
 
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Features
+open FSharp.Compiler.Internal.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution

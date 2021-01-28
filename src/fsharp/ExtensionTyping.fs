@@ -12,7 +12,7 @@ open System.Collections.Generic
 open System.Reflection
 open FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
+open Internal.Utilities.Library // frontAndBack
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text

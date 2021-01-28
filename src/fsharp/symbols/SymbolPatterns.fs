@@ -4,7 +4,7 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open System.Text.RegularExpressions
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 
 /// Patterns over FSharpSymbol and derivatives.
 [<RequireQualifiedAccess>]

@@ -9775,34 +9775,34 @@ FSharp.Compiler.TextLayout.TaggedTextModule: FSharp.Compiler.TextLayout.TaggedTe
 FSharp.Compiler.TextLayout.TaggedTextModule: FSharp.Compiler.TextLayout.TaggedText tagUnknownType(System.String)
 FSharp.Compiler.TextLayout.TaggedTextModule: Microsoft.FSharp.Collections.FSharpSet`1[System.String] get_keywordFunctions()
 FSharp.Compiler.TextLayout.TaggedTextModule: Microsoft.FSharp.Collections.FSharpSet`1[System.String] keywordFunctions
-FSharp.Compiler.XmlDoc
-FSharp.Compiler.XmlDoc+PreXmlDoc: Boolean Equals(PreXmlDoc)
-FSharp.Compiler.XmlDoc+PreXmlDoc: Boolean Equals(System.Object)
-FSharp.Compiler.XmlDoc+PreXmlDoc: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.XmlDoc+PreXmlDoc: Int32 GetHashCode()
-FSharp.Compiler.XmlDoc+PreXmlDoc: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.XmlDoc+PreXmlDoc: PreXmlDoc Create(System.String[], FSharp.Compiler.Text.Range)
-FSharp.Compiler.XmlDoc+PreXmlDoc: PreXmlDoc Empty
-FSharp.Compiler.XmlDoc+PreXmlDoc: PreXmlDoc Merge(PreXmlDoc, PreXmlDoc)
-FSharp.Compiler.XmlDoc+PreXmlDoc: PreXmlDoc get_Empty()
-FSharp.Compiler.XmlDoc+PreXmlDoc: System.String ToString()
-FSharp.Compiler.XmlDoc+PreXmlDoc: XmlDoc ToXmlDoc(Boolean, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]])
-FSharp.Compiler.XmlDoc+XmlDoc: Boolean IsEmpty
-FSharp.Compiler.XmlDoc+XmlDoc: Boolean NonEmpty
-FSharp.Compiler.XmlDoc+XmlDoc: Boolean get_IsEmpty()
-FSharp.Compiler.XmlDoc+XmlDoc: Boolean get_NonEmpty()
-FSharp.Compiler.XmlDoc+XmlDoc: FSharp.Compiler.Text.Range Range
-FSharp.Compiler.XmlDoc+XmlDoc: FSharp.Compiler.Text.Range get_Range()
-FSharp.Compiler.XmlDoc+XmlDoc: System.String GetXmlText()
-FSharp.Compiler.XmlDoc+XmlDoc: System.String[] GetElaboratedXmlLines()
-FSharp.Compiler.XmlDoc+XmlDoc: System.String[] UnprocessedLines
-FSharp.Compiler.XmlDoc+XmlDoc: System.String[] get_UnprocessedLines()
-FSharp.Compiler.XmlDoc+XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)
-FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc Empty
-FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc Merge(XmlDoc, XmlDoc)
-FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc get_Empty()
-FSharp.Compiler.XmlDoc: FSharp.Compiler.XmlDoc+PreXmlDoc
-FSharp.Compiler.XmlDoc: FSharp.Compiler.XmlDoc+XmlDoc
+FSharp.Compiler.Syntax.XmlDoc
+FSharp.Compiler.Syntax.XmlDoc+PreXmlDoc: Boolean Equals(PreXmlDoc)
+FSharp.Compiler.Syntax.XmlDoc+PreXmlDoc: Boolean Equals(System.Object)
+FSharp.Compiler.Syntax.XmlDoc+PreXmlDoc: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Syntax.XmlDoc+PreXmlDoc: Int32 GetHashCode()
+FSharp.Compiler.Syntax.XmlDoc+PreXmlDoc: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.Syntax.XmlDoc+PreXmlDoc: PreXmlDoc Create(System.String[], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.XmlDoc+PreXmlDoc: PreXmlDoc Empty
+FSharp.Compiler.Syntax.XmlDoc+PreXmlDoc: PreXmlDoc Merge(PreXmlDoc, PreXmlDoc)
+FSharp.Compiler.Syntax.XmlDoc+PreXmlDoc: PreXmlDoc get_Empty()
+FSharp.Compiler.Syntax.XmlDoc+PreXmlDoc: System.String ToString()
+FSharp.Compiler.Syntax.XmlDoc+PreXmlDoc: XmlDoc ToXmlDoc(Boolean, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]])
+FSharp.Compiler.Syntax.XmlDoc+XmlDoc: Boolean IsEmpty
+FSharp.Compiler.Syntax.XmlDoc+XmlDoc: Boolean NonEmpty
+FSharp.Compiler.Syntax.XmlDoc+XmlDoc: Boolean get_IsEmpty()
+FSharp.Compiler.Syntax.XmlDoc+XmlDoc: Boolean get_NonEmpty()
+FSharp.Compiler.Syntax.XmlDoc+XmlDoc: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.XmlDoc+XmlDoc: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.Syntax.XmlDoc+XmlDoc: System.String GetXmlText()
+FSharp.Compiler.Syntax.XmlDoc+XmlDoc: System.String[] GetElaboratedXmlLines()
+FSharp.Compiler.Syntax.XmlDoc+XmlDoc: System.String[] UnprocessedLines
+FSharp.Compiler.Syntax.XmlDoc+XmlDoc: System.String[] get_UnprocessedLines()
+FSharp.Compiler.Syntax.XmlDoc+XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.XmlDoc+XmlDoc: XmlDoc Empty
+FSharp.Compiler.Syntax.XmlDoc+XmlDoc: XmlDoc Merge(XmlDoc, XmlDoc)
+FSharp.Compiler.Syntax.XmlDoc+XmlDoc: XmlDoc get_Empty()
+FSharp.Compiler.Syntax.XmlDoc: FSharp.Compiler.Syntax.XmlDoc+PreXmlDoc
+FSharp.Compiler.Syntax.XmlDoc: FSharp.Compiler.Syntax.XmlDoc+XmlDoc
 FSharp.Compiler.DependencyManager.AssemblyResolutionProbe
 FSharp.Compiler.DependencyManager.AssemblyResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] EndInvoke(System.IAsyncResult)
 FSharp.Compiler.DependencyManager.AssemblyResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] Invoke()

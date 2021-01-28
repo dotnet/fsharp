@@ -12,7 +12,7 @@ open System.Text
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout

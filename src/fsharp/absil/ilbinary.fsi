@@ -3,11 +3,7 @@
 /// Compiler use only.  Code and constants shared between binary reader/writer.
 module internal FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
 
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Internal 
-
 
 [<Struct>]
 type TableName =

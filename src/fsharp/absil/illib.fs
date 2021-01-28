@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.AbstractIL.Internal.Library 
+module internal Internal.Utilities.Library 
 #nowarn "1178" // The struct, record or union type 'internal_instr_extension' is not structurally comparable because the type
 
 
@@ -42,6 +42,24 @@ let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
 /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
 let LOH_SIZE_THRESHOLD_BYTES = 80_000
+
+let runningOnMono =
+#if ENABLE_MONO_SUPPORT
+    // Officially supported way to detect if we are running on Mono.
+    // See http://www.mono-project.com/FAQ:_Technical
+    // "How can I detect if am running in Mono?" section
+    try
+        System.Type.GetType ("Mono.Runtime") <> null
+    with _ ->
+        // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
+        // that is not reliable.
+        // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is
+        // called by OnTypeResolveEvent. The function throws a NullReferenceException. I'm working with that team to get
+        // their issue fixed but we need to be robust here anyway.
+        false
+#else
+    false
+#endif
 
 //---------------------------------------------------------------------
 // Library: ReportTime

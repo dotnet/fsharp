@@ -11,12 +11,12 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree

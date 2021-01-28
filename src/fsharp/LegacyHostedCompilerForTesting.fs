@@ -13,7 +13,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open Internal.Utilities.Library 
 
 /// build issue location
 type internal Location =

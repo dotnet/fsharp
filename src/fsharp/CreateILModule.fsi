@@ -3,7 +3,7 @@
 module internal FSharp.Compiler.CreateILModule 
 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig

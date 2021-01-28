@@ -14,20 +14,20 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
+open Internal.Utilities.Library
+open FSharp.Compiler.AbstractIL.ILX.Types
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.QuotationPickler
-open FSharp.Compiler.Rational
+open Internal.Utilities.Rational
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.XmlDoc
+open FSharp.Compiler.Syntax.XmlDoc
 open FSharp.Core.Printf
 
 #if !NO_EXTENSIONTYPING

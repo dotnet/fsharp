@@ -6,13 +6,13 @@ open Internal.Utilities.Text.Parsing
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.XmlDoc
+open FSharp.Compiler.Syntax.XmlDoc
 
 //----------------------------------------------------------------------
 // Construct syntactic AST nodes

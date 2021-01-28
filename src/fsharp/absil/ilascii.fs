@@ -3,8 +3,7 @@
 module internal FSharp.Compiler.AbstractIL.Internal.AsciiConstants
 
 open Internal.Utilities.Collections
-
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 
 /// Table of parsing and pretty printing data for instructions.

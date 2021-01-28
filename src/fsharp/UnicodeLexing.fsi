@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.UnicodeLexing
+module internal FSharp.Compiler.Internal.UnicodeLexing
 
 open System.IO
-open FSharp.Compiler.Features
+open FSharp.Compiler.Internal.Features
 open FSharp.Compiler.Text
 open Internal.Utilities.Text.Lexing
 
-type Lexbuf =  LexBuffer<char>
+type Lexbuf = LexBuffer<char>
 
 val internal StringAsLexbuf: (LanguageFeature -> bool) * string -> Lexbuf
 

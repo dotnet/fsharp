@@ -11,8 +11,8 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.Library.ResultOrException
+open Internal.Utilities.Library
+open Internal.Utilities.Library.ResultOrException
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
@@ -21,10 +21,10 @@ open FSharp.Compiler.CheckComputationExpressions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Features
+open FSharp.Compiler.Internal.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
@@ -37,7 +37,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
-open FSharp.Compiler.XmlDoc
+open FSharp.Compiler.Syntax.XmlDoc
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping

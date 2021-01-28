@@ -5,12 +5,12 @@ module internal FSharp.Compiler.LowerCallsAndSeqs
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Text

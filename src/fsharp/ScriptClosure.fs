@@ -10,13 +10,13 @@ open System.Text
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree

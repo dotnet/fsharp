@@ -7,7 +7,7 @@ open System.Collections.Generic
 open System.Collections.Immutable
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal.Library  
+open Internal.Utilities.Library  
 open FSharp.Compiler.Infos
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution

@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.Lib
+module internal Internal.Utilities.Library.Extras
 
 open System.Collections.Generic
 open System.IO
 open System.Text
-open FSharp.Compiler.AbstractIL.Internal 
+open Internal.Utilities.Collections
 
 val debug: bool
 

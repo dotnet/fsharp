@@ -5,11 +5,11 @@ module internal FSharp.Compiler.QuotationTranslator
 open Internal.Utilities
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals

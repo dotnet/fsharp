@@ -4,253 +4,259 @@
 // Helpers for quick info and information about items
 //----------------------------------------------------------------------------
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Diagnostics
 
-open System
-open FSharp.Compiler 
-open FSharp.Compiler.TcGlobals 
-open FSharp.Compiler.Infos
-open FSharp.Compiler.NameResolution
-open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Text
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TypedTree
-open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.ErrorLogger
+    open System
+    open FSharp.Compiler.Text
+    open FSharp.Compiler.SourceCodeServices
+    open FSharp.Compiler.ErrorLogger
 
-[<RequireQualifiedAccess>]
-type public FSharpDiagnosticSeverity = 
-    | Hidden
-    | Info
-    | Warning 
-    | Error
+    [<RequireQualifiedAccess>]
+    type public FSharpDiagnosticSeverity = 
+        | Hidden
+        | Info
+        | Warning 
+        | Error
 
-/// Object model for diagnostics
-[<Class>]
-type public FSharpDiagnostic = 
-    member FileName: string
-    member Start: pos
-    member End: pos
-    member StartLineAlternate: int
-    member EndLineAlternate: int
-    member StartColumn: int
-    member EndColumn: int
+    /// Object model for diagnostics
+    [<Class>]
+    type public FSharpDiagnostic = 
+        member FileName: string
+        member Start: pos
+        member End: pos
+        member StartLineAlternate: int
+        member EndLineAlternate: int
+        member StartColumn: int
+        member EndColumn: int
 
-    member Range: range
-    member Severity: FSharpDiagnosticSeverity
-    member Message: string
-    member Subcategory: string
-    member ErrorNumber: int
+        member Range: range
+        member Severity: FSharpDiagnosticSeverity
+        member Message: string
+        member Subcategory: string
+        member ErrorNumber: int
 
-    static member internal CreateFromExceptionAndAdjustEof: PhasedDiagnostic * isError: bool * range * lastPosInFile: (int*int) * suggestNames: bool -> FSharpDiagnostic
-    static member internal CreateFromException: PhasedDiagnostic * isError: bool * range * suggestNames: bool -> FSharpDiagnostic
+        static member internal CreateFromExceptionAndAdjustEof: PhasedDiagnostic * isError: bool * range * lastPosInFile: (int*int) * suggestNames: bool -> FSharpDiagnostic
+        static member internal CreateFromException: PhasedDiagnostic * isError: bool * range * suggestNames: bool -> FSharpDiagnostic
 
-    static member NewlineifyErrorString: message:string -> string
+        static member NewlineifyErrorString: message:string -> string
 
-    /// Newlines are recognized and replaced with (ASCII 29, the 'group separator'), 
-    /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
-    static member NormalizeErrorString: text:string -> string
+        /// Newlines are recognized and replaced with (ASCII 29, the 'group separator'), 
+        /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
+        static member NormalizeErrorString: text:string -> string
   
-/// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
-//
-// Note: instances of this type do not hold any references to any compiler resources.
-[<RequireQualifiedAccess>]
-type public FSharpXmlDoc =
-    /// No documentation is available
-    | None
 
-    /// The text for documentation for in-memory references.  Here unprocessedText is the `\n` concatenated
-    /// text of the original source and processsedXmlLines is the 
-    /// XML produced after all checking and processing by the F# compiler, including
-    /// insertion of summary tags, encoding and resolving of cross-references if
-    // supported.
-    | Text of unprocessedLines: string[] * elaboratedXmlLines: string[]
+    //----------------------------------------------------------------------------
+    // Internal only
 
-    /// Indicates that the XML for the documentation can be found in a .xml documentation file, using the given signature key
-    | XmlDocFileSignature of file: string * xmlSig: string
+    // Implementation details used by other code in the compiler    
+    [<Sealed>]
+    type internal ErrorScope = 
+        interface IDisposable
+        new : unit -> ErrorScope
+        member Diagnostics : FSharpDiagnostic list
+        static member Protect<'a> : range -> (unit->'a) -> (string->'a) -> 'a
 
-/// A single data tip display element
-[<RequireQualifiedAccess>]
-type public FSharpToolTipElementData<'T> = 
-    {
-      MainDescription:  'T 
+    /// An error logger that capture errors, filtering them according to warning levels etc.
+    type internal CompilationErrorLogger = 
+        inherit ErrorLogger
 
-      XmlDoc: FSharpXmlDoc
+        /// Create the error logger
+        new: debugName:string * options: FSharpDiagnosticOptions -> CompilationErrorLogger
+            
+        /// Get the captured errors
+        member GetErrors: unit -> (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
-      /// typar instantiation text, to go after xml
-      TypeMapping: 'T list
+    /// This represents the global state established as each task function runs as part of the build.
+    ///
+    /// Use to reset error and warning handlers.
+    type internal CompilationGlobalsScope =
+        new : ErrorLogger * BuildPhase -> CompilationGlobalsScope
+        interface IDisposable
 
-      /// Extra text, goes at the end
-      Remarks: 'T option
+    module internal ErrorHelpers = 
+        val ReportError: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpDiagnosticSeverity) * suggestNames: bool -> FSharpDiagnostic list
+        val CreateErrorInfos: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpDiagnosticSeverity)> * suggestNames: bool -> FSharpDiagnostic[]
 
-      /// Parameter name
-      ParamName : string option
-    }
+namespace FSharp.Compiler.Analysis
 
-/// A single tool tip display element
-//
-// Note: instances of this type do not hold any references to any compiler resources.
-[<RequireQualifiedAccess>]
-type public FSharpToolTipElement<'T> = 
-    | None
+    open FSharp.Compiler 
+    open FSharp.Compiler.TcGlobals 
+    open FSharp.Compiler.Infos
+    open FSharp.Compiler.NameResolution
+    open FSharp.Compiler.InfoReader
+    open FSharp.Compiler.Text
+    open FSharp.Compiler.TextLayout
+    open FSharp.Compiler.TypedTree
+    open FSharp.Compiler.TypedTreeOps
 
-    /// A single type, method, etc with comment. May represent a method overload group.
-    | Group of elements: FSharpToolTipElementData<'T> list
+    /// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
+    //
+    // Note: instances of this type do not hold any references to any compiler resources.
+    [<RequireQualifiedAccess>]
+    type public FSharpXmlDoc =
+        /// No documentation is available
+        | None
 
-    /// An error occurred formatting this element
-    | CompositionError of errorText: string
+        /// The text for documentation for in-memory references.  Here unprocessedText is the `\n` concatenated
+        /// text of the original source and processsedXmlLines is the 
+        /// XML produced after all checking and processing by the F# compiler, including
+        /// insertion of summary tags, encoding and resolving of cross-references if
+        // supported.
+        | Text of unprocessedLines: string[] * elaboratedXmlLines: string[]
 
-    static member Single : 'T * FSharpXmlDoc * ?typeMapping: 'T list * ?paramName: string * ?remarks : 'T  -> FSharpToolTipElement<'T>
+        /// Indicates that the XML for the documentation can be found in a .xml documentation file, using the given signature key
+        | XmlDocFileSignature of file: string * xmlSig: string
 
-/// A single data tip display element with where text is expressed as string
-type public FSharpToolTipElement = FSharpToolTipElement<string>
+    /// A single data tip display element
+    [<RequireQualifiedAccess>]
+    type public FSharpToolTipElementData<'T> = 
+        {
+          MainDescription:  'T 
 
-/// A single data tip display element with where text is expressed as <see cref="Layout"/>
-type public FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
+          XmlDoc: FSharpXmlDoc
 
-/// Information for building a tool tip box.
-//
-// Note: instances of this type do not hold any references to any compiler resources.
-type public FSharpToolTipText<'T> = 
+          /// typar instantiation text, to go after xml
+          TypeMapping: 'T list
 
-    /// A list of data tip elements to display.
-    | FSharpToolTipText of FSharpToolTipElement<'T> list  
+          /// Extra text, goes at the end
+          Remarks: 'T option
 
-type public FSharpToolTipText = FSharpToolTipText<string>
+          /// Parameter name
+          ParamName : string option
+        }
 
-type public FSharpStructuredToolTipText = FSharpToolTipText<Layout>
+    /// A single tool tip display element
+    //
+    // Note: instances of this type do not hold any references to any compiler resources.
+    [<RequireQualifiedAccess>]
+    type public FSharpToolTipElement<'T> = 
+        | None
 
-[<RequireQualifiedAccess>]
-type public FSharpCompletionItemKind =
-    | Field
-    | Property
-    | Method of isExtension : bool
-    | Event
-    | Argument
-    | CustomOperation
-    | Other
+        /// A single type, method, etc with comment. May represent a method overload group.
+        | Group of elements: FSharpToolTipElementData<'T> list
 
-type FSharpUnresolvedSymbol =
-    {
-      FullName: string
+        /// An error occurred formatting this element
+        | CompositionError of errorText: string
 
-      DisplayName: string
+        static member Single : 'T * FSharpXmlDoc * ?typeMapping: 'T list * ?paramName: string * ?remarks : 'T  -> FSharpToolTipElement<'T>
 
-      Namespace: string[]
-    }
+    /// A single data tip display element with where text is expressed as string
+    type public FSharpToolTipElement = FSharpToolTipElement<string>
 
-type internal CompletionItem =
-    {
-      ItemWithInst: ItemWithInst
+    /// A single data tip display element with where text is expressed as <see cref="Layout"/>
+    type public FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
 
-      Kind: FSharpCompletionItemKind
+    /// Information for building a tool tip box.
+    //
+    // Note: instances of this type do not hold any references to any compiler resources.
+    type public FSharpToolTipText<'T> = 
 
-      IsOwnMember: bool
+        /// A list of data tip elements to display.
+        | FSharpToolTipText of FSharpToolTipElement<'T> list  
 
-      MinorPriority: int
+    type public FSharpToolTipText = FSharpToolTipText<string>
 
-      Type: TyconRef option 
+    type public FSharpStructuredToolTipText = FSharpToolTipText<Layout>
 
-      Unresolved: FSharpUnresolvedSymbol option
-    }
-    member Item : Item
+    [<RequireQualifiedAccess>]
+    type public FSharpCompletionItemKind =
+        | Field
+        | Property
+        | Method of isExtension : bool
+        | Event
+        | Argument
+        | CustomOperation
+        | Other
 
-module public FSharpToolTip =
+    type FSharpUnresolvedSymbol =
+        {
+          FullName: string
 
-    val ToFSharpToolTipElement: FSharpStructuredToolTipElement -> FSharpToolTipElement
+          DisplayName: string
 
-    val ToFSharpToolTipText: FSharpStructuredToolTipText -> FSharpToolTipText
+          Namespace: string[]
+        }
 
-// Implementation details used by other code in the compiler    
-module internal SymbolHelpers =
-    val ParamNameAndTypesOfUnaryCustomOperation : TcGlobals -> MethInfo -> ParamNameAndType list
+    type internal CompletionItem =
+        {
+          ItemWithInst: ItemWithInst
 
-    val GetXmlDocSigOfEntityRef : InfoReader -> range -> EntityRef -> (string option * string) option
+          Kind: FSharpCompletionItemKind
 
-    val GetXmlDocSigOfScopedValRef : TcGlobals -> TyconRef -> ValRef -> (string option * string) option
+          IsOwnMember: bool
 
-    val GetXmlDocSigOfILFieldInfo : InfoReader -> range -> ILFieldInfo -> (string option * string) option
+          MinorPriority: int
 
-    val GetXmlDocSigOfRecdFieldInfo : RecdFieldInfo -> (string option * string) option
+          Type: TyconRef option 
 
-    val GetXmlDocSigOfUnionCaseInfo : UnionCaseInfo -> (string option * string) option
+          Unresolved: FSharpUnresolvedSymbol option
+        }
+        member Item : Item
 
-    val GetXmlDocSigOfMethInfo : InfoReader -> range -> MethInfo -> (string option * string) option
+    module public FSharpToolTip =
 
-    val GetXmlDocSigOfValRef : TcGlobals -> ValRef -> (string option * string) option
+        val ToFSharpToolTipElement: FSharpStructuredToolTipElement -> FSharpToolTipElement
 
-    val GetXmlDocSigOfProp : InfoReader -> range -> PropInfo -> (string option * string) option
+        val ToFSharpToolTipText: FSharpStructuredToolTipText -> FSharpToolTipText
 
-    val GetXmlDocSigOfEvent : InfoReader -> range -> EventInfo -> (string option * string) option
+    // Implementation details used by other code in the compiler    
+    module internal SymbolHelpers =
+        val ParamNameAndTypesOfUnaryCustomOperation : TcGlobals -> MethInfo -> ParamNameAndType list
 
-    val GetXmlCommentForItem : InfoReader -> range -> Item -> FSharpXmlDoc
+        val GetXmlDocSigOfEntityRef : InfoReader -> range -> EntityRef -> (string option * string) option
 
-    val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> FSharpStructuredToolTipElement
+        val GetXmlDocSigOfScopedValRef : TcGlobals -> TyconRef -> ValRef -> (string option * string) option
 
-    val RemoveDuplicateItems : TcGlobals -> ItemWithInst list -> ItemWithInst list
+        val GetXmlDocSigOfILFieldInfo : InfoReader -> range -> ILFieldInfo -> (string option * string) option
 
-    val RemoveExplicitlySuppressed : TcGlobals -> ItemWithInst list -> ItemWithInst list
+        val GetXmlDocSigOfRecdFieldInfo : RecdFieldInfo -> (string option * string) option
 
-    val RemoveDuplicateCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
+        val GetXmlDocSigOfUnionCaseInfo : UnionCaseInfo -> (string option * string) option
 
-    val RemoveExplicitlySuppressedCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
+        val GetXmlDocSigOfMethInfo : InfoReader -> range -> MethInfo -> (string option * string) option
 
-    val GetF1Keyword : TcGlobals -> Item -> string option
+        val GetXmlDocSigOfValRef : TcGlobals -> ValRef -> (string option * string) option
 
-    val rangeOfItem : TcGlobals -> bool option -> Item -> range option
+        val GetXmlDocSigOfProp : InfoReader -> range -> PropInfo -> (string option * string) option
 
-    val fileNameOfItem : TcGlobals -> string option -> range -> Item -> string
+        val GetXmlDocSigOfEvent : InfoReader -> range -> EventInfo -> (string option * string) option
 
-    val FullNameOfItem : TcGlobals -> Item -> string
+        val GetXmlCommentForItem : InfoReader -> range -> Item -> FSharpXmlDoc
 
-    val ccuOfItem : TcGlobals -> Item -> CcuThunk option
+        val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> FSharpStructuredToolTipElement
 
-    val mutable ToolTipFault : string option
+        val RemoveDuplicateItems : TcGlobals -> ItemWithInst list -> ItemWithInst list
 
-    val IsAttribute : InfoReader -> Item -> bool
+        val RemoveExplicitlySuppressed : TcGlobals -> ItemWithInst list -> ItemWithInst list
 
-    val IsExplicitlySuppressed : TcGlobals -> Item -> bool
+        val RemoveDuplicateCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
 
-    val FlattenItems : TcGlobals -> range -> Item -> Item list
+        val RemoveExplicitlySuppressedCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
+
+        val GetF1Keyword : TcGlobals -> Item -> string option
+
+        val rangeOfItem : TcGlobals -> bool option -> Item -> range option
+
+        val fileNameOfItem : TcGlobals -> string option -> range -> Item -> string
+
+        val FullNameOfItem : TcGlobals -> Item -> string
+
+        val ccuOfItem : TcGlobals -> Item -> CcuThunk option
+
+        val mutable ToolTipFault : string option
+
+        val IsAttribute : InfoReader -> Item -> bool
+
+        val IsExplicitlySuppressed : TcGlobals -> Item -> bool
+
+        val FlattenItems : TcGlobals -> range -> Item -> Item list
 
 #if !NO_EXTENSIONTYPING
-    val (|ItemIsProvidedType|_|) : TcGlobals -> Item -> TyconRef option
+        val (|ItemIsProvidedType|_|) : TcGlobals -> Item -> TyconRef option
 
-    val (|ItemIsWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
+        val (|ItemIsWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
 
-    val (|ItemIsProvidedTypeWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
+        val (|ItemIsProvidedTypeWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
 #endif
 
-    val SimplerDisplayEnv : DisplayEnv -> DisplayEnv
-
-//----------------------------------------------------------------------------
-// Internal only
-
-// Implementation details used by other code in the compiler    
-[<Sealed>]
-type internal ErrorScope = 
-    interface IDisposable
-    new : unit -> ErrorScope
-    member Diagnostics : FSharpDiagnostic list
-    static member Protect<'a> : range -> (unit->'a) -> (string->'a) -> 'a
-
-/// An error logger that capture errors, filtering them according to warning levels etc.
-type internal CompilationErrorLogger = 
-    inherit ErrorLogger
-
-    /// Create the error logger
-    new: debugName:string * options: FSharpDiagnosticOptions -> CompilationErrorLogger
-            
-    /// Get the captured errors
-    member GetErrors: unit -> (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
-
-/// This represents the global state established as each task function runs as part of the build.
-///
-/// Use to reset error and warning handlers.
-type internal CompilationGlobalsScope =
-    new : ErrorLogger * BuildPhase -> CompilationGlobalsScope
-    interface IDisposable
-
-module internal ErrorHelpers = 
-    val ReportError: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpDiagnosticSeverity) * suggestNames: bool -> FSharpDiagnostic list
-    val CreateErrorInfos: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpDiagnosticSeverity)> * suggestNames: bool -> FSharpDiagnostic[]
+        val SimplerDisplayEnv : DisplayEnv -> DisplayEnv

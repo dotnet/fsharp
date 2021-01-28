@@ -6,7 +6,7 @@ namespace Tests.Compiler.Watson
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open Internal.Utilities.Library 
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Driver
 open NUnit.Framework

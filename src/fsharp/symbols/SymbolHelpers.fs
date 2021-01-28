@@ -5,40 +5,21 @@
 // type checking and intellisense-like environment-reporting.
 //--------------------------------------------------------------------------
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Diagnostics
 
 open System
-open System.IO
 
 open FSharp.Core.Printf
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal.Library  
-open FSharp.Compiler.AbstractIL.Diagnostics 
+open Internal.Utilities.Library  
 
-open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Infos
-open FSharp.Compiler.Lib
-open FSharp.Compiler.NameResolution
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Pos
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.Layout
-open FSharp.Compiler.TextLayout.LayoutRender
-open FSharp.Compiler.TextLayout.TaggedText
-open FSharp.Compiler.TypedTree
-open FSharp.Compiler.TypedTreeBasics
-open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals 
-open FSharp.Compiler.XmlDoc
-
-module EnvMisc2 =
-    let maxMembers = GetEnvInteger "FCS_MaxMembersInQuickInfo" 10
 
 //----------------------------------------------------------------------------
 // Object model for diagnostics
@@ -227,6 +208,43 @@ module ErrorHelpers =
         [| for (exn, isError) in errors do 
               yield! ReportError (options, allErrors, mainInputFileName, fileInfo, (exn, isError), suggestNames) |]
                             
+
+
+namespace FSharp.Compiler.Analysis
+
+open System
+open System.IO
+
+open FSharp.Core.Printf
+open FSharp.Compiler 
+open FSharp.Compiler.IO 
+open Internal.Utilities.Library  
+open FSharp.Compiler.AbstractIL.Diagnostics 
+
+open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Infos
+open Internal.Utilities.Library.Extras
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.TextLayout.LayoutRender
+open FSharp.Compiler.TextLayout.TaggedText
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TcGlobals 
+open FSharp.Compiler.Syntax.XmlDoc
+
+module EnvMisc2 =
+    let maxMembers = GetEnvInteger "FCS_MaxMembersInQuickInfo" 10
 
 //----------------------------------------------------------------------------
 // Object model for tooltips and helpers for their generation from items

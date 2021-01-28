@@ -14,11 +14,11 @@ open System.Diagnostics
 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Extensions.ILX 
-open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.ILX 
+open Internal.Utilities.Library
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Features
+open Internal.Utilities.Library.Extras
+open FSharp.Compiler.Internal.Features
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.FileIndex

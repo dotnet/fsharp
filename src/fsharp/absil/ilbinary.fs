@@ -3,7 +3,7 @@
 module internal FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 
 [<Struct>]
 type TableName(idx: int) = 

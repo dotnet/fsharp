@@ -12,7 +12,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 open FSharp.Compiler.BinaryResourceFormats
@@ -22,7 +22,7 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IlxGen
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text.Range

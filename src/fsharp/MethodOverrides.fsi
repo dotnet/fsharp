@@ -3,7 +3,7 @@
 /// Primary logic related to method overrides.
 module internal FSharp.Compiler.MethodOverrides
 
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open Internal.Utilities.Library 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Import

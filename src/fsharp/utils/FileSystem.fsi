@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 // This file contains public types related to the "file system hook" of the FCS API which are used throughout the F# compiler.
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.IO
 
 open System
 open System.IO

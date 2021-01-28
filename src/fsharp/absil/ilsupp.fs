@@ -13,10 +13,9 @@ open System.Runtime.InteropServices
 open System.Runtime.CompilerServices
 
 open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.Internal.NativeRes
-open FSharp.Compiler.AbstractIL.Internal.Utils
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.IO
 #if FX_NO_CORHOST_SIGNER
 open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 #endif

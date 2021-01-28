@@ -2,14 +2,15 @@
 
 module internal FSharp.Compiler.AbstractIL.ILAsciiWriter
 
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
-open FSharp.Compiler.AbstractIL.Internal.AsciiConstants
-open FSharp.Compiler.AbstractIL.IL
-
 open System.IO
 open System.Reflection
+
+open Internal.Utilities
+open Internal.Utilities.Library
+
+open FSharp.Compiler.AbstractIL.Internal.AsciiConstants
+open FSharp.Compiler.AbstractIL.ILX.Types
+open FSharp.Compiler.AbstractIL.IL
 
 #if DEBUG
 let pretty () = true
@@ -459,7 +460,7 @@ let output_at os b =
 
 let output_option f os = function None -> () | Some x -> f os x
 
-let goutput_alternative_ref env os (alt: IlxUnionAlternative) =
+let goutput_alternative_ref env os (alt: IlxUnionCase) =
   output_id os alt.Name
   alt.FieldDefs |> output_parens (output_array ", " (fun os fdef -> goutput_typ env os fdef.Type)) os
 

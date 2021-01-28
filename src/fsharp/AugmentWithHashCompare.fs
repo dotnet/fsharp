@@ -5,7 +5,7 @@ module internal FSharp.Compiler.AugmentWithHashCompare
  
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.SyntaxTree
@@ -13,7 +13,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.XmlDoc
+open FSharp.Compiler.Syntax.XmlDoc
 
 let mkIComparableCompareToSlotSig (g: TcGlobals) = 
     TSlotSig("CompareTo", g.mk_IComparable_ty, [], [], [[TSlotParam(Some("obj"), g.obj_ty, false, false, false, [])]], Some g.int_ty)

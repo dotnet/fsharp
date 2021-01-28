@@ -8,10 +8,10 @@ open System.IO
 open System.Collections.Concurrent
 open System.Collections.Generic
 open Microsoft.FSharp.Core.Printf
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Lib.Bits
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras.Bits
+open FSharp.Compiler.IO
+open Internal.Utilities.Library.Extras
 
 type FileIndex = int32 
 

@@ -12,10 +12,10 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Features
+open FSharp.Compiler.Internal.Features
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 

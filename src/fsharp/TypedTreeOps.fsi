@@ -12,14 +12,14 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Rational
+open Internal.Utilities.Rational
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.XmlDoc
+open FSharp.Compiler.Syntax.XmlDoc
 open System.Collections.Immutable
 
 type Erasure = EraseAll | EraseMeasures | EraseNone

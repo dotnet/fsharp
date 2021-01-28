@@ -4,7 +4,6 @@
 /// Anything to do with special names of identifiers and other lexical rules 
 module public FSharp.Compiler.SourceCodeServices.PrettyNaming
 
-open FSharp.Compiler
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 

@@ -1,16 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Compiler.LegacyMSBuildReferenceResolver
+module FSharp.Compiler.Legacy.LegacyMSBuildReferenceResolver
 
     open System
     open System.IO
     open System.Reflection
-    open FSharp.Compiler.AbstractIL.Internal.Library 
+    open Internal.Utilities.Library 
     open Microsoft.Build.Tasks
     open Microsoft.Build.Utilities
     open Microsoft.Build.Framework
-    open FSharp.Compiler
-    open FSharp.Compiler.SourceCodeServices
+    open FSharp.Compiler.IO
 
     // Reflection wrapper for properties
     type System.Object with
@@ -318,7 +317,7 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
 #if ENABLE_MONO_SUPPORT
         // The properties TargetedRuntimeVersion and CopyLocalDependenciesWhenParentReferenceInGac 
         // are not available on Mono. So we only set them if available (to avoid a compile-time dependency). 
-        if not FSharp.Compiler.AbstractIL.Internal.Utils.runningOnMono then
+        if not runningOnMono then
             typeof<ResolveAssemblyReference>.InvokeMember("TargetedRuntimeVersion",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box targetedRuntimeVersionValue |])  |> ignore 
             typeof<ResolveAssemblyReference>.InvokeMember("CopyLocalDependenciesWhenParentReferenceInGac",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box true |])  |> ignore 
 #else

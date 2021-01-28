@@ -13,7 +13,7 @@ open Internal.Utilities.Filename
 open Internal.Utilities.Text
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
@@ -24,7 +24,7 @@ open FSharp.Compiler.DiagnosticMessage
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Lexhelp
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution

@@ -14,12 +14,10 @@ open System.Text
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Support 
-open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractIL.Internal.Utils
+open Internal.Utilities.Library 
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
-
 
 type BlobBuildingStream () =
     inherit Stream()
@@ -27,22 +25,22 @@ type BlobBuildingStream () =
     static let chunkSize = 32 * 1024
     let builder = new BlobBuilder(chunkSize)
 
-    override this.CanWrite = true
-    override this.CanRead  = false
-    override this.CanSeek  = false
-    override this.Length   = int64 (builder.Count)
+    override _.CanWrite = true
+    override _.CanRead  = false
+    override _.CanSeek  = false
+    override _.Length   = int64 (builder.Count)
 
-    override this.Write(buffer: byte array, offset: int, count: int) = builder.WriteBytes(buffer, offset, count)
-    override this.WriteByte(value: byte) = builder.WriteByte value
-    member   this.WriteInt32(value: int) = builder.WriteInt32 value
-    member   this.ToImmutableArray() = builder.ToImmutableArray()
-    member   this.TryWriteBytes(stream: Stream, length: int) = builder.TryWriteBytes(stream, length)
+    override _.Write(buffer: byte array, offset: int, count: int) = builder.WriteBytes(buffer, offset, count)
+    override _.WriteByte(value: byte) = builder.WriteByte value
+    member   _.WriteInt32(value: int) = builder.WriteInt32 value
+    member   _.ToImmutableArray() = builder.ToImmutableArray()
+    member   _.TryWriteBytes(stream: Stream, length: int) = builder.TryWriteBytes(stream, length)
 
-    override this.Flush() = ()
-    override this.Dispose(_disposing: bool) = ()
-    override this.Seek(_offset: int64, _origin: SeekOrigin) = raise (new NotSupportedException())
-    override this.Read(_buffer: byte array, _offset: int, _count: int) = raise (new NotSupportedException())
-    override this.SetLength(_value: int64) = raise (new NotSupportedException())
+    override _.Flush() = ()
+    override _.Dispose(_disposing: bool) = ()
+    override _.Seek(_offset: int64, _origin: SeekOrigin) = raise (new NotSupportedException())
+    override _.Read(_buffer: byte array, _offset: int, _count: int) = raise (new NotSupportedException())
+    override _.SetLength(_value: int64) = raise (new NotSupportedException())
     override val Position = 0L with get, set
 
 // -------------------------------------------------------------------- 

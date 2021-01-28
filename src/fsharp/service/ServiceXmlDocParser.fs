@@ -2,11 +2,11 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.XmlDoc
+open FSharp.Compiler.Syntax.XmlDoc
 
 /// Represent an Xml documentation block in source code
 type XmlDocable =

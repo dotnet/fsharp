@@ -6,7 +6,7 @@ namespace FSharp.Compiler
 
 open FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.Text
 
 [<Sealed>]

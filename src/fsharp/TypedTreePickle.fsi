@@ -5,7 +5,7 @@ module internal FSharp.Compiler.TypedTreePickle
 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 

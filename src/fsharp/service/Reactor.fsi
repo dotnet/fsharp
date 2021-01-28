@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System.Threading
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 
 /// Represents the capability to schedule work in the compiler service operations queue for the compilation thread
 type internal IReactorOperations = 

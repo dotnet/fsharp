@@ -7,13 +7,13 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Rational
+open Internal.Utilities.Library.Extras
+open Internal.Utilities.Rational
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.SyntaxTree

@@ -7,7 +7,7 @@ module internal FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open Internal.Utilities.Library 
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports

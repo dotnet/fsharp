@@ -5,7 +5,7 @@ module internal FSharp.Compiler.ScriptClosure
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager

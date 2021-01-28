@@ -6,7 +6,7 @@ open System
 open System.Collections.Generic
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.AccessibilityLogic
@@ -23,7 +23,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.XmlDoc
+open FSharp.Compiler.Syntax.XmlDoc
 
 open Internal.Utilities
 

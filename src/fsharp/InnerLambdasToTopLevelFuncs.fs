@@ -4,12 +4,12 @@ module internal FSharp.Compiler.InnerLambdasToTopLevelFuncs
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Detuple.GlobalUsageAnalysis
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout.Layout
@@ -19,7 +19,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.XmlDoc
+open FSharp.Compiler.Syntax.XmlDoc
 
 let verboseTLR = false
 

@@ -7,8 +7,8 @@ open System.Diagnostics
 open System.Globalization
 open System.Threading
 
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 
 /// Represents the capability to schedule work in the compiler service operations queue for the compilation thread
 type internal IReactorOperations = 

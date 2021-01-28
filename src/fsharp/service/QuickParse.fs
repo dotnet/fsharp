@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 
 /// Qualified long name.
 type PartialLongName =

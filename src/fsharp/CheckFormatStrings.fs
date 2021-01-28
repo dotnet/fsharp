@@ -4,9 +4,9 @@ module internal FSharp.Compiler.CheckFormatStrings
 
 open System.Text
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open Internal.Utilities.Library 
 open FSharp.Compiler.ConstraintSolver
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps

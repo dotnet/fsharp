@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.AbstractIL.Internal.Library 
+module internal Internal.Utilities.Library 
 
 open System
 open System.Threading
@@ -32,6 +32,8 @@ val inline ( === ): x:'a -> y:'a -> bool when 'a: not struct
 val LOH_SIZE_THRESHOLD_BYTES: int
 
 val reportTime: (bool -> string -> unit)
+
+val runningOnMono: bool
 
 [<StructAttribute>]
 type InlineDelayInit<'T when 'T: not struct> =
