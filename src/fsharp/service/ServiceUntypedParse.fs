@@ -213,7 +213,6 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                 getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
             // This matches computation expressions like 'async { ... }'
-            // TODO: check if this can be simplified out
             | SynExpr.App (_, _, _, SynExpr.CompExpr (_, _, expr, range), _) when rangeContainsPos range pos ->
                 getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
@@ -228,17 +227,6 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
 
                 | SynExpr.Paren (expr, _, _, range) when rangeContainsPos range pos ->
                     getIdentRangeForFuncExprInApp traverseSynExpr expr pos
-
-                //| SynExpr.Paren (SynExpr.Lambda(_, _, _args, body, _, _), _, _, _) when rangeContainsPos body.Range pos -> 
-                //    getIdentRangeForFuncExprInApp traverseSynExpr body pos
-
-                // Maybe this covers the parentheses case for when inside of a method invocation?
-                //| SynExpr.Paren (SynExpr.Tuple(_, exprs, _, tupRange) as tup, _, _, _) when rangeContainsPos tupRange pos ->
-                //    let expr = exprs |> List.tryFind (fun expr -> rangeContainsPos expr.Range pos)
-                //    match expr with
-                //    | None -> None
-                //    | Some expr ->
-                //        getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
                 | _ ->
                     match funcExpr with
