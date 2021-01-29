@@ -81,7 +81,7 @@ type internal FSharpGoToDefinitionService
                                     | FSharpExternalSymbol.Property(tyName, _)
                                     | FSharpExternalSymbol.Type(tyName) -> tyName
 
-                                let text = MetadataAsSource.DecompileCSharp(symbolFullTypeName, targetSymbolAssemblyFileName)
+                                let text = MetadataAsSource.decompileCSharp(symbolFullTypeName, targetSymbolAssemblyFileName)
                                 let tmpShownDocOpt = metadataAsSourceService.ShowCSharpDocument(tmpProjInfo, tmpDocInfo, text)
                                 match tmpShownDocOpt with
                                 | Some tmpShownDoc ->

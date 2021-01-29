@@ -256,8 +256,8 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
             match declarations with
             | FSharpFindDeclResult.ExternalDecl (assembly, targetExternalSym) ->
                 let projectOpt = originDocument.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName.Equals(assembly, StringComparison.OrdinalIgnoreCase))
-                if projectOpt.IsSome then
-                    let project = projectOpt.Value
+                match projectOpt with
+                | Some project ->
                     let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, fun _ -> true)
 
                     let roslynSymbols =
@@ -274,8 +274,8 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
 
                     let! location = symbol.Locations |> Seq.tryHead
                     return (FSharpGoToDefinitionResult.NavigableItem(FSharpGoToDefinitionNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan)), idRange)
-                else
-                    let tmpProjInfo, tmpDocId = MetadataAsSource.GenerateTemporaryCSharpDocument(AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName), targetSymbolUse.Symbol.DisplayName, originDocument.Project.MetadataReferences)
+                | _ ->
+                    let tmpProjInfo, tmpDocId = MetadataAsSource.generateTemporaryCSharpDocument(AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName), targetSymbolUse.Symbol.DisplayName, originDocument.Project.MetadataReferences)
                     return (FSharpGoToDefinitionResult.ExternalAssembly(tmpProjInfo, tmpDocId, targetSymbolUse, targetExternalSym), idRange)
 
             | FSharpFindDeclResult.DeclFound targetRange -> 

@@ -38,7 +38,7 @@ module internal MetadataAsSource =
     open ICSharpCode.Decompiler.CSharp.Transforms
     open ICSharpCode.Decompiler.TypeSystem
 
-    let GenerateTemporaryCSharpDocument (asmIdentity: AssemblyIdentity, name: string, metadataReferences) =
+    let generateTemporaryCSharpDocument (asmIdentity: AssemblyIdentity, name: string, metadataReferences) =
         let rootPath = Path.Combine(Path.GetTempPath(), "MetadataAsSource")
         let extension = ".cs"
         let directoryName = Guid.NewGuid().ToString("N")
@@ -85,8 +85,8 @@ module internal MetadataAsSource =
 
         (projectInfo, documentInfo)
 
-    let DecompileCSharp (symbolFullTypeName: string, assemblyLocation: string) =
-        let logger = new StringBuilder();
+    let decompileCSharp (symbolFullTypeName: string, assemblyLocation: string) =
+        let logger = new StringBuilder()
 
         // Initialize a decompiler with default settings.
         let decompiler = CSharpDecompiler(assemblyLocation, DecompilerSettings())
@@ -97,24 +97,21 @@ module internal MetadataAsSource =
         let fullTypeName = FullTypeName(symbolFullTypeName)
 
         // Try to decompile; if an exception is thrown the caller will handle it
-        let mutable text = decompiler.DecompileTypeAsString(fullTypeName)
+        let text = decompiler.DecompileTypeAsString(fullTypeName)
 
-        text <- text + "#if false // " + Environment.NewLine
-        text <- text + logger.ToString()
-        text <- text + "#endif" + Environment.NewLine
+        let text = text + "#if false // " + Environment.NewLine
+        let text = text + logger.ToString()
+        let text = text + "#endif" + Environment.NewLine
 
         SourceText.From(text)
 
-    let ShowDocument (filePath, name, serviceProvider: IServiceProvider) =
+    let showDocument (filePath, name, serviceProvider: IServiceProvider) =
         let vsRunningDocumentTable4 = serviceProvider.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable4>()
         let fileAlreadyOpen = vsRunningDocumentTable4.IsMonikerValid(filePath)
 
         let openDocumentService = serviceProvider.GetService<SVsUIShellOpenDocument, IVsUIShellOpenDocument>()
-        let mutable localServiceProvider = Unchecked.defaultof<_>
-        let mutable hierarchy = Unchecked.defaultof<_>
-        let mutable itemId = Unchecked.defaultof<_>
-        let mutable windowFrame = Unchecked.defaultof<_>
-        openDocumentService.OpenDocumentViaProject(filePath, ref VSConstants.LOGVIEWID.TextView_guid, &localServiceProvider, &hierarchy, &itemId, &windowFrame) |> ignore
+
+        let (_, _, _, _, windowFrame) = openDocumentService.OpenDocumentViaProject(filePath, ref VSConstants.LOGVIEWID.TextView_guid)
 
         let componentModel = serviceProvider.GetService<SComponentModel, IComponentModel>()
         let editorAdaptersFactory = componentModel.GetService<IVsEditorAdaptersFactoryService>();
@@ -156,4 +153,4 @@ type internal FSharpMetadataAsSourceService() =
 
         this.CSharpFiles.[docInfo.FilePath] <- (projInfo, docInfo)
 
-        MetadataAsSource.ShowDocument(docInfo.FilePath, docInfo.Name, ServiceProvider.GlobalProvider)
+        MetadataAsSource.showDocument(docInfo.FilePath, docInfo.Name, ServiceProvider.GlobalProvider)

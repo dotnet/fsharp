@@ -38,13 +38,12 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
         projectContext.DisplayName <- projInfo.Name
         projectContext.AddSourceFile(docInfo.FilePath, sourceCodeKind = SourceCodeKind.Regular)
         
-        projInfo.MetadataReferences
-        |> Seq.iter (function
+        for metaRef in projInfo.MetadataReferences do
+            match metaRef with
             | :? PortableExecutableReference as peRef ->
                 projectContext.AddMetadataReference(peRef.FilePath, MetadataReferenceProperties.Assembly)
             | _ ->
                 ()
-        )
 
         projectContext
 
