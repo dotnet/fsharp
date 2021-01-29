@@ -4,6 +4,7 @@
 module internal FSharp.Compiler.CompilerDiagnostics
 
 open System.Text
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text

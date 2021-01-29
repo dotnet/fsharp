@@ -1862,49 +1862,49 @@ FSharp.Compiler.SourceCodeServices.EntityKind: Int32 get_Tag()
 FSharp.Compiler.SourceCodeServices.EntityKind: System.String ToString()
 FSharp.Compiler.SourceCodeServices.ErrorResolutionHints
 FSharp.Compiler.SourceCodeServices.ErrorResolutionHints: System.Collections.Generic.IEnumerable`1[System.String] getSuggestedNames(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit], System.String)
-FSharp.Compiler.SourceCodeServices.ExternalType
-FSharp.Compiler.SourceCodeServices.ExternalType+Array: FSharp.Compiler.SourceCodeServices.ExternalType get_inner()
-FSharp.Compiler.SourceCodeServices.ExternalType+Array: FSharp.Compiler.SourceCodeServices.ExternalType inner
-FSharp.Compiler.SourceCodeServices.ExternalType+Pointer: FSharp.Compiler.SourceCodeServices.ExternalType get_inner()
-FSharp.Compiler.SourceCodeServices.ExternalType+Pointer: FSharp.Compiler.SourceCodeServices.ExternalType inner
-FSharp.Compiler.SourceCodeServices.ExternalType+Tags: Int32 Array
-FSharp.Compiler.SourceCodeServices.ExternalType+Tags: Int32 Pointer
-FSharp.Compiler.SourceCodeServices.ExternalType+Tags: Int32 Type
-FSharp.Compiler.SourceCodeServices.ExternalType+Tags: Int32 TypeVar
-FSharp.Compiler.SourceCodeServices.ExternalType+Type: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.ExternalType] genericArgs
-FSharp.Compiler.SourceCodeServices.ExternalType+Type: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.ExternalType] get_genericArgs()
-FSharp.Compiler.SourceCodeServices.ExternalType+Type: System.String fullName
-FSharp.Compiler.SourceCodeServices.ExternalType+Type: System.String get_fullName()
-FSharp.Compiler.SourceCodeServices.ExternalType+TypeVar: System.String get_typeName()
-FSharp.Compiler.SourceCodeServices.ExternalType+TypeVar: System.String typeName
-FSharp.Compiler.SourceCodeServices.ExternalType: Boolean Equals(FSharp.Compiler.SourceCodeServices.ExternalType)
-FSharp.Compiler.SourceCodeServices.ExternalType: Boolean Equals(System.Object)
-FSharp.Compiler.SourceCodeServices.ExternalType: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.SourceCodeServices.ExternalType: Boolean IsArray
-FSharp.Compiler.SourceCodeServices.ExternalType: Boolean IsPointer
-FSharp.Compiler.SourceCodeServices.ExternalType: Boolean IsType
-FSharp.Compiler.SourceCodeServices.ExternalType: Boolean IsTypeVar
-FSharp.Compiler.SourceCodeServices.ExternalType: Boolean get_IsArray()
-FSharp.Compiler.SourceCodeServices.ExternalType: Boolean get_IsPointer()
-FSharp.Compiler.SourceCodeServices.ExternalType: Boolean get_IsType()
-FSharp.Compiler.SourceCodeServices.ExternalType: Boolean get_IsTypeVar()
-FSharp.Compiler.SourceCodeServices.ExternalType: FSharp.Compiler.SourceCodeServices.ExternalType NewArray(FSharp.Compiler.SourceCodeServices.ExternalType)
-FSharp.Compiler.SourceCodeServices.ExternalType: FSharp.Compiler.SourceCodeServices.ExternalType NewPointer(FSharp.Compiler.SourceCodeServices.ExternalType)
-FSharp.Compiler.SourceCodeServices.ExternalType: FSharp.Compiler.SourceCodeServices.ExternalType NewType(System.String, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.ExternalType])
-FSharp.Compiler.SourceCodeServices.ExternalType: FSharp.Compiler.SourceCodeServices.ExternalType NewTypeVar(System.String)
-FSharp.Compiler.SourceCodeServices.ExternalType: FSharp.Compiler.SourceCodeServices.ExternalType+Array
-FSharp.Compiler.SourceCodeServices.ExternalType: FSharp.Compiler.SourceCodeServices.ExternalType+Pointer
-FSharp.Compiler.SourceCodeServices.ExternalType: FSharp.Compiler.SourceCodeServices.ExternalType+Tags
-FSharp.Compiler.SourceCodeServices.ExternalType: FSharp.Compiler.SourceCodeServices.ExternalType+Type
-FSharp.Compiler.SourceCodeServices.ExternalType: FSharp.Compiler.SourceCodeServices.ExternalType+TypeVar
-FSharp.Compiler.SourceCodeServices.ExternalType: Int32 CompareTo(FSharp.Compiler.SourceCodeServices.ExternalType)
-FSharp.Compiler.SourceCodeServices.ExternalType: Int32 CompareTo(System.Object)
-FSharp.Compiler.SourceCodeServices.ExternalType: Int32 CompareTo(System.Object, System.Collections.IComparer)
-FSharp.Compiler.SourceCodeServices.ExternalType: Int32 GetHashCode()
-FSharp.Compiler.SourceCodeServices.ExternalType: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.SourceCodeServices.ExternalType: Int32 Tag
-FSharp.Compiler.SourceCodeServices.ExternalType: Int32 get_Tag()
-FSharp.Compiler.SourceCodeServices.ExternalType: System.String ToString()
+FSharp.Compiler.SourceCodeServices.FSharpExternalType
+FSharp.Compiler.SourceCodeServices.FSharpExternalType+Array: FSharp.Compiler.SourceCodeServices.FSharpExternalType get_inner()
+FSharp.Compiler.SourceCodeServices.FSharpExternalType+Array: FSharp.Compiler.SourceCodeServices.FSharpExternalType inner
+FSharp.Compiler.SourceCodeServices.FSharpExternalType+Pointer: FSharp.Compiler.SourceCodeServices.FSharpExternalType get_inner()
+FSharp.Compiler.SourceCodeServices.FSharpExternalType+Pointer: FSharp.Compiler.SourceCodeServices.FSharpExternalType inner
+FSharp.Compiler.SourceCodeServices.FSharpExternalType+Tags: Int32 Array
+FSharp.Compiler.SourceCodeServices.FSharpExternalType+Tags: Int32 Pointer
+FSharp.Compiler.SourceCodeServices.FSharpExternalType+Tags: Int32 Type
+FSharp.Compiler.SourceCodeServices.FSharpExternalType+Tags: Int32 TypeVar
+FSharp.Compiler.SourceCodeServices.FSharpExternalType+Type: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExternalType] genericArgs
+FSharp.Compiler.SourceCodeServices.FSharpExternalType+Type: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExternalType] get_genericArgs()
+FSharp.Compiler.SourceCodeServices.FSharpExternalType+Type: System.String fullName
+FSharp.Compiler.SourceCodeServices.FSharpExternalType+Type: System.String get_fullName()
+FSharp.Compiler.SourceCodeServices.FSharpExternalType+TypeVar: System.String get_typeName()
+FSharp.Compiler.SourceCodeServices.FSharpExternalType+TypeVar: System.String typeName
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Boolean Equals(FSharp.Compiler.SourceCodeServices.FSharpExternalType)
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Boolean Equals(System.Object)
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Boolean IsArray
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Boolean IsPointer
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Boolean IsType
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Boolean IsTypeVar
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Boolean get_IsArray()
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Boolean get_IsPointer()
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Boolean get_IsType()
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Boolean get_IsTypeVar()
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: FSharp.Compiler.SourceCodeServices.FSharpExternalType NewArray(FSharp.Compiler.SourceCodeServices.FSharpExternalType)
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: FSharp.Compiler.SourceCodeServices.FSharpExternalType NewPointer(FSharp.Compiler.SourceCodeServices.FSharpExternalType)
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: FSharp.Compiler.SourceCodeServices.FSharpExternalType NewType(System.String, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExternalType])
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: FSharp.Compiler.SourceCodeServices.FSharpExternalType NewTypeVar(System.String)
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: FSharp.Compiler.SourceCodeServices.FSharpExternalType+Array
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: FSharp.Compiler.SourceCodeServices.FSharpExternalType+Pointer
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: FSharp.Compiler.SourceCodeServices.FSharpExternalType+Tags
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: FSharp.Compiler.SourceCodeServices.FSharpExternalType+Type
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: FSharp.Compiler.SourceCodeServices.FSharpExternalType+TypeVar
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Int32 CompareTo(FSharp.Compiler.SourceCodeServices.FSharpExternalType)
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Int32 CompareTo(System.Object)
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Int32 GetHashCode()
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Int32 Tag
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: Int32 get_Tag()
+FSharp.Compiler.SourceCodeServices.FSharpExternalType: System.String ToString()
 FSharp.Compiler.SourceCodeServices.ExternalTypeModule
 FSharp.Compiler.SourceCodeServices.FSharpAbstractParameter
 FSharp.Compiler.SourceCodeServices.FSharpAbstractParameter: Boolean IsInArg
@@ -2522,8 +2522,8 @@ FSharp.Compiler.SourceCodeServices.FSharpExpr: Microsoft.FSharp.Collections.FSha
 FSharp.Compiler.SourceCodeServices.FSharpExpr: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExpr] get_ImmediateSubExpressions()
 FSharp.Compiler.SourceCodeServices.FSharpExpr: System.String ToString()
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol
-FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Constructor: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.ParamTypeSymbol] args
-FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Constructor: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.ParamTypeSymbol] get_args()
+FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Constructor: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExternalParam] args
+FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Constructor: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExternalParam] get_args()
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Constructor: System.String get_typeName()
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Constructor: System.String typeName
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Event: System.String get_name()
@@ -2536,8 +2536,8 @@ FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Field: System.String nam
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Field: System.String typeName
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Method: Int32 genericArity
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Method: Int32 get_genericArity()
-FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Method: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.ParamTypeSymbol] get_paramSyms()
-FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Method: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.ParamTypeSymbol] paramSyms
+FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Method: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExternalParam] get_paramSyms()
+FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Method: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExternalParam] paramSyms
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Method: System.String get_name()
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Method: System.String get_typeName()
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Method: System.String name
@@ -2569,10 +2569,10 @@ FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol: Boolean get_IsField()
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol: Boolean get_IsMethod()
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol: Boolean get_IsProperty()
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol: Boolean get_IsType()
-FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol: FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol NewConstructor(System.String, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.ParamTypeSymbol])
+FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol: FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol NewConstructor(System.String, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExternalParam])
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol: FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol NewEvent(System.String, System.String)
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol: FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol NewField(System.String, System.String)
-FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol: FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol NewMethod(System.String, System.String, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.ParamTypeSymbol], Int32)
+FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol: FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol NewMethod(System.String, System.String, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExternalParam], Int32)
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol: FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol NewProperty(System.String, System.String)
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol: FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol NewType(System.String)
 FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol: FSharp.Compiler.SourceCodeServices.FSharpExternalSymbol+Constructor
@@ -5225,33 +5225,33 @@ FSharp.Compiler.SourceCodeServices.OpenStatementInsertionPoint: Int32 GetHashCod
 FSharp.Compiler.SourceCodeServices.OpenStatementInsertionPoint: Int32 Tag
 FSharp.Compiler.SourceCodeServices.OpenStatementInsertionPoint: Int32 get_Tag()
 FSharp.Compiler.SourceCodeServices.OpenStatementInsertionPoint: System.String ToString()
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol+Byref: FSharp.Compiler.SourceCodeServices.ExternalType get_parameterType()
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol+Byref: FSharp.Compiler.SourceCodeServices.ExternalType parameterType
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol+Param: FSharp.Compiler.SourceCodeServices.ExternalType get_parameterType()
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol+Param: FSharp.Compiler.SourceCodeServices.ExternalType parameterType
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol+Tags: Int32 Byref
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol+Tags: Int32 Param
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: Boolean Equals(FSharp.Compiler.SourceCodeServices.ParamTypeSymbol)
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: Boolean Equals(System.Object)
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: Boolean IsByref
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: Boolean IsParam
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: Boolean get_IsByref()
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: Boolean get_IsParam()
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: FSharp.Compiler.SourceCodeServices.ParamTypeSymbol NewByref(FSharp.Compiler.SourceCodeServices.ExternalType)
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: FSharp.Compiler.SourceCodeServices.ParamTypeSymbol NewParam(FSharp.Compiler.SourceCodeServices.ExternalType)
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: FSharp.Compiler.SourceCodeServices.ParamTypeSymbol+Byref
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: FSharp.Compiler.SourceCodeServices.ParamTypeSymbol+Param
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: FSharp.Compiler.SourceCodeServices.ParamTypeSymbol+Tags
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: Int32 CompareTo(FSharp.Compiler.SourceCodeServices.ParamTypeSymbol)
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: Int32 CompareTo(System.Object)
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: Int32 CompareTo(System.Object, System.Collections.IComparer)
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: Int32 GetHashCode()
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: Int32 Tag
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: Int32 get_Tag()
-FSharp.Compiler.SourceCodeServices.ParamTypeSymbol: System.String ToString()
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam+Byref: FSharp.Compiler.SourceCodeServices.FSharpExternalType get_parameterType()
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam+Byref: FSharp.Compiler.SourceCodeServices.FSharpExternalType parameterType
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam+Param: FSharp.Compiler.SourceCodeServices.FSharpExternalType get_parameterType()
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam+Param: FSharp.Compiler.SourceCodeServices.FSharpExternalType parameterType
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam+Tags: Int32 Byref
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam+Tags: Int32 Param
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: Boolean Equals(FSharp.Compiler.SourceCodeServices.FSharpExternalParam)
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: Boolean Equals(System.Object)
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: Boolean IsByref
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: Boolean IsParam
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: Boolean get_IsByref()
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: Boolean get_IsParam()
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: FSharp.Compiler.SourceCodeServices.FSharpExternalParam NewByref(FSharp.Compiler.SourceCodeServices.FSharpExternalType)
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: FSharp.Compiler.SourceCodeServices.FSharpExternalParam NewParam(FSharp.Compiler.SourceCodeServices.FSharpExternalType)
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: FSharp.Compiler.SourceCodeServices.FSharpExternalParam+Byref
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: FSharp.Compiler.SourceCodeServices.FSharpExternalParam+Param
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: FSharp.Compiler.SourceCodeServices.FSharpExternalParam+Tags
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: Int32 CompareTo(FSharp.Compiler.SourceCodeServices.FSharpExternalParam)
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: Int32 CompareTo(System.Object)
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: Int32 GetHashCode()
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: Int32 Tag
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: Int32 get_Tag()
+FSharp.Compiler.SourceCodeServices.FSharpExternalParam: System.String ToString()
 FSharp.Compiler.SourceCodeServices.ParamTypeSymbolModule
 FSharp.Compiler.SourceCodeServices.ParsedInput
 FSharp.Compiler.SourceCodeServices.ParsedInput: FSharp.Compiler.SourceCodeServices.InsertContext findNearestPointToInsertOpenDeclaration(Int32, ParsedInput, System.String[], FSharp.Compiler.SourceCodeServices.OpenStatementInsertionPoint)

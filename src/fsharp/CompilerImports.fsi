@@ -39,6 +39,7 @@ val IsOptimizationDataResource: ILResource -> bool
 
 /// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource: ILResource -> bool
+
 val GetSignatureDataResourceName: ILResource -> string
 
 /// Write F# signature data as an IL resource

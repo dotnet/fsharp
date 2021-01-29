@@ -17,10 +17,8 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CheckDeclarations
@@ -34,13 +32,13 @@ open FSharp.Compiler.Legacy
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -687,7 +685,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
 
          member _.HasMatchingFSharpSignatureDataAttribute ilg = 
             let attrs = GetCustomAttributesOfILModule ilModule
-            List.exists (IsMatchingSignatureDataVersionAttr ilg (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
+            List.exists (IsMatchingSignatureDataVersionAttr ilg (parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
 
 //----------------------------------------------------------------------------
 // TcImports
@@ -1331,7 +1329,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
     /// Query information about types available in target system runtime library
     member tcImports.SystemRuntimeContainsType (typeName: string) : bool = 
-        let ns, typeName = IL.splitILTypeName typeName
+        let ns, typeName = splitILTypeName typeName
         let tcGlobals = tcImports.GetTcGlobals()
         tcGlobals.TryFindSysTyconRef ns typeName |> Option.isSome
 

@@ -12,7 +12,6 @@ open Internal.Utilities.FSharpEnvironment
 /// host implements this, it's job is to return a list of assembly paths to probe.
 type AssemblyResolutionProbe = delegate of Unit -> seq<string>
 
-
 /// Type that encapsulates AssemblyResolveHandler for managed packages
 type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProbe) as this =
     let assemblyLoadContextType: Type = Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)

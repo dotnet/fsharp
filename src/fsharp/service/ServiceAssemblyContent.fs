@@ -5,18 +5,18 @@
 // type checking and intellisense-like environment-reporting.
 //--------------------------------------------------------------------------
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Editing
 
 open System
 open System.Collections.Generic
-
-open FSharp.Compiler
 open Internal.Utilities.Library 
+open FSharp.Compiler.Analysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.IO
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Pos
-open FSharp.Compiler.Text.Range
 
 type ShortIdent = string
 

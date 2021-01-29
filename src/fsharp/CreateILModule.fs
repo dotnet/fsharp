@@ -10,9 +10,7 @@ open Internal.Utilities
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.StrongNameSign
 open FSharp.Compiler.BinaryResourceFormats
 open FSharp.Compiler.CheckDeclarations
@@ -28,10 +26,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
-//----------------------------------------------------------------------------
-// Helpers for finding attributes
-//----------------------------------------------------------------------------
-
+/// Helpers for finding attributes
 module AttributeHelpers = 
 
     /// Try to find an attribute that takes a string argument
@@ -60,7 +55,7 @@ module AttributeHelpers =
         | _ -> None
 
     let (|ILVersion|_|) (versionString: string) =
-        try Some (IL.parseILVersion versionString)
+        try Some (parseILVersion versionString)
         with e -> 
             None
 

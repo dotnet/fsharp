@@ -1,15 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-//----------------------------------------------------------------------------
-// Open up the compiler as an incremental service for lexing.
-//--------------------------------------------------------------------------
-
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Editing
 
 open System
 open System.Collections.Generic
 open System.Threading
 
+open Internal.Utilities
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
@@ -22,8 +19,6 @@ open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Pos
 open FSharp.Compiler.Text.Range
-
-open Internal.Utilities
 
 type Position = int * int
 

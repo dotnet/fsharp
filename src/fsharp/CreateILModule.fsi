@@ -21,6 +21,7 @@ val ValidateKeySigningAttributes: tcConfig:TcConfig * tcGlobals:TcGlobals * TopA
 /// Get the object used to perform strong-name signing
 val GetStrongNameSigner: signingInfo: StrongNameSigningInfo -> ILStrongNameSigner option
 
+/// Helpers for finding attributes
 module AttributeHelpers =
     val TryFindStringAttribute: g: TcGlobals -> attrib: string -> attribs: Attribs -> string option
 

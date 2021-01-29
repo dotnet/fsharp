@@ -310,36 +310,36 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token <range * string * ParseHelpers.LexerContinuation> HASH_IF HASH_ELSE HASH_ENDIF 
 
 %start signatureFile implementationFile interaction typedSeqExprEOF typEOF
-%type <SyntaxTree.SynExpr> typedSeqExprEOF
-%type <SyntaxTree.ParsedImplFile> implementationFile
-%type <SyntaxTree.ParsedSigFile> signatureFile
-%type <SyntaxTree.ParsedFsiInteraction> interaction
-%type <SyntaxTree.Ident> ident
-%type <SyntaxTree.SynType> typ typEOF
-%type <SyntaxTree.SynTypeDefnSig list> tyconSpfns
-%type <SyntaxTree.SynExpr> patternResult
-%type <SyntaxTree.SynExpr> declExpr
-%type <SyntaxTree.SynExpr> minusExpr
-%type <SyntaxTree.SynExpr> appExpr
-%type <SyntaxTree.SynExpr> argExpr
-%type <SyntaxTree.SynExpr> declExprBlock
-%type <SyntaxTree.SynPat> headBindingPattern
-%type <SyntaxTree.SynExpr> atomicExprAfterType
-%type <SyntaxTree.SynExpr> typedSeqExprBlock
-%type <SyntaxTree.SynExpr * bool> atomicExpr
-%type <SyntaxTree.SynTypeDefnSimpleRepr> tyconDefnOrSpfnSimpleRepr
-%type <(SyntaxTree.SynEnumCase, SyntaxTree.SynUnionCase) Choice list> unionTypeRepr
-%type <SyntaxTree.SynMemberDefns> tyconDefnAugmentation
-%type <SyntaxTree.SynExceptionDefn> exconDefn
-%type <SyntaxTree.SynExceptionDefnRepr> exconCore
-%type <SyntaxTree.SynModuleDecl list> moduleDefnsOrExprPossiblyEmptyOrBlock
-%type <SyntaxTree.LongIdentWithDots> path
-%type <SyntaxTree.LongIdentWithDots> pathOp
+%type <SynExpr> typedSeqExprEOF
+%type <ParsedImplFile> implementationFile
+%type <ParsedSigFile> signatureFile
+%type <ParsedFsiInteraction> interaction
+%type <Ident> ident
+%type <SynType> typ typEOF
+%type <SynTypeDefnSig list> tyconSpfns
+%type <SynExpr> patternResult
+%type <SynExpr> declExpr
+%type <SynExpr> minusExpr
+%type <SynExpr> appExpr
+%type <SynExpr> argExpr
+%type <SynExpr> declExprBlock
+%type <SynPat> headBindingPattern
+%type <SynExpr> atomicExprAfterType
+%type <SynExpr> typedSeqExprBlock
+%type <SynExpr * bool> atomicExpr
+%type <SynTypeDefnSimpleRepr> tyconDefnOrSpfnSimpleRepr
+%type <(SynEnumCase, SynUnionCase) Choice list> unionTypeRepr
+%type <SynMemberDefns> tyconDefnAugmentation
+%type <SynExceptionDefn> exconDefn
+%type <SynExceptionDefnRepr> exconCore
+%type <SynModuleDecl list> moduleDefnsOrExprPossiblyEmptyOrBlock
+%type <LongIdentWithDots> path
+%type <LongIdentWithDots> pathOp
 /*     LESS    GREATER        parsedOk   typeArgs           m for each   mWhole  */
-%type <range * range option * bool     * SyntaxTree.SynType list * range list * range> typeArgsActual
+%type <range * range option * bool     * SynType list * range list * range> typeArgsActual
 /*     LESS    GREATER        typeArgs           m for each   mWhole  */
-%type <range * range option * SyntaxTree.SynType list * range list * range> typeArgsNoHpaDeprecated
-%type <SyntaxTree.SynTypar> typar
+%type <range * range option * SynType list * range list * range> typeArgsNoHpaDeprecated
+%type <SynTypar> typar
 
 /* About precedence rules: 
  * 

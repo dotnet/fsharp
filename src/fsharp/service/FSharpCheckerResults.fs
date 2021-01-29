@@ -3,40 +3,42 @@
 // Open up the compiler as an incremental service for parsing,
 // type checking and intellisense-like environment-reporting.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Analysis
 
 open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
 open System.Threading
-
+open Internal.Utilities.Library  
+open Internal.Utilities.Library.Extras
 open FSharp.Core.Printf
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open Internal.Utilities.Library  
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.Analysis.SymbolHelpers 
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Editing
+open FSharp.Compiler.Editing.DeclarationListHelpers
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lexhelp
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.ScriptClosure
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.SourceCodeServices.SymbolHelpers 
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
@@ -1202,7 +1204,7 @@ type internal TypeCheckInfo
                         match ilinfo.MetadataScope with
                         | ILScopeRef.Assembly assemblyRef ->
                             let typeVarNames = getTypeVarNames ilinfo
-                            ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
+                            FSharpExternalParam.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
                             |> Option.map (fun args ->
                                 let externalSym = FSharpExternalSymbol.Constructor (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, args)
                                 FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
@@ -1212,7 +1214,7 @@ type internal TypeCheckInfo
                         match ilinfo.MetadataScope with
                         | ILScopeRef.Assembly assemblyRef ->
                             let typeVarNames = getTypeVarNames ilinfo
-                            ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
+                            FSharpExternalParam.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
                             |> Option.map (fun args ->
                                 let externalSym = FSharpExternalSymbol.Method (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, name, args, ilinfo.ILMethodRef.GenericArity)
                                 FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))

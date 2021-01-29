@@ -9,13 +9,14 @@ open System.Collections.Generic
 
 open Internal.Utilities
 open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.BinaryConstants
-open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.ILX.Types
 open FSharp.Compiler.AttributeChecking
@@ -23,7 +24,6 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.LowerCallsAndSeqs
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming

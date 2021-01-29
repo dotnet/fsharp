@@ -65,7 +65,7 @@ open FSharp.Compiler.XmlDocFileWriter
 [<AbstractClass>]
 type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameForDebugging) = 
     inherit ErrorLogger(nameForDebugging)
-
+    
     let mutable errors = 0
 
     /// Called when an error or warning occurs

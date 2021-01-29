@@ -19,16 +19,19 @@ open System.Threading
 open System.Reflection
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
-
+open Internal.Utilities
+open Internal.Utilities.Collections
+open Internal.Utilities.FSharpEnvironment
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open Internal.Utilities.Library
-open FSharp.Compiler.AbstractIL.Utils
 open FSharp.Compiler.AbstractIL.ILRuntimeWriter
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.Analysis
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerOptions
@@ -37,31 +40,30 @@ open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Editing
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.NameResolution
+open FSharp.Compiler.IO
+open FSharp.Compiler.Legacy
 open FSharp.Compiler.Lexhelp
-open Internal.Utilities.Library.Extras
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.OptimizeInputs
-open FSharp.Compiler.Text.Range
 open FSharp.Compiler.ScriptClosure
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout
 open FSharp.Compiler.TextLayout.LayoutRender
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Syntax.XmlDoc
-open Internal.Utilities
-open Internal.Utilities.FSharpEnvironment
 
 // Prevents warnings of experimental APIs - we are using FSharpLexer
 #nowarn "57"
@@ -1634,7 +1636,7 @@ type internal FsiDynamicCompiler
                 invalidArg "name" "Name cannot be null or white-space."
 
             // Verify that the name is a valid identifier for a value.
-            SourceCodeServices.FSharpLexer.Lex(SourceText.ofString name, 
+            FSharpLexer.Lex(SourceText.ofString name, 
                 let mutable foundOne = false
                 fun t -> 
                     if not t.IsIdentifier || foundOne then
@@ -2730,7 +2732,7 @@ type FsiCompilationException(message: string, errorInfos: FSharpDiagnostic[] opt
 /// text input, writing to the given text output and error writers.
 type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter, fsiCollectible: bool, legacyReferenceResolver: LegacyReferenceResolver option) = 
 
-    do if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
+    do if not runningOnMono then UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
 
     // Explanation: When FsiEvaluationSession.Create is called we do a bunch of processing. For fsi.exe
     // and fsiAnyCpu.exe there are no other active threads at this point, so we can assume this is the

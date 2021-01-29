@@ -49,6 +49,7 @@ open FSharp.Compiler.ExtensionTyping
 //------------------------------------------------------------------------- 
 
 let mkNilListPat (g: TcGlobals) m ty = TPat_unioncase(g.nil_ucref, [ty], [], m)
+
 let mkConsListPat (g: TcGlobals) ty ph pt = TPat_unioncase(g.cons_ucref, [ty], [ph;pt], unionRanges ph.Range pt.Range)
 
 //-------------------------------------------------------------------------

@@ -21,9 +21,13 @@ open FSharp.Compiler.TcGlobals
 // Implementation details used by other code in the compiler    
 type internal SymbolEnv = 
     new: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports -> SymbolEnv
+
     new: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports * amap: ImportMap * infoReader: InfoReader -> SymbolEnv
+
     member amap: ImportMap
+
     member g: TcGlobals
+
     member tcValF: ConstraintSolver.TcValF
 
 /// Indicates the accessibility of a symbol, as seen by the F# language
@@ -44,7 +48,6 @@ type FSharpAccessibility =
 
     /// The underlying Accessibility
     member internal Contents: Accessibility
-
 
 /// Represents the information needed to format types and other information in a style
 /// suitable for use in F# source text at a particular source location.

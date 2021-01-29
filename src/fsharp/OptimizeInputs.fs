@@ -8,6 +8,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
@@ -17,7 +18,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TypedTreeOps 
-open FSharp.Compiler.CheckDeclarations
 
 let mutable showTermFileCount = 0    
 

@@ -8,8 +8,6 @@
 namespace FSharp.Compiler.Analysis
 
 open System.Collections.Generic
-
-open FSharp.Compiler
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Editing
 open FSharp.Compiler.Syntax

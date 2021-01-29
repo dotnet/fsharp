@@ -6,21 +6,21 @@
 module internal FSharp.Compiler.Optimizer
 
 open Internal.Utilities
+open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout
 open FSharp.Compiler.TextLayout.LayoutRender
@@ -30,7 +30,6 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypedTreePickle
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic
@@ -398,7 +397,7 @@ type cenv =
       emitTailcalls: bool
       
       /// cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
-      casApplied : Dictionary<Stamp, bool>
+      casApplied: Dictionary<Stamp, bool>
     }
 
     override x.ToString() = "<cenv>"

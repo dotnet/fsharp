@@ -8,10 +8,10 @@
 namespace FSharp.Compiler.Editing
 
 open System.Collections.Generic
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 
 /// Represents the different kinds of items that can appear in the navigation bar
 type FSharpNavigationDeclarationItemKind =

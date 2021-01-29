@@ -4,6 +4,7 @@ module internal FSharp.Compiler.OptimizeInputs
 
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.IlxGen
@@ -11,7 +12,6 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.Optimizer
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.CheckDeclarations
 
 val GetGeneratedILModuleName : CompilerTarget -> string -> string
 

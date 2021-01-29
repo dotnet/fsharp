@@ -4,11 +4,9 @@
 module internal FSharp.Compiler.CompilerConfig
 
 open System
-open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
-open System.Text
 open Internal.Utilities
 open Internal.Utilities.Filename
 open Internal.Utilities.FSharpEnvironment
@@ -19,7 +17,6 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
@@ -29,7 +26,6 @@ open FSharp.Compiler.Legacy
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
-
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -43,10 +39,15 @@ let (++) x s = x @ [s]
 //--------------------------------------------------------------------------
 
 let FSharpSigFileSuffixes = [".mli";".fsi"]
+
 let mlCompatSuffixes = [".mli";".ml"]
+
 let FSharpImplFileSuffixes = [".ml";".fs";".fsscript";".fsx"]
+
 let FSharpScriptFileSuffixes = [".fsscript";".fsx"]
+
 let doNotRequireNamespaceOrModuleSuffixes = [".mli";".ml"] @ FSharpScriptFileSuffixes
+
 let FSharpLightSyntaxFileSuffixes: string list = [ ".fs";".fsscript";".fsx";".fsi" ]
 
 //--------------------------------------------------------------------------

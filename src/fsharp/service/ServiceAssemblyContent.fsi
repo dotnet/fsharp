@@ -1,11 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.Analysis
+namespace FSharp.Compiler.Editing
 
 open System
-open System.Collections.Generic
-
-open FSharp.Compiler
+open FSharp.Compiler.Analysis
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
@@ -162,8 +160,6 @@ type public InsertContext =
 type public OpenStatementInsertionPoint =
     | TopLevel
     | Nearest
-
-namespace FSharp.Compiler.Syntax
 
 /// Parse AST helpers.
 module public ParsedInput =

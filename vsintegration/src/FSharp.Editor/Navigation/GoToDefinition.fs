@@ -37,35 +37,33 @@ module private Symbol =
 
         inner [] root |> String.concat "."
 
-module private ExternalType =
-    let rec tryOfRoslynType (typesym: ITypeSymbol): ExternalType option =
+module private FSharpExternalType =
+    let rec tryOfRoslynType (typesym: ITypeSymbol): FSharpExternalType option =
         match typesym with
         | :? IPointerTypeSymbol as ptrparam ->
-            tryOfRoslynType ptrparam.PointedAtType |> Option.map ExternalType.Pointer
+            tryOfRoslynType ptrparam.PointedAtType |> Option.map FSharpExternalType.Pointer
         | :? IArrayTypeSymbol as arrparam ->
-            tryOfRoslynType arrparam.ElementType |> Option.map ExternalType.Array
+            tryOfRoslynType arrparam.ElementType |> Option.map FSharpExternalType.Array
         | :? ITypeParameterSymbol as typaram ->
-            Some (ExternalType.TypeVar typaram.Name)
+            Some (FSharpExternalType.TypeVar typaram.Name)
         | :? INamedTypeSymbol as namedTypeSym ->
             namedTypeSym.TypeArguments
             |> Seq.map tryOfRoslynType
             |> List.ofSeq
             |> Option.ofOptionList
             |> Option.map (fun genericArgs ->
-                ExternalType.Type (Symbol.fullName typesym, genericArgs))
+                FSharpExternalType.Type (Symbol.fullName typesym, genericArgs))
         | _ ->
             Debug.Assert(false, sprintf "GoToDefinitionService: Unexpected Roslyn type symbol subclass: %O" (typesym.GetType()))
             None
 
-module private ParamTypeSymbol =
+module private FSharpExternalParam =
 
-    let tryOfRoslynParameter (param: IParameterSymbol): ParamTypeSymbol option =
-        ExternalType.tryOfRoslynType param.Type
-        |> Option.map (
-            if param.RefKind = RefKind.None then ParamTypeSymbol.Param
-            else ParamTypeSymbol.Byref)
+    let tryOfRoslynParameter (param: IParameterSymbol): FSharpExternalParam option =
+        FSharpExternalType.tryOfRoslynType param.Type
+        |> Option.map (fun ty -> FSharpExternalParam.Create(ty, param.RefKind <> RefKind.None))
 
-    let tryOfRoslynParameters (paramSyms: ImmutableArray<IParameterSymbol>): ParamTypeSymbol list option =
+    let tryOfRoslynParameters (paramSyms: ImmutableArray<IParameterSymbol>): FSharpExternalParam list option =
         paramSyms
         |> Seq.map tryOfRoslynParameter
         |> Seq.toList
@@ -82,7 +80,7 @@ module private ExternalSymbol =
             let constructors =
                 typesym.InstanceConstructors
                 |> Seq.choose<_,ISymbol * FSharpExternalSymbol> (fun methsym ->
-                    ParamTypeSymbol.tryOfRoslynParameters methsym.Parameters
+                    FSharpExternalParam.tryOfRoslynParameters methsym.Parameters
                     |> Option.map (fun args -> upcast methsym, FSharpExternalSymbol.Constructor(fullTypeName, args))
                     )
                 |> List.ofSeq
@@ -90,7 +88,7 @@ module private ExternalSymbol =
             (symbol, FSharpExternalSymbol.Type fullTypeName) :: constructors
 
         | :? IMethodSymbol as methsym ->
-            ParamTypeSymbol.tryOfRoslynParameters methsym.Parameters
+            FSharpExternalParam.tryOfRoslynParameters methsym.Parameters
             |> Option.map (fun args ->
                 symbol, FSharpExternalSymbol.Method(container, methsym.MetadataName, args, methsym.TypeParameters.Length))
             |> Option.toList

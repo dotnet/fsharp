@@ -1,21 +1,23 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
-
+namespace FSharp.Compiler.Analysis
 
 open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.Analysis
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Editing
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Legacy
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals

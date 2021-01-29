@@ -1,36 +1,35 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Analysis
 
 open System
 open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
 open System.Reflection
-
+open Internal.Utilities
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
-open FSharp.Compiler.AbstractIL.Utils
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
+open FSharp.Compiler.Editing
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Legacy
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TcGlobals 
-
-open Internal.Utilities
-open Internal.Utilities.Collections
 
 [<AutoOpen>]
 module EnvMisc =

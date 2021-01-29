@@ -7,8 +7,8 @@
 
 namespace FSharp.Compiler.Editing
 
-open FSharp.Compiler.Text
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
 
 /// Represents the locations relevant to activating parameter info in an IDE
 [<Sealed>]

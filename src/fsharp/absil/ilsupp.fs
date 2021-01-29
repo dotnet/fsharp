@@ -5,14 +5,12 @@ module internal FSharp.Compiler.AbstractIL.Support
 open System
 open System.IO
 open System.Reflection
-
 #if !FX_NO_SYMBOLSTORE
 open System.Diagnostics.SymbolStore
 #endif
 open System.Runtime.InteropServices
 open System.Runtime.CompilerServices
-
-open FSharp.Compiler.AbstractIL
+open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.NativeRes
 open FSharp.Compiler.IO
