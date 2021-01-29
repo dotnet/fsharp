@@ -33,12 +33,17 @@ type SignatureHelpItem =
       Parameters: SignatureHelpParameterInfo[]
       MainDescription: ResizeArray<RoslynTaggedText> }
 
+type CurrentSignatureHelpSessionKind =
+    | FunctionApplication
+    | MethodCall
+
 type SignatureHelpData =
     { SignatureHelpItems: SignatureHelpItem[]
       ApplicableSpan: TextSpan
       ArgumentIndex: int
       ArgumentCount: int
-      ArgumentName: string option }
+      ArgumentName: string option
+      CurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind }
 
 [<Shared>]
 [<Export(typeof<IFSharpSignatureHelpProvider>)>]
@@ -55,6 +60,8 @@ type internal FSharpSignatureHelpProvider
 
     static let oneColAfter (lp: LinePosition) = LinePosition(lp.Line,lp.Character+1)
     static let oneColBefore (lp: LinePosition) = LinePosition(lp.Line,max 0 (lp.Character-1))
+
+    let mutable possibleCurrentSignatureHelpSessionKind = None
 
     static member internal ProvideMethodsAsyncAux
         (
@@ -212,7 +219,8 @@ type internal FSharpSignatureHelpProvider
                       ApplicableSpan = applicableSpan
                       ArgumentIndex = argumentIndex
                       ArgumentCount = argumentCount
-                      ArgumentName = argumentName }
+                      ArgumentName = argumentName
+                      CurrentSignatureHelpSessionKind = MethodCall }
 
                 return! Some data
     }
@@ -424,7 +432,8 @@ type internal FSharpSignatureHelpProvider
                           ApplicableSpan = TextSpan(symbolSpan.End, caretPosition - symbolSpan.End)
                           ArgumentIndex = argumentIndex
                           ArgumentCount = displayArgs.Count
-                          ArgumentName = None }
+                          ArgumentName = None
+                          CurrentSignatureHelpSessionKind = FunctionApplication }
 
                     return! Some data
             | _ ->
@@ -442,7 +451,8 @@ type internal FSharpSignatureHelpProvider
             options: FSharpProjectOptions,
             filePath: string,
             textVersionHash: int,
-            triggerTypedChar: char option
+            triggerTypedChar: char option,
+            possibleCurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind option
         ) =
         asyncMaybe {
             let textLines = sourceText.Lines
@@ -468,11 +478,23 @@ type internal FSharpSignatureHelpProvider
 
             let adjustedColumnString = sourceText.GetSubText(TextSpan(adjustedColumnInSource, 1)).ToString()
 
-            match triggerTypedChar with
+            match triggerTypedChar, possibleCurrentSignatureHelpSessionKind with
             // Generally ' ' indicates a function application, but it's also used commonly after a comma in a method call.
             // This means that the adjusted position relative to the caret could be a ',' or a ')' or '>',
             // which would mean we're already inside of a method call - not a function argument. So we bail if that's the case.
-            | Some ' ' when adjustedColumnString <> "," && adjustedColumnString <> ")" && adjustedColumnString <> ">" ->
+            | Some ' ', None when adjustedColumnChar <> ',' && adjustedColumnChar <> '(' && adjustedColumnChar <> '<' ->
+                return!
+                    FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
+                        parseResults,
+                        checkFileResults,
+                        document.Id,
+                        defines,
+                        documentationBuilder,
+                        sourceText,
+                        caretPosition,
+                        adjustedColumnInSource,
+                        filePath)
+            | _, Some FunctionApplication when adjustedColumnChar <> ',' && adjustedColumnChar <> '(' && adjustedColumnChar <> '<' ->
                 return!
                     FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
                         parseResults,
@@ -515,46 +537,63 @@ type internal FSharpSignatureHelpProvider
                         Some triggerInfo.TriggerCharacter.Value
                     else None
 
-                let! signatureHelpData =
-                    FSharpSignatureHelpProvider.ProvideSignatureHelp(
-                        document,
-                        defines,
-                        checker,
-                        documentationBuilder,
-                        sourceText,
-                        position,
-                        projectOptions,
-                        document.FilePath,
-                        textVersion.GetHashCode(),
-                        triggerTypedChar)
-                let items =
-                    signatureHelpData.SignatureHelpItems
-                    |> Array.map (fun item ->
-                        let parameters =
-                            item.Parameters
-                            |> Array.map (fun paramInfo ->
-                                FSharpSignatureHelpParameter(
-                                    paramInfo.ParameterName,
-                                    paramInfo.IsOptional,
-                                    documentationFactory = (fun _ -> paramInfo.Documentation :> seq<_>),
-                                    displayParts = paramInfo.DisplayParts))
+                let doWork () =
+                    async {
+                        let! signatureHelpDataOpt =
+                            FSharpSignatureHelpProvider.ProvideSignatureHelp(
+                                document,
+                                defines,
+                                checker,
+                                documentationBuilder,
+                                sourceText,
+                                position,
+                                projectOptions,
+                                document.FilePath,
+                                textVersion.GetHashCode(),
+                                triggerTypedChar,
+                                possibleCurrentSignatureHelpSessionKind)
+                        match signatureHelpDataOpt with
+                        | None ->
+                            possibleCurrentSignatureHelpSessionKind <- None
+                            return None
+                        | Some signatureHelpData ->
+                            let items =
+                                signatureHelpData.SignatureHelpItems
+                                |> Array.map (fun item ->
+                                    let parameters =
+                                        item.Parameters
+                                        |> Array.map (fun paramInfo ->
+                                            FSharpSignatureHelpParameter(
+                                                paramInfo.ParameterName,
+                                                paramInfo.IsOptional,
+                                                documentationFactory = (fun _ -> paramInfo.Documentation :> seq<_>),
+                                                displayParts = paramInfo.DisplayParts))
                                             
-                        FSharpSignatureHelpItem(
-                            isVariadic=item.HasParamArrayArg,
-                            documentationFactory=(fun _ -> item.Documentation :> seq<_>),
-                            prefixParts=item.PrefixParts,
-                            separatorParts=item.SeparatorParts,
-                            suffixParts=item.SuffixParts,
-                            parameters=parameters,
-                            descriptionParts=item.MainDescription))
-                                    
-                return
-                    FSharpSignatureHelpItems(
-                        items,
-                        signatureHelpData.ApplicableSpan,
-                        signatureHelpData.ArgumentIndex,
-                        signatureHelpData.ArgumentCount,
-                        Option.toObj signatureHelpData.ArgumentName)
+                                    FSharpSignatureHelpItem(
+                                        isVariadic=item.HasParamArrayArg,
+                                        documentationFactory=(fun _ -> item.Documentation :> seq<_>),
+                                        prefixParts=item.PrefixParts,
+                                        separatorParts=item.SeparatorParts,
+                                        suffixParts=item.SuffixParts,
+                                        parameters=parameters,
+                                        descriptionParts=item.MainDescription))
+                            
+                            match signatureHelpData.CurrentSignatureHelpSessionKind with
+                            | MethodCall ->
+                                possibleCurrentSignatureHelpSessionKind <- Some MethodCall
+                            | FunctionApplication ->
+                                possibleCurrentSignatureHelpSessionKind <- Some FunctionApplication
+
+                            return
+                                FSharpSignatureHelpItems(
+                                    items,
+                                    signatureHelpData.ApplicableSpan,
+                                    signatureHelpData.ArgumentIndex,
+                                    signatureHelpData.ArgumentCount,
+                                    Option.toObj signatureHelpData.ArgumentName)
+                                |> Some
+                    }
+                return! doWork ()
             } 
             |> Async.map Option.toObj
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
