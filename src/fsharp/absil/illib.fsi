@@ -655,7 +655,7 @@ type internal LayeredMap<'Key,'Value when 'Key: comparison> = Map<'Key,'Value>
 
 
 [<AutoOpen>]
-module MapAutoOpens =
+module internal MapAutoOpens =
     type internal Map<'Key,'Value when 'Key: comparison> with
 
         static member Empty: Map<'Key,'Value> when 'Key: comparison
