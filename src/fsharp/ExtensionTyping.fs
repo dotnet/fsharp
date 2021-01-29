@@ -10,7 +10,7 @@ open System
 open System.IO
 open System.Collections.Generic
 open System.Reflection
-open Internal.Utilities.Library // frontAndBack
+open Internal.Utilities.Library
 open Internal.Utilities.FSharpEnvironment  
 open FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL

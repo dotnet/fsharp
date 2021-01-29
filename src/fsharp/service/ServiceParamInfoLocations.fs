@@ -1,12 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Editing
 
-open FSharp.Compiler
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Pos
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 
 [<Sealed>]
@@ -88,7 +87,7 @@ module internal NoteworthyParamInfoLocationsImpl =
         let inner = traverseSynExpr synExpr
         match inner with
         | None ->
-            if AstTraversal.rangeContainsPosLeftEdgeExclusiveAndRightEdgeInclusive parenRange pos then
+            if SyntaxTraversal.rangeContainsPosLeftEdgeExclusiveAndRightEdgeInclusive parenRange pos then
                 Found (parenRange.Start, [(parenRange.End, getNamedParamName synExpr)], rpRangeOpt.IsSome), None
             else
                 NotFound, None
@@ -105,7 +104,7 @@ module internal NoteworthyParamInfoLocationsImpl =
             let inner = traverseSynExpr synExpr
             match inner with
             | None ->
-                if AstTraversal.rangeContainsPosLeftEdgeExclusiveAndRightEdgeInclusive parenRange pos then
+                if SyntaxTraversal.rangeContainsPosLeftEdgeExclusiveAndRightEdgeInclusive parenRange pos then
                     let commasAndCloseParen = ((synExprList, commaRanges@[parenRange]) ||> List.map2 (fun e c -> c.End, getNamedParamName e))
                     let r = Found (parenRange.Start, commasAndCloseParen, rpRangeOpt.IsSome)
                     r, None
@@ -125,14 +124,14 @@ module internal NoteworthyParamInfoLocationsImpl =
             handleSingleArg traverseSynExpr (pos, synExpr, parenRange, rpRangeOpt)
 
         | SynExpr.ArbitraryAfterError (_debugStr, range) -> // single argument when e.g. after open paren you hit EOF
-            if AstTraversal.rangeContainsPosEdgesExclusive range pos then
+            if SyntaxTraversal.rangeContainsPosEdgesExclusive range pos then
                 let r = Found (range.Start, [(range.End, None)], false)
                 r, None
             else
                 NotFound, None
 
         | SynExpr.Const (SynConst.Unit, unitRange) ->
-            if AstTraversal.rangeContainsPosEdgesExclusive unitRange pos then
+            if SyntaxTraversal.rangeContainsPosEdgesExclusive unitRange pos then
                 let r = Found (unitRange.Start, [(unitRange.End, None)], true)
                 r, None
             else
@@ -142,7 +141,7 @@ module internal NoteworthyParamInfoLocationsImpl =
             let inner = traverseSynExpr e
             match inner with
             | None ->
-                if AstTraversal.rangeContainsPosEdgesExclusive e.Range pos then
+                if SyntaxTraversal.rangeContainsPosEdgesExclusive e.Range pos then
                     // any other expression doesn't start with parens, so if it was the target of an App, then it must be a single argument e.g. "f x"
                     Found (e.Range.Start, [ (e.Range.End, None) ], false), Some inner
                 else
@@ -154,7 +153,7 @@ module internal NoteworthyParamInfoLocationsImpl =
         | SynType.App(StripParenTypes (SynType.LongIdent(LongIdentWithDots(lid, _) as lidwd)), Some(openm), args, commas, closemOpt, _pf, wholem) ->
             let lidm = lidwd.Range
             let betweenTheBrackets = mkRange wholem.FileName openm.Start wholem.End
-            if AstTraversal.rangeContainsPosEdgesExclusive betweenTheBrackets pos && args |> List.forall isStaticArg then
+            if SyntaxTraversal.rangeContainsPosEdgesExclusive betweenTheBrackets pos && args |> List.forall isStaticArg then
                 let commasAndCloseParen = [ for c in commas -> c.End ] @ [ wholem.End ]
                 Some (FSharpNoteworthyParamInfoLocations(pathOfLid lid, lidm, openm.Start, commasAndCloseParen, closemOpt.IsSome, args |> List.map digOutIdentFromStaticArg))
             else
@@ -163,7 +162,7 @@ module internal NoteworthyParamInfoLocationsImpl =
             None
 
     let traverseInput(pos, parseTree) =
-        AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
+        SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxVisitorBase<_>() with
         member this.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
             let expr = expr // fix debug locals
             match expr with
@@ -190,7 +189,7 @@ module internal NoteworthyParamInfoLocationsImpl =
                 | Some _ -> fResult
                 | _ ->
                     let typeArgsm = mkRange openm.FileName openm.Start wholem.End 
-                    if AstTraversal.rangeContainsPosEdgesExclusive typeArgsm pos then
+                    if SyntaxTraversal.rangeContainsPosEdgesExclusive typeArgsm pos then
                         // We found it, dig out ident
                         match digOutIdentFromFuncExpr synExpr with
                         | Some(lid, lidRange) -> Some (FSharpNoteworthyParamInfoLocations(lid, lidRange, op.idRange.Start, [ wholem.End ], false, []))
@@ -229,7 +228,7 @@ module internal NoteworthyParamInfoLocationsImpl =
                 | Some _ as r -> r
                 | None -> 
                     let typeArgsm = mkRange openm.FileName openm.Start wholem.End 
-                    if AstTraversal.rangeContainsPosEdgesExclusive typeArgsm pos && tyArgs |> List.forall isStaticArg then
+                    if SyntaxTraversal.rangeContainsPosEdgesExclusive typeArgsm pos && tyArgs |> List.forall isStaticArg then
                         let commasAndCloseParen = [ for c in commas -> c.End ] @ [ wholem.End ]
                         let r = FSharpNoteworthyParamInfoLocations(["dummy"], synExpr.Range, openm.Start, commasAndCloseParen, closemOpt.IsSome, tyArgs |> List.map digOutIdentFromStaticArg)
                         Some r
@@ -238,17 +237,17 @@ module internal NoteworthyParamInfoLocationsImpl =
 
             | _ -> defaultTraverse expr
 
-        member this.VisitTypeAbbrev(tyAbbrevRhs, _m) = 
+        member this.VisitTypeAbbrev(_path, tyAbbrevRhs, _m) = 
             match tyAbbrevRhs with
             | StaticParameters pos loc -> Some loc
             | _ -> None
 
-        member this.VisitImplicitInherit(defaultTraverse, ty, expr, m) =
+        member this.VisitImplicitInherit(_path, defaultTraverse, ty, expr, m) =
             match defaultTraverse expr with
             | Some _ as r -> r
             | None ->
                 let inheritm = mkRange m.FileName m.Start m.End 
-                if AstTraversal.rangeContainsPosEdgesExclusive inheritm pos then
+                if SyntaxTraversal.rangeContainsPosEdgesExclusive inheritm pos then
                     // inherit ty(expr)    ---   treat it like an application (constructor call)
                     let xResult, _cacheOpt = searchSynArgExpr defaultTraverse pos expr
                     match xResult with
@@ -307,7 +306,7 @@ module internal SynExprAppLocationsImpl =
             | _ -> None, Some inner
 
     let getAllCurriedArgsAtPosition pos parseTree =
-        AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
+        SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxVisitorBase<_>() with
             member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                 match expr with
                 | SynExpr.App (_exprAtomicFlag, _isInfix, funcExpr, argExpr, range) when posEq pos range.Start ->

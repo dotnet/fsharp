@@ -1,10 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Analysis
 
 open System
-
-open FSharp.Compiler.Text
 
 /// Provides a read only view to iterate over the semantic classification contents.
 [<Sealed>]

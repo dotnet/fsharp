@@ -12,7 +12,7 @@ open NUnit.Framework
 open FsUnit
 open System
 open FSharp.Compiler.Service.Tests.Common
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 

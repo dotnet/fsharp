@@ -8,7 +8,7 @@ open System
 open System.Collections.Generic
 
 open Internal.Utilities
-
+open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Library.ResultOrException
@@ -30,7 +30,6 @@ open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -40,7 +39,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
-open FSharp.Compiler.Syntax.XmlDoc
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping

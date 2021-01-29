@@ -50,7 +50,7 @@ open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout

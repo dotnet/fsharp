@@ -564,7 +564,7 @@ The "intended" FCS API is the parts under the namespaces
 * FSharp.Compiler.SourceCodeServices.* (analysis, compilation, tooling, lexing)
 * FSharp.Compiler.Interactive.Shell.*  (scripting support)
 * FSharp.Compiler.AbstractIL.*  (for ILAssemblyReader hook for Rider)
-* FSharp.Compiler.Syntax.SyntaxTreeInternal.*  (direct access to full untyped tree)
+* FSharp.Compiler.Syntax.*  (direct access to full untyped tree)
 
 These sections are generally designed with F#/.NET design conventions (e.g. types in namespaces, not modules, no nesting of modules etc.)
 and we will continue to iterate to make this so.

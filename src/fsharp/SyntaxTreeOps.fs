@@ -1,29 +1,21 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public FSharp.Compiler.SyntaxTreeOps
+module FSharp.Compiler.SyntaxTreeOps
 
 open Internal.Utilities.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
-//----------------------------------------------------------------------
-// Construct syntactic AST nodes
-//-----------------------------------------------------------------------
-
+/// Generate implicit argument names in parsing
 type SynArgNameGenerator() =
     let mutable count = 0
     let generatedArgNamePrefix = "_arg"
 
     member _.New() : string = count <- count + 1; generatedArgNamePrefix + string count
     member _.Reset() = count <- 0
-
-//----------------------------------------------------------------------
-// AST and parsing utilities.
-//----------------------------------------------------------------------
 
 let ident (s, r) = Ident(s, r)
 

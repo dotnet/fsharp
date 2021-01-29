@@ -27,7 +27,6 @@ open Internal.Utilities.Library.Extras
 open FSharp.Compiler.LowerCallsAndSeqs
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text.Range

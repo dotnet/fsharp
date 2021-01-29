@@ -10,17 +10,15 @@ open System
 open System.Collections.Generic
 open System.Threading
 
-open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
+open FSharp.Compiler
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
-open Internal.Utilities.Library.Extras
-open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Pos
 open FSharp.Compiler.Text.Range

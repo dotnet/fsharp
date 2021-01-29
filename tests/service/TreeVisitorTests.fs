@@ -2,13 +2,13 @@ module Tests.Service.TreeVisitorTests
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Text.Pos
-open FSharp.Compiler.SourceCodeServices.AstTraversal
+open FSharp.Compiler.SourceCodeServices.SyntaxTraversal
 open NUnit.Framework
 
 [<Test>]
 let ``Visit type test`` () =
     let visitor =
-        { new AstVisitorBase<_>() with
+        { new SyntaxVisitorBase<_>() with
             member x.VisitExpr(_, _, defaultTraverse, expr) = defaultTraverse expr
             member x.VisitType(_, _) = Some () }
 

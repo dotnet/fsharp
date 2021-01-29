@@ -8,7 +8,6 @@ namespace FSharp.Compiler.Diagnostics
 
     open System
     open FSharp.Compiler.Text
-    open FSharp.Compiler.SourceCodeServices
     open FSharp.Compiler.ErrorLogger
 
     [<RequireQualifiedAccess>]
@@ -22,17 +21,27 @@ namespace FSharp.Compiler.Diagnostics
     [<Class>]
     type public FSharpDiagnostic = 
         member FileName: string
+
         member Start: pos
+
         member End: pos
+
         member StartLineAlternate: int
+
         member EndLineAlternate: int
+
         member StartColumn: int
+
         member EndColumn: int
 
         member Range: range
+
         member Severity: FSharpDiagnosticSeverity
+
         member Message: string
+
         member Subcategory: string
+
         member ErrorNumber: int
 
         static member internal CreateFromExceptionAndAdjustEof: PhasedDiagnostic * isError: bool * range * lastPosInFile: (int*int) * suggestNames: bool -> FSharpDiagnostic
@@ -75,10 +84,12 @@ namespace FSharp.Compiler.Diagnostics
 
     module internal ErrorHelpers = 
         val ReportError: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpDiagnosticSeverity) * suggestNames: bool -> FSharpDiagnostic list
+
         val CreateErrorInfos: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpDiagnosticSeverity)> * suggestNames: bool -> FSharpDiagnostic[]
 
 namespace FSharp.Compiler.Analysis
 
+    open Internal.Utilities.Library
     open FSharp.Compiler 
     open FSharp.Compiler.TcGlobals 
     open FSharp.Compiler.Infos
@@ -107,98 +118,6 @@ namespace FSharp.Compiler.Analysis
         /// Indicates that the XML for the documentation can be found in a .xml documentation file, using the given signature key
         | XmlDocFileSignature of file: string * xmlSig: string
 
-    /// A single data tip display element
-    [<RequireQualifiedAccess>]
-    type public FSharpToolTipElementData<'T> = 
-        {
-          MainDescription:  'T 
-
-          XmlDoc: FSharpXmlDoc
-
-          /// typar instantiation text, to go after xml
-          TypeMapping: 'T list
-
-          /// Extra text, goes at the end
-          Remarks: 'T option
-
-          /// Parameter name
-          ParamName : string option
-        }
-
-    /// A single tool tip display element
-    //
-    // Note: instances of this type do not hold any references to any compiler resources.
-    [<RequireQualifiedAccess>]
-    type public FSharpToolTipElement<'T> = 
-        | None
-
-        /// A single type, method, etc with comment. May represent a method overload group.
-        | Group of elements: FSharpToolTipElementData<'T> list
-
-        /// An error occurred formatting this element
-        | CompositionError of errorText: string
-
-        static member Single : 'T * FSharpXmlDoc * ?typeMapping: 'T list * ?paramName: string * ?remarks : 'T  -> FSharpToolTipElement<'T>
-
-    /// A single data tip display element with where text is expressed as string
-    type public FSharpToolTipElement = FSharpToolTipElement<string>
-
-    /// A single data tip display element with where text is expressed as <see cref="Layout"/>
-    type public FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
-
-    /// Information for building a tool tip box.
-    //
-    // Note: instances of this type do not hold any references to any compiler resources.
-    type public FSharpToolTipText<'T> = 
-
-        /// A list of data tip elements to display.
-        | FSharpToolTipText of FSharpToolTipElement<'T> list  
-
-    type public FSharpToolTipText = FSharpToolTipText<string>
-
-    type public FSharpStructuredToolTipText = FSharpToolTipText<Layout>
-
-    [<RequireQualifiedAccess>]
-    type public FSharpCompletionItemKind =
-        | Field
-        | Property
-        | Method of isExtension : bool
-        | Event
-        | Argument
-        | CustomOperation
-        | Other
-
-    type FSharpUnresolvedSymbol =
-        {
-          FullName: string
-
-          DisplayName: string
-
-          Namespace: string[]
-        }
-
-    type internal CompletionItem =
-        {
-          ItemWithInst: ItemWithInst
-
-          Kind: FSharpCompletionItemKind
-
-          IsOwnMember: bool
-
-          MinorPriority: int
-
-          Type: TyconRef option 
-
-          Unresolved: FSharpUnresolvedSymbol option
-        }
-        member Item : Item
-
-    module public FSharpToolTip =
-
-        val ToFSharpToolTipElement: FSharpStructuredToolTipElement -> FSharpToolTipElement
-
-        val ToFSharpToolTipText: FSharpStructuredToolTipText -> FSharpToolTipText
-
     // Implementation details used by other code in the compiler    
     module internal SymbolHelpers =
         val ParamNameAndTypesOfUnaryCustomOperation : TcGlobals -> MethInfo -> ParamNameAndType list
@@ -223,15 +142,9 @@ namespace FSharp.Compiler.Analysis
 
         val GetXmlCommentForItem : InfoReader -> range -> Item -> FSharpXmlDoc
 
-        val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> FSharpStructuredToolTipElement
-
         val RemoveDuplicateItems : TcGlobals -> ItemWithInst list -> ItemWithInst list
 
         val RemoveExplicitlySuppressed : TcGlobals -> ItemWithInst list -> ItemWithInst list
-
-        val RemoveDuplicateCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
-
-        val RemoveExplicitlySuppressedCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
 
         val GetF1Keyword : TcGlobals -> Item -> string option
 
@@ -242,8 +155,6 @@ namespace FSharp.Compiler.Analysis
         val FullNameOfItem : TcGlobals -> Item -> string
 
         val ccuOfItem : TcGlobals -> Item -> CcuThunk option
-
-        val mutable ToolTipFault : string option
 
         val IsAttribute : InfoReader -> Item -> bool
 
@@ -260,3 +171,10 @@ namespace FSharp.Compiler.Analysis
 #endif
 
         val SimplerDisplayEnv : DisplayEnv -> DisplayEnv
+
+        val ItemDisplayPartialEquality: g:TcGlobals -> IPartialEqualityComparer<Item>    
+
+        val GetXmlCommentForMethInfoItem: infoReader:InfoReader -> m:range -> d:Item -> minfo:MethInfo -> FSharpXmlDoc    
+        
+        val FormatTyparMapping: denv:DisplayEnv -> prettyTyparInst:TyparInst -> Layout list
+

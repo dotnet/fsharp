@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-[<Experimental("The types in this module are considered internal to FSharp.Compiler.Service but are available for experimental use. They are subject to change in future versions of FSharp.Compiler.Service.")>]
-module public rec FSharp.Compiler.Syntax.SyntaxTreeInternal
+namespace rec FSharp.Compiler.Syntax
 
 open System.Diagnostics
 
@@ -28,7 +27,8 @@ type LongIdent = Ident list
 /// more freedom about typechecking these expressions.
 /// LongIdent can be empty list - it is used to denote that name of some AST element is absent (i.e. empty type name in inherit)
 type LongIdentWithDots =
-    | LongIdentWithDots of id: LongIdent * dotms: range list
+    | //[<Experimental("This construct is subject to change in future versions of FSharp.Compiler.Service and should only be used if no adequate alternative is available.")>]
+      LongIdentWithDots of id: LongIdent * dotms: range list
 
     /// Gets the syntax range of this construct
     member this.Range =

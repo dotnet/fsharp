@@ -5,12 +5,12 @@
 // type checking and intellisense-like environment-reporting.
 //--------------------------------------------------------------------------
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Editing
 
 open System.Collections.Generic
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 
 /// Represents the different kinds of items that can appear in the navigation bar
@@ -34,7 +34,7 @@ type FSharpEnclosingEntityKind =
     | Interface
     | Record
     | Enum
-    | DU
+    | Union
 
 /// Represents an item to be displayed in the navigation bar
 [<Sealed>]
@@ -188,9 +188,9 @@ module NavigationImpl =
                 | SynTypeDefnSimpleRepr.Union(_, cases, mb) ->
                     let cases = 
                         [ for (UnionCase(_, id, fldspec, _, _, _)) in cases -> 
-                            createMember(id, OtherDecl, FSharpGlyph.Struct, unionRanges (fldspecRange fldspec) id.idRange, FSharpEnclosingEntityKind.DU, false, access) ]
+                            createMember(id, OtherDecl, FSharpGlyph.Struct, unionRanges (fldspecRange fldspec) id.idRange, FSharpEnclosingEntityKind.Union, false, access) ]
                     let nested = cases@topMembers              
-                    [ createDeclLid(baseName, lid, TypeDecl, FSharpGlyph.Union, m, bodyRange mb nested, nested, FSharpEnclosingEntityKind.DU, false, access) ]
+                    [ createDeclLid(baseName, lid, TypeDecl, FSharpGlyph.Union, m, bodyRange mb nested, nested, FSharpEnclosingEntityKind.Union, false, access) ]
                 | SynTypeDefnSimpleRepr.Enum(cases, mb) -> 
                     let cases = 
                         [ for (EnumCase(_, id, _, _, m)) in cases ->
@@ -360,9 +360,9 @@ module NavigationImpl =
                 | SynTypeDefnSimpleRepr.Union(_, cases, mb) ->
                     let cases = 
                         [ for (UnionCase(_, id, fldspec, _, _, _)) in cases -> 
-                            createMember(id, OtherDecl, FSharpGlyph.Struct, unionRanges (fldspecRange fldspec) id.idRange, FSharpEnclosingEntityKind.DU, false, access) ]
+                            createMember(id, OtherDecl, FSharpGlyph.Struct, unionRanges (fldspecRange fldspec) id.idRange, FSharpEnclosingEntityKind.Union, false, access) ]
                     let nested = cases@topMembers              
-                    [ createDeclLid(baseName, lid, TypeDecl, FSharpGlyph.Union, m, bodyRange mb nested, nested, FSharpEnclosingEntityKind.DU, false, access) ]
+                    [ createDeclLid(baseName, lid, TypeDecl, FSharpGlyph.Union, m, bodyRange mb nested, nested, FSharpEnclosingEntityKind.Union, false, access) ]
                 | SynTypeDefnSimpleRepr.Enum(cases, mb) -> 
                     let cases = 
                         [ for (EnumCase(_, id, _, _, m)) in cases ->

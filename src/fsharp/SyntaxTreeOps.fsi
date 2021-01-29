@@ -4,7 +4,6 @@ module internal FSharp.Compiler.SyntaxTreeOps
 
 open FSharp.Compiler.Text
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
 
 [<Class>]
 type SynArgNameGenerator =

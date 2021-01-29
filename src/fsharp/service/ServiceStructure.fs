@@ -4,7 +4,7 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler
 open Internal.Utilities.Library
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Pos

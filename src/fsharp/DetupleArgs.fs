@@ -7,7 +7,6 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics

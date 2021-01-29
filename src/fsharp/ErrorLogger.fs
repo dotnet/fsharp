@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public FSharp.Compiler.ErrorLogger
+module FSharp.Compiler.ErrorLogger
 
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text.Range
@@ -50,7 +50,7 @@ let NoSuggestions : Suggestions = ignore
 
 /// Thrown when we stop processing the F# Interactive entry or #load.
 exception StopProcessingExn of exn option with
-    override this.Message = "Processing of a script fragment has stopped because an exception has been raised"
+    override _.Message = "Processing of a script fragment has stopped because an exception has been raised"
 
     override this.ToString() = 
         match this :> exn with 

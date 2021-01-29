@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Analysis
 
 open System.Text.RegularExpressions
-open FSharp.Compiler
 open Internal.Utilities.Library
+open FSharp.Compiler.Syntax
 
 /// Patterns over FSharpSymbol and derivatives.
 [<RequireQualifiedAccess>]

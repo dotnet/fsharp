@@ -11,7 +11,7 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text

@@ -20,7 +20,6 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Text.Pos
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree

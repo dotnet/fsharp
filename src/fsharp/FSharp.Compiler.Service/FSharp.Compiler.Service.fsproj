@@ -288,7 +288,7 @@
       <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiParser --open FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>AbsIL\ilpars.fsy</Link>
     </FsYacc>
-    <None Include="..\..\absil\ilpars.fsy">
+    <None Include="..\absil\ilpars.fsy">
       <Link>AbsIL\FsYacc\ilpars.fsy</Link>
     </None>
     <Compile Include="..\absil\il.fsi">

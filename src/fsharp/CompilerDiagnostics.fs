@@ -22,16 +22,18 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticMessage
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
+open FSharp.Compiler.IO
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.SignatureConformance
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.Text.Pos
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
@@ -800,7 +802,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                       let nameOrOneBasedIndexMessage =
                           x.calledArg.NameOpt
                           |> Option.map (fun n -> FSComp.SR.csOverloadCandidateNamedArgumentTypeMismatch n.idText)
-                          |> Option.defaultValue (FSComp.SR.csOverloadCandidateIndexedArgumentTypeMismatch ((Lib.vsnd x.calledArg.Position) + 1)) //snd
+                          |> Option.defaultValue (FSComp.SR.csOverloadCandidateIndexedArgumentTypeMismatch ((vsnd x.calledArg.Position) + 1)) //snd
                       sprintf " // %s" nameOrOneBasedIndexMessage
                   | _ -> ""
                   

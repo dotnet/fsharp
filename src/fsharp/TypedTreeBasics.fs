@@ -10,7 +10,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Text
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TypedTree
 
 #if DEBUG

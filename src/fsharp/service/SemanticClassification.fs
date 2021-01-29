@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Analysis
 
 open System.Diagnostics
 open System.Collections.Generic
@@ -8,6 +8,7 @@ open System.Collections.Immutable
 
 open FSharp.Compiler
 open Internal.Utilities.Library  
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Infos
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution

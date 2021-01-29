@@ -5,11 +5,11 @@
 // type checking and intellisense-like environment-reporting.
 //----------------------------------------------------------------------------
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Editing
 
-open FSharp.Compiler
+open System
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
 
 /// Indicates a kind of item to show in an F# navigation bar
 type public FSharpNavigationDeclarationItemKind =
@@ -32,20 +32,29 @@ type public FSharpEnclosingEntityKind =
     | Interface
     | Record
     | Enum
-    | DU
+    | Union
 
 /// Represents an item to be displayed in the navigation bar
 [<Sealed>]
 type public FSharpNavigationDeclarationItem = 
     member Name : string
+
     member UniqueName : string
+
     member Glyph : FSharpGlyph
+
     member Kind : FSharpNavigationDeclarationItemKind
+
     member Range : range
+
     member BodyRange : range
+
     member IsSingleTopLevel : bool
+
     member EnclosingEntityKind: FSharpEnclosingEntityKind
+
     member IsAbstract: bool
+
     member Access : SynAccess option
 
 /// Represents top-level declarations (that should be in the type drop-down)

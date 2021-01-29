@@ -5,12 +5,14 @@
 // type checking and intellisense-like environment-reporting.
 //----------------------------------------------------------------------------
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Analysis
 
 open System.Collections.Generic
 
 open FSharp.Compiler
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Editing
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 [<Sealed>]

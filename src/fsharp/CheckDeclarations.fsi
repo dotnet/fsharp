@@ -8,7 +8,7 @@ open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Import
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree

@@ -1,15 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Analysis
 
 open System
 open System.IO
 open System.IO.MemoryMappedFiles
 open System.Reflection.Metadata
-open System.Runtime.Serialization.Formatters.Binary
-
 open FSharp.NativeInterop
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Pos
 open FSharp.Compiler.Text.Range
 
@@ -39,7 +36,8 @@ type FSharpSemanticClassificationView(mmf: MemoryMappedFile, length) =
             let item = FSharpSemanticClassificationItem((m, (enum<SemanticClassificationType>(sct))))
             f item
 
-and [<Sealed>] SemanticClassificationKeyStore(mmf: MemoryMappedFile, length) =
+[<Sealed>]
+type SemanticClassificationKeyStore(mmf: MemoryMappedFile, length) =
     let mutable isDisposed = false
     let checkDispose() =
         if isDisposed then
@@ -55,7 +53,8 @@ and [<Sealed>] SemanticClassificationKeyStore(mmf: MemoryMappedFile, length) =
                 isDisposed <- true
                 mmf.Dispose()
 
-and [<Sealed>] SemanticClassificationKeyStoreBuilder() =
+[<Sealed>] 
+type SemanticClassificationKeyStoreBuilder() =
 
     let b = BlobBuilder()
 

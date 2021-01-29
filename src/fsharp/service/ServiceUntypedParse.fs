@@ -5,20 +5,20 @@
 // type checking and intellisense-like environment-reporting.
 //--------------------------------------------------------------------------
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Analysis
 
 open System
 open System.IO
 open System.Collections.Generic
 open System.Diagnostics
 open System.Text.RegularExpressions
- 
-open FSharp.Compiler
 open Internal.Utilities.Library  
-open FSharp.Compiler.CompilerConfig
 open Internal.Utilities.Library.Extras
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Editing
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Pos
@@ -150,11 +150,11 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
 
         match scope.ParseTree with
         | Some input ->
-            AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
+            SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(_, _, defaultTraverse, expr) =                        
                     defaultTraverse expr
 
-                override _.VisitBinding(defaultTraverse, binding) =
+                override _.VisitBinding(_path, defaultTraverse, binding) =
                     match binding with
                     | SynBinding.Binding (_, _, _, _, _, _, _, _, _, expr, _range, _) as b when rangeContainsPos b.RangeOfBindingAndRhs pos ->
                         match tryGetIdentRangeFromBinding b with
@@ -166,7 +166,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
     member scope.TryIdentOfPipelineContainingPosAndNumArgsApplied pos =
         match scope.ParseTree with
         | Some input ->
-            AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
+            SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(_, _, defaultTraverse, expr) =
                     match expr with
                     | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.Ident ident, _, _), argExpr, _) when rangeContainsPos argExpr.Range pos ->
@@ -186,7 +186,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
         match scope.ParseTree with
         | Some input ->
             let result =
-                AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
+                SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
                     member _.VisitExpr(_, traverseSynExpr, defaultTraverse, expr) =
                         match expr with
                         | SynExpr.App(_, _, _, SynExpr.CompExpr (_, _, expr, _), range) when rangeContainsPos range pos ->
@@ -233,7 +233,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
 
         match scope.ParseTree with
         | Some input ->
-            AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
+            SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(_, traverseSynExpr, defaultTraverse, expr) =
                     match expr with
                     | SynExpr.App (_, _, _funcExpr, _, range) as app when rangeContainsPos range pos ->
@@ -258,13 +258,14 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
 
         match scope.ParseTree with
         | Some parseTree ->
-            AstTraversal.Traverse(opGreaterEqualPos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
+            SyntaxTraversal.Traverse(opGreaterEqualPos, parseTree, { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(_, _, defaultTraverse, expr) =
                     match expr with
                     | SynExpr.Paren((InfixAppOfOpEqualsGreater(lambdaArgs, lambdaBody) as app), _, _, _) ->
                         Some (app.Range, lambdaArgs.Range, lambdaBody.Range)
                     | _ -> defaultTraverse expr
-                member _.VisitBinding(defaultTraverse, binding) =
+
+                member _.VisitBinding(_path, defaultTraverse, binding) =
                     match binding with
                     | SynBinding.Binding (_, SynBindingKind.NormalBinding, _, _, _, _, _, _, _, (InfixAppOfOpEqualsGreater(lambdaArgs, lambdaBody) as app), _, _) ->
                         Some(app.Range, lambdaArgs.Range, lambdaBody.Range)
@@ -274,7 +275,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
     member scope.TryRangeOfExprInYieldOrReturn pos =
         match scope.ParseTree with
         | Some parseTree ->
-            AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with 
+            SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxVisitorBase<_>() with 
                 member _.VisitExpr(_path, _, defaultTraverse, expr) =
                     match expr with
                     | SynExpr.YieldOrReturn(_, expr, range)
@@ -286,7 +287,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
     member scope.TryRangeOfRecordExpressionContainingPos pos =
         match input with
         | Some input ->
-            AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with 
+            SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with 
                 member _.VisitExpr(_, _, defaultTraverse, expr) =
                     match expr with
                     | SynExpr.Record(_, _, _, range) when rangeContainsPos range pos ->
@@ -298,7 +299,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
     member _.TryRangeOfRefCellDereferenceContainingPos expressionPos =
         match input with
         | Some input ->
-            AstTraversal.Traverse(expressionPos, input, { new AstTraversal.AstVisitorBase<_>() with 
+            SyntaxTraversal.Traverse(expressionPos, input, { new SyntaxVisitorBase<_>() with 
                 member _.VisitExpr(_, _, defaultTraverse, expr) =
                     match expr with
                     | SynExpr.App(_, false, SynExpr.Ident funcIdent, expr, _) ->
@@ -319,11 +320,11 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
         match input with
         | Some input ->
             let result =
-                AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with 
+                SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with 
                     member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                         defaultTraverse(expr)
 
-                    override _.VisitBinding (_, binding) =
+                    override _.VisitBinding (_path, _, binding) =
                         match binding with
                         | Binding(_, _, _, _, _, _, valData, _, _, _, range, _) when rangeContainsPos range pos ->
                             let info = valData.SynValInfo.CurriedArgInfos
@@ -712,7 +713,7 @@ module UntypedParseImpl =
                     couldBeBeforeFront <- false
             couldBeBeforeFront, r
 
-        AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
+        SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxVisitorBase<_>() with
         member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
             let expr = expr // fix debugger locals
             match expr with
@@ -720,13 +721,13 @@ module UntypedParseImpl =
                 let _, r = CheckLongIdent longIdent
                 Some r
             | SynExpr.LongIdentSet (LongIdentWithDots(longIdent, _), synExpr, _range) -> 
-                if AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
+                if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
                 else
                     let _, r = CheckLongIdent longIdent
                     Some r
             | SynExpr.DotGet (synExpr, _dotm, LongIdentWithDots(longIdent, _), _range) -> 
-                if AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
+                if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
                 else
                     let inFront, r = CheckLongIdent longIdent
@@ -736,16 +737,16 @@ module UntypedParseImpl =
                         // see comment below for SynExpr.DotSet
                         Some ((unionRanges synExpr.Range r))
             | SynExpr.Set (synExpr, synExpr2, range) ->
-                if AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
+                if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
-                elif AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr2.Range pos then
+                elif SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr2.Range pos then
                     traverseSynExpr synExpr2
                 else
                     Some range
             | SynExpr.DotSet (synExpr, LongIdentWithDots(longIdent, _), synExpr2, _range) ->
-                if AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
+                if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
-                elif AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr2.Range pos then
+                elif SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr2.Range pos then
                     traverseSynExpr synExpr2
                 else
                     let inFront, r = CheckLongIdent longIdent
@@ -759,11 +760,11 @@ module UntypedParseImpl =
                         // ------   we want this value
                         Some ((unionRanges synExpr.Range r))
             | SynExpr.DotNamedIndexedPropertySet (synExpr, LongIdentWithDots(longIdent, _), synExpr2, synExpr3, _range) ->  
-                if AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
+                if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
-                elif AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr2.Range pos then
+                elif SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr2.Range pos then
                     traverseSynExpr synExpr2
-                elif AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr3.Range pos then
+                elif SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr3.Range pos then
                     traverseSynExpr synExpr3
                 else
                     let inFront, r = CheckLongIdent longIdent
@@ -772,18 +773,18 @@ module UntypedParseImpl =
                     else
                         Some ((unionRanges synExpr.Range r))
             | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _range) ->  // get this for e.g. "bar()."
-                if AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
+                if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
                 else
                     Some (synExpr.Range) 
             | SynExpr.FromParseError (synExpr, range) -> 
-                if AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
+                if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
                 else
                     Some range 
             | SynExpr.App (ExprAtomicFlag.NonAtomic, true, (SynExpr.Ident ident), rhs, _) 
                 when ident.idText = "op_ArrayLookup" 
-                     && not(AstTraversal.rangeContainsPosLeftEdgeInclusive rhs.Range pos) ->
+                     && not(SyntaxTraversal.rangeContainsPosLeftEdgeInclusive rhs.Range pos) ->
                 match defaultTraverse expr with
                 | None ->
                     // (expr).(expr) is an ML-deprecated array lookup, but we want intellisense on the dot
@@ -829,15 +830,15 @@ module UntypedParseImpl =
                 | _ -> None
 
             let rec walker = 
-                { new AstTraversal.AstVisitorBase<_>() with
-                    member this.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+                { new SyntaxVisitorBase<_>() with
+                    member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
                         if rangeContainsPos expr.Range pos then
                             match TryGetExpression false expr with
                             | (Some parts) -> parts |> String.concat "." |> Some
                             | _ -> defaultTraverse expr
                         else
                             None }
-            AstTraversal.Traverse(pos, parseTree, walker)
+            SyntaxTraversal.Traverse(pos, parseTree, walker)
 
     // Given a cursor position here:
     //    f(x)   .   ident
@@ -855,10 +856,10 @@ module UntypedParseImpl =
         match parseTreeOpt with 
         | None -> None 
         | Some parseTree ->
-        let dive x = AstTraversal.dive x
-        let pick x = AstTraversal.pick pos x
+        let dive x = SyntaxTraversal.dive x
+        let pick x = SyntaxTraversal.pick pos x
         let walker = 
-            { new AstTraversal.AstVisitorBase<_>() with
+            { new SyntaxVisitorBase<_>() with
                 member this.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                     let pick = pick expr.Range
                     let traverseSynExpr, defaultTraverse, expr = traverseSynExpr, defaultTraverse, expr  // for debugging: debugger does not get object expression params as local vars
@@ -938,7 +939,7 @@ module UntypedParseImpl =
                             | r -> r
                         | SynExpr.App (ExprAtomicFlag.NonAtomic, true, (SynExpr.Ident ident), lhs, _m) 
                             when ident.idText = "op_ArrayLookup" 
-                                 && not(AstTraversal.rangeContainsPosLeftEdgeInclusive lhs.Range pos) ->
+                                 && not(SyntaxTraversal.rangeContainsPosLeftEdgeInclusive lhs.Range pos) ->
                             match defaultTraverse expr with
                             | None ->
                                 // (expr).(expr) is an ML-deprecated array lookup, but we want intellisense on the dot
@@ -946,7 +947,7 @@ module UntypedParseImpl =
                                 Some (lhs.Range.End, false)
                             | x -> x  // we found the answer deeper somewhere in the lhs
                         | _ -> defaultTraverse expr }
-        AstTraversal.Traverse(pos, parseTree, walker)
+        SyntaxTraversal.Traverse(pos, parseTree, walker)
     
     let GetEntityKind (pos: pos, input: ParsedInput) : EntityKind option =
         let (|ConstructorPats|) = function
@@ -1040,7 +1041,7 @@ module UntypedParseImpl =
         and walkType = function
             | SynType.LongIdent ident -> 
                 // we protect it with try..with because System.Exception : rangeOfLidwd may raise
-                // at FSharp.Compiler.Syntax.SyntaxTreeInternal.LongIdentWithDots.get_Range() in D:\j\workspace\release_ci_pa---3f142ccc\src\fsharp\ast.fs: line 156
+                // at FSharp.Compiler.Syntax.LongIdentWithDots.get_Range() in D:\j\workspace\release_ci_pa---3f142ccc\src\fsharp\ast.fs: line 156
                 try ifPosInRange ident.Range (fun _ -> Some EntityKind.Type) with _ -> None
             | SynType.App(ty, _, types, _, _, _, _) -> 
                 walkType ty |> Option.orElse (List.tryPick walkType types)
@@ -1238,7 +1239,7 @@ module UntypedParseImpl =
         | ParsedInput.SigFile _ -> None
         | ParsedInput.ImplFile input -> walkImplFileInput input
 
-    type internal TS = AstTraversal.TraverseStep
+    type internal TS = SyntaxNode
     /// Matches the most nested [< and >] pair.
     let insideAttributeApplicationRegex = Regex(@"(?<=\[\<)(?<attribute>(.*?))(?=\>\])", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
 
@@ -1343,9 +1344,9 @@ module UntypedParseImpl =
             | _ -> None
 
         // checks if we are in rhs of the range operator
-        let isInRhsOfRangeOp (p : AstTraversal.TraversePath) = 
+        let isInRhsOfRangeOp (p : SyntaxVisitorPath) = 
             match p with
-            | TS.Expr(Operator "op_Range" _) :: _ -> true
+            | SyntaxNode.SynExpr(Operator "op_Range" _) :: _ -> true
             | _ -> false
 
         let (|Setter|_|) e =
@@ -1414,9 +1415,9 @@ module UntypedParseImpl =
 
         let (|PartOfParameterList|_|) precedingArgument path =
             match path with
-            | TS.Expr(SynExpr.Paren _) :: TS.Expr(NewObjectOrMethodCall args) :: _ -> 
+            | SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(NewObjectOrMethodCall args) :: _ -> 
                 if Option.isSome precedingArgument then None else Some args
-            | TS.Expr(SynExpr.Tuple (false, elements, commas, _)) :: TS.Expr(SynExpr.Paren _) :: TS.Expr(NewObjectOrMethodCall args) :: _ -> 
+            | SyntaxNode.SynExpr(SynExpr.Tuple (false, elements, commas, _)) :: SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(NewObjectOrMethodCall args) :: _ -> 
                 match precedingArgument with
                 | None -> Some args
                 | Some e ->
@@ -1431,7 +1432,7 @@ module UntypedParseImpl =
 
         let walker = 
             { 
-                new AstTraversal.AstVisitorBase<_>() with
+                new SyntaxVisitorBase<_>() with
                     member _.VisitExpr(path, _, defaultTraverse, expr) = 
 
                         if isInRhsOfRangeOp path then
@@ -1443,7 +1444,7 @@ module UntypedParseImpl =
                             // new A($)
                             | SynExpr.Const (SynConst.Unit, m) when rangeContainsPos m pos ->
                                 match path with
-                                | TS.Expr(NewObjectOrMethodCall args) :: _ -> 
+                                | SyntaxNode.SynExpr(NewObjectOrMethodCall args) :: _ -> 
                                     Some (CompletionContext.ParameterList args)
                                 | _ -> 
                                     defaultTraverse expr
@@ -1470,7 +1471,7 @@ module UntypedParseImpl =
                         let contextFromTreePath completionPath = 
                             // detect records usage in constructor
                             match path with
-                            | TS.Expr(_) :: TS.Binding(_) :: TS.MemberDefn(_) :: TS.TypeDefn(SynTypeDefn.TypeDefn(ComponentInfo(_, _, _, [id], _, _, _, _), _, _, _)) :: _ ->  
+                            | SyntaxNode.SynExpr(_) :: SyntaxNode.SynBinding(_) :: SyntaxNode.SynMemberDefn(_) :: SyntaxNode.SynTypeDefn(SynTypeDefn.TypeDefn(ComponentInfo(_, _, _, [id], _, _, _, _), _, _, _)) :: _ ->  
                                 RecordContext.Constructor(id.idText)
                             | _ -> RecordContext.New completionPath
                         match field with
@@ -1490,7 +1491,7 @@ module UntypedParseImpl =
                                 | None -> contextFromTreePath ([], None)
                             Some (CompletionContext.RecordField recordContext)
                                 
-                    member _.VisitInheritSynMemberDefn(componentInfo, typeDefnKind, synType, _members, _range) = 
+                    member _.VisitInheritSynMemberDefn(_path, componentInfo, typeDefnKind, synType, _members, _range) = 
                         match synType with
                         | SynType.LongIdent lidwd ->                                 
                             match parseLid lidwd with
@@ -1499,7 +1500,7 @@ module UntypedParseImpl =
 
                         | _ -> None 
                         
-                    member _.VisitBinding(defaultTraverse, (Binding(headPat = headPat) as synBinding)) = 
+                    member _.VisitBinding(_path, defaultTraverse, (Binding(headPat = headPat) as synBinding)) = 
                     
                         let visitParam = function
                             | SynPat.Named (range = range) when rangeContainsPos range pos -> 
@@ -1535,11 +1536,11 @@ module UntypedParseImpl =
                             Some CompletionContext.Invalid
                         | _ -> defaultTraverse synBinding 
                     
-                    member _.VisitHashDirective range = 
+                    member _.VisitHashDirective (_path, _directive, range) = 
                         if rangeContainsPos range pos then Some CompletionContext.Invalid 
                         else None 
                         
-                    member _.VisitModuleOrNamespace(SynModuleOrNamespace(longId = idents)) =
+                    member _.VisitModuleOrNamespace(_path, SynModuleOrNamespace(longId = idents)) =
                         match List.tryLast idents with
                         | Some lastIdent when pos.Line = lastIdent.idRange.EndLine && lastIdent.idRange.EndColumn >= 0 && pos.Column <= lineStr.Length ->
                             let stringBetweenModuleNameAndPos = lineStr.[lastIdent.idRange.EndColumn..pos.Column - 1]
@@ -1548,16 +1549,16 @@ module UntypedParseImpl =
                             else None
                         | _ -> None 
 
-                    member _.VisitComponentInfo(ComponentInfo(range = range)) = 
+                    member _.VisitComponentInfo(_path, ComponentInfo(range = range)) = 
                         if rangeContainsPos range pos then Some CompletionContext.Invalid
                         else None
 
-                    member _.VisitLetOrUse(_, _, bindings, range) =
+                    member _.VisitLetOrUse(_path, _, _, bindings, range) =
                         match bindings with
                         | [] when range.StartLine = pos.Line -> Some CompletionContext.Invalid
                         | _ -> None
 
-                    member _.VisitSimplePats pats =
+                    member _.VisitSimplePats (_path, pats) =
                         pats |> List.tryPick (fun pat ->
                             match pat with
                             | SynSimplePat.Id(range = range)
@@ -1565,7 +1566,7 @@ module UntypedParseImpl =
                                 Some CompletionContext.Invalid
                             | _ -> None)
 
-                    member _.VisitModuleDecl(defaultTraverse, decl) =
+                    member _.VisitModuleDecl(_path, defaultTraverse, decl) =
                         match decl with
                         | SynModuleDecl.Open(target, m) -> 
                             // in theory, this means we're "in an open"
@@ -1585,14 +1586,14 @@ module UntypedParseImpl =
                                 None
                         | _ -> defaultTraverse decl
 
-                    member _.VisitType(defaultTraverse, ty) =
+                    member _.VisitType(_path, defaultTraverse, ty) =
                         match ty with
                         | SynType.LongIdent _ when rangeContainsPos ty.Range pos ->
                             Some CompletionContext.PatternType
                         | _ -> defaultTraverse ty
             }
 
-        AstTraversal.Traverse(pos, parsedInput, walker)
+        SyntaxTraversal.Traverse(pos, parsedInput, walker)
         // Uncompleted attribute applications are not presented in the AST in any way. So, we have to parse source string.
         |> Option.orElseWith (fun _ ->
              let cutLeadingAttributes (str: string) =
@@ -1639,14 +1640,14 @@ module UntypedParseImpl =
     let GetFullNameOfSmallestModuleOrNamespaceAtPoint (parsedInput: ParsedInput, pos: pos) = 
         let mutable path = []
         let visitor = 
-            { new AstTraversal.AstVisitorBase<bool>() with
+            { new SyntaxVisitorBase<bool>() with
                 override this.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) = 
                     // don't need to keep going, namespaces and modules never appear inside Exprs
                     None 
-                override this.VisitModuleOrNamespace(SynModuleOrNamespace(longId = longId; range = range)) =
+                override this.VisitModuleOrNamespace(_path, SynModuleOrNamespace(longId = longId; range = range)) =
                     if rangeContainsPos range pos then 
                         path <- path @ longId
                     None // we should traverse the rest of the AST to find the smallest module 
             }
-        AstTraversal.Traverse(pos, parsedInput, visitor) |> ignore
+        SyntaxTraversal.Traverse(pos, parsedInput, visitor) |> ignore
         path |> List.map (fun x -> x.idText) |> List.toArray

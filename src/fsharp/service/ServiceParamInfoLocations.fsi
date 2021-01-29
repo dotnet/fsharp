@@ -5,10 +5,10 @@
 // type checking and intellisense-like environment-reporting.
 //----------------------------------------------------------------------------
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Editing
 
 open FSharp.Compiler.Text
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
+open FSharp.Compiler.Syntax
 
 /// Represents the locations relevant to activating parameter info in an IDE
 [<Sealed>]

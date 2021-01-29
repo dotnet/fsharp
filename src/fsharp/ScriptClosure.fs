@@ -19,7 +19,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Legacy
 open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 

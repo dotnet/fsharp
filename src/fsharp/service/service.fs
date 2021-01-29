@@ -13,6 +13,7 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.Utils
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
@@ -21,12 +22,11 @@ open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
-open Internal.Utilities.Library.Extras
+open FSharp.Compiler.ScriptClosure
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.ScriptClosure
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
 open FSharp.Compiler.TcGlobals 
 
 open Internal.Utilities

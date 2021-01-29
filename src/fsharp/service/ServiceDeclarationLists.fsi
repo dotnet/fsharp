@@ -1,15 +1,110 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// API for declaration lists and method overload lists
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Editing
 
 open System
 open FSharp.Compiler
+open FSharp.Compiler.Analysis
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
+
+/// A single data tip display element
+[<RequireQualifiedAccess>]
+type public FSharpToolTipElementData<'T> = 
+    {
+      MainDescription:  'T 
+
+      XmlDoc: FSharpXmlDoc
+
+      /// typar instantiation text, to go after xml
+      TypeMapping: 'T list
+
+      /// Extra text, goes at the end
+      Remarks: 'T option
+
+      /// Parameter name
+      ParamName : string option
+    }
+
+/// A single tool tip display element
+//
+// Note: instances of this type do not hold any references to any compiler resources.
+[<RequireQualifiedAccess>]
+type public FSharpToolTipElement<'T> = 
+    | None
+
+    /// A single type, method, etc with comment. May represent a method overload group.
+    | Group of elements: FSharpToolTipElementData<'T> list
+
+    /// An error occurred formatting this element
+    | CompositionError of errorText: string
+
+    static member Single : 'T * FSharpXmlDoc * ?typeMapping: 'T list * ?paramName: string * ?remarks : 'T  -> FSharpToolTipElement<'T>
+
+/// A single data tip display element with where text is expressed as string
+type public FSharpToolTipElement = FSharpToolTipElement<string>
+
+/// A single data tip display element with where text is expressed as <see cref="Layout"/>
+type public FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
+
+/// Information for building a tool tip box.
+//
+// Note: instances of this type do not hold any references to any compiler resources.
+type public FSharpToolTipText<'T> = 
+
+    /// A list of data tip elements to display.
+    | FSharpToolTipText of FSharpToolTipElement<'T> list  
+
+type public FSharpToolTipText = FSharpToolTipText<string>
+
+type public FSharpStructuredToolTipText = FSharpToolTipText<Layout>
+
+[<RequireQualifiedAccess>]
+type public FSharpCompletionItemKind =
+    | Field
+    | Property
+    | Method of isExtension : bool
+    | Event
+    | Argument
+    | CustomOperation
+    | Other
+
+type FSharpUnresolvedSymbol =
+    {
+      FullName: string
+
+      DisplayName: string
+
+      Namespace: string[]
+    }
+
+type internal CompletionItem =
+    {
+      ItemWithInst: ItemWithInst
+
+      Kind: FSharpCompletionItemKind
+
+      IsOwnMember: bool
+
+      MinorPriority: int
+
+      Type: TyconRef option 
+
+      Unresolved: FSharpUnresolvedSymbol option
+    }
+    member Item : Item
+
+module public FSharpToolTip =
+
+    val ToFSharpToolTipElement: FSharpStructuredToolTipElement -> FSharpToolTipElement
+
+    val ToFSharpToolTipText: FSharpStructuredToolTipText -> FSharpToolTipText
 
 [<Sealed>]
 /// Represents a declaration in F# source code, with information attached ready for display by an editor.
@@ -137,4 +232,13 @@ type public FSharpMethodGroup =
     member Methods: FSharpMethodGroupItem[] 
 
     static member internal Create : InfoReader * range * DisplayEnv * ItemWithInst list -> FSharpMethodGroup
+
+module internal DeclarationListHelpers =
+    val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> FSharpStructuredToolTipElement
+
+    val RemoveDuplicateCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
+
+    val RemoveExplicitlySuppressedCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
+
+    val mutable ToolTipFault : string option
 

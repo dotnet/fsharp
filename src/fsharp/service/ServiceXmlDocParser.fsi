@@ -2,7 +2,7 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 /// Represent an Xml documentation block in source code

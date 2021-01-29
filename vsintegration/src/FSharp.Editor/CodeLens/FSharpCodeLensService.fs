@@ -51,7 +51,7 @@ type internal FSharpCodeLensService
     let userOpName = "FSharpCodeLensService"
 
     let visit pos parseTree = 
-        AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with 
+        SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxTraversal.SyntaxVisitorBase<_>() with 
             member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                 defaultTraverse(expr)
             

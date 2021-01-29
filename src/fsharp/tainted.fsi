@@ -97,7 +97,6 @@ type internal Tainted<'T> =
     /// If coercion fails, the failure will be blamed on a type provider
     member Coerce<'U> : range:range -> Tainted<'U>
 
-
 [<RequireQualifiedAccess>]
 module internal Tainted =
 

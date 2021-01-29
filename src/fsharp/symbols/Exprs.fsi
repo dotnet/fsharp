@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec FSharp.Compiler.SourceCodeServices
+namespace rec FSharp.Compiler.Analysis
 
 open FSharp.Compiler
 open FSharp.Compiler.CompilerImports
-open FSharp.Compiler.Syntax.SyntaxTreeInternal
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
