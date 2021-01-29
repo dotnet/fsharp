@@ -9,11 +9,11 @@
 module FSharp.Compiler.Service.Tests.CSharpProjectAnalysis
 #endif
 
-
 open NUnit.Framework
 open FsUnit
 open System.IO
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Service.Tests.Common
 
 let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) = 

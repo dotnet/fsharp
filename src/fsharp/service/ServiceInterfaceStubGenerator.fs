@@ -1,12 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.Editing
+namespace FSharp.Compiler.EditorServices
 
 open System
 open System.Diagnostics
 open Internal.Utilities.Library 
 open FSharp.Compiler
-open FSharp.Compiler.Analysis
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
@@ -102,14 +102,16 @@ module internal CodeGenerationUtils =
 /// Capture information about an interface in ASTs
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type InterfaceData =
-    | Interface of SynType * SynMemberDefns option
-    | ObjExpr of SynType * SynBinding list
+    | Interface of interfaceType: SynType * memberDefns: SynMemberDefns option
+    | ObjExpr of objType: SynType * bindings: SynBinding list
+
     member x.Range =
         match x with
         | InterfaceData.Interface(ty, _) -> 
             ty.Range
         | InterfaceData.ObjExpr(ty, _) -> 
             ty.Range
+
     member x.TypeParameters = 
         match x with
         | InterfaceData.Interface(StripParenTypes ty, _)
@@ -174,18 +176,25 @@ module InterfaceStubGenerator =
     type internal Context =
         {
             Writer: ColumnIndentedTextWriter
+
             /// Map generic types to specific instances for specialized interface implementation
             TypeInstantations: Map<string, string>
+
             /// Data for interface instantiation
             ArgInstantiations: (FSharpGenericParameter * FSharpType) seq
+
             /// Indentation inside method bodies
             Indentation: int
+
             /// Object identifier of the interface e.g. 'x', 'this', '__', etc.
             ObjectIdent: string
+
             /// A list of lines represents skeleton of each member
             MethodBody: string []
+
             /// Context in order to display types in the short form
             DisplayContext: FSharpDisplayContext
+
         }
 
     // Adapt from MetadataFormat module in FSharp.Formatting 
@@ -484,9 +493,9 @@ module InterfaceStubGenerator =
         |> Seq.distinct
 
     /// Get members in the decreasing order of inheritance chain
-    let getInterfaceMembers (e: FSharpEntity) = 
+    let GetInterfaceMembers (entity: FSharpEntity) = 
         seq {
-            for (iface, instantiations) in getInterfaces e do
+            for (iface, instantiations) in getInterfaces entity do
                 yield! iface.TryGetMembersFunctionsAndValues()
                        |> Seq.choose (fun m -> 
                            // Use this hack when FCS doesn't return enough information on .NET properties and events
@@ -496,8 +505,8 @@ module InterfaceStubGenerator =
          }
 
     /// Check whether an interface is empty
-    let hasNoInterfaceMember e =
-        getInterfaceMembers e |> Seq.isEmpty
+    let HasNoInterfaceMember entity =
+        GetInterfaceMembers entity |> Seq.isEmpty
 
     let internal (|LongIdentPattern|_|) = function
         | SynPat.LongIdent(LongIdentWithDots(xs, _), _, _, _, _, _) ->
@@ -526,7 +535,8 @@ module InterfaceStubGenerator =
     /// Get associated member names and ranges
     /// In case of properties, intrinsic ranges might not be correct for the purpose of getting
     /// positions of 'member', which indicate the indentation for generating new members
-    let getMemberNameAndRanges = function
+    let GetMemberNameAndRanges interfaceData = 
+        match interfaceData with
         | InterfaceData.Interface(_, None) -> 
             []
         | InterfaceData.Interface(_, Some memberDefns) -> 
@@ -548,7 +558,7 @@ module InterfaceStubGenerator =
     ///  (1) Crack ASTs to get member names and their associated ranges
     ///  (2) Check symbols of those members based on ranges
     ///  (3) If any symbol found, capture its member signature 
-    let getImplementedMemberSignatures (getMemberByLocation: string * range -> FSharpSymbolUse option) displayContext interfaceData = 
+    let GetImplementedMemberSignatures (getMemberByLocation: string * range -> FSharpSymbolUse option) displayContext interfaceData = 
         let formatMemberSignature (symbolUse: FSharpSymbolUse) =            
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as m ->
@@ -567,7 +577,7 @@ module InterfaceStubGenerator =
                 None
         async {
             let symbolUses = 
-                getMemberNameAndRanges interfaceData
+                GetMemberNameAndRanges interfaceData
                 |> List.toArray
                 |> Array.map getMemberByLocation
             return symbolUses |> Array.choose (Option.bind formatMemberSignature >> Option.map String.Concat)
@@ -575,14 +585,14 @@ module InterfaceStubGenerator =
         }
 
     /// Check whether an entity is an interface or type abbreviation of an interface
-    let rec isInterface (e: FSharpEntity) =
-        e.IsInterface || (e.IsFSharpAbbreviation && isInterface e.AbbreviatedType.TypeDefinition)
+    let rec IsInterface (entity: FSharpEntity) =
+        entity.IsInterface || (entity.IsFSharpAbbreviation && IsInterface entity.AbbreviatedType.TypeDefinition)
 
     /// Generate stub implementation of an interface at a start column
-    let formatInterface startColumn indentation (typeInstances: string []) objectIdent
+    let FormatInterface startColumn indentation (typeInstances: string []) objectIdent
             (methodBody: string) (displayContext: FSharpDisplayContext) excludedMemberSignatures
             (e: FSharpEntity) verboseMode =
-        Debug.Assert(isInterface e, "The entity should be an interface.")
+        Debug.Assert(IsInterface e, "The entity should be an interface.")
         let lines = String.getLines methodBody
         use writer = new ColumnIndentedTextWriter()
         let typeParams = Seq.map getTypeParameterName e.GenericParameters
@@ -603,7 +613,7 @@ module InterfaceStubGenerator =
         let ctx = { Writer = writer; TypeInstantations = instantiations; ArgInstantiations = Seq.empty;
                     Indentation = indentation; ObjectIdent = objectIdent; MethodBody = lines; DisplayContext = displayContext }
         let missingMembers =
-            getInterfaceMembers e
+            GetInterfaceMembers e
             |> Seq.groupBy (fun (m, insts) ->               
                 match m with
                 | _ when isEventMember m  ->
@@ -667,7 +677,7 @@ module InterfaceStubGenerator =
             writer.Dump()
 
     /// Find corresponding interface declaration at a given position
-    let tryFindInterfaceDeclaration (pos: pos) (parsedInput: ParsedInput) =
+    let TryFindInterfaceDeclaration (pos: pos) (parsedInput: ParsedInput) =
         let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) = 
             List.tryPick walkSynModuleOrNamespace moduleOrNamespaceList
 

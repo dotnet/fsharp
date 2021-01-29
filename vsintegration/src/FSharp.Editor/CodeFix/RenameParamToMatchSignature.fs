@@ -9,9 +9,9 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor.SymbolHelpers
-open FSharp.Compiler.SourceCodeServices.FSharpKeywords
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices.FSharpKeywords
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "FSharpRenameParamToMatchSignature"); Shared>]
 type internal FSharpRenameParamToMatchSignature
@@ -54,7 +54,7 @@ type internal FSharpRenameParamToMatchSignature
                                                 yield TextChange(textSpan, replacement) |]
                                 return changes 
                             }
-                        let title = CompilerDiagnostics.getErrorMessage (ReplaceWithSuggestion suggestion)
+                        let title = CompilerDiagnostics.GetErrorMessage (ReplaceWithSuggestion suggestion)
                         let codefix = CodeFixHelpers.createTextChangeCodeFix(title, context, computeChanges)
                         context.RegisterCodeFix(codefix, diagnostics)
             | _ -> ()

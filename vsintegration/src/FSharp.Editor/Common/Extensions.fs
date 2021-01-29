@@ -11,13 +11,12 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
 
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Text
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
 
-type private FSharpGlyph = FSharp.Compiler.SourceCodeServices.FSharpGlyph
+type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph
 type private FSharpRoslynGlyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
-
 
 type Path with
     static member GetFullPathSafe path =

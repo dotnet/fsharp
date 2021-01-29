@@ -187,7 +187,7 @@ type CompilationGlobalsScope(errorLogger: ErrorLogger, phase: BuildPhase) =
             unwindBP.Dispose()         
             unwindEL.Dispose()
 
-module ErrorHelpers =                            
+module DiagnosticHelpers =                            
 
     let ReportError (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, fileInfo, (exn, sev), suggestNames) = 
         [ let isError = (sev = FSharpDiagnosticSeverity.Error) || ReportWarningAsError options exn                
@@ -206,14 +206,14 @@ module ErrorHelpers =
             for e in relatedErrors do 
                 yield! oneError e ]
 
-    let CreateErrorInfos (options, allErrors, mainInputFileName, errors, suggestNames) = 
+    let CreateDiagnostics (options, allErrors, mainInputFileName, errors, suggestNames) = 
         let fileInfo = (Int32.MaxValue, Int32.MaxValue)
         [| for (exn, isError) in errors do 
               yield! ReportError (options, allErrors, mainInputFileName, fileInfo, (exn, isError), suggestNames) |]
                             
 
 
-namespace FSharp.Compiler.Analysis
+namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.IO

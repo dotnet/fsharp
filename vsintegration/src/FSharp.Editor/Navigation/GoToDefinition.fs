@@ -8,17 +8,15 @@ open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
 open System.Linq
-open System.Runtime.InteropServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.FindSymbols
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 
 open Microsoft.VisualStudio.Shell.Interop
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 
 module private Symbol =

@@ -16,7 +16,10 @@ open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Extensions
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 
@@ -51,15 +54,15 @@ type internal FSharpCodeLensService
     let userOpName = "FSharpCodeLensService"
 
     let visit pos parseTree = 
-        SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxTraversal.SyntaxVisitorBase<_>() with 
+        SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxVisitorBase<_>() with 
             member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                 defaultTraverse(expr)
             
-            override _.VisitInheritSynMemberDefn (_, _, _, _, range) = Some range
+            override _.VisitInheritSynMemberDefn (_, _, _, _, _, range) = Some range
 
-            override _.VisitTypeAbbrev( _, range) = Some range
+            override _.VisitTypeAbbrev(_, _, range) = Some range
 
-            override _.VisitLetOrUse(_, _, bindings, range) =
+            override _.VisitLetOrUse(_, _, _, bindings, range) =
                 match bindings |> Seq.tryFind (fun b -> b.RangeOfHeadPat.StartLine = pos.Line) with
                 | Some entry ->
                     Some entry.RangeOfBindingAndRhs
@@ -69,7 +72,7 @@ type internal FSharpCodeLensService
                     // including implementation code.
                     Some range
 
-            override _.VisitBinding (fn, binding) =
+            override _.VisitBinding (_, fn, binding) =
                 Some binding.RangeOfBindingAndRhs
         })
 

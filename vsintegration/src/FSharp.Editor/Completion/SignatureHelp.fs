@@ -11,7 +11,9 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.SignatureHelp
 
 open Microsoft.VisualStudio.Shell
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Pos
 open FSharp.Compiler.Text.Range

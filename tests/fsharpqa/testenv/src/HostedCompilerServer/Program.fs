@@ -8,7 +8,7 @@ open System.Text
 open System.Threading
 open System.Linq
 open FSharp.Compiler
-open FSharp.Compiler.Legacy.Hosted
+open FSharp.Compiler.CodeAnalysis.Hosted
 
 [<AutoOpen>]
 module Log =

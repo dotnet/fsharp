@@ -40,17 +40,11 @@ open System.Diagnostics
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Shell.Interop
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 
 open Microsoft.CodeAnalysis
-open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
-open VSLangProj
-open System.ComponentModel.Composition.Primitives
-open Microsoft.VisualStudio.Shell
-open System.Collections.Immutable
-
 
 /// An additional interface that an IProjectSite object can implement to indicate it has an FSharpProjectOptions 
 /// already available, so we don't have to recreate it

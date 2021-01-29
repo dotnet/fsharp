@@ -1673,10 +1673,13 @@ type SynUnionCase =
 type SynUnionCaseType =
 
     /// Normal style declaration
-    | UnionCaseFields of cases: SynField list
+    | UnionCaseFields of
+        cases: SynField list
 
     /// Full type spec given by 'UnionCase: ty1 * tyN -> rty'. Only used in FSharp.Core, otherwise a warning.
-    | UnionCaseFullType of fullType: SynType * fullTypeInfo: SynValInfo
+    | UnionCaseFullType of
+        fullType: SynType *
+        fullTypeInfo: SynValInfo
 
 /// Represents the syntax tree for the right-hand-side of a type definition in a signature.
 /// Note: in practice, using a discriminated union to make a distinction between
@@ -1692,10 +1695,11 @@ type SynTypeDefnSigRepr =
 
     /// Indicates the right right-hand-side is a record, union or other simple type.
     | Simple of
-       repr: SynTypeDefnSimpleRepr *
-       range: range
+        repr: SynTypeDefnSimpleRepr *
+        range: range
 
-    | Exception of SynExceptionDefnRepr
+    | Exception of
+        repr: SynExceptionDefnRepr
 
     /// Gets the syntax range of this construct
     member this.Range =

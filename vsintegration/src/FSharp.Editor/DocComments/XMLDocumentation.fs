@@ -7,7 +7,9 @@ open System.Runtime.CompilerServices
 open System.Text.RegularExpressions
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.TaggedText
 open System.Collections.Generic

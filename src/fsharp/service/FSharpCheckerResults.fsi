@@ -1,20 +1,19 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.Analysis
+namespace FSharp.Compiler.CodeAnalysis
 
 open System.Threading
-open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.IL
 open Internal.Utilities.Library
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Analysis
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.Editing
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Legacy
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
@@ -83,7 +82,7 @@ type public FSharpParsingOptions =
 [<Sealed>]
 type public FSharpCheckFileResults =
     /// The errors returned by parsing a source file.
-    member Errors : FSharpDiagnostic[]
+    member Diagnostics: FSharpDiagnostic[]
 
     /// Get a view of the contents of the assembly up to and including the file just checked
     member PartialAssemblySignature : FSharpAssemblySignature

@@ -10,7 +10,8 @@ open System.ComponentModel.Composition
 open System.IO
 open System.Linq
 open Microsoft.CodeAnalysis
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices
@@ -117,7 +118,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             OtherOptions = [||]
                             ReferencedProjects = [||]
                             IsIncompleteTypeCheckEnvironment = false
-                            UseScriptResolutionRules = SourceFile.MustBeSingleFileProject (Path.GetFileName(document.FilePath))
+                            UseScriptResolutionRules = FSharpSourceFile.MustBeSingleFileProject (Path.GetFileName(document.FilePath))
                             LoadTime = DateTime.Now
                             UnresolvedReferences = None
                             OriginalLoadReferences = []
@@ -203,7 +204,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                         OtherOptions = otherOptions
                         ReferencedProjects = referencedProjects.ToArray()
                         IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
-                        UseScriptResolutionRules = SourceFile.MustBeSingleFileProject (Path.GetFileName(project.FilePath))
+                        UseScriptResolutionRules = FSharpSourceFile.MustBeSingleFileProject (Path.GetFileName(project.FilePath))
                         LoadTime = projectSite.LoadTime
                         UnresolvedReferences = None
                         OriginalLoadReferences = []

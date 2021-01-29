@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.Editing
+namespace FSharp.Compiler.EditorServices
 
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 open Internal.Utilities.Library
-open FSharp.Compiler.Analysis
-open FSharp.Compiler.Text.Range
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 
 module UnusedOpens =
 

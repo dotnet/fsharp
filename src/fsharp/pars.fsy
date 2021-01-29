@@ -17,7 +17,6 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps

@@ -13,7 +13,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
 
 [<RequireQualifiedAccess>]
 type internal DiagnosticsType =
@@ -68,11 +69,11 @@ type internal FSharpDocumentDiagnosticAnalyzer
                         | FSharpCheckFileAnswer.Aborted -> return [||]
                         | FSharpCheckFileAnswer.Succeeded results ->
                             // In order to eleminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
-                            let allErrors = HashSet(results.Errors, errorInfoEqualityComparer)
-                            allErrors.ExceptWith(parseResults.Errors)
+                            let allErrors = HashSet(results.Diagnostics, errorInfoEqualityComparer)
+                            allErrors.ExceptWith(parseResults.Diagnostics)
                             return Seq.toArray allErrors
                     | DiagnosticsType.Syntax ->
-                        return parseResults.Errors
+                        return parseResults.Diagnostics
                 }
             
             let results = 

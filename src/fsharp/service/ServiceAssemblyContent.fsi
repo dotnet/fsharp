@@ -1,31 +1,17 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.Editing
+namespace FSharp.Compiler.EditorServices
 
 open System
-open FSharp.Compiler.Analysis
-open FSharp.Compiler.Syntax
-open FSharp.Compiler.Text
+open FSharp.Compiler.CodeAnalysis
 
 /// Assembly content type.
+[<RequireQualifiedAccess>]
 type public AssemblyContentType = 
 /// Public assembly content only.
     | Public 
     /// All assembly content.
     | Full
-
-/// Short identifier, i.e. an identifier that contains no dots.
-type public ShortIdent = string
-
-/// An array of `ShortIdent`.
-type public Idents = ShortIdent[]
-
-/// `ShortIdent` with a flag indicating if it's resolved in some scope.
-type public MaybeUnresolvedIdent = 
-    { Ident: ShortIdent; Resolved: bool }
-
-/// Array of `MaybeUnresolvedIdent`.
-type public MaybeUnresolvedIdents = MaybeUnresolvedIdent[]
 
 /// Entity lookup type.
 [<RequireQualifiedAccess>]
@@ -46,24 +32,24 @@ type public AssemblySymbol =
       /// Entity name parts with removed module suffixes (Ns.M1Module.M2Module.M3.entity -> Ns.M1.M2.M3.entity)
       /// and replaced compiled names with display names (FSharpEntity.DisplayName, FSharpValueOrFunction.DisplayName).
       /// Note: *all* parts are cleaned, not the last one. 
-      CleanedIdents: Idents
+      CleanedIdents: FSharpShortIdents
 
       /// `FSharpEntity.Namespace`.
-      Namespace: Idents option
+      Namespace: FSharpShortIdents option
 
       /// The most narrative parent module that has `RequireQualifiedAccess` attribute.
-      NearestRequireQualifiedAccessParent: Idents option
+      NearestRequireQualifiedAccessParent: FSharpShortIdents option
 
       /// Parent module that has the largest scope and has `RequireQualifiedAccess` attribute.
-      TopRequireQualifiedAccessParent: Idents option
+      TopRequireQualifiedAccessParent: FSharpShortIdents option
 
       /// Parent module that has `AutoOpen` attribute.
-      AutoOpenParent: Idents option
+      AutoOpenParent: FSharpShortIdents option
 
       Symbol: FSharpSymbol
 
       /// Function that returns `EntityKind` based of given `LookupKind`.
-      Kind: LookupType -> EntityKind
+      Kind: LookupType -> FSharpEntityKind
 
       /// Cache display name and namespace, used for completion.
       FSharpUnresolvedSymbol: FSharpUnresolvedSymbol
@@ -102,28 +88,6 @@ type public EntityCache =
     /// Performs an operation on the cache in thread safe manner.
     member Locking : (IAssemblyContentCache -> 'T) -> 'T
 
-/// Long identifier (i.e. it may contain dots).
-type public StringLongIdent = string
-
-/// Helper data structure representing a symbol, suitable for implementing unresolved identifiers resolution code fixes.
-type public Entity =
-    {
-      /// Full name, relative to the current scope.
-      FullRelativeName: StringLongIdent
-
-      /// Ident parts needed to append to the current ident to make it resolvable in current scope.
-      Qualifier: StringLongIdent
-
-      /// Namespace that is needed to open to make the entity resolvable in the current scope.
-      Namespace: StringLongIdent option
-
-      /// Full display name (i.e. last ident plus modules with `RequireQualifiedAccess` attribute prefixed).
-      Name: StringLongIdent
-
-      /// Last part of the entity's full name.
-      LastIdent: string
-    }
-
 /// Provides assembly content.
 module public AssemblyContentProvider =
 
@@ -137,46 +101,4 @@ module public AssemblyContentProvider =
           -> fileName: string option 
           -> assemblies: FSharpAssembly list 
           -> AssemblySymbol list
-
-/// Kind of lexical scope.
-type public ScopeKind =
-    | Namespace
-    | TopModule
-    | NestedModule
-    | OpenDeclaration
-    | HashDirective
-
-/// Insert open namespace context.
-type public InsertContext =
-    {
-      /// Current scope kind.
-      ScopeKind: ScopeKind
-
-      /// Current position (F# compiler line number).
-      Pos: pos
-    }
-
-/// Where open statements should be added.
-type public OpenStatementInsertionPoint =
-    | TopLevel
-    | Nearest
-
-/// Parse AST helpers.
-module public ParsedInput =
-
-    /// Returns `InsertContext` based on current position and symbol idents.
-    val tryFindInsertionContext : 
-        currentLine: int -> 
-        ast: ParsedInput -> MaybeUnresolvedIdents -> 
-        insertionPoint: OpenStatementInsertionPoint ->
-        (( (* requiresQualifiedAccessParent: *) Idents option * (* autoOpenParent: *) Idents option * (*  entityNamespace *) Idents option * (* entity: *) Idents) -> (Entity * InsertContext)[])
-    
-    /// Returns `InsertContext` based on current position and symbol idents.
-    val findNearestPointToInsertOpenDeclaration : currentLine: int -> ast: ParsedInput -> entity: Idents -> insertionPoint: OpenStatementInsertionPoint -> InsertContext
-
-    /// Returns long identifier at position.
-    val getLongIdentAt : ast: ParsedInput -> pos: pos -> LongIdent option
-
-    /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
-    val adjustInsertionPoint : getLineStr: (int -> string) -> ctx: InsertContext -> pos
 

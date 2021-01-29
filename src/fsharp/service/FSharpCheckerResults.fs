@@ -3,7 +3,7 @@
 // Open up the compiler as an incremental service for parsing,
 // type checking and intellisense-like environment-reporting.
 
-namespace FSharp.Compiler.Analysis
+namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.Diagnostics
@@ -17,15 +17,15 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Analysis.SymbolHelpers 
+open FSharp.Compiler.CodeAnalysis.SymbolHelpers 
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.Editing
-open FSharp.Compiler.Editing.DeclarationListHelpers
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.EditorServices.DeclarationListHelpers
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
@@ -419,7 +419,7 @@ type internal TypeCheckInfo
             let bestQual, textChanged = 
                 match parseResults.ParseTree with
                 | Some(input) -> 
-                    match UntypedParseImpl.GetRangeOfExprLeftOfDot(endOfExprPos,Some(input)) with   // TODO we say "colAtEndOfNames" everywhere, but that's not really a good name ("foo  .  $" hit Ctrl-Space at $)
+                    match ParsedInput.GetRangeOfExprLeftOfDot(endOfExprPos,Some(input)) with   // TODO we say "colAtEndOfNames" everywhere, but that's not really a good name ("foo  .  $" hit Ctrl-Space at $)
                     | Some( exprRange) ->
                         // We have an up-to-date sync parse, and know the exact range of the prior expression.
                         // The quals all already have the same ending position, so find one with a matching starting position, if it exists.
@@ -654,7 +654,7 @@ type internal TypeCheckInfo
                             GetPreciseCompletionListFromExprTypingsResult.None, false
                         | Some parseResults -> 
                 
-                        match UntypedParseImpl.TryFindExpressionASTLeftOfDotLeftOfCursor(mkPos line colAtEndOfNamesAndResidue,parseResults.ParseTree) with
+                        match ParsedInput.TryFindExpressionASTLeftOfDotLeftOfCursor(mkPos line colAtEndOfNamesAndResidue,parseResults.ParseTree) with
                         | Some(pos,_) ->
                             GetPreciseCompletionListFromExprTypings(parseResults, pos, filterCtors), true
                         | None -> 
@@ -744,7 +744,7 @@ type internal TypeCheckInfo
     let GetDeclItemsForNamesAtPosition(parseResultsOpt: FSharpParseFileResults option, origLongIdentOpt: string list option, 
                                        residueOpt:string option, lastDotPos: int option, line:int, lineStr:string, colAtEndOfNamesAndResidue, filterCtors, resolveOverloads, 
                                        getAllSymbols: unit -> AssemblySymbol list) 
-                                       : (CompletionItem list * DisplayEnv * CompletionContext option * range) option = 
+                                       : (CompletionItem list * DisplayEnv * FSharpCompletionContext option * range) option = 
 
         let loc = 
             match colAtEndOfNamesAndResidue with
@@ -757,33 +757,33 @@ type internal TypeCheckInfo
         let completionContext = 
             parseResultsOpt 
             |> Option.bind (fun x -> x.ParseTree)
-            |> Option.bind (fun parseTree -> UntypedParseImpl.TryGetCompletionContext(mkPos line colAtEndOfNamesAndResidue, parseTree, lineStr))
+            |> Option.bind (fun parseTree -> ParsedInput.TryGetCompletionContext(mkPos line colAtEndOfNamesAndResidue, parseTree, lineStr))
         
         let res =
             match completionContext with
             // Invalid completion locations
-            | Some CompletionContext.Invalid -> None
+            | Some FSharpCompletionContext.Invalid -> None
             
             // Completion at 'inherit C(...)"
-            | Some (CompletionContext.Inherit(InheritanceContext.Class, (plid, _))) ->
+            | Some (FSharpCompletionContext.Inherit(FSharpInheritanceContext.Class, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
                 |> FilterRelevantItemsBy getItem None (getItem >> GetBaseClassCandidates)
                 |> Option.map toCompletionItems
              
             // Completion at 'interface ..."
-            | Some (CompletionContext.Inherit(InheritanceContext.Interface, (plid, _))) ->
+            | Some (FSharpCompletionContext.Inherit(FSharpInheritanceContext.Interface, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
                 |> FilterRelevantItemsBy getItem None (getItem >> GetInterfaceCandidates)
                 |> Option.map toCompletionItems
             
             // Completion at 'implement ..."
-            | Some (CompletionContext.Inherit(InheritanceContext.Unknown, (plid, _))) ->
+            | Some (FSharpCompletionContext.Inherit(FSharpInheritanceContext.Unknown, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false) 
                 |> FilterRelevantItemsBy getItem None (getItem >> (fun t -> GetBaseClassCandidates t || GetInterfaceCandidates t))
                 |> Option.map toCompletionItems
             
             // Completion at ' { XXX = ... } "
-            | Some(CompletionContext.RecordField(RecordContext.New(plid, _))) ->
+            | Some(FSharpCompletionContext.RecordField(FSharpRecordContext.New(plid, _))) ->
                 // { x. } can be either record construction or computation expression. Try to get all visible record fields first
                 match GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid) |> toCompletionItems with
                 | [],_,_ -> 
@@ -792,7 +792,7 @@ type internal TypeCheckInfo
                 | result -> Some(result)
             
             // Completion at ' { XXX = ... with ... } "
-            | Some(CompletionContext.RecordField(RecordContext.CopyOnUpdate(r, (plid, _)))) -> 
+            | Some(FSharpCompletionContext.RecordField(FSharpRecordContext.CopyOnUpdate(r, (plid, _)))) -> 
                 match GetRecdFieldsForExpr(r) with
                 | None -> 
                     Some (GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid))
@@ -802,12 +802,12 @@ type internal TypeCheckInfo
                     |> Option.map toCompletionItems
             
             // Completion at ' { XXX = ... with ... } "
-            | Some(CompletionContext.RecordField(RecordContext.Constructor(typeName))) ->
+            | Some(FSharpCompletionContext.RecordField(FSharpRecordContext.Constructor(typeName))) ->
                 Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName]))
                 |> Option.map toCompletionItems
             
             // Completion at ' SomeMethod( ... ) ' with named arguments 
-            | Some(CompletionContext.ParameterList (endPos, fields)) ->
+            | Some(FSharpCompletionContext.ParameterList (endPos, fields)) ->
                 let results = GetNamedParametersAndSettableFields endPos
             
                 let declaredItems = 
@@ -833,7 +833,7 @@ type internal TypeCheckInfo
                     | Some (declItems, declaredDisplayEnv, declaredRange) -> Some (filtered @ declItems, declaredDisplayEnv, declaredRange)
                 | _ -> declaredItems
             
-            | Some(CompletionContext.AttributeApplication) ->
+            | Some(FSharpCompletionContext.AttributeApplication) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) -> 
                      items 
@@ -843,7 +843,7 @@ type internal TypeCheckInfo
                          | _ when IsAttribute infoReader cItem.Item -> true
                          | _ -> false), denv, m)
             
-            | Some(CompletionContext.OpenDeclaration isOpenType) ->
+            | Some(FSharpCompletionContext.OpenDeclaration isOpenType) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
                     items 
@@ -854,7 +854,7 @@ type internal TypeCheckInfo
                         | _ -> false), denv, m)
             
             // Completion at '(x: ...)"
-            | Some (CompletionContext.PatternType) ->
+            | Some (FSharpCompletionContext.PatternType) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
                      items 
@@ -877,7 +877,7 @@ type internal TypeCheckInfo
                     // because providing generic parameters list is context aware, which we don't have here (yet).
                     None
                 | _ ->
-                    let isInRangeOperator = (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
+                    let isInRangeOperator = (match cc with Some (FSharpCompletionContext.RangeOperator) -> true | _ -> false)
                     GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue,
                         residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads,
                         isInRangeOperator, getAllSymbols)
@@ -933,8 +933,8 @@ type internal TypeCheckInfo
                     let currentNamespaceOrModule =
                         parseResultsOpt
                         |> Option.bind (fun x -> x.ParseTree)
-                        |> Option.map (fun parsedInput -> UntypedParseImpl.GetFullNameOfSmallestModuleOrNamespaceAtPoint(parsedInput, mkPos line 0))
-                    let isAttributeApplication = ctx = Some CompletionContext.AttributeApplication
+                        |> Option.map (fun parsedInput -> ParsedInput.GetFullNameOfSmallestModuleOrNamespaceAtPoint(parsedInput, mkPos line 0))
+                    let isAttributeApplication = ctx = Some FSharpCompletionContext.AttributeApplication
                     FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,currentNamespaceOrModule,isAttributeApplication))
             (fun msg -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarations: '%s'" msg)
@@ -1412,7 +1412,7 @@ module internal ParseAndCheckFile =
                 else exn
             if reportErrors then
                 let report exn =
-                    for ei in ErrorHelpers.ReportError (options, false, mainInputFileName, fileInfo, (exn, sev), suggestNamesForErrors) do
+                    for ei in DiagnosticHelpers.ReportError (options, false, mainInputFileName, fileInfo, (exn, sev), suggestNamesForErrors) do
                         errorsAndWarningsCollector.Add ei
                         if sev = FSharpDiagnosticSeverity.Error then
                             errorCount <- errorCount + 1
@@ -1781,7 +1781,7 @@ type FSharpCheckFileResults
         | None -> dflt()
         | Some (scope, _builderOpt) -> f scope
 
-    member _.Errors = errors
+    member _.Diagnostics = errors
 
     member _.HasFullTypeCheckInfo = details.IsSome
     

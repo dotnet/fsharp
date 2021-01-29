@@ -8,7 +8,8 @@ module Tests.Service.Symbols
 #endif
 
 open FSharp.Compiler.Service.Tests.Common
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FsUnit
 open NUnit.Framework

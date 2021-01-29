@@ -5,15 +5,13 @@ module internal FSharp.Compiler.CheckDeclarations
 open System
 open System.Collections.Generic
 
-open Internal.Utilities
+open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Library.ResultOrException
-
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking

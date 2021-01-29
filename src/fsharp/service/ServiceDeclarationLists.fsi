@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// API for declaration lists and method overload lists
-namespace FSharp.Compiler.Editing
+namespace FSharp.Compiler.EditorServices
 
 open System
 open FSharp.Compiler
-open FSharp.Compiler.Analysis
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.TcGlobals

@@ -12,7 +12,8 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddOpen"); Shared>]
@@ -49,10 +50,10 @@ type internal FSharpAddOpenCodeFixProvider
                 } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
             displayText)
 
-    let addSuggestionsAsCodeFixes (context: CodeFixContext) (candidates: (Entity * InsertContext) list) =
+    let addSuggestionsAsCodeFixes (context: CodeFixContext) (candidates: (FSharpParsedEntity * FSharpInsertionContext) list) =
         let openNamespaceFixes =
             candidates
-            |> Seq.choose (fun (entity, ctx) -> entity.Namespace |> Option.map (fun ns -> ns, entity.Name, ctx))
+            |> Seq.choose (fun (entity, ctx) -> entity.Namespace |> Option.map (fun ns -> ns, entity.FullDisplayName, ctx))
             |> Seq.groupBy (fun (ns, _, _) -> ns)
             |> Seq.map (fun (ns, xs) -> 
                 ns, 
@@ -108,7 +109,7 @@ type internal FSharpAddOpenCodeFixProvider
                 let endPos = Pos.fromZ endLinePos.Line endLinePos.Character
                 Range.mkRange context.Document.FilePath startPos endPos
             
-            let isAttribute = UntypedParseImpl.GetEntityKind(unresolvedIdentRange.Start, parsedInput) = Some EntityKind.Attribute
+            let isAttribute = ParsedInput.GetEntityKind(unresolvedIdentRange.Start, parsedInput) = Some FSharpEntityKind.Attribute
             
             let entities =
                 assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
@@ -116,7 +117,7 @@ type internal FSharpAddOpenCodeFixProvider
                      [ yield s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents
                        if isAttribute then
                           let lastIdent = s.CleanedIdents.[s.CleanedIdents.Length - 1]
-                          if lastIdent.EndsWith "Attribute" && s.Kind LookupType.Precise = EntityKind.Attribute then
+                          if lastIdent.EndsWith "Attribute" && s.Kind LookupType.Precise = FSharpEntityKind.Attribute then
                               yield 
                                   s.TopRequireQualifiedAccessParent, 
                                   s.AutoOpenParent,
@@ -124,7 +125,7 @@ type internal FSharpAddOpenCodeFixProvider
                                   s.CleanedIdents 
                                   |> Array.replace (s.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
 
-            let longIdent = ParsedInput.getLongIdentAt parsedInput unresolvedIdentRange.End
+            let longIdent = ParsedInput.GetLongIdentAt parsedInput unresolvedIdentRange.End
 
             let! maybeUnresolvedIdents =
                 longIdent 
@@ -136,10 +137,10 @@ type internal FSharpAddOpenCodeFixProvider
                     |> List.toArray)
                                                     
             let insertionPoint = 
-                if document.FSharpOptions.CodeFixes.AlwaysPlaceOpensAtTopLevel then OpenStatementInsertionPoint.TopLevel
-                else OpenStatementInsertionPoint.Nearest
+                if document.FSharpOptions.CodeFixes.AlwaysPlaceOpensAtTopLevel then FSharpOpenStatementInsertionPoint.TopLevel
+                else FSharpOpenStatementInsertionPoint.Nearest
 
-            let createEntity = ParsedInput.tryFindInsertionContext unresolvedIdentRange.StartLine parsedInput maybeUnresolvedIdents insertionPoint
+            let createEntity = ParsedInput.TryFindInsertionContext unresolvedIdentRange.StartLine parsedInput maybeUnresolvedIdents insertionPoint
             return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> addSuggestionsAsCodeFixes context
         } 
         |> Async.Ignore 

@@ -901,11 +901,17 @@
     <Compile Include="..\service\ServiceParamInfoLocations.fs">
       <Link>Service/ServiceParamInfoLocations.fs</Link>
     </Compile>
-    <Compile Include="..\service\ServiceUntypedParse.fsi">
-      <Link>Service/ServiceUntypedParse.fsi</Link>
+    <Compile Include="..\service\FSharpParseFileResults.fsi">
+      <Link>Service/FSharpParseFileResults.fsi</Link>
     </Compile>
-    <Compile Include="..\service\ServiceUntypedParse.fs">
-      <Link>Service/ServiceUntypedParse.fs</Link>
+    <Compile Include="..\service\FSharpParseFileResults.fs">
+      <Link>Service/FSharpParseFileResults.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceParsedInputOps.fsi">
+      <Link>Service/ServiceParsedInputOps.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceParsedInputOps.fs">
+      <Link>Service/ServiceParsedInputOps.fs</Link>
     </Compile>
     <Compile Include="..\service\ServiceAssemblyContent.fsi">
       <Link>Service/ServiceAssemblyContent.fsi</Link>

@@ -13,7 +13,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
@@ -22,7 +23,7 @@ open Microsoft.VisualStudio.Imaging
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 
-type private FSharpGlyph = FSharp.Compiler.SourceCodeServices.FSharpGlyph
+type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph
 type private Glyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
 
 [<RequireQualifiedAccess>]

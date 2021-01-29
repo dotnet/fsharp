@@ -13,8 +13,9 @@ open NUnit.Framework
 open FsUnit
 open System
 open System.IO
-
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
 

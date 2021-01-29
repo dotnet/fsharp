@@ -5,7 +5,7 @@
 // type checking and intellisense-like environment-reporting.
 //----------------------------------------------------------------------------
 
-namespace FSharp.Compiler.Editing
+namespace FSharp.Compiler.EditorServices
 
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text

@@ -8,8 +8,7 @@ open System.Runtime.InteropServices
 open System.Threading
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Options
-open FSharp.Compiler.SourceCodeServices
-open FSharp.NativeInterop
+open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices
@@ -19,10 +18,7 @@ open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text.Outlining
-open FSharp.NativeInterop
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
-
-#nowarn "9" // NativePtr.toNativeInt
 
 // Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
 // Diagnostic providers can be executed in environment that does not use MEF so they can rely only

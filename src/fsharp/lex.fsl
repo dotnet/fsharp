@@ -15,19 +15,18 @@ open System.Globalization
 open System.Text
 
 open Internal.Utilities
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL
-open Internal.Utilities.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range

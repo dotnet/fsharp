@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec FSharp.Compiler.Analysis
+namespace rec FSharp.Compiler.CodeAnalysis
 
 open System.Collections.Generic
 

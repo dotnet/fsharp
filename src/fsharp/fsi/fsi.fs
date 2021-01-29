@@ -31,7 +31,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILRuntimeWriter
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Analysis
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerOptions
@@ -41,13 +41,13 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.Editing
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
-open FSharp.Compiler.Legacy
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
@@ -2918,7 +2918,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let commitResultNonThrowing errorOptions scriptFile (errorLogger: CompilationErrorLogger) res =
         let errs = errorLogger.GetErrors()
-        let errorInfos = ErrorHelpers.CreateErrorInfos (errorOptions, true, scriptFile, errs, true)
+        let errorInfos = DiagnosticHelpers.CreateDiagnostics (errorOptions, true, scriptFile, errs, true)
         let userRes =
             match res with
             | Choice1Of2 r -> Choice1Of2 r

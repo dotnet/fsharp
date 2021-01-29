@@ -4,9 +4,9 @@ module public FSharp.Compiler.Interactive.Shell
 
 open System.IO
 open System.Threading
-open FSharp.Compiler.Analysis
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.Legacy
+open FSharp.Compiler.CodeAnalysis
 
 [<Class>]
 /// Represents an evaluated F# value

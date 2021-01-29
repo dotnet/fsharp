@@ -13,7 +13,8 @@ open FsUnit
 open System
 open System.IO
 open System.Text
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 
 let fileName1 = @"c:\mycode\test1.fs" // note, the path doesn' exist

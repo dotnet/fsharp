@@ -15,7 +15,7 @@ open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Legacy
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 
 exception FileNameNotResolved of (*filename*) string * (*description of searched locations*) string * range

@@ -2,7 +2,7 @@
 
 /// SourceCodeServices API to the compiler as an incremental service for parsing,
 /// type checking and intellisense-like environment-reporting.
-namespace FSharp.Compiler.Analysis
+namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.IO
@@ -10,8 +10,8 @@ open System.IO
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.Editing
-open FSharp.Compiler.Legacy
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 

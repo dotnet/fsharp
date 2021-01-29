@@ -8,14 +8,13 @@
 module Tests.Service.MultiProjectAnalysisTests
 #endif
 
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Text
-
 open NUnit.Framework
 open FsUnit
 open System.IO
 open System.Collections.Generic
-
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
 
 let toIList (x: _ array) = x :> IList<_>

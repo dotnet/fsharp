@@ -9,7 +9,7 @@ type FSharpDiagnosticKind =
 [<RequireQualifiedAccess>]
 module CompilerDiagnostics =
 
-    let getErrorMessage diagnosticKind =
+    let GetErrorMessage diagnosticKind =
         match diagnosticKind with
         | AddIndexerDot -> FSComp.SR.addIndexerDot()
         | ReplaceWithSuggestion s -> FSComp.SR.replaceWithSuggestion(s)

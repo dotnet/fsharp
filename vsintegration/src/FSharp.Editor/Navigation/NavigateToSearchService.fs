@@ -7,22 +7,19 @@ open System.IO
 open System.Composition
 open System.Collections.Generic
 open System.Collections.Immutable
-open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 open System.Runtime.Caching
 open System.Globalization
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.NavigateTo
-open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.PatternMatching
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.NavigateTo
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 
 type internal NavigableItem(document: Document, sourceSpan: TextSpan, glyph: Glyph, name: string, kind: string, additionalInfo: string) =
     inherit FSharpNavigableItem(glyph, ImmutableArray.Create (TaggedText(TextTags.Text, name)), document, sourceSpan)

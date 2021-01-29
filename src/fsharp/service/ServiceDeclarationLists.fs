@@ -5,17 +5,17 @@
 // type checking and intellisense-like environment-reporting.
 //--------------------------------------------------------------------------
 
-namespace FSharp.Compiler.Editing
+namespace FSharp.Compiler.EditorServices
 
 open Internal.Utilities.Library  
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Analysis
-open FSharp.Compiler.Analysis.SymbolHelpers
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis.SymbolHelpers
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.Editing
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader

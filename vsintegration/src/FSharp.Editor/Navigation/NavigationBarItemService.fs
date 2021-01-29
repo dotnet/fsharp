@@ -6,14 +6,9 @@ open System.Composition
 open System.Collections.Generic
 open System.Threading.Tasks
 
-open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Navigation
-open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Notification
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.EditorServices
 
 type internal NavigationBarSymbolItem(text, glyph, spans, childItems) =
     inherit FSharpNavigationBarItem(text, glyph, spans, childItems)

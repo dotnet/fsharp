@@ -10,7 +10,7 @@ open System.Threading
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CodeActions

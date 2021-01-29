@@ -82,12 +82,12 @@ namespace FSharp.Compiler.Diagnostics
         new : ErrorLogger * BuildPhase -> CompilationGlobalsScope
         interface IDisposable
 
-    module internal ErrorHelpers = 
+    module internal DiagnosticHelpers = 
         val ReportError: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpDiagnosticSeverity) * suggestNames: bool -> FSharpDiagnostic list
 
-        val CreateErrorInfos: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpDiagnosticSeverity)> * suggestNames: bool -> FSharpDiagnostic[]
+        val CreateDiagnostics: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpDiagnosticSeverity)> * suggestNames: bool -> FSharpDiagnostic[]
 
-namespace FSharp.Compiler.Analysis
+namespace FSharp.Compiler.CodeAnalysis
 
     open Internal.Utilities.Library
     open FSharp.Compiler 

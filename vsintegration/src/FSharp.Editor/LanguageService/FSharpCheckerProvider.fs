@@ -5,13 +5,13 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.ComponentModel.Composition
 open System.Diagnostics
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis
+open FSharp.NativeInterop
 open Microsoft.CodeAnalysis
-open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices
-open FSharp.NativeInterop
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 #nowarn "9" // NativePtr.toNativeInt

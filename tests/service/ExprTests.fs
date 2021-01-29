@@ -16,7 +16,10 @@ open System.Text
 open System.Collections.Generic
 open System.Diagnostics
 open System.Threading
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 
 type FSharpCore = 

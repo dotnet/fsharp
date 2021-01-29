@@ -11,4 +11,4 @@ type FSharpDiagnosticKind =
 module CompilerDiagnostics =
 
     /// Given a DiagnosticKind, returns the string representing the error message for that diagnostic.
-    val getErrorMessage: diagnosticKind: FSharpDiagnosticKind -> string
+    val GetErrorMessage: diagnosticKind: FSharpDiagnosticKind -> string

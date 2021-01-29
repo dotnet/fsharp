@@ -7,10 +7,9 @@ open System.Threading
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 open System.Globalization
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax.PrettyNaming
 
 module internal CompletionUtils =

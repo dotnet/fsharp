@@ -4183,7 +4183,7 @@ let rec private EntityRefContainsSomethingAccessible (ncenv: NameResolver) m ad 
 let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv isApplicableMeth m ad (modref: ModuleOrNamespaceRef) plid allowObsolete =
     let g = ncenv.g
     let mty = modref.ModuleOrNamespaceType
-
+    
     match plid with
     | [] ->
          let tycons =
@@ -4220,6 +4220,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
          // Collect up the accessible discriminated union cases in the module
        @ (UnionCaseRefsInModuleOrNamespace modref
           |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
+          |> List.filter (fun ucref -> not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute ucref.TyconRef.Attribs))
           |> List.map (fun x -> Item.UnionCase(GeneralizeUnionCaseRef x, false)))
 
          // Collect up the accessible active patterns in the module
@@ -4227,7 +4228,6 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
           |> NameMap.range
           |> List.filter (fun apref -> apref.ActivePatternVal |> IsValUnseen ad g m |> not)
           |> List.map Item.ActivePatternCase)
-
 
          // Collect up the accessible F# exception declarations in the module
        @ (mty.ExceptionDefinitionsByDemangledName
@@ -4808,6 +4808,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                   yield!
                       UnionCaseRefsInModuleOrNamespace modref
                       |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
+                      |> List.filter (fun ucref -> not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute ucref.TyconRef.Attribs))
                       |> List.map (fun x -> Item.UnionCase(GeneralizeUnionCaseRef x,  false))
              | Item.ActivePatternCase _ ->
              // Collect up the accessible active patterns in the module

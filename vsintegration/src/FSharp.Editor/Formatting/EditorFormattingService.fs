@@ -6,13 +6,12 @@ open System.Composition
 open System.Collections.Generic
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Formatting
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open System.Threading
 open System.Windows.Forms
 

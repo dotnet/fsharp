@@ -17,9 +17,10 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Utilities
 
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
-open FSharp.Compiler.SourceCodeServices
 
 type internal QuickInfo =
     { StructuredText: FSharpStructuredToolTipText

@@ -16,7 +16,9 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 
 open Microsoft.VisualStudio.Shell
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger
@@ -195,7 +197,7 @@ type internal FSharpCompletionProvider
                 let completionContext =
                     parseResults.ParseTree 
                     |> Option.bind (fun parseTree ->
-                         UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, parseTree, line))
+                         ParsedInput.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, parseTree, line))
 
                 match completionContext with
                 | None -> results.AddRange(keywordCompletionItems)
@@ -296,10 +298,10 @@ type internal FSharpCompletionProvider
                     let fullNameIdents = fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
                     
                     let insertionPoint = 
-                        if settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then OpenStatementInsertionPoint.TopLevel
-                        else OpenStatementInsertionPoint.Nearest
+                        if settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then FSharpOpenStatementInsertionPoint.TopLevel
+                        else FSharpOpenStatementInsertionPoint.Nearest
 
-                    let ctx = ParsedInput.findNearestPointToInsertOpenDeclaration line.LineNumber parsedInput fullNameIdents insertionPoint
+                    let ctx = ParsedInput.FindNearestPointToInsertOpenDeclaration line.LineNumber parsedInput fullNameIdents insertionPoint
                     let finalSourceText, changedSpanStartPos = OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
                     let fullChangingSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End)
                     let changedSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End + (finalSourceText.Length - sourceText.Length))

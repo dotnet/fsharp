@@ -1700,7 +1700,7 @@ FSharp.Compiler.SourceCodeServices.BasicPatterns: Microsoft.FSharp.Core.FSharpOp
 FSharp.Compiler.SourceCodeServices.BasicPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`6[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],System.String,FSharp.Compiler.Syntax.MemberFlags,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExpr]]] |TraitCall|_|(FSharp.Compiler.SourceCodeServices.FSharpExpr)
 FSharp.Compiler.SourceCodeServices.BasicPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`6[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpExpr],FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExpr],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExpr]]] |CallWithWitnesses|_|(FSharp.Compiler.SourceCodeServices.FSharpExpr)
 FSharp.Compiler.SourceCodeServices.CompilerDiagnostics
-FSharp.Compiler.SourceCodeServices.CompilerDiagnostics: System.String getErrorMessage(FSharp.Compiler.SourceCodeServices.DiagnosticKind)
+FSharp.Compiler.SourceCodeServices.CompilerDiagnostics: System.String GetErrorMessage(FSharp.Compiler.SourceCodeServices.DiagnosticKind)
 FSharp.Compiler.SourceCodeServices.CompilerEnvironment
 FSharp.Compiler.SourceCodeServices.CompilerEnvironment: Microsoft.FSharp.Core.FSharpOption`1[System.String] BinFolderOfDefaultFSharpCompiler(Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.CompilerEnvironmentModule
@@ -1861,7 +1861,7 @@ FSharp.Compiler.SourceCodeServices.EntityKind: Int32 Tag
 FSharp.Compiler.SourceCodeServices.EntityKind: Int32 get_Tag()
 FSharp.Compiler.SourceCodeServices.EntityKind: System.String ToString()
 FSharp.Compiler.SourceCodeServices.ErrorResolutionHints
-FSharp.Compiler.SourceCodeServices.ErrorResolutionHints: System.Collections.Generic.IEnumerable`1[System.String] getSuggestedNames(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit], System.String)
+FSharp.Compiler.SourceCodeServices.ErrorResolutionHints: System.Collections.Generic.IEnumerable`1[System.String] GetSuggestedNames(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit], System.String)
 FSharp.Compiler.SourceCodeServices.FSharpExternalType
 FSharp.Compiler.SourceCodeServices.FSharpExternalType+Array: FSharp.Compiler.SourceCodeServices.FSharpExternalType get_inner()
 FSharp.Compiler.SourceCodeServices.FSharpExternalType+Array: FSharp.Compiler.SourceCodeServices.FSharpExternalType inner
@@ -5001,13 +5001,13 @@ FSharp.Compiler.SourceCodeServices.InterfaceData: System.String ToString()
 FSharp.Compiler.SourceCodeServices.InterfaceData: System.String[] TypeParameters
 FSharp.Compiler.SourceCodeServices.InterfaceData: System.String[] get_TypeParameters()
 FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator
-FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: Boolean hasNoInterfaceMember(FSharp.Compiler.SourceCodeServices.FSharpEntity)
+FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: Boolean HasNoInterfaceMember(FSharp.Compiler.SourceCodeServices.FSharpEntity)
 FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: Boolean isInterface(FSharp.Compiler.SourceCodeServices.FSharpEntity)
-FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,FSharp.Compiler.Text.Range]] getMemberNameAndRanges(FSharp.Compiler.SourceCodeServices.InterfaceData)
-FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Collections.FSharpSet`1[System.String]] getImplementedMemberSignatures(Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,FSharp.Compiler.Text.Range],Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpSymbolUse]], FSharp.Compiler.SourceCodeServices.FSharpDisplayContext, FSharp.Compiler.SourceCodeServices.InterfaceData)
-FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.InterfaceData] tryFindInterfaceDeclaration(FSharp.Compiler.Text.Pos, ParsedInput)
-FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: System.Collections.Generic.IEnumerable`1[System.Tuple`2[FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue,System.Collections.Generic.IEnumerable`1[System.Tuple`2[FSharp.Compiler.SourceCodeServices.FSharpGenericParameter,FSharp.Compiler.SourceCodeServices.FSharpType]]]] getInterfaceMembers(FSharp.Compiler.SourceCodeServices.FSharpEntity)
-FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: System.String formatInterface(Int32, Int32, System.String[], System.String, System.String, FSharp.Compiler.SourceCodeServices.FSharpDisplayContext, Microsoft.FSharp.Collections.FSharpSet`1[System.String], FSharp.Compiler.SourceCodeServices.FSharpEntity, Boolean)
+FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,FSharp.Compiler.Text.Range]] GetMemberNameAndRanges(FSharp.Compiler.SourceCodeServices.InterfaceData)
+FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Collections.FSharpSet`1[System.String]] GetImplementedMemberSignatures(Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,FSharp.Compiler.Text.Range],Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpSymbolUse]], FSharp.Compiler.SourceCodeServices.FSharpDisplayContext, FSharp.Compiler.SourceCodeServices.InterfaceData)
+FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.InterfaceData] TryFindInterfaceDeclaration(FSharp.Compiler.Text.Pos, ParsedInput)
+FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: System.Collections.Generic.IEnumerable`1[System.Tuple`2[FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue,System.Collections.Generic.IEnumerable`1[System.Tuple`2[FSharp.Compiler.SourceCodeServices.FSharpGenericParameter,FSharp.Compiler.SourceCodeServices.FSharpType]]]] GetInterfaceMembers(FSharp.Compiler.SourceCodeServices.FSharpEntity)
+FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: System.String FormatInterface(Int32, Int32, System.String[], System.String, System.String, FSharp.Compiler.SourceCodeServices.FSharpDisplayContext, Microsoft.FSharp.Collections.FSharpSet`1[System.String], FSharp.Compiler.SourceCodeServices.FSharpEntity, Boolean)
 FSharp.Compiler.SourceCodeServices.LookupType
 FSharp.Compiler.SourceCodeServices.LookupType+Tags: Int32 Fuzzy
 FSharp.Compiler.SourceCodeServices.LookupType+Tags: Int32 Precise
@@ -5254,10 +5254,10 @@ FSharp.Compiler.SourceCodeServices.FSharpExternalParam: Int32 get_Tag()
 FSharp.Compiler.SourceCodeServices.FSharpExternalParam: System.String ToString()
 FSharp.Compiler.SourceCodeServices.ParamTypeSymbolModule
 FSharp.Compiler.SourceCodeServices.ParsedInput
-FSharp.Compiler.SourceCodeServices.ParsedInput: FSharp.Compiler.SourceCodeServices.InsertContext findNearestPointToInsertOpenDeclaration(Int32, ParsedInput, System.String[], FSharp.Compiler.SourceCodeServices.OpenStatementInsertionPoint)
-FSharp.Compiler.SourceCodeServices.ParsedInput: FSharp.Compiler.Text.Pos adjustInsertionPoint(Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,System.String], FSharp.Compiler.SourceCodeServices.InsertContext)
-FSharp.Compiler.SourceCodeServices.ParsedInput: Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`4[Microsoft.FSharp.Core.FSharpOption`1[System.String[]],Microsoft.FSharp.Core.FSharpOption`1[System.String[]],Microsoft.FSharp.Core.FSharpOption`1[System.String[]],System.String[]],System.Tuple`2[FSharp.Compiler.SourceCodeServices.Entity,FSharp.Compiler.SourceCodeServices.InsertContext][]] tryFindInsertionContext(Int32, ParsedInput, FSharp.Compiler.SourceCodeServices.MaybeUnresolvedIdent[], FSharp.Compiler.SourceCodeServices.OpenStatementInsertionPoint)
-FSharp.Compiler.SourceCodeServices.ParsedInput: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident]] getLongIdentAt(ParsedInput, FSharp.Compiler.Text.Pos)
+FSharp.Compiler.SourceCodeServices.ParsedInput: FSharp.Compiler.SourceCodeServices.InsertContext FindNearestPointToInsertOpenDeclaration(Int32, ParsedInput, System.String[], FSharp.Compiler.SourceCodeServices.OpenStatementInsertionPoint)
+FSharp.Compiler.SourceCodeServices.ParsedInput: FSharp.Compiler.Text.Pos AdjustInsertionPoint(Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,System.String], FSharp.Compiler.SourceCodeServices.InsertContext)
+FSharp.Compiler.SourceCodeServices.ParsedInput: Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`4[Microsoft.FSharp.Core.FSharpOption`1[System.String[]],Microsoft.FSharp.Core.FSharpOption`1[System.String[]],Microsoft.FSharp.Core.FSharpOption`1[System.String[]],System.String[]],System.Tuple`2[FSharp.Compiler.SourceCodeServices.Entity,FSharp.Compiler.SourceCodeServices.InsertContext][]] TryFindInsertionContext(Int32, ParsedInput, FSharp.Compiler.SourceCodeServices.MaybeUnresolvedIdent[], FSharp.Compiler.SourceCodeServices.OpenStatementInsertionPoint)
+FSharp.Compiler.SourceCodeServices.ParsedInput: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident]] GetLongIdentAt(ParsedInput, FSharp.Compiler.Text.Pos)
 FSharp.Compiler.SourceCodeServices.PartialLongName
 FSharp.Compiler.SourceCodeServices.PartialLongName: Boolean Equals(FSharp.Compiler.SourceCodeServices.PartialLongName)
 FSharp.Compiler.SourceCodeServices.PartialLongName: Boolean Equals(System.Object)

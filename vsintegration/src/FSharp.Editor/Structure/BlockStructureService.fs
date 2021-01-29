@@ -7,13 +7,11 @@ open System.Collections.Immutable
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Structure
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Structure
 
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Structure
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.EditorServices.Structure
 open FSharp.Compiler.Syntax
 
 module internal BlockStructure =

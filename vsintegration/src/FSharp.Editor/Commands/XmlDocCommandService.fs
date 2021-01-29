@@ -13,9 +13,8 @@ open Microsoft.VisualStudio.OLE.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.TextManager.Interop
-open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.EditorServices
 
 type internal XmlDocCommandFilter 
      (

@@ -8,8 +8,9 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.TextLayout
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open Microsoft.VisualStudio.FSharp.Editor.Logging
@@ -175,7 +176,7 @@ module internal OpenDeclarationHelper =
     /// <param name="sourceText">SourceText.</param>
     /// <param name="ctx">Insertion context. Typically returned from tryGetInsertionContext</param>
     /// <param name="ns">Namespace to open.</param>
-    let insertOpenDeclaration (sourceText: SourceText) (ctx: InsertContext) (ns: string) : SourceText * int =
+    let insertOpenDeclaration (sourceText: SourceText) (ctx: FSharpInsertionContext) (ns: string) : SourceText * int =
         let mutable minPos = None
 
         let insert line lineStr (sourceText: SourceText) : SourceText =
@@ -190,7 +191,7 @@ module internal OpenDeclarationHelper =
             sourceText.WithChanges(TextChange(TextSpan(pos, 0), lineStr + lineBreak))
 
         let getLineStr line = sourceText.Lines.[line].ToString().Trim()
-        let pos = ParsedInput.adjustInsertionPoint getLineStr ctx
+        let pos = ParsedInput.AdjustInsertionPoint getLineStr ctx
         let docLine = Line.toZ pos.Line
         let lineStr = (String.replicate pos.Column " ") + "open " + ns
 
@@ -211,7 +212,7 @@ module internal OpenDeclarationHelper =
 
         let sourceText =
             // for top level module we add a blank line between the module declaration and first open statement
-            if (pos.Column = 0 || ctx.ScopeKind = ScopeKind.Namespace) && docLine > 0
+            if (pos.Column = 0 || ctx.ScopeKind = FSharpScopeKind.Namespace) && docLine > 0
                 && not (sourceText.Lines.[docLine - 1].ToString().Trim().StartsWith "open") then
                     sourceText |> insert docLine ""
             else sourceText

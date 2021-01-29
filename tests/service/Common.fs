@@ -5,7 +5,8 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Collections.Generic
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FsUnit
@@ -82,7 +83,7 @@ let sysLib nm =
 [<AutoOpen>]
 module Helpers = 
     type DummyType = A | B
-    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<FSharp.Compiler.SourceCodeServices.FSharpChecker>.Assembly.CodeBase).LocalPath), p)
+    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<FSharpChecker>.Assembly.CodeBase).LocalPath), p)
 
 let fsCoreDefaultReference() = 
     PathRelativeToTestAssembly "FSharp.Core.dll"

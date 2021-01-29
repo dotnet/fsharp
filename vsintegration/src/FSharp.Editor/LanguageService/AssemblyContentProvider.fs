@@ -5,7 +5,8 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.ComponentModel.Composition
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 
 [<Export(typeof<AssemblyContentProvider>); Composition.Shared>]
 type internal AssemblyContentProvider () =
@@ -27,5 +28,5 @@ type internal AssemblyContentProvider () =
                           // get Content.Entities from it.
 
           for fileName, signatures in assembliesByFileName do
-              let contentType = Public // it's always Public for now since we don't support InternalsVisibleTo attribute yet
+              let contentType = AssemblyContentType.Public // it's always Public for now since we don't support InternalsVisibleTo attribute yet
               yield! AssemblyContentProvider.getAssemblyContent entityCache.Locking contentType fileName signatures ]

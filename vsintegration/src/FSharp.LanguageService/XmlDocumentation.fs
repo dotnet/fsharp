@@ -7,7 +7,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 open System
 open System.Text.RegularExpressions
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.TaggedText
 

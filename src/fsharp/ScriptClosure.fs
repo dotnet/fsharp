@@ -17,7 +17,7 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IO
-open FSharp.Compiler.Legacy
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text

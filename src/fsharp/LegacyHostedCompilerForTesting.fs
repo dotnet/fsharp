@@ -3,7 +3,7 @@
 // This component is used by the 'fsharpqa' tests for faster in-memory compilation.  It should be removed and the 
 // proper compiler service API used instead.
 
-namespace FSharp.Compiler.Legacy.Hosted
+namespace FSharp.Compiler.CodeAnalysis.Hosted
 
 open System
 open System.IO
