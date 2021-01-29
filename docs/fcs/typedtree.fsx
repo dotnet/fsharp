@@ -25,7 +25,8 @@ To use the interactive checker, reference `FSharp.Compiler.Service.dll` and open
 #r "FSharp.Compiler.Service.dll"
 open System
 open System.IO
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 (**
 
@@ -75,8 +76,7 @@ type MyClass() =
 let checkProjectResults = 
     parseAndCheckSingleFile(input2)
 
-checkProjectResults.Errors // should be empty
-
+checkProjectResults.Diagnostics // should be empty
 
 (**
 

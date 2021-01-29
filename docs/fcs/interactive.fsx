@@ -32,8 +32,7 @@ First, we need to reference the libraries that contain F# interactive service:
 
 #r "FSharp.Compiler.Service.dll"
 open FSharp.Compiler.Interactive.Shell
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Text
+open FSharp.Compiler.EditorServices
 
 (**
 To communicate with F# interactive, we need to create streams that represent input and
@@ -220,7 +219,7 @@ let parseResults, checkResults, checkProjectResults =
 The `parseResults` and `checkResults` have types `ParseFileResults` and `CheckFileResults`
 explained in [Editor](editor.html). You can, for example, look at the type errors in the code:
 *)
-checkResults.Errors.Length // 1
+checkResults.Diagnostics.Length // 1
 
 (**
 The code is checked with respect to the logical type context available in the F# interactive session
