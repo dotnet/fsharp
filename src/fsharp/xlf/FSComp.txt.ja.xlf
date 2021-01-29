@@ -369,7 +369,7 @@
       </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
         <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
-        <target state="new">A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</target>
+        <target state="translated">[&lt;Literal&gt;] 宣言では、その識別子に対してアクティブ パターンを使用することはできません</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
@@ -3885,11 +3885,6 @@
       <trans-unit id="tcConcreteMembersIllegalInInterface">
         <source>Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.</source>
         <target state="translated">インターフェイスに具象メンバーの定義を含めることはできません。必要に応じて、型にコンストラクターを定義して、型がクラスであることを示してください。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="packageManagerError">
-        <source>{0}</source>
-        <target state="new">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">
@@ -7615,6 +7610,11 @@
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
         <target state="translated">パッケージ マネージャー キー '{0}' は {1} に登録されていませんでした。現在登録済み: {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerError">
+        <source>{0}</source>
+        <target state="translated">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="couldNotLoadDependencyManagerExtension">
