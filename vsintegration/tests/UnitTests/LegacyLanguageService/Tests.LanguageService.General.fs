@@ -8,7 +8,9 @@ open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
 open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Salsa.Salsa
 open Salsa

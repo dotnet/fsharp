@@ -2,7 +2,7 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 open FSharp.Test.Utilities
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Diagnostics
 
 [<TestFixture>]
 module ComputationExpressionTests =

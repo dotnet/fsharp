@@ -4,7 +4,9 @@ module Tests.ServiceAnalysis.UnusedOpens
 
 open System
 open NUnit.Framework
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
 /// like "should equal", but validates same-type

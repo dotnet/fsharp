@@ -12,8 +12,8 @@ open VisualFSharp.UnitTests.Roslyn
 
 open UnitTests.TestLib.LanguageService
 
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
-open FSharp.Compiler.SourceCodeServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text

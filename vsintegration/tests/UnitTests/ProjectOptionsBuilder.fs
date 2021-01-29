@@ -3,7 +3,7 @@
 open System
 open System.IO
 open System.Xml.Linq
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 
 module FileSystemHelpers =
     let safeDeleteFile (path: string) =

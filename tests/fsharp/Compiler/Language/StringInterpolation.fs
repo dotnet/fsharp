@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Diagnostics
 open FSharp.Test.Utilities
 
 [<TestFixture>]

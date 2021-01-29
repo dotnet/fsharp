@@ -4,7 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 open System
 open NUnit.Framework
 open Microsoft.VisualStudio.FSharp.Editor
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification

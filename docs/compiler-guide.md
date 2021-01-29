@@ -570,7 +570,7 @@ These sections are generally designed with F#/.NET design conventions (e.g. type
 and we will continue to iterate to make this so.
 
 In contrast, the public parts of the compiler directly under `FSharp.Compiler.*` and `FSharp.AbstractIL.*` are
-"incidental" and not really designed for public use apart from the hook for Jet Brains Rider
+"incidental" and not really designed for public use apart from the hook for JetBrains Rider
 (Aside: In theory all these other parts could be renamed to FSharp.Compiler though there's no need to do that right now).  
 These internal parts tend to be implemented with the "module containing lots of stuff in one big file" approach for layers of the compiler.
 
