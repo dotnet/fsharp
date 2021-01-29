@@ -344,9 +344,8 @@ let getParseResults (source: string) =
 let getParseAndCheckResults (source: string) =
     parseAndCheckScript("/home/user/Test.fsx", source)
 
-
 let inline dumpErrors results =
-    (^TResults: (member Errors: FSharpDiagnostic[]) results)
+    (^TResults: (member Diagnostics: FSharpDiagnostic[]) results)
     |> Array.map (fun e ->
         let message =
             e.Message.Split('\n')
@@ -354,7 +353,6 @@ let inline dumpErrors results =
             |> String.concat " "
         sprintf "%s: %s" (e.Range.ToShortString()) message)
     |> List.ofArray
-
 
 let getSymbolUses (results: FSharpCheckFileResults) =
     results.GetAllUsesOfAllSymbolsInFile()

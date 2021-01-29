@@ -1882,6 +1882,7 @@ type SynTypeDefn =
         typeInfo: SynComponentInfo *
         typeRepr: SynTypeDefnRepr *
         members: SynMemberDefns *
+        implicitConstructor: SynMemberDefn option *
         range: range
 
     /// Gets the syntax range of this construct

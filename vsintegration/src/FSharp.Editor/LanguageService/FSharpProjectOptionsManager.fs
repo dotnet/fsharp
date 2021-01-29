@@ -434,3 +434,5 @@ type internal FSharpProjectOptionsManager
         reactor.SetCpsCommandLineOptions(projectId, sourcePaths, options.ToArray())
 
     member _.Checker = checkerProvider.Checker
+
+    member _.MetadataAsSource = checkerProvider.MetadataAsSource

@@ -302,7 +302,7 @@ and [<RequireQualifiedAccess>] public FSharpCheckFileAnswer =
 type public FSharpCheckProjectResults =
 
     /// The errors returned by processing the project
-    member Errors: FSharpDiagnostic[]
+    member Diagnostics: FSharpDiagnostic[]
 
     /// Get a view of the overall signature of the assembly. Only valid to use if HasCriticalErrors is false.
     member AssemblySignature: FSharpAssemblySignature
@@ -337,7 +337,7 @@ type public FSharpCheckProjectResults =
         projectFileName:string *
         tcConfigOption: TcConfig option *
         keepAssemblyContents: bool *
-        errors: FSharpDiagnostic[] * 
+        diagnostics: FSharpDiagnostic[] * 
         details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list * TopAttribs option * IRawFSharpAssemblyData option * ILAssemblyRef * AccessorDomain * TypedImplFile list option * string[]) option 
            -> FSharpCheckProjectResults
 

@@ -1,13 +1,10 @@
 ﻿namespace MLang.Test
 
 open System
-open System.IO
 open System.Net
 open System.Net.Sockets
 open System.Text
-open System.Threading
-open System.Linq
-open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.Hosted
 
 [<AutoOpen>]

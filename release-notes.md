@@ -51,10 +51,10 @@ Renamings:
 
 ```diff
 -type FSharp.Compiler.AbstractIL.Library.IFileSystem
-+type FSharp.Compiler.SourceCodeServices.IFileSystem
++type FSharp.Compiler.IO.IFileSystem
 
 -module FSharp.Compiler.AbstractIL.Library.Shim
-+FSharp.Compiler.SourceCodeServices.FileSystemAutoOpens
++FSharp.Compiler.IO.FileSystemAutoOpens
 
 -type FSharp.Compiler.AbstractIL.Layout
 +type FSharp.Compiler.TextLayout.Layout
@@ -94,19 +94,19 @@ Renamings:
 +module FSharp.Compiler.Text.Range
 
 -module FSharp.Compiler.QuickParse
-+module FSharp.Compiler.SourceCodeServices.QuickParse
++module FSharp.Compiler.EditorServices.QuickParse
 
 -module FSharp.Compiler.PrettyNaming
-+FSharp.Compiler.SourceCodeServices.PrettyNaming
++FSharp.Compiler.Syntax.PrettyNaming
 
 -val FSharpKeywords.PrettyNaming.KeywordNames
-+FSharp.Compiler.SourceCodeServices.FSharpKeywords.KeywordNames
++FSharp.Compiler.Syntax.FSharpKeywords.KeywordNames
 
 -val FSharpKeywords.PrettyNaming.QuoteIdentifierIfNeeded
-+FSharp.Compiler.SourceCodeServices.FSharpKeywords.QuoteIdentifierIfNeeded
++FSharp.Compiler.Syntax.FSharpKeywords.QuoteIdentifierIfNeeded
 
 -val FSharpKeywords.PrettyNaming.FormatAndOtherOverloadsString
-+FSharp.Compiler.SourceCodeServices.FSharpKeywords.FormatAndOtherOverloadsString
++FSharp.Compiler.Syntax.FSharpKeywords.FormatAndOtherOverloadsString
 ```
 
 Renamings in `FSharp.Compiler.SourceCodeServices`:
@@ -138,6 +138,12 @@ Renamings in `FSharp.Compiler.SourceCodeServices`:
 
 -module Tooltips
 +module FSharpTooltip
+
+-FSharpParseFileResults.Errors
++FSharpParseFileResults.Diagnostics
+
+-FSharpCheckFileResults.Errors
++FSharpCheckFileResults.Diagnostics
 ```
 
 * Extension methods in `ServiceAssemblyContent.fsi` are now now intrinsic methods on the symbol types themselves.

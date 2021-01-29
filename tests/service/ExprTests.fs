@@ -728,13 +728,13 @@ let ``Test Unoptimized Declarations Project1`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project1 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Errors.Length |> shouldEqual 3 // recursive value warning
-    wholeProjectResults.Errors.[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Errors.[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Errors.[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 3 // recursive value warning
+    wholeProjectResults.Diagnostics.[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
 
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 2
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
@@ -863,13 +863,13 @@ let ``Test Optimized Declarations Project1`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project1 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Errors.Length |> shouldEqual 3 // recursive value warning
-    wholeProjectResults.Errors.[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Errors.[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Errors.[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 3 // recursive value warning
+    wholeProjectResults.Diagnostics.[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
 
     wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> shouldEqual 2
     let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0]
@@ -1028,12 +1028,12 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
             printfn "Referenced assembly %s: %O" r.QualifiedName r.FileName
 
         let errors = StringBuilder()
-        for e in wholeProjectResults.Errors do 
+        for e in wholeProjectResults.Diagnostics do 
             printfn "%s Operator Tests error: <<<%s>>>" dnName e.Message
             errors.AppendLine e.Message |> ignore
 
         errors.ToString() |> shouldEqual ""
-        wholeProjectResults.Errors.Length |> shouldEqual 0
+        wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
         let resultUnoptimized = 
             wholeProjectResults.AssemblyContents.ImplementationFiles.[0].Declarations 
@@ -3194,7 +3194,7 @@ let ``Test expressions of declarations stress big expressions`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
@@ -3210,7 +3210,7 @@ let ``Test expressions of optimized declarations stress big expressions`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
     wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0]
@@ -3270,7 +3270,7 @@ let ``Test ProjectForWitnesses1`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project1 error: <<<%s>>>" e.Message
 
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
@@ -3314,7 +3314,7 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "ProjectForWitnesses1 error: <<<%s>>>" e.Message
 
     begin
@@ -3394,10 +3394,10 @@ let ``Test ProjectForWitnesses2`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "ProjectForWitnesses2 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
 
@@ -3449,10 +3449,10 @@ let ``Test ProjectForWitnesses3`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "ProjectForWitnesses3 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
 
@@ -3480,7 +3480,7 @@ let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "ProjectForWitnesses3 error: <<<%s>>>" e.Message
 
     begin

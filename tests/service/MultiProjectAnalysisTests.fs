@@ -654,14 +654,14 @@ let v = Project2A.C().InternalMember // access an internal symbol
 let ``Test multi project2 errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project2B.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "multi project2 error: <<<%s>>>" e.Message
 
-    wholeProjectResults .Errors.Length |> shouldEqual 0
+    wholeProjectResults .Diagnostics.Length |> shouldEqual 0
 
 
     let wholeProjectResultsC = checker.ParseAndCheckProject(Project2C.options) |> Async.RunSynchronously
-    wholeProjectResultsC.Errors.Length |> shouldEqual 1
+    wholeProjectResultsC.Diagnostics.Length |> shouldEqual 1
 
 
 
@@ -747,10 +747,10 @@ let fizzBuzz = function
 let ``Test multi project 3 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "multi project 3 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 [<Test>]
 let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
@@ -876,12 +876,9 @@ let ``Type provider project references should not throw exceptions`` () =
         | FSharpCheckFileAnswer.Succeeded(res) -> res
         | res -> failwithf "Parsing did not finish... (%A)" res
 
-    printfn "Parse Errors: %A" fileParseResults.Errors
-    printfn "Errors: %A" fileCheckResults.Errors
-    fileCheckResults.Errors |> Array.exists (fun error -> error.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual false
-
-
-
+    printfn "Parse Errors: %A" fileParseResults.Diagnostics
+    printfn "Errors: %A" fileCheckResults.Diagnostics
+    fileCheckResults.Diagnostics |> Array.exists (fun error -> error.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual false
 
 //------------------------------------------------------------------------------------
 
@@ -972,8 +969,8 @@ let ``Projects creating generated types should not utilize cross-project-referen
         | FSharpCheckFileAnswer.Succeeded(res) -> res
         | res -> failwithf "Parsing did not finish... (%A)" res
 
-    printfn "Parse Errors: %A" fileParseResults.Errors
-    printfn "Errors: %A" fileCheckResults.Errors
-    fileCheckResults.Errors |> Array.exists (fun error -> error.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual false
+    printfn "Parse Errors: %A" fileParseResults.Diagnostics
+    printfn "Errors: %A" fileCheckResults.Diagnostics
+    fileCheckResults.Diagnostics |> Array.exists (fun error -> error.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual false
 
 //------------------------------------------------------------------------------------

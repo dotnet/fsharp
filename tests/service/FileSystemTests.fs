@@ -112,7 +112,7 @@ let ``FileSystem compilation test``() =
 
     let results = checker.ParseAndCheckProject(projectOptions) |> Async.RunSynchronously
 
-    results.Errors.Length |> shouldEqual 0
+    results.Diagnostics.Length |> shouldEqual 0
     results.AssemblySignature.Entities.Count |> shouldEqual 2
     results.AssemblySignature.Entities.[0].MembersFunctionsAndValues.Count |> shouldEqual 1
     results.AssemblySignature.Entities.[0].MembersFunctionsAndValues.[0].DisplayName |> shouldEqual "B"

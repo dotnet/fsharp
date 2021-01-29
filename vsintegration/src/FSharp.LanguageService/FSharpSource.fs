@@ -22,6 +22,7 @@ open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.OLE.Interop
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
@@ -340,7 +341,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
 
         override source.GetExpressionAtPosition(line, col) = 
             let upi = source.GetParseTree()
-            match UntypedParseImpl.TryFindExpressionIslandInPosition(Pos.fromZ line col, upi.ParseTree) with
+            match ParsedInput.TryFindExpressionIslandInPosition(Pos.fromZ line col, upi.ParseTree) with
             | Some islandToEvaluate -> islandToEvaluate
             | None -> null
 
@@ -446,7 +447,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                 if reason = BackgroundRequestReason.CompleteWord then
                     let upi = source.GetParseTree()
                     let isBetweenDotAndIdent =
-                        match UntypedParseImpl.TryFindExpressionASTLeftOfDotLeftOfCursor(Pos.fromZ !line !idx, upi.ParseTree) with
+                        match ParsedInput.TryFindExpressionASTLeftOfDotLeftOfCursor(Pos.fromZ !line !idx, upi.ParseTree) with
                         | Some(_,isBetweenDotAndIdent) -> isBetweenDotAndIdent
                         | None -> false
                     if isBetweenDotAndIdent then

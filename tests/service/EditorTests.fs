@@ -68,18 +68,18 @@ let ``Intro test`` () =
 //    let projectOptions = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
 
     // So we check that the messages are the same
-    for msg in typeCheckResults.Errors do 
+    for msg in typeCheckResults.Diagnostics do 
         printfn "Got an error, hopefully with the right text: %A" msg
 
-    printfn "typeCheckResults.Errors.Length = %d" typeCheckResults.Errors.Length
+    printfn "typeCheckResults.Diagnostics.Length = %d" typeCheckResults.Diagnostics.Length
 
     // We only expect one reported error. However,
     // on Unix, using filenames like /home/user/Test.fsx gives a second copy of all parse errors due to the
     // way the load closure for scripts is generated. So this returns two identical errors
-    (match typeCheckResults.Errors.Length with 1 | 2 -> true | _ -> false)  |> shouldEqual true
+    (match typeCheckResults.Diagnostics.Length with 1 | 2 -> true | _ -> false)  |> shouldEqual true
 
     // So we check that the messages are the same
-    for msg in typeCheckResults.Errors do 
+    for msg in typeCheckResults.Diagnostics do 
         printfn "Good! got an error, hopefully with the right text: %A" msg
         msg.Message.Contains("Missing qualification after '.'") |> shouldEqual true
 
@@ -280,10 +280,10 @@ let ``Expression typing test`` () =
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input3) 
     let identToken = FSharpTokenTag.IDENT
 
-    for msg in typeCheckResults.Errors do 
+    for msg in typeCheckResults.Diagnostics do 
         printfn "***Expression typing test: Unexpected  error: %A" msg.Message
 
-    typeCheckResults.Errors.Length |> shouldEqual 0
+    typeCheckResults.Diagnostics.Length |> shouldEqual 0
 
     // Get declarations (autocomplete) for a location
     //
@@ -486,7 +486,7 @@ let _ =  printf "            %*a" 3 (fun _ _ -> ()) 2
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
 
-    typeCheckResults.Errors |> shouldEqual [||]
+    typeCheckResults.Diagnostics |> shouldEqual [||]
     typeCheckResults.GetFormatSpecifierLocationsAndArity() 
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual
@@ -516,7 +516,7 @@ let _ = List.iter(printfn \"\"\"%-A
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
 
-    typeCheckResults.Errors |> shouldEqual [||]
+    typeCheckResults.Diagnostics |> shouldEqual [||]
     typeCheckResults.GetFormatSpecifierLocationsAndArity() 
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual [|(2, 19, 2, 22, 1);
@@ -537,7 +537,7 @@ let _ = debug "[LanguageService] Type checking fails for '%s' with content=%A an
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
 
-    typeCheckResults.Errors |> shouldEqual [||]
+    typeCheckResults.Diagnostics |> shouldEqual [||]
     typeCheckResults.GetFormatSpecifierLocationsAndArity() 
     |> Array.map (fun (range, numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual [|(3, 24, 3, 26, 1); 
@@ -577,7 +577,7 @@ let s3 = $"abc %d{s.Length}
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScriptWithOptions(file, input, [| "/langversion:preview" |]) 
 
-    typeCheckResults.Errors |> shouldEqual [||]
+    typeCheckResults.Diagnostics |> shouldEqual [||]
     typeCheckResults.GetFormatSpecifierLocationsAndArity() 
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual
@@ -595,7 +595,7 @@ let ``Printf specifiers for triple quote interpolated strings`` () =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScriptWithOptions(file, input, [| "/langversion:preview" |]) 
 
-    typeCheckResults.Errors |> shouldEqual [||]
+    typeCheckResults.Diagnostics |> shouldEqual [||]
     typeCheckResults.GetFormatSpecifierLocationsAndArity() 
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual
@@ -1258,7 +1258,7 @@ let ``Test TPProject errors`` () =
         | FSharpCheckFileAnswer.Succeeded(res) -> res
         | res -> failwithf "Parsing did not finish... (%A)" res
 
-    let errorMessages = [ for msg in typeCheckResults.Errors -> msg.StartLineAlternate, msg.StartColumn, msg.EndLineAlternate, msg.EndColumn, msg.Message.Replace("\r","").Replace("\n","") ]
+    let errorMessages = [ for msg in typeCheckResults.Diagnostics -> msg.StartLineAlternate, msg.StartColumn, msg.EndLineAlternate, msg.EndColumn, msg.Message.Replace("\r","").Replace("\n","") ]
     //printfn "errorMessages = \n----\n%A\n----" errorMessages
 
     errorMessages |> shouldEqual

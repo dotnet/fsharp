@@ -179,7 +179,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
             let! entity, displayContext = 
                 match symbolUse.Symbol with
                 | :? FSharpEntity as entity -> 
-                    if InterfaceStubGenerator.isInterface entity then
+                    if InterfaceStubGenerator.IsInterface entity then
                         Some (entity, symbolUse.DisplayContext)
                     else None
                 | _ -> None

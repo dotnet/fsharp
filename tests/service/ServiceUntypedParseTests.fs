@@ -21,7 +21,7 @@ open NUnit.Framework
 
 let [<Literal>] private Marker = "(* marker *)"
 
-let private (=>) (source: string) (expected: CompletionContext option) =
+let private (=>) (source: string) (expected: FSharpCompletionContext option) =
 
     let lines =
         use reader = new StringReader(source)
@@ -46,7 +46,7 @@ let private (=>) (source: string) (expected: CompletionContext option) =
         match parseSourceCode("C:\\test.fs", source) with
         | None -> failwith "No parse tree"
         | Some parseTree ->
-            let actual = UntypedParseImpl.TryGetCompletionContext(markerPos, parseTree, lines.[Line.toZ markerPos.Line])
+            let actual = ParsedInput.TryGetCompletionContext(markerPos, parseTree, lines.[Line.toZ markerPos.Line])
             try Assert.AreEqual(expected, actual)
             with e ->
                 printfn "ParseTree: %A" parseTree
@@ -58,7 +58,7 @@ module AttributeCompletion =
         """
 [<(* marker *)
 """  
-     => Some CompletionContext.AttributeApplication
+     => Some FSharpCompletionContext.AttributeApplication
 
     [<TestCase ("[<(* marker *)", true)>]
     [<TestCase ("[<AnAttr(* marker *)", true)>]
@@ -79,7 +79,7 @@ module AttributeCompletion =
 %s
 type T =
     { F: int }
-""" lineStr)  => (if expectAttributeApplicationContext then Some CompletionContext.AttributeApplication else None)
+""" lineStr)  => (if expectAttributeApplicationContext then Some FSharpCompletionContext.AttributeApplication else None)
 
     [<TestCase ("[<(* marker *)>]", true)>]
     [<TestCase ("[<AnAttr(* marker *)>]", true)>]
@@ -102,7 +102,7 @@ type T =
 %s
 type T =
     { F: int }
-""" lineStr)  => (if expectAttributeApplicationContext then Some CompletionContext.AttributeApplication else None)
+""" lineStr)  => (if expectAttributeApplicationContext then Some FSharpCompletionContext.AttributeApplication else None)
 
 
 
@@ -202,7 +202,7 @@ module TypeMemberRanges =
     let getTypeMemberRange source =
         let (SynModuleOrNamespace (decls = decls)) = parseSourceCodeAndGetModule source
         match decls with
-        | [ SynModuleDecl.Types ([ TypeDefn (_, SynTypeDefnRepr.ObjectModel (_, memberDecls, _), _, _) ], _) ] ->
+        | [ SynModuleDecl.Types ([ TypeDefn (_, SynTypeDefnRepr.ObjectModel (_, memberDecls, _), _, _, _) ], _) ] ->
             memberDecls |> List.map (fun memberDecl -> getRangeCoords memberDecl.Range)
         | _ -> failwith "Could not get member"
 
@@ -838,6 +838,26 @@ async {
             |> tups
             |> shouldEqual ((4, 11), (4, 16))
 
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda``() =
+        let source = """
+let add n1 n2 = n1 + n2
+let lst = [1; 2; 3]
+let mapped = 
+    lst |> List.map (fun n ->
+        let sum = add
+        n.ToString()
+    )
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 6 21)
+        match res with
+        | None -> Assert.Fail("Expected 'add' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((6, 18), (6, 21))
+
 module PipelinesAndArgs =
     [<Test>]
     let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - No pipeline, no infix app``() =
@@ -899,6 +919,21 @@ let square x = x *
             |> shouldEqual ("op_PipeRight3", 3)
         | None ->
             Assert.Fail("No pipeline found")
+
+    [<Test>]
+    let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - none when inside lambda``() =
+        let source = """
+let add n1 n2 = n1 + n2
+let lst = [1; 2; 3]
+let mapped = 
+    lst |> List.map (fun n ->
+        let sum = add 1
+        n.ToString()
+    )
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 6 22)
+        Assert.IsTrue(res.IsNone, "Inside a lambda but counted the pipeline outside of that lambda.")
 
 [<Test>]
 let ``TryRangeOfExprInYieldOrReturn - not contained``() =

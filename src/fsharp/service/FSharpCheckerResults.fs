@@ -2031,22 +2031,22 @@ type FSharpCheckProjectResults
          (projectFileName:string, 
           tcConfigOption: TcConfig option, 
           keepAssemblyContents: bool, 
-          errors: FSharpDiagnostic[], 
+          diagnostics: FSharpDiagnostic[], 
           details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list *
                    TopAttribs option * IRawFSharpAssemblyData option * ILAssemblyRef *
                    AccessorDomain * TypedImplFile list option * string[]) option) =
 
     let getDetails() = 
         match details with 
-        | None -> invalidOp ("The project has no results due to critical errors in the project options. Check the HasCriticalErrors before accessing the detailed results. Errors: " + String.concat "\n" [ for e in errors -> e.Message ])
+        | None -> invalidOp ("The project has no results due to critical errors in the project options. Check the HasCriticalErrors before accessing the detailed results. Errors: " + String.concat "\n" [ for e in diagnostics -> e.Message ])
         | Some d -> d
 
     let getTcConfig() = 
         match tcConfigOption with 
-        | None -> invalidOp ("The project has no results due to critical errors in the project options. Check the HasCriticalErrors before accessing the detailed results. Errors: " + String.concat "\n" [ for e in errors -> e.Message ])
+        | None -> invalidOp ("The project has no results due to critical errors in the project options. Check the HasCriticalErrors before accessing the detailed results. Errors: " + String.concat "\n" [ for e in diagnostics -> e.Message ])
         | Some d -> d
 
-    member _.Errors = errors
+    member _.Diagnostics = diagnostics
 
     member _.HasCriticalErrors = details.IsNone
 

@@ -26,6 +26,8 @@ type internal FSharpCheckerProvider
         settings: EditorOptions
     ) =
 
+    let metadataAsSource = FSharpMetadataAsSourceService()
+
     let tryGetMetadataSnapshot (path, timeStamp) = 
         try
             let md = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetMetadata(workspace, path, timeStamp)
@@ -84,4 +86,6 @@ type internal FSharpCheckerProvider
             checker
 
     member this.Checker = checker.Value
+
+    member _.MetadataAsSource = metadataAsSource
 
