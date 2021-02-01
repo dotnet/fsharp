@@ -197,8 +197,8 @@ let rangeOfLongIdent(lid:LongIdent) =
 // Producing these changes the lex state, e.g. string --> token, or nesting level of braces in interpolated strings
 %token <byte[] * bool * ParseHelpers.LexerContinuation> BYTEARRAY
 %token <string * bool * bool * ParseHelpers.LexerContinuation> STRING 
-%token <string * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_END
-%token <string * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_PART 
+%token <string * bool * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_END
+%token <string * bool * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_PART 
 %token <string * ParseHelpers.LexerContinuation> INTERP_STRING_PART 
 %token <string * ParseHelpers.LexerContinuation> INTERP_STRING_END 
 %token <ParseHelpers.LexerContinuation> LBRACE RBRACE
@@ -4255,7 +4255,9 @@ atomicExprAfterType:
       { $1 }
 
   | interpolatedString
-      { SynExpr.InterpolatedString($1, rhs parseState 1) }
+      { let parts, isTripleQuote = $1
+        let synStringKind = if isTripleQuote then SynStringKind.TripleQuote else SynStringKind.Regular 
+        SynExpr.InterpolatedString(parts, synStringKind, rhs parseState 1) }
 
   | NULL 
       { SynExpr.Null (lhs parseState) } 
@@ -5568,17 +5570,20 @@ interpolatedStringParts:
 /* INTERP_STRING_BEGIN_PART int32 INTERP_STRING_PART int32 INTERP_STRING_END */
 interpolatedString:
   | INTERP_STRING_BEGIN_PART interpolatedStringFill interpolatedStringParts
-    { SynInterpolatedStringPart.String (fst $1, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3 }
+    { let s, isTripleQuote, _ = $1
+      SynInterpolatedStringPart.String (s, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3, isTripleQuote }
 
   | INTERP_STRING_BEGIN_END
-    { [ SynInterpolatedStringPart.String (fst $1, rhs parseState 1) ] }
+    { let s, isTripleQuote, _ = $1
+      [ SynInterpolatedStringPart.String (s, rhs parseState 1) ], isTripleQuote }
 
   | INTERP_STRING_BEGIN_PART interpolatedStringParts
     { 
+      let s, isTripleQuote, _ = $1
       let rbrace = parseState.InputEndPosition 1
       let lbrace = parseState.InputStartPosition 2
       reportParseErrorAt (mkSynRange rbrace lbrace) (FSComp.SR.parsEmptyFillInInterpolatedString())
-      SynInterpolatedStringPart.String (fst $1, rhs parseState 1) :: $2 }
+      SynInterpolatedStringPart.String (s, rhs parseState 1) :: $2, isTripleQuote }
   
 opt_HIGH_PRECEDENCE_APP:
   | HIGH_PRECEDENCE_BRACK_APP { }

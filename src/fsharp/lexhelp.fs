@@ -142,9 +142,9 @@ type LexerStringFinisher =
                 let s = stringBufferAsString buf
                 if kind.IsInterpolatedFirst then 
                     if isPart then 
-                        INTERP_STRING_BEGIN_PART (s, cont)
+                        INTERP_STRING_BEGIN_PART (s, isTripleQuote, cont)
                     else
-                        INTERP_STRING_BEGIN_END (s, cont)
+                        INTERP_STRING_BEGIN_END (s, isTripleQuote, cont)
                 else
                     if isPart then
                         INTERP_STRING_PART (s, cont)

@@ -290,7 +290,7 @@ module SyntaxExpressions =
             failwith "Could not find SynExpr.Do"
 
 module Strings =
-    let getBindingConstValue (parseResults: ParsedInput option) =
+    let getBindingExpressionValue (parseResults: ParsedInput option) =
         parseResults
         |> Option.bind
             (fun tree ->
@@ -314,15 +314,20 @@ module Strings =
                                                               _,
                                                               _,
                                                               _,
-                                                              SynPat.Named (ident = ident),
+                                                              SynPat.Named _,
                                                               _,
-                                                              SynExpr.Const (c, _),
+                                                              e,
                                                               _,
-                                                              _) -> Some c
+                                                              _) -> Some e
                                         | _ -> None)
                                 | _ -> None))
                 | _ -> None)
 
+    let getBindingConstValue parseResults =
+        match getBindingExpressionValue parseResults with
+        | Some (SynExpr.Const(c,_)) -> Some c
+        | _ -> None
+    
     [<Test>]
     let ``SynConst.String with SynStringKind.Regular`` () =
         let parseResults =
@@ -381,4 +386,28 @@ let bytes = @"yo"B
 
         match getBindingConstValue parseResults with
         | Some (SynConst.Bytes (_,  kind, _)) -> kind |> should equal SynByteStringKind.Verbatim
+        | _ -> failwithf "Couldn't find const"
+
+    [<Test>]
+    let ``SynExpr.InterpolatedString with SynStringKind.TripleQuote`` () =
+        let parseResults =
+            getParseResults
+                "
+ let s = $\"\"\"yo {42}\"\"\"
+ "
+
+        match getBindingExpressionValue parseResults with
+        | Some (SynExpr.InterpolatedString(_,  kind, _)) -> kind |> should equal SynStringKind.TripleQuote
+        | _ -> failwithf "Couldn't find const"
+
+    [<Test>]
+    let ``SynExpr.InterpolatedString with SynStringKind.Regular`` () =
+        let parseResults =
+            getParseResults
+                """
+ let s = $"yo {42}"
+ """
+
+        match getBindingExpressionValue parseResults with
+        | Some (SynExpr.InterpolatedString(_,  kind, _)) -> kind |> should equal SynStringKind.Regular
         | _ -> failwithf "Couldn't find const"

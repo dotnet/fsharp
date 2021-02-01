@@ -7062,6 +7062,8 @@ FSharp.Compiler.SyntaxTree+SynExpr+InterpolatedString: FSharp.Compiler.Text.Rang
 FSharp.Compiler.SyntaxTree+SynExpr+InterpolatedString: FSharp.Compiler.Text.Range range
 FSharp.Compiler.SyntaxTree+SynExpr+InterpolatedString: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynInterpolatedStringPart] contents
 FSharp.Compiler.SyntaxTree+SynExpr+InterpolatedString: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynInterpolatedStringPart] get_contents()
+FSharp.Compiler.SyntaxTree+SynExpr+InterpolatedString: SynStringKind get_synStringKind()
+FSharp.Compiler.SyntaxTree+SynExpr+InterpolatedString: SynStringKind synStringKind
 FSharp.Compiler.SyntaxTree+SynExpr+JoinIn: FSharp.Compiler.Text.Range get_lhsRange()
 FSharp.Compiler.SyntaxTree+SynExpr+JoinIn: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.SyntaxTree+SynExpr+JoinIn: FSharp.Compiler.Text.Range lhsRange
@@ -7652,7 +7654,7 @@ FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewIfThenElse(SynExpr, SynExpr, Micr
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewImplicitZero(FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewInferredDowncast(SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewInferredUpcast(SynExpr, FSharp.Compiler.Text.Range)
-FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewInterpolatedString(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynInterpolatedStringPart], FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewInterpolatedString(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynInterpolatedStringPart], SynStringKind, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewJoinIn(SynExpr, FSharp.Compiler.Text.Range, SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewLambda(Boolean, Boolean, SynSimplePats, SynExpr, Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynPat],FSharp.Compiler.SyntaxTree+SynExpr]], FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewLazy(SynExpr, FSharp.Compiler.Text.Range)

@@ -1028,6 +1028,7 @@ type SynExpr =
     /// Note the string ranges include the quotes, verbatim markers, dollar sign and braces
     | InterpolatedString of
         contents: SynInterpolatedStringPart list *
+        synStringKind :SynStringKind *
         range: range
 
     /// Gets the syntax range of this construct

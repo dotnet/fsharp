@@ -38,8 +38,8 @@ module FSharpTokenTag =
 
     let IDENT = tagOfToken (IDENT "a")
     let STRING = String
-    let INTERP_STRING_BEGIN_END = tagOfToken (INTERP_STRING_BEGIN_END ("a", LexCont.Default))
-    let INTERP_STRING_BEGIN_PART = tagOfToken (INTERP_STRING_BEGIN_PART ("a", LexCont.Default))
+    let INTERP_STRING_BEGIN_END = tagOfToken (INTERP_STRING_BEGIN_END ("a", false, LexCont.Default))
+    let INTERP_STRING_BEGIN_PART = tagOfToken (INTERP_STRING_BEGIN_PART ("a", false, LexCont.Default))
     let INTERP_STRING_PART = tagOfToken (INTERP_STRING_PART ("a", LexCont.Default))
     let INTERP_STRING_END = tagOfToken (INTERP_STRING_END ("a", LexCont.Default))
     let LPAREN = tagOfToken LPAREN
@@ -379,9 +379,9 @@ module internal LexerStateEncoding =
       | LINE_COMMENT cont
       | STRING_TEXT cont
       | EOF cont 
-      | INTERP_STRING_BEGIN_PART (_, cont)
+      | INTERP_STRING_BEGIN_PART (_, _, cont)
       | INTERP_STRING_PART (_, cont)
-      | INTERP_STRING_BEGIN_END (_, cont)
+      | INTERP_STRING_BEGIN_END (_, _, cont)
       | INTERP_STRING_END (_, cont)
       | LBRACE cont
       | RBRACE cont
