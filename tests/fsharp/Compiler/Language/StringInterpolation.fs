@@ -333,8 +333,8 @@ check "fwejwflpej12" (fmt_us $"abc {30000,10} def {40000} hij") "abc      30000 
 check "fwejwflpej13" (fmt_de $"abc {30000} def {40000} hij") "abc 30000 def 40000 hij"
 check "fwejwflpej14" (fmt_us $"abc {30000:N2} def {40000:N2} hij") "abc 30,000.00 def 40,000.00 hij"
 check "fwejwflpej15" (fmt_de $"abc {30000:N2} def {40000:N2} hij") "abc 30.000,00 def 40.000,00 hij"
-check "fwejwflpej16" (fmt_de $"abc {30000,10:N} def {40000:N2} hij") "abc  30.000,00 def 40.000,00 hij"
-check "fwejwflpej17" (fmt_de $"abc {30000,-10:N} def {40000:N2} hij") "abc 30.000,00  def 40.000,00 hij"
+check "fwejwflpej16" (fmt_de $"abc {30000,10:N2} def {40000:N2} hij") "abc  30.000,00 def 40.000,00 hij"
+check "fwejwflpej17" (fmt_de $"abc {30000,-10:N2} def {40000:N2} hij") "abc 30.000,00  def 40.000,00 hij"
 
             """
 
