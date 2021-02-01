@@ -835,6 +835,26 @@ async {
             |> tups
             |> shouldEqual ((4, 11), (4, 16))
 
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda``() =
+        let source = """
+let add n1 n2 = n1 + n2
+let lst = [1; 2; 3]
+let mapped = 
+    lst |> List.map (fun n ->
+        let sum = add
+        n.ToString()
+    )
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 6 21)
+        match res with
+        | None -> Assert.Fail("Expected 'add' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((6, 18), (6, 21))
+
 module PipelinesAndArgs =
     [<Test>]
     let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - No pipeline, no infix app``() =
@@ -896,6 +916,21 @@ let square x = x *
             |> shouldEqual ("op_PipeRight3", 3)
         | None ->
             Assert.Fail("No pipeline found")
+
+    [<Test>]
+    let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - none when inside lambda``() =
+        let source = """
+let add n1 n2 = n1 + n2
+let lst = [1; 2; 3]
+let mapped = 
+    lst |> List.map (fun n ->
+        let sum = add 1
+        n.ToString()
+    )
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 6 22)
+        Assert.IsTrue(res.IsNone, "Inside a lambda but counted the pipeline outside of that lambda.")
 
 [<Test>]
 let ``TryRangeOfExprInYieldOrReturn - not contained``() =
