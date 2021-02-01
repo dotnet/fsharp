@@ -222,10 +222,10 @@ module SyntaxTraversal =
             visitor.VisitModuleDecl(origPath, defaultTraverse, decl)
 
         and traverseSynModuleOrNamespace origPath (SynModuleOrNamespace(_longIdent, _isRec, _isModule, synModuleDecls, _preXmlDoc, _synAttributes, _synAccessOpt, range) as mors) =
-            let path = SyntaxNode.SynModuleOrNamespace mors :: origPath
             match visitor.VisitModuleOrNamespace(origPath, mors) with
             | Some x -> Some x
             | None ->
+                let path = SyntaxNode.SynModuleOrNamespace mors :: origPath
                 synModuleDecls |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path)) |> pick range mors
 
         and traverseSynExpr origPath (expr:SynExpr) =
