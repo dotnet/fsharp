@@ -6466,6 +6466,28 @@ FSharp.Compiler.SyntaxTree+SynBindingReturnInfo: SynBindingReturnInfo NewSynBind
 FSharp.Compiler.SyntaxTree+SynBindingReturnInfo: SynType get_typeName()
 FSharp.Compiler.SyntaxTree+SynBindingReturnInfo: SynType typeName
 FSharp.Compiler.SyntaxTree+SynBindingReturnInfo: System.String ToString()
+FSharp.Compiler.SyntaxTree+SynByteStringKind+Tags: Int32 Regular
+FSharp.Compiler.SyntaxTree+SynByteStringKind+Tags: Int32 Verbatim
+FSharp.Compiler.SyntaxTree+SynByteStringKind: Boolean Equals(SynByteStringKind)
+FSharp.Compiler.SyntaxTree+SynByteStringKind: Boolean Equals(System.Object)
+FSharp.Compiler.SyntaxTree+SynByteStringKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.SyntaxTree+SynByteStringKind: Boolean IsRegular
+FSharp.Compiler.SyntaxTree+SynByteStringKind: Boolean IsVerbatim
+FSharp.Compiler.SyntaxTree+SynByteStringKind: Boolean get_IsRegular()
+FSharp.Compiler.SyntaxTree+SynByteStringKind: Boolean get_IsVerbatim()
+FSharp.Compiler.SyntaxTree+SynByteStringKind: FSharp.Compiler.SyntaxTree+SynByteStringKind+Tags
+FSharp.Compiler.SyntaxTree+SynByteStringKind: Int32 CompareTo(SynByteStringKind)
+FSharp.Compiler.SyntaxTree+SynByteStringKind: Int32 CompareTo(System.Object)
+FSharp.Compiler.SyntaxTree+SynByteStringKind: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.SyntaxTree+SynByteStringKind: Int32 GetHashCode()
+FSharp.Compiler.SyntaxTree+SynByteStringKind: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.SyntaxTree+SynByteStringKind: Int32 Tag
+FSharp.Compiler.SyntaxTree+SynByteStringKind: Int32 get_Tag()
+FSharp.Compiler.SyntaxTree+SynByteStringKind: SynByteStringKind Regular
+FSharp.Compiler.SyntaxTree+SynByteStringKind: SynByteStringKind Verbatim
+FSharp.Compiler.SyntaxTree+SynByteStringKind: SynByteStringKind get_Regular()
+FSharp.Compiler.SyntaxTree+SynByteStringKind: SynByteStringKind get_Verbatim()
+FSharp.Compiler.SyntaxTree+SynByteStringKind: System.String ToString()
 FSharp.Compiler.SyntaxTree+SynComponentInfo: Boolean get_preferPostfix()
 FSharp.Compiler.SyntaxTree+SynComponentInfo: Boolean preferPostfix
 FSharp.Compiler.SyntaxTree+SynComponentInfo: FSharp.Compiler.Text.Range Range
@@ -6496,6 +6518,8 @@ FSharp.Compiler.SyntaxTree+SynConst+Bytes: Byte[] bytes
 FSharp.Compiler.SyntaxTree+SynConst+Bytes: Byte[] get_bytes()
 FSharp.Compiler.SyntaxTree+SynConst+Bytes: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.SyntaxTree+SynConst+Bytes: FSharp.Compiler.Text.Range range
+FSharp.Compiler.SyntaxTree+SynConst+Bytes: SynByteStringKind get_synByteStringKind()
+FSharp.Compiler.SyntaxTree+SynConst+Bytes: SynByteStringKind synByteStringKind
 FSharp.Compiler.SyntaxTree+SynConst+Char: Char Item
 FSharp.Compiler.SyntaxTree+SynConst+Char: Char get_Item()
 FSharp.Compiler.SyntaxTree+SynConst+Decimal: System.Decimal Item
@@ -6520,6 +6544,8 @@ FSharp.Compiler.SyntaxTree+SynConst+Single: Single Item
 FSharp.Compiler.SyntaxTree+SynConst+Single: Single get_Item()
 FSharp.Compiler.SyntaxTree+SynConst+String: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.SyntaxTree+SynConst+String: FSharp.Compiler.Text.Range range
+FSharp.Compiler.SyntaxTree+SynConst+String: SynStringKind get_synStringKind()
+FSharp.Compiler.SyntaxTree+SynConst+String: SynStringKind synStringKind
 FSharp.Compiler.SyntaxTree+SynConst+String: System.String get_text()
 FSharp.Compiler.SyntaxTree+SynConst+String: System.String text
 FSharp.Compiler.SyntaxTree+SynConst+Tags: Int32 Bool
@@ -6625,7 +6651,7 @@ FSharp.Compiler.SyntaxTree+SynConst: Int32 Tag
 FSharp.Compiler.SyntaxTree+SynConst: Int32 get_Tag()
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewBool(Boolean)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewByte(Byte)
-FSharp.Compiler.SyntaxTree+SynConst: SynConst NewBytes(Byte[], FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTree+SynConst: SynConst NewBytes(Byte[], SynByteStringKind, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewChar(Char)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewDecimal(System.Decimal)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewDouble(Double)
@@ -6636,7 +6662,7 @@ FSharp.Compiler.SyntaxTree+SynConst: SynConst NewIntPtr(Int64)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewMeasure(SynConst, SynMeasure)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewSByte(SByte)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewSingle(Single)
-FSharp.Compiler.SyntaxTree+SynConst: SynConst NewString(System.String, FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTree+SynConst: SynConst NewString(System.String, SynStringKind, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewUInt16(UInt16)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewUInt16s(UInt16[])
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewUInt32(UInt32)
@@ -6890,6 +6916,8 @@ FSharp.Compiler.SyntaxTree+SynExpr+InterpolatedString: FSharp.Compiler.Text.Rang
 FSharp.Compiler.SyntaxTree+SynExpr+InterpolatedString: FSharp.Compiler.Text.Range range
 FSharp.Compiler.SyntaxTree+SynExpr+InterpolatedString: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynInterpolatedStringPart] contents
 FSharp.Compiler.SyntaxTree+SynExpr+InterpolatedString: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynInterpolatedStringPart] get_contents()
+FSharp.Compiler.SyntaxTree+SynExpr+InterpolatedString: SynStringKind get_synStringKind()
+FSharp.Compiler.SyntaxTree+SynExpr+InterpolatedString: SynStringKind synStringKind
 FSharp.Compiler.SyntaxTree+SynExpr+JoinIn: FSharp.Compiler.Text.Range get_lhsRange()
 FSharp.Compiler.SyntaxTree+SynExpr+JoinIn: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.SyntaxTree+SynExpr+JoinIn: FSharp.Compiler.Text.Range lhsRange
@@ -7480,7 +7508,7 @@ FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewIfThenElse(SynExpr, SynExpr, Micr
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewImplicitZero(FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewInferredDowncast(SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewInferredUpcast(SynExpr, FSharp.Compiler.Text.Range)
-FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewInterpolatedString(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynInterpolatedStringPart], FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewInterpolatedString(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynInterpolatedStringPart], SynStringKind, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewJoinIn(SynExpr, FSharp.Compiler.Text.Range, SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewLambda(Boolean, Boolean, SynSimplePats, SynExpr, Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynPat],FSharp.Compiler.SyntaxTree+SynExpr]], FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewLazy(SynExpr, FSharp.Compiler.Text.Range)
@@ -8536,6 +8564,33 @@ FSharp.Compiler.SyntaxTree+SynStaticOptimizationConstraint: Int32 get_Tag()
 FSharp.Compiler.SyntaxTree+SynStaticOptimizationConstraint: SynStaticOptimizationConstraint NewWhenTyparIsStruct(SynTypar, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynStaticOptimizationConstraint: SynStaticOptimizationConstraint NewWhenTyparTyconEqualsTycon(SynTypar, SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynStaticOptimizationConstraint: System.String ToString()
+FSharp.Compiler.SyntaxTree+SynStringKind+Tags: Int32 Regular
+FSharp.Compiler.SyntaxTree+SynStringKind+Tags: Int32 TripleQuote
+FSharp.Compiler.SyntaxTree+SynStringKind+Tags: Int32 Verbatim
+FSharp.Compiler.SyntaxTree+SynStringKind: Boolean Equals(SynStringKind)
+FSharp.Compiler.SyntaxTree+SynStringKind: Boolean Equals(System.Object)
+FSharp.Compiler.SyntaxTree+SynStringKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.SyntaxTree+SynStringKind: Boolean IsRegular
+FSharp.Compiler.SyntaxTree+SynStringKind: Boolean IsTripleQuote
+FSharp.Compiler.SyntaxTree+SynStringKind: Boolean IsVerbatim
+FSharp.Compiler.SyntaxTree+SynStringKind: Boolean get_IsRegular()
+FSharp.Compiler.SyntaxTree+SynStringKind: Boolean get_IsTripleQuote()
+FSharp.Compiler.SyntaxTree+SynStringKind: Boolean get_IsVerbatim()
+FSharp.Compiler.SyntaxTree+SynStringKind: FSharp.Compiler.SyntaxTree+SynStringKind+Tags
+FSharp.Compiler.SyntaxTree+SynStringKind: Int32 CompareTo(SynStringKind)
+FSharp.Compiler.SyntaxTree+SynStringKind: Int32 CompareTo(System.Object)
+FSharp.Compiler.SyntaxTree+SynStringKind: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.SyntaxTree+SynStringKind: Int32 GetHashCode()
+FSharp.Compiler.SyntaxTree+SynStringKind: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.SyntaxTree+SynStringKind: Int32 Tag
+FSharp.Compiler.SyntaxTree+SynStringKind: Int32 get_Tag()
+FSharp.Compiler.SyntaxTree+SynStringKind: SynStringKind Regular
+FSharp.Compiler.SyntaxTree+SynStringKind: SynStringKind TripleQuote
+FSharp.Compiler.SyntaxTree+SynStringKind: SynStringKind Verbatim
+FSharp.Compiler.SyntaxTree+SynStringKind: SynStringKind get_Regular()
+FSharp.Compiler.SyntaxTree+SynStringKind: SynStringKind get_TripleQuote()
+FSharp.Compiler.SyntaxTree+SynStringKind: SynStringKind get_Verbatim()
+FSharp.Compiler.SyntaxTree+SynStringKind: System.String ToString()
 FSharp.Compiler.SyntaxTree+SynTypar: Boolean get_isCompGen()
 FSharp.Compiler.SyntaxTree+SynTypar: Boolean isCompGen
 FSharp.Compiler.SyntaxTree+SynTypar: FSharp.Compiler.Text.Range Range
@@ -9269,6 +9324,7 @@ FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynAttributeList
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynBinding
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynBindingKind
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynBindingReturnInfo
+FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynByteStringKind
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynComponentInfo
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynConst
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynEnumCase
@@ -9297,6 +9353,7 @@ FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynSimplePat
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynSimplePatAlternativeIdInfo
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynSimplePats
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynStaticOptimizationConstraint
+FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynStringKind
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynTypar
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynTyparDecl
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynType
