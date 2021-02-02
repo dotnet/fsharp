@@ -116,17 +116,28 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     module internal TaggedText =
 #endif
         val tagText: string -> TaggedText
+        val tagClass: string -> TaggedText
         val internal tagField: string -> TaggedText
         val internal tagKeyword: string -> TaggedText
         val internal tagLocal: string -> TaggedText
         val internal tagProperty: string -> TaggedText
         val internal tagMethod: string -> TaggedText
-        val internal tagClass: string -> TaggedText
         val internal tagUnionCase: string -> TaggedText
 
         val comma: TaggedText
 
 #if COMPILER
+        val tagNamespace: string -> TaggedText
+        val tagParameter: string -> TaggedText
+        val tagSpace: string -> TaggedText
+
+        // common tagged literals
+        val dot: TaggedText
+        val colon: TaggedText
+        val minus: TaggedText
+        val lineBreak: TaggedText
+        val space: TaggedText
+
         val internal mkTag: TextTag -> string -> TaggedText
         val internal keywordFunctions: Set<string>
         val internal tagAlias: string -> TaggedText
@@ -140,11 +151,8 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         val internal tagRecord: string -> TaggedText
         val internal tagRecordField: string -> TaggedText
         val internal tagModule: string -> TaggedText
-        val internal tagNamespace: string -> TaggedText
         val internal tagNumericLiteral: string -> TaggedText
         val internal tagOperator: string -> TaggedText
-        val internal tagParameter: string -> TaggedText
-        val internal tagSpace: string -> TaggedText
         val internal tagStringLiteral: string -> TaggedText
         val internal tagStruct: string -> TaggedText
         val internal tagTypeParameter: string -> TaggedText
@@ -156,12 +164,6 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         val internal tagUnknownEntity: string -> TaggedText
         val internal tagUnknownType: string -> TaggedText
 
-        // common tagged literals
-        val dot: TaggedText
-        val colon: TaggedText
-        val minus: TaggedText
-        val lineBreak: TaggedText
-        val space: TaggedText
         val internal leftAngle: TaggedText
         val internal rightAngle: TaggedText
         val internal keywordTrue: TaggedText

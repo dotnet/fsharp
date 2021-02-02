@@ -8131,6 +8131,112 @@ FSharp.Compiler.Text.ISourceText: System.String GetLineString(Int32)
 FSharp.Compiler.Text.ISourceText: System.String GetSubTextString(Int32, Int32)
 FSharp.Compiler.Text.ISourceText: System.Tuple`2[System.Int32,System.Int32] GetLastCharacterPosition()
 FSharp.Compiler.Text.ISourceText: Void CopyTo(Int32, Char[], Int32, Int32)
+FSharp.Compiler.Text.Line
+FSharp.Compiler.Text.Line: Int32 fromZ(Int32)
+FSharp.Compiler.Text.Line: Int32 toZ(Int32)
+FSharp.Compiler.Text.NavigableTaggedText
+FSharp.Compiler.Text.NavigableTaggedText: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Text.NavigableTaggedText: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.Text.Position
+FSharp.Compiler.Text.Position: Boolean Equals(System.Object)
+FSharp.Compiler.Text.Position: Int32 Column
+FSharp.Compiler.Text.Position: Int32 GetHashCode()
+FSharp.Compiler.Text.Position: Int32 Line
+FSharp.Compiler.Text.Position: Int32 get_Column()
+FSharp.Compiler.Text.Position: Int32 get_Line()
+FSharp.Compiler.Text.Position: System.String ToString()
+FSharp.Compiler.Text.PositionModule
+FSharp.Compiler.Text.PositionModule: Boolean posEq(FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
+FSharp.Compiler.Text.PositionModule: Boolean posGeq(FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
+FSharp.Compiler.Text.PositionModule: Boolean posGt(FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
+FSharp.Compiler.Text.PositionModule: Boolean posLt(FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
+FSharp.Compiler.Text.PositionModule: FSharp.Compiler.Text.Position fromZ(Int32, Int32)
+FSharp.Compiler.Text.PositionModule: FSharp.Compiler.Text.Position get_pos0()
+FSharp.Compiler.Text.PositionModule: FSharp.Compiler.Text.Position mkPos(Int32, Int32)
+FSharp.Compiler.Text.PositionModule: FSharp.Compiler.Text.Position pos0
+FSharp.Compiler.Text.PositionModule: System.String stringOfPos(FSharp.Compiler.Text.Position)
+FSharp.Compiler.Text.PositionModule: System.Tuple`2[System.Int32,System.Int32] toZ(FSharp.Compiler.Text.Position)
+FSharp.Compiler.Text.PositionModule: Void outputPos(System.IO.TextWriter, FSharp.Compiler.Text.Position)
+FSharp.Compiler.Text.Range
+FSharp.Compiler.Text.Range: Boolean Equals(System.Object)
+FSharp.Compiler.Text.Range: Boolean IsSynthetic
+FSharp.Compiler.Text.Range: Boolean get_IsSynthetic()
+FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position End
+FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position Start
+FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position get_End()
+FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position get_Start()
+FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range EndRange
+FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range StartRange
+FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range Zero
+FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range get_EndRange()
+FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range get_StartRange()
+FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range get_Zero()
+FSharp.Compiler.Text.Range: Int32 EndColumn
+FSharp.Compiler.Text.Range: Int32 EndLine
+FSharp.Compiler.Text.Range: Int32 GetHashCode()
+FSharp.Compiler.Text.Range: Int32 StartColumn
+FSharp.Compiler.Text.Range: Int32 StartLine
+FSharp.Compiler.Text.Range: Int32 get_EndColumn()
+FSharp.Compiler.Text.Range: Int32 get_EndLine()
+FSharp.Compiler.Text.Range: Int32 get_StartColumn()
+FSharp.Compiler.Text.Range: Int32 get_StartLine()
+FSharp.Compiler.Text.Range: System.String FileName
+FSharp.Compiler.Text.Range: System.String ToString()
+FSharp.Compiler.Text.Range: System.String get_FileName()
+FSharp.Compiler.Text.RangeModule
+FSharp.Compiler.Text.RangeModule: Boolean equals(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Text.RangeModule: Boolean rangeBeforePos(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Position)
+FSharp.Compiler.Text.RangeModule: Boolean rangeContainsPos(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Position)
+FSharp.Compiler.Text.RangeModule: Boolean rangeContainsRange(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range get_range0()
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range get_rangeCmdArgs()
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range get_rangeStartup()
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range mkFileIndexRange(Int32, FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range mkFirstLineOfFile(System.String)
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range mkRange(System.String, FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range range0
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range rangeCmdArgs
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range rangeN(System.String, Int32)
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range rangeStartup
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range trimRangeToLine(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range unionRanges(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Text.RangeModule: System.Collections.Generic.IComparer`1[FSharp.Compiler.Text.Position] get_posOrder()
+FSharp.Compiler.Text.RangeModule: System.Collections.Generic.IComparer`1[FSharp.Compiler.Text.Position] posOrder
+FSharp.Compiler.Text.RangeModule: System.Collections.Generic.IComparer`1[FSharp.Compiler.Text.Range] get_rangeOrder()
+FSharp.Compiler.Text.RangeModule: System.Collections.Generic.IComparer`1[FSharp.Compiler.Text.Range] rangeOrder
+FSharp.Compiler.Text.RangeModule: System.Collections.Generic.IEqualityComparer`1[FSharp.Compiler.Text.Range] comparer
+FSharp.Compiler.Text.RangeModule: System.Collections.Generic.IEqualityComparer`1[FSharp.Compiler.Text.Range] get_comparer()
+FSharp.Compiler.Text.RangeModule: System.String stringOfRange(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Text.RangeModule: System.Tuple`2[System.String,System.Tuple`2[System.Tuple`2[System.Int32,System.Int32],System.Tuple`2[System.Int32,System.Int32]]] toFileZ(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Text.RangeModule: System.Tuple`2[System.Tuple`2[System.Int32,System.Int32],System.Tuple`2[System.Int32,System.Int32]] toZ(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Text.RangeModule: Void outputRange(System.IO.TextWriter, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Text.SourceText
+FSharp.Compiler.Text.SourceText: FSharp.Compiler.Text.ISourceText ofString(System.String)
+FSharp.Compiler.Text.TaggedText
+FSharp.Compiler.Text.TaggedText: FSharp.Compiler.Text.TextTag Tag
+FSharp.Compiler.Text.TaggedText: FSharp.Compiler.Text.TextTag get_Tag()
+FSharp.Compiler.Text.TaggedText: System.String Text
+FSharp.Compiler.Text.TaggedText: System.String ToString()
+FSharp.Compiler.Text.TaggedText: System.String get_Text()
+FSharp.Compiler.Text.TaggedText: Void .ctor(FSharp.Compiler.Text.TextTag, System.String)
+FSharp.Compiler.Text.TaggedTextModule
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText colon
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText comma
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText dot
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText get_colon()
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText get_comma()
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText get_dot()
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText get_lineBreak()
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText get_minus()
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText get_space()
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText lineBreak
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText minus
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText space
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText tagClass(System.String)
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText tagNamespace(System.String)
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText tagParameter(System.String)
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText tagSpace(System.String)
+FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText tagText(System.String)
 FSharp.Compiler.Text.TextTag
 FSharp.Compiler.Text.TextTag+Tags: Int32 ActivePatternCase
 FSharp.Compiler.Text.TextTag+Tags: Int32 ActivePatternResult
@@ -8311,108 +8417,6 @@ FSharp.Compiler.Text.TextTag: Int32 GetHashCode(System.Collections.IEqualityComp
 FSharp.Compiler.Text.TextTag: Int32 Tag
 FSharp.Compiler.Text.TextTag: Int32 get_Tag()
 FSharp.Compiler.Text.TextTag: System.String ToString()
-FSharp.Compiler.Text.Line
-FSharp.Compiler.Text.Line: Int32 fromZ(Int32)
-FSharp.Compiler.Text.Line: Int32 toZ(Int32)
-FSharp.Compiler.Text.NavigableTaggedText
-FSharp.Compiler.Text.NavigableTaggedText: FSharp.Compiler.Text.Range Range
-FSharp.Compiler.Text.NavigableTaggedText: FSharp.Compiler.Text.Range get_Range()
-FSharp.Compiler.Text.Position
-FSharp.Compiler.Text.Position: Boolean Equals(System.Object)
-FSharp.Compiler.Text.Position: Int32 Column
-FSharp.Compiler.Text.Position: Int32 GetHashCode()
-FSharp.Compiler.Text.Position: Int32 Line
-FSharp.Compiler.Text.Position: Int32 get_Column()
-FSharp.Compiler.Text.Position: Int32 get_Line()
-FSharp.Compiler.Text.Position: System.String ToString()
-FSharp.Compiler.Text.PositionModule
-FSharp.Compiler.Text.PositionModule: Boolean posEq(FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
-FSharp.Compiler.Text.PositionModule: Boolean posGeq(FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
-FSharp.Compiler.Text.PositionModule: Boolean posGt(FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
-FSharp.Compiler.Text.PositionModule: Boolean posLt(FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
-FSharp.Compiler.Text.PositionModule: FSharp.Compiler.Text.Position fromZ(Int32, Int32)
-FSharp.Compiler.Text.PositionModule: FSharp.Compiler.Text.Position get_pos0()
-FSharp.Compiler.Text.PositionModule: FSharp.Compiler.Text.Position mkPos(Int32, Int32)
-FSharp.Compiler.Text.PositionModule: FSharp.Compiler.Text.Position pos0
-FSharp.Compiler.Text.PositionModule: System.String stringOfPos(FSharp.Compiler.Text.Position)
-FSharp.Compiler.Text.PositionModule: System.Tuple`2[System.Int32,System.Int32] toZ(FSharp.Compiler.Text.Position)
-FSharp.Compiler.Text.PositionModule: Void outputPos(System.IO.TextWriter, FSharp.Compiler.Text.Position)
-FSharp.Compiler.Text.Range
-FSharp.Compiler.Text.Range: Boolean Equals(System.Object)
-FSharp.Compiler.Text.Range: Boolean IsSynthetic
-FSharp.Compiler.Text.Range: Boolean get_IsSynthetic()
-FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position End
-FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position Start
-FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position get_End()
-FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position get_Start()
-FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range EndRange
-FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range StartRange
-FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range Zero
-FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range get_EndRange()
-FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range get_StartRange()
-FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range get_Zero()
-FSharp.Compiler.Text.Range: Int32 EndColumn
-FSharp.Compiler.Text.Range: Int32 EndLine
-FSharp.Compiler.Text.Range: Int32 GetHashCode()
-FSharp.Compiler.Text.Range: Int32 StartColumn
-FSharp.Compiler.Text.Range: Int32 StartLine
-FSharp.Compiler.Text.Range: Int32 get_EndColumn()
-FSharp.Compiler.Text.Range: Int32 get_EndLine()
-FSharp.Compiler.Text.Range: Int32 get_StartColumn()
-FSharp.Compiler.Text.Range: Int32 get_StartLine()
-FSharp.Compiler.Text.Range: System.String FileName
-FSharp.Compiler.Text.Range: System.String ToString()
-FSharp.Compiler.Text.Range: System.String get_FileName()
-FSharp.Compiler.Text.RangeModule
-FSharp.Compiler.Text.RangeModule: Boolean equals(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Text.RangeModule: Boolean rangeBeforePos(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Position)
-FSharp.Compiler.Text.RangeModule: Boolean rangeContainsPos(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Position)
-FSharp.Compiler.Text.RangeModule: Boolean rangeContainsRange(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range get_range0()
-FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range get_rangeCmdArgs()
-FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range get_rangeStartup()
-FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range mkFileIndexRange(Int32, FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
-FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range mkFirstLineOfFile(System.String)
-FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range mkRange(System.String, FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
-FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range range0
-FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range rangeCmdArgs
-FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range rangeN(System.String, Int32)
-FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range rangeStartup
-FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range trimRangeToLine(FSharp.Compiler.Text.Range)
-FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range unionRanges(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Text.RangeModule: System.Collections.Generic.IComparer`1[FSharp.Compiler.Text.Position] get_posOrder()
-FSharp.Compiler.Text.RangeModule: System.Collections.Generic.IComparer`1[FSharp.Compiler.Text.Position] posOrder
-FSharp.Compiler.Text.RangeModule: System.Collections.Generic.IComparer`1[FSharp.Compiler.Text.Range] get_rangeOrder()
-FSharp.Compiler.Text.RangeModule: System.Collections.Generic.IComparer`1[FSharp.Compiler.Text.Range] rangeOrder
-FSharp.Compiler.Text.RangeModule: System.Collections.Generic.IEqualityComparer`1[FSharp.Compiler.Text.Range] comparer
-FSharp.Compiler.Text.RangeModule: System.Collections.Generic.IEqualityComparer`1[FSharp.Compiler.Text.Range] get_comparer()
-FSharp.Compiler.Text.RangeModule: System.String stringOfRange(FSharp.Compiler.Text.Range)
-FSharp.Compiler.Text.RangeModule: System.Tuple`2[System.String,System.Tuple`2[System.Tuple`2[System.Int32,System.Int32],System.Tuple`2[System.Int32,System.Int32]]] toFileZ(FSharp.Compiler.Text.Range)
-FSharp.Compiler.Text.RangeModule: System.Tuple`2[System.Tuple`2[System.Int32,System.Int32],System.Tuple`2[System.Int32,System.Int32]] toZ(FSharp.Compiler.Text.Range)
-FSharp.Compiler.Text.RangeModule: Void outputRange(System.IO.TextWriter, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Text.SourceText
-FSharp.Compiler.Text.SourceText: FSharp.Compiler.Text.ISourceText ofString(System.String)
-FSharp.Compiler.Text.TaggedText
-FSharp.Compiler.Text.TaggedText: FSharp.Compiler.Text.TextTag Tag
-FSharp.Compiler.Text.TaggedText: FSharp.Compiler.Text.TextTag get_Tag()
-FSharp.Compiler.Text.TaggedText: System.String Text
-FSharp.Compiler.Text.TaggedText: System.String ToString()
-FSharp.Compiler.Text.TaggedText: System.String get_Text()
-FSharp.Compiler.Text.TaggedText: Void .ctor(FSharp.Compiler.Text.TextTag, System.String)
-FSharp.Compiler.Text.TaggedTextModule
-FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText colon
-FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText comma
-FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText dot
-FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText get_colon()
-FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText get_comma()
-FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText get_dot()
-FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText get_lineBreak()
-FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText get_minus()
-FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText get_space()
-FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText lineBreak
-FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText minus
-FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText space
-FSharp.Compiler.Text.TaggedTextModule: FSharp.Compiler.Text.TaggedText tagText(System.String)
 FSharp.Compiler.Tokenization.FSharpKeywords
 FSharp.Compiler.Tokenization.FSharpKeywords: Boolean DoesIdentifierNeedQuotation(System.String)
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.String] KeywordNames

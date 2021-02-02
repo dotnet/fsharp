@@ -74,8 +74,8 @@ type internal FSharpFindUsagesService
                 | None -> return! async.Return [] } |> liftAsync
 
             let isExternal = declarationSpans |> List.isEmpty
-            let displayParts = ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText))
-            let originationParts = ImmutableArray.Create(TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))
+            let displayParts = ImmutableArray.Create(Microsoft.CodeAnalysis.TaggedText(TextTags.Text, symbol.Ident.idText))
+            let originationParts = ImmutableArray.Create(Microsoft.CodeAnalysis.TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))
             let externalDefinitionItem = FSharpDefinitionItem.CreateNonNavigableItem(tags, displayParts, originationParts)
             let definitionItems =
                     declarationSpans
