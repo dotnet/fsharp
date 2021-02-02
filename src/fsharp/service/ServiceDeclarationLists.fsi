@@ -20,15 +20,15 @@ open FSharp.Compiler.TypedTreeOps
 [<RequireQualifiedAccess>]
 type public FSharpToolTipElementData = 
     {
-      MainDescription: ImmutableArray<TaggedText>
+      MainDescription: TaggedText[]
 
       XmlDoc: FSharpXmlDoc
 
       /// typar instantiation text, to go after xml
-      TypeMapping: ImmutableArray<TaggedText> list
+      TypeMapping: TaggedText[] list
 
       /// Extra text, goes at the end
-      Remarks: ImmutableArray<TaggedText> option
+      Remarks: TaggedText[] option
 
       /// Parameter name
       ParamName: string option
@@ -47,7 +47,7 @@ type public FSharpToolTipElement =
     /// An error occurred formatting this element
     | CompositionError of errorText: string
 
-    static member Single: layout: ImmutableArray<TaggedText> * xml: FSharpXmlDoc * ?typeMapping: ImmutableArray<TaggedText> list * ?paramName: string * ?remarks: ImmutableArray<TaggedText>  -> FSharpToolTipElement
+    static member Single: layout: TaggedText[] * xml: FSharpXmlDoc * ?typeMapping: TaggedText[] list * ?paramName: string * ?remarks: TaggedText[]  -> FSharpToolTipElement
 
 /// Information for building a tool tip box.
 //
@@ -164,7 +164,7 @@ type public FSharpMethodGroupItemParameter =
 
     /// The representation for the parameter including its name, its type and visual indicators of other
     /// information such as whether it is optional.
-    member Display: ImmutableArray<TaggedText>
+    member Display: TaggedText[]
 
     /// Is the parameter optional
     member IsOptional: bool
@@ -181,7 +181,7 @@ type public FSharpMethodGroupItem =
     member Description: FSharpToolTipText
 
     /// The tagged text for the return type for the method (or other item)
-    member ReturnTypeText: ImmutableArray<TaggedText>
+    member ReturnTypeText: TaggedText[]
 
     /// The parameters of the method in the overload set
     member Parameters: FSharpMethodGroupItemParameter[]

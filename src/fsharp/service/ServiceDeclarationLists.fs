@@ -36,10 +36,10 @@ open FSharp.Compiler.TypedTreeOps
 /// A single data tip display element
 [<RequireQualifiedAccess>]
 type FSharpToolTipElementData = 
-    { MainDescription:  ImmutableArray<TaggedText>
+    { MainDescription:  TaggedText[]
       XmlDoc: FSharpXmlDoc
-      TypeMapping: ImmutableArray<TaggedText> list
-      Remarks: ImmutableArray<TaggedText> option
+      TypeMapping: TaggedText[] list
+      Remarks: TaggedText[] option
       ParamName : string option }
 
     static member Create(layout, xml, ?typeMapping, ?paramName, ?remarks) = 
@@ -104,8 +104,8 @@ module DeclarationListHelpers =
                 let prettyTyparInst, layout = NicePrint.prettyLayoutOfMethInfoFreeStyle infoReader.amap m denv item.TyparInst minfo
                 let xml = GetXmlCommentForMethInfoItem infoReader m item.Item minfo
                 let tpsL = FormatTyparMapping denv prettyTyparInst
-                let layout = LayoutRender.toImmutableArray layout
-                let tpsL = List.map LayoutRender.toImmutableArray tpsL
+                let layout = LayoutRender.toArray layout
+                let tpsL = List.map LayoutRender.toArray tpsL
                 FSharpToolTipElementData.Create(layout, xml, tpsL) ]
  
         FSharpToolTipElement.Group layouts
@@ -162,9 +162,9 @@ module DeclarationListHelpers =
             let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv item.TyparInst vref.Deref
             let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
             let tpsL = FormatTyparMapping denv prettyTyparInst
-            let tpsL = List.map LayoutRender.toImmutableArray tpsL
-            let resL = LayoutRender.toImmutableArray resL
-            let remarks = LayoutRender.toImmutableArray remarks
+            let tpsL = List.map LayoutRender.toArray tpsL
+            let resL = LayoutRender.toArray resL
+            let remarks = LayoutRender.toArray remarks
             FSharpToolTipElement.Single(resL, xml, tpsL, remarks=remarks)
 
         // Union tags (constructors)
@@ -180,7 +180,7 @@ module DeclarationListHelpers =
                 RightL.colon ^^
                 (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv recd ^^ WordL.arrow) ^^
                 NicePrint.layoutType denv rty
-            let layout = LayoutRender.toImmutableArray layout
+            let layout = LayoutRender.toArray layout
             FSharpToolTipElement.Single (layout, xml)
 
         // Active pattern tag inside the declaration (result)             
@@ -191,7 +191,7 @@ module DeclarationListHelpers =
                 wordL (tagActivePatternResult (List.item idx items) |> mkNav apinfo.Range) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv ty
-            let layout = LayoutRender.toImmutableArray layout
+            let layout = LayoutRender.toArray layout
             FSharpToolTipElement.Single (layout, xml)
 
         // Active pattern tags 
@@ -210,17 +210,17 @@ module DeclarationListHelpers =
 
             let tpsL = FormatTyparMapping denv prettyTyparInst
 
-            let layout = LayoutRender.toImmutableArray layout
-            let tpsL = List.map LayoutRender.toImmutableArray tpsL
-            let remarks = LayoutRender.toImmutableArray remarks
+            let layout = LayoutRender.toArray layout
+            let tpsL = List.map LayoutRender.toArray tpsL
+            let remarks = LayoutRender.toArray remarks
             FSharpToolTipElement.Single (layout, xml, tpsL, remarks=remarks)
 
         // F# exception names
         | Item.ExnCase ecref -> 
             let layout = NicePrint.layoutExnDef denv ecref.Deref
             let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
-            let layout = LayoutRender.toImmutableArray layout
-            let remarks = LayoutRender.toImmutableArray remarks
+            let layout = LayoutRender.toArray layout
+            let remarks = LayoutRender.toArray remarks
             FSharpToolTipElement.Single (layout, xml, remarks=remarks)
 
         | Item.RecdField rfinfo when rfinfo.TyconRef.IsExceptionDecl ->
@@ -231,7 +231,7 @@ module DeclarationListHelpers =
                 wordL (tagParameter id.idText) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv ty
-            let layout = LayoutRender.toImmutableArray layout
+            let layout = LayoutRender.toArray layout
             FSharpToolTipElement.Single (layout, xml, paramName = id.idText)
 
         // F# record field names
@@ -249,7 +249,7 @@ module DeclarationListHelpers =
                     | None -> emptyL
                     | Some lit -> try WordL.equals ^^  NicePrint.layoutConst denv.g ty lit with _ -> emptyL
                 )
-            let layout = LayoutRender.toImmutableArray layout
+            let layout = LayoutRender.toArray layout
             FSharpToolTipElement.Single (layout, xml)
 
         | Item.UnionCaseField (ucinfo, fieldIndex) ->
@@ -261,7 +261,7 @@ module DeclarationListHelpers =
                 wordL (tagParameter id.idText) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv fieldTy
-            let layout = LayoutRender.toImmutableArray layout
+            let layout = LayoutRender.toArray layout
             FSharpToolTipElement.Single (layout, xml, paramName = id.idText)
 
         // Not used
@@ -269,7 +269,7 @@ module DeclarationListHelpers =
             let layout = 
                 wordL (tagText (FSComp.SR.typeInfoPatternVariable())) ^^
                 wordL (tagUnknownEntity id.idText)
-            let layout = LayoutRender.toImmutableArray layout
+            let layout = LayoutRender.toArray layout
             FSharpToolTipElement.Single (layout, xml)
 
         // .NET fields
@@ -288,7 +288,7 @@ module DeclarationListHelpers =
                         WordL.equals ^^
                         try NicePrint.layoutConst denv.g (finfo.FieldType(infoReader.amap, m)) (CheckExpressions.TcFieldInit m v) with _ -> emptyL
                 )
-            let layout = LayoutRender.toImmutableArray layout
+            let layout = LayoutRender.toArray layout
             FSharpToolTipElement.Single (layout, xml)
 
         // .NET events
@@ -302,13 +302,13 @@ module DeclarationListHelpers =
                 wordL (tagEvent einfo.EventName) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv rty
-            let layout = LayoutRender.toImmutableArray layout
+            let layout = LayoutRender.toArray layout
             FSharpToolTipElement.Single (layout, xml)
 
         // F# and .NET properties
         | Item.Property(_, pinfo :: _) -> 
             let layout = NicePrint.prettyLayoutOfPropInfoFreeStyle  g amap m denv pinfo
-            let layout = LayoutRender.toImmutableArray layout
+            let layout = LayoutRender.toArray layout
             FSharpToolTipElement.Single (layout, xml)
 
         // Custom operations in queries
@@ -334,7 +334,7 @@ module DeclarationListHelpers =
                 SepL.dot ^^
                 wordL (tagMethod minfo.DisplayName)
 
-            let layout = LayoutRender.toImmutableArray layout
+            let layout = LayoutRender.toArray layout
             FSharpToolTipElement.Single (layout, xml)
 
         // F# constructors and methods
@@ -350,7 +350,7 @@ module DeclarationListHelpers =
         | Item.FakeInterfaceCtor ty ->
            let ty, _ = PrettyTypes.PrettifyType g ty
            let layout = NicePrint.layoutTyconRef denv (tcrefOfAppTy g ty)
-           let layout = LayoutRender.toImmutableArray layout
+           let layout = LayoutRender.toArray layout
            FSharpToolTipElement.Single(layout, xml)
         
         // The 'fake' representation of constructors of .NET delegate types
@@ -362,7 +362,7 @@ module DeclarationListHelpers =
                LeftL.leftParen ^^
                NicePrint.layoutType denv fty ^^
                RightL.rightParen
-           let layout = LayoutRender.toImmutableArray layout
+           let layout = LayoutRender.toArray layout
            FSharpToolTipElement.Single(layout, xml)
 
         // Types.
@@ -371,8 +371,8 @@ module DeclarationListHelpers =
             let denv = { denv with shortTypeNames = true  }
             let layout = NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere m (* width *) tcref.Deref
             let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
-            let layout = LayoutRender.toImmutableArray layout
-            let remarks = LayoutRender.toImmutableArray remarks
+            let layout = LayoutRender.toArray layout
+            let remarks = LayoutRender.toArray remarks
             FSharpToolTipElement.Single (layout, xml, remarks=remarks)
 
         // F# Modules and namespaces
@@ -412,10 +412,10 @@ module DeclarationListHelpers =
                         else 
                             emptyL
                     )
-                let layout = LayoutRender.toImmutableArray layout
+                let layout = LayoutRender.toArray layout
                 FSharpToolTipElement.Single (layout, xml)
             else
-                let layout = LayoutRender.toImmutableArray layout
+                let layout = LayoutRender.toArray layout
                 FSharpToolTipElement.Single (layout, xml)
 
         | Item.AnonRecdField(anon, argTys, i, _) -> 
@@ -427,7 +427,7 @@ module DeclarationListHelpers =
                 wordL (tagRecordField nm) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv argTy
-            let layout = LayoutRender.toImmutableArray layout
+            let layout = LayoutRender.toArray layout
             FSharpToolTipElement.Single (layout, FSharpXmlDoc.None)
             
         // Named parameters
@@ -438,7 +438,7 @@ module DeclarationListHelpers =
                 wordL (tagParameter id.idText) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv argTy
-            let layout = LayoutRender.toImmutableArray layout
+            let layout = LayoutRender.toArray layout
             FSharpToolTipElement.Single (layout, xml, paramName = id.idText)
             
         | Item.SetterArg (_, item) -> 
@@ -455,7 +455,7 @@ module DeclarationListHelpers =
 
 [<Sealed>]
 /// Represents one parameter for one method (or other item) in a group. 
-type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: ImmutableArray<TaggedText>, isOptional: bool) = 
+type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: TaggedText[], isOptional: bool) = 
 
     /// The name of the parameter.
     member _.ParameterName = name
@@ -487,7 +487,7 @@ module internal DescriptionListsImpl =
 
     let PrettyParamOfRecdField g denv (f: RecdField) =
         let display = NicePrint.prettyLayoutOfType denv f.FormalType
-        let display = LayoutRender.toImmutableArray display
+        let display = LayoutRender.toArray display
         FSharpMethodGroupItemParameter(
           name = f.Name,
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv f.FormalType,
@@ -505,7 +505,7 @@ module internal DescriptionListsImpl =
                 // TODO: in this case ucinst is ignored - it gives the instantiation of the type parameters of
                 // the union type containing this case.
                 let display = NicePrint.layoutOfParamData denv (ParamData(false, false, false, NotOptional, NoCallerInfo, Some f.Id, ReflectedArgInfo.None, f.FormalType)) 
-                LayoutRender.toImmutableArray display
+                LayoutRender.toArray display
 
         FSharpMethodGroupItemParameter(
           name=initial.ParameterName,
@@ -515,7 +515,7 @@ module internal DescriptionListsImpl =
 
     let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) as paramData) =
         let display = NicePrint.layoutOfParamData denv paramData
-        let display = LayoutRender.toImmutableArray display
+        let display = LayoutRender.toArray display
         FSharpMethodGroupItemParameter(
           name = (match nmOpt with None -> "" | Some pn -> pn.idText),
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv pty,
@@ -562,7 +562,7 @@ module internal DescriptionListsImpl =
         let prettyParams = 
           (paramInfo, prettyParamTys, prettyParamTysL) |||> List.map3 (fun (nm, isOptArg, paramPrefix) tau tyL -> 
             let display = paramPrefix ^^ tyL
-            let display = LayoutRender.toImmutableArray display
+            let display = LayoutRender.toArray display
             FSharpMethodGroupItemParameter(
               name = nm,
               canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tau,
@@ -583,7 +583,7 @@ module internal DescriptionListsImpl =
             (prettyParamTys, prettyParamTysL) 
             ||> List.zip 
             |> List.map (fun (tau, tyL) -> 
-                let display = LayoutRender.toImmutableArray tyL
+                let display = LayoutRender.toArray tyL
                 FSharpMethodGroupItemParameter(
                     name = "",
                     canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tau,
@@ -610,7 +610,7 @@ module internal DescriptionListsImpl =
                     let spName = sp.PUntaint((fun sp -> sp.Name), m)
                     let spOpt = sp.PUntaint((fun sp -> sp.IsOptional), m)
                     let display = (if spOpt then SepL.questionMark else emptyL) ^^ wordL (TaggedText.tagParameter spName) ^^ RightL.colon ^^ spKind
-                    let display = LayoutRender.toImmutableArray display
+                    let display = LayoutRender.toArray display
                     FSharpMethodGroupItemParameter(
                       name = spName,
                       canonicalTypeTextForSorting = showL spKind,
@@ -1114,7 +1114,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
 // Note: instances of this type do not hold any references to any compiler resources.
 [<Sealed; NoEquality; NoComparison>]
 type FSharpMethodGroupItem(description: FSharpToolTipText, xmlDoc: FSharpXmlDoc,
-                           returnType: ImmutableArray<TaggedText>, parameters: FSharpMethodGroupItemParameter[],
+                           returnType: TaggedText[], parameters: FSharpMethodGroupItemParameter[],
                            hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
 
     /// The description representation for the method (or other item)
@@ -1205,7 +1205,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
 #endif
                             | _ -> true
 
-                        let prettyRetTyL = LayoutRender.toImmutableArray prettyRetTyL
+                        let prettyRetTyL = LayoutRender.toArray prettyRetTyL
                         FSharpMethodGroupItem(
                           description = description,
                           returnType = prettyRetTyL,

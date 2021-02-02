@@ -2114,7 +2114,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match x.IsMember, d with
         | true, V v ->
             NicePrint.prettyLayoutOfMemberNoInstShort { (context.Contents cenv.g) with showMemberContainers=true } v.Deref
-            |> LayoutRender.toImmutableArray
+            |> LayoutRender.toArray
         | _,_ ->
             checkIsResolved()
             let ty = 
@@ -2127,7 +2127,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
                 | V v -> v.TauType
             NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
-            |> LayoutRender.toImmutableArray
+            |> LayoutRender.toArray
 
     member x.GetWitnessPassingInfo() = 
         let witnessInfos = 
@@ -2341,7 +2341,7 @@ type FSharpType(cenv, ty:TType) =
     member _.FormatLayout(context: FSharpDisplayContext) =
        protect <| fun () -> 
         NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
-        |> LayoutRender.toImmutableArray
+        |> LayoutRender.toArray
 
     override _.ToString() = 
        protect <| fun () -> 

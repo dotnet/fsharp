@@ -1107,7 +1107,7 @@ type internal TypeCheckInfo
             | resolved::_ // Take the first seen
             | [resolved] -> 
                 let tip = wordL (TaggedText.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
-                let tip = LayoutRender.toImmutableArray tip
+                let tip = LayoutRender.toArray tip
                 FSharpToolTipText.FSharpToolTipText [FSharpToolTipElement.Single(tip, FSharpXmlDoc.None)]
 
             | [] -> 
@@ -1124,7 +1124,7 @@ type internal TypeCheckInfo
                     FSharpToolTipText.FSharpToolTipText 
                        [ for line in lines -> 
                             let tip = wordL (TaggedText.tagStringLiteral line)
-                            let tip = LayoutRender.toImmutableArray tip
+                            let tip = LayoutRender.toArray tip
                             FSharpToolTipElement.Single(tip, FSharpXmlDoc.None)]
                                     
         ErrorScope.Protect Range.range0 

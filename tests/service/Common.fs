@@ -419,8 +419,8 @@ let findSymbolByName (name: string) (results: FSharpCheckFileResults) =
     let symbolUse = findSymbolUseByName name results
     symbolUse.Symbol
 
-let taggedTextToString (tts: ImmutableArray<TaggedText>) =
-    tts |> Seq.toList |> List.map (fun tt -> tt.Text) |> String.concat ""
+let taggedTextToString (tts: TaggedText[]) =
+    tts |> Array.map (fun tt -> tt.Text) |> String.concat ""
 
 let getRangeCoords (r: range) =
     (r.StartLine, r.StartColumn), (r.EndLine, r.EndColumn)

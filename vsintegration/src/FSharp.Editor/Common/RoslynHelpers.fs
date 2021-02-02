@@ -222,5 +222,5 @@ module internal OpenDeclarationHelper =
 
 [<AutoOpen>]
 module internal TaggedText =
-    let toString (tts: ImmutableArray<TaggedText>) =
-        tts |> Seq.toList |> List.map (fun tt -> tt.Text) |> String.concat ""
+    let toString (tts: TaggedText[]) =
+        tts |> Array.map (fun tt -> tt.Text) |> String.concat ""

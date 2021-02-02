@@ -24,8 +24,8 @@ open FSharp.Compiler.Tokenization
 
 module internal TaggedText =
     let appendTo (sb: System.Text.StringBuilder) (t: TaggedText) = sb.Append t.Text |> ignore 
-    let toString (tts: ImmutableArray<TaggedText>) =
-        tts |> Seq.toList |> List.map (fun tt -> tt.Text) |> String.concat ""
+    let toString (tts: TaggedText[]) =
+        tts |> Array.map (fun tt -> tt.Text) |> String.concat ""
  
 // Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
 //

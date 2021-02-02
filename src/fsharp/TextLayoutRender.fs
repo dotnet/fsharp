@@ -167,8 +167,7 @@ module LayoutRender =
 
     let emitL f layout = renderL (taggedTextListR f) layout |> ignore
 
-    let toImmutableArray layout = 
+    let toArray layout = 
         let output = ResizeArray()
         renderL (taggedTextListR (fun tt -> output.Add(tt))) layout |> ignore
-        output.ToImmutableArray()
-    
+        output.ToArray()

@@ -202,6 +202,7 @@ let methods =
 // Print concatenated parameter lists
 for mi in methods.Methods do
     [ for p in mi.Parameters -> p.Display ]
+    |> List.collect (Array.map (fun tt -> tt.Text) >> Array.toList)
     |> String.concat ", " 
     |> printfn "%s(%s)" methods.MethodName
 (**
@@ -271,6 +272,7 @@ let x16 : FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults  = failwith ""
 let checker : FSharp.Compiler.CodeAnalysis.FSharpChecker = failwith ""
 let checker : FSharp.Compiler. = failwith ""
 
+FSharp.Compiler.CodeAnalysis.
 
 FSharp.Compiler.CodeAnalysis.FSharpChecker.Cre
 x16.

@@ -16,8 +16,8 @@ open FSharp.Compiler.TextLayout.TaggedText
 
 [<AutoOpen>]
 module internal Utils2 =
-    let taggedTextToString (tts: ImmutableArray<TaggedText>) =
-        tts |> Seq.toList |> List.map (fun tt -> tt.Text) |> String.concat ""
+    let taggedTextToString (tts: TaggedText[]) =
+        tts |> Array.map (fun tt -> tt.Text) |> String.concat ""
 
 type internal ITaggedTextCollector_DEPRECATED =
     abstract Add: text: TaggedText -> unit

@@ -317,14 +317,14 @@ module internal XmlDocumentation =
                 AddSeparator textCollector
                 AddSeparator xmlCollector
 
-        let ProcessGenericParameters (tps: ImmutableArray<TaggedText> list) =
+        let ProcessGenericParameters (tps: TaggedText[] list) =
             if not tps.IsEmpty then
                 AppendHardLine typeParameterMapCollector
                 AppendOnNewLine typeParameterMapCollector (SR.GenericParametersHeader())
                 for tp in tps do 
                     AppendHardLine typeParameterMapCollector
                     typeParameterMapCollector.Add(tagSpace "    ")
-                    tp |> Seq.iter typeParameterMapCollector.Add
+                    tp |> Array.iter typeParameterMapCollector.Add
 
         let Process add (dataTipElement: FSharpToolTipElement) =
 
