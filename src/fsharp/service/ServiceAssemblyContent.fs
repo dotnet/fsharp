@@ -25,13 +25,13 @@ type LookupType =
 [<NoComparison; NoEquality>]
 type AssemblySymbol = 
     { FullName: string
-      CleanedIdents: FSharpShortIdents
-      Namespace: FSharpShortIdents option
-      NearestRequireQualifiedAccessParent: FSharpShortIdents option
-      TopRequireQualifiedAccessParent: FSharpShortIdents option
-      AutoOpenParent: FSharpShortIdents option
+      CleanedIdents: ShortIdents
+      Namespace: ShortIdents option
+      NearestRequireQualifiedAccessParent: ShortIdents option
+      TopRequireQualifiedAccessParent: ShortIdents option
+      AutoOpenParent: ShortIdents option
       Symbol: FSharpSymbol
-      Kind: LookupType -> FSharpEntityKind
+      Kind: LookupType -> EntityKind
       FSharpUnresolvedSymbol: FSharpUnresolvedSymbol }
 
     override x.ToString() = sprintf "%A" x  
@@ -40,11 +40,11 @@ type AssemblyPath = string
 type AssemblyContentType = Public | Full
 
 type Parent = 
-    { Namespace: FSharpShortIdents option
-      ThisRequiresQualifiedAccess: (* isForMemberOrValue *) bool -> FSharpShortIdents option
-      TopRequiresQualifiedAccess: (* isForMemberOrValue *) bool -> FSharpShortIdents option
-      AutoOpen: FSharpShortIdents option
-      WithModuleSuffix: FSharpShortIdents option 
+    { Namespace: ShortIdents option
+      ThisRequiresQualifiedAccess: (* isForMemberOrValue *) bool -> ShortIdents option
+      TopRequiresQualifiedAccess: (* isForMemberOrValue *) bool -> ShortIdents option
+      AutoOpen: ShortIdents option
+      WithModuleSuffix: ShortIdents option 
       IsModule: bool }
 
     static member Empty = 
@@ -55,7 +55,7 @@ type Parent =
           WithModuleSuffix = None 
           IsModule = true }
 
-    static member RewriteParentIdents (parentIdents: FSharpShortIdents option) (idents: FSharpShortIdents) =
+    static member RewriteParentIdents (parentIdents: ShortIdents option) (idents: ShortIdents) =
         match parentIdents with
         | Some p when p.Length <= idents.Length -> 
             for i in 0..p.Length - 1 do
@@ -63,14 +63,14 @@ type Parent =
         | _ -> ()
         idents
     
-    member x.FixParentModuleSuffix (idents: FSharpShortIdents) =
+    member x.FixParentModuleSuffix (idents: ShortIdents) =
         Parent.RewriteParentIdents x.WithModuleSuffix idents
 
     member _.FormatEntityFullName (entity: FSharpEntity) =
         // remove number of arguments from generic types
         // e.g. System.Collections.Generic.Dictionary`2 -> System.Collections.Generic.Dictionary
         // and System.Data.Listeners`1.Func -> System.Data.Listeners.Func
-        let removeGenericParamsCount (idents: FSharpShortIdents) =
+        let removeGenericParamsCount (idents: ShortIdents) =
             idents 
             |> Array.map (fun ident ->
                 if ident.Length > 0 && Char.IsDigit ident.[ident.Length - 1] then
@@ -80,7 +80,7 @@ type Parent =
                     else ident
                 else ident)
 
-        let removeModuleSuffix (idents: FSharpShortIdents) =
+        let removeModuleSuffix (idents: ShortIdents) =
             if entity.IsFSharpModule && idents.Length > 0 then
                 let lastIdent = idents.[idents.Length - 1]
                 if lastIdent <> entity.DisplayName then
@@ -107,11 +107,11 @@ type IAssemblyContentCache =
     abstract TryGet: AssemblyPath -> AssemblyContentCacheEntry option
     abstract Set: AssemblyPath -> AssemblyContentCacheEntry -> unit
 
-module AssemblyContentProvider =
+module AssemblyContent =
     open System.IO
 
-    let FSharpUnresolvedSymbol (topRequireQualifiedAccessParent: FSharpShortIdents option) (cleanedIdents: FSharpShortIdents) (fullName: string) =
-        let getNamespace (idents: FSharpShortIdents) = 
+    let FSharpUnresolvedSymbol (topRequireQualifiedAccessParent: ShortIdents option) (cleanedIdents: ShortIdents) (fullName: string) =
+        let getNamespace (idents: ShortIdents) = 
             if idents.Length > 1 then Some idents.[..idents.Length - 2] else None
 
         let ns = 
@@ -142,15 +142,15 @@ module AssemblyContentProvider =
               Kind = fun lookupType ->
                 match entity, lookupType with                
                 | FSharpSymbolPatterns.FSharpModule, _ ->
-                    FSharpEntityKind.Module 
+                    EntityKind.Module 
                         { IsAutoOpen = entity.HasAttribute<AutoOpenAttribute>()
                           HasModuleSuffix = FSharpSymbolPatterns.hasModuleSuffixAttribute entity }
                 | _, LookupType.Fuzzy ->
-                    FSharpEntityKind.Type
+                    EntityKind.Type
                 | _, LookupType.Precise ->
                     match entity with
-                    | FSharpSymbolPatterns.Attribute -> FSharpEntityKind.Attribute 
-                    | _ -> FSharpEntityKind.Type
+                    | FSharpSymbolPatterns.Attribute -> EntityKind.Attribute 
+                    | _ -> EntityKind.Type
               FSharpUnresolvedSymbol = FSharpUnresolvedSymbol topRequireQualifiedAccessParent cleanIdents fullName
             })
 
@@ -169,7 +169,7 @@ module AssemblyContentProvider =
                   TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
                   AutoOpenParent = autoOpenParent
                   Symbol = func
-                  Kind = fun _ -> FSharpEntityKind.FunctionOrValue func.IsActivePattern
+                  Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern
                   FSharpUnresolvedSymbol = FSharpUnresolvedSymbol topRequireQualifiedAccessParent cleanedIdents fullName }
 
             [ yield! func.TryGetFullDisplayName() 
@@ -240,7 +240,7 @@ module AssemblyContentProvider =
                 | _ -> () }
 
 
-    let getAssemblySignatureContent contentType (signature: FSharpAssemblySignature) =
+    let GetAssemblySignatureContent contentType (signature: FSharpAssemblySignature) =
 
         // We ignore all diagnostics during this operation
         //
@@ -257,9 +257,9 @@ module AssemblyContentProvider =
         |> Seq.toList
 
     let getAssemblySignaturesContent contentType (assemblies: FSharpAssembly list) = 
-        assemblies |> List.collect (fun asm -> getAssemblySignatureContent contentType asm.Contents)
+        assemblies |> List.collect (fun asm -> GetAssemblySignatureContent contentType asm.Contents)
 
-    let getAssemblyContent (withCache: (IAssemblyContentCache -> _) -> _) contentType (fileName: string option) (assemblies: FSharpAssembly list) =
+    let GetAssemblyContent (withCache: (IAssemblyContentCache -> _) -> _) contentType (fileName: string option) (assemblies: FSharpAssembly list) =
 
         // We ignore all diagnostics during this operation
         //

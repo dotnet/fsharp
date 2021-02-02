@@ -1552,8 +1552,12 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
     oddSymbol.ToString() |> shouldEqual "symbol Odd"
 
     let oddActivePatternCase = oddSymbol :?> FSharpActivePatternCase
-    oddActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual ["Total active pattern for even/odd integers"]
-    oddActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Total active pattern for even/odd integers"; "</summary>"]
+    match oddActivePatternCase.XmlDoc with 
+    | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines |> shouldEqual [| "Total active pattern for even/odd integers" |]
+    | _ -> failwith "wrong kind"
+    match oddActivePatternCase.XmlDoc with 
+    | FSharpXmlDoc.FromXmlText t -> t.GetElaboratedXmlLines() |> shouldEqual [|"<summary>"; "Total active pattern for even/odd integers"; "</summary>" |]
+    | _ -> failwith "wrong kind"
     oddActivePatternCase.XmlDocSig |> shouldEqual ""
     let oddGroup = oddActivePatternCase.Group
     oddGroup.IsTotal |> shouldEqual true
@@ -1567,8 +1571,11 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
     let evenSymbol = evenSymbolUse.Value.Symbol
     evenSymbol.ToString() |> shouldEqual "symbol Even"
     let evenActivePatternCase = evenSymbol :?> FSharpActivePatternCase
-    evenActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual ["Total active pattern for even/odd integers"]
-    evenActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Total active pattern for even/odd integers"; "</summary>"]
+    match evenActivePatternCase.XmlDoc with 
+    | FSharpXmlDoc.FromXmlText t ->
+        t.UnprocessedLines |> shouldEqual [| "Total active pattern for even/odd integers" |]
+        t.GetElaboratedXmlLines() |> shouldEqual [| "<summary>"; "Total active pattern for even/odd integers"; "</summary>" |]
+    | _ -> failwith "wrong kind"
     evenActivePatternCase.XmlDocSig |> shouldEqual ""
     let evenGroup = evenActivePatternCase.Group
     evenGroup.IsTotal |> shouldEqual true
@@ -1612,8 +1619,11 @@ let ``Test partial active patterns' exact ranges from uses of symbols`` () =
     floatSymbol.ToString() |> shouldEqual "symbol Float"
 
     let floatActivePatternCase = floatSymbol :?> FSharpActivePatternCase
-    floatActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual ["Partial active pattern for floats"]
-    floatActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Partial active pattern for floats"; "</summary>"]
+    match floatActivePatternCase.XmlDoc with 
+    | FSharpXmlDoc.FromXmlText t ->
+        t.UnprocessedLines |> shouldEqual [| "Partial active pattern for floats" |]
+        t.GetElaboratedXmlLines() |> shouldEqual [| "<summary>"; "Partial active pattern for floats"; "</summary>" |]
+    | _ -> failwith "wrong kind"
     floatActivePatternCase.XmlDocSig |> shouldEqual ""
     let floatGroup = floatActivePatternCase.Group
     floatGroup.IsTotal |> shouldEqual false

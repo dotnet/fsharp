@@ -143,7 +143,7 @@ module internal FSharpQuickInfo =
 
                 let! result =
                     match findSigDeclarationResult with 
-                    | FSharpFindDeclResult.DeclFound declRange when isSignatureFile declRange.FileName ->
+                    | FindDeclResult.DeclFound declRange when isSignatureFile declRange.FileName ->
                         asyncMaybe {
                             let! sigQuickInfo = getQuickInfoFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
 
@@ -154,10 +154,10 @@ module internal FSharpQuickInfo =
                             let findImplDefinitionResult = checkFileResults.GetDeclarationLocation (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=false)
 
                             match findImplDefinitionResult  with
-                            | FSharpFindDeclResult.DeclNotFound _
-                            | FSharpFindDeclResult.ExternalDecl _ ->
+                            | FindDeclResult.DeclNotFound _
+                            | FindDeclResult.ExternalDecl _ ->
                                 return symbolUse.Range, Some sigQuickInfo, None
-                            | FSharpFindDeclResult.DeclFound declRange ->
+                            | FindDeclResult.DeclFound declRange ->
                                 let! implQuickInfo = getQuickInfoFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
                                 return symbolUse.Range, Some sigQuickInfo, Some { implQuickInfo with Span = targetQuickInfo.Span }
                         }

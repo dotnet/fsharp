@@ -154,7 +154,7 @@ type public DeclarationListInfo =
 
 /// Represents one parameter for one method (or other item) in a group. 
 [<Sealed>]
-type public FSharpMethodGroupItemParameter = 
+type public MethodGroupItemParameter = 
 
     /// The name of the parameter.
     member ParameterName: string
@@ -172,7 +172,7 @@ type public FSharpMethodGroupItemParameter =
 /// Represents one method (or other item) in a method group. The item may represent either a method or 
 /// a single, non-overloaded item such as union case or a named function value.
 [<Sealed>]
-type public FSharpMethodGroupItem = 
+type public MethodGroupItem = 
 
     /// The documentation for the item
     member XmlDoc: FSharpXmlDoc
@@ -184,7 +184,7 @@ type public FSharpMethodGroupItem =
     member ReturnTypeText: TaggedText[]
 
     /// The parameters of the method in the overload set
-    member Parameters: FSharpMethodGroupItemParameter[]
+    member Parameters: MethodGroupItemParameter[]
 
     /// Does the method support an arguments list?  This is always true except for static type instantiations like TP<42,"foo">.
     member HasParameters: bool
@@ -193,21 +193,21 @@ type public FSharpMethodGroupItem =
     member HasParamArrayArg: bool
 
     /// Does the type name or method support a static arguments list, like TP<42,"foo"> or conn.CreateCommand<42, "foo">(arg1, arg2)?
-    member StaticParameters: FSharpMethodGroupItemParameter[]
+    member StaticParameters: MethodGroupItemParameter[]
 
 /// Represents a group of methods (or other items) returned by GetMethods.  
 [<Sealed>]
-type public FSharpMethodGroup = 
+type public MethodGroup = 
 
-    internal new: string * FSharpMethodGroupItem[] -> FSharpMethodGroup
+    internal new: string * MethodGroupItem[] -> MethodGroup
 
     /// The shared name of the methods (or other items) in the group
     member MethodName: string
 
     /// The methods (or other items) in the group
-    member Methods: FSharpMethodGroupItem[] 
+    member Methods: MethodGroupItem[] 
 
-    static member internal Create: InfoReader * range * DisplayEnv * ItemWithInst list -> FSharpMethodGroup
+    static member internal Create: InfoReader * range * DisplayEnv * ItemWithInst list -> MethodGroup
 
 module internal DeclarationListHelpers =
     val FormatStructuredDescriptionOfItem: isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> FSharpToolTipElement

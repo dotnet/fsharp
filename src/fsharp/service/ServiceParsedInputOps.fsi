@@ -15,7 +15,7 @@ type public InheritanceContext =
     | Unknown
 
 [<RequireQualifiedAccess>]
-type public FSharpRecordContext =
+type public RecordContext =
     | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
     | New of path: CompletionPath
@@ -29,7 +29,7 @@ type public CompletionContext =
     | Inherit of context: InheritanceContext * path: CompletionPath
 
     /// Completing records field
-    | RecordField of context: FSharpRecordContext
+    | RecordField of context: RecordContext
 
     | RangeOperator
 
@@ -44,20 +44,20 @@ type public CompletionContext =
     /// Completing pattern type (e.g. foo (x: |))
     | PatternType
 
-type public FSharpModuleKind =
+type public ModuleKind =
     { IsAutoOpen: bool
       HasModuleSuffix: bool }
 
 [<RequireQualifiedAccess>]
-type public FSharpEntityKind =
+type public EntityKind =
     | Attribute
     | Type
     | FunctionOrValue of isActivePattern:bool
-    | Module of FSharpModuleKind
+    | Module of ModuleKind
 
 /// Kind of lexical scope.
 [<RequireQualifiedAccess>]
-type public FSharpScopeKind =
+type public ScopeKind =
     | Namespace
     | TopModule
     | NestedModule
@@ -66,10 +66,10 @@ type public FSharpScopeKind =
 
 /// Insert open namespace context.
 [<RequireQualifiedAccess>]
-type public FSharpInsertionContext =
+type public InsertionContext =
     {
       /// Current scope kind.
-      ScopeKind: FSharpScopeKind
+      ScopeKind: ScopeKind
 
       /// Current position (F# compiler line number).
       Pos: pos
@@ -77,72 +77,69 @@ type public FSharpInsertionContext =
 
 /// Where open statements should be added.
 [<RequireQualifiedAccess>]
-type public FSharpOpenStatementInsertionPoint =
+type public OpenStatementInsertionPoint =
     | TopLevel
     | Nearest
 
 /// Short identifier, i.e. an identifier that contains no dots.
-type public FSharpShortIdent = string
+type public ShortIdent = string
 
 /// An array of `ShortIdent`.
-type public FSharpShortIdents = FSharpShortIdent[]
+type public ShortIdents = ShortIdent[]
 
 /// `ShortIdent` with a flag indicating if it's resolved in some scope.
-type public FSharpMaybeUnresolvedIdent = 
-    { Ident: FSharpShortIdent; Resolved: bool }
-
-/// Long identifier (i.e. it may contain dots).
-type public FSharpLongIdent = string
+type public MaybeUnresolvedIdent = 
+    { Ident: ShortIdent; Resolved: bool }
 
 /// Helper data structure representing a symbol, suitable for implementing unresolved identifiers resolution code fixes.
-type public FSharpParsedEntity =
+type public InsertionContextEntity =
     {
       /// Full name, relative to the current scope.
-      FullRelativeName: FSharpLongIdent
+      FullRelativeName: string
 
       /// Ident parts needed to append to the current ident to make it resolvable in current scope.
-      Qualifier: FSharpLongIdent
+      Qualifier: string
 
       /// Namespace that is needed to open to make the entity resolvable in the current scope.
-      Namespace: FSharpLongIdent option
+      Namespace: string option
 
       /// Full display name (i.e. last ident plus modules with `RequireQualifiedAccess` attribute prefixed).
-      FullDisplayName: FSharpLongIdent
+      FullDisplayName: string
 
       /// Last part of the entity's full name.
-      LastIdent: FSharpShortIdent
+      LastIdent: ShortIdent
     }
 
 /// Operations querying the entire syntax tree
 module public ParsedInput =
-    val TryFindExpressionASTLeftOfDotLeftOfCursor: pos * ParsedInput option -> (pos * bool) option
+    val TryFindExpressionASTLeftOfDotLeftOfCursor: pos: pos * parsedInputOpt: ParsedInput option -> (pos * bool) option
 
-    val GetRangeOfExprLeftOfDot: pos  * ParsedInput option -> range option
+    val GetRangeOfExprLeftOfDot: pos: pos * parsedInputOpt: ParsedInput option -> range option
 
-    val TryFindExpressionIslandInPosition: pos * ParsedInput option -> string option
+    val TryFindExpressionIslandInPosition: pos: pos * parsedInputOpt: ParsedInput option -> string option
 
-    val TryGetCompletionContext: pos * ParsedInput * lineStr: string -> CompletionContext option
+    val TryGetCompletionContext: pos: pos * parsedInput: ParsedInput * lineStr: string -> CompletionContext option
 
-    val GetEntityKind: pos * ParsedInput -> FSharpEntityKind option
+    val GetEntityKind: pos: pos * parsedInput: ParsedInput -> EntityKind option
 
-    val GetFullNameOfSmallestModuleOrNamespaceAtPoint: ParsedInput * pos -> string[]
+    val GetFullNameOfSmallestModuleOrNamespaceAtPoint: pos: pos * parsedInput: ParsedInput -> string[]
 
     /// Returns `InsertContext` based on current position and symbol idents.
     val TryFindInsertionContext: 
         currentLine: int -> 
-        ast: ParsedInput -> 
-        partiallyQualifiedName: FSharpMaybeUnresolvedIdent[] -> 
-        insertionPoint: FSharpOpenStatementInsertionPoint ->
-        (( (* requiresQualifiedAccessParent: *) FSharpShortIdents option * (* autoOpenParent: *) FSharpShortIdents option * (*  entityNamespace *) FSharpShortIdents option * (* entity: *) FSharpShortIdents) -> (FSharpParsedEntity * FSharpInsertionContext)[])
+        parsedInput: ParsedInput -> 
+        partiallyQualifiedName: MaybeUnresolvedIdent[] -> 
+        insertionPoint: OpenStatementInsertionPoint ->
+        (( (* requiresQualifiedAccessParent: *) ShortIdents option * (* autoOpenParent: *) ShortIdents option * (*  entityNamespace *) ShortIdents option * (* entity: *) ShortIdents) -> (InsertionContextEntity * InsertionContext)[])
     
     /// Returns `InsertContext` based on current position and symbol idents.
-    val FindNearestPointToInsertOpenDeclaration: currentLine: int -> ast: ParsedInput -> entity: FSharpShortIdents -> insertionPoint: FSharpOpenStatementInsertionPoint -> FSharpInsertionContext
+    val FindNearestPointToInsertOpenDeclaration: currentLine: int -> parsedInput: ParsedInput -> entity: ShortIdents -> insertionPoint: OpenStatementInsertionPoint -> InsertionContext
 
     /// Returns long identifier at position.
-    val GetLongIdentAt: ast: ParsedInput -> pos: pos -> LongIdent option
+    val GetLongIdentAt: parsedInput: ParsedInput -> pos: pos -> LongIdent option
 
     /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
-    val AdjustInsertionPoint: getLineStr: (int -> string) -> ctx: FSharpInsertionContext -> pos
+    val AdjustInsertionPoint: getLineStr: (int -> string) -> ctx: InsertionContext -> pos
 
 // implementation details used by other code in the compiler    
 module internal SourceFileImpl =

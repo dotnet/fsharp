@@ -54,7 +54,7 @@ type internal FSharpRenameParamToMatchSignature
                                                 yield TextChange(textSpan, replacement) |]
                                 return changes 
                             }
-                        let title = CompilerDiagnostics.GetErrorMessage (ReplaceWithSuggestion suggestion)
+                        let title = CompilerDiagnostics.GetErrorMessage (FSharpDiagnosticKind.ReplaceWithSuggestion suggestion)
                         let codefix = CodeFixHelpers.createTextChangeCodeFix(title, context, computeChanges)
                         context.RegisterCodeFix(codefix, diagnostics)
             | _ -> ()

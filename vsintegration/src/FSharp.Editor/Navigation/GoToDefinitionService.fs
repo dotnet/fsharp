@@ -74,12 +74,12 @@ type internal FSharpGoToDefinitionService
                             try
                                 let symbolFullTypeName =
                                     match targetExternalSymbol with
-                                    | FSharpExternalSymbol.Constructor(tyName, _)
-                                    | FSharpExternalSymbol.Event(tyName, _)
-                                    | FSharpExternalSymbol.Field(tyName, _)
-                                    | FSharpExternalSymbol.Method(tyName, _, _, _)
-                                    | FSharpExternalSymbol.Property(tyName, _)
-                                    | FSharpExternalSymbol.Type(tyName) -> tyName
+                                    | FindDeclExternalSymbol.Constructor(tyName, _)
+                                    | FindDeclExternalSymbol.Event(tyName, _)
+                                    | FindDeclExternalSymbol.Field(tyName, _)
+                                    | FindDeclExternalSymbol.Method(tyName, _, _, _)
+                                    | FindDeclExternalSymbol.Property(tyName, _)
+                                    | FindDeclExternalSymbol.Type(tyName) -> tyName
 
                                 let text = MetadataAsSource.decompileCSharp(symbolFullTypeName, targetSymbolAssemblyFileName)
                                 let tmpShownDocOpt = metadataAsSourceService.ShowCSharpDocument(tmpProjInfo, tmpDocInfo, text)

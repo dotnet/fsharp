@@ -33,24 +33,24 @@ type public AssemblySymbol =
       /// Entity name parts with removed module suffixes (Ns.M1Module.M2Module.M3.entity -> Ns.M1.M2.M3.entity)
       /// and replaced compiled names with display names (FSharpEntity.DisplayName, FSharpValueOrFunction.DisplayName).
       /// Note: *all* parts are cleaned, not the last one. 
-      CleanedIdents: FSharpShortIdents
+      CleanedIdents: ShortIdents
 
       /// `FSharpEntity.Namespace`.
-      Namespace: FSharpShortIdents option
+      Namespace: ShortIdents option
 
       /// The most narrative parent module that has `RequireQualifiedAccess` attribute.
-      NearestRequireQualifiedAccessParent: FSharpShortIdents option
+      NearestRequireQualifiedAccessParent: ShortIdents option
 
       /// Parent module that has the largest scope and has `RequireQualifiedAccess` attribute.
-      TopRequireQualifiedAccessParent: FSharpShortIdents option
+      TopRequireQualifiedAccessParent: ShortIdents option
 
       /// Parent module that has `AutoOpen` attribute.
-      AutoOpenParent: FSharpShortIdents option
+      AutoOpenParent: ShortIdents option
 
       Symbol: FSharpSymbol
 
       /// Function that returns `EntityKind` based of given `LookupKind`.
-      Kind: LookupType -> FSharpEntityKind
+      Kind: LookupType -> EntityKind
 
       /// Cache display name and namespace, used for completion.
       FSharpUnresolvedSymbol: FSharpUnresolvedSymbol
@@ -90,13 +90,13 @@ type public EntityCache =
     member Locking : (IAssemblyContentCache -> 'T) -> 'T
 
 /// Provides assembly content.
-module public AssemblyContentProvider =
+module public AssemblyContent =
 
     /// Given a `FSharpAssemblySignature`, returns assembly content.
-    val getAssemblySignatureContent : AssemblyContentType -> FSharpAssemblySignature -> AssemblySymbol list
+    val GetAssemblySignatureContent : AssemblyContentType -> FSharpAssemblySignature -> AssemblySymbol list
 
     /// Returns (possibly cached) assembly content.
-    val getAssemblyContent : 
+    val GetAssemblyContent : 
           withCache: ((IAssemblyContentCache -> AssemblySymbol list) -> AssemblySymbol list)  
           -> contentType: AssemblyContentType 
           -> fileName: string option 

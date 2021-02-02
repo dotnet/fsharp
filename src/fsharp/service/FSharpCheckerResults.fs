@@ -131,37 +131,10 @@ type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc
 
     override _.ToString() = sprintf "%O, %O, %O" symbol itemOcc range 
 
-[<RequireQualifiedAccess>]
-type FSharpFindDeclFailureReason = 
-
-    // generic reason: no particular information about error
-    | Unknown of message: string
-
-    // source code file is not available
-    | NoSourceCode
-
-    // trying to find declaration of ProvidedType without TypeProviderDefinitionLocationAttribute
-    | ProvidedType of typeName: string
-
-    // trying to find declaration of ProvidedMember without TypeProviderDefinitionLocationAttribute
-    | ProvidedMember of memberName: string
-
-[<RequireQualifiedAccess>]
-type FSharpFindDeclResult = 
-
-    /// declaration not found + reason
-    | DeclNotFound of FSharpFindDeclFailureReason
-
-    /// found declaration
-    | DeclFound of location: range
-
-    /// Indicates an external declaration was found
-    | ExternalDecl of assembly : string * externalSym : FSharpExternalSymbol
-
 /// This type is used to describe what was found during the name resolution.
 /// (Depending on the kind of the items, we may stop processing or continue to find better items)
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type internal NameResResult = 
+type NameResResult = 
     | Members of (ItemWithInst list * DisplayEnv * range)
     | Cancel of DisplayEnv * range
     | Empty
@@ -844,7 +817,7 @@ type internal TypeCheckInfo
                 |> Option.map toCompletionItems
             
             // Completion at ' { XXX = ... } "
-            | Some(CompletionContext.RecordField(FSharpRecordContext.New(plid, _))) ->
+            | Some(CompletionContext.RecordField(RecordContext.New(plid, _))) ->
                 // { x. } can be either record construction or computation expression. Try to get all visible record fields first
                 match GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid) |> toCompletionItems with
                 | [],_,_ -> 
@@ -853,7 +826,7 @@ type internal TypeCheckInfo
                 | result -> Some(result)
             
             // Completion at ' { XXX = ... with ... } "
-            | Some(CompletionContext.RecordField(FSharpRecordContext.CopyOnUpdate(r, (plid, _)))) -> 
+            | Some(CompletionContext.RecordField(RecordContext.CopyOnUpdate(r, (plid, _)))) -> 
                 match GetRecdFieldsForExpr(r) with
                 | None -> 
                     Some (GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid))
@@ -863,7 +836,7 @@ type internal TypeCheckInfo
                     |> Option.map toCompletionItems
             
             // Completion at ' { XXX = ... with ... } "
-            | Some(CompletionContext.RecordField(FSharpRecordContext.Constructor(typeName))) ->
+            | Some(CompletionContext.RecordField(RecordContext.Constructor(typeName))) ->
                 Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName]))
                 |> Option.map toCompletionItems
             
@@ -994,7 +967,7 @@ type internal TypeCheckInfo
                     let currentNamespaceOrModule =
                         parseResultsOpt
                         |> Option.bind (fun x -> x.ParseTree)
-                        |> Option.map (fun parsedInput -> ParsedInput.GetFullNameOfSmallestModuleOrNamespaceAtPoint(parsedInput, mkPos line 0))
+                        |> Option.map (fun parsedInput -> ParsedInput.GetFullNameOfSmallestModuleOrNamespaceAtPoint(mkPos line 0, parsedInput))
                     let isAttributeApplication = ctx = Some CompletionContext.AttributeApplication
                     DeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,currentNamespaceOrModule,isAttributeApplication))
             (fun msg -> 
@@ -1209,7 +1182,7 @@ type internal TypeCheckInfo
                         ResolveOverloads.No, (fun() -> []))
 
                 match declItemsOpt with
-                | None -> FSharpMethodGroup("",[| |])
+                | None -> MethodGroup("",[| |])
                 | Some (items, denv, _, m) -> 
                     // GetDeclItemsForNamesAtPosition returns Items.Types and Item.CtorGroup for `new T(|)`, 
                     // the Item.Types is not needed here as it duplicates (at best) parameterless ctor.
@@ -1218,10 +1191,10 @@ type internal TypeCheckInfo
                         match ctors with
                         | [] -> items
                         | ctors -> ctors
-                    FSharpMethodGroup.Create(infoReader, m, denv, items |> List.map (fun x -> x.ItemWithInst)))
+                    MethodGroup.Create(infoReader, m, denv, items |> List.map (fun x -> x.ItemWithInst)))
             (fun msg -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetMethods: '%s'" msg)
-                FSharpMethodGroup(msg,[| |]))
+                MethodGroup(msg,[| |]))
 
     member _.GetMethodsAsSymbols (line, lineStr, colAtEndOfNames, names) =
         ErrorScope.Protect Range.range0
@@ -1254,7 +1227,7 @@ type internal TypeCheckInfo
 
                 match declItemsOpt with
                 | None
-                | Some ([], _, _, _) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown "")
+                | Some ([], _, _, _) -> FindDeclResult.DeclNotFound (FindDeclFailureReason.Unknown "")
                 | Some (item :: _, _, _, _) ->
                 let getTypeVarNames (ilinfo: ILMethInfo) =
                     let classTypeParams = ilinfo.DeclaringTyconRef.ILTyconRawMetadata.GenericParams |> List.map (fun paramDef -> paramDef.Name)
@@ -1267,20 +1240,20 @@ type internal TypeCheckInfo
                         match ilinfo.MetadataScope with
                         | ILScopeRef.Assembly assemblyRef ->
                             let typeVarNames = getTypeVarNames ilinfo
-                            FSharpExternalParam.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
+                            FindDeclExternalParam.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
                             |> Option.map (fun args ->
-                                let externalSym = FSharpExternalSymbol.Constructor (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, args)
-                                FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
+                                let externalSym = FindDeclExternalSymbol.Constructor (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, args)
+                                FindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                         | _ -> None
 
                     | Item.MethodGroup (name, (ILMeth (_,ilinfo,_)) :: _, _) ->
                         match ilinfo.MetadataScope with
                         | ILScopeRef.Assembly assemblyRef ->
                             let typeVarNames = getTypeVarNames ilinfo
-                            FSharpExternalParam.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
+                            FindDeclExternalParam.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
                             |> Option.map (fun args ->
-                                let externalSym = FSharpExternalSymbol.Method (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, name, args, ilinfo.ILMethodRef.GenericArity)
-                                FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
+                                let externalSym = FindDeclExternalSymbol.Method (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, name, args, ilinfo.ILMethodRef.GenericArity)
+                                FindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                         | _ -> None
 
                     | Item.Property (name, ILProp propInfo :: _) ->
@@ -1293,23 +1266,23 @@ type internal TypeCheckInfo
                         | Some methInfo ->
                             match methInfo.MetadataScope with
                             | ILScopeRef.Assembly assemblyRef ->
-                                let externalSym = FSharpExternalSymbol.Property (methInfo.ILMethodRef.DeclaringTypeRef.FullName, name)
-                                Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
+                                let externalSym = FindDeclExternalSymbol.Property (methInfo.ILMethodRef.DeclaringTypeRef.FullName, name)
+                                Some (FindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                             | _ -> None
                         | None -> None
                   
                     | Item.ILField (ILFieldInfo (typeInfo, fieldDef)) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                         match typeInfo.ILScopeRef with
                         | ILScopeRef.Assembly assemblyRef ->
-                            let externalSym = FSharpExternalSymbol.Field (typeInfo.ILTypeRef.FullName, fieldDef.Name)
-                            Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
+                            let externalSym = FindDeclExternalSymbol.Field (typeInfo.ILTypeRef.FullName, fieldDef.Name)
+                            Some (FindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                         | _ -> None
                   
                     | Item.Event (ILEvent (ILEventInfo (typeInfo, eventDef))) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                         match typeInfo.ILScopeRef with
                         | ILScopeRef.Assembly assemblyRef ->
-                            let externalSym = FSharpExternalSymbol.Event (typeInfo.ILTypeRef.FullName, eventDef.Name)
-                            Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
+                            let externalSym = FindDeclExternalSymbol.Event (typeInfo.ILTypeRef.FullName, eventDef.Name)
+                            Some (FindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                         | _ -> None
 
                     | Item.ImplicitOp(_, {contents = Some(TraitConstraintSln.FSMethSln(_, _vref, _))}) ->
@@ -1322,7 +1295,7 @@ type internal TypeCheckInfo
                         match tr.TypeReprInfo, tr.PublicPath with
                         | TILObjectRepr(TILObjectReprData (ILScopeRef.Assembly assemblyRef, _, _)), Some (PubPath parts) ->
                             let fullName = parts |> String.concat "."
-                            Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, FSharpExternalSymbol.Type fullName))
+                            Some (FindDeclResult.ExternalDecl (assemblyRef.Name, FindDeclExternalSymbol.Type fullName))
                         | _ -> None
                     | _ -> None
                 match result with
@@ -1333,24 +1306,24 @@ type internal TypeCheckInfo
                     let projectDir = Filename.directoryName (if projectFileName = "" then mainInputFileName else projectFileName)
                     let range = fileNameOfItem g (Some projectDir) itemRange item.Item
                     mkRange range itemRange.Start itemRange.End              
-                    |> FSharpFindDeclResult.DeclFound
+                    |> FindDeclResult.DeclFound
                 | None -> 
                     match item.Item with 
 #if !NO_EXTENSIONTYPING
 // provided items may have TypeProviderDefinitionLocationAttribute that binds them to some location
                     | Item.CtorGroup  (name, ProvidedMeth (_)::_   )
                     | Item.MethodGroup(name, ProvidedMeth (_)::_, _)
-                    | Item.Property   (name, ProvidedProp (_)::_   ) -> FSharpFindDeclFailureReason.ProvidedMember name             
-                    | Item.Event      (      ProvidedEvent(_) as e ) -> FSharpFindDeclFailureReason.ProvidedMember e.EventName        
-                    | Item.ILField    (      ProvidedField(_) as f ) -> FSharpFindDeclFailureReason.ProvidedMember f.FieldName        
-                    | SymbolHelpers.ItemIsProvidedType g (tcref)     -> FSharpFindDeclFailureReason.ProvidedType   tcref.DisplayName
+                    | Item.Property   (name, ProvidedProp (_)::_   ) -> FindDeclFailureReason.ProvidedMember name             
+                    | Item.Event      (      ProvidedEvent(_) as e ) -> FindDeclFailureReason.ProvidedMember e.EventName        
+                    | Item.ILField    (      ProvidedField(_) as f ) -> FindDeclFailureReason.ProvidedMember f.FieldName        
+                    | SymbolHelpers.ItemIsProvidedType g (tcref)     -> FindDeclFailureReason.ProvidedType   tcref.DisplayName
 #endif
-                    | _                                              -> FSharpFindDeclFailureReason.Unknown ""                      
-                    |> FSharpFindDeclResult.DeclNotFound
+                    | _                                              -> FindDeclFailureReason.Unknown ""                      
+                    |> FindDeclResult.DeclNotFound
             )
             (fun msg -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarationLocation: '%s'" msg)
-                FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown msg))
+                FindDeclResult.DeclNotFound (FindDeclFailureReason.Unknown msg))
 
     member _.GetSymbolUseAtLocation (line, lineStr, colAtEndOfNames, names) =
         ErrorScope.Protect Range.range0 
@@ -1883,12 +1856,12 @@ type FSharpCheckFileResults
 
     // Resolve the names at the given location to a set of methods
     member _.GetMethods(line, colAtEndOfNames, lineText, names) =
-        let dflt = FSharpMethodGroup("",[| |])
+        let dflt = MethodGroup("",[| |])
         threadSafeOp (fun () -> dflt) (fun scope -> 
             scope.GetMethods (line, lineText, colAtEndOfNames, names))
             
     member _.GetDeclarationLocation (line, colAtEndOfNames, lineText, names, ?preferFlag) = 
-        let dflt = FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown "")
+        let dflt = FindDeclResult.DeclNotFound (FindDeclFailureReason.Unknown "")
         threadSafeOp (fun () -> dflt) (fun scope -> 
             scope.GetDeclarationLocation (line, lineText, colAtEndOfNames, names, preferFlag))
 

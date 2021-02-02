@@ -211,31 +211,52 @@ let ``Test multi project 1 xmldoc`` () =
 
 
     match x1FromProject1A with 
-    | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc.Count |> shouldEqual 1
+    | :? FSharpMemberOrFunctionOrValue as v -> 
+        match v.XmlDoc with 
+        | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines.Length |> shouldEqual 1
+        | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
     
     match x3FromProject1A with 
-    | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc |> shouldEqual ([|" This is"; " x3"|] |> toIList)
+    | :? FSharpMemberOrFunctionOrValue as v ->
+        match v.XmlDoc with 
+        | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines |> shouldEqual [|" This is"; " x3"|]
+        | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
 
     match x3FromProject1A with 
-    | :? FSharpMemberOrFunctionOrValue as v -> v.ElaboratedXmlDoc |> shouldEqual ([|"<summary>"; " This is"; " x3"; "</summary>" |] |> toIList)
+    | :? FSharpMemberOrFunctionOrValue as v -> 
+        match v.XmlDoc with 
+        | FSharpXmlDoc.FromXmlText t -> t.GetElaboratedXmlLines() |> shouldEqual [|"<summary>"; " This is"; " x3"; "</summary>" |]
+        | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
 
     match x1FromProjectMultiProject with 
-    | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc.Count |> shouldEqual 1
+    | :? FSharpMemberOrFunctionOrValue as v ->
+        match v.XmlDoc with 
+        | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines.Length |> shouldEqual 1
+        | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
 
     match ctorFromProjectMultiProject with 
-    | :? FSharpMemberOrFunctionOrValue as c -> c.XmlDoc.Count |> shouldEqual 0
+    | :? FSharpMemberOrFunctionOrValue as c ->
+        match c.XmlDoc with 
+        | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines.Length |> shouldEqual 0
+        | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
 
     match ctorFromProjectMultiProject with 
-    | :? FSharpMemberOrFunctionOrValue as c -> c.DeclaringEntity.Value.XmlDoc.Count |> shouldEqual 1
+    | :? FSharpMemberOrFunctionOrValue as c ->
+        match c.XmlDoc with 
+        | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines.Length |> shouldEqual 1
+        | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
 
     match case1FromProjectMultiProject with 
-    | :? FSharpUnionCase as c -> c.XmlDoc.Count |> shouldEqual 1
+    | :? FSharpUnionCase as c -> 
+        match c.XmlDoc with 
+        | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines.Length |> shouldEqual 1
+        | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
 
 //------------------------------------------------------------------------------------
@@ -767,8 +788,11 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
     divisibleBySymbol.ToString() |> shouldEqual "symbol DivisibleBy"
 
     let divisibleByActivePatternCase = divisibleBySymbol :?> FSharpActivePatternCase
-    divisibleByActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual [ "A parameterized active pattern of divisibility" ]
-    divisibleByActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual [ "<summary>"; "A parameterized active pattern of divisibility"; "</summary>" ]
+    match divisibleByActivePatternCase.XmlDoc with 
+    | FSharpXmlDoc.FromXmlText t ->
+        t.UnprocessedLines |> shouldEqual [| "A parameterized active pattern of divisibility" |]
+        t.GetElaboratedXmlLines() |> shouldEqual [| "<summary>"; "A parameterized active pattern of divisibility"; "</summary>" |]
+    | _ -> failwith "wrong kind"
     divisibleByActivePatternCase.XmlDocSig |> shouldEqual "M:Project3A.|DivisibleBy|_|(System.Int32,System.Int32)"
     let divisibleByGroup = divisibleByActivePatternCase.Group
     divisibleByGroup.IsTotal |> shouldEqual false
@@ -859,14 +883,12 @@ let ``Type provider project references should not throw exceptions`` () =
                 UseScriptResolutionRules = false;
                 LoadTime = System.DateTime.Now
                 UnresolvedReferences = None;
-                OriginalLoadReferences = [];
-                ExtraProjectInfo = None;})|];
+                OriginalLoadReferences = [] })|];
            IsIncompleteTypeCheckEnvironment = false;
            UseScriptResolutionRules = false;
            LoadTime = System.DateTime.Now
            UnresolvedReferences = None;
-           OriginalLoadReferences = [];
-           ExtraProjectInfo = None;}
+           OriginalLoadReferences = [];}
 
     //printfn "options: %A" options
     let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/Program.fs"    
@@ -952,15 +974,13 @@ let ``Projects creating generated types should not utilize cross-project-referen
                 LoadTime = System.DateTime.Now
                 UnresolvedReferences = None;
                 OriginalLoadReferences = [];
-                Stamp = None;
-                ExtraProjectInfo = None;})|];
+                Stamp = None})|];
            IsIncompleteTypeCheckEnvironment = false;
            UseScriptResolutionRules = false;
            LoadTime = System.DateTime.Now
            UnresolvedReferences = None;
            Stamp = None;
-           OriginalLoadReferences = [];
-           ExtraProjectInfo = None;}
+           OriginalLoadReferences = [] }
     //printfn "options: %A" options
     let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/Program.fs"    
     let fileSource = File.ReadAllText(fileName)

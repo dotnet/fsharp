@@ -34,7 +34,7 @@ module internal TaggedText =
 // functionality and thus have considerable value, they should ony be deleted if we are sure this 
 // is not the case.
 //
-type internal FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder: IDocumentationBuilder_DEPRECATED, methodsName, methods: FSharpMethodGroupItem[], nwpl: ParameterLocations, snapshot: ITextSnapshot, isThisAStaticArgumentsTip: bool) =
+type internal FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder: IDocumentationBuilder_DEPRECATED, methodsName, methods: MethodGroupItem[], nwpl: ParameterLocations, snapshot: ITextSnapshot, isThisAStaticArgumentsTip: bool) =
     inherit MethodListForAMethodTip_DEPRECATED() 
 
     // Compute the tuple end points
@@ -58,7 +58,7 @@ type internal FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder: IDo
                 let span = ss.CreateTrackingSpan(MakeSpan(ss,sl,sc,el,ec), SpanTrackingMode.EdgeInclusive)
                 yield span  |]
 
-    let getParameters (m : FSharpMethodGroupItem) =  if isThisAStaticArgumentsTip then m.StaticParameters else m.Parameters
+    let getParameters (m : MethodGroupItem) =  if isThisAStaticArgumentsTip then m.StaticParameters else m.Parameters
 
     do assert(methods.Length > 0)
 

@@ -64,7 +64,7 @@ type internal FSharpFindUsagesService
             
             let declarationRange = 
                 match declaration with
-                | FSharpFindDeclResult.DeclFound range -> Some range
+                | FindDeclResult.DeclFound range -> Some range
                 | _ -> None
 
             let! declarationSpans = async {

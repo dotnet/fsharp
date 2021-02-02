@@ -59,7 +59,7 @@ module GoToDefinitionServiceTests =
             let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
             
             match declarations with
-            | FSharpFindDeclResult.DeclFound range -> return range
+            | FindDeclResult.DeclFound range -> return range
             | _ -> return! None
         }
 

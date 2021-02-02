@@ -67,35 +67,6 @@ type public FSharpSymbolUse =
     // For internal use only
     internal new: g:TcGlobals * denv: DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
 
-/// Represents the reason why the GetDeclarationLocation operation failed.
-[<RequireQualifiedAccess>]
-type public FSharpFindDeclFailureReason = 
-
-    /// Generic reason: no particular information about error apart from a message
-    | Unknown of message: string
-
-    /// Source code file is not available
-    | NoSourceCode
-
-    /// Trying to find declaration of ProvidedType without TypeProviderDefinitionLocationAttribute
-    | ProvidedType of typeName: string
-
-    /// Trying to find declaration of ProvidedMember without TypeProviderDefinitionLocationAttribute
-    | ProvidedMember of memberName: string
-
-/// Represents the result of the GetDeclarationLocation operation.
-[<RequireQualifiedAccess>]
-type public FSharpFindDeclResult = 
-
-    /// Indicates a declaration location was not found, with an additional reason
-    | DeclNotFound of FSharpFindDeclFailureReason
-
-    /// Indicates a declaration location was found
-    | DeclFound of location: range
-
-    /// Indicates an external declaration was found
-    | ExternalDecl of assembly: string * externalSym : FSharpExternalSymbol
-     
 /// Represents the checking context implied by the ProjectOptions 
 [<Sealed>]
 type public FSharpProjectContext =
@@ -210,7 +181,7 @@ type public FSharpCheckFileResults =
     /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    member GetMethods : line:int * colAtEndOfNames:int * lineText:string * names:string list option -> FSharpMethodGroup
+    member GetMethods : line:int * colAtEndOfNames:int * lineText:string * names:string list option -> MethodGroup
 
     /// <summary>Compute a set of method overloads to show in a dialog relevant to the given code location.  The resulting method overloads are returned as symbols.</summary>
     /// <param name="line">The line number where the information is being requested.</param>
@@ -226,7 +197,7 @@ type public FSharpCheckFileResults =
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="preferFlag">If not given, then get the location of the symbol. If false, then prefer the location of the corresponding symbol in the implementation of the file (rather than the signature if present). If true, prefer the location of the corresponding symbol in the signature of the file (rather than the implementation).</param>
-    member GetDeclarationLocation : line:int * colAtEndOfNames:int * lineText:string * names:string list * ?preferFlag:bool -> FSharpFindDeclResult
+    member GetDeclarationLocation : line:int * colAtEndOfNames:int * lineText:string * names:string list * ?preferFlag:bool -> FindDeclResult
 
     /// <summary>Resolve the names at the given location to a use of symbol.</summary>
     ///

@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.CodeAnalysis
+namespace FSharp.Compiler.EditorServices
 
 open FSharp.Reflection
+open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL.IL
 open System.Diagnostics
 
@@ -17,15 +18,15 @@ module Option =
     
 /// Represents a type in an external (non F#) assembly.
 [<RequireQualifiedAccess>]
-type FSharpExternalType =
+type FindDeclExternalType =
     /// Type defined in non-F# assembly.
-    | Type of fullName: string * genericArgs: FSharpExternalType list
+    | Type of fullName: string * genericArgs: FindDeclExternalType list
 
     /// Array of type that is defined in non-F# assembly.
-    | Array of inner: FSharpExternalType
+    | Array of inner: FindDeclExternalType
 
     /// Pointer defined in non-F# assembly.
-    | Pointer of inner: FSharpExternalType
+    | Pointer of inner: FindDeclExternalType
 
     /// Type variable defined in non-F# assembly.
     | TypeVar of typeName: string
@@ -45,33 +46,33 @@ type FSharpExternalType =
         | Pointer inner -> sprintf "&%O" inner
         | TypeVar name -> sprintf "'%s" name
         
-module FSharpExternalType =
+module FindDeclExternalType =
     let rec tryOfILType (typeVarNames: string array) (ilType: ILType) =
         
         match ilType with
         | ILType.Array (_, inner) ->
-            tryOfILType typeVarNames inner |> Option.map FSharpExternalType.Array
+            tryOfILType typeVarNames inner |> Option.map FindDeclExternalType.Array
         | ILType.Boxed tyspec
         | ILType.Value tyspec ->
             tyspec.GenericArgs
             |> List.map (tryOfILType typeVarNames)
             |> Option.ofOptionList
-            |> Option.map (fun genericArgs -> FSharpExternalType.Type (tyspec.FullName, genericArgs))
+            |> Option.map (fun genericArgs -> FindDeclExternalType.Type (tyspec.FullName, genericArgs))
         | ILType.Ptr inner ->
-            tryOfILType typeVarNames inner |> Option.map FSharpExternalType.Pointer
+            tryOfILType typeVarNames inner |> Option.map FindDeclExternalType.Pointer
         | ILType.TypeVar ordinal ->
             typeVarNames
             |> Array.tryItem (int ordinal)
-            |> Option.map (fun typeVarName -> FSharpExternalType.TypeVar typeVarName)
+            |> Option.map (fun typeVarName -> FindDeclExternalType.TypeVar typeVarName)
         | _ ->
             None
 
 [<RequireQualifiedAccess>]
-type FSharpExternalParam =
+type FindDeclExternalParam =
 
-    | Param of parameterType: FSharpExternalType
+    | Param of parameterType: FindDeclExternalType
 
-    | Byref of parameterType: FSharpExternalType
+    | Byref of parameterType: FindDeclExternalType
 
     member c.IsByRef = match c with Byref _ -> true | _ -> false
 
@@ -85,21 +86,21 @@ type FSharpExternalParam =
         | Param t -> t.ToString()
         | Byref t -> sprintf "ref %O" t
 
-module FSharpExternalParam =
+module FindDeclExternalParam =
     let tryOfILType (typeVarNames : string array) =
         function
-        | ILType.Byref inner -> FSharpExternalType.tryOfILType typeVarNames inner |> Option.map FSharpExternalParam.Byref
-        | ilType -> FSharpExternalType.tryOfILType typeVarNames ilType |> Option.map FSharpExternalParam.Param
+        | ILType.Byref inner -> FindDeclExternalType.tryOfILType typeVarNames inner |> Option.map FindDeclExternalParam.Byref
+        | ilType -> FindDeclExternalType.tryOfILType typeVarNames ilType |> Option.map FindDeclExternalParam.Param
 
     let tryOfILTypes typeVarNames ilTypes =
         ilTypes |> List.map (tryOfILType typeVarNames) |> Option.ofOptionList
     
 [<RequireQualifiedAccess>]
 [<DebuggerDisplay "{ToDebuggerDisplay(),nq}">]
-type FSharpExternalSymbol =
+type FindDeclExternalSymbol =
     | Type of fullName: string
-    | Constructor of typeName: string * args: FSharpExternalParam list
-    | Method of typeName: string * name: string * paramSyms: FSharpExternalParam list * genericArity: int
+    | Constructor of typeName: string * args: FindDeclExternalParam list
+    | Method of typeName: string * name: string * paramSyms: FindDeclExternalParam list * genericArity: int
     | Field of typeName: string * name: string
     | Event of typeName: string * name: string
     | Property of typeName: string * name: string
@@ -127,5 +128,33 @@ type FSharpExternalSymbol =
             sprintf "%s.%s" typeName name
 
     member this.ToDebuggerDisplay () =
-        let caseInfo, _ = FSharpValue.GetUnionFields(this, typeof<FSharpExternalSymbol>)
+        let caseInfo, _ = FSharpValue.GetUnionFields(this, typeof<FindDeclExternalSymbol>)
         sprintf "%s %O" caseInfo.Name this
+
+[<RequireQualifiedAccess>]
+type FindDeclFailureReason = 
+
+    // generic reason: no particular information about error
+    | Unknown of message: string
+
+    // source code file is not available
+    | NoSourceCode
+
+    // trying to find declaration of ProvidedType without TypeProviderDefinitionLocationAttribute
+    | ProvidedType of typeName: string
+
+    // trying to find declaration of ProvidedMember without TypeProviderDefinitionLocationAttribute
+    | ProvidedMember of memberName: string
+
+[<RequireQualifiedAccess>]
+type FindDeclResult = 
+
+    /// declaration not found + reason
+    | DeclNotFound of FindDeclFailureReason
+
+    /// found declaration
+    | DeclFound of location: range
+
+    /// Indicates an external declaration was found
+    | ExternalDecl of assembly : string * externalSym : FindDeclExternalSymbol
+

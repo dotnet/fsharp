@@ -52,7 +52,7 @@ type internal FSharpMakeDeclarationMutableFixProvider
             match decl with
             // Only do this for symbols in the same file. That covers almost all cases anyways.
             // We really shouldn't encourage making values mutable outside of local scopes anyways.
-            | FSharpFindDeclResult.DeclFound declRange when declRange.FileName = document.FilePath ->
+            | FindDeclResult.DeclFound declRange when declRange.FileName = document.FilePath ->
                 let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, declRange)
 
                 // Bail if it's a parameter, because like, that ain't allowed

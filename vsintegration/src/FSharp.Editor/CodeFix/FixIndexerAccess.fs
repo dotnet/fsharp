@@ -47,7 +47,7 @@ type internal FSharpFixIndexerAccessCodeFixProvider() =
 
                     let codefix = 
                         CodeFixHelpers.createTextChangeCodeFix(
-                            CompilerDiagnostics.GetErrorMessage AddIndexerDot, 
+                            CompilerDiagnostics.GetErrorMessage FSharpDiagnosticKind.AddIndexerDot, 
                             context,
                             (fun () -> asyncMaybe.Return [| TextChange(span, replacement.TrimEnd() + ".") |]))
 

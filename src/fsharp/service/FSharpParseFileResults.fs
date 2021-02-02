@@ -41,7 +41,7 @@ type InheritanceContext =
     | Unknown
 
 [<RequireQualifiedAccess>]
-type FSharpRecordContext =
+type RecordContext =
     | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
     | New of path: CompletionPath
@@ -55,7 +55,7 @@ type CompletionContext =
     | Inherit of context: InheritanceContext * path: CompletionPath
 
     /// Completing records field
-    | RecordField of context: FSharpRecordContext
+    | RecordField of context: RecordContext
 
     | RangeOperator
 

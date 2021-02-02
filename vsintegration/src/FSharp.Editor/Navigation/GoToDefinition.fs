@@ -47,40 +47,40 @@ module private Symbol =
 
         inner [] root |> String.concat "."
 
-module private FSharpExternalType =
-    let rec tryOfRoslynType (typesym: ITypeSymbol): FSharpExternalType option =
+module private FindDeclExternalType =
+    let rec tryOfRoslynType (typesym: ITypeSymbol): FindDeclExternalType option =
         match typesym with
         | :? IPointerTypeSymbol as ptrparam ->
-            tryOfRoslynType ptrparam.PointedAtType |> Option.map FSharpExternalType.Pointer
+            tryOfRoslynType ptrparam.PointedAtType |> Option.map FindDeclExternalType.Pointer
         | :? IArrayTypeSymbol as arrparam ->
-            tryOfRoslynType arrparam.ElementType |> Option.map FSharpExternalType.Array
+            tryOfRoslynType arrparam.ElementType |> Option.map FindDeclExternalType.Array
         | :? ITypeParameterSymbol as typaram ->
-            Some (FSharpExternalType.TypeVar typaram.Name)
+            Some (FindDeclExternalType.TypeVar typaram.Name)
         | :? INamedTypeSymbol as namedTypeSym ->
             namedTypeSym.TypeArguments
             |> Seq.map tryOfRoslynType
             |> List.ofSeq
             |> Option.ofOptionList
             |> Option.map (fun genericArgs ->
-                FSharpExternalType.Type (Symbol.fullName typesym, genericArgs))
+                FindDeclExternalType.Type (Symbol.fullName typesym, genericArgs))
         | _ ->
             Debug.Assert(false, sprintf "GoToDefinitionService: Unexpected Roslyn type symbol subclass: %O" (typesym.GetType()))
             None
 
-module private FSharpExternalParam =
+module private FindDeclExternalParam =
 
-    let tryOfRoslynParameter (param: IParameterSymbol): FSharpExternalParam option =
-        FSharpExternalType.tryOfRoslynType param.Type
-        |> Option.map (fun ty -> FSharpExternalParam.Create(ty, param.RefKind <> RefKind.None))
+    let tryOfRoslynParameter (param: IParameterSymbol): FindDeclExternalParam option =
+        FindDeclExternalType.tryOfRoslynType param.Type
+        |> Option.map (fun ty -> FindDeclExternalParam.Create(ty, param.RefKind <> RefKind.None))
 
-    let tryOfRoslynParameters (paramSyms: ImmutableArray<IParameterSymbol>): FSharpExternalParam list option =
+    let tryOfRoslynParameters (paramSyms: ImmutableArray<IParameterSymbol>): FindDeclExternalParam list option =
         paramSyms
         |> Seq.map tryOfRoslynParameter
         |> Seq.toList
         |> Option.ofOptionList
 
 module private ExternalSymbol =
-    let rec ofRoslynSymbol (symbol: ISymbol) : (ISymbol * FSharpExternalSymbol) list =
+    let rec ofRoslynSymbol (symbol: ISymbol) : (ISymbol * FindDeclExternalSymbol) list =
         let container = Symbol.fullName symbol.ContainingSymbol
 
         match symbol with
@@ -89,28 +89,28 @@ module private ExternalSymbol =
 
             let constructors =
                 typesym.InstanceConstructors
-                |> Seq.choose<_,ISymbol * FSharpExternalSymbol> (fun methsym ->
-                    FSharpExternalParam.tryOfRoslynParameters methsym.Parameters
-                    |> Option.map (fun args -> upcast methsym, FSharpExternalSymbol.Constructor(fullTypeName, args))
+                |> Seq.choose<_,ISymbol * FindDeclExternalSymbol> (fun methsym ->
+                    FindDeclExternalParam.tryOfRoslynParameters methsym.Parameters
+                    |> Option.map (fun args -> upcast methsym, FindDeclExternalSymbol.Constructor(fullTypeName, args))
                     )
                 |> List.ofSeq
                 
-            (symbol, FSharpExternalSymbol.Type fullTypeName) :: constructors
+            (symbol, FindDeclExternalSymbol.Type fullTypeName) :: constructors
 
         | :? IMethodSymbol as methsym ->
-            FSharpExternalParam.tryOfRoslynParameters methsym.Parameters
+            FindDeclExternalParam.tryOfRoslynParameters methsym.Parameters
             |> Option.map (fun args ->
-                symbol, FSharpExternalSymbol.Method(container, methsym.MetadataName, args, methsym.TypeParameters.Length))
+                symbol, FindDeclExternalSymbol.Method(container, methsym.MetadataName, args, methsym.TypeParameters.Length))
             |> Option.toList
 
         | :? IPropertySymbol as propsym ->
-            [upcast propsym, FSharpExternalSymbol.Property(container, propsym.MetadataName)]
+            [upcast propsym, FindDeclExternalSymbol.Property(container, propsym.MetadataName)]
 
         | :? IFieldSymbol as fieldsym ->
-            [upcast fieldsym, FSharpExternalSymbol.Field(container, fieldsym.MetadataName)]
+            [upcast fieldsym, FindDeclExternalSymbol.Field(container, fieldsym.MetadataName)]
 
         | :? IEventSymbol as eventsym ->
-            [upcast eventsym, FSharpExternalSymbol.Event(container, eventsym.MetadataName)]
+            [upcast eventsym, FindDeclExternalSymbol.Event(container, eventsym.MetadataName)]
 
         | _ -> []
 
@@ -156,7 +156,7 @@ type internal FSharpGoToDefinitionNavigableItem(document, sourceSpan) =
 [<RequireQualifiedAccess>]
 type internal FSharpGoToDefinitionResult =
     | NavigableItem of FSharpNavigableItem
-    | ExternalAssembly of ProjectInfo * DocumentInfo * FSharpSymbolUse * FSharpExternalSymbol
+    | ExternalAssembly of ProjectInfo * DocumentInfo * FSharpSymbolUse * FindDeclExternalSymbol
 
 type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager) =
     let userOpName = "GoToDefinition"
@@ -253,7 +253,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
             let! targetSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
 
             match declarations with
-            | FSharpFindDeclResult.ExternalDecl (assembly, targetExternalSym) ->
+            | FindDeclResult.ExternalDecl (assembly, targetExternalSym) ->
                 let projectOpt = originDocument.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName.Equals(assembly, StringComparison.OrdinalIgnoreCase))
                 match projectOpt with
                 | Some project ->
@@ -277,7 +277,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                     let tmpProjInfo, tmpDocId = MetadataAsSource.generateTemporaryCSharpDocument(AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName), targetSymbolUse.Symbol.DisplayName, originDocument.Project.MetadataReferences)
                     return (FSharpGoToDefinitionResult.ExternalAssembly(tmpProjInfo, tmpDocId, targetSymbolUse, targetExternalSym), idRange)
 
-            | FSharpFindDeclResult.DeclFound targetRange -> 
+            | FindDeclResult.DeclFound targetRange -> 
                 // if goto definition is called at we are alread at the declaration location of a symbol in
                 // either a signature or an implementation file then we jump to it's respective postion in thethe
                 if lexerSymbol.Range = targetRange then
@@ -297,7 +297,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                     else // jump from implementation to the corresponding signature
                         let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineString, lexerSymbol.FullIsland, true)
                         match declarations with
-                        | FSharpFindDeclResult.DeclFound targetRange -> 
+                        | FindDeclResult.DeclFound targetRange -> 
                             let! sigDocument = originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName
                             let! sigSourceText = sigDocument.GetTextAsync () |> liftTaskAsync
                             let! sigTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sigSourceText, targetRange)

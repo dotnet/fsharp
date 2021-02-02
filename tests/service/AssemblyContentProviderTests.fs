@@ -52,7 +52,7 @@ let (=>) (source: string) (expected: string list) =
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> checkFileResults
 
     let actual = 
-        AssemblyContentProvider.getAssemblySignatureContent AssemblyContentType.Full checkFileResults.PartialAssemblySignature
+        AssemblyContent.GetAssemblySignatureContent AssemblyContentType.Full checkFileResults.PartialAssemblySignature
         |> List.map (fun x -> x.CleanedIdents |> String.concat ".") 
         |> List.sort
 

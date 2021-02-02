@@ -8,12 +8,12 @@ open System.ComponentModel.Composition
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 
-[<Export(typeof<AssemblyContentProvider>); Composition.Shared>]
-type internal AssemblyContentProvider () =
+[<Export(typeof<AssemblyContent>); Composition.Shared>]
+type internal AssemblyContent () =
     let entityCache = EntityCache()
 
     member x.GetAllEntitiesInProjectAndReferencedAssemblies (fileCheckResults: FSharpCheckFileResults) =
-        [ yield! AssemblyContentProvider.getAssemblySignatureContent AssemblyContentType.Full fileCheckResults.PartialAssemblySignature
+        [ yield! AssemblyContent.GetAssemblySignatureContent AssemblyContentType.Full fileCheckResults.PartialAssemblySignature
           // FCS sometimes returns several FSharpAssembly for single referenced assembly. 
           // For example, it returns two different ones for Swensen.Unquote; the first one 
           // contains no useful entities, the second one does. Our cache prevents to process
@@ -29,4 +29,4 @@ type internal AssemblyContentProvider () =
 
           for fileName, signatures in assembliesByFileName do
               let contentType = AssemblyContentType.Public // it's always Public for now since we don't support InternalsVisibleTo attribute yet
-              yield! AssemblyContentProvider.getAssemblyContent entityCache.Locking contentType fileName signatures ]
+              yield! AssemblyContent.GetAssemblyContent entityCache.Locking contentType fileName signatures ]

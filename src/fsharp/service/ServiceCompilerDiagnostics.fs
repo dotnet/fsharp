@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.Diagnostics
 
+[<RequireQualifiedAccess>]
 type FSharpDiagnosticKind =
     | AddIndexerDot
     | ReplaceWithSuggestion of suggestion:string
@@ -11,5 +12,5 @@ module CompilerDiagnostics =
 
     let GetErrorMessage diagnosticKind =
         match diagnosticKind with
-        | AddIndexerDot -> FSComp.SR.addIndexerDot()
-        | ReplaceWithSuggestion s -> FSComp.SR.replaceWithSuggestion(s)
+        | FSharpDiagnosticKind.AddIndexerDot -> FSComp.SR.addIndexerDot()
+        | FSharpDiagnosticKind.ReplaceWithSuggestion s -> FSComp.SR.replaceWithSuggestion(s)

@@ -101,7 +101,19 @@ namespace FSharp.Compiler.Diagnostics
 
         val CreateDiagnostics: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpDiagnosticSeverity)> * suggestNames: bool -> FSharpDiagnostic[]
 
-namespace FSharp.Compiler.EditorServices
+namespace FSharp.Compiler.Symbols
+
+    open Internal.Utilities.Library
+    open FSharp.Compiler 
+    open FSharp.Compiler.TcGlobals 
+    open FSharp.Compiler.Infos
+    open FSharp.Compiler.NameResolution
+    open FSharp.Compiler.InfoReader
+    open FSharp.Compiler.Syntax
+    open FSharp.Compiler.Text
+    open FSharp.Compiler.TextLayout
+    open FSharp.Compiler.TypedTree
+    open FSharp.Compiler.TypedTreeOps
 
     /// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
     //
@@ -111,29 +123,12 @@ namespace FSharp.Compiler.EditorServices
         /// No documentation is available
         | None
 
-        /// The text for documentation for in-memory references.  Here unprocessedText is the `\n` concatenated
-        /// text of the original source and processsedXmlLines is the 
-        /// XML produced after all checking and processing by the F# compiler, including
-        /// insertion of summary tags, encoding and resolving of cross-references if
-        // supported.
-        | FromXmlText of unprocessedLines: string[] * elaboratedXmlLines: string[]
+        /// The text for documentation for in-memory references. 
+        | FromXmlText of XmlDoc
 
-        /// Indicates that the XML for the documentation can be found in a .xml documentation file, using the given signature key
-        | FromXmlFile of file: string * xmlSig: string
+        /// Indicates that the XML for the documentation can be found in a .xml documentation file for the given DLL, using the given signature key
+        | FromXmlFile of dllName: string * xmlSig: string
 
-namespace FSharp.Compiler.Symbols
-
-    open Internal.Utilities.Library
-    open FSharp.Compiler 
-    open FSharp.Compiler.TcGlobals 
-    open FSharp.Compiler.Infos
-    open FSharp.Compiler.EditorServices
-    open FSharp.Compiler.NameResolution
-    open FSharp.Compiler.InfoReader
-    open FSharp.Compiler.Text
-    open FSharp.Compiler.TextLayout
-    open FSharp.Compiler.TypedTree
-    open FSharp.Compiler.TypedTreeOps
 
     // Implementation details used by other code in the compiler    
     module internal SymbolHelpers =

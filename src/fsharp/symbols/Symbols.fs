@@ -82,7 +82,7 @@ module Impl =
         System.Collections.ObjectModel.ReadOnlyCollection<_>(Seq.toArray arr) :> IList<_>
         
     let makeXmlDoc (doc: XmlDoc) =
-        makeReadOnlyCollection doc.UnprocessedLines
+        FSharpXmlDoc.FromXmlText doc
     
     let makeElaboratedXmlDoc (doc: XmlDoc) =
         makeReadOnlyCollection (doc.GetElaboratedXmlLines())

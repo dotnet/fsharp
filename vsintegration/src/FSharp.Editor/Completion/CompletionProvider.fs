@@ -30,7 +30,7 @@ type internal FSharpCompletionProvider
         serviceProvider: SVsServiceProvider,
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager,
-        assemblyContentProvider: AssemblyContentProvider
+        assemblyContentProvider: AssemblyContent
     ) =
 
     inherit CompletionProvider()
@@ -299,8 +299,8 @@ type internal FSharpCompletionProvider
                     let fullNameIdents = fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
                     
                     let insertionPoint = 
-                        if settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then FSharpOpenStatementInsertionPoint.TopLevel
-                        else FSharpOpenStatementInsertionPoint.Nearest
+                        if settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then OpenStatementInsertionPoint.TopLevel
+                        else OpenStatementInsertionPoint.Nearest
 
                     let ctx = ParsedInput.FindNearestPointToInsertOpenDeclaration line.LineNumber parsedInput fullNameIdents insertionPoint
                     let finalSourceText, changedSpanStartPos = OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns

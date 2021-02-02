@@ -211,15 +211,6 @@ module DiagnosticHelpers =
               yield! ReportError (options, allErrors, mainInputFileName, fileInfo, (exn, isError), suggestNames) |]
                             
 
-namespace FSharp.Compiler.EditorServices
-
-/// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
-[<RequireQualifiedAccess>]
-type FSharpXmlDoc =
-    | None
-    | FromXmlText of unprocessedLines: string[] * elaboratedXmlLines: string[]
-    | FromXmlFile of file: string * xmlSig: string
-
 namespace FSharp.Compiler.Symbols
 
 open System
@@ -230,7 +221,6 @@ open Internal.Utilities.Library.Extras
 open FSharp.Core.Printf
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Diagnostics 
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
@@ -247,6 +237,13 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals 
+
+/// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
+[<RequireQualifiedAccess>]
+type FSharpXmlDoc =
+    | None
+    | FromXmlText of XmlDoc
+    | FromXmlFile of dllName: string * xmlSig: string
 
 module EnvMisc2 =
     let maxMembers = GetEnvInteger "FCS_MaxMembersInQuickInfo" 10
@@ -583,7 +580,7 @@ module internal SymbolHelpers =
     let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d = 
         match xmlDoc with 
         | Some xmlDoc when not xmlDoc.IsEmpty  -> 
-            FSharpXmlDoc.FromXmlText (xmlDoc.UnprocessedLines, xmlDoc.GetElaboratedXmlLines())
+            FSharpXmlDoc.FromXmlText xmlDoc
         | _ -> GetXmlDocHelpSigOfItemForLookup infoReader m d
 
     let GetXmlCommentForMethInfoItem infoReader m d (minfo: MethInfo) = 

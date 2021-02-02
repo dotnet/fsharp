@@ -284,12 +284,8 @@ type FSharpEntity =
     /// Indicates if the entity is a part of a namespace path
     member IsNamespace: bool
 
-    /// Get the in-memory XML documentation for the entity, used when code is checked in-memory
-    member XmlDoc: IList<string>
-
-    /// Get the elaborated XML documentation for the entity, used when code is checked in-memory,
-    /// after any checking and processing to XML performed by the F# compiler
-    member ElaboratedXmlDoc: IList<string>
+    /// Get the XML documentation for the entity
+    member XmlDoc: FSharpXmlDoc
 
       /// Get the XML documentation signature for the entity, used for .xml file lookup for compiled code
     member XmlDocSig: string
@@ -441,12 +437,8 @@ type FSharpUnionCase =
     /// Get the name of the case in generated IL code 
     member CompiledName: string
 
-    /// Get the in-memory XML documentation for the union case, used when code is checked in-memory
-    member XmlDoc: IList<string>
-
-    /// Get the elaborated XML documentation for the union case, used when code is checked in-memory,
-    /// after any checking and processing to XML performed by the F# compiler
-    member ElaboratedXmlDoc: IList<string>
+    /// Get the XML documentation for the entity
+    member XmlDoc: FSharpXmlDoc
 
     /// Get the XML documentation signature for .xml file lookup for the union case, used for .xml file lookup for compiled code 
     member XmlDocSig: string
@@ -521,12 +513,8 @@ type FSharpField =
     /// This API returns true for source defined symbols only.
     member IsNameGenerated: bool
 
-    /// Get the in-memory XML documentation for the field, used when code is checked in-memory
-    member XmlDoc: IList<string>
-
-    /// Get the elaborated XML documentation for the field, used when code is checked in-memory,
-    /// after any checking and processing to XML performed by the F# compiler
-    member ElaboratedXmlDoc: IList<string>
+    /// Get the XML documentation for the entity
+    member XmlDoc: FSharpXmlDoc
 
     /// Get the XML documentation signature for .xml file lookup for the field, used for .xml file lookup for compiled code
     member XmlDocSig: string
@@ -577,12 +565,8 @@ type FSharpGenericParameter =
     /// Indicates if this is a measure variable
     member IsMeasure: bool
 
-    /// Get the in-memory XML documentation for the type parameter, used when code is checked in-memory
-    member XmlDoc: IList<string>
-       
-    /// Get the elaborated XML documentation for the type parameter, used when code is checked in-memory,
-    /// after any checking and processing to XML performed by the F# compiler
-    member ElaboratedXmlDoc: IList<string>
+    /// Get the XML documentation for the entity
+    member XmlDoc: FSharpXmlDoc
 
     /// Indicates if this is a statically resolved type variable
     member IsSolveAtCompileTime: bool 
@@ -893,12 +877,8 @@ type FSharpMemberOrFunctionOrValue =
     /// these value references after copying a collection of values. 
     override Attributes: IList<FSharpAttribute>
 
-    /// Get the in-memory XML documentation for the value, used when code is checked in-memory
-    member XmlDoc: IList<string>
-
-    /// Get the elaborated XML documentation for the value, used when code is checked in-memory,
-    /// after any checking and processing to XML performed by the F# compiler
-    member ElaboratedXmlDoc: IList<string>
+    /// Get the XML documentation for the entity
+    member XmlDoc: FSharpXmlDoc
 
     /// XML documentation signature for the value, used for .xml file lookup for compiled code
     member XmlDocSig: string
@@ -992,12 +972,8 @@ type FSharpActivePatternCase =
     /// The group of active pattern cases this belongs to
     member Group: FSharpActivePatternGroup
 
-    /// Get the in-memory XML documentation for the active pattern case, used when code is checked in-memory
-    member XmlDoc: IList<string>
-
-    /// Get the elaborated XML documentation for the active pattern case, used when code is checked in-memory,
-    /// after any checking and processing to XML performed by the F# compiler
-    member ElaboratedXmlDoc: IList<string>
+    /// Get the XML documentation for the entity
+    member XmlDoc: FSharpXmlDoc
 
       /// XML documentation signature for the active pattern case, used for .xml file lookup for compiled code
     member XmlDocSig: string

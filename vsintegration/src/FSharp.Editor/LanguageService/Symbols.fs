@@ -16,7 +16,7 @@ type SymbolDeclarationLocation =
 type SymbolUse =
     { SymbolUse: FSharpSymbolUse 
       IsUsed: bool
-      FullNames: FSharpShortIdent[] }
+      FullNames: ShortIdent[] }
 
 type FSharpSymbol with
     member this.IsInternalToProject =

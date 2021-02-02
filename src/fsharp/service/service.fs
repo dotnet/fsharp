@@ -59,7 +59,6 @@ type FSharpProjectOptions =
       LoadTime : System.DateTime
       UnresolvedReferences : FSharpUnresolvedReferencesSet option
       OriginalLoadReferences: (range * string * string) list
-      ExtraProjectInfo : obj option
       Stamp : int64 option
     }
     member x.ProjectOptions = x.OtherOptions
@@ -256,10 +255,10 @@ type ScriptClosureCacheToken() = interface LockToken
 type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification, enablePartialTypeChecking) as self =
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.reactor: The one and only Reactor
     let reactor = Reactor.Singleton
-    let beforeFileChecked = Event<string * obj option>()
-    let fileParsed = Event<string * obj option>()
-    let fileChecked = Event<string * obj option>()
-    let projectChecked = Event<string * obj option>()
+    let beforeFileChecked = Event<string * FSharpProjectOptions>()
+    let fileParsed = Event<string * FSharpProjectOptions>()
+    let fileChecked = Event<string * FSharpProjectOptions>()
+    let projectChecked = Event<FSharpProjectOptions>()
 
 
     let mutable implicitlyStartBackgroundWork = true
@@ -338,10 +337,10 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             //
             // This indicates to the UI that the file type check state is dirty. If the file is open and visible then 
             // the UI will sooner or later request a typecheck of the file, recording errors and intellisense information.
-            builder.BeforeFileChecked.Add (fun file -> beforeFileChecked.Trigger(file, options.ExtraProjectInfo))
-            builder.FileParsed.Add (fun file -> fileParsed.Trigger(file, options.ExtraProjectInfo))
-            builder.FileChecked.Add (fun file -> fileChecked.Trigger(file, options.ExtraProjectInfo))
-            builder.ProjectChecked.Add (fun () -> projectChecked.Trigger (options.ProjectFileName, options.ExtraProjectInfo))
+            builder.BeforeFileChecked.Add (fun file -> beforeFileChecked.Trigger(file, options))
+            builder.FileParsed.Add (fun file -> fileParsed.Trigger(file, options))
+            builder.FileChecked.Add (fun file -> fileChecked.Trigger(file, options))
+            builder.ProjectChecked.Add (fun () -> projectChecked.Trigger (options))
 
         return (builderOpt, diagnostics)
       }
@@ -444,8 +443,9 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         if implicitlyStartBackgroundWork then 
             bc.CheckProjectInBackground(options, userOpName + ".ImplicitlyStartCheckProjectInBackground")
 
-    member _.ParseFile(filename: string, sourceText: ISourceText, options: FSharpParsingOptions, userOpName: string) =
+    member _.ParseFile(filename: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, userOpName: string) =
         async {
+          if cache then
             let hash = sourceText.GetHashCode()
             match parseCacheLock.AcquireLock(fun ltok -> parseFileCache.TryGet(ltok, (filename, hash, options))) with
             | Some res -> return res
@@ -455,10 +455,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 let res = FSharpParseFileResults(parseDiags, parseTreeOpt, anyErrors, options.SourceFiles)
                 parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (filename, hash, options), res))
                 return res
-        }
-
-    member bc.ParseFileNoCache(filename, sourceText, options, userOpName) =
-        async {
+          else
             let parseDiags, parseTreeOpt, anyErrors = ParseAndCheckFile.parseFile(sourceText, filename, options, userOpName, false)
             return FSharpParseFileResults(parseDiags, parseTreeOpt, anyErrors, options.SourceFiles)
         }
@@ -857,7 +854,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     member bc.ParseAndCheckProject(options, userOpName) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckProject", options.ProjectFileName, fun ctok -> bc.ParseAndCheckProjectImpl(options, ctok, userOpName))
 
-    member _.GetProjectOptionsFromScript(filename, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, sdkDirOverride: string option, assumeDotNetFramework: bool option, extraProjectInfo: obj option, optionsStamp: int64 option, userOpName) = 
+    member _.GetProjectOptionsFromScript(filename, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, sdkDirOverride: string option, assumeDotNetFramework: bool option, optionsStamp: int64 option, userOpName) = 
 
         reactor.EnqueueAndAwaitOpAsync (userOpName, "GetProjectOptionsFromScript", filename, fun ctok -> 
           cancellable {
@@ -914,7 +911,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     LoadTime = loadedTimeStamp
                     UnresolvedReferences = Some (FSharpUnresolvedReferencesSet(loadClosure.UnresolvedReferences))
                     OriginalLoadReferences = loadClosure.OriginalLoadReferences
-                    ExtraProjectInfo=extraProjectInfo
                     Stamp = optionsStamp
                 }
             scriptClosureCache.Set(AnyCallerThread, options, loadClosure) // Save the full load closure for later correlation.
@@ -1099,20 +1095,15 @@ type FSharpChecker(legacyReferenceResolver,
         let argv = List.ofArray options.OtherOptions
         ic.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, options.UseScriptResolutionRules)
 
-    member ic.ParseFile(filename, sourceText, options, ?userOpName: string) =
+    member ic.ParseFile(filename, sourceText, options, ?cache, ?userOpName: string) =
+        let cache = defaultArg cache true
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
-        backgroundCompiler.ParseFile(filename, sourceText, options, userOpName)
+        backgroundCompiler.ParseFile(filename, sourceText, options, cache, userOpName)
 
-    member ic.ParseFileNoCache(filename, sourceText, options, ?userOpName) =
-        let userOpName = defaultArg userOpName "Unknown"
-        ic.CheckMaxMemoryReached()
-        backgroundCompiler.ParseFileNoCache(filename, sourceText, options, userOpName)
-
-    member ic.ParseFileInProject(filename, source: string, options, ?userOpName: string) =
-        let userOpName = defaultArg userOpName "Unknown"
+    member ic.ParseFileInProject(filename, source: string, options, ?cache: bool, ?userOpName: string) =
         let parsingOptions, _ = ic.GetParsingOptionsFromProjectOptions(options)
-        ic.ParseFile(filename, SourceText.ofString source, parsingOptions, userOpName)
+        ic.ParseFile(filename, SourceText.ofString source, parsingOptions, ?cache=cache, ?userOpName=userOpName)
 
     member _.GetBackgroundParseResultsForFileInProject (filename,options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
@@ -1294,11 +1285,11 @@ type FSharpChecker(legacyReferenceResolver,
         backgroundCompiler.GetSemanticClassificationForFile(filename, options, userOpName)
 
     /// For a given script file, get the ProjectOptions implied by the #load closure
-    member _.GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?assumeDotNetFramework, ?sdkDirOverride, ?extraProjectInfo: obj, ?optionsStamp: int64, ?userOpName: string) = 
+    member _.GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?assumeDotNetFramework, ?sdkDirOverride, ?optionsStamp: int64, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
-        backgroundCompiler.GetProjectOptionsFromScript(filename, source, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, sdkDirOverride, assumeDotNetFramework, extraProjectInfo, optionsStamp, userOpName)
+        backgroundCompiler.GetProjectOptionsFromScript(filename, source, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, sdkDirOverride, assumeDotNetFramework, optionsStamp, userOpName)
 
-    member _.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp, ?extraProjectInfo: obj) = 
+    member _.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp) = 
         let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
         { ProjectFileName = projectFileName
           ProjectId = None
@@ -1310,7 +1301,6 @@ type FSharpChecker(legacyReferenceResolver,
           LoadTime = loadedTimeStamp
           UnresolvedReferences = None
           OriginalLoadReferences=[]
-          ExtraProjectInfo=extraProjectInfo
           Stamp = None }
 
     member _.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, ?isInteractive) =

@@ -41,7 +41,7 @@ type InheritanceContext =
     | Unknown
 
 [<RequireQualifiedAccess>]
-type FSharpRecordContext =
+type RecordContext =
     | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
     | New of path: CompletionPath
@@ -55,7 +55,7 @@ type CompletionContext =
     | Inherit of context: InheritanceContext * path: CompletionPath
 
     /// Completing records field
-    | RecordField of context: FSharpRecordContext
+    | RecordField of context: RecordContext
 
     | RangeOperator
 
@@ -70,33 +70,31 @@ type CompletionContext =
     /// Completing pattern type (e.g. foo (x: |))
     | PatternType
 
-type FSharpShortIdent = string
+type ShortIdent = string
 
-type FSharpShortIdents = FSharpShortIdent[]
+type ShortIdents = ShortIdent[]
 
-type FSharpMaybeUnresolvedIdent = { Ident: FSharpShortIdent; Resolved: bool }
+type MaybeUnresolvedIdent = { Ident: ShortIdent; Resolved: bool }
 
-type FSharpModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
+type ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
 
 [<RequireQualifiedAccess>]
-type FSharpEntityKind =
+type EntityKind =
     | Attribute
     | Type
     | FunctionOrValue of isActivePattern: bool
-    | Module of FSharpModuleKind
+    | Module of ModuleKind
     override x.ToString() = sprintf "%A" x
 
-type FSharpLongIdent = string
-
-type FSharpParsedEntity =
-    { FullRelativeName: FSharpLongIdent
-      Qualifier: FSharpLongIdent
-      Namespace: FSharpLongIdent option
-      FullDisplayName: FSharpLongIdent
-      LastIdent: FSharpShortIdent }
+type InsertionContextEntity =
+    { FullRelativeName: string
+      Qualifier: string
+      Namespace: string option
+      FullDisplayName: string
+      LastIdent: ShortIdent }
     override x.ToString() = sprintf "%A" x
 
-type FSharpScopeKind =
+type ScopeKind =
     | Namespace
     | TopModule
     | NestedModule
@@ -104,21 +102,21 @@ type FSharpScopeKind =
     | HashDirective
     override x.ToString() = sprintf "%A" x
 
-type FSharpInsertionContext =
-    { ScopeKind: FSharpScopeKind
+type InsertionContext =
+    { ScopeKind: ScopeKind
       Pos: pos }
 
 type FSharpModule =
-    { Idents: FSharpShortIdents
+    { Idents: ShortIdents
       Range: range }
 
-type FSharpOpenStatementInsertionPoint =
+type OpenStatementInsertionPoint =
     | TopLevel
     | Nearest
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Entity =
-    let getRelativeNamespace (targetNs: FSharpShortIdents) (sourceNs: FSharpShortIdents) =
+    let getRelativeNamespace (targetNs: ShortIdents) (sourceNs: ShortIdents) =
         let rec loop index =
             if index > targetNs.Length - 1 then sourceNs.[index..]
             // target namespace is not a full parent of source namespace, keep the source ns as is
@@ -128,7 +126,7 @@ module Entity =
         if sourceNs.Length = 0 || targetNs.Length = 0 then sourceNs
         else loop 0
 
-    let cutAutoOpenModules (autoOpenParent: FSharpShortIdents option) (candidateNs: FSharpShortIdents) =
+    let cutAutoOpenModules (autoOpenParent: ShortIdents option) (candidateNs: ShortIdents) =
         let nsCount = 
             match autoOpenParent with
             | Some parent when parent.Length > 0 -> 
@@ -136,8 +134,8 @@ module Entity =
             | _ -> candidateNs.Length
         candidateNs.[0..nsCount - 1]
 
-    let tryCreate (targetNamespace: FSharpShortIdents option, targetScope: FSharpShortIdents, partiallyQualifiedName: FSharpMaybeUnresolvedIdent[], 
-                   requiresQualifiedAccessParent: FSharpShortIdents option, autoOpenParent: FSharpShortIdents option, candidateNamespace: FSharpShortIdents option, candidate: FSharpShortIdents) =
+    let tryCreate (targetNamespace: ShortIdents option, targetScope: ShortIdents, partiallyQualifiedName: MaybeUnresolvedIdent[], 
+                   requiresQualifiedAccessParent: ShortIdents option, autoOpenParent: ShortIdents option, candidateNamespace: ShortIdents option, candidate: ShortIdents) =
         match candidate with
         | [||] -> [||]
         | _ ->
@@ -195,8 +193,8 @@ module ParsedInput =
     
     let emptyStringSet = HashSet<string>()
 
-    let GetRangeOfExprLeftOfDot(pos: pos, parseTreeOpt) =
-        match parseTreeOpt with 
+    let GetRangeOfExprLeftOfDot(pos: pos, parsedInputOpt) =
+        match parsedInputOpt with 
         | None -> None 
         | Some parseTree ->
         let CheckLongIdent(longIdent: LongIdent) =
@@ -292,8 +290,8 @@ module ParsedInput =
         })
     
     /// searches for the expression island suitable for the evaluation by the debugger
-    let TryFindExpressionIslandInPosition(pos: pos, parseTreeOpt) = 
-        match parseTreeOpt with 
+    let TryFindExpressionIslandInPosition(pos: pos, parsedInputOpt) = 
+        match parsedInputOpt with 
         | None -> None 
         | Some parseTree ->
             let getLidParts (lid : LongIdent) = 
@@ -348,8 +346,8 @@ module ParsedInput =
     //      ^
     // would return None
     // TODO would be great to unify this with GetRangeOfExprLeftOfDot above, if possible, as they are similar
-    let TryFindExpressionASTLeftOfDotLeftOfCursor(pos, parseTreeOpt) =
-        match parseTreeOpt with 
+    let TryFindExpressionASTLeftOfDotLeftOfCursor(pos, parsedInputOpt) =
+        match parsedInputOpt with 
         | None -> None 
         | Some parseTree ->
         let dive x = SyntaxTraversal.dive x
@@ -445,7 +443,7 @@ module ParsedInput =
                         | _ -> defaultTraverse expr }
         SyntaxTraversal.Traverse(pos, parseTree, walker)
     
-    let GetEntityKind (pos: pos, input: ParsedInput) : FSharpEntityKind option =
+    let GetEntityKind (pos: pos, parsedInput: ParsedInput) : EntityKind option =
         let (|ConstructorPats|) = function
             | SynArgPats.Pats ps -> ps
             | SynArgPats.NamePatPairs(xs, _) -> List.map snd xs
@@ -470,10 +468,10 @@ module ParsedInput =
             |> Option.orElse (ifPosInRange r (fun _ -> List.tryPick (walkSynModuleDecl isTopLevel) decls))
 
         and walkAttribute (attr: SynAttribute) = 
-            if isPosInRange attr.Range then Some FSharpEntityKind.Attribute else None
-            |> Option.orElse (walkExprWithKind (Some FSharpEntityKind.Type) attr.ArgExpr)
+            if isPosInRange attr.Range then Some EntityKind.Attribute else None
+            |> Option.orElse (walkExprWithKind (Some EntityKind.Type) attr.ArgExpr)
 
-        and walkTypar (SynTypar (ident, _, _)) = ifPosInRange ident.idRange (fun _ -> Some FSharpEntityKind.Type)
+        and walkTypar (SynTypar (ident, _, _)) = ifPosInRange ident.idRange (fun _ -> Some EntityKind.Type)
 
         and walkTyparDecl (SynTyparDecl.SynTyparDecl (Attributes attrs, typar)) = 
             List.tryPick walkAttribute attrs
@@ -493,7 +491,7 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparIsEnum(t, ts, _) -> walkTypar t |> Option.orElse (List.tryPick walkType ts)
             | SynTypeConstraint.WhereTyparIsDelegate(t, ts, _) -> walkTypar t |> Option.orElse (List.tryPick walkType ts)
 
-        and walkPatWithKind (kind: FSharpEntityKind option) = function
+        and walkPatWithKind (kind: EntityKind option) = function
             | SynPat.Ands (pats, _) -> List.tryPick walkPat pats
             | SynPat.Named(SynPat.Wild nameRange as pat, _, _, _, _) -> 
                 if isPosInRange nameRange then None
@@ -538,7 +536,7 @@ module ParsedInput =
             | SynType.LongIdent ident -> 
                 // we protect it with try..with because System.Exception : rangeOfLidwd may raise
                 // at FSharp.Compiler.Syntax.LongIdentWithDots.get_Range() in D:\j\workspace\release_ci_pa---3f142ccc\src\fsharp\ast.fs: line 156
-                try ifPosInRange ident.Range (fun _ -> Some FSharpEntityKind.Type) with _ -> None
+                try ifPosInRange ident.Range (fun _ -> Some EntityKind.Type) with _ -> None
             | SynType.App(ty, _, types, _, _, _, _) -> 
                 walkType ty |> Option.orElse (List.tryPick walkType types)
             | SynType.LongIdentApp(_, _, _, types, _, _, _) -> List.tryPick walkType types
@@ -553,19 +551,19 @@ module ParsedInput =
             | _ -> None
 
         and walkClause (SynMatchClause(pat, e1, e2, _, _)) =
-            walkPatWithKind (Some FSharpEntityKind.Type) pat 
+            walkPatWithKind (Some EntityKind.Type) pat 
             |> Option.orElse (walkExpr e2)
             |> Option.orElse (Option.bind walkExpr e1)
 
-        and walkExprWithKind (parentKind: FSharpEntityKind option) = function
+        and walkExprWithKind (parentKind: EntityKind option) = function
             | SynExpr.LongIdent (_, LongIdentWithDots(_, dotRanges), _, r) ->
                 match dotRanges with
-                | [] when isPosInRange r -> parentKind |> Option.orElse (Some (FSharpEntityKind.FunctionOrValue false)) 
+                | [] when isPosInRange r -> parentKind |> Option.orElse (Some (EntityKind.FunctionOrValue false)) 
                 | firstDotRange :: _  ->
                     let firstPartRange = 
                         mkRange "" r.Start (mkPos firstDotRange.StartLine (firstDotRange.StartColumn - 1))
                     if isPosInRange firstPartRange then
-                        parentKind |> Option.orElse (Some (FSharpEntityKind.FunctionOrValue false))
+                        parentKind |> Option.orElse (Some (EntityKind.FunctionOrValue false))
                     else None
                 | _ -> None
             | SynExpr.Paren (e, _, _, _) -> walkExprWithKind parentKind e
@@ -595,7 +593,7 @@ module ParsedInput =
             | SynExpr.Assert (e, _) -> walkExprWithKind parentKind e
             | SynExpr.App (_, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.TypeApp (e, _, tys, _, _, _, _) -> 
-                walkExprWithKind (Some FSharpEntityKind.Type) e |> Option.orElse (List.tryPick walkType tys)
+                walkExprWithKind (Some EntityKind.Type) e |> Option.orElse (List.tryPick walkType tys)
             | SynExpr.LetOrUse (_, _, bindings, e, _) -> List.tryPick walkBinding bindings |> Option.orElse (walkExprWithKind parentKind e)
             | SynExpr.TryWith (e, _, clauses, _, _, _, _) -> walkExprWithKind parentKind e |> Option.orElse (List.tryPick walkClause clauses)
             | SynExpr.TryFinally (e1, e2, _, _, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
@@ -603,7 +601,7 @@ module ParsedInput =
             | Sequentials es -> List.tryPick (walkExprWithKind parentKind) es
             | SynExpr.IfThenElse (e1, e2, e3, _, _, _, _) -> 
                 List.tryPick (walkExprWithKind parentKind) [e1; e2] |> Option.orElse (match e3 with None -> None | Some e -> walkExprWithKind parentKind e)
-            | SynExpr.Ident ident -> ifPosInRange ident.idRange (fun _ -> Some (FSharpEntityKind.FunctionOrValue false))
+            | SynExpr.Ident ident -> ifPosInRange ident.idRange (fun _ -> Some (EntityKind.FunctionOrValue false))
             | SynExpr.LongIdentSet (_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.DotGet (e, _, _, _) -> walkExprWithKind parentKind e
             | SynExpr.DotSet (e, _, _, _) -> walkExprWithKind parentKind e
@@ -698,7 +696,7 @@ module ParsedInput =
             | _ -> None
 
         and walkComponentInfo isModule (SynComponentInfo(Attributes attrs, typars, constraints, _, _, _, _, r)) =
-            if isModule then None else ifPosInRange r (fun _ -> Some FSharpEntityKind.Type)
+            if isModule then None else ifPosInRange r (fun _ -> Some EntityKind.Type)
             |> Option.orElse (
                 List.tryPick walkAttribute attrs
                 |> Option.orElse (List.tryPick walkTyparDecl typars)
@@ -731,7 +729,7 @@ module ParsedInput =
             | SynModuleDecl.Types (types, _) -> List.tryPick walkTypeDefn types
             | _ -> None
 
-        match input with 
+        match parsedInput with 
         | ParsedInput.SigFile _ -> None
         | ParsedInput.ImplFile input -> walkImplFileInput input
 
@@ -742,7 +740,7 @@ module ParsedInput =
     let TryGetCompletionContext (pos, parsedInput: ParsedInput, lineStr: string) : CompletionContext option = 
 
         match GetEntityKind(pos, parsedInput) with
-        | Some FSharpEntityKind.Attribute -> Some CompletionContext.AttributeApplication
+        | Some EntityKind.Attribute -> Some CompletionContext.AttributeApplication
         | _ ->
         
         let parseLid (LongIdentWithDots(lid, dots)) =            
@@ -967,22 +965,22 @@ module ParsedInput =
                             // detect records usage in constructor
                             match path with
                             | SyntaxNode.SynExpr(_) :: SyntaxNode.SynBinding(_) :: SyntaxNode.SynMemberDefn(_) :: SyntaxNode.SynTypeDefn(SynTypeDefn(SynComponentInfo(_, _, _, [id], _, _, _, _), _, _, _, _)) :: _ ->  
-                                FSharpRecordContext.Constructor(id.idText)
-                            | _ -> FSharpRecordContext.New completionPath
+                                RecordContext.Constructor(id.idText)
+                            | _ -> RecordContext.New completionPath
                         match field with
                         | Some field -> 
                             match parseLid field with
                             | Some completionPath ->
                                 let recordContext = 
                                     match copyOpt with
-                                    | Some (s : SynExpr) -> FSharpRecordContext.CopyOnUpdate(s.Range, completionPath)
+                                    | Some (s : SynExpr) -> RecordContext.CopyOnUpdate(s.Range, completionPath)
                                     | None -> contextFromTreePath completionPath
                                 Some (CompletionContext.RecordField recordContext)
                             | None -> None
                         | None ->
                             let recordContext = 
                                 match copyOpt with
-                                | Some s -> FSharpRecordContext.CopyOnUpdate(s.Range, ([], None))
+                                | Some s -> RecordContext.CopyOnUpdate(s.Range, ([], None))
                                 | None -> contextFromTreePath ([], None)
                             Some (CompletionContext.RecordField recordContext)
                                 
@@ -1132,7 +1130,7 @@ module ParsedInput =
                 | _ -> None)
 
     /// Check if we are at an "open" declaration
-    let GetFullNameOfSmallestModuleOrNamespaceAtPoint (parsedInput: ParsedInput, pos: pos) = 
+    let GetFullNameOfSmallestModuleOrNamespaceAtPoint (pos: pos, parsedInput: ParsedInput) = 
         let mutable path = []
         let visitor = 
             { new SyntaxVisitorBase<bool>() with
@@ -1160,7 +1158,7 @@ module ParsedInput =
         | SynArgPats.NamePatPairs(xs, _) -> List.map snd xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
-    let getLongIdents (input: ParsedInput option) : IDictionary<pos, LongIdent> =
+    let getLongIdents (parsedInput: ParsedInput option) : IDictionary<pos, LongIdent> =
         let identsByEndPos = Dictionary<pos, LongIdent>()
     
         let addLongIdent (longIdent: LongIdent) =
@@ -1498,24 +1496,24 @@ module ParsedInput =
             | SynModuleDecl.Attributes (Attributes attrs, _) -> List.iter walkAttribute attrs
             | _ -> ()
     
-        match input with
+        match parsedInput with
         | Some (ParsedInput.ImplFile input) ->
              walkImplFileInput input
         | _ -> ()
         //debug "%A" idents
         upcast identsByEndPos
     
-    let GetLongIdentAt ast pos =
-        let idents = getLongIdents (Some ast)
+    let GetLongIdentAt parsedInput pos =
+        let idents = getLongIdents (Some parsedInput)
         match idents.TryGetValue pos with
         | true, idents -> Some idents
         | _ -> None
 
     type Scope =
-        { FSharpShortIdents: FSharpShortIdents
-          Kind: FSharpScopeKind }
+        { ShortIdents: ShortIdents
+          Kind: ScopeKind }
 
-    let tryFindNearestPointAndModules (currentLine: int) (ast: ParsedInput) (insertionPoint: FSharpOpenStatementInsertionPoint) = 
+    let tryFindNearestPointAndModules (currentLine: int) (ast: ParsedInput) (insertionPoint: OpenStatementInsertionPoint) = 
         // We ignore all diagnostics during this operation
         //
         // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
@@ -1536,18 +1534,18 @@ module ParsedInput =
             if line <= currentLine then
                 match result, insertionPoint with
                 | None, _ -> 
-                    result <- Some ({ FSharpShortIdents = longIdentToIdents scope; Kind = kind }, mkPos line col, false)
+                    result <- Some ({ ShortIdents = longIdentToIdents scope; Kind = kind }, mkPos line col, false)
                 | Some (_, _, true), _ -> ()
-                | Some (oldScope, oldPos, false), FSharpOpenStatementInsertionPoint.TopLevel when kind <> OpenDeclaration ->
+                | Some (oldScope, oldPos, false), OpenStatementInsertionPoint.TopLevel when kind <> OpenDeclaration ->
                     result <- Some (oldScope, oldPos, true)
                 | Some (oldScope, oldPos, _), _ ->
                     match kind, oldScope.Kind with
                     | (Namespace | NestedModule | TopModule), OpenDeclaration
                     | _ when oldPos.Line <= line ->
                         result <-
-                            Some ({ FSharpShortIdents = 
+                            Some ({ ShortIdents = 
                                         match scope with 
-                                        | [] -> oldScope.FSharpShortIdents 
+                                        | [] -> oldScope.ShortIdents 
                                         | _ -> longIdentToIdents scope
                                     Kind = kind },
                                   mkPos line col,
@@ -1632,7 +1630,7 @@ module ParsedInput =
 
         res, modules
 
-    let findBestPositionToInsertOpenDeclaration (modules: FSharpModule list) scope pos (entity: FSharpShortIdents) =
+    let findBestPositionToInsertOpenDeclaration (modules: FSharpModule list) scope pos (entity: ShortIdents) =
         match modules |> List.filter (fun x -> entity |> Array.startsWith x.Idents) with
         | [] -> { ScopeKind = scope.Kind; Pos = pos }
         | m :: _ ->
@@ -1644,9 +1642,9 @@ module ParsedInput =
             { ScopeKind = scopeKind
               Pos = mkPos (Line.fromZ m.Range.EndLine) m.Range.StartColumn }
 
-    let TryFindInsertionContext (currentLine: int) (ast: ParsedInput) (partiallyQualifiedName: FSharpMaybeUnresolvedIdent[]) (insertionPoint: FSharpOpenStatementInsertionPoint) = 
-        let res, modules = tryFindNearestPointAndModules currentLine ast insertionPoint
-        fun (requiresQualifiedAccessParent: FSharpShortIdents option, autoOpenParent: FSharpShortIdents option, entityNamespace: FSharpShortIdents option, entity: FSharpShortIdents) ->
+    let TryFindInsertionContext (currentLine: int) (parsedInput: ParsedInput) (partiallyQualifiedName: MaybeUnresolvedIdent[]) (insertionPoint: OpenStatementInsertionPoint) = 
+        let res, modules = tryFindNearestPointAndModules currentLine parsedInput insertionPoint
+        fun (requiresQualifiedAccessParent: ShortIdents option, autoOpenParent: ShortIdents option, entityNamespace: ShortIdents option, entity: ShortIdents) ->
 
             // We ignore all diagnostics during this operation
             //
@@ -1655,14 +1653,14 @@ module ParsedInput =
             match res with
             | None -> [||]
             | Some (scope, ns, pos) -> 
-                Entity.tryCreate(ns, scope.FSharpShortIdents, partiallyQualifiedName, requiresQualifiedAccessParent, autoOpenParent, entityNamespace, entity)
+                Entity.tryCreate(ns, scope.ShortIdents, partiallyQualifiedName, requiresQualifiedAccessParent, autoOpenParent, entityNamespace, entity)
                 |> Array.map (fun e -> e, findBestPositionToInsertOpenDeclaration modules scope pos entity)
 
     /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
     let AdjustInsertionPoint (getLineStr: int -> string) ctx  =
         let line =
             match ctx.ScopeKind with
-            | FSharpScopeKind.TopModule ->
+            | ScopeKind.TopModule ->
                 if ctx.Pos.Line > 1 then
                     // it's an implicit module without any open declarations    
                     let line = getLineStr (ctx.Pos.Line - 2)
@@ -1670,7 +1668,7 @@ module ParsedInput =
                         not (line.StartsWithOrdinal("module") && not (line.EndsWithOrdinal("=")))
                     if isImplicitTopLevelModule then 1 else ctx.Pos.Line
                 else 1
-            | FSharpScopeKind.Namespace ->
+            | ScopeKind.Namespace ->
                 // for namespaces the start line is start line of the first nested entity
                 if ctx.Pos.Line > 1 then
                     [0..ctx.Pos.Line - 1]
@@ -1687,11 +1685,11 @@ module ParsedInput =
 
         mkPos line ctx.Pos.Column
     
-    let FindNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) (entity: FSharpShortIdents) (insertionPoint: FSharpOpenStatementInsertionPoint) =
-        match tryFindNearestPointAndModules currentLine ast insertionPoint with
+    let FindNearestPointToInsertOpenDeclaration (currentLine: int) (parsedInput: ParsedInput) (entity: ShortIdents) (insertionPoint: OpenStatementInsertionPoint) =
+        match tryFindNearestPointAndModules currentLine parsedInput insertionPoint with
         | Some (scope, _, point), modules -> 
             findBestPositionToInsertOpenDeclaration modules scope point entity
         | _ ->
             // we failed to find insertion point because ast is empty for some reason, return top left point in this case  
-            { ScopeKind = FSharpScopeKind.TopModule
+            { ScopeKind = ScopeKind.TopModule
               Pos = mkPos 1 0 }

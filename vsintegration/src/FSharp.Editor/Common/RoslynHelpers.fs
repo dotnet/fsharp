@@ -177,7 +177,7 @@ module internal OpenDeclarationHelper =
     /// <param name="sourceText">SourceText.</param>
     /// <param name="ctx">Insertion context. Typically returned from tryGetInsertionContext</param>
     /// <param name="ns">Namespace to open.</param>
-    let insertOpenDeclaration (sourceText: SourceText) (ctx: FSharpInsertionContext) (ns: string) : SourceText * int =
+    let insertOpenDeclaration (sourceText: SourceText) (ctx: InsertionContext) (ns: string) : SourceText * int =
         let mutable minPos = None
 
         let insert line lineStr (sourceText: SourceText) : SourceText =
@@ -213,7 +213,7 @@ module internal OpenDeclarationHelper =
 
         let sourceText =
             // for top level module we add a blank line between the module declaration and first open statement
-            if (pos.Column = 0 || ctx.ScopeKind = FSharpScopeKind.Namespace) && docLine > 0
+            if (pos.Column = 0 || ctx.ScopeKind = ScopeKind.Namespace) && docLine > 0
                 && not (sourceText.Lines.[docLine - 1].ToString().Trim().StartsWith "open") then
                     sourceText |> insert docLine ""
             else sourceText

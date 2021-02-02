@@ -455,7 +455,7 @@ module DeclarationListHelpers =
 
 [<Sealed>]
 /// Represents one parameter for one method (or other item) in a group. 
-type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: TaggedText[], isOptional: bool) = 
+type MethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: TaggedText[], isOptional: bool) = 
 
     /// The name of the parameter.
     member _.ParameterName = name
@@ -488,7 +488,7 @@ module internal DescriptionListsImpl =
     let PrettyParamOfRecdField g denv (f: RecdField) =
         let display = NicePrint.prettyLayoutOfType denv f.FormalType
         let display = LayoutRender.toArray display
-        FSharpMethodGroupItemParameter(
+        MethodGroupItemParameter(
           name = f.Name,
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv f.FormalType,
           // Note: the instantiation of any type parameters is currently incorporated directly into the type
@@ -507,7 +507,7 @@ module internal DescriptionListsImpl =
                 let display = NicePrint.layoutOfParamData denv (ParamData(false, false, false, NotOptional, NoCallerInfo, Some f.Id, ReflectedArgInfo.None, f.FormalType)) 
                 LayoutRender.toArray display
 
-        FSharpMethodGroupItemParameter(
+        MethodGroupItemParameter(
           name=initial.ParameterName,
           canonicalTypeTextForSorting=initial.CanonicalTypeTextForSorting,
           display=display,
@@ -516,7 +516,7 @@ module internal DescriptionListsImpl =
     let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) as paramData) =
         let display = NicePrint.layoutOfParamData denv paramData
         let display = LayoutRender.toArray display
-        FSharpMethodGroupItemParameter(
+        MethodGroupItemParameter(
           name = (match nmOpt with None -> "" | Some pn -> pn.idText),
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv pty,
           display = display,
@@ -563,7 +563,7 @@ module internal DescriptionListsImpl =
           (paramInfo, prettyParamTys, prettyParamTysL) |||> List.map3 (fun (nm, isOptArg, paramPrefix) tau tyL -> 
             let display = paramPrefix ^^ tyL
             let display = LayoutRender.toArray display
-            FSharpMethodGroupItemParameter(
+            MethodGroupItemParameter(
               name = nm,
               canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tau,
               display = display,
@@ -584,7 +584,7 @@ module internal DescriptionListsImpl =
             ||> List.zip 
             |> List.map (fun (tau, tyL) -> 
                 let display = LayoutRender.toArray tyL
-                FSharpMethodGroupItemParameter(
+                MethodGroupItemParameter(
                     name = "",
                     canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tau,
                     display =  display,
@@ -611,7 +611,7 @@ module internal DescriptionListsImpl =
                     let spOpt = sp.PUntaint((fun sp -> sp.IsOptional), m)
                     let display = (if spOpt then SepL.questionMark else emptyL) ^^ wordL (TaggedText.tagParameter spName) ^^ RightL.colon ^^ spKind
                     let display = LayoutRender.toArray display
-                    FSharpMethodGroupItemParameter(
+                    MethodGroupItemParameter(
                       name = spName,
                       canonicalTypeTextForSorting = showL spKind,
                       display = display,
@@ -622,7 +622,7 @@ module internal DescriptionListsImpl =
 
     /// Get all the information about parameters and "prettify" the types by choosing nice type variable
     /// names.  This is similar to the other variations on "show me an item" code. This version is
-    /// is used when presenting groups of methods (see FSharpMethodGroup).  It is possible these different
+    /// is used when presenting groups of methods (see MethodGroup).  It is possible these different
     /// versions could be better unified.
     let rec PrettyParamsAndReturnTypeOfItem (infoReader:InfoReader) m denv (item: ItemWithInst) = 
         let amap = infoReader.amap
@@ -1113,9 +1113,9 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
 /// a single, non-overloaded item such as union case or a named function value.
 // Note: instances of this type do not hold any references to any compiler resources.
 [<Sealed; NoEquality; NoComparison>]
-type FSharpMethodGroupItem(description: FSharpToolTipText, xmlDoc: FSharpXmlDoc,
-                           returnType: TaggedText[], parameters: FSharpMethodGroupItemParameter[],
-                           hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
+type MethodGroupItem(description: FSharpToolTipText, xmlDoc: FSharpXmlDoc,
+                           returnType: TaggedText[], parameters: MethodGroupItemParameter[],
+                           hasParameters: bool, hasParamArrayArg: bool, staticParameters: MethodGroupItemParameter[]) = 
 
     /// The description representation for the method (or other item)
     member _.Description = description
@@ -1144,11 +1144,11 @@ type FSharpMethodGroupItem(description: FSharpToolTipText, xmlDoc: FSharpXmlDoc,
 // Note: this type does not hold any strong references to any compiler resources, nor does evaluating any of the properties execute any
 // code on the compiler thread.  
 [<Sealed>]
-type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] ) = 
+type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) = 
     // BUG 413009 : [ParameterInfo] takes about 3 seconds to move from one overload parameter to another
     // cache allows to avoid recomputing parameterinfo for the same item
 #if !FX_NO_WEAKTABLE
-    static let methodOverloadsCache = System.Runtime.CompilerServices.ConditionalWeakTable<ItemWithInst, FSharpMethodGroupItem[]>()
+    static let methodOverloadsCache = System.Runtime.CompilerServices.ConditionalWeakTable<ItemWithInst, MethodGroupItem[]>()
 #endif
 
     let methods = 
@@ -1157,7 +1157,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
         |> Array.map (fun meth -> 
             let parms = meth.Parameters
             if parms.Length = 1 && parms.[0].CanonicalTypeTextForSorting="Microsoft.FSharp.Core.Unit" then 
-                FSharpMethodGroupItem(meth.Description, meth.XmlDoc, meth.ReturnTypeText, [||], true, meth.HasParamArrayArg, meth.StaticParameters) 
+                MethodGroupItem(meth.Description, meth.XmlDoc, meth.ReturnTypeText, [||], true, meth.HasParamArrayArg, meth.StaticParameters) 
             else 
                 meth)
         // Fix the order of methods, to be stable for unit testing.
@@ -1171,7 +1171,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
 
     static member Create (infoReader: InfoReader, m, denv, items:ItemWithInst list) = 
         let g = infoReader.g
-        if isNil items then new FSharpMethodGroup("", [| |]) else
+        if isNil items then new MethodGroup("", [| |]) else
         let name = items.Head.Item.DisplayName 
 
         let methods = 
@@ -1206,7 +1206,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
                             | _ -> true
 
                         let prettyRetTyL = LayoutRender.toArray prettyRetTyL
-                        FSharpMethodGroupItem(
+                        MethodGroupItem(
                           description = description,
                           returnType = prettyRetTyL,
                           xmlDoc = SymbolHelpers.GetXmlCommentForItem infoReader m flatItem,
@@ -1225,7 +1225,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
                 yield! methods 
            |]
 
-        new FSharpMethodGroup(name, methods)
+        new MethodGroup(name, methods)
 
 
 

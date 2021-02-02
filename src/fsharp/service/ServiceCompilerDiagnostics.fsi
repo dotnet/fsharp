@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.Diagnostics
 
 /// Supported kinds of diagnostics by this service.
+[<RequireQualifiedAccess>]
 type FSharpDiagnosticKind =
     | AddIndexerDot
     | ReplaceWithSuggestion of suggestion:string

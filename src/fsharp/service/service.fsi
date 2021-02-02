@@ -56,9 +56,6 @@ type public FSharpProjectOptions =
       /// Unused in this API and should be '[]' when used as user-specified input
       OriginalLoadReferences: (range * string * string) list
 
-      /// Extra information passed back on event trigger
-      ExtraProjectInfo: obj option
-
       /// An optional stamp to uniquely identify this set of options
       /// If two sets of options both have stamps, then they are considered equal
       /// if and only if the stamps are equal
@@ -117,18 +114,9 @@ type public FSharpChecker =
     /// <param name="filename">The path for the file. The file name is used as a module name for implicit top level modules (e.g. in scripts).</param>
     /// <param name="sourceText">The source to be parsed.</param>
     /// <param name="options">Parsing options for the project or script.</param>
+    /// <param name="cache">Store the parse in a size-limited cache assocaited with the FSharpChecker. Default: true</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member ParseFile: filename: string * sourceText: ISourceText * options: FSharpParsingOptions * ?userOpName: string -> Async<FSharpParseFileResults>
-
-    /// <summary>
-    /// Parses a source code for a file. Returns an AST that can be traversed for various features.
-    /// </summary>
-    ///
-    /// <param name="filename">The path for the file. The file name is also as a module name for implicit top level modules (e.g. in scripts).</param>
-    /// <param name="sourceText">The source to be parsed.</param>
-    /// <param name="options">Parsing options for the project or script.</param>
-    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member ParseFileNoCache: filename: string * sourceText: ISourceText * options: FSharpParsingOptions * ?userOpName: string -> Async<FSharpParseFileResults>
+    member ParseFile: filename: string * sourceText: ISourceText * options: FSharpParsingOptions * ?cache: bool * ?userOpName: string -> Async<FSharpParseFileResults>
 
     /// <summary>
     /// Parses a source code for a file. Returns an AST that can be traversed for various features.
@@ -137,9 +125,10 @@ type public FSharpChecker =
     /// <param name="filename">The path for the file. The file name is also as a module name for implicit top level modules (e.g. in scripts).</param>
     /// <param name="source">The source to be parsed.</param>
     /// <param name="options">Parsing options for the project or script.</param>
+    /// <param name="cache">Store the parse in a size-limited cache assocaited with the FSharpChecker. Default: true</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     [<Obsolete("Please call checker.ParseFile instead.  To do this, you must also pass FSharpParsingOptions instead of FSharpProjectOptions. If necessary generate FSharpParsingOptions from FSharpProjectOptions by calling checker.GetParsingOptionsFromProjectOptions(options)")>]
-    member ParseFileInProject: filename: string * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpParseFileResults>
+    member ParseFileInProject: filename: string * source: string * options: FSharpProjectOptions * ?cache: bool * ?userOpName: string -> Async<FSharpParseFileResults>
 
     /// <summary>
     /// <para>Check a source code file, returning a handle to the results of the parse including
@@ -432,6 +421,7 @@ type public FSharpChecker =
     ///
     /// <param name="options">The options describing the project that has been cleaned.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    [<Obsolete("This method is obsolete and will be removed in a future release")>]
     member NotifyProjectCleaned: options: FSharpProjectOptions * ?userOpName: string -> Async<unit>
 
     /// <summary>
