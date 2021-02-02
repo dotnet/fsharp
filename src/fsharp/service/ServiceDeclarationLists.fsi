@@ -3,22 +3,18 @@
 /// API for declaration lists and method overload lists
 namespace FSharp.Compiler.EditorServices
 
-open System
-open System.Collections.Immutable
-open FSharp.Compiler
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]
-type public FSharpToolTipElementData = 
+type public ToolTipElementData = 
     {
       MainDescription: TaggedText[]
 
@@ -38,24 +34,24 @@ type public FSharpToolTipElementData =
 //
 // Note: instances of this type do not hold any references to any compiler resources.
 [<RequireQualifiedAccess>]
-type public FSharpToolTipElement = 
+type public ToolTipElement = 
     | None
 
     /// A single type, method, etc with comment. May represent a method overload group.
-    | Group of elements: FSharpToolTipElementData list
+    | Group of elements: ToolTipElementData list
 
     /// An error occurred formatting this element
     | CompositionError of errorText: string
 
-    static member Single: layout: TaggedText[] * xml: FSharpXmlDoc * ?typeMapping: TaggedText[] list * ?paramName: string * ?remarks: TaggedText[]  -> FSharpToolTipElement
+    static member Single: layout: TaggedText[] * xml: FSharpXmlDoc * ?typeMapping: TaggedText[] list * ?paramName: string * ?remarks: TaggedText[]  -> ToolTipElement
 
 /// Information for building a tool tip box.
 //
 // Note: instances of this type do not hold any references to any compiler resources.
-type public FSharpToolTipText = 
+type public ToolTipText = 
 
     /// A list of data tip elements to display.
-    | FSharpToolTipText of FSharpToolTipElement list  
+    | ToolTipText of ToolTipElement list  
 
 [<RequireQualifiedAccess>]
 type public CompletionItemKind =
@@ -67,7 +63,7 @@ type public CompletionItemKind =
     | CustomOperation
     | Other
 
-type FSharpUnresolvedSymbol =
+type public UnresolvedSymbol =
     {
       FullName: string
 
@@ -88,7 +84,7 @@ type internal CompletionItem =
 
       Type: TyconRef option 
 
-      Unresolved: FSharpUnresolvedSymbol option
+      Unresolved: UnresolvedSymbol option
     }
     member Item: Item
 
@@ -105,7 +101,7 @@ type public DeclarationListItem =
     member NameInCode: string
 
     /// Get the description
-    member Description: FSharpToolTipText
+    member Description: ToolTipText
 
     member Glyph: FSharpGlyph
 
@@ -178,7 +174,7 @@ type public MethodGroupItem =
     member XmlDoc: FSharpXmlDoc
 
     /// The description representation for the method (or other item)
-    member Description: FSharpToolTipText
+    member Description: ToolTipText
 
     /// The tagged text for the return type for the method (or other item)
     member ReturnTypeText: TaggedText[]
@@ -210,7 +206,7 @@ type public MethodGroup =
     static member internal Create: InfoReader * range * DisplayEnv * ItemWithInst list -> MethodGroup
 
 module internal DeclarationListHelpers =
-    val FormatStructuredDescriptionOfItem: isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> FSharpToolTipElement
+    val FormatStructuredDescriptionOfItem: isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> ToolTipElement
 
     val RemoveDuplicateCompletionItems: TcGlobals -> CompletionItem list -> CompletionItem list
 

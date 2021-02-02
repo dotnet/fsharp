@@ -111,7 +111,7 @@ namespace FSharp.Compiler.Symbols
     open FSharp.Compiler.InfoReader
     open FSharp.Compiler.Syntax
     open FSharp.Compiler.Text
-    open FSharp.Compiler.TextLayout
+    open FSharp.Compiler.Text
     open FSharp.Compiler.TypedTree
     open FSharp.Compiler.TypedTreeOps
 

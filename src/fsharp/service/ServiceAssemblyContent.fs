@@ -32,7 +32,7 @@ type AssemblySymbol =
       AutoOpenParent: ShortIdents option
       Symbol: FSharpSymbol
       Kind: LookupType -> EntityKind
-      FSharpUnresolvedSymbol: FSharpUnresolvedSymbol }
+      UnresolvedSymbol: UnresolvedSymbol }
 
     override x.ToString() = sprintf "%A" x  
 
@@ -110,7 +110,7 @@ type IAssemblyContentCache =
 module AssemblyContent =
     open System.IO
 
-    let FSharpUnresolvedSymbol (topRequireQualifiedAccessParent: ShortIdents option) (cleanedIdents: ShortIdents) (fullName: string) =
+    let UnresolvedSymbol (topRequireQualifiedAccessParent: ShortIdents option) (cleanedIdents: ShortIdents) (fullName: string) =
         let getNamespace (idents: ShortIdents) = 
             if idents.Length > 1 then Some idents.[..idents.Length - 2] else None
 
@@ -151,7 +151,7 @@ module AssemblyContent =
                     match entity with
                     | FSharpSymbolPatterns.Attribute -> EntityKind.Attribute 
                     | _ -> EntityKind.Type
-              FSharpUnresolvedSymbol = FSharpUnresolvedSymbol topRequireQualifiedAccessParent cleanIdents fullName
+              UnresolvedSymbol = UnresolvedSymbol topRequireQualifiedAccessParent cleanIdents fullName
             })
 
     let traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
@@ -170,7 +170,7 @@ module AssemblyContent =
                   AutoOpenParent = autoOpenParent
                   Symbol = func
                   Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern
-                  FSharpUnresolvedSymbol = FSharpUnresolvedSymbol topRequireQualifiedAccessParent cleanedIdents fullName }
+                  UnresolvedSymbol = UnresolvedSymbol topRequireQualifiedAccessParent cleanedIdents fullName }
 
             [ yield! func.TryGetFullDisplayName() 
                      |> Option.map (fun fullDisplayName -> processIdents func.FullName (fullDisplayName.Split '.'))

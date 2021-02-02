@@ -61,8 +61,8 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -148,20 +148,20 @@ module internal Utilities =
                 member r.AddText z s =
                     let color =
                         match s.Tag with
-                        | LayoutTag.Keyword -> ConsoleColor.White
-                        | LayoutTag.TypeParameter
-                        | LayoutTag.Alias
-                        | LayoutTag.Class 
-                        | LayoutTag.Module
-                        | LayoutTag.Interface
-                        | LayoutTag.Record
-                        | LayoutTag.Struct
-                        | LayoutTag.Union
-                        | LayoutTag.UnknownType -> ConsoleColor.Cyan
-                        | LayoutTag.UnionCase
-                        | LayoutTag.ActivePatternCase -> ConsoleColor.Magenta
-                        | LayoutTag.StringLiteral -> ConsoleColor.Yellow
-                        | LayoutTag.NumericLiteral -> ConsoleColor.Green
+                        | TextTag.Keyword -> ConsoleColor.White
+                        | TextTag.TypeParameter
+                        | TextTag.Alias
+                        | TextTag.Class 
+                        | TextTag.Module
+                        | TextTag.Interface
+                        | TextTag.Record
+                        | TextTag.Struct
+                        | TextTag.Union
+                        | TextTag.UnknownType -> ConsoleColor.Cyan
+                        | TextTag.UnionCase
+                        | TextTag.ActivePatternCase -> ConsoleColor.Magenta
+                        | TextTag.StringLiteral -> ConsoleColor.Yellow
+                        | TextTag.NumericLiteral -> ConsoleColor.Green
                         | _ -> Console.ForegroundColor
 
                     DoWithColor color (fun () -> outWriter.Write s.Text)

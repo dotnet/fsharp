@@ -42,8 +42,8 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Text
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
@@ -182,7 +182,7 @@ type internal TypeCheckInfo
     // Is not keyed on 'Names' collection because this is invariant for the current position in 
     // this unchanged file. Keyed on lineStr though to prevent a change to the currently line
     // being available against a stale scope.
-    let getToolTipTextCache = AgedLookup<AnyCallerThreadToken, int*int*string, FSharpToolTipText>(getToolTipTextSize,areSimilar=(fun (x,y) -> x = y))
+    let getToolTipTextCache = AgedLookup<AnyCallerThreadToken, int*int*string, ToolTipText>(getToolTipTextSize,areSimilar=(fun (x,y) -> x = y))
     
     let amap = tcImports.GetImportMap()
     let infoReader = InfoReader(g,amap)
@@ -249,7 +249,7 @@ type internal TypeCheckInfo
     /// The items that come back from ResolveCompletionsInType are a bit
     /// noisy. Filter a few things out.
     ///
-    /// e.g. prefer types to constructors for FSharpToolTipText 
+    /// e.g. prefer types to constructors for ToolTipText 
     let FilterItemsForCtors filterCtors (items: ItemWithInst list) =
         let items = items |> List.filter (fun item -> match item.Item with (Item.CtorGroup _) when filterCtors = ResolveTypeNamesToTypeRefs -> false | _ -> true) 
         items
@@ -601,7 +601,7 @@ type internal TypeCheckInfo
           Kind = kind
           IsOwnMember = false
           Type = match ty with ValueSome x -> Some x | _ -> None
-          Unresolved = match assemblySymbol with ValueSome x -> Some x.FSharpUnresolvedSymbol | _ -> None }
+          Unresolved = match assemblySymbol with ValueSome x -> Some x.UnresolvedSymbol | _ -> None }
 
     let DefaultCompletionItem item = CompletionItem ValueNone ValueNone item
     
@@ -1081,7 +1081,7 @@ type internal TypeCheckInfo
             | [resolved] -> 
                 let tip = wordL (TaggedText.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
                 let tip = LayoutRender.toArray tip
-                FSharpToolTipText.FSharpToolTipText [FSharpToolTipElement.Single(tip, FSharpXmlDoc.None)]
+                ToolTipText.ToolTipText [ToolTipElement.Single(tip, FSharpXmlDoc.None)]
 
             | [] -> 
                 let matches =
@@ -1091,20 +1091,20 @@ type internal TypeCheckInfo
                         loadClosure.PackageReferences
                         |> Array.tryFind (fun (m, _) -> Range.rangeContainsPos m pos)
                 match matches with 
-                | None -> FSharpToolTipText.FSharpToolTipText []
+                | None -> ToolTipText.ToolTipText []
                 | Some (_, lines) -> 
                     let lines = lines |> List.filter (fun line -> not (line.StartsWith("//")) && not (String.IsNullOrEmpty line))
-                    FSharpToolTipText.FSharpToolTipText 
+                    ToolTipText.ToolTipText 
                        [ for line in lines -> 
                             let tip = wordL (TaggedText.tagStringLiteral line)
                             let tip = LayoutRender.toArray tip
-                            FSharpToolTipElement.Single(tip, FSharpXmlDoc.None)]
+                            ToolTipElement.Single(tip, FSharpXmlDoc.None)]
                                     
         ErrorScope.Protect Range.range0 
             dataTipOfReferences
             (fun err -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetReferenceResolutionStructuredToolTipText: '%s'" err)
-                FSharpToolTipText [FSharpToolTipElement.CompositionError err])
+                ToolTipText [ToolTipElement.CompositionError err])
 
     // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
     member _.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names) = 
@@ -1117,13 +1117,13 @@ type internal TypeCheckInfo
                             ResolveOverloads.Yes, (fun() -> []))
 
                     match declItemsOpt with
-                    | None -> FSharpToolTipText []
+                    | None -> ToolTipText []
                     | Some(items, denv, _, m) ->
-                         FSharpToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader m denv x.ItemWithInst)))
+                         ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader m denv x.ItemWithInst)))
 
                 (fun err -> 
                     Trace.TraceInformation(sprintf "FCS: recovering from error in GetStructuredToolTipText: '%s'" err)
-                    FSharpToolTipText [FSharpToolTipElement.CompositionError err])
+                    ToolTipText [ToolTipElement.CompositionError err])
                
         // See devdiv bug 646520 for rationale behind truncating and caching these quick infos (they can be big!)
         let key = line,colAtEndOfNames,lineStr
@@ -1839,7 +1839,7 @@ type FSharpCheckFileResults
 
     /// Resolve the names at the given location to give a data tip 
     member _.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag) = 
-        let dflt = FSharpToolTipText []
+        let dflt = ToolTipText []
         match tokenTagToTokenId tokenTag with 
         | TOKEN_IDENT -> 
             threadSafeOp (fun () -> dflt) (fun scope -> 

@@ -15,7 +15,7 @@ open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TypedTreeOps 
 

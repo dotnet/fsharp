@@ -14,8 +14,8 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open Internal.Utilities.Library
 open FSharp.Compiler.Text
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Layout
 
 //------------------------------------------------------------------------
 // Operator name compilation

@@ -5,7 +5,7 @@
 module public FSharp.Compiler.Syntax.PrettyNaming
 
 open FSharp.Compiler.Text
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
 
 [<LiteralAttribute>]
 val internal parenGet: string = ".()"

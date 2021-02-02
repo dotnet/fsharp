@@ -12,7 +12,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.FSharpExprPatterns
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
 open FsUnit
 open NUnit.Framework
 

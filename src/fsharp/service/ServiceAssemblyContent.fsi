@@ -53,7 +53,7 @@ type public AssemblySymbol =
       Kind: LookupType -> EntityKind
 
       /// Cache display name and namespace, used for completion.
-      FSharpUnresolvedSymbol: FSharpUnresolvedSymbol
+      UnresolvedSymbol: UnresolvedSymbol
     }
 
 /// `RawEntity` list retrieved from an assembly.

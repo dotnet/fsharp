@@ -4,7 +4,7 @@ module internal FSharp.Compiler.Optimizer
 
 open FSharp.Compiler 
 open FSharp.Compiler.TcGlobals 
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreePickle

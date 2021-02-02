@@ -18,7 +18,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
 type SignatureHelpParameterInfo =
@@ -271,8 +271,8 @@ type internal FSharpSignatureHelpProvider
             | :? FSharpMemberOrFunctionOrValue as mfv when isValid mfv ->
                 let tooltip = checkFileResults.GetToolTip(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineText, lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
                 match tooltip with
-                | FSharpToolTipText []
-                | FSharpToolTipText [FSharpToolTipElement.None] -> return! None
+                | ToolTipText []
+                | ToolTipText [ToolTipElement.None] -> return! None
                 | _ ->                    
                     let possiblePipelineIdent = parseResults.TryIdentOfPipelineContainingPosAndNumArgsApplied symbolUse.Range.Start
                     let numArgsAlreadyApplied =

@@ -19,7 +19,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
 module internal TaggedText =
@@ -427,7 +427,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                             let dataTip = typedResults.GetToolTip(Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag)
 
                             match dataTip with
-                            | FSharpToolTipText.FSharpToolTipText [] when makeSecondAttempt -> getDataTip true
+                            | ToolTipText.ToolTipText [] when makeSecondAttempt -> getDataTip true
                             | _ -> 
                                 let buf = Text.StringBuilder()
                                 XmlDocumentation.BuildDataTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, dataTip)

@@ -87,7 +87,7 @@ let ``Intro test`` () =
 
     // Get tool tip at the specified location
     let tip = typeCheckResults.GetToolTip(4, 7, inputLines.[1], ["foo"], identToken)
-    // (sprintf "%A" tip).Replace("\n","") |> shouldEqual """FSharpToolTipText [Single ("val foo : unit -> unitFull name: Test.foo",None)]"""
+    // (sprintf "%A" tip).Replace("\n","") |> shouldEqual """ToolTipText [Single ("val foo : unit -> unitFull name: Test.foo",None)]"""
     // Get declarations (autocomplete) for a location
     let partialName = { QualifyingIdents = []; PartialIdent = "msg"; EndColumn = 22; LastDotPos = None }
     let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines.[6], partialName, (fun _ -> []))
@@ -1275,12 +1275,12 @@ let ``Test TPProject errors`` () =
          (15, 33, 15, 38, "No static parameter exists with name ''");
          (16, 40, 16, 50, "This expression was expected to have type    'string'    but here has type    'unit'    ")]
 
-let internal extractToolTipText (FSharpToolTipText(els)) = 
+let internal extractToolTipText (ToolTipText(els)) = 
     [ for e in els do 
         match e with
-        | FSharpToolTipElement.Group txts -> for item in txts do yield item.MainDescription
-        | FSharpToolTipElement.CompositionError err -> yield err
-        | FSharpToolTipElement.None -> yield "NONE!" ] 
+        | ToolTipElement.Group txts -> for item in txts do yield item.MainDescription
+        | ToolTipElement.CompositionError err -> yield err
+        | ToolTipElement.None -> yield "NONE!" ] 
 
 [<Test>]
 let ``Test TPProject quick info`` () = 

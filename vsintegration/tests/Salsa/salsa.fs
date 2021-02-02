@@ -1443,16 +1443,16 @@ module internal Salsa =
             let documentationProvider = 
                 { new IDocumentationBuilder_DEPRECATED with
                     override doc.AppendDocumentationFromProcessedXML(appendTo,processedXml:string,showExceptions, showReturns, paramName) = 
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.tagText processedXml)
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.lineBreak)
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.tagText processedXml)
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.lineBreak)
                     override doc.AppendDocumentation(appendTo,filename:string,signature:string, showExceptions, showReturns, paramName) = 
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.tagText (sprintf "[Filename:%s]" filename))
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.lineBreak)
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.tagText (sprintf "[Signature:%s]" signature))
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.lineBreak)
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.tagText (sprintf "[Filename:%s]" filename))
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.lineBreak)
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.tagText (sprintf "[Signature:%s]" signature))
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.lineBreak)
                         if paramName.IsSome then
-                            appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.tagText (sprintf "[ParamName: %s]" paramName.Value))
-                            appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.lineBreak)
+                            appendTo.Add(FSharp.Compiler.Text.TaggedText.tagText (sprintf "[ParamName: %s]" paramName.Value))
+                            appendTo.Add(FSharp.Compiler.Text.TaggedText.lineBreak)
                 } 
 
             let sp2 = 

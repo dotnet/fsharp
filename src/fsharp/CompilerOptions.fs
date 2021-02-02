@@ -21,7 +21,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTreeOps 
 open FSharp.Compiler.ErrorLogger
 

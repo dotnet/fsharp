@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open Microsoft.VisualStudio.FSharp.Editor.Logging
@@ -54,42 +54,42 @@ module internal RoslynHelpers =
             Assert.Exception(task.Exception.GetBaseException())
             raise(task.Exception.GetBaseException())
 
-    /// maps from `LayoutTag` of the F# Compiler to Roslyn `TextTags` for use in tooltips
+    /// maps from `TextTag` of the F# Compiler to Roslyn `TextTags` for use in tooltips
     let roslynTag = function
-        | LayoutTag.ActivePatternCase
-        | LayoutTag.ActivePatternResult
-        | LayoutTag.UnionCase
-        | LayoutTag.Enum -> TextTags.Enum
-        | LayoutTag.Struct -> TextTags.Struct
-        | LayoutTag.TypeParameter -> TextTags.TypeParameter
-        | LayoutTag.Alias
-        | LayoutTag.Class
-        | LayoutTag.Union
-        | LayoutTag.Record
-        | LayoutTag.UnknownType // Default to class until/unless we use classification data
-        | LayoutTag.Module -> TextTags.Class
-        | LayoutTag.Interface -> TextTags.Interface
-        | LayoutTag.Keyword -> TextTags.Keyword
-        | LayoutTag.Member
-        | LayoutTag.Function
-        | LayoutTag.Method -> TextTags.Method
-        | LayoutTag.RecordField
-        | LayoutTag.Property -> TextTags.Property
-        | LayoutTag.Parameter // parameter?
-        | LayoutTag.Local -> TextTags.Local
-        | LayoutTag.Namespace -> TextTags.Namespace
-        | LayoutTag.Delegate -> TextTags.Delegate
-        | LayoutTag.Event -> TextTags.Event
-        | LayoutTag.Field -> TextTags.Field
-        | LayoutTag.LineBreak -> TextTags.LineBreak
-        | LayoutTag.Space -> TextTags.Space
-        | LayoutTag.NumericLiteral -> TextTags.NumericLiteral
-        | LayoutTag.Operator -> TextTags.Operator
-        | LayoutTag.StringLiteral -> TextTags.StringLiteral
-        | LayoutTag.Punctuation -> TextTags.Punctuation
-        | LayoutTag.Text
-        | LayoutTag.ModuleBinding // why no 'Identifier'? Does it matter?
-        | LayoutTag.UnknownEntity -> TextTags.Text
+        | TextTag.ActivePatternCase
+        | TextTag.ActivePatternResult
+        | TextTag.UnionCase
+        | TextTag.Enum -> TextTags.Enum
+        | TextTag.Struct -> TextTags.Struct
+        | TextTag.TypeParameter -> TextTags.TypeParameter
+        | TextTag.Alias
+        | TextTag.Class
+        | TextTag.Union
+        | TextTag.Record
+        | TextTag.UnknownType // Default to class until/unless we use classification data
+        | TextTag.Module -> TextTags.Class
+        | TextTag.Interface -> TextTags.Interface
+        | TextTag.Keyword -> TextTags.Keyword
+        | TextTag.Member
+        | TextTag.Function
+        | TextTag.Method -> TextTags.Method
+        | TextTag.RecordField
+        | TextTag.Property -> TextTags.Property
+        | TextTag.Parameter // parameter?
+        | TextTag.Local -> TextTags.Local
+        | TextTag.Namespace -> TextTags.Namespace
+        | TextTag.Delegate -> TextTags.Delegate
+        | TextTag.Event -> TextTags.Event
+        | TextTag.Field -> TextTags.Field
+        | TextTag.LineBreak -> TextTags.LineBreak
+        | TextTag.Space -> TextTags.Space
+        | TextTag.NumericLiteral -> TextTags.NumericLiteral
+        | TextTag.Operator -> TextTags.Operator
+        | TextTag.StringLiteral -> TextTags.StringLiteral
+        | TextTag.Punctuation -> TextTags.Punctuation
+        | TextTag.Text
+        | TextTag.ModuleBinding // why no 'Identifier'? Does it matter?
+        | TextTag.UnknownEntity -> TextTags.Text
 
     let CollectTaggedText (list: List<_>) (t:TaggedText) = list.Add(RoslynTaggedText(roslynTag t.Tag, t.Text))
 

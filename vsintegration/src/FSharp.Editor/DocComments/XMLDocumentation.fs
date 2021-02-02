@@ -12,8 +12,8 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.TaggedText
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.TaggedText
 open System.Collections.Generic
 
 type internal ITaggedTextCollector =
@@ -36,7 +36,7 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
             count <- count + 1
         | _ ->
             isEmpty <- false
-            endsWithLineBreak <- text.Tag = LayoutTag.LineBreak
+            endsWithLineBreak <- text.Tag = TextTag.LineBreak
             if endsWithLineBreak then count <- count + 1
             collector text
     
@@ -68,7 +68,7 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
         member this.Add taggedText = 
             // TODO: bail out early if line limit is already hit
             match taggedText.Tag with
-            | LayoutTag.Text -> reportTextLines taggedText.Text
+            | TextTag.Text -> reportTextLines taggedText.Text
             | _ -> addTaggedTextEntry taggedText
 
         member this.IsEmpty = isEmpty
@@ -305,7 +305,7 @@ module internal XmlDocumentation =
 
     /// Build a data tip text string with xml comments injected.
     let BuildTipText(documentationProvider:IDocumentationBuilder, 
-                     dataTipText: FSharpToolTipElement list,
+                     dataTipText: ToolTipElement list,
                      textCollector, xmlCollector,  typeParameterMapCollector, usageCollector, exnCollector,
                      showText, showExceptions, showParameters) = 
         let textCollector: ITaggedTextCollector = TextSanitizingCollector(textCollector, lineLimit = 45) :> _
@@ -328,19 +328,19 @@ module internal XmlDocumentation =
                     typeParameterMapCollector.Add(tagSpace "    ")
                     tp |> Array.iter typeParameterMapCollector.Add
 
-        let Process add (dataTipElement: FSharpToolTipElement) =
+        let Process add (dataTipElement: ToolTipElement) =
 
             match dataTipElement with 
-            | FSharpToolTipElement.None -> 
+            | ToolTipElement.None -> 
                 false
 
-            | FSharpToolTipElement.Group (overloads) -> 
+            | ToolTipElement.Group (overloads) -> 
                 let overloads = Array.ofList overloads
                 let len = overloads.Length
                 if len >= 1 then
                     addSeparatorIfNecessary add
                     if showText then 
-                        let AppendOverload (item: FSharpToolTipElementData) = 
+                        let AppendOverload (item: ToolTipElementData) = 
                             if TaggedText.toString item.MainDescription <> "" then
                                 if not textCollector.IsEmpty then 
                                     AppendHardLine textCollector
@@ -371,16 +371,16 @@ module internal XmlDocumentation =
                 else
                     false
 
-            | FSharpToolTipElement.CompositionError(errText) -> 
+            | ToolTipElement.CompositionError(errText) -> 
                 textCollector.Add(tagText errText)
                 true
 
         List.fold Process false dataTipText |> ignore
 
-    let BuildDataTipText(documentationProvider, textCollector, xmlCollector, typeParameterMapCollector, usageCollector, exnCollector, FSharpToolTipText(dataTipText)) = 
+    let BuildDataTipText(documentationProvider, textCollector, xmlCollector, typeParameterMapCollector, usageCollector, exnCollector, ToolTipText(dataTipText)) = 
         BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, typeParameterMapCollector, usageCollector, exnCollector, true, true, false) 
 
-    let BuildMethodOverloadTipText(documentationProvider, textCollector, xmlCollector, FSharpToolTipText(dataTipText), showParams) = 
+    let BuildMethodOverloadTipText(documentationProvider, textCollector, xmlCollector, ToolTipText(dataTipText), showParams) = 
         BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, xmlCollector, ignore, ignore, false, false, showParams) 
 
     let BuildMethodParamText(documentationProvider, xmlCollector, xml, paramName) =

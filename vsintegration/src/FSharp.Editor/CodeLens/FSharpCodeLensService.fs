@@ -22,7 +22,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging
@@ -85,7 +85,7 @@ type internal FSharpCodeLensService
     let mutable bufferChangedCts = new CancellationTokenSource()
     let uiContext = SynchronizationContext.Current
 
-    let layoutTagToFormatting (layoutTag: LayoutTag) =
+    let layoutTagToFormatting (layoutTag: TextTag) =
         layoutTag
         |> RoslynHelpers.roslynTag
         |> FSharpClassificationTags.GetClassificationTypeName

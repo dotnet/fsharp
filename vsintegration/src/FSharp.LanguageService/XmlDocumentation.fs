@@ -12,8 +12,8 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.TaggedText
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.TaggedText
 
 [<AutoOpen>]
 module internal Utils2 =
@@ -40,7 +40,7 @@ type internal TextSanitizingCollector_DEPRECATED(collector, ?lineLimit: int) =
             count <- count + 1
         | _ ->
             isEmpty <- false
-            endsWithLineBreak <- text.Tag = LayoutTag.LineBreak
+            endsWithLineBreak <- text.Tag = TextTag.LineBreak
             if endsWithLineBreak then count <- count + 1
             collector text
     
@@ -72,7 +72,7 @@ type internal TextSanitizingCollector_DEPRECATED(collector, ?lineLimit: int) =
         member this.Add taggedText = 
             // TODO: bail out early if line limit is already hit
             match taggedText.Tag with
-            | LayoutTag.Text -> reportTextLines taggedText.Text
+            | TextTag.Text -> reportTextLines taggedText.Text
             | _ -> addTaggedTextEntry taggedText
 
         member this.IsEmpty = isEmpty
@@ -136,7 +136,7 @@ module internal XmlDocumentation =
             AppendHardLine collector
 
     /// Build a data tip text string with xml comments injected.
-    let BuildTipText_DEPRECATED(documentationProvider:IDocumentationBuilder_DEPRECATED, dataTipText: FSharpToolTipElement list, textCollector, xmlCollector, showText, showExceptions, showParameters) = 
+    let BuildTipText_DEPRECATED(documentationProvider:IDocumentationBuilder_DEPRECATED, dataTipText: ToolTipElement list, textCollector, xmlCollector, showText, showExceptions, showParameters) = 
         let textCollector: ITaggedTextCollector_DEPRECATED = TextSanitizingCollector_DEPRECATED(textCollector, lineLimit = 45) :> _
         let xmlCollector: ITaggedTextCollector_DEPRECATED = TextSanitizingCollector_DEPRECATED(xmlCollector, lineLimit = 45) :> _
 
@@ -145,18 +145,18 @@ module internal XmlDocumentation =
                 AddSeparator textCollector
                 AddSeparator xmlCollector
 
-        let Process add (dataTipElement: FSharpToolTipElement) =
+        let Process add (dataTipElement: ToolTipElement) =
 
             match dataTipElement with 
-            | FSharpToolTipElement.None -> false
+            | ToolTipElement.None -> false
 
-            | FSharpToolTipElement.Group (overloads) -> 
+            | ToolTipElement.Group (overloads) -> 
                 let overloads = Array.ofList overloads
                 let len = overloads.Length
                 if len >= 1 then
                     addSeparatorIfNecessary add
                     if showText then 
-                        let AppendOverload (item :FSharpToolTipElementData) = 
+                        let AppendOverload (item :ToolTipElementData) = 
                             if taggedTextToString item.MainDescription <> "" then
                                 if not textCollector.IsEmpty then textCollector.Add TaggedText.lineBreak
                                 item.MainDescription |> Seq.iter textCollector.Add
@@ -182,16 +182,16 @@ module internal XmlDocumentation =
                 else
                     false
 
-            | FSharpToolTipElement.CompositionError(errText) -> 
+            | ToolTipElement.CompositionError(errText) -> 
                 textCollector.Add(tagText errText)
                 true
 
         List.fold Process false dataTipText |> ignore
 
-    let BuildDataTipText_DEPRECATED(documentationProvider, textCollector, xmlCollector, FSharpToolTipText(dataTipText)) = 
+    let BuildDataTipText_DEPRECATED(documentationProvider, textCollector, xmlCollector, ToolTipText(dataTipText)) = 
         BuildTipText_DEPRECATED(documentationProvider, dataTipText, textCollector, xmlCollector, true, true, false) 
 
-    let BuildMethodOverloadTipText_DEPRECATED(documentationProvider, textCollector, xmlCollector, FSharpToolTipText(dataTipText), showParams) = 
+    let BuildMethodOverloadTipText_DEPRECATED(documentationProvider, textCollector, xmlCollector, ToolTipText(dataTipText), showParams) = 
         BuildTipText_DEPRECATED(documentationProvider, dataTipText, textCollector, xmlCollector, false, false, showParams) 
 
 
