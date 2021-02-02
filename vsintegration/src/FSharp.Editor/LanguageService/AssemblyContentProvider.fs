@@ -8,8 +8,8 @@ open System.ComponentModel.Composition
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 
-[<Export(typeof<AssemblyContent>); Composition.Shared>]
-type internal AssemblyContent () =
+[<Export(typeof<AssemblyContentProvider>); Composition.Shared>]
+type internal AssemblyContentProvider () =
     let entityCache = EntityCache()
 
     member x.GetAllEntitiesInProjectAndReferencedAssemblies (fileCheckResults: FSharpCheckFileResults) =

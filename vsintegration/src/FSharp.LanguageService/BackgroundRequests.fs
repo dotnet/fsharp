@@ -112,7 +112,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                     let rdt = getServiceProvider().RunningDocumentTable
                     let projectSite = getProjectSitesAndFiles().FindOwningProject_DEPRECATED(rdt,fileName)
                     let enableInMemoryCrossProjectReferences = true
-                    let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, getServiceProvider(), None(*projectId*), fileName, None(*extraProjectInfo*), None(*FSharpProjectOptionsTable*), false)
+                    let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, getServiceProvider(), fileName, false)
                     let projectFileName = projectSite.ProjectFileName
                     let data = 
                         {   ProjectSite = projectSite

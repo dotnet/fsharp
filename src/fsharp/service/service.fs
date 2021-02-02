@@ -7,7 +7,6 @@ open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
 open System.Reflection
-open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -22,7 +21,6 @@ open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.ScriptClosure

@@ -10,6 +10,7 @@ open System.Collections.Immutable
 open System.Text.RegularExpressions
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.TaggedText
@@ -124,8 +125,8 @@ module internal XmlDocumentation =
         | FSharpXmlDoc.None -> ()
         | FSharpXmlDoc.FromXmlFile(filename,signature) -> 
             documentationProvider.AppendDocumentation(sink, filename, signature, showExceptions, showParameters, paramName)
-        | FSharpXmlDoc.FromXmlText(rawText, _) ->
-            let processedXml = ProcessXml("\n\n" + String.concat "\n" rawText)
+        | FSharpXmlDoc.FromXmlText(xmlDoc) ->
+            let processedXml = ProcessXml("\n\n" + String.concat "\n" xmlDoc.UnprocessedLines)
             documentationProvider.AppendDocumentationFromProcessedXML(sink, processedXml, showExceptions, showParameters, paramName)
 
     let private AddSeparator (collector: ITaggedTextCollector_DEPRECATED) =

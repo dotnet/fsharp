@@ -20,6 +20,7 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.LanguageServices
 
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 
 [<Export(typeof<IFSharpGoToDefinitionService>)>]
 [<Export(typeof<FSharpGoToDefinitionService>)>]

@@ -25,7 +25,6 @@ type SemanticClassificationServiceTests() =
         LoadTime = DateTime.MaxValue
         UnresolvedReferences = None
         OriginalLoadReferences = []
-        ExtraProjectInfo = None
         Stamp = None
     }
 

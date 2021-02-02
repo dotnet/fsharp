@@ -215,26 +215,26 @@ type public FSharpChecker =
     /// <param name="useSdkRefs">Use the implicit references from the .NET SDK.</param>
     /// <param name="assumeDotNetFramework">Set up compilation and analysis for .NET Framework scripts.</param>
     /// <param name="sdkDirOverride">Override the .NET SDK used for default references.</param>
-    /// <param name="extraProjectInfo">An extra data item added to the returned FSharpProjectOptions.</param>
     /// <param name="optionsStamp">An optional unique stamp for the options.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member GetProjectOptionsFromScript:
         filename: string * source: ISourceText * ?previewEnabled:bool * ?loadedTimeStamp: DateTime *
         ?otherFlags: string[] * ?useFsiAuxLib: bool * ?useSdkRefs: bool * ?assumeDotNetFramework: bool * ?sdkDirOverride: string *
-        ?extraProjectInfo: obj * ?optionsStamp: int64 * ?userOpName: string
+        ?optionsStamp: int64 * ?userOpName: string
             -> Async<FSharpProjectOptions * FSharpDiagnostic list>
 
-    /// <summary>
-    /// <para>Get the FSharpProjectOptions implied by a set of command line arguments.</para>
-    /// </summary>
+    /// <summary>Get the FSharpProjectOptions implied by a set of command line arguments.</summary>
     ///
     /// <param name="projectFileName">Used to differentiate between projects and for the base directory of the project.</param>
     /// <param name="argv">The command line arguments for the project build.</param>
     /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
-    /// <param name="extraProjectInfo">An extra data item added to the returned FSharpProjectOptions.</param>
-    member GetProjectOptionsFromCommandLineArgs: projectFileName: string * argv: string[] * ?loadedTimeStamp: DateTime * ?extraProjectInfo: obj -> FSharpProjectOptions
+    member GetProjectOptionsFromCommandLineArgs:
+        projectFileName: string *
+        argv: string[] *
+        ?loadedTimeStamp: DateTime
+            -> FSharpProjectOptions
 
     /// <summary>
     /// <para>Get the FSharpParsingOptions implied by a set of command line arguments and list of source files.</para>
@@ -243,7 +243,11 @@ type public FSharpChecker =
     /// <param name="sourceFiles">Initial source files list. Additional files may be added during argv evaluation.</param>
     /// <param name="argv">The command line arguments for the project build.</param>
     /// <param name="isInteractive">Indicates that parsing should assume the INTERACTIVE define and related settings</param>
-    member GetParsingOptionsFromCommandLineArgs: sourceFiles: string list * argv: string list * ?isInteractive: bool -> FSharpParsingOptions * FSharpDiagnostic list
+    member GetParsingOptionsFromCommandLineArgs:
+        sourceFiles: string list *
+        argv: string list *
+        ?isInteractive: bool
+            -> FSharpParsingOptions * FSharpDiagnostic list
 
     /// <summary>
     /// <para>Get the FSharpParsingOptions implied by a set of command line arguments.</para>
@@ -429,17 +433,17 @@ type public FSharpChecker =
     /// and that the file has become eligible to be re-typechecked for errors.
     /// The event will be raised on a background thread.
     /// </summary>
-    member BeforeBackgroundFileCheck: IEvent<string * obj option>
+    member BeforeBackgroundFileCheck: IEvent<string * FSharpProjectOptions>
 
     /// Raised after a parse of a file in the background analysis.
     ///
     /// The event will be raised on a background thread.
-    member FileParsed: IEvent<string * obj option>
+    member FileParsed: IEvent<string * FSharpProjectOptions>
 
     /// Raised after a check of a file in the background analysis.
     ///
     /// The event will be raised on a background thread.
-    member FileChecked: IEvent<string * obj option>
+    member FileChecked: IEvent<string * FSharpProjectOptions>
 
     /// Raised after the maxMB memory threshold limit is reached
     member MaxMemoryReached: IEvent<unit>
@@ -464,7 +468,7 @@ type public FSharpChecker =
     /// Notify the host that a project has been fully checked in the background (using file contents provided by the file system API)
     ///
     /// The event may be raised on a background thread.
-    member ProjectChecked: IEvent<string * obj option>
+    member ProjectChecked: IEvent<FSharpProjectOptions>
 
     // For internal use only
     member internal ReactorOps: IReactorOperations

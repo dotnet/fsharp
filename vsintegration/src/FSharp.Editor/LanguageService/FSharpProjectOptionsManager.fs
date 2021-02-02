@@ -122,7 +122,6 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             LoadTime = DateTime.Now
                             UnresolvedReferences = None
                             OriginalLoadReferences = []
-                            ExtraProjectInfo= None
                             Stamp = Some(int64 (fileStamp.GetHashCode()))
                         }
 
@@ -208,7 +207,6 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                         LoadTime = projectSite.LoadTime
                         UnresolvedReferences = None
                         OriginalLoadReferences = []
-                        ExtraProjectInfo= None
                         Stamp = Some(int64 (project.Version.GetHashCode()))
                     }
 

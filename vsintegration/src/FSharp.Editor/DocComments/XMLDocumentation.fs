@@ -10,6 +10,7 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.TaggedText
@@ -291,8 +292,9 @@ module internal XmlDocumentation =
         | FSharpXmlDoc.None -> ()
         | FSharpXmlDoc.FromXmlFile(filename,signature) -> 
             documentationProvider.AppendDocumentation(xmlCollector, exnCollector, filename, signature, showExceptions, showParameters, paramName)
-        | FSharpXmlDoc.FromXmlText(_rawText, processedXml) ->
-            let processedXml = ProcessXml("\n\n" + String.concat "\n" processedXml)
+        | FSharpXmlDoc.FromXmlText(xmlDoc) ->
+            let elaboratedXml = xmlDoc.GetElaboratedXmlLines()
+            let processedXml = ProcessXml("\n\n" + String.concat "\n" elaboratedXml)
             documentationProvider.AppendDocumentationFromProcessedXML(xmlCollector, exnCollector, processedXml, showExceptions, showParameters, paramName)
 
     let private AddSeparator (collector: ITaggedTextCollector) =

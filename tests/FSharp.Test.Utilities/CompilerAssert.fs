@@ -232,7 +232,6 @@ let main argv = 0"""
             LoadTime = DateTime()
             UnresolvedReferences = None
             OriginalLoadReferences = []
-            ExtraProjectInfo = None
             Stamp = None
         }
 

@@ -30,6 +30,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open UnitTests.TestLib.LanguageService
 
@@ -75,7 +76,6 @@ module GoToDefinitionServiceTests =
             LoadTime = DateTime.MaxValue
             OriginalLoadReferences = []
             UnresolvedReferences = None
-            ExtraProjectInfo = None
             Stamp = None
         }
 

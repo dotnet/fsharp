@@ -27,7 +27,7 @@ open Microsoft.VisualStudio.TextManager.Interop
 
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Symbols
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
 

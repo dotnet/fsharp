@@ -25,7 +25,6 @@ let private projectOptions : FSharpProjectOptions =
       LoadTime = DateTime.MaxValue
       OriginalLoadReferences = []
       UnresolvedReferences = None
-      ExtraProjectInfo = None
       Stamp = None }
 
 let private checker = FSharpChecker.Create()

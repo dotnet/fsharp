@@ -30,7 +30,7 @@ type internal FSharpCompletionProvider
         serviceProvider: SVsServiceProvider,
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager,
-        assemblyContentProvider: AssemblyContent
+        assemblyContentProvider: AssemblyContentProvider
     ) =
 
     inherit CompletionProvider()

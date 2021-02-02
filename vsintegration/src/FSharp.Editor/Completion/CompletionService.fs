@@ -19,7 +19,7 @@ type internal FSharpCompletionService
         serviceProvider: SVsServiceProvider,
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager,
-        assemblyContentProvider: AssemblyContent,
+        assemblyContentProvider: AssemblyContentProvider,
         settings: EditorOptions
     ) =
     inherit CompletionServiceWithProviders(workspace)
@@ -58,7 +58,7 @@ type internal FSharpCompletionServiceFactory
         serviceProvider: SVsServiceProvider,
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager,
-        assemblyContentProvider: AssemblyContent,
+        assemblyContentProvider: AssemblyContentProvider,
         settings: EditorOptions
     ) =
     interface ILanguageServiceFactory with
