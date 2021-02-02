@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace Microsoft.DotNet.DependencyManager
+namespace FSharp.Compiler.DependencyManager
 
 open System
 open System.IO
@@ -11,10 +11,10 @@ open Internal.Utilities.FSharpEnvironment
 open Microsoft.FSharp.Reflection
 open System.Collections.Concurrent
 
-module Option = 
+module Option =
 
     /// Convert string into Option string where null and String.Empty result in None
-    let ofString s = 
+    let ofString s =
         if String.IsNullOrEmpty(s) then None
         else Some(s)
 
@@ -293,7 +293,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
         | null -> { new IDisposable with member _.Dispose() = () }
         | _ -> new AssemblyResolveHandler(assemblyProbingPaths) :> IDisposable
 
-    // Resolution Path = Location of FSharp.Compiler.Private.dll
+    // Resolution Path = Location of FSharp.Compiler.Service.dll
     let assemblySearchPaths = lazy (
         [
             let assemblyLocation = typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly.Location
@@ -315,7 +315,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
             with
             | e ->
                 let e = stripTieWrapper e
-                let n, m = DependencyManager.SR.couldNotLoadDependencyManagerExtension(path,e.Message)
+                let n, m = FSComp.SR.couldNotLoadDependencyManagerExtension(path,e.Message)
                 reportError.Invoke(ErrorReportType.Warning, n, m)
                 None)
         |> Seq.filter (fun a -> assemblyHasAttribute a dependencyManagerAttributeName)
@@ -365,7 +365,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
     member _.CreatePackageManagerUnknownError (compilerTools: string seq, outputDir: string, packageManagerKey: string, reportError: ResolvingErrorReport) =
         let registeredKeys = String.Join(", ", RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError |> Seq.map (fun kv -> kv.Value.Key))
         let searchPaths = assemblySearchPaths.Force()
-        DependencyManager.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths, compilerTools), registeredKeys)
+        FSComp.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths, compilerTools), registeredKeys)
 
     /// Fetch a dependencymanager that supports a specific key
     member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string * IDependencyManagerProvider =
@@ -385,7 +385,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
         with 
         | e ->
             let e = stripTieWrapper e
-            let err, msg = DependencyManager.SR.packageManagerError(e.Message)
+            let err, msg = FSComp.SR.packageManagerError(e.Message)
             reportError.Invoke(ErrorReportType.Error, err, msg)
             null, Unchecked.defaultof<IDependencyManagerProvider>
 
@@ -399,7 +399,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
         with
         | e ->
             let e = stripTieWrapper e
-            let err, msg = DependencyManager.SR.packageManagerError(e.Message)
+            let err, msg = FSComp.SR.packageManagerError(e.Message)
             reportError.Invoke(ErrorReportType.Error, err, msg)
             Unchecked.defaultof<IDependencyManagerProvider>
 
@@ -429,7 +429,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
 
                 with e ->
                     let e = stripTieWrapper e
-                    Error (DependencyManager.SR.packageManagerError(e.Message))
+                    Error (FSComp.SR.packageManagerError(e.Message))
             ))
         match result with
         | Ok res ->

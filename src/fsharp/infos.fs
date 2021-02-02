@@ -106,6 +106,30 @@ type SkipUnrefInterfaces = Yes | No
 /// Collect the set of immediate declared interface types for an F# type, but do not
 /// traverse the type hierarchy to collect further interfaces.
 let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
+
+    let getInterfaces ty (tcref:TyconRef) tinst =
+        match metadataOfTy g ty with
+#if !NO_EXTENSIONTYPING
+        | ProvidedTypeMetadata info ->
+            [ for ity in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
+                yield Import.ImportProvidedType amap m ity ]
+#endif
+        | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
+            // ImportILType may fail for an interface if the assembly load set is incomplete and the interface
+            // comes from another assembly. In this case we simply skip the interface:
+            // if we don't skip it, then compilation will just fail here, and if type checking
+            // succeeds with fewer non-dereferencable interfaces reported then it would have
+            // succeeded with more reported. There are pathological corner cases where this
+            // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always
+            // assume those are present.
+            tdef.Implements |> List.choose (fun ity ->
+                if skipUnref = SkipUnrefInterfaces.No || CanImportILType scoref amap m ity then
+                    Some (ImportILType scoref amap m tinst ity)
+                else
+                    None)
+        | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+            tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map (instType (mkInstForAppTy g ty))
+
     let itys =
         match tryAppTy g ty with
         | ValueSome(tcref, tinst) ->
@@ -123,31 +147,17 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
                   yield mkAppTy g.system_GenericIComparable_tcref [ty]
                   yield mkAppTy g.system_GenericIEquatable_tcref [ty]]
             else
-                match metadataOfTy g ty with
-#if !NO_EXTENSIONTYPING
-                | ProvidedTypeMetadata info ->
-                    [ for ity in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
-                          yield Import.ImportProvidedType amap m ity ]
-#endif
-                | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
+                getInterfaces ty tcref tinst
+        | _ ->
+            let tyWithMetadata = convertToTypeWithMetadataIfPossible g ty
+            match tryAppTy g tyWithMetadata with
+            | ValueSome (tcref, tinst) ->
+                if isAnyTupleTy g ty then
+                    getInterfaces tyWithMetadata tcref tinst
+                else
+                    []
+            | _ -> []
 
-                    // ImportILType may fail for an interface if the assembly load set is incomplete and the interface
-                    // comes from another assembly. In this case we simply skip the interface:
-                    // if we don't skip it, then compilation will just fail here, and if type checking
-                    // succeeds with fewer non-dereferencable interfaces reported then it would have
-                    // succeeded with more reported. There are pathological corner cases where this
-                    // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always
-                    // assume those are present.
-                    tdef.Implements |> List.choose (fun ity ->
-                         if skipUnref = SkipUnrefInterfaces.No || CanImportILType scoref amap m ity then
-                             Some (ImportILType scoref amap m tinst ity)
-                         else None)
-
-                | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
-                    tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map (instType (mkInstForAppTy g ty))
-        | _ -> []
-
-    
     // NOTE: Anonymous record types are not directly considered to implement IComparable,
     // IComparable<T> or IEquatable<T>. This is because whether they support these interfaces depend on their
     // consitutent types, which may not yet be known in type inference.

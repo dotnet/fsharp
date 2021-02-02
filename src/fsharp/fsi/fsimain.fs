@@ -31,7 +31,7 @@ open FSharp.Compiler.Interactive.Shell.Settings
 
 
 // Hardbinding dependencies should we NGEN fsi.exe
-[<Dependency("FSharp.Compiler.Private",LoadHint.Always)>] do ()
+[<Dependency("FSharp.Compiler.Service",LoadHint.Always)>] do ()
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
 // Standard attributes
 [<assembly: System.Runtime.InteropServices.ComVisible(false)>]

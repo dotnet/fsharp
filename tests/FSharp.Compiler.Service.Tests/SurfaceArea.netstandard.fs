@@ -1522,6 +1522,8 @@ FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+FsiEvaluati
 FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+FsiEvaluationSessionHostConfig
 FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+FsiValue
 FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+Settings
+FSharp.Compiler.LegacyMSBuildReferenceResolver
+FSharp.Compiler.LegacyMSBuildReferenceResolver: FSharp.Compiler.LegacyReferenceResolver getResolver()
 FSharp.Compiler.LegacyReferenceResolver
 FSharp.Compiler.SourceCodeServices.AssemblyContentProvider
 FSharp.Compiler.SourceCodeServices.AssemblyContentProvider: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.AssemblySymbol] getAssemblyContent(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.SourceCodeServices.IAssemblyContentCache,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.AssemblySymbol]],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.AssemblySymbol]], FSharp.Compiler.SourceCodeServices.AssemblyContentType, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpAssembly])
@@ -2067,7 +2069,7 @@ FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: System.String ToStrin
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: System.String[] DependencyFiles
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: System.Tuple`2[FSharp.Compiler.Text.Range,System.Int32][] GetFormatSpecifierLocationsAndArity()
-FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: System.ValueTuple`2[FSharp.Compiler.Text.Range,FSharp.Compiler.SourceCodeServices.SemanticClassificationType][] GetSemanticClassification(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationItem[] GetSemanticClassification(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults
 FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults: Boolean HasCriticalErrors
 FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults: Boolean get_HasCriticalErrors()
@@ -2110,6 +2112,7 @@ FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FShar
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpParseFileResults] ParseFileInProject(System.String, System.String, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpParseFileResults] ParseFileNoCache(System.String, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.SourceCodeServices.FSharpParsingOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer]] CheckFileInProjectAllowingStaleCachedResults(FSharp.Compiler.SourceCodeServices.FSharpParseFileResults, System.String, Int32, System.String, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationView]] GetBackgroundSemanticClassificationForFile(System.String, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] NotifyProjectCleaned(FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Collections.Generic.IEnumerable`1[FSharp.Compiler.Text.Range]] FindBackgroundReferencesInFile(System.String, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, FSharp.Compiler.SourceCodeServices.FSharpSymbol, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.SourceCodeServices.FSharpDiagnostic[],System.Int32]] Compile(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+ParsedInput], System.String, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
@@ -2121,7 +2124,6 @@ FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FShar
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.Text.Range,FSharp.Compiler.Text.Range][]] MatchBraces(System.String, System.String, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`3[FSharp.Compiler.SourceCodeServices.FSharpDiagnostic[],System.Int32,Microsoft.FSharp.Core.FSharpOption`1[System.Reflection.Assembly]]] CompileToDynamicAssembly(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+ParsedInput], System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.IO.TextWriter,System.IO.TextWriter]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`3[FSharp.Compiler.SourceCodeServices.FSharpDiagnostic[],System.Int32,Microsoft.FSharp.Core.FSharpOption`1[System.Reflection.Assembly]]] CompileToDynamicAssembly(System.String[], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.IO.TextWriter,System.IO.TextWriter]], Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.ValueTuple`2[FSharp.Compiler.Text.Range,FSharp.Compiler.SourceCodeServices.SemanticClassificationType][]] GetBackgroundSemanticClassificationForFile(System.String, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit] MaxMemoryReached
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit] get_MaxMemoryReached()
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[System.Tuple`2[System.String,Microsoft.FSharp.Core.FSharpOption`1[System.Object]]],System.Tuple`2[System.String,Microsoft.FSharp.Core.FSharpOption`1[System.Object]]] BeforeBackgroundFileCheck
@@ -3420,6 +3422,19 @@ FSharp.Compiler.SourceCodeServices.FSharpProjectOptions: System.String[] get_Sou
 FSharp.Compiler.SourceCodeServices.FSharpProjectOptions: System.Tuple`2[System.String,FSharp.Compiler.SourceCodeServices.FSharpProjectOptions][] ReferencedProjects
 FSharp.Compiler.SourceCodeServices.FSharpProjectOptions: System.Tuple`2[System.String,FSharp.Compiler.SourceCodeServices.FSharpProjectOptions][] get_ReferencedProjects()
 FSharp.Compiler.SourceCodeServices.FSharpProjectOptions: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], System.String[], System.String[], System.Tuple`2[System.String,FSharp.Compiler.SourceCodeServices.FSharpProjectOptions][], Boolean, Boolean, System.DateTime, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpUnresolvedReferencesSet], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Object], Microsoft.FSharp.Core.FSharpOption`1[System.Int64])
+FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationItem
+FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationItem: Boolean Equals(FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationItem)
+FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationItem: Boolean Equals(System.Object)
+FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationItem: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationItem: FSharp.Compiler.SourceCodeServices.SemanticClassificationType Type
+FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationItem: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Type()
+FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationItem: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationItem: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationItem: Int32 GetHashCode()
+FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationItem: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationItem: Void .ctor(System.Tuple`2[FSharp.Compiler.Text.Range,FSharp.Compiler.SourceCodeServices.SemanticClassificationType])
+FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationView
+FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationView: Void ForEach(Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.SourceCodeServices.FSharpSemanticClassificationItem,Microsoft.FSharp.Core.Unit])
 FSharp.Compiler.SourceCodeServices.FSharpSourceTokenizer
 FSharp.Compiler.SourceCodeServices.FSharpSourceTokenizer: FSharp.Compiler.SourceCodeServices.FSharpLineTokenizer CreateBufferTokenizer(Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`3[System.Char[],System.Int32,System.Int32],System.Int32])
 FSharp.Compiler.SourceCodeServices.FSharpSourceTokenizer: FSharp.Compiler.SourceCodeServices.FSharpLineTokenizer CreateLineTokenizer(System.String)
@@ -4958,6 +4973,41 @@ FSharp.Compiler.SourceCodeServices.InsertContext: Int32 GetHashCode()
 FSharp.Compiler.SourceCodeServices.InsertContext: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.SourceCodeServices.InsertContext: System.String ToString()
 FSharp.Compiler.SourceCodeServices.InsertContext: Void .ctor(FSharp.Compiler.SourceCodeServices.ScopeKind, FSharp.Compiler.Text.Pos)
+FSharp.Compiler.SourceCodeServices.InterfaceData
+FSharp.Compiler.SourceCodeServices.InterfaceData+Interface: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynMemberDefn]] Item2
+FSharp.Compiler.SourceCodeServices.InterfaceData+Interface: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynMemberDefn]] get_Item2()
+FSharp.Compiler.SourceCodeServices.InterfaceData+Interface: SynType Item1
+FSharp.Compiler.SourceCodeServices.InterfaceData+Interface: SynType get_Item1()
+FSharp.Compiler.SourceCodeServices.InterfaceData+ObjExpr: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynBinding] Item2
+FSharp.Compiler.SourceCodeServices.InterfaceData+ObjExpr: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynBinding] get_Item2()
+FSharp.Compiler.SourceCodeServices.InterfaceData+ObjExpr: SynType Item1
+FSharp.Compiler.SourceCodeServices.InterfaceData+ObjExpr: SynType get_Item1()
+FSharp.Compiler.SourceCodeServices.InterfaceData+Tags: Int32 Interface
+FSharp.Compiler.SourceCodeServices.InterfaceData+Tags: Int32 ObjExpr
+FSharp.Compiler.SourceCodeServices.InterfaceData: Boolean IsInterface
+FSharp.Compiler.SourceCodeServices.InterfaceData: Boolean IsObjExpr
+FSharp.Compiler.SourceCodeServices.InterfaceData: Boolean get_IsInterface()
+FSharp.Compiler.SourceCodeServices.InterfaceData: Boolean get_IsObjExpr()
+FSharp.Compiler.SourceCodeServices.InterfaceData: FSharp.Compiler.SourceCodeServices.InterfaceData NewInterface(SynType, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynMemberDefn]])
+FSharp.Compiler.SourceCodeServices.InterfaceData: FSharp.Compiler.SourceCodeServices.InterfaceData NewObjExpr(SynType, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynBinding])
+FSharp.Compiler.SourceCodeServices.InterfaceData: FSharp.Compiler.SourceCodeServices.InterfaceData+Interface
+FSharp.Compiler.SourceCodeServices.InterfaceData: FSharp.Compiler.SourceCodeServices.InterfaceData+ObjExpr
+FSharp.Compiler.SourceCodeServices.InterfaceData: FSharp.Compiler.SourceCodeServices.InterfaceData+Tags
+FSharp.Compiler.SourceCodeServices.InterfaceData: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.SourceCodeServices.InterfaceData: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.SourceCodeServices.InterfaceData: Int32 Tag
+FSharp.Compiler.SourceCodeServices.InterfaceData: Int32 get_Tag()
+FSharp.Compiler.SourceCodeServices.InterfaceData: System.String ToString()
+FSharp.Compiler.SourceCodeServices.InterfaceData: System.String[] TypeParameters
+FSharp.Compiler.SourceCodeServices.InterfaceData: System.String[] get_TypeParameters()
+FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator
+FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: Boolean hasNoInterfaceMember(FSharp.Compiler.SourceCodeServices.FSharpEntity)
+FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: Boolean isInterface(FSharp.Compiler.SourceCodeServices.FSharpEntity)
+FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,FSharp.Compiler.Text.Range]] getMemberNameAndRanges(FSharp.Compiler.SourceCodeServices.InterfaceData)
+FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Collections.FSharpSet`1[System.String]] getImplementedMemberSignatures(Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,FSharp.Compiler.Text.Range],Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpSymbolUse]], FSharp.Compiler.SourceCodeServices.FSharpDisplayContext, FSharp.Compiler.SourceCodeServices.InterfaceData)
+FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.InterfaceData] tryFindInterfaceDeclaration(FSharp.Compiler.Text.Pos, ParsedInput)
+FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: System.Collections.Generic.IEnumerable`1[System.Tuple`2[FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue,System.Collections.Generic.IEnumerable`1[System.Tuple`2[FSharp.Compiler.SourceCodeServices.FSharpGenericParameter,FSharp.Compiler.SourceCodeServices.FSharpType]]]] getInterfaceMembers(FSharp.Compiler.SourceCodeServices.FSharpEntity)
+FSharp.Compiler.SourceCodeServices.InterfaceStubGenerator: System.String formatInterface(Int32, Int32, System.String[], System.String, System.String, FSharp.Compiler.SourceCodeServices.FSharpDisplayContext, Microsoft.FSharp.Collections.FSharpSet`1[System.String], FSharp.Compiler.SourceCodeServices.FSharpEntity, Boolean)
 FSharp.Compiler.SourceCodeServices.LookupType
 FSharp.Compiler.SourceCodeServices.LookupType+Tags: Int32 Fuzzy
 FSharp.Compiler.SourceCodeServices.LookupType+Tags: Int32 Precise
@@ -5328,121 +5378,8 @@ FSharp.Compiler.SourceCodeServices.ScopeKind: Int32 GetHashCode(System.Collectio
 FSharp.Compiler.SourceCodeServices.ScopeKind: Int32 Tag
 FSharp.Compiler.SourceCodeServices.ScopeKind: Int32 get_Tag()
 FSharp.Compiler.SourceCodeServices.ScopeKind: System.String ToString()
+FSharp.Compiler.SourceCodeServices.SimplifyNames
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 ComputationExpression
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 ConstructorForReferenceType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 ConstructorForValueType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Delegate
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 DisposableLocalValue
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 DisposableTopLevelValue
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 DisposableType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Enumeration
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Event
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Exception
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 ExtensionMethod
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Field
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Function
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Interface
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 IntrinsicFunction
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Literal
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 LocalValue
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Method
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Module
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 MutableRecordField
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 MutableVar
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 NamedArgument
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Namespace
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Operator
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Plaintext
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Printf
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Property
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 RecordField
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 RecordFieldAsFunction
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 ReferenceType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Type
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 TypeArgument
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 TypeDef
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 UnionCase
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 UnionCaseField
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Value
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 ValueType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean Equals(FSharp.Compiler.SourceCodeServices.SemanticClassificationType)
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean Equals(System.Object)
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsComputationExpression
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsConstructorForReferenceType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsConstructorForValueType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsDelegate
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsDisposableLocalValue
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsDisposableTopLevelValue
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsDisposableType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsEnumeration
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsEvent
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsException
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsExtensionMethod
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsField
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsFunction
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsInterface
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsIntrinsicFunction
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsLiteral
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsLocalValue
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsMethod
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsModule
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsMutableRecordField
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsMutableVar
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsNamedArgument
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsNamespace
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsOperator
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsPlaintext
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsPrintf
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsProperty
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsRecordField
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsRecordFieldAsFunction
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsReferenceType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsTypeArgument
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsTypeDef
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsUnionCase
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsUnionCaseField
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsValue
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsValueType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsComputationExpression()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsConstructorForReferenceType()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsConstructorForValueType()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsDelegate()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsDisposableLocalValue()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsDisposableTopLevelValue()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsDisposableType()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsEnumeration()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsEvent()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsException()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsExtensionMethod()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsField()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsFunction()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsInterface()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsIntrinsicFunction()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsLiteral()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsLocalValue()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsMethod()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsModule()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsMutableRecordField()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsMutableVar()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsNamedArgument()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsNamespace()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsOperator()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsPlaintext()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsPrintf()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsProperty()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsRecordField()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsRecordFieldAsFunction()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsReferenceType()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsType()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsTypeArgument()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsTypeDef()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsUnionCase()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsUnionCaseField()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsValue()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsValueType()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType ComputationExpression
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType ConstructorForReferenceType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType ConstructorForValueType
@@ -5480,53 +5417,7 @@ FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.S
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType UnionCaseField
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType Value
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType ValueType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_ComputationExpression()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_ConstructorForReferenceType()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_ConstructorForValueType()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Delegate()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_DisposableLocalValue()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_DisposableTopLevelValue()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_DisposableType()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Enumeration()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Event()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Exception()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_ExtensionMethod()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Field()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Function()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Interface()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_IntrinsicFunction()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Literal()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_LocalValue()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Method()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Module()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_MutableRecordField()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_MutableVar()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_NamedArgument()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Namespace()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Operator()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Plaintext()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Printf()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Property()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_RecordField()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_RecordFieldAsFunction()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_ReferenceType()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Type()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_TypeArgument()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_TypeDef()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_UnionCase()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_UnionCaseField()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Value()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_ValueType()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Int32 CompareTo(FSharp.Compiler.SourceCodeServices.SemanticClassificationType)
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Int32 CompareTo(System.Object)
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Int32 CompareTo(System.Object, System.Collections.IComparer)
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Int32 GetHashCode()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Int32 Tag
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Int32 get_Tag()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: System.String ToString()
-FSharp.Compiler.SourceCodeServices.SimplifyNames
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Int32 value__
 FSharp.Compiler.SourceCodeServices.SimplifyNames+SimplifiableRange: Boolean Equals(SimplifiableRange)
 FSharp.Compiler.SourceCodeServices.SimplifyNames+SimplifiableRange: Boolean Equals(System.Object)
 FSharp.Compiler.SourceCodeServices.SimplifyNames+SimplifiableRange: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -6841,8 +6732,8 @@ FSharp.Compiler.SyntaxTree+SynExpr+ArbitraryAfterError: FSharp.Compiler.Text.Ran
 FSharp.Compiler.SyntaxTree+SynExpr+ArbitraryAfterError: FSharp.Compiler.Text.Range range
 FSharp.Compiler.SyntaxTree+SynExpr+ArbitraryAfterError: System.String debugStr
 FSharp.Compiler.SyntaxTree+SynExpr+ArbitraryAfterError: System.String get_debugStr()
-FSharp.Compiler.SyntaxTree+SynExpr+ArrayOrList: Boolean get_isList()
-FSharp.Compiler.SyntaxTree+SynExpr+ArrayOrList: Boolean isList
+FSharp.Compiler.SyntaxTree+SynExpr+ArrayOrList: Boolean get_isArray()
+FSharp.Compiler.SyntaxTree+SynExpr+ArrayOrList: Boolean isArray
 FSharp.Compiler.SyntaxTree+SynExpr+ArrayOrList: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.SyntaxTree+SynExpr+ArrayOrList: FSharp.Compiler.Text.Range range
 FSharp.Compiler.SyntaxTree+SynExpr+ArrayOrList: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynExpr] exprs
@@ -9912,76 +9803,76 @@ FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc Merge(XmlDoc, XmlDoc)
 FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc get_Empty()
 FSharp.Compiler.XmlDoc: FSharp.Compiler.XmlDoc+PreXmlDoc
 FSharp.Compiler.XmlDoc: FSharp.Compiler.XmlDoc+XmlDoc
-Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe
-Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] EndInvoke(System.IAsyncResult)
-Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] Invoke()
-Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe: System.IAsyncResult BeginInvoke(System.AsyncCallback, System.Object)
-Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe: Void .ctor(System.Object, IntPtr)
-Microsoft.DotNet.DependencyManager.AssemblyResolveHandler
-Microsoft.DotNet.DependencyManager.AssemblyResolveHandler: Void .ctor(Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe)
-Microsoft.DotNet.DependencyManager.DependencyProvider
-Microsoft.DotNet.DependencyManager.DependencyProvider: Microsoft.DotNet.DependencyManager.IDependencyManagerProvider TryFindDependencyManagerByKey(System.Collections.Generic.IEnumerable`1[System.String], System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport, System.String)
-Microsoft.DotNet.DependencyManager.DependencyProvider: Microsoft.DotNet.DependencyManager.IResolveDependenciesResult Resolve(Microsoft.DotNet.DependencyManager.IDependencyManagerProvider, System.String, System.Collections.Generic.IEnumerable`1[System.Tuple`2[System.String,System.String]], Microsoft.DotNet.DependencyManager.ResolvingErrorReport, System.String, System.String, System.String, System.String, System.String, Int32)
-Microsoft.DotNet.DependencyManager.DependencyProvider: System.String[] GetRegisteredDependencyManagerHelpText(System.Collections.Generic.IEnumerable`1[System.String], System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport)
-Microsoft.DotNet.DependencyManager.DependencyProvider: System.Tuple`2[System.Int32,System.String] CreatePackageManagerUnknownError(System.Collections.Generic.IEnumerable`1[System.String], System.String, System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport)
-Microsoft.DotNet.DependencyManager.DependencyProvider: System.Tuple`2[System.String,Microsoft.DotNet.DependencyManager.IDependencyManagerProvider] TryFindDependencyManagerInPath(System.Collections.Generic.IEnumerable`1[System.String], System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport, System.String)
-Microsoft.DotNet.DependencyManager.DependencyProvider: Void .ctor()
-Microsoft.DotNet.DependencyManager.DependencyProvider: Void .ctor(Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe, Microsoft.DotNet.DependencyManager.NativeResolutionProbe)
-Microsoft.DotNet.DependencyManager.DependencyProvider: Void .ctor(Microsoft.DotNet.DependencyManager.NativeResolutionProbe)
-Microsoft.DotNet.DependencyManager.ErrorReportType
-Microsoft.DotNet.DependencyManager.ErrorReportType+Tags: Int32 Error
-Microsoft.DotNet.DependencyManager.ErrorReportType+Tags: Int32 Warning
-Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean Equals(Microsoft.DotNet.DependencyManager.ErrorReportType)
-Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean Equals(System.Object)
-Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean IsError
-Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean IsWarning
-Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean get_IsError()
-Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean get_IsWarning()
-Microsoft.DotNet.DependencyManager.ErrorReportType: Int32 CompareTo(Microsoft.DotNet.DependencyManager.ErrorReportType)
-Microsoft.DotNet.DependencyManager.ErrorReportType: Int32 CompareTo(System.Object)
-Microsoft.DotNet.DependencyManager.ErrorReportType: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.DotNet.DependencyManager.ErrorReportType: Int32 GetHashCode()
-Microsoft.DotNet.DependencyManager.ErrorReportType: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.DotNet.DependencyManager.ErrorReportType: Int32 Tag
-Microsoft.DotNet.DependencyManager.ErrorReportType: Int32 get_Tag()
-Microsoft.DotNet.DependencyManager.ErrorReportType: Microsoft.DotNet.DependencyManager.ErrorReportType Error
-Microsoft.DotNet.DependencyManager.ErrorReportType: Microsoft.DotNet.DependencyManager.ErrorReportType Warning
-Microsoft.DotNet.DependencyManager.ErrorReportType: Microsoft.DotNet.DependencyManager.ErrorReportType get_Error()
-Microsoft.DotNet.DependencyManager.ErrorReportType: Microsoft.DotNet.DependencyManager.ErrorReportType get_Warning()
-Microsoft.DotNet.DependencyManager.ErrorReportType: Microsoft.DotNet.DependencyManager.ErrorReportType+Tags
-Microsoft.DotNet.DependencyManager.ErrorReportType: System.String ToString()
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: Microsoft.DotNet.DependencyManager.IResolveDependenciesResult ResolveDependencies(System.String, System.String, System.String, System.String, System.Collections.Generic.IEnumerable`1[System.Tuple`2[System.String,System.String]], System.String, System.String, Int32)
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: System.String Key
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: System.String Name
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: System.String get_Key()
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: System.String get_Name()
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: System.String[] HelpMessages
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: System.String[] get_HelpMessages()
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: Boolean Success
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: Boolean get_Success()
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] Resolutions
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] Roots
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] SourceFiles
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] get_Resolutions()
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] get_Roots()
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] get_SourceFiles()
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.String[] StdError
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.String[] StdOut
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.String[] get_StdError()
-Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.String[] get_StdOut()
-Microsoft.DotNet.DependencyManager.NativeDllResolveHandler
-Microsoft.DotNet.DependencyManager.NativeDllResolveHandler: Void .ctor(Microsoft.DotNet.DependencyManager.NativeResolutionProbe)
-Microsoft.DotNet.DependencyManager.NativeResolutionProbe
-Microsoft.DotNet.DependencyManager.NativeResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] EndInvoke(System.IAsyncResult)
-Microsoft.DotNet.DependencyManager.NativeResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] Invoke()
-Microsoft.DotNet.DependencyManager.NativeResolutionProbe: System.IAsyncResult BeginInvoke(System.AsyncCallback, System.Object)
-Microsoft.DotNet.DependencyManager.NativeResolutionProbe: Void .ctor(System.Object, IntPtr)
-Microsoft.DotNet.DependencyManager.ResolvingErrorReport
-Microsoft.DotNet.DependencyManager.ResolvingErrorReport: System.IAsyncResult BeginInvoke(Microsoft.DotNet.DependencyManager.ErrorReportType, Int32, System.String, System.AsyncCallback, System.Object)
-Microsoft.DotNet.DependencyManager.ResolvingErrorReport: Void .ctor(System.Object, IntPtr)
-Microsoft.DotNet.DependencyManager.ResolvingErrorReport: Void EndInvoke(System.IAsyncResult)
-Microsoft.DotNet.DependencyManager.ResolvingErrorReport: Void Invoke(Microsoft.DotNet.DependencyManager.ErrorReportType, Int32, System.String)"
+FSharp.Compiler.DependencyManager.AssemblyResolutionProbe
+FSharp.Compiler.DependencyManager.AssemblyResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] EndInvoke(System.IAsyncResult)
+FSharp.Compiler.DependencyManager.AssemblyResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] Invoke()
+FSharp.Compiler.DependencyManager.AssemblyResolutionProbe: System.IAsyncResult BeginInvoke(System.AsyncCallback, System.Object)
+FSharp.Compiler.DependencyManager.AssemblyResolutionProbe: Void .ctor(System.Object, IntPtr)
+FSharp.Compiler.DependencyManager.AssemblyResolveHandler
+FSharp.Compiler.DependencyManager.AssemblyResolveHandler: Void .ctor(FSharp.Compiler.DependencyManager.AssemblyResolutionProbe)
+FSharp.Compiler.DependencyManager.DependencyProvider
+FSharp.Compiler.DependencyManager.DependencyProvider: FSharp.Compiler.DependencyManager.IDependencyManagerProvider TryFindDependencyManagerByKey(System.Collections.Generic.IEnumerable`1[System.String], System.String, FSharp.Compiler.DependencyManager.ResolvingErrorReport, System.String)
+FSharp.Compiler.DependencyManager.DependencyProvider: FSharp.Compiler.DependencyManager.IResolveDependenciesResult Resolve(FSharp.Compiler.DependencyManager.IDependencyManagerProvider, System.String, System.Collections.Generic.IEnumerable`1[System.Tuple`2[System.String,System.String]], FSharp.Compiler.DependencyManager.ResolvingErrorReport, System.String, System.String, System.String, System.String, System.String, Int32)
+FSharp.Compiler.DependencyManager.DependencyProvider: System.String[] GetRegisteredDependencyManagerHelpText(System.Collections.Generic.IEnumerable`1[System.String], System.String, FSharp.Compiler.DependencyManager.ResolvingErrorReport)
+FSharp.Compiler.DependencyManager.DependencyProvider: System.Tuple`2[System.Int32,System.String] CreatePackageManagerUnknownError(System.Collections.Generic.IEnumerable`1[System.String], System.String, System.String, FSharp.Compiler.DependencyManager.ResolvingErrorReport)
+FSharp.Compiler.DependencyManager.DependencyProvider: System.Tuple`2[System.String,FSharp.Compiler.DependencyManager.IDependencyManagerProvider] TryFindDependencyManagerInPath(System.Collections.Generic.IEnumerable`1[System.String], System.String, FSharp.Compiler.DependencyManager.ResolvingErrorReport, System.String)
+FSharp.Compiler.DependencyManager.DependencyProvider: Void .ctor()
+FSharp.Compiler.DependencyManager.DependencyProvider: Void .ctor(FSharp.Compiler.DependencyManager.AssemblyResolutionProbe, FSharp.Compiler.DependencyManager.NativeResolutionProbe)
+FSharp.Compiler.DependencyManager.DependencyProvider: Void .ctor(FSharp.Compiler.DependencyManager.NativeResolutionProbe)
+FSharp.Compiler.DependencyManager.ErrorReportType
+FSharp.Compiler.DependencyManager.ErrorReportType+Tags: Int32 Error
+FSharp.Compiler.DependencyManager.ErrorReportType+Tags: Int32 Warning
+FSharp.Compiler.DependencyManager.ErrorReportType: Boolean Equals(FSharp.Compiler.DependencyManager.ErrorReportType)
+FSharp.Compiler.DependencyManager.ErrorReportType: Boolean Equals(System.Object)
+FSharp.Compiler.DependencyManager.ErrorReportType: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DependencyManager.ErrorReportType: Boolean IsError
+FSharp.Compiler.DependencyManager.ErrorReportType: Boolean IsWarning
+FSharp.Compiler.DependencyManager.ErrorReportType: Boolean get_IsError()
+FSharp.Compiler.DependencyManager.ErrorReportType: Boolean get_IsWarning()
+FSharp.Compiler.DependencyManager.ErrorReportType: Int32 CompareTo(FSharp.Compiler.DependencyManager.ErrorReportType)
+FSharp.Compiler.DependencyManager.ErrorReportType: Int32 CompareTo(System.Object)
+FSharp.Compiler.DependencyManager.ErrorReportType: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.DependencyManager.ErrorReportType: Int32 GetHashCode()
+FSharp.Compiler.DependencyManager.ErrorReportType: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DependencyManager.ErrorReportType: Int32 Tag
+FSharp.Compiler.DependencyManager.ErrorReportType: Int32 get_Tag()
+FSharp.Compiler.DependencyManager.ErrorReportType: FSharp.Compiler.DependencyManager.ErrorReportType Error
+FSharp.Compiler.DependencyManager.ErrorReportType: FSharp.Compiler.DependencyManager.ErrorReportType Warning
+FSharp.Compiler.DependencyManager.ErrorReportType: FSharp.Compiler.DependencyManager.ErrorReportType get_Error()
+FSharp.Compiler.DependencyManager.ErrorReportType: FSharp.Compiler.DependencyManager.ErrorReportType get_Warning()
+FSharp.Compiler.DependencyManager.ErrorReportType: FSharp.Compiler.DependencyManager.ErrorReportType+Tags
+FSharp.Compiler.DependencyManager.ErrorReportType: System.String ToString()
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider: FSharp.Compiler.DependencyManager.IResolveDependenciesResult ResolveDependencies(System.String, System.String, System.String, System.String, System.Collections.Generic.IEnumerable`1[System.Tuple`2[System.String,System.String]], System.String, System.String, Int32)
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String Key
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String Name
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String get_Key()
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String get_Name()
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String[] HelpMessages
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String[] get_HelpMessages()
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: Boolean Success
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: Boolean get_Success()
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] Resolutions
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] Roots
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] SourceFiles
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] get_Resolutions()
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] get_Roots()
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.Collections.Generic.IEnumerable`1[System.String] get_SourceFiles()
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.String[] StdError
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.String[] StdOut
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.String[] get_StdError()
+FSharp.Compiler.DependencyManager.IResolveDependenciesResult: System.String[] get_StdOut()
+FSharp.Compiler.DependencyManager.NativeDllResolveHandler
+FSharp.Compiler.DependencyManager.NativeDllResolveHandler: Void .ctor(FSharp.Compiler.DependencyManager.NativeResolutionProbe)
+FSharp.Compiler.DependencyManager.NativeResolutionProbe
+FSharp.Compiler.DependencyManager.NativeResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] EndInvoke(System.IAsyncResult)
+FSharp.Compiler.DependencyManager.NativeResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] Invoke()
+FSharp.Compiler.DependencyManager.NativeResolutionProbe: System.IAsyncResult BeginInvoke(System.AsyncCallback, System.Object)
+FSharp.Compiler.DependencyManager.NativeResolutionProbe: Void .ctor(System.Object, IntPtr)
+FSharp.Compiler.DependencyManager.ResolvingErrorReport
+FSharp.Compiler.DependencyManager.ResolvingErrorReport: System.IAsyncResult BeginInvoke(FSharp.Compiler.DependencyManager.ErrorReportType, Int32, System.String, System.AsyncCallback, System.Object)
+FSharp.Compiler.DependencyManager.ResolvingErrorReport: Void .ctor(System.Object, IntPtr)
+FSharp.Compiler.DependencyManager.ResolvingErrorReport: Void EndInvoke(System.IAsyncResult)
+FSharp.Compiler.DependencyManager.ResolvingErrorReport: Void Invoke(FSharp.Compiler.DependencyManager.ErrorReportType, Int32, System.String)"
         SurfaceArea.verify expected "netstandard" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))

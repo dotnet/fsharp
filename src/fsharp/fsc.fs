@@ -37,6 +37,7 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CreateILModule
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
@@ -55,7 +56,6 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.XmlDocFileWriter
 open FSharp.Compiler.StaticLinking
-open Microsoft.DotNet.DependencyManager
 
 //----------------------------------------------------------------------------
 // Reporting - warnings, errors

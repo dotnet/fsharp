@@ -1345,8 +1345,8 @@ type UsingMSBuild() as this =
                     <Reference Include=""FSharp.Compiler.Interactive.Settings"">
                         <HintPath>%s\\FSharp.Compiler.Interactive.Settings.dll</HintPath>
                     </Reference>
-                    <Reference Include=""FSharp.Compiler.Private"">
-                        <HintPath>%s\\FSharp.Compiler.Private.dll</HintPath>
+                    <Reference Include=""FSharp.Compiler.Service"">
+                        <HintPath>%s\\FSharp.Compiler.Service.dll</HintPath>
                     </Reference>
                 </ItemGroup>" binariesFolder binariesFolder)
 
