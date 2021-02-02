@@ -478,7 +478,19 @@ type internal FSharpSignatureHelpProvider
             // Generally ' ' indicates a function application, but it's also used commonly after a comma in a method call.
             // This means that the adjusted position relative to the caret could be a ',' or a '(' or '<',
             // which would mean we're already inside of a method call - not a function argument. So we bail if that's the case.
-            | Some ' ' when adjustedColumnChar <> ',' && adjustedColumnChar <> '(' && adjustedColumnChar <> '<' ->
+            | Some ' ', None when adjustedColumnChar <> ',' && adjustedColumnChar <> '(' && adjustedColumnChar <> '<' ->
+                return!
+                    FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
+                        parseResults,
+                        checkFileResults,
+                        document.Id,
+                        defines,
+                        documentationBuilder,
+                        sourceText,
+                        caretPosition,
+                        adjustedColumnInSource,
+                        filePath)
+            | _, Some FunctionApplication when adjustedColumnChar <> ',' && adjustedColumnChar <> '(' && adjustedColumnChar <> '<' ->
                 return!
                     FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
                         parseResults,
