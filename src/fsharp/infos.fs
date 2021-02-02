@@ -1116,7 +1116,7 @@ type MethInfo =
     member x.IsConstructor =
         match x with
         | ILMeth(_, ilmeth, _) -> ilmeth.IsConstructor
-        | FSMeth(_g, _, vref, _) -> (vref.MemberInfo.Value.MemberFlags.MemberKind = MemberKind.Constructor)
+        | FSMeth(_g, _, vref, _) -> (vref.MemberInfo.Value.MemberFlags.MemberKind = SynMemberKind.Constructor)
         | DefaultStructCtor _ -> true
 #if !NO_EXTENSIONTYPING
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsConstructor), m)

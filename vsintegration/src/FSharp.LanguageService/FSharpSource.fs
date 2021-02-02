@@ -341,7 +341,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
 
         override source.GetExpressionAtPosition(line, col) = 
             let upi = source.GetParseTree()
-            match ParsedInput.TryFindExpressionIslandInPosition(Pos.fromZ line col, upi.ParseTree) with
+            match ParsedInput.TryFindExpressionIslandInPosition(Position.fromZ line col, upi.ParseTree) with
             | Some islandToEvaluate -> islandToEvaluate
             | None -> null
 
@@ -447,7 +447,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                 if reason = BackgroundRequestReason.CompleteWord then
                     let upi = source.GetParseTree()
                     let isBetweenDotAndIdent =
-                        match ParsedInput.TryFindExpressionASTLeftOfDotLeftOfCursor(Pos.fromZ !line !idx, upi.ParseTree) with
+                        match ParsedInput.TryFindExpressionASTLeftOfDotLeftOfCursor(Position.fromZ !line !idx, upi.ParseTree) with
                         | Some(_,isBetweenDotAndIdent) -> isBetweenDotAndIdent
                         | None -> false
                     if isBetweenDotAndIdent then

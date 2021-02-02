@@ -12,11 +12,14 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
+open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 [<NoEquality; NoComparison>]
 type internal InterfaceState =
@@ -45,7 +48,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                 tokens 
                 |> Array.tryPick (fun (t: Tokenizer.SavedTokenInfo) ->
                         if t.Tag = FSharpTokenTag.WITH || t.Tag = FSharpTokenTag.OWITH then
-                            Some (Pos.fromZ line (t.RightColumn + 1))
+                            Some (Position.fromZ line (t.RightColumn + 1))
                         else None)
             let appendBracketAt =
                 match iface, appendBracketAt with
@@ -162,7 +165,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                | _ -> acc
             let! token = tryFindIdentifierToken None 0
             let fixupPosition = textLine.Start + token.RightColumn
-            let interfacePos = Pos.fromZ textLine.LineNumber token.RightColumn
+            let interfacePos = Position.fromZ textLine.LineNumber token.RightColumn
             // We rely on the observation that the lastChar of the context should be '}' if that character is present
             let appendBracketAt =
                 match sourceText.[context.Span.End-1] with

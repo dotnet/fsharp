@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 
 open Microsoft.VisualStudio.FSharp.Editor.SymbolHelpers
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.EditorServices.FSharpKeywords
+open FSharp.Compiler.Tokenization.FSharpKeywords
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "FSharpRenameParamToMatchSignature"); Shared>]
 type internal FSharpRenameParamToMatchSignature
@@ -47,7 +47,7 @@ type internal FSharpRenameParamToMatchSignature
                                 let! symbolUses = getSymbolUsesOfSymbolAtLocationInDocument (document, context.Span.Start, projectInfoManager, checkerProvider.Checker, userOpName) 
                                 let changes = 
                                     [| for symbolUse in symbolUses do
-                                            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) with 
+                                            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with 
                                             | None -> ()
                                             | Some span -> 
                                                 let textSpan = Tokenizer.fixupSpan(sourceText, span)

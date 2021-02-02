@@ -305,9 +305,9 @@ module private PrintTypes =
     let layoutTyconRef denv tycon = layoutTyconRefImpl false denv tycon
 
     /// Layout the flags of a member 
-    let layoutMemberFlags memFlags = 
+    let layoutMemberFlags (memFlags: SynMemberFlags) = 
         let stat = 
-            if memFlags.IsInstance || (memFlags.MemberKind = MemberKind.Constructor) then emptyL 
+            if memFlags.IsInstance || (memFlags.MemberKind = SynMemberKind.Constructor) then emptyL 
             else WordL.keywordStatic
         let stat = 
             if memFlags.IsDispatchSlot then stat ++ WordL.keywordAbstract
@@ -316,12 +316,12 @@ module private PrintTypes =
         let stat = 
             if memFlags.IsOverrideOrExplicitImpl then stat else
             match memFlags.MemberKind with 
-            | MemberKind.ClassConstructor 
-            | MemberKind.Constructor 
-            | MemberKind.PropertyGetSet -> stat
-            | MemberKind.Member 
-            | MemberKind.PropertyGet 
-            | MemberKind.PropertySet -> stat ++ WordL.keywordMember
+            | SynMemberKind.ClassConstructor 
+            | SynMemberKind.Constructor 
+            | SynMemberKind.PropertyGetSet -> stat
+            | SynMemberKind.Member 
+            | SynMemberKind.PropertyGet 
+            | SynMemberKind.PropertySet -> stat ++ WordL.keywordMember
 
         // let stat = if memFlags.IsFinal then stat ++ wordL "final" else stat in
         stat
@@ -954,7 +954,7 @@ module private PrintTastMemberOrVals =
             nameL
 
         match membInfo.MemberFlags.MemberKind with 
-        | MemberKind.Member -> 
+        | SynMemberKind.Member -> 
             let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv v typarInst argInfos rty
             let resL =
                 if short then tauL
@@ -963,8 +963,8 @@ module private PrintTastMemberOrVals =
                     stat --- (nameL ^^ WordL.colon ^^ tauL)
             prettyTyparInst, resL
 
-        | MemberKind.ClassConstructor
-        | MemberKind.Constructor -> 
+        | SynMemberKind.ClassConstructor
+        | SynMemberKind.Constructor -> 
             let prettyTyparInst, _, tauL = prettyLayoutOfMemberType denv v typarInst argInfos rty
             let resL = 
                 if short then tauL
@@ -973,10 +973,10 @@ module private PrintTastMemberOrVals =
                     stat ++ newL ^^ wordL (tagPunctuation ":") ^^ tauL
             prettyTyparInst, resL
 
-        | MemberKind.PropertyGetSet -> 
+        | SynMemberKind.PropertyGetSet -> 
             emptyTyparInst, stat
 
-        | MemberKind.PropertyGet -> 
+        | SynMemberKind.PropertyGet -> 
             if isNil argInfos then
                 // use error recovery because intellisense on an incomplete file will show this
                 errorR(Error(FSComp.SR.tastInvalidFormForPropertyGetter(), v.Id.idRange))
@@ -1000,7 +1000,7 @@ module private PrintTastMemberOrVals =
                         stat --- (nameL ^^ WordL.colon ^^ (if isNil argInfos then tauL else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)))
                 prettyTyparInst, resL
 
-        | MemberKind.PropertySet -> 
+        | SynMemberKind.PropertySet -> 
             if argInfos.Length <> 1 || isNil argInfos.Head then 
                 // use error recovery because intellisense on an incomplete file will show this
                 errorR(Error(FSComp.SR.tastInvalidFormForPropertySetter(), v.Id.idRange))

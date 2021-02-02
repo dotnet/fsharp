@@ -299,8 +299,8 @@ type TyparFlags(flags: int32) =
         TyparFlags((if isFromError then                0b00000000000000010 else 0) |||
                    (if isCompGen   then                0b00000000000000100 else 0) |||
                    (match staticReq with
-                     | NoStaticReq                  -> 0b00000000000000000
-                     | HeadTypeStaticReq            -> 0b00000000000001000) |||
+                     | TyparStaticReq.None                  -> 0b00000000000000000
+                     | TyparStaticReq.HeadType            -> 0b00000000000001000) |||
                    (match rigidity with
                      | TyparRigidity.Rigid          -> 0b00000000000000000
                      | TyparRigidity.WillBeRigid    -> 0b00000000000100000
@@ -327,8 +327,8 @@ type TyparFlags(flags: int32) =
     /// Indicates if the type variable has a static "head type" requirement, i.e. ^a variables used in FSharp.Core and member constraints.
     member x.StaticReq = 
                              match (flags &&& 0b00000000000001000) with 
-                                            | 0b00000000000000000 -> NoStaticReq
-                                            | 0b00000000000001000 -> HeadTypeStaticReq
+                                            | 0b00000000000000000 -> TyparStaticReq.None
+                                            | 0b00000000000001000 -> TyparStaticReq.HeadType
                                             | _             -> failwith "unreachable"
 
     /// Indicates if the type variable can be solved or given new constraints. The status of a type variable
@@ -598,7 +598,7 @@ type Entity =
       /// The methods and properties of the type 
       //
       // MUTABILITY; used only during creation and remapping of tycons 
-      mutable entity_tycon_tcaug: TyconAugmentation      
+      mutable entity_tycon_tcaug: TyconAugmentation
       
       /// This field is used when the 'tycon' is really a module definition. It holds statically nested type definitions and nested modules 
       //
@@ -1365,7 +1365,7 @@ type TyconAugmentation =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TyconAugmentation(...)"
+    override x.ToString() = "SynTypeDefnKind.Augmentation(...)"
 
 /// The information for the contents of a type. Also used for a provided namespace.
 [<NoEquality; NoComparison (*; StructuredFormatDisplay("{DebugText}") *) >]
@@ -2302,7 +2302,7 @@ type TyparConstraint =
     
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitWitnessInfo = 
-    | TraitWitnessInfo of TTypes * string * MemberFlags * TTypes * TType option
+    | TraitWitnessInfo of TTypes * string * SynMemberFlags * TTypes * TType option
     
     /// Get the member name associated with the member constraint.
     member x.MemberName = (let (TraitWitnessInfo(_, b, _, _, _)) = x in b)
@@ -2321,7 +2321,7 @@ type TraitConstraintInfo =
 
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of tys: TTypes * memberName: string * _memFlags: MemberFlags * argTys: TTypes * returnTy: TType option * solution: TraitConstraintSln option ref 
+    | TTrait of tys: TTypes * memberName: string * _memFlags: SynMemberFlags * argTys: TTypes * returnTy: TType option * solution: TraitConstraintSln option ref 
 
     /// Get the key associated with the member constraint.
     member x.TraitKey = (let (TTrait(a, b, c, d, e, _)) = x in TraitWitnessInfo(a, b, c, d, e))
@@ -2649,13 +2649,13 @@ type Val =
     /// Indicates if this is an F#-defined 'new' constructor member
     member x.IsConstructor =
         match x.MemberInfo with 
-        | Some memberInfo when not x.IsExtensionMember && (memberInfo.MemberFlags.MemberKind = MemberKind.Constructor) -> true
+        | Some memberInfo when not x.IsExtensionMember && (memberInfo.MemberFlags.MemberKind = SynMemberKind.Constructor) -> true
         | _ -> false
 
     /// Indicates if this is a compiler-generated class constructor member
     member x.IsClassConstructor =
         match x.MemberInfo with 
-        | Some memberInfo when not x.IsExtensionMember && (memberInfo.MemberFlags.MemberKind = MemberKind.ClassConstructor) -> true
+        | Some memberInfo when not x.IsExtensionMember && (memberInfo.MemberFlags.MemberKind = SynMemberKind.ClassConstructor) -> true
         | _ -> false
 
     /// Indicates if this value was a member declared 'override' or an implementation of an interface slot
@@ -2881,12 +2881,12 @@ type Val =
         match x.MemberInfo with 
         | Some membInfo -> 
             match membInfo.MemberFlags.MemberKind with 
-            | MemberKind.ClassConstructor 
-            | MemberKind.Constructor 
-            | MemberKind.Member -> x.LogicalName
-            | MemberKind.PropertyGetSet 
-            | MemberKind.PropertySet
-            | MemberKind.PropertyGet -> x.PropertyName
+            | SynMemberKind.ClassConstructor 
+            | SynMemberKind.Constructor 
+            | SynMemberKind.Member -> x.LogicalName
+            | SynMemberKind.PropertyGetSet 
+            | SynMemberKind.PropertySet
+            | SynMemberKind.PropertyGet -> x.PropertyName
         | None -> x.LogicalName
 
     ///   - If this is a property then this is 'Foo' 
@@ -3002,7 +3002,7 @@ type ValMemberInfo =
       /// Gets updated with 'true' if an abstract slot is implemented in the file being typechecked. Internal only. 
       mutable IsImplemented: bool                      
 
-      MemberFlags: MemberFlags
+      MemberFlags: SynMemberFlags
     }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -3682,13 +3682,13 @@ type ValRef =
     member x.IsPropertyGetterMethod = 
         match x.MemberInfo with
         | None -> false
-        | Some (memInfo: ValMemberInfo) -> memInfo.MemberFlags.MemberKind = MemberKind.PropertyGet || memInfo.MemberFlags.MemberKind = MemberKind.PropertyGetSet
+        | Some (memInfo: ValMemberInfo) -> memInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGet || memInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGetSet
 
     /// Indicates whether this value represents a property setter.
     member x.IsPropertySetterMethod = 
         match x.MemberInfo with
         | None -> false
-        | Some (memInfo: ValMemberInfo) -> memInfo.MemberFlags.MemberKind = MemberKind.PropertySet || memInfo.MemberFlags.MemberKind = MemberKind.PropertyGetSet
+        | Some (memInfo: ValMemberInfo) -> memInfo.MemberFlags.MemberKind = SynMemberKind.PropertySet || memInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGetSet
 
     /// A unique stamp within the context of this invocation of the compiler process 
     member x.Stamp = x.Deref.Stamp
@@ -4312,7 +4312,7 @@ type Bindings = Binding list
 /// A binding of a variable to an expression, as in a `let` binding or similar
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type Binding = 
-    | TBind of var: Val * expr: Expr * debugPoint: DebugPointForBinding
+    | TBind of var: Val * expr: Expr * debugPoint: DebugPointAtBinding
 
     /// The value being bound
     member x.Var = (let (TBind(v, _, _)) = x in v)
@@ -4515,7 +4515,7 @@ type Expr =
     /// as the range for all the decision making and binding that happens during the decision tree
     /// execution.
     | Match of
-        debugPoint: DebugPointForBinding *
+        debugPoint: DebugPointAtBinding *
         inputRange: range *
         decision: DecisionTree *
         targets: DecisionTreeTarget array *
@@ -5503,7 +5503,7 @@ type Construct() =
     static member MakeUnionRepr ucs = TUnionRepr (Construct.MakeUnionCases ucs)
 
     /// Create a new type parameter node
-    static member NewTypar (kind, rigid, Typar(id, staticReq, isCompGen), isFromError, dynamicReq, attribs, eqDep, compDep) = 
+    static member NewTypar (kind, rigid, SynTypar(id, staticReq, isCompGen), isFromError, dynamicReq, attribs, eqDep, compDep) = 
         Typar.New
           { typar_id = id 
             typar_stamp = newStamp() 
@@ -5517,7 +5517,7 @@ type Construct() =
 
     /// Create a new type parameter node for a declared type parameter
     static member NewRigidTypar nm m =
-        Construct.NewTypar (TyparKind.Type, TyparRigidity.Rigid, Typar(mkSynId m nm, NoStaticReq, true), false, TyparDynamicReq.Yes, [], false, false)
+        Construct.NewTypar (TyparKind.Type, TyparRigidity.Rigid, SynTypar(mkSynId m nm, TyparStaticReq.None, true), false, TyparDynamicReq.Yes, [], false, false)
 
     /// Create a new union case node
     static member NewUnionCase id tys rty attribs docOption access: UnionCase = 
@@ -5670,7 +5670,7 @@ type Construct() =
         | Some (filePath, line, column) -> 
             // Coordinates from type provider are 1-based for lines and columns
             // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
-            let pos = Pos.mkPos line (max 0 (column - 1)) 
+            let pos = Position.mkPos line (max 0 (column - 1)) 
             Range.mkRange filePath pos pos |> Some
 #endif
 

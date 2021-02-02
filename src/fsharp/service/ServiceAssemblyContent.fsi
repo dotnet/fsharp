@@ -4,6 +4,7 @@ namespace FSharp.Compiler.EditorServices
 
 open System
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
 
 /// Assembly content type.
 [<RequireQualifiedAccess>]

@@ -15,7 +15,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Implementation.Debuggin
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Position
 
 [<Export(typeof<IFSharpBreakpointResolutionService>)>]
 type internal FSharpBreakpointResolutionService 

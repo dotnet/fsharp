@@ -118,42 +118,42 @@ module private Index =
 module private Utils =
 
     let navigateToItemKindToRoslynKind = function
-        | NavigateTo.NavigableItemKind.Module -> FSharpNavigateToItemKind.Module
-        | NavigateTo.NavigableItemKind.ModuleAbbreviation -> FSharpNavigateToItemKind.Module
-        | NavigateTo.NavigableItemKind.Exception -> FSharpNavigateToItemKind.Class
-        | NavigateTo.NavigableItemKind.Type -> FSharpNavigateToItemKind.Class
-        | NavigateTo.NavigableItemKind.ModuleValue -> FSharpNavigateToItemKind.Field
-        | NavigateTo.NavigableItemKind.Field -> FSharpNavigateToItemKind.Field
-        | NavigateTo.NavigableItemKind.Property -> FSharpNavigateToItemKind.Property
-        | NavigateTo.NavigableItemKind.Constructor -> FSharpNavigateToItemKind.Method
-        | NavigateTo.NavigableItemKind.Member -> FSharpNavigateToItemKind.Method
-        | NavigateTo.NavigableItemKind.EnumCase -> FSharpNavigateToItemKind.EnumItem
-        | NavigateTo.NavigableItemKind.UnionCase -> FSharpNavigateToItemKind.EnumItem
+        | NavigableItemKind.Module -> FSharpNavigateToItemKind.Module
+        | NavigableItemKind.ModuleAbbreviation -> FSharpNavigateToItemKind.Module
+        | NavigableItemKind.Exception -> FSharpNavigateToItemKind.Class
+        | NavigableItemKind.Type -> FSharpNavigateToItemKind.Class
+        | NavigableItemKind.ModuleValue -> FSharpNavigateToItemKind.Field
+        | NavigableItemKind.Field -> FSharpNavigateToItemKind.Field
+        | NavigableItemKind.Property -> FSharpNavigateToItemKind.Property
+        | NavigableItemKind.Constructor -> FSharpNavigateToItemKind.Method
+        | NavigableItemKind.Member -> FSharpNavigateToItemKind.Method
+        | NavigableItemKind.EnumCase -> FSharpNavigateToItemKind.EnumItem
+        | NavigableItemKind.UnionCase -> FSharpNavigateToItemKind.EnumItem
 
     let navigateToItemKindToGlyph = function
-        | NavigateTo.NavigableItemKind.Module -> Glyph.ModulePublic
-        | NavigateTo.NavigableItemKind.ModuleAbbreviation -> Glyph.ModulePublic
-        | NavigateTo.NavigableItemKind.Exception -> Glyph.ClassPublic
-        | NavigateTo.NavigableItemKind.Type -> Glyph.ClassPublic
-        | NavigateTo.NavigableItemKind.ModuleValue -> Glyph.FieldPublic
-        | NavigateTo.NavigableItemKind.Field -> Glyph.FieldPublic
-        | NavigateTo.NavigableItemKind.Property -> Glyph.PropertyPublic
-        | NavigateTo.NavigableItemKind.Constructor -> Glyph.MethodPublic
-        | NavigateTo.NavigableItemKind.Member -> Glyph.MethodPublic
-        | NavigateTo.NavigableItemKind.EnumCase -> Glyph.EnumPublic
-        | NavigateTo.NavigableItemKind.UnionCase -> Glyph.EnumPublic
+        | NavigableItemKind.Module -> Glyph.ModulePublic
+        | NavigableItemKind.ModuleAbbreviation -> Glyph.ModulePublic
+        | NavigableItemKind.Exception -> Glyph.ClassPublic
+        | NavigableItemKind.Type -> Glyph.ClassPublic
+        | NavigableItemKind.ModuleValue -> Glyph.FieldPublic
+        | NavigableItemKind.Field -> Glyph.FieldPublic
+        | NavigableItemKind.Property -> Glyph.PropertyPublic
+        | NavigableItemKind.Constructor -> Glyph.MethodPublic
+        | NavigableItemKind.Member -> Glyph.MethodPublic
+        | NavigableItemKind.EnumCase -> Glyph.EnumPublic
+        | NavigableItemKind.UnionCase -> Glyph.EnumPublic
 
-    let containerToString (container: NavigateTo.Container) (project: Project) =
+    let containerToString (container: NavigableContainer) (project: Project) =
         let typeAsString =
             match container.Type with
-            | NavigateTo.ContainerType.File -> "project "
-            | NavigateTo.ContainerType.Namespace -> "namespace "
-            | NavigateTo.ContainerType.Module -> "module "
-            | NavigateTo.ContainerType.Exception -> "exception "
-            | NavigateTo.ContainerType.Type -> "type "
+            | NavigableContainerType.File -> "project "
+            | NavigableContainerType.Namespace -> "namespace "
+            | NavigableContainerType.Module -> "module "
+            | NavigableContainerType.Exception -> "exception "
+            | NavigableContainerType.Type -> "type "
         let name =
             match container.Type with
-            | NavigateTo.ContainerType.File ->
+            | NavigableContainerType.File ->
                 (Path.GetFileNameWithoutExtension project.Name) + ", " + (Path.GetFileName container.Name)
             | _ -> container.Name
         typeAsString + name

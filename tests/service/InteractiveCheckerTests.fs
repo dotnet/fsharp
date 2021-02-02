@@ -27,11 +27,11 @@ let internal identsAndRanges (input: ParsedInput) =
     let identAndRange ident (range: range) =
         (ident, rangeToTuple range)
     let extractFromComponentInfo (componentInfo: SynComponentInfo) =
-        let ((SynComponentInfo.ComponentInfo(_attrs, _typarDecls, _typarConstraints, longIdent, _, _, _, range))) = componentInfo
+        let ((SynComponentInfo.SynComponentInfo(_attrs, _typarDecls, _typarConstraints, longIdent, _, _, _, range))) = componentInfo
         // TODO : attrs, typarDecls and typarConstraints
         [identAndRange (longIdentToString longIdent) range]
     let extractFromTypeDefn (typeDefn: SynTypeDefn) =
-        let (SynTypeDefn.TypeDefn(componentInfo, _repr, _members, _, _)) = typeDefn
+        let (SynTypeDefn(componentInfo, _repr, _members, _, _)) = typeDefn
         // TODO : repr and members
         extractFromComponentInfo componentInfo
     let rec extractFromModuleDecl (moduleDecl: SynModuleDecl) =

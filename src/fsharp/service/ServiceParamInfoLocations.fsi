@@ -12,7 +12,7 @@ open FSharp.Compiler.Text
 
 /// Represents the locations relevant to activating parameter info in an IDE
 [<Sealed>]
-type public FSharpNoteworthyParamInfoLocations =
+type public ParameterLocations =
 
     /// The text of the long identifier prior to the open-parentheses
     member LongId : string list
@@ -36,7 +36,7 @@ type public FSharpNoteworthyParamInfoLocations =
     member NamedParamNames : string option []  
 
     /// Find the information about parameter info locations at a particular source location
-    static member Find : pos * ParsedInput -> FSharpNoteworthyParamInfoLocations option
+    static member Find : pos * ParsedInput -> ParameterLocations option
 
 module internal SynExprAppLocationsImpl =
     val getAllCurriedArgsAtPosition: pos: pos -> parseTree: ParsedInput -> range list option

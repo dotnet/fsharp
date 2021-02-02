@@ -19,9 +19,11 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Extensions
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Tokenization
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 open Microsoft.VisualStudio.Shell.Interop
@@ -189,7 +191,7 @@ type internal FSharpCodeLensService
                                 let displayContext = Option.defaultValue displayContext maybeContext
                                 let typeLayout = func.FormatLayout displayContext
                                 let taggedText = ResizeArray()        
-                                LayoutRender.emitL taggedText.Add typeLayout |> ignore
+                                typeLayout |> Seq.iter taggedText.Add
                                 let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>()) 
                                 let navigation = QuickInfoNavigation(statusBar, checker, projectInfoManager, document, realPosition)
                                 // Because the data is available notify that this line should be updated, displaying the results

@@ -2,12 +2,14 @@
 
 module FSharp.Compiler.Interactive.Shell
 
+// Prevents warnings of experimental APIs - we are using FSharpLexer
+#nowarn "57"
+
 #nowarn "55"
 
 [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
 [<assembly: System.CLSCompliant(true)>]  
 do()
-
 
 open System
 open System.Collections.Generic
@@ -31,9 +33,9 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILRuntimeWriter
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
@@ -47,26 +49,23 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.ScriptClosure
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout
-open FSharp.Compiler.TextLayout.LayoutRender
+open FSharp.Compiler.Tokenization
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals
-
-// Prevents warnings of experimental APIs - we are using FSharpLexer
-#nowarn "57"
 
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
@@ -1069,7 +1068,7 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     mty <- ModuleOrNamespaceType(ModuleOrNamespaceKind.ModuleOrType, QueueList.one v, QueueList.empty)
 
     let bindExpr = TypedTreeOps.mkCallDefaultOf tcGlobals range0 ty
-    let binding = Binding.TBind(v, bindExpr, NoDebugPointAtLetBinding)
+    let binding = Binding.TBind(v, bindExpr, DebugPointAtBinding.NoneAtLet)
     let mbinding = ModuleOrNamespaceBinding.Module(moduleOrNamespace, TMDefs([TMDefLet(binding, m)]))
     let expr = ModuleOrNamespaceExprWithSig(mty, TMDefs([TMDefs[TMDefRec(false, [], [mbinding], m)]]), range0)
     moduleOrNamespace, v, TypedImplFile.TImplFile(QualifiedNameOfFile.QualifiedNameOfFile(Ident(moduleName, m)), [], expr, false, false, StampMap.Empty)
@@ -1385,7 +1384,7 @@ type internal FsiDynamicCompiler
         let i = nextFragmentId()
         let prefix = mkFragmentPath i
         let prefixPath = pathOfLid prefix
-        let impl = SynModuleOrNamespace(prefix,(*isRec*)false, NamedModule,defs,PreXmlDoc.Empty,[],None,rangeStdin)
+        let impl = SynModuleOrNamespace(prefix,(*isRec*)false, SynModuleOrNamespaceKind.NamedModule,defs,PreXmlDoc.Empty,[],None,rangeStdin)
         let input = ParsedInput.ImplFile (ParsedImplFileInput (filename,true, ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath),[],[],[impl],(true (* isLastCompiland *), false (* isExe *)) ))
         let istate,tcEnvAtEndOfLastInput,declaredImpls = ProcessInputs (ctok, errorLogger, istate, [input], showTypes, true, isInteractiveItExpr, prefix)
         let tcState = istate.tcState 
@@ -1431,7 +1430,7 @@ type internal FsiDynamicCompiler
 
         let itID  = mkSynId m itName
         //let itExp = SynExpr.Ident itID
-        let mkBind pat expr = Binding (None, DoBinding, false, (*mutable*)false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, pat, None, expr, m, NoDebugPointAtInvisibleBinding)
+        let mkBind pat expr = SynBinding (None, SynBindingKind.Do, false, (*mutable*)false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, pat, None, expr, m, DebugPointAtBinding.NoneAtInvisible)
         let bindingA = mkBind (mkSynPatVar None itID) expr (* let it = <expr> *)  // NOTE: the generalizability of 'expr' must not be damaged, e.g. this can't be an application 
         //let saverPath  = ["Microsoft";"FSharp";"Compiler";"Interactive";"RuntimeHelpers";"SaveIt"]
         //let dots = List.replicate (saverPath.Length - 1) m
@@ -1448,7 +1447,7 @@ type internal FsiDynamicCompiler
         let methCall = SynExpr.LongIdent (false, LongIdentWithDots(List.map (mkSynId m) breakPath, dots), None, m)
         let args = SynExpr.Const (SynConst.Unit, m)
         let breakStatement = SynExpr.App (ExprAtomicFlag.Atomic, false, methCall, args, m)
-        SynModuleDecl.DoExpr(DebugPointForBinding.NoDebugPointAtDoBinding, breakStatement, m)
+        SynModuleDecl.DoExpr(DebugPointAtBinding.NoneAtDo, breakStatement, m)
 
     member _.EvalRequireReference (ctok, istate, m, path) = 
         if FileSystem.IsInvalidPathShim(path) then
@@ -1636,7 +1635,7 @@ type internal FsiDynamicCompiler
                 invalidArg "name" "Name cannot be null or white-space."
 
             // Verify that the name is a valid identifier for a value.
-            FSharpLexer.Lex(SourceText.ofString name, 
+            FSharpLexer.Tokenize(SourceText.ofString name, 
                 let mutable foundOne = false
                 fun t -> 
                     if not t.IsIdentifier || foundOne then
@@ -2209,89 +2208,89 @@ type internal FsiInteractionProcessor
 
         istate |> InteractiveCatch errorLogger (fun istate ->
             match action with 
-            | IDefns ([], _) ->
+            | ParsedFsiInteraction.Definitions ([], _) ->
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 istate,Completed None
 
-            | IDefns ([SynModuleDecl.DoExpr(_, expr, _)], _) ->
+            | ParsedFsiInteraction.Definitions ([SynModuleDecl.DoExpr(_, expr, _)], _) ->
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 fsiDynamicCompiler.EvalParsedExpression(ctok, errorLogger, istate, expr)
 
-            | IDefns (defs,_) -> 
+            | ParsedFsiInteraction.Definitions (defs,_) -> 
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs)
 
-            | IHash (ParsedHashDirective("load", sourceFiles, m), _) -> 
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("load", sourceFiles, m), _) -> 
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
 
-            | IHash (ParsedHashDirective(("reference" | "r"), [path], m), _) ->
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective(("reference" | "r"), [path], m), _) ->
                 packageManagerDirective Directive.Resolution path m
 
-            | IHash (ParsedHashDirective("i", [path], m), _) -> 
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("i", [path], m), _) -> 
                 packageManagerDirective Directive.Include path m
 
-            | IHash (ParsedHashDirective("I", [path], m), _) -> 
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("I", [path], m), _) -> 
                 tcConfigB.AddIncludePath (m, path, tcConfig.implicitIncludeDir)
                 fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiDidAHashI(tcConfig.MakePathAbsolute path))
                 istate, Completed None
 
-            | IHash (ParsedHashDirective("cd", [path], m), _) ->
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("cd", [path], m), _) ->
                 ChangeDirectory path m
                 istate, Completed None
 
-            | IHash (ParsedHashDirective("silentCd", [path], m), _) ->
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("silentCd", [path], m), _) ->
                 ChangeDirectory path m
                 fsiConsolePrompt.SkipNext() (* "silent" directive *)
                 istate, Completed None                  
                                
-            | IHash (ParsedHashDirective("dbgbreak", [], _), _) -> 
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("dbgbreak", [], _), _) -> 
                 {istate with debugBreak = true}, Completed None
 
-            | IHash (ParsedHashDirective("time", [], _), _) -> 
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("time", [], _), _) -> 
                 if istate.timing then
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff())
                 else
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
                 {istate with timing = not istate.timing}, Completed None
 
-            | IHash (ParsedHashDirective("time", [("on" | "off") as v], _), _) -> 
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("time", [("on" | "off") as v], _), _) -> 
                 if v <> "on" then
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff())
                 else
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
                 {istate with timing = (v = "on")}, Completed None
 
-            | IHash (ParsedHashDirective("nowarn", numbers, m), _) -> 
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("nowarn", numbers, m), _) -> 
                 List.iter (fun (d:string) -> tcConfigB.TurnWarningOff(m, d)) numbers
                 istate, Completed None
 
-            | IHash (ParsedHashDirective("terms", [], _), _) -> 
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("terms", [], _), _) -> 
                 tcConfigB.showTerms <- not tcConfig.showTerms
                 istate, Completed None
 
-            | IHash (ParsedHashDirective("types", [], _), _) -> 
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("types", [], _), _) -> 
                 fsiOptions.ShowTypes <- not fsiOptions.ShowTypes
                 istate, Completed None
 
     #if DEBUG
-            | IHash (ParsedHashDirective("ilcode", [], _m), _) -> 
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("ilcode", [], _m), _) -> 
                 fsiOptions.ShowILCode <- not fsiOptions.ShowILCode; 
                 istate, Completed None
 
-            | IHash (ParsedHashDirective("info", [], _m), _) -> 
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("info", [], _m), _) -> 
                 PrintOptionInfo tcConfigB
                 istate, Completed None
     #endif
 
-            | IHash (ParsedHashDirective(("q" | "quit"), [], _), _) -> 
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective(("q" | "quit"), [], _), _) -> 
                 fsiInterruptController.Exit()
 
-            | IHash (ParsedHashDirective("help", [], m), _) ->
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("help", [], m), _) ->
                 fsiOptions.ShowHelp(m)
                 istate, Completed None
 
-            | IHash (ParsedHashDirective(c, arg, m), _) -> 
+            | ParsedFsiInteraction.HashDirective (ParsedHashDirective(c, arg, m), _) -> 
                 warning(Error((FSComp.SR.fsiInvalidDirective(c, String.concat " " arg)), m))
                 istate, Completed None
         )
@@ -2306,18 +2305,18 @@ type internal FsiInteractionProcessor
         let action,nextAction,istate = 
             match action with
             | None                                      -> None,None,istate
-            | Some (IHash _)                            -> action,None,istate
-            | Some (IDefns ([],_))                      -> None,None,istate
-            | Some (IDefns (SynModuleDecl.HashDirective(hash,mh) :: defs,m)) -> 
-                Some (IHash(hash,mh)),Some (IDefns(defs,m)),istate
+            | Some (ParsedFsiInteraction.HashDirective _)                            -> action,None,istate
+            | Some (ParsedFsiInteraction.Definitions ([],_))                      -> None,None,istate
+            | Some (ParsedFsiInteraction.Definitions (SynModuleDecl.HashDirective(hash,mh) :: defs,m)) -> 
+                Some (ParsedFsiInteraction.HashDirective(hash,mh)),Some (ParsedFsiInteraction.Definitions(defs,m)),istate
 
-            | Some (IDefns (defs,m))                    -> 
+            | Some (ParsedFsiInteraction.Definitions (defs,m))                    -> 
                 let isDefHash = function SynModuleDecl.HashDirective(_,_) -> true | _ -> false
                 let isBreakable def = 
                     // only add automatic debugger breaks before 'let' or 'do' expressions with sequence points
                     match def with
-                    | SynModuleDecl.DoExpr (DebugPointForBinding.DebugPointAtBinding _, _, _)
-                    | SynModuleDecl.Let (_, SynBinding.Binding(_, _, _, _, _, _, _, _,_,_,_, DebugPointForBinding.DebugPointAtBinding _) :: _, _) -> true
+                    | SynModuleDecl.DoExpr (DebugPointAtBinding.Yes _, _, _)
+                    | SynModuleDecl.Let (_, SynBinding(_, _, _, _, _, _, _, _,_,_,_, DebugPointAtBinding.Yes _) :: _, _) -> true
                     | _ -> false
                 let defsA = Seq.takeWhile (isDefHash >> not) defs |> Seq.toList
                 let defsB = Seq.skipWhile (isDefHash >> not) defs |> Seq.toList
@@ -2346,7 +2345,7 @@ type internal FsiInteractionProcessor
                         | SynModuleDecl.DoExpr(_,exp,_) :: rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding exp)
                         | _ -> defsA
 
-                Some (IDefns(defsA,m)),Some (IDefns(defsB,m)),istate
+                Some (ParsedFsiInteraction.Definitions(defsA,m)),Some (ParsedFsiInteraction.Definitions(defsB,m)),istate
 
         match action, lastResult with
           | None, Some prev -> assert(nextAction.IsNone); istate, prev
@@ -2955,7 +2954,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         fsiDynamicCompiler.DynamicAssembly
     /// A host calls this to determine if the --gui parameter is active
     member x.IsGui = fsiOptions.Gui 
-
+    
     /// A host calls this to get the active language ID if provided by fsi-server-lcid
     member x.LCID = fsiOptions.FsiLCID
 

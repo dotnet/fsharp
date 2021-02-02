@@ -11,6 +11,7 @@ open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.Tokenization
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Salsa.Salsa
 open Salsa

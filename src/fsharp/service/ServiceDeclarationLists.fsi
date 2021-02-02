@@ -4,10 +4,12 @@
 namespace FSharp.Compiler.EditorServices
 
 open System
+open System.Collections.Immutable
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
@@ -16,60 +18,50 @@ open FSharp.Compiler.TypedTreeOps
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]
-type public FSharpToolTipElementData<'T> = 
+type public FSharpToolTipElementData = 
     {
-      MainDescription:  'T 
+      MainDescription: ImmutableArray<TaggedText>
 
       XmlDoc: FSharpXmlDoc
 
       /// typar instantiation text, to go after xml
-      TypeMapping: 'T list
+      TypeMapping: ImmutableArray<TaggedText> list
 
       /// Extra text, goes at the end
-      Remarks: 'T option
+      Remarks: ImmutableArray<TaggedText> option
 
       /// Parameter name
-      ParamName : string option
+      ParamName: string option
     }
 
 /// A single tool tip display element
 //
 // Note: instances of this type do not hold any references to any compiler resources.
 [<RequireQualifiedAccess>]
-type public FSharpToolTipElement<'T> = 
+type public FSharpToolTipElement = 
     | None
 
     /// A single type, method, etc with comment. May represent a method overload group.
-    | Group of elements: FSharpToolTipElementData<'T> list
+    | Group of elements: FSharpToolTipElementData list
 
     /// An error occurred formatting this element
     | CompositionError of errorText: string
 
-    static member Single : 'T * FSharpXmlDoc * ?typeMapping: 'T list * ?paramName: string * ?remarks : 'T  -> FSharpToolTipElement<'T>
-
-/// A single data tip display element with where text is expressed as string
-type public FSharpToolTipElement = FSharpToolTipElement<string>
-
-/// A single data tip display element with where text is expressed as <see cref="Layout"/>
-type public FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
+    static member Single: layout: ImmutableArray<TaggedText> * xml: FSharpXmlDoc * ?typeMapping: ImmutableArray<TaggedText> list * ?paramName: string * ?remarks: ImmutableArray<TaggedText>  -> FSharpToolTipElement
 
 /// Information for building a tool tip box.
 //
 // Note: instances of this type do not hold any references to any compiler resources.
-type public FSharpToolTipText<'T> = 
+type public FSharpToolTipText = 
 
     /// A list of data tip elements to display.
-    | FSharpToolTipText of FSharpToolTipElement<'T> list  
-
-type public FSharpToolTipText = FSharpToolTipText<string>
-
-type public FSharpStructuredToolTipText = FSharpToolTipText<Layout>
+    | FSharpToolTipText of FSharpToolTipElement list  
 
 [<RequireQualifiedAccess>]
-type public FSharpCompletionItemKind =
+type public CompletionItemKind =
     | Field
     | Property
-    | Method of isExtension : bool
+    | Method of isExtension: bool
     | Event
     | Argument
     | CustomOperation
@@ -88,7 +80,7 @@ type internal CompletionItem =
     {
       ItemWithInst: ItemWithInst
 
-      Kind: FSharpCompletionItemKind
+      Kind: CompletionItemKind
 
       IsOwnMember: bool
 
@@ -98,52 +90,38 @@ type internal CompletionItem =
 
       Unresolved: FSharpUnresolvedSymbol option
     }
-    member Item : Item
-
-module public FSharpToolTip =
-
-    val ToFSharpToolTipElement: FSharpStructuredToolTipElement -> FSharpToolTipElement
-
-    val ToFSharpToolTipText: FSharpStructuredToolTipText -> FSharpToolTipText
+    member Item: Item
 
 [<Sealed>]
 /// Represents a declaration in F# source code, with information attached ready for display by an editor.
 /// Returned by GetDeclarations.
 //
 // Note: this type holds a weak reference to compiler resources. 
-type public FSharpDeclarationListItem =
+type public DeclarationListItem =
     /// Get the display name for the declaration.
-    member Name : string
+    member Name: string
 
     /// Get the name for the declaration as it's presented in source code.
-    member NameInCode : string
+    member NameInCode: string
 
-    [<Obsolete("This operation is no longer asynchronous, please use the non-async version")>]
-    member StructuredDescriptionTextAsync : Async<FSharpStructuredToolTipText>
+    /// Get the description
+    member Description: FSharpToolTipText
 
-    /// Get the description text.
-    member StructuredDescriptionText : FSharpStructuredToolTipText
+    member Glyph: FSharpGlyph
 
-    [<Obsolete("This operation is no longer asynchronous, please use the non-async version")>]
-    member DescriptionTextAsync : Async<FSharpToolTipText>
+    member Accessibility: FSharpAccessibility
 
-    member DescriptionText : FSharpToolTipText
+    member Kind: CompletionItemKind
 
-    member Glyph : FSharpGlyph
+    member IsOwnMember: bool
 
-    member Accessibility : FSharpAccessibility option
+    member MinorPriority: int
 
-    member Kind : FSharpCompletionItemKind
+    member FullName: string
 
-    member IsOwnMember : bool
+    member IsResolved: bool
 
-    member MinorPriority : int
-
-    member FullName : string
-
-    member IsResolved : bool
-
-    member NamespaceToOpen : string option
+    member NamespaceToOpen: string option
 
 
 [<Sealed>]
@@ -151,20 +129,28 @@ type public FSharpDeclarationListItem =
 /// Returned by GetDeclarations.
 //
 // Note: this type holds a weak reference to compiler resources. 
-type public FSharpDeclarationListInfo =
+type public DeclarationListInfo =
 
-    member Items : FSharpDeclarationListItem[]
+    member Items: DeclarationListItem[]
 
-    member IsForType : bool
+    member IsForType: bool
 
-    member IsError : bool
+    member IsError: bool
 
     // Implementation details used by other code in the compiler    
-    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * getAccessibility:(Item -> FSharpAccessibility option) * items:CompletionItem list * currentNamespace:string[] option * isAttributeApplicationContext:bool -> FSharpDeclarationListInfo
+    static member internal Create:
+        infoReader:InfoReader * 
+        m:range * 
+        denv:DisplayEnv * 
+        getAccessibility:(Item -> FSharpAccessibility) * 
+        items:CompletionItem list * 
+        currentNamespace:string[] option * 
+        isAttributeApplicationContext:bool 
+            -> DeclarationListInfo
 
-    static member internal Error : message:string -> FSharpDeclarationListInfo
+    static member internal Error: message:string -> DeclarationListInfo
 
-    static member Empty : FSharpDeclarationListInfo
+    static member Empty: DeclarationListInfo
 
 /// Represents one parameter for one method (or other item) in a group. 
 [<Sealed>]
@@ -176,13 +162,9 @@ type public FSharpMethodGroupItemParameter =
     /// A key that can be used for sorting the parameters, used to help sort overloads.
     member CanonicalTypeTextForSorting: string
 
-    /// The structured representation for the parameter including its name, its type and visual indicators of other
+    /// The representation for the parameter including its name, its type and visual indicators of other
     /// information such as whether it is optional.
-    member StructuredDisplay: Layout
-
-    /// The text to display for the parameter including its name, its type and visual indicators of other
-    /// information such as whether it is optional.
-    member Display: string
+    member Display: ImmutableArray<TaggedText>
 
     /// Is the parameter optional
     member IsOptional: bool
@@ -193,19 +175,13 @@ type public FSharpMethodGroupItemParameter =
 type public FSharpMethodGroupItem = 
 
     /// The documentation for the item
-    member XmlDoc : FSharpXmlDoc
+    member XmlDoc: FSharpXmlDoc
 
-    /// The structured description representation for the method (or other item)
-    member StructuredDescription : FSharpStructuredToolTipText
+    /// The description representation for the method (or other item)
+    member Description: FSharpToolTipText
 
-    /// The formatted description text for the method (or other item)
-    member Description : FSharpToolTipText
-
-    /// The The structured description representation for the method (or other item)
-    member StructuredReturnTypeText: Layout
-
-    /// The formatted type text for the method (or other item)
-    member ReturnTypeText: string
+    /// The tagged text for the return type for the method (or other item)
+    member ReturnTypeText: ImmutableArray<TaggedText>
 
     /// The parameters of the method in the overload set
     member Parameters: FSharpMethodGroupItemParameter[]
@@ -223,7 +199,7 @@ type public FSharpMethodGroupItem =
 [<Sealed>]
 type public FSharpMethodGroup = 
 
-    internal new : string * FSharpMethodGroupItem[] -> FSharpMethodGroup
+    internal new: string * FSharpMethodGroupItem[] -> FSharpMethodGroup
 
     /// The shared name of the methods (or other items) in the group
     member MethodName: string
@@ -231,14 +207,14 @@ type public FSharpMethodGroup =
     /// The methods (or other items) in the group
     member Methods: FSharpMethodGroupItem[] 
 
-    static member internal Create : InfoReader * range * DisplayEnv * ItemWithInst list -> FSharpMethodGroup
+    static member internal Create: InfoReader * range * DisplayEnv * ItemWithInst list -> FSharpMethodGroup
 
 module internal DeclarationListHelpers =
-    val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> FSharpStructuredToolTipElement
+    val FormatStructuredDescriptionOfItem: isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> FSharpToolTipElement
 
-    val RemoveDuplicateCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
+    val RemoveDuplicateCompletionItems: TcGlobals -> CompletionItem list -> CompletionItem list
 
-    val RemoveExplicitlySuppressedCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
+    val RemoveExplicitlySuppressedCompletionItems: TcGlobals -> CompletionItem list -> CompletionItem list
 
-    val mutable ToolTipFault : string option
+    val mutable ToolTipFault: string option
 

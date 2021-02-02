@@ -19,7 +19,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
 [<RequireQualifiedAccess>]
@@ -28,10 +28,6 @@ type FSharpDiagnosticSeverity =
     | Info
     | Warning 
     | Error
-
-module FSharpDiagnostic =
-
-    let [<Literal>] ObsoleteMessage = "Use FSharpDiagnostic.Range. This API will be removed in a future update."
 
 type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: string, subcategory: string, errorNum: int) =
     member _.Range = m
@@ -44,16 +40,19 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
 
     member _.ErrorNumber = errorNum
 
-    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.Start = m.Start
-    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.End = m.End
+    member _.Start = m.Start
 
-    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.StartLine = Line.toZ m.Start.Line
-    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.StartLineAlternate = m.Start.Line
-    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.EndLine = Line.toZ m.End.Line
-    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.EndLineAlternate = m.End.Line
-    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.StartColumn = m.Start.Column
-    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.EndColumn = m.End.Column
-    [<Obsolete(FSharpDiagnostic.ObsoleteMessage)>] member _.FileName = m.FileName
+    member _.End = m.End
+
+    member _.StartLine = m.Start.Line
+
+    member _.EndLine = m.End.Line
+    
+    member _.StartColumn = m.Start.Column
+
+    member _.EndColumn = m.End.Column
+
+    member _.FileName = m.FileName
 
     member _.WithStart newStart =
         let m = mkFileIndexRange m.FileIndex newStart m.End
@@ -83,13 +82,13 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
         let r = FSharpDiagnostic.CreateFromException(exn, isError, fallbackRange, suggestNames)
 
         // Adjust to make sure that errors reported at Eof are shown at the linesCount
-        let startline, schange = min (r.Range.StartLine, false) (linesCount, true)
-        let endline, echange = min (r.Range.EndLine, false)   (linesCount, true)
+        let startline, schange = min (Line.toZ r.Range.StartLine, false) (linesCount, true)
+        let endline, echange = min (Line.toZ r.Range.EndLine, false)  (linesCount, true)
         
         if not (schange || echange) then r
         else
             let r = if schange then r.WithStart(mkPos startline lastLength) else r
-            if echange then r.WithEnd(mkPos  endline (1 + lastLength)) else r
+            if echange then r.WithEnd(mkPos endline (1 + lastLength)) else r
 
     static member NewlineifyErrorString(message) = ErrorLogger.NewlineifyErrorString(message)
 
@@ -212,22 +211,30 @@ module DiagnosticHelpers =
               yield! ReportError (options, allErrors, mainInputFileName, fileInfo, (exn, isError), suggestNames) |]
                             
 
+namespace FSharp.Compiler.EditorServices
 
-namespace FSharp.Compiler.CodeAnalysis
+/// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
+[<RequireQualifiedAccess>]
+type FSharpXmlDoc =
+    | None
+    | FromXmlText of unprocessedLines: string[] * elaboratedXmlLines: string[]
+    | FromXmlFile of file: string * xmlSig: string
+
+namespace FSharp.Compiler.Symbols
 
 open System
 open System.IO
 
+open Internal.Utilities.Library  
+open Internal.Utilities.Library.Extras
 open FSharp.Core.Printf
 open FSharp.Compiler 
-open FSharp.Compiler.IO 
-open Internal.Utilities.Library  
 open FSharp.Compiler.AbstractIL.Diagnostics 
-
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
-open Internal.Utilities.Library.Extras
+open FSharp.Compiler.IO 
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -243,16 +250,6 @@ open FSharp.Compiler.TcGlobals
 
 module EnvMisc2 =
     let maxMembers = GetEnvInteger "FCS_MaxMembersInQuickInfo" 10
-
-//----------------------------------------------------------------------------
-// Object model for tooltips and helpers for their generation from items
-
-/// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
-[<RequireQualifiedAccess>]
-type FSharpXmlDoc =
-    | None
-    | Text of unprocessedLines: string[] * elaboratedXmlLines: string[]
-    | XmlDocFileSignature of file: string * xmlSig: string
 
 [<AutoOpen>]
 module internal SymbolHelpers = 
@@ -436,7 +433,7 @@ module internal SymbolHelpers =
 
     let mkXmlComment thing =
         match thing with
-        | Some (Some fileName, xmlDocSig) -> FSharpXmlDoc.XmlDocFileSignature(fileName, xmlDocSig)
+        | Some (Some fileName, xmlDocSig) -> FSharpXmlDoc.FromXmlFile(fileName, xmlDocSig)
         | _ -> FSharpXmlDoc.None
 
     let GetXmlDocSigOfEntityRef infoReader m (eref: EntityRef) = 
@@ -586,7 +583,7 @@ module internal SymbolHelpers =
     let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d = 
         match xmlDoc with 
         | Some xmlDoc when not xmlDoc.IsEmpty  -> 
-            FSharpXmlDoc.Text (xmlDoc.UnprocessedLines, xmlDoc.GetElaboratedXmlLines())
+            FSharpXmlDoc.FromXmlText (xmlDoc.UnprocessedLines, xmlDoc.GetElaboratedXmlLines())
         | _ -> GetXmlDocHelpSigOfItemForLookup infoReader m d
 
     let GetXmlCommentForMethInfoItem infoReader m d (minfo: MethInfo) = 

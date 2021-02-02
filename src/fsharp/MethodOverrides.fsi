@@ -72,7 +72,7 @@ module DispatchSlotChecking =
     val FormatMethInfoSig: g:TcGlobals -> amap:ImportMap -> m:range -> denv:DisplayEnv -> d:MethInfo -> string
 
     /// Get the override information for an object expression method being used to implement dispatch slots
-    val GetObjectExprOverrideInfo: g:TcGlobals -> amap:ImportMap -> implty:TType * id:Ident * memberFlags:MemberFlags * ty:TType * arityInfo:ValReprInfo * bindingAttribs:Attribs * rhsExpr:Expr -> OverrideInfo * (Val option * Val * Val list list * Attribs * Expr)
+    val GetObjectExprOverrideInfo: g:TcGlobals -> amap:ImportMap -> implty:TType * id:Ident * memberFlags:SynMemberFlags * ty:TType * arityInfo:ValReprInfo * bindingAttribs:Attribs * rhsExpr:Expr -> OverrideInfo * (Val option * Val * Val list list * Attribs * Expr)
 
     /// Check if an override exactly matches the requirements for a dispatch slot.
     val IsExactMatch: g:TcGlobals -> amap:ImportMap -> m:range -> dispatchSlot:MethInfo -> overrideBy:OverrideInfo -> bool

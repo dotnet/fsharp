@@ -25,7 +25,9 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.TextManager.Interop
 
+open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 
 
@@ -205,11 +207,11 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                 let! _, _, checkFileResults = checker.ParseAndCheckDocument (implDoc, projectOptions, sourceText=implSourceText, userOpName=userOpName)
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol
                 let! implSymbol  = symbolUses |> Array.tryHead 
-                let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, implSymbol.RangeAlternate)
+                let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, implSymbol.Range)
                 return FSharpGoToDefinitionNavigableItem (implDoc, implTextSpan)
             else
-                let! targetDocument = originDocument.Project.Solution.TryGetDocumentFromFSharpRange fsSymbolUse.RangeAlternate
-                return! rangeToNavigableItem (fsSymbolUse.RangeAlternate, targetDocument)
+                let! targetDocument = originDocument.Project.Solution.TryGetDocumentFromFSharpRange fsSymbolUse.Range
+                return! rangeToNavigableItem (fsSymbolUse.Range, targetDocument)
         }
 
     /// if the symbol is defined in the given file, return its declaration location, otherwise use the targetSymbol to find the first 
@@ -226,7 +228,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                 | FSharpCheckFileAnswer.Succeeded checkFileResults ->
                     let symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol
                     let! implSymbol  = symbolUses |> Array.tryHead 
-                    return implSymbol.RangeAlternate
+                    return implSymbol.Range
         }
 
     member private this.FindDefinitionAtPosition(originDocument: Document, position: int) =

@@ -34,6 +34,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         | Breakable of indentation: int
         | Broken of indentation: int
     
+    /// Represents the tag of some tagged text
     [<StructuralEquality; NoComparison; RequireQualifiedAccess>]
     type LayoutTag =
         | ActivePatternCase
@@ -73,8 +74,13 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
     /// Represents text with a tag
     type public TaggedText =
+        /// Creates text with a tag
         new: tag: LayoutTag * text: string -> TaggedText
+
+        /// Gets the tag
         member Tag: LayoutTag
+
+        /// Gets the text
         member Text: string
     
     type internal TaggedTextWriter =
@@ -83,14 +89,14 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
     /// Data representing structured layouts of terms.
     [<NoEquality; NoComparison>]
-    type public Layout =
-        internal
+    type internal Layout =
         | ObjLeaf of juxtLeft: bool * object: obj * juxtRight: bool
         | Leaf of juxtLeft: bool * text: TaggedText * justRight: bool
         | Node of leftLayout: Layout * rightLayout: Layout * joint: Joint
         | Attr of text: string * attributes: (string * string) list * layout: Layout
 
         static member internal JuxtapositionMiddle: left: Layout * right: Layout -> bool
+
 #else  // FSharp.Compiler.Service.dll, fsc.exe
     /// Data representing structured layouts of terms.  
     // FSharp.Core.dll makes things internal and hides representations

@@ -18,6 +18,7 @@ open Microsoft.VisualStudio.Utilities
 open Microsoft.CodeAnalysis.Classification
 
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 
 [<RequireQualifiedAccess>]
 module internal FSharpClassificationTypes =

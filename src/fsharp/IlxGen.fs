@@ -998,8 +998,8 @@ let GetMethodSpecForMemberVal amap g (memberInfo: ValMemberInfo) (vref: ValRef) 
          GetTopValTypeInCompiledForm g vref.ValReprInfo.Value numEnclosingTypars vref.Type m
     let tyenvUnderTypars = TypeReprEnv.ForTypars tps
     let flatArgInfos = List.concat curriedArgInfos
-    let isCtor = (memberInfo.MemberFlags.MemberKind = MemberKind.Constructor)
-    let cctor = (memberInfo.MemberFlags.MemberKind = MemberKind.ClassConstructor)
+    let isCtor = (memberInfo.MemberFlags.MemberKind = SynMemberKind.Constructor)
+    let cctor = (memberInfo.MemberFlags.MemberKind = SynMemberKind.ClassConstructor)
     let parentTcref = vref.TopValDeclaringEntity
     let parentTypars = parentTcref.TyparsNoRange
     let numParentTypars = parentTypars.Length
@@ -1538,7 +1538,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             let m = range0
             let tps =
                 [ for nm in nms ->
-                    let stp = Typar(mkSynId m ("T"+nm), TyparStaticReq.NoStaticReq, true)
+                    let stp = SynTypar(mkSynId m ("T"+nm), TyparStaticReq.None, true)
                     Construct.NewTypar (TyparKind.Type, TyparRigidity.WarnIfNotRigid, stp, false, TyparDynamicReq.Yes, [], true, true) ]
 
             let tycon =
@@ -2076,20 +2076,20 @@ let ComputeDebugPointForBinding g (TBind(_, e, spBind) as bind) =
         false, None, SPSuppress
     else
         match spBind, stripExpr e with
-        | NoDebugPointAtInvisibleBinding, _ -> false, None, SPSuppress
-        | NoDebugPointAtStickyBinding, _ -> true, None, SPSuppress
-        | NoDebugPointAtDoBinding, _ -> false, None, SPAlways
-        | NoDebugPointAtLetBinding, _ -> false, None, SPSuppress
+        | DebugPointAtBinding.NoneAtInvisible, _ -> false, None, SPSuppress
+        | DebugPointAtBinding.NoneAtSticky, _ -> true, None, SPSuppress
+        | DebugPointAtBinding.NoneAtDo, _ -> false, None, SPAlways
+        | DebugPointAtBinding.NoneAtLet, _ -> false, None, SPSuppress
         // Don't emit sequence points for lambdas.
         // SEQUENCE POINT REVIEW: don't emit for lazy either, nor any builder expressions, nor interface-implementing object expressions
         | _, (Expr.Lambda _ | Expr.TyLambda _) -> false, None, SPSuppress
-        | DebugPointAtBinding m, _ -> false, Some m, SPSuppress
+        | DebugPointAtBinding.Yes m, _ -> false, Some m, SPSuppress
 
 
 /// Determines if a sequence will be emitted when we generate the code for a binding.
 ///
-/// False for Lambdas, BindingEmitsNoCode, NoDebugPointAtStickyBinding, NoDebugPointAtInvisibleBinding, and NoDebugPointAtLetBinding.
-/// True for DebugPointAtBinding, NoDebugPointAtDoBinding.
+/// False for Lambdas, BindingEmitsNoCode, DebugPointAtBinding.NoneAtSticky, DebugPointAtBinding.NoneAtInvisible, and DebugPointAtBinding.NoneAtLet.
+/// True for DebugPointAtBinding.Yes, DebugPointAtBinding.NoneAtDo.
 let BindingEmitsDebugPoint g bind =
     match ComputeDebugPointForBinding g bind with
     | _, None, SPSuppress -> false
@@ -2097,7 +2097,7 @@ let BindingEmitsDebugPoint g bind =
 
 let BindingIsInvisible (TBind(_, _, spBind)) =
     match spBind with
-    | NoDebugPointAtInvisibleBinding _ -> true
+    | DebugPointAtBinding.NoneAtInvisible _ -> true
     | _ -> false
 
 /// Determines if the code generated for a binding is to be marked as hidden, e.g. the 'newobj' for a local function definition.
@@ -2125,7 +2125,7 @@ let rec FirstEmittedCodeWillBeDebugPoint g sp expr =
             | DebugPointAtSequential.Both -> true
             | DebugPointAtSequential.StmtOnly -> true
             | DebugPointAtSequential.ExprOnly -> false
-        | Expr.Match (DebugPointAtBinding _, _, _, _, _, _) -> true
+        | Expr.Match (DebugPointAtBinding.Yes _, _, _, _, _, _) -> true
         | Expr.Op ((TOp.TryWith (DebugPointAtTry.Yes _, _)
                   | TOp.TryFinally (DebugPointAtTry.Yes _, _)
                   | TOp.For (DebugPointAtFor.Yes _, _)
@@ -2147,7 +2147,7 @@ let EmitDebugPointForWholeExpr g sp expr =
         // In some cases, we emit sequence points for the 'whole' of a 'let' expression.
         // Specifically, when
         //    + SPAlways (i.e. a sequence point is required as soon as meaningful)
-        //    + binding is NoDebugPointAtStickyBinding, or NoDebugPointAtLetBinding.
+        //    + binding is DebugPointAtBinding.NoneAtSticky, or DebugPointAtBinding.NoneAtLet.
         //    + not FirstEmittedCodeWillBeDebugPoint
         // For example if we start with
         //    let someCode () = f x
@@ -2686,11 +2686,11 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel preSteps (contf: FakeUnit -> Fa
         // For sticky bindings arising from inlining we suppress any immediate sequence point in the body
         let spBody =
            match bind.DebugPoint with
-           | DebugPointAtBinding _
-           | NoDebugPointAtLetBinding
-           | NoDebugPointAtDoBinding -> SPAlways
-           | NoDebugPointAtInvisibleBinding -> sp
-           | NoDebugPointAtStickyBinding -> SPSuppress
+           | DebugPointAtBinding.Yes _
+           | DebugPointAtBinding.NoneAtLet
+           | DebugPointAtBinding.NoneAtDo -> SPAlways
+           | DebugPointAtBinding.NoneAtInvisible -> sp
+           | DebugPointAtBinding.NoneAtSticky -> SPSuppress
     
         // Generate the body
         GenLinearExpr cenv cgbuf eenv spBody body (EndLocalScope(sequel, endScope)) true contf
@@ -2700,11 +2700,11 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel preSteps (contf: FakeUnit -> Fa
         if preSteps && GenExprPreSteps cenv cgbuf eenv sp expr sequel then contf Fake else
 
         match spBind with
-        | DebugPointAtBinding m -> CG.EmitSeqPoint cgbuf m
-        | NoDebugPointAtDoBinding
-        | NoDebugPointAtLetBinding
-        | NoDebugPointAtInvisibleBinding
-        | NoDebugPointAtStickyBinding -> ()
+        | DebugPointAtBinding.Yes m -> CG.EmitSeqPoint cgbuf m
+        | DebugPointAtBinding.NoneAtDo
+        | DebugPointAtBinding.NoneAtLet
+        | DebugPointAtBinding.NoneAtInvisible
+        | DebugPointAtBinding.NoneAtSticky -> ()
 
         // The target of branch needs a sequence point.
         // If we don't give it one it will get entirely the wrong sequence point depending on earlier codegen
@@ -5994,8 +5994,8 @@ and GenPropertyForMethodDef compileAsInstance tref mdef (v: Val) (memberInfo: Va
 
     ILPropertyDef(name = name,
                   attributes = PropertyAttributes.None,
-                  setMethod = (if memberInfo.MemberFlags.MemberKind= MemberKind.PropertySet then Some(mkRefToILMethod(tref, mdef)) else None),
-                  getMethod = (if memberInfo.MemberFlags.MemberKind= MemberKind.PropertyGet then Some(mkRefToILMethod(tref, mdef)) else None),
+                  setMethod = (if memberInfo.MemberFlags.MemberKind= SynMemberKind.PropertySet then Some(mkRefToILMethod(tref, mdef)) else None),
+                  getMethod = (if memberInfo.MemberFlags.MemberKind= SynMemberKind.PropertyGet then Some(mkRefToILMethod(tref, mdef)) else None),
                   callingConv = (if compileAsInstance then ILThisConvention.Instance else ILThisConvention.Static),
                   propertyType = ilPropTy,
                   init = None,
@@ -6232,9 +6232,9 @@ and GenMethodForBinding
 
           match v.MemberInfo with
           | Some memberInfo when 
-            memberInfo.MemberFlags.MemberKind = MemberKind.PropertyGet ||
-            memberInfo.MemberFlags.MemberKind = MemberKind.PropertySet ||
-            memberInfo.MemberFlags.MemberKind = MemberKind.PropertyGetSet ->
+            memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGet ||
+            memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertySet ||
+            memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGetSet ->
                 match GenReadOnlyAttributeIfNecessary g returnTy with Some ilAttr -> ilAttr | _ -> ()
           | _ -> () ]
 
@@ -6254,7 +6254,7 @@ and GenMethodForBinding
     | Some memberInfo
          when not v.IsExtensionMember && 
               (match memberInfo.MemberFlags.MemberKind with 
-               | (MemberKind.PropertySet | MemberKind.PropertyGet) -> CompileAsEvent cenv.g v.Attribs 
+               | (SynMemberKind.PropertySet | SynMemberKind.PropertyGet) -> CompileAsEvent cenv.g v.Attribs 
                | _ -> false) ->
 
         let useMethodImpl = 
@@ -6289,13 +6289,13 @@ and GenMethodForBinding
         | Some memberInfo when not v.IsExtensionMember ->
 
            let ilMethTypars = ilTypars |> List.skip mspec.DeclaringType.GenericArgs.Length
-           if memberInfo.MemberFlags.MemberKind = MemberKind.Constructor then
+           if memberInfo.MemberFlags.MemberKind = SynMemberKind.Constructor then
                assert (isNil ilMethTypars)
                let mdef = mkILCtor (access, ilParams, ilMethodBody)
                let mdef = mdef.With(customAttrs= mkILCustomAttrs (ilAttrsThatGoOnPrimaryItem @ sourceNameAttribs @ ilAttrsCompilerGenerated))
                mdef
 
-           elif memberInfo.MemberFlags.MemberKind = MemberKind.ClassConstructor then
+           elif memberInfo.MemberFlags.MemberKind = SynMemberKind.ClassConstructor then
                assert (isNil ilMethTypars)
                let mdef = mkILClassCtor ilMethodBody
                let mdef = mdef.With(customAttrs= mkILCustomAttrs (ilAttrsThatGoOnPrimaryItem @ sourceNameAttribs @ ilAttrsCompilerGenerated))
@@ -6332,7 +6332,7 @@ and GenMethodForBinding
 
                match memberInfo.MemberFlags.MemberKind with
            
-               | (MemberKind.PropertySet | MemberKind.PropertyGet) ->
+               | (SynMemberKind.PropertySet | SynMemberKind.PropertyGet) ->
                    if not (isNil ilMethTypars) then
                        error(InternalError("A property may not be more generic than the enclosing type - constrain the polymorphism in the expression", v.Range))
                
@@ -6364,7 +6364,7 @@ and GenMethodForBinding
                 match v.MemberInfo with
                 | Some memberInfo when v.IsExtensionMember ->
                      match memberInfo.MemberFlags.MemberKind with
-                     | (MemberKind.PropertySet | MemberKind.PropertyGet) -> ilAttrsThatGoOnPrimaryItem @ GenAttrs cenv eenv attrsAppliedToGetterOrSetter
+                     | (SynMemberKind.PropertySet | SynMemberKind.PropertyGet) -> ilAttrsThatGoOnPrimaryItem @ GenAttrs cenv eenv attrsAppliedToGetterOrSetter
                      | _ -> ilAttrsThatGoOnPrimaryItem
                 | _ -> ilAttrsThatGoOnPrimaryItem
 
@@ -7168,9 +7168,9 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
               
               match vref.MemberInfo, returnTy with
               | Some memberInfo, Some returnTy when 
-                memberInfo.MemberFlags.MemberKind = MemberKind.PropertyGet ||
-                memberInfo.MemberFlags.MemberKind = MemberKind.PropertySet ||
-                memberInfo.MemberFlags.MemberKind = MemberKind.PropertyGetSet ->
+                memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGet ||
+                memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertySet ||
+                memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGetSet ->
                    match GenReadOnlyAttributeIfNecessary g returnTy with Some ilAttr -> ilAttr | _ -> ()
               | _ -> () ]
 
@@ -7196,13 +7196,13 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
                  .WithAggressiveInlining(hasAggressiveInliningImplFlag)
     
         match memberInfo.MemberFlags.MemberKind with
-        | MemberKind.ClassConstructor
-        | MemberKind.Constructor
-        | MemberKind.Member ->
+        | SynMemberKind.ClassConstructor
+        | SynMemberKind.Constructor
+        | SynMemberKind.Member ->
              let mdef = mdef.With(customAttrs= mkILCustomAttrs ilAttrs)
              [mdef], [], []
-        | MemberKind.PropertyGetSet -> error(Error(FSComp.SR.ilUnexpectedGetSetAnnotation(), m))
-        | MemberKind.PropertySet | MemberKind.PropertyGet ->
+        | SynMemberKind.PropertyGetSet -> error(Error(FSComp.SR.ilUnexpectedGetSetAnnotation(), m))
+        | SynMemberKind.PropertySet | SynMemberKind.PropertyGet ->
              let v = vref.Deref
              let vtyp = ReturnTypeOfPropertyVal g v
              if CompileAsEvent g attribs then
@@ -7361,7 +7361,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                 | None -> None
                 | Some memberInfo ->
                     match name, memberInfo.MemberFlags.MemberKind with
-                    | ("Item" | "op_IndexedLookup"), (MemberKind.PropertyGet | MemberKind.PropertySet) when not (isNil (ArgInfosOfPropertyVal g vref.Deref)) ->
+                    | ("Item" | "op_IndexedLookup"), (SynMemberKind.PropertyGet | SynMemberKind.PropertySet) when not (isNil (ArgInfosOfPropertyVal g vref.Deref)) ->
                         Some( mkILCustomAttribute g.ilg (g.FindSysILTypeRef "System.Reflection.DefaultMemberAttribute", [g.ilg.typ_String], [ILAttribElem.String(Some name)], []) )
                     | _ -> None)
             |> Option.toList

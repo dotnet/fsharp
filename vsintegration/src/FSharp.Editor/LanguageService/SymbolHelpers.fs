@@ -10,7 +10,9 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 
+open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Microsoft.VisualStudio.FSharp.Editor.Symbols 
 
@@ -78,7 +80,7 @@ module internal SymbolHelpers =
             | SymbolDeclarationLocation.CurrentDocument ->
                 let! ct = Async.CancellationToken
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbol, ct)
-                return toDict (symbolUses |> Seq.map (fun symbolUse -> symbolUse.RangeAlternate))
+                return toDict (symbolUses |> Seq.map (fun symbolUse -> symbolUse.Range))
             | SymbolDeclarationLocation.Projects (projects, isInternalToProject) -> 
                 let symbolUseRanges = ImmutableArray.CreateBuilder()
                     

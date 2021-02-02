@@ -11,6 +11,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.DocumentHighlighting
 
+open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 
@@ -62,7 +63,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
             let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
             return 
                 [| for symbolUse in symbolUses do
-                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) with 
+                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with 
                      | None -> ()
                      | Some span -> 
                          yield { IsDefinition = symbolUse.IsFromDefinition

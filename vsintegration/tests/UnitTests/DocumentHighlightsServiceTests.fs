@@ -59,7 +59,7 @@ let private getSpans (sourceText: SourceText) (caretPosition: int) =
     |> Option.defaultValue [||]
 
 let private span sourceText isDefinition (startLine, startCol) (endLine, endCol) =
-    let range = Range.mkRange filePath (Pos.mkPos startLine startCol) (Pos.mkPos endLine endCol)
+    let range = Range.mkRange filePath (Position.mkPos startLine startCol) (Position.mkPos endLine endCol)
     { IsDefinition = isDefinition
       TextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range) }
 

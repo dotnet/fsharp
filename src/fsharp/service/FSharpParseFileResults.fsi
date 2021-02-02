@@ -47,7 +47,7 @@ type public FSharpParseFileResults =
     member TryRangeOfRefCellDereferenceContainingPos: expressionPos: pos -> range option
 
     /// Notable parse info for ParameterInfo at a given location
-    member FindNoteworthyParamInfoLocations: pos:pos -> FSharpNoteworthyParamInfoLocations option
+    member FindParameterLocations: pos:pos -> ParameterLocations option
 
     /// Determines if the given position is contained within a curried parameter in a binding.
     member IsPositionContainedInACurriedParameter: pos: pos -> bool
@@ -56,7 +56,7 @@ type public FSharpParseFileResults =
     member FileName: string
 
     /// Get declared items and the selected item at the specified location
-    member GetNavigationItems: unit -> FSharpNavigationItems
+    member GetNavigationItems: unit -> NavigationItems
 
     /// Return the inner-most range associated with a possible breakpoint location
     member ValidateBreakpointLocation: pos:pos -> range option

@@ -34,9 +34,9 @@ open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.SignatureConformance
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.Text.Pos
-open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Position
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -1533,9 +1533,9 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               match v.MemberInfo with 
               | Some membInfo when 
                   begin match membInfo.MemberFlags.MemberKind with 
-                  | MemberKind.PropertyGet 
-                  | MemberKind.PropertySet 
-                  | MemberKind.Constructor -> true (* can't infer extra polymorphism *)
+                  | SynMemberKind.PropertyGet 
+                  | SynMemberKind.PropertySet 
+                  | SynMemberKind.Constructor -> true (* can't infer extra polymorphism *)
                   | _ -> false (* can infer extra polymorphism *)
                   end -> 
                       os.Append(ValueRestriction3E().Format (NicePrint.stringOfQualifiedValOrMember denv v)) |> ignore
@@ -1899,7 +1899,7 @@ type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger:
                     | ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma) -> 
                         warningNum = warningNumFromPragma && 
                         (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
-                        Pos.posGeq m.Start pragmaRange.Start))  
+                        Position.posGeq m.Start pragmaRange.Start))  
             | None -> true
           if report then errorLogger.DiagnosticSink(phasedError, false)
 

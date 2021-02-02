@@ -10,8 +10,8 @@ open System.ComponentModel.Composition
 open System.IO
 open System.Linq
 open Microsoft.CodeAnalysis
+open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.EditorServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices
@@ -118,7 +118,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             OtherOptions = [||]
                             ReferencedProjects = [||]
                             IsIncompleteTypeCheckEnvironment = false
-                            UseScriptResolutionRules = FSharpSourceFile.MustBeSingleFileProject (Path.GetFileName(document.FilePath))
+                            UseScriptResolutionRules = CompilerEnvironment.MustBeSingleFileProject (Path.GetFileName(document.FilePath))
                             LoadTime = DateTime.Now
                             UnresolvedReferences = None
                             OriginalLoadReferences = []
@@ -204,7 +204,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                         OtherOptions = otherOptions
                         ReferencedProjects = referencedProjects.ToArray()
                         IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
-                        UseScriptResolutionRules = FSharpSourceFile.MustBeSingleFileProject (Path.GetFileName(project.FilePath))
+                        UseScriptResolutionRules = CompilerEnvironment.MustBeSingleFileProject (Path.GetFileName(project.FilePath))
                         LoadTime = projectSite.LoadTime
                         UnresolvedReferences = None
                         OriginalLoadReferences = []
@@ -380,7 +380,7 @@ type internal FSharpProjectOptionsManager
         let parsingOptions =
             match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
             | Some (_, parsingOptions, _) -> parsingOptions
-            | _ -> { FSharpParsingOptions.Default with IsInteractive = FSharpFileUtilities.isScriptFile document.Name }
+            | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile document.Name }
         CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions     
 
     member this.TryGetOptionsByProject(project) =
@@ -408,7 +408,7 @@ type internal FSharpProjectOptionsManager
     member this.TryGetQuickParsingOptionsForEditingDocumentOrProject(document:Document) = 
         match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
         | Some (_, parsingOptions, _) -> parsingOptions
-        | _ -> { FSharpParsingOptions.Default with IsInteractive = FSharpFileUtilities.isScriptFile document.Name }
+        | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile document.Name }
 
     [<Export>]
     /// This handles commandline change notifications from the Dotnet Project-system

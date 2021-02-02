@@ -11,7 +11,7 @@ open FSharp.Compiler
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
 /// used to track route during traversal AST
@@ -369,7 +369,7 @@ module SyntaxTraversal =
                 | SynExpr.ObjExpr (ty,baseCallOpt,binds,ifaces,_range1,_range2) -> 
                     let result = 
                         ifaces 
-                        |> Seq.map (fun (InterfaceImpl(ty, _, _)) -> ty)
+                        |> Seq.map (fun (SynInterfaceImpl(ty, _, _)) -> ty)
                         |> Seq.tryPick (fun ty -> visitor.VisitInterfaceSynMemberDefnType(path, ty))
                     
                     if result.IsSome then 
@@ -384,7 +384,7 @@ module SyntaxTraversal =
                         | _ -> ()
                         for b in binds do
                             yield dive b b.RangeOfBindingAndRhs (traverseSynBinding path)
-                        for InterfaceImpl(_ty, binds, _range) in ifaces do
+                        for SynInterfaceImpl(_ty, binds, _range) in ifaces do
                             for b in binds do
                                 yield dive b b.RangeOfBindingAndRhs (traverseSynBinding path)
                     ] |> pick expr
@@ -655,8 +655,8 @@ module SyntaxTraversal =
                         match mems |> Seq.toList with
                         | [mem] -> // the typical case, a single member has this range 'r'
                             Some (dive mem r (traverseSynMemberDefn path  traverseInherit))
-                        |  [SynMemberDefn.Member(Binding(_,_,_,_,_,_,_,SynPat.LongIdent(lid1,Some(info1),_,_,_,_),_,_,_,_),_) as mem1
-                            SynMemberDefn.Member(Binding(_,_,_,_,_,_,_,SynPat.LongIdent(lid2,Some(info2),_,_,_,_),_,_,_,_),_) as mem2] -> // can happen if one is a getter and one is a setter
+                        |  [SynMemberDefn.Member(SynBinding(_,_,_,_,_,_,_,SynPat.LongIdent(lid1,Some(info1),_,_,_,_),_,_,_,_),_) as mem1
+                            SynMemberDefn.Member(SynBinding(_,_,_,_,_,_,_,SynPat.LongIdent(lid2,Some(info2),_,_,_,_),_,_,_,_),_) as mem2] -> // can happen if one is a getter and one is a setter
                             // ensure same long id
                             assert( (lid1.Lid,lid2.Lid) ||> List.forall2 (fun x y -> x.idText = y.idText) )
                             // ensure one is getter, other is setter
@@ -687,7 +687,7 @@ module SyntaxTraversal =
 #endif
                         )
 
-        and traverseSynTypeDefn origPath (SynTypeDefn.TypeDefn(synComponentInfo, synTypeDefnRepr, synMemberDefns, _, tRange) as tydef) =
+        and traverseSynTypeDefn origPath (SynTypeDefn(synComponentInfo, synTypeDefnRepr, synMemberDefns, _, tRange) as tydef) =
             let path = SyntaxNode.SynTypeDefn tydef :: origPath
             
             match visitor.VisitComponentInfo (origPath, synComponentInfo) with
@@ -754,7 +754,7 @@ module SyntaxTraversal =
             let defaultTraverse mc =
                 let path = SyntaxNode.SynMatchClause mc :: origPath
                 match mc with
-                | (SynMatchClause.Clause(synPat, synExprOption, synExpr, _range, _sequencePointInfoForTarget) as all) ->
+                | (SynMatchClause(synPat, synExprOption, synExpr, _range, _sequencePointInfoForTarget) as all) ->
                     [dive synPat synPat.Range (traversePat path) ]
                     @
                     ([
@@ -771,7 +771,7 @@ module SyntaxTraversal =
             let defaultTraverse b =
                 let path = SyntaxNode.SynBinding b :: origPath
                 match b with
-                | (SynBinding.Binding(_synAccessOption, _synBindingKind, _, _, _synAttributes, _preXmlDoc, _synValData, synPat, _synBindingReturnInfoOption, synExpr, _range, _sequencePointInfoForBinding)) ->
+                | (SynBinding(_synAccessOption, _synBindingKind, _, _, _synAttributes, _preXmlDoc, _synValData, synPat, _synBindingReturnInfoOption, synExpr, _range, _sequencePointInfoForBinding)) ->
                     [ traversePat path synPat
                       traverseSynExpr path synExpr ]
                     |> List.tryPick id

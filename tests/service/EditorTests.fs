@@ -34,7 +34,9 @@ open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 let stringMethods = 
     ["Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
@@ -84,7 +86,7 @@ let ``Intro test`` () =
         msg.Message.Contains("Missing qualification after '.'") |> shouldEqual true
 
     // Get tool tip at the specified location
-    let tip = typeCheckResults.GetToolTipText(4, 7, inputLines.[1], ["foo"], identToken)
+    let tip = typeCheckResults.GetToolTip(4, 7, inputLines.[1], ["foo"], identToken)
     // (sprintf "%A" tip).Replace("\n","") |> shouldEqual """FSharpToolTipText [Single ("val foo : unit -> unitFull name: Test.foo",None)]"""
     // Get declarations (autocomplete) for a location
     let partialName = { QualifyingIdents = []; PartialIdent = "msg"; EndColumn = 22; LastDotPos = None }
@@ -97,7 +99,7 @@ let ``Intro test`` () =
 
     // Print concatenated parameter lists
     [ for mi in methods.Methods do
-        yield methods.MethodName , [ for p in mi.Parameters do yield p.Display ] ]
+        yield methods.MethodName , [ for p in mi.Parameters do yield p.Display |> taggedTextToString ] ]
         |> shouldEqual
               [("Concat", ["[<ParamArray>] args: obj []"]);
                ("Concat", ["[<ParamArray>] values: string []"]);
@@ -629,7 +631,7 @@ type DU = Case1
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
     |> Array.map (fun su -> 
-        let r = su.RangeAlternate 
+        let r = su.Range 
         r.StartLine, r.StartColumn, r.EndLine, r.EndColumn)
     |> shouldEqual [|(2, 10, 2, 15); (2, 5, 2, 7); (1, 0, 1, 0)|]
 
@@ -648,7 +650,7 @@ let _ = arr.[..number2]
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
     |> Array.map (fun su -> 
-        let r = su.RangeAlternate 
+        let r = su.Range 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> shouldEqual 
         [|("val arr", (2, 4, 2, 7))
@@ -736,7 +738,7 @@ let _ =
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
     |> Array.map (fun su -> 
-        let r = su.RangeAlternate 
+        let r = su.Range 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> Array.distinct
     |> shouldEqual 
@@ -783,7 +785,7 @@ type Class1() =
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
     |> Array.map (fun su -> 
-        let r = su.RangeAlternate 
+        let r = su.Range 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> shouldEqual 
         [|("LiteralAttribute", (3, 10, 3, 17))
@@ -833,7 +835,7 @@ let x: T()
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
     |> Array.map (fun su -> 
-        let r = su.RangeAlternate
+        let r = su.Range
         let isConstructor =
             match su.Symbol with
             | :? FSharpMemberOrFunctionOrValue as f -> f.IsConstructor
@@ -862,7 +864,7 @@ let f x =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
     let lines = input.Replace("\r", "").Split( [| '\n' |])
-    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Pos.mkPos (Line.fromZ i) j, line ]
+    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Position.mkPos (Line.fromZ i) j, line ]
     let results = [ for pos, line in positions do 
                         match parseResult.ValidateBreakpointLocation pos with 
                         | Some r -> yield ((line, pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))  
@@ -916,7 +918,7 @@ type FooImpl() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
     let lines = input.Replace("\r", "").Split( [| '\n' |])
-    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Pos.mkPos (Line.fromZ i) j, line ]
+    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Position.mkPos (Line.fromZ i) j, line ]
     let results = [ for pos, line in positions do 
                         match parseResult.ValidateBreakpointLocation pos with 
                         | Some r -> yield ((line, pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))  
@@ -1147,7 +1149,7 @@ let _ = Threading.Buzz = null
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
     |> Array.map (fun su -> 
-        let r = su.RangeAlternate 
+        let r = su.Range 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> Array.distinct
     |> shouldEqual 
@@ -1215,7 +1217,7 @@ let ``Test TPProject all symbols`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunSynchronously
     let allSymbolUses = wholeProjectResults.GetAllUsesOfAllSymbols() 
-    let allSymbolUsesInfo =  [ for s in allSymbolUses -> s.Symbol.DisplayName, tups s.RangeAlternate, attribsOfSymbol s.Symbol ]
+    let allSymbolUsesInfo =  [ for s in allSymbolUses -> s.Symbol.DisplayName, tups s.Range, attribsOfSymbol s.Symbol ]
     //printfn "allSymbolUsesInfo = \n----\n%A\n----" allSymbolUsesInfo
 
     allSymbolUsesInfo |> shouldEqual
@@ -1258,7 +1260,7 @@ let ``Test TPProject errors`` () =
         | FSharpCheckFileAnswer.Succeeded(res) -> res
         | res -> failwithf "Parsing did not finish... (%A)" res
 
-    let errorMessages = [ for msg in typeCheckResults.Diagnostics -> msg.StartLineAlternate, msg.StartColumn, msg.EndLineAlternate, msg.EndColumn, msg.Message.Replace("\r","").Replace("\n","") ]
+    let errorMessages = [ for msg in typeCheckResults.Diagnostics -> msg.StartLine, msg.StartColumn, msg.EndLine, msg.EndColumn, msg.Message.Replace("\r","").Replace("\n","") ]
     //printfn "errorMessages = \n----\n%A\n----" errorMessages
 
     errorMessages |> shouldEqual
@@ -1365,7 +1367,7 @@ let ``FSharpField.IsNameGenerated`` () =
         |> Array.choose (fun su ->
             match su.Symbol with
             | :? FSharpEntity as entity -> Some entity.FSharpFields
-            | :? FSharpUnionCase as unionCase -> Some unionCase.UnionCaseFields 
+            | :? FSharpUnionCase as unionCase -> Some unionCase.Fields 
             | _ -> None)
         |> Seq.concat
         |> Seq.map (fun (field: FSharpField) -> field.Name, field.IsNameGenerated)

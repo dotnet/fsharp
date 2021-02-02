@@ -17,6 +17,7 @@ open Microsoft.VisualStudio.OLE.Interop
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Tokenization
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 

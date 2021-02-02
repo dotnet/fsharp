@@ -10,7 +10,9 @@ module Tests.Service.Symbols
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
 open FsUnit
 open NUnit.Framework
 
@@ -41,7 +43,7 @@ match "foo" with
           
          checkResults.GetAllUsesOfAllSymbolsInFile()
          |> Array.ofSeq
-         |> Array.filter (fun su -> su.RangeAlternate.StartLine = line && su.Symbol :? FSharpActivePatternCase)
+         |> Array.filter (fun su -> su.Range.StartLine = line && su.Symbol :? FSharpActivePatternCase)
          |> Array.map (fun su -> su.Symbol :?> FSharpActivePatternCase)
 
     [<Test>]
@@ -75,7 +77,7 @@ extern int private c()
         |> List.zip decls
         |> List.iter (fun (actual, expected) ->
             match actual with
-            | SynModuleDecl.Let (_, [Binding (accessibility = access)], _) -> access |> should equal expected
+            | SynModuleDecl.Let (_, [SynBinding (accessibility = access)], _) -> access |> should equal expected
             | decl -> failwithf "unexpected decl: %O" decl)
 
         [ "a", (true, false, false, false)
@@ -274,14 +276,14 @@ module SyntaxExpressions =
             expectedEndColumn
             (actualRange: FSharp.Compiler.Text.range)
             =
-                Assert.AreEqual(FSharp.Compiler.Text.Pos.mkPos expectedStartLine expectedStartColumn, actualRange.Start)
-                Assert.AreEqual(FSharp.Compiler.Text.Pos.mkPos expectedEndLine expectedEndColumn, actualRange.End)
+                Assert.AreEqual(Position.mkPos expectedStartLine expectedStartColumn, actualRange.Start)
+                Assert.AreEqual(Position.mkPos expectedEndLine expectedEndColumn, actualRange.End)
 
         match ast with
         | Some(ParsedInput.ImplFile(ParsedImplFileInput(modules = [
                     SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                         SynModuleDecl.Let(bindings = [
-                            SynBinding.Binding(expr = SynExpr.Sequential(expr1 = SynExpr.Do(_, doRange) ; expr2 = SynExpr.DoBang(_, doBangRange)))
+                            SynBinding(expr = SynExpr.Sequential(expr1 = SynExpr.Do(_, doRange) ; expr2 = SynExpr.DoBang(_, doBangRange)))
                         ])
                     ])
                 ]))) ->

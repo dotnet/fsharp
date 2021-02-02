@@ -8,6 +8,7 @@ open System.Runtime.InteropServices
 open System.Threading
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Options
+open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
@@ -227,7 +228,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
     override _.RoslynLanguageName = FSharpConstants.FSharpLanguageName
 
     override _.LanguageServiceId = new Guid(FSharpConstants.languageServiceGuidString)
-    override _.DebuggerLanguageId = DebuggerEnvironment.GetLanguageID()
+    override _.DebuggerLanguageId = CompilerEnvironment.GetDebuggerLanguageID()
 
     override _.CreateContext(_,_,_,_,_) = raise(System.NotImplementedException())
 

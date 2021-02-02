@@ -13,14 +13,59 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+
+/// Represents the use of an F# symbol from F# source code
+[<Sealed>]
+type public FSharpSymbolUse = 
+
+    /// The symbol referenced
+    member Symbol: FSharpSymbol 
+
+    /// The display context active at the point where the symbol is used. Can be passed to FSharpType.Format
+    /// and other methods to format items in a way that is suitable for a specific source code location.
+    member DisplayContext: FSharpDisplayContext
+
+    /// Indicates if the reference is a definition for the symbol, either in a signature or implementation
+    member IsFromDefinition: bool
+
+    /// Indicates if the reference is in a pattern
+    member IsFromPattern: bool
+
+    /// Indicates if the reference is in a syntactic type
+    member IsFromType: bool
+
+    /// Indicates if the reference is in an attribute
+    member IsFromAttribute: bool
+
+    /// Indicates if the reference is via the member being implemented in a class or object expression
+    member IsFromDispatchSlotImplementation: bool
+
+    /// Indicates if the reference is either a builder or a custom operation in a computation expression
+    member IsFromComputationExpression: bool
+
+    /// Indicates if the reference is in open statement
+    member IsFromOpenStatement: bool
+
+    /// The file name the reference occurs in 
+    member FileName: string 
+
+    /// The range of text representing the reference to the symbol
+    member Range: range
+
+    /// Indicates if the FSharpSymbolUse is declared as private
+    member IsPrivateToFile: bool 
+
+    // For internal use only
+    internal new: g:TcGlobals * denv: DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
 
 /// Represents the reason why the GetDeclarationLocation operation failed.
 [<RequireQualifiedAccess>]
@@ -120,7 +165,7 @@ type public FSharpCheckFileResults =
     /// <param name="getAllEntities">
     ///    Function that returns all entities from current and referenced assemblies.
     /// </param>
-    member GetDeclarationListInfo: parsedFileResults:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllEntities: (unit -> AssemblySymbol list) -> FSharpDeclarationListInfo
+    member GetDeclarationListInfo: parsedFileResults:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllEntities: (unit -> AssemblySymbol list) -> DeclarationListInfo
 
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
     ///
@@ -149,16 +194,7 @@ type public FSharpCheckFileResults =
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
-    member GetStructuredToolTipText : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> FSharpStructuredToolTipText
-
-    /// <summary>Compute a formatted tooltip for the given location</summary>
-    ///
-    /// <param name="line">The line number where the information is being requested.</param>
-    /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
-    /// <param name="lineText">The text of the line where the information is being requested.</param>
-    /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
-    member GetToolTipText : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> FSharpToolTipText
+    member GetToolTip: line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> FSharpToolTipText
 
     /// <summary>Compute the Visual Studio F1-help key identifier for the given location, based on name resolution results</summary>
     ///
@@ -201,7 +237,7 @@ type public FSharpCheckFileResults =
     member GetSymbolUseAtLocation  : line:int * colAtEndOfNames:int * lineText:string * names:string list -> FSharpSymbolUse option
 
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
-    member GetSemanticClassification : range option -> FSharpSemanticClassificationItem[]
+    member GetSemanticClassification : range option -> SemanticClassificationItem[]
 
     /// <summary>Get the locations of format specifiers</summary>
     [<System.Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]

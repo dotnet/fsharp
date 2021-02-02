@@ -6,14 +6,14 @@ namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.IO
-
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
-open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 /// <summary>Unused in this API</summary>
 type public FSharpUnresolvedReferencesSet
@@ -314,7 +314,7 @@ type public FSharpChecker =
     /// <param name="filename">The filename for the file.</param>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetBackgroundSemanticClassificationForFile : filename : string * options : FSharpProjectOptions * ?userOpName: string -> Async<FSharpSemanticClassificationView option>
+    member GetBackgroundSemanticClassificationForFile : filename : string * options : FSharpProjectOptions * ?userOpName: string -> Async<SemanticClassificationView option>
 
     /// <summary>
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API.
@@ -387,18 +387,21 @@ type public FSharpChecker =
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.
     member InvalidateAll: unit -> unit
 
-    /// This function is called when the configuration is known to have changed for reasons not encoded in the ProjectOptions.
-    /// For example, dependent references may have been deleted or created.
+    /// <summary>
+    ///  This function is called when the configuration is known to have changed for reasons not encoded in the ProjectOptions.
+    ///  For example, dependent references may have been deleted or created.
+    /// </summary>
+    /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="startBackgroundCompile">Start a background compile of the project if a project with the same name has already been seen before.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member InvalidateConfiguration: options: FSharpProjectOptions * ?startBackgroundCompile: bool * ?userOpName: string -> unit
 
-    /// Clear the internal cache of the given projects.
+    /// <summary>Clear the internal cache of the given projects.</summary>
     /// <param name="options">The given project options.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member ClearCache: options: FSharpProjectOptions seq * ?userOpName: string -> unit
 
-    /// Set the project to be checked in the background.  Overrides any previous call to <c>CheckProjectInBackground</c>
+    /// <summary>Set the project to be checked in the background.  Overrides any previous call to <c>CheckProjectInBackground</c>.</summary>
     member CheckProjectInBackground: options: FSharpProjectOptions  * ?userOpName: string -> unit
 
     /// Stop the background compile.
@@ -431,10 +434,11 @@ type public FSharpChecker =
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member NotifyProjectCleaned: options: FSharpProjectOptions * ?userOpName: string -> Async<unit>
 
+    /// <summary>
     /// Notify the host that the logical type checking context for a file has now been updated internally
     /// and that the file has become eligible to be re-typechecked for errors.
-    ///
     /// The event will be raised on a background thread.
+    /// </summary>
     member BeforeBackgroundFileCheck: IEvent<string * obj option>
 
     /// Raised after a parse of a file in the background analysis.
@@ -450,14 +454,18 @@ type public FSharpChecker =
     /// Raised after the maxMB memory threshold limit is reached
     member MaxMemoryReached: IEvent<unit>
 
-    /// A maximum number of megabytes of allocated memory. If the figure reported by <c>System.GC.GetTotalMemory(false)</c> goes over this limit, the FSharpChecker object will attempt to free memory and reduce cache sizes to a minimum.</param>
+    /// <summary>
+    ///   A maximum number of megabytes of allocated memory. If the figure reported by <c>System.GC.GetTotalMemory(false)</c> goes over this limit, the FSharpChecker object will attempt to free memory and reduce cache sizes to a minimum.
+    /// </summary>
     member MaxMemory: int with get, set
 
+    /// <summary>
     /// Get or set a flag which controls if background work is started implicitly.
     ///
     /// If true, calls to CheckFileInProject implicitly start a background check of that project, replacing
     /// any other background checks in progress. This is useful in IDE applications with spare CPU cycles as
     /// it prepares the project analysis results for use.  The default is 'true'.
+    /// </summary>
     member ImplicitlyStartBackgroundWork: bool with get, set
 
     /// Get or set the pause time in milliseconds before background work is started.
@@ -482,32 +490,36 @@ type public FSharpChecker =
     /// Tokenize an entire file, line by line
     member TokenizeFile: source:string -> FSharpTokenInfo [] []
 
+namespace FSharp.Compiler
+
+open System
+open FSharp.Compiler.CodeAnalysis
+
 /// Information about the compilation environment
 [<Class>]
 type public CompilerEnvironment =
     /// The default location of FSharp.Core.dll and fsc.exe based on the version of fsc.exe that is running
     static member BinFolderOfDefaultFSharpCompiler: ?probePoint: string -> string option
 
-/// Information about the compilation environment
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module public CompilerEnvironment =
-
     /// These are the names of assemblies that should be referenced for .fs or .fsi files that
     /// are not associated with a project.
-    val DefaultReferencesForOrphanSources: assumeDotNetFramework: bool -> string list
+    static member DefaultReferencesForOrphanSources: assumeDotNetFramework: bool -> string list
 
     /// Return the compilation defines that should be used when editing the given file.
-    val GetCompilationDefinesForEditing: parsingOptions: FSharpParsingOptions -> string list
+    static member GetCompilationDefinesForEditing: parsingOptions: FSharpParsingOptions -> string list
 
     /// Return true if this is a subcategory of error or warning message that the language service can emit
-    val IsCheckerSupportedSubcategory: string -> bool
+    static member IsCheckerSupportedSubcategory: string -> bool
 
-/// Information about the debugging environment
-module public DebuggerEnvironment =
-    /// Return the language ID, which is the expression evaluator id that the
-    /// debugger will use.
-    val GetLanguageID: unit -> Guid
+    /// Return the language ID, which is the expression evaluator id that the debugger will use.
+    static member GetDebuggerLanguageID: unit -> Guid
 
-/// A set of helpers for dealing with F# files.
-module FSharpFileUtilities =
-    val isScriptFile: string -> bool
+    /// A helpers for dealing with F# files.
+    static member IsScriptFile: string -> bool
+
+    /// Whether or not this file is compilable
+    static member IsCompilable: string -> bool
+
+    /// Whether or not this file should be a single-file project
+    static member MustBeSingleFileProject: string -> bool
+

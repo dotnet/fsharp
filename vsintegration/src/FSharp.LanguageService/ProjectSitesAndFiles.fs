@@ -40,8 +40,8 @@ open System.Diagnostics
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Shell.Interop
+open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.EditorServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
@@ -315,7 +315,7 @@ type internal ProjectSitesAndFiles() =
                 OtherOptions = projectSite.CompilationOptions
                 ReferencedProjects = referencedProjectOptions
                 IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
-                UseScriptResolutionRules = FSharpSourceFile.MustBeSingleFileProject fileName
+                UseScriptResolutionRules = CompilerEnvironment.MustBeSingleFileProject fileName
                 LoadTime = projectSite.LoadTime
                 UnresolvedReferences = None
                 OriginalLoadReferences = []
@@ -339,7 +339,7 @@ type internal ProjectSitesAndFiles() =
 
     /// Construct a project site for a single file. May be a single file project (for scripts) or an orphan project site (for everything else).
     static member ProjectSiteOfSingleFile(filename:string) : IProjectSite = 
-        if FSharpSourceFile.MustBeSingleFileProject(filename) then 
+        if CompilerEnvironment.MustBeSingleFileProject(filename) then 
             Debug.Assert(false, ".fsx or .fsscript should have been treated as implicit project")
             failwith ".fsx or .fsscript should have been treated as implicit project"
         new ProjectSiteOfSingleFile(filename) :> IProjectSite
@@ -381,7 +381,7 @@ type internal ProjectSitesAndFiles() =
 
     member art.GetDefinesForFile_DEPRECATED(rdt:IVsRunningDocumentTable, filename : string, checker:FSharpChecker) =
         // The only caller of this function calls it each time it needs to colorize a line, so this call must execute very fast.  
-        if FSharpSourceFile.MustBeSingleFileProject(filename) then
+        if CompilerEnvironment.MustBeSingleFileProject(filename) then
             let parsingOptions = { FSharpParsingOptions.Default with IsInteractive = true}
             CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
         else 
@@ -399,7 +399,7 @@ type internal ProjectSitesAndFiles() =
             CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
 
     member art.TryFindOwningProject_DEPRECATED(rdt:IVsRunningDocumentTable, filename) = 
-        if FSharpSourceFile.MustBeSingleFileProject(filename) then None
+        if CompilerEnvironment.MustBeSingleFileProject(filename) then None
         else
             match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,filename) with 
             | Some(hier, _textLines) ->

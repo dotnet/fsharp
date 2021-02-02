@@ -9,6 +9,7 @@ module FSharp.Compiler.Service.Tests.TokenizerTests
 #endif
 
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Tokenization
 
 open NUnit.Framework
 

@@ -35,8 +35,8 @@ type internal FSharpDocumentDiagnosticAnalyzer
         { new IEqualityComparer<FSharpDiagnostic> with 
             member _.Equals (x, y) =
                 x.FileName = y.FileName &&
-                x.StartLineAlternate = y.StartLineAlternate &&
-                x.EndLineAlternate = y.EndLineAlternate &&
+                x.StartLine = y.StartLine &&
+                x.EndLine = y.EndLine &&
                 x.StartColumn = y.StartColumn &&
                 x.EndColumn = y.EndColumn &&
                 x.Severity = y.Severity &&
@@ -45,8 +45,8 @@ type internal FSharpDocumentDiagnosticAnalyzer
                 x.ErrorNumber = y.ErrorNumber
             member _.GetHashCode x =
                 let mutable hash = 17
-                hash <- hash * 23 + x.StartLineAlternate.GetHashCode()
-                hash <- hash * 23 + x.EndLineAlternate.GetHashCode()
+                hash <- hash * 23 + x.StartLine.GetHashCode()
+                hash <- hash * 23 + x.EndLine.GetHashCode()
                 hash <- hash * 23 + x.StartColumn.GetHashCode()
                 hash <- hash * 23 + x.EndColumn.GetHashCode()
                 hash <- hash * 23 + x.Severity.GetHashCode()
@@ -79,12 +79,12 @@ type internal FSharpDocumentDiagnosticAnalyzer
             let results = 
                 HashSet(errors, errorInfoEqualityComparer)
                 |> Seq.choose(fun error ->
-                    if error.StartLineAlternate = 0 || error.EndLineAlternate = 0 then
+                    if error.StartLine = 0 || error.EndLine = 0 then
                         // F# error line numbers are one-based. Compiler returns 0 for global errors (reported by ProjectDiagnosticAnalyzer)
                         None
                     else
                         // Roslyn line numbers are zero-based
-                        let linePositionSpan = LinePositionSpan(LinePosition(error.StartLineAlternate - 1, error.StartColumn), LinePosition(error.EndLineAlternate - 1, error.EndColumn))
+                        let linePositionSpan = LinePositionSpan(LinePosition(error.StartLine - 1, error.StartColumn), LinePosition(error.EndLine - 1, error.EndColumn))
                         let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
                         
                         // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries

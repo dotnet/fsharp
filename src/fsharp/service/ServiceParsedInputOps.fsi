@@ -6,36 +6,27 @@ open System.Collections.Generic
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
-/// Information about F# source file names
-module public FSharpSourceFile =
-
-   /// Whether or not this file is compilable
-   val IsCompilable: string -> bool
-
-   /// Whether or not this file should be a single-file project
-   val MustBeSingleFileProject: string -> bool
-
-type public FSharpCompletionPath = string list * string option // plid * residue
+type public CompletionPath = string list * string option // plid * residue
 
 [<RequireQualifiedAccess>]
-type public FSharpInheritanceContext = 
+type public InheritanceContext = 
     | Class
     | Interface
     | Unknown
 
 [<RequireQualifiedAccess>]
 type public FSharpRecordContext =
-    | CopyOnUpdate of range: range * path: FSharpCompletionPath
+    | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
-    | New of path: FSharpCompletionPath
+    | New of path: CompletionPath
 
 [<RequireQualifiedAccess>]
-type public FSharpCompletionContext = 
+type public CompletionContext = 
     /// Completion context cannot be determined due to errors
     | Invalid
 
     /// Completing something after the inherit keyword
-    | Inherit of context: FSharpInheritanceContext * path: FSharpCompletionPath
+    | Inherit of context: InheritanceContext * path: CompletionPath
 
     /// Completing records field
     | RecordField of context: FSharpRecordContext
@@ -65,6 +56,7 @@ type public FSharpEntityKind =
     | Module of FSharpModuleKind
 
 /// Kind of lexical scope.
+[<RequireQualifiedAccess>]
 type public FSharpScopeKind =
     | Namespace
     | TopModule
@@ -73,6 +65,7 @@ type public FSharpScopeKind =
     | HashDirective
 
 /// Insert open namespace context.
+[<RequireQualifiedAccess>]
 type public FSharpInsertionContext =
     {
       /// Current scope kind.
@@ -83,6 +76,7 @@ type public FSharpInsertionContext =
     }
 
 /// Where open statements should be added.
+[<RequireQualifiedAccess>]
 type public FSharpOpenStatementInsertionPoint =
     | TopLevel
     | Nearest
@@ -127,7 +121,7 @@ module public ParsedInput =
 
     val TryFindExpressionIslandInPosition: pos * ParsedInput option -> string option
 
-    val TryGetCompletionContext: pos * ParsedInput * lineStr: string -> FSharpCompletionContext option
+    val TryGetCompletionContext: pos * ParsedInput * lineStr: string -> CompletionContext option
 
     val GetEntityKind: pos * ParsedInput -> FSharpEntityKind option
 

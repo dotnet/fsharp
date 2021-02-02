@@ -71,7 +71,7 @@ val (|ExprValWithPossibleTypeInst|_|): Expr -> (ValRef * ValUseFlag * TType list
 type MatchBuilder =
 
     /// Create a new builder
-    new: DebugPointForBinding * range -> MatchBuilder
+    new: DebugPointAtBinding * range -> MatchBuilder
 
     /// Add a new destination target
     member AddTarget: DecisionTreeTarget -> int
@@ -89,10 +89,10 @@ type MatchBuilder =
 val mkBoolSwitch: range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
 
 /// Build a conditional expression
-val primMkCond: DebugPointForBinding -> DebugPointForTarget -> DebugPointForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
+val primMkCond: DebugPointAtBinding -> DebugPointForTarget -> DebugPointForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 /// Build a conditional expression
-val mkCond: DebugPointForBinding -> DebugPointForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
+val mkCond: DebugPointAtBinding -> DebugPointForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 /// Build a conditional expression that checks for non-nullness
 val mkNonNullCond: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
@@ -163,7 +163,7 @@ val mkTryWith: TcGlobals -> Expr * (* filter val *) Val * (* filter expr *) Expr
 val mkTryFinally: TcGlobals -> Expr * Expr * range * TType * DebugPointAtTry * DebugPointAtFinally -> Expr
 
 /// Build a user-level value binding
-val mkBind: DebugPointForBinding -> Val -> Expr -> Binding
+val mkBind: DebugPointAtBinding -> Val -> Expr -> Binding
 
 /// Build a user-level let-binding
 val mkLetBind: range -> Binding -> Expr -> Expr
@@ -175,10 +175,10 @@ val mkLetsBind: range -> Binding list -> Expr -> Expr
 val mkLetsFromBindings: range -> Bindings -> Expr -> Expr
 
 /// Build a user-level let expression
-val mkLet: DebugPointForBinding -> range -> Val -> Expr -> Expr -> Expr
+val mkLet: DebugPointAtBinding -> range -> Val -> Expr -> Expr -> Expr
 
 /// Make a binding that binds a function value to a lambda taking multiple arguments
-val mkMultiLambdaBind: Val -> DebugPointForBinding -> range -> Typars -> Val list list -> Expr * TType -> Binding
+val mkMultiLambdaBind: Val -> DebugPointAtBinding -> range -> Typars -> Val list list -> Expr * TType -> Binding
 
 // Compiler generated bindings may involve a user variable.
 // Compiler generated bindings may give rise to a sequence point if they are part of
@@ -890,7 +890,7 @@ val GetTypeOfMemberInMemberForm: TcGlobals -> ValRef -> Typars * TraitWitnessInf
 
 val GetTypeOfIntrinsicMemberInCompiledForm: TcGlobals -> ValRef -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
 
-val GetMemberTypeInMemberForm: TcGlobals -> MemberFlags -> ValReprInfo -> int -> TType -> range -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
+val GetMemberTypeInMemberForm: TcGlobals -> SynMemberFlags -> ValReprInfo -> int -> TType -> range -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
 
 /// Returns (parentTypars,memberParentTypars,memberMethodTypars,memberToParentInst,tinst)
 val PartitionValTyparsForApparentEnclosingType: TcGlobals -> Val -> (Typars * Typars * Typars * TyparInst * TType list) option
@@ -1284,10 +1284,10 @@ val accTargetsOfDecisionTree: DecisionTree -> int list -> int list
 
 /// Make a 'match' expression applying some peep-hole optimizations along the way, e.g to 
 /// pre-decide the branch taken at compile-time.
-val mkAndSimplifyMatch: DebugPointForBinding -> range -> range -> TType -> DecisionTree -> DecisionTreeTarget list -> Expr
+val mkAndSimplifyMatch: DebugPointAtBinding -> range -> range -> TType -> DecisionTree -> DecisionTreeTarget list -> Expr
 
 /// Make a 'match' expression without applying any peep-hole optimizations.
-val primMkMatch: DebugPointForBinding * range * DecisionTree * DecisionTreeTarget array * range * TType -> Expr
+val primMkMatch: DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget array * range * TType -> Expr
 
 ///  Work out what things on the right-han-side of a 'let rec' recursive binding need to be fixed up
 val IterateRecursiveFixups: 
@@ -2369,9 +2369,9 @@ val ValIsExplicitImpl: TcGlobals -> Val -> bool
 
 val ValRefIsExplicitImpl: TcGlobals -> ValRef -> bool
 
-val (|LinearMatchExpr|_|): Expr -> (DebugPointForBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * range * TType) option
+val (|LinearMatchExpr|_|): Expr -> (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * range * TType) option
 
-val rebuildLinearMatchExpr: (DebugPointForBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * range * TType) -> Expr
+val rebuildLinearMatchExpr: (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * range * TType) -> Expr
 
 val (|LinearOpExpr|_|): Expr -> (TOp * TypeInst * Expr list * Expr * range) option
 

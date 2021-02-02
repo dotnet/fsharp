@@ -31,7 +31,7 @@ module PosImpl =
 
 [<Struct; CustomEquality; NoComparison>]
 [<System.Diagnostics.DebuggerDisplay("{Line},{Column}")>]
-type Pos(code:int64) =
+type Position(code:int64) =
 
     new (l, c) = 
         let l = max 0 l 
@@ -48,15 +48,15 @@ type Pos(code:int64) =
 
     static member EncodingSize = posBitCount
 
-    static member Decode (code:int64) : pos = pos code
+    static member Decode (code:int64) : pos = Position(code)
 
-    override p.Equals(obj) = match obj with :? pos as p2 -> code = p2.Encoding | _ -> false
+    override p.Equals(obj) = match obj with :? Position as p2 -> code = p2.Encoding | _ -> false
 
     override p.GetHashCode() = hash code
 
     override p.ToString() = sprintf "(%d,%d)" p.Line p.Column
 
-and pos = Pos
+and pos = Position
 
 [<AutoOpen>]
 module RangeImpl =
@@ -293,20 +293,21 @@ type Line0 = int<ZeroBasedLineAnnotation>
 #else
 type Line0 = int
 #endif
-type Pos01 = Line0 * int
-type Range01 = Pos01 * Pos01
+
+type Position01 = Line0 * int
+
+type Range01 = Position01 * Position01
 
 module Line =
 
-    // Visual Studio uses line counts starting at 0, F# uses them starting at 1 
     let fromZ (line:Line0) = int line+1
 
     let toZ (line:int) : Line0 = LanguagePrimitives.Int32WithMeasure(line - 1)
 
 [<AutoOpen>]
-module Pos =
+module Position =
 
-    let mkPos line column = pos (line, column)
+    let mkPos line column = Position (line, column)
 
     let outputPos   (os:TextWriter) (m:pos)   = fprintf os "(%d,%d)" m.Line m.Column
 
@@ -343,7 +344,7 @@ module Range =
     /// rangeOrder: not a total order, but enough to sort on ranges
     let rangeOrder = Order.orderOn (fun (r:range) -> r.FileName, r.Start) (Pair.order (String.order, posOrder))
 
-    let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName Pos.outputPos m.Start Pos.outputPos m.End
+    let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName Position.outputPos m.Start Position.outputPos m.End
     
     /// This is deliberately written in an allocation-free way, i.e. m1.Start, m1.End etc. are not called
     let unionRanges (m1:range) (m2:range) = 
@@ -358,15 +359,15 @@ module Range =
 
     let rangeContainsRange (m1:range) (m2:range) =
         m1.FileIndex = m2.FileIndex &&
-        Pos.posGeq m2.Start m1.Start &&
-        Pos.posGeq m1.End m2.End
+        Position.posGeq m2.Start m1.Start &&
+        Position.posGeq m1.End m2.End
 
     let rangeContainsPos (m1:range) p =
-        Pos.posGeq p m1.Start &&
-        Pos.posGeq m1.End p
+        Position.posGeq p m1.Start &&
+        Position.posGeq m1.End p
 
     let rangeBeforePos (m1:range) p =
-        Pos.posGeq p m1.End
+        Position.posGeq p m1.End
 
     let rangeN filename line = mkRange filename (mkPos line 0) (mkPos line 0)
 
@@ -385,9 +386,9 @@ module Range =
           let endL, endC = startL+1, 0   (* Trim to the start of the next line (we do not know the end of the current line) *)
           range (r.FileIndex, startL, startC, endL, endC)
 
-    let stringOfRange (r:range) = sprintf "%s%s-%s" r.FileName (Pos.stringOfPos r.Start) (Pos.stringOfPos r.End)
+    let stringOfRange (r:range) = sprintf "%s%s-%s" r.FileName (Position.stringOfPos r.Start) (Position.stringOfPos r.End)
 
-    let toZ (m:range) = Pos.toZ m.Start, Pos.toZ m.End
+    let toZ (m:range) = Position.toZ m.Start, Position.toZ m.End
 
     let toFileZ (m:range) = m.FileName, toZ m
 

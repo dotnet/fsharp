@@ -13,6 +13,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.IO
+open FSharp.Compiler.Symbols
 
 type IsAutoOpen = bool
 
@@ -140,15 +141,15 @@ module AssemblyContentProvider =
               Symbol = entity
               Kind = fun lookupType ->
                 match entity, lookupType with                
-                | Symbol.FSharpModule, _ ->
+                | FSharpSymbolPatterns.FSharpModule, _ ->
                     FSharpEntityKind.Module 
-                        { IsAutoOpen = Symbol.hasAttribute<AutoOpenAttribute> entity.Attributes
-                          HasModuleSuffix = Symbol.hasModuleSuffixAttribute entity }
+                        { IsAutoOpen = entity.HasAttribute<AutoOpenAttribute>()
+                          HasModuleSuffix = FSharpSymbolPatterns.hasModuleSuffixAttribute entity }
                 | _, LookupType.Fuzzy ->
                     FSharpEntityKind.Type
                 | _, LookupType.Precise ->
                     match entity with
-                    | Symbol.Attribute -> FSharpEntityKind.Attribute 
+                    | FSharpSymbolPatterns.Attribute -> FSharpEntityKind.Attribute 
                     | _ -> FSharpEntityKind.Type
               FSharpUnresolvedSymbol = FSharpUnresolvedSymbol topRequireQualifiedAccessParent cleanIdents fullName
             })
@@ -204,7 +205,7 @@ module AssemblyContentProvider =
                     | None -> ()
 
                     let rqa = parent.FormatEntityFullName entity |> Option.map snd
-                    let rqaForType = if entity.IsFSharp && Symbol.hasAttribute<RequireQualifiedAccessAttribute> entity.Attributes then rqa else None
+                    let rqaForType = if entity.IsFSharp && entity.HasAttribute<RequireQualifiedAccessAttribute>() then rqa else None
                     let thisRequiresQualifierAccess (isForMethodOrValue: bool) = if isForMethodOrValue then rqa else rqaForType
 
                     let currentParent =
@@ -212,7 +213,7 @@ module AssemblyContentProvider =
                           TopRequiresQualifiedAccess = fun forMV -> (parent.TopRequiresQualifiedAccess false) |> Option.orElse (thisRequiresQualifierAccess forMV)
                           
                           AutoOpen =
-                            let isAutoOpen = entity.IsFSharpModule && Symbol.hasAttribute<AutoOpenAttribute> entity.Attributes
+                            let isAutoOpen = entity.IsFSharpModule && entity.HasAttribute<AutoOpenAttribute>()
                             match isAutoOpen, parent.AutoOpen with
                             // if parent is also AutoOpen, then keep the parent
                             | true, Some parent -> Some parent 
@@ -222,7 +223,7 @@ module AssemblyContentProvider =
                             | false, _ -> None 
 
                           WithModuleSuffix = 
-                            if entity.IsFSharpModule && (Symbol.hasModuleSuffixAttribute entity || entity.CompiledName <> entity.DisplayName) then 
+                            if entity.IsFSharpModule && (FSharpSymbolPatterns.hasModuleSuffixAttribute entity || entity.CompiledName <> entity.DisplayName) then 
                                 currentEntity |> Option.map (fun e -> e.CleanedIdents) 
                             else parent.WithModuleSuffix
 
@@ -287,13 +288,9 @@ module AssemblyContentProvider =
         | assemblies, None -> 
             getAssemblySignaturesContent contentType assemblies
         |> List.filter (fun entity -> 
-            match contentType, FSharpSymbol.GetAccessibility(entity.Symbol) with
-            | Full, _ -> true
-            | Public, access ->
-                match access with
-                | None -> true
-                | Some x when x.IsPublic -> true
-                | _ -> false)
+            match contentType with
+            | Full -> true
+            | Public -> entity.Symbol.Accessibility.IsPublic)
 
 type EntityCache() =
     let dic = Dictionary<AssemblyPath, AssemblyContentCacheEntry>()

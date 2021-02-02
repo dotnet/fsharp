@@ -1243,7 +1243,7 @@ let ConvMethodBase cenv env (methName, v: Val) =
         let numEnclTypeArgs = vref.MemberApparentEntity.TyparsNoRange.Length
         let argTys = argInfos |> List.concat |> List.map fst
 
-        let isNewObj = (vspr.MemberFlags.MemberKind = MemberKind.Constructor)
+        let isNewObj = (vspr.MemberFlags.MemberKind = SynMemberKind.Constructor)
 
         // The signature types are w.r.t. to the formal context
         let envinner = BindFormalTypars env tps

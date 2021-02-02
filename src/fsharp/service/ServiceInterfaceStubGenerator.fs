@@ -5,12 +5,14 @@ namespace FSharp.Compiler.EditorServices
 open System
 open System.Diagnostics
 open Internal.Utilities.Library 
-open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Symbols.FSharpSymbolPatterns
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Tokenization
 
 [<AutoOpen>]
 module internal CodeGenerationUtils =
@@ -125,11 +127,11 @@ type InterfaceData =
                     sprintf "- %s" s
 
             let rec (|TypeIdent|_|) = function
-                | SynType.Var(SynTypar.Typar(s, req, _), _) ->
+                | SynType.Var(SynTypar(s, req, _), _) ->
                     match req with
-                    | NoStaticReq -> 
+                    | TyparStaticReq.None -> 
                         Some ("'" + s.idText)
-                    | HeadTypeStaticReq -> 
+                    | TyparStaticReq.HeadType -> 
                         Some ("^" + s.idText)
                 | SynType.LongIdent(LongIdentWithDots(xs, _)) ->
                     xs |> Seq.map (fun x -> x.idText) |> String.concat "." |> Some
@@ -230,7 +232,7 @@ module InterfaceStubGenerator =
         let nm, namesWithIndices = normalizeArgName namesWithIndices nm
         
         // Detect an optional argument
-        let isOptionalArg = Symbol.hasAttribute<OptionalArgumentAttribute> arg.Attributes
+        let isOptionalArg = arg.HasAttribute<OptionalArgumentAttribute>()
         let argName = if isOptionalArg then "?" + nm else nm
         (if hasTypeAnnotation && argName <> "()" then 
             argName + ": " + formatType ctx arg.Type
@@ -307,7 +309,7 @@ module InterfaceStubGenerator =
         else displayName
 
     let internal isEventMember (m: FSharpMemberOrFunctionOrValue) =
-        m.IsEvent || Symbol.hasAttribute<CLIEventAttribute> m.Attributes
+        m.IsEvent || m.HasAttribute<CLIEventAttribute>()
     
     let internal formatMember (ctx: Context) m verboseMode = 
         let getParamArgs (argInfos: FSharpParameter list list) (ctx: Context) (v: FSharpMemberOrFunctionOrValue) = 
@@ -339,7 +341,7 @@ module InterfaceStubGenerator =
                 | _, true, _, name -> name + parArgs
                 // Ordinary functions or values
                 | false, _, _, name when
-                    not (Symbol.hasAttribute<RequireQualifiedAccessAttribute> v.ApparentEnclosingEntity.Attributes) -> 
+                    not (v.ApparentEnclosingEntity.HasAttribute<RequireQualifiedAccessAttribute>()) -> 
                     name + " " + parArgs
                 // Ordinary static members or things (?) that require fully qualified access
                 | _, _, _, name -> name + parArgs
@@ -520,14 +522,14 @@ module InterfaceStubGenerator =
     // On merged properties (consisting both getters and setters), they have the same range values,
     // so we use 'get_' and 'set_' prefix to ensure corresponding symbols are retrieved correctly.
     let internal (|MemberNameAndRange|_|) = function
-        | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
-                    _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = MemberKind.PropertyGet ->
+        | SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
+                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = SynMemberKind.PropertyGet ->
             if name.StartsWithOrdinal("get_") then Some(name, range) else Some("get_" + name, range)
-        | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
-                    _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = MemberKind.PropertySet ->
+        | SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
+                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = SynMemberKind.PropertySet ->
             if name.StartsWithOrdinal("set_") then Some(name, range) else Some("set_" + name, range)
-        | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, LongIdentPattern(name, range), 
-                    _retTy, _expr, _bindingRange, _seqPoint) ->
+        | SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, LongIdentPattern(name, range), 
+                     _retTy, _expr, _bindingRange, _seqPoint) ->
             Some(name, range)
         | _ ->
             None
@@ -711,7 +713,7 @@ module InterfaceStubGenerator =
                 | SynModuleDecl.Open _ -> 
                     None
 
-        and walkSynTypeDefn(TypeDefn(_componentInfo, representation, members, _, range)) = 
+        and walkSynTypeDefn(SynTypeDefn(_componentInfo, representation, members, _, range)) = 
             if not <| rangeContainsPos range pos then
                 None
             else
@@ -756,7 +758,7 @@ module InterfaceStubGenerator =
                 | SynMemberDefn.Inherit _ -> None
                 | SynMemberDefn.ImplicitInherit (_, expr, _, _) -> walkExpr expr
 
-        and walkBinding (Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, _headPat, _retTy, expr, _bindingRange, _seqPoint)) =
+        and walkBinding (SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, _headPat, _retTy, expr, _bindingRange, _seqPoint)) =
             walkExpr expr
 
         and walkExpr expr =
@@ -791,7 +793,7 @@ module InterfaceStubGenerator =
                         if rangeContainsPos ty.Range pos then
                             Some (InterfaceData.ObjExpr(ty, binds))
                         else
-                            ifaces |> List.tryPick (fun (InterfaceImpl(ty, binds, range)) ->
+                            ifaces |> List.tryPick (fun (SynInterfaceImpl(ty, binds, range)) ->
                                 if rangeContainsPos range pos then 
                                     Some (InterfaceData.ObjExpr(ty, binds))
                                 else None)
@@ -815,10 +817,10 @@ module InterfaceStubGenerator =
                      walkExpr synExpr
 
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) -> 
-                    synMatchClauseList |> List.tryPick (fun (Clause(_, _, e, _, _)) -> walkExpr e)
+                    synMatchClauseList |> List.tryPick (fun (SynMatchClause(_, _, e, _, _)) -> walkExpr e)
                 | SynExpr.Match (_sequencePointInfoForBinding, synExpr, synMatchClauseList, _range) ->
                     walkExpr synExpr
-                    |> Option.orElse (synMatchClauseList |> List.tryPick (fun (Clause(_, _, e, _, _)) -> walkExpr e))
+                    |> Option.orElse (synMatchClauseList |> List.tryPick (fun (SynMatchClause(_, _, e, _, _)) -> walkExpr e))
 
                 | SynExpr.Lazy (synExpr, _range) ->
                     walkExpr synExpr

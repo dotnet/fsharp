@@ -14,6 +14,7 @@ open System.IO
 open System.Collections.Generic
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
 
@@ -455,7 +456,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject1 = 
         wholeProjectResults1.GetUsesOfSymbol(xSymbol) 
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject1
     |> shouldEqual 
@@ -463,7 +464,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject2 = 
         wholeProjectResults2.GetUsesOfSymbol(xSymbol) 
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject2 
     |> shouldEqual 
@@ -504,7 +505,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject1AfterChange1 = 
         wholeProjectResults1AfterChange1.GetUsesOfSymbol(xSymbolAfterChange1) 
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.Range)
     
     usesOfXSymbolInProject1AfterChange1
     |> shouldEqual 
@@ -512,7 +513,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject2AfterChange1 = 
         wholeProjectResults2AfterChange1.GetUsesOfSymbol(xSymbolAfterChange1) 
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject2AfterChange1 
     |> shouldEqual 
@@ -555,7 +556,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject1AfterChange2 = 
         wholeProjectResults1AfterChange2.GetUsesOfSymbol(xSymbolAfterChange2) 
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject1AfterChange2
     |> shouldEqual 
@@ -564,7 +565,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject2AfterChange2 = 
         wholeProjectResults2AfterChange2.GetUsesOfSymbol(xSymbolAfterChange2) 
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject2AfterChange2
     |> shouldEqual 

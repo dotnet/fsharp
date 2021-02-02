@@ -16,25 +16,6 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
-/// Methods for dealing with F# sources files.
-module FSharpSourceFile =
-
-    /// Source file extensions
-    let private compilableExtensions = FSharpSigFileSuffixes @ FSharpImplFileSuffixes @ FSharpScriptFileSuffixes
-
-    /// Single file projects extensions
-    let private singleFileProjectExtensions = FSharpScriptFileSuffixes
-
-    /// Whether or not this file is compilable
-    let IsCompilable file =
-        let ext = Path.GetExtension file
-        compilableExtensions |> List.exists(fun e->0 = String.Compare(e, ext, StringComparison.OrdinalIgnoreCase))
-
-    /// Whether or not this file should be a single-file project
-    let MustBeSingleFileProject file =
-        let ext = Path.GetExtension file
-        singleFileProjectExtensions |> List.exists(fun e-> 0 = String.Compare(e, ext, StringComparison.OrdinalIgnoreCase))
-
 module SourceFileImpl =
     let IsInterfaceFile file =
         let ext = Path.GetExtension file
@@ -45,7 +26,7 @@ module SourceFileImpl =
         if isInteractive then ["INTERACTIVE";"EDITING"] // This is still used by the foreground parse
         else ["COMPILED";"EDITING"]
            
-type FSharpCompletionPath = string list * string option // plid * residue
+type CompletionPath = string list * string option // plid * residue
 
 [<RequireQualifiedAccess>]
 type FSharpInheritanceOrigin = 
@@ -54,24 +35,24 @@ type FSharpInheritanceOrigin =
     | Unknown
 
 [<RequireQualifiedAccess>]
-type FSharpInheritanceContext = 
+type InheritanceContext = 
     | Class
     | Interface
     | Unknown
 
 [<RequireQualifiedAccess>]
 type FSharpRecordContext =
-    | CopyOnUpdate of range: range * path: FSharpCompletionPath
+    | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
-    | New of path: FSharpCompletionPath
+    | New of path: CompletionPath
 
 [<RequireQualifiedAccess>]
-type FSharpCompletionContext = 
+type CompletionContext = 
     /// Completion context cannot be determined due to errors
     | Invalid
 
     /// Completing something after the inherit keyword
-    | Inherit of context: FSharpInheritanceContext * path: FSharpCompletionPath
+    | Inherit of context: InheritanceContext * path: CompletionPath
 
     /// Completing records field
     | RecordField of context: FSharpRecordContext
@@ -105,7 +86,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
     member scope.TryRangeOfNameOfNearestOuterBindingContainingPos pos =
         let tryGetIdentRangeFromBinding binding =
             match binding with
-            | SynBinding.Binding (_, _, _, _, _, _, _, headPat, _, _, _, _) ->
+            | SynBinding(_, _, _, _, _, _, _, headPat, _, _, _, _) ->
                 match headPat with
                 | SynPat.LongIdent (longIdentWithDots, _, _, _, _, _) ->
                     Some longIdentWithDots.Range
@@ -148,7 +129,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
 
                 override _.VisitBinding(_path, defaultTraverse, binding) =
                     match binding with
-                    | SynBinding.Binding (_, _, _, _, _, _, _, _, _, expr, _range, _) as b when rangeContainsPos b.RangeOfBindingAndRhs pos ->
+                    | SynBinding(_, _, _, _, _, _, _, _, _, expr, _range, _) as b when rangeContainsPos b.RangeOfBindingAndRhs pos ->
                         match tryGetIdentRangeFromBinding b with
                         | Some range -> walkBinding expr range
                         | None -> None
@@ -233,7 +214,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
                     bindings
                     |> List.tryFind (fun x -> rangeContainsPos x.RangeOfBindingAndRhs pos)
                 match binding with
-                | Some(SynBinding.Binding(_, _, _, _, _, _, _, _, _, expr, _, _)) ->
+                | Some(SynBinding(_, _, _, _, _, _, _, _, _, expr, _, _)) ->
                     getIdentRangeForFuncExprInApp traverseSynExpr expr pos
                 | None ->
                     getIdentRangeForFuncExprInApp traverseSynExpr body pos
@@ -278,7 +259,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
 
                 member _.VisitBinding(_path, defaultTraverse, binding) =
                     match binding with
-                    | SynBinding.Binding (_, SynBindingKind.NormalBinding, _, _, _, _, _, _, _, (InfixAppOfOpEqualsGreater(lambdaArgs, lambdaBody) as app), _, _) ->
+                    | SynBinding(_, SynBindingKind.Normal, _, _, _, _, _, _, _, (InfixAppOfOpEqualsGreater(lambdaArgs, lambdaBody) as app), _, _) ->
                         Some(app.Range, lambdaArgs.Range, lambdaBody.Range)
                     | _ -> defaultTraverse binding })
         | None -> None
@@ -322,9 +303,9 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
         | None ->
             None
 
-    member _.FindNoteworthyParamInfoLocations pos = 
+    member _.FindParameterLocations pos = 
         match input with
-        | Some input -> FSharpNoteworthyParamInfoLocations.Find(pos, input)
+        | Some input -> ParameterLocations.Find(pos, input)
         | _ -> None
 
     member _.IsPositionContainedInACurriedParameter pos =
@@ -337,7 +318,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
 
                     override _.VisitBinding (_path, _, binding) =
                         match binding with
-                        | Binding(_, _, _, _, _, _, valData, _, _, _, range, _) when rangeContainsPos range pos ->
+                        | SynBinding(_, _, _, _, _, _, valData, _, _, _, range, _) when rangeContainsPos range pos ->
                             let info = valData.SynValInfo.CurriedArgInfos
                             let mutable found = false
                             for group in info do
@@ -359,14 +340,14 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
             (fun () -> 
                 match input with
                 | Some (ParsedInput.ImplFile _ as p) ->
-                    FSharpNavigation.getNavigation p
+                    Navigation.getNavigation p
                 | Some (ParsedInput.SigFile _) ->
-                    FSharpNavigation.empty
+                    Navigation.empty
                 | _ -> 
-                    FSharpNavigation.empty)
+                    Navigation.empty)
             (fun err -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetNavigationItemsImpl: '%s'" err)
-                FSharpNavigation.empty)
+                Navigation.empty)
             
     member _.ValidateBreakpointLocationImpl pos =
         let isMatchRange m = rangeContainsPos m pos || m.StartLine = pos.Line
@@ -374,14 +355,14 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
         // Process let-binding
         let findBreakPoints () = 
             let checkRange m = [ if isMatchRange m then yield m ]
-            let walkBindSeqPt sp = [ match sp with DebugPointAtBinding m -> yield! checkRange m | _ -> () ]
+            let walkBindSeqPt sp = [ match sp with DebugPointAtBinding.Yes m -> yield! checkRange m | _ -> () ]
             let walkForSeqPt sp = [ match sp with DebugPointAtFor.Yes m -> yield! checkRange m | _ -> () ]
             let walkWhileSeqPt sp = [ match sp with DebugPointAtWhile.Yes m -> yield! checkRange m | _ -> () ]
             let walkTrySeqPt sp = [ match sp with DebugPointAtTry.Yes m -> yield! checkRange m | _ -> () ]
             let walkWithSeqPt sp = [ match sp with DebugPointAtWith.Yes m -> yield! checkRange m | _ -> () ]
             let walkFinallySeqPt sp = [ match sp with DebugPointAtFinally.Yes m -> yield! checkRange m | _ -> () ]
 
-            let rec walkBind (Binding(_, _, _, _, _, _, SynValData(memFlagsOpt, _, _), synPat, _, synExpr, _, spInfo)) =
+            let rec walkBind (SynBinding(_, _, _, _, _, _, SynValData(memFlagsOpt, _, _), synPat, _, synExpr, _, spInfo)) =
                 [ // Don't yield the binding sequence point if there are any arguments, i.e. we're defining a function or a method
                   let isFunction = 
                       Option.isSome memFlagsOpt ||
@@ -391,12 +372,12 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
                   if not isFunction then 
                       yield! walkBindSeqPt spInfo
 
-                  yield! walkExpr (isFunction || (match spInfo with DebugPointAtBinding _ -> false | _-> true)) synExpr ]
+                  yield! walkExpr (isFunction || (match spInfo with DebugPointAtBinding.Yes _ -> false | _-> true)) synExpr ]
 
             and walkExprs es = List.collect (walkExpr false) es
             and walkBinds es = List.collect walkBind es
             and walkMatchClauses cl = 
-                [ for (Clause(_, whenExpr, e, _, _)) in cl do 
+                [ for (SynMatchClause(_, whenExpr, e, _, _)) in cl do 
                     match whenExpr with 
                     | Some e -> yield! walkExpr false e 
                     | _ -> ()
@@ -498,7 +479,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
                       | None -> ()
                       | Some (arg, _) -> yield! walkExpr false arg
                       yield! walkBinds bs  
-                      for (InterfaceImpl(_, bs, _)) in is do yield! walkBinds bs
+                      for (SynInterfaceImpl(_, bs, _)) in is do yield! walkBinds bs
 
                   | SynExpr.While (spWhile, e1, e2, _) -> 
                       yield! walkWhileSeqPt spWhile
@@ -522,7 +503,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
 
                   | SynExpr.MatchLambda (_isExnMatch, _argm, cl, spBind, _wholem) -> 
                       yield! walkBindSeqPt spBind
-                      for (Clause(_, whenExpr, e, _, _)) in cl do 
+                      for (SynMatchClause(_, whenExpr, e, _, _)) in cl do 
                           yield! walkExprOpt false whenExpr
                           yield! walkExpr true e 
 
@@ -532,7 +513,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
                   | SynExpr.Match (spBind, e, cl, _) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false e 
-                      for (Clause(_, whenExpr, e, _, _)) in cl do 
+                      for (SynMatchClause(_, whenExpr, e, _, _)) in cl do 
                           yield! walkExprOpt false whenExpr
                           yield! walkExpr true e 
 
@@ -588,12 +569,12 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
                   | SynExpr.MatchBang (spBind, e, cl, _) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false e 
-                      for (Clause(_, whenExpr, e, _, _)) in cl do 
+                      for (SynMatchClause(_, whenExpr, e, _, _)) in cl do 
                           yield! walkExprOpt false whenExpr
                           yield! walkExpr true e ]
             
             // Process a class declaration or F# type declaration
-            let rec walkTycon (TypeDefn(ComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, implicitCtor, m)) =
+            let rec walkTycon (SynTypeDefn(SynComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, implicitCtor, m)) =
                 if not (isMatchRange m) then [] else
                 [ for memb in membDefns do yield! walkMember memb
                   match repr with

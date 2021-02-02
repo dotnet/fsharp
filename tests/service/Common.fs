@@ -5,10 +5,14 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Collections.Generic
+open System.Collections.Immutable
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Symbols.FSharpExprPatterns
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Compiler.TextLayout
 open FsUnit
 open NUnit.Framework
 
@@ -329,7 +333,7 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
                yield (gp :> FSharpSymbol)
           for x in e.UnionCases do
              yield (x :> FSharpSymbol)
-             for f in x.UnionCaseFields do
+             for f in x.Fields do
                  if compGen || not f.IsCompilerGenerated then 
                      yield (f :> FSharpSymbol)
           for x in e.FSharpFields do
@@ -415,6 +419,8 @@ let findSymbolByName (name: string) (results: FSharpCheckFileResults) =
     let symbolUse = findSymbolUseByName name results
     symbolUse.Symbol
 
+let taggedTextToString (tts: ImmutableArray<TaggedText>) =
+    tts |> Seq.toList |> List.map (fun tt -> tt.Text) |> String.concat ""
 
 let getRangeCoords (r: range) =
     (r.StartLine, r.StartColumn), (r.EndLine, r.EndColumn)

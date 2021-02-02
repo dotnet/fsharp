@@ -16,12 +16,12 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Position
 open NUnit.Framework
 
 let [<Literal>] private Marker = "(* marker *)"
 
-let private (=>) (source: string) (expected: FSharpCompletionContext option) =
+let private (=>) (source: string) (expected: CompletionContext option) =
 
     let lines =
         use reader = new StringReader(source)
@@ -58,7 +58,7 @@ module AttributeCompletion =
         """
 [<(* marker *)
 """  
-     => Some FSharpCompletionContext.AttributeApplication
+     => Some CompletionContext.AttributeApplication
 
     [<TestCase ("[<(* marker *)", true)>]
     [<TestCase ("[<AnAttr(* marker *)", true)>]
@@ -79,7 +79,7 @@ module AttributeCompletion =
 %s
 type T =
     { F: int }
-""" lineStr)  => (if expectAttributeApplicationContext then Some FSharpCompletionContext.AttributeApplication else None)
+""" lineStr)  => (if expectAttributeApplicationContext then Some CompletionContext.AttributeApplication else None)
 
     [<TestCase ("[<(* marker *)>]", true)>]
     [<TestCase ("[<AnAttr(* marker *)>]", true)>]
@@ -102,7 +102,7 @@ type T =
 %s
 type T =
     { F: int }
-""" lineStr)  => (if expectAttributeApplicationContext then Some FSharpCompletionContext.AttributeApplication else None)
+""" lineStr)  => (if expectAttributeApplicationContext then Some CompletionContext.AttributeApplication else None)
 
 
 
@@ -137,7 +137,7 @@ let foo8 = ()
     let (SynModuleOrNamespace (decls = decls)) = parseSourceCodeAndGetModule source
     decls |> List.map (fun decl ->
         match decl with
-        | SynModuleDecl.Let (_, [Binding (attributes = attributeLists)], _) ->
+        | SynModuleDecl.Let (_, [SynBinding (attributes = attributeLists)], _) ->
             attributeLists |> List.map (fun list -> list.Attributes.Length, getRangeCoords list.Range)
         | _ -> failwith "Could not get binding")
     |> shouldEqual
@@ -202,7 +202,7 @@ module TypeMemberRanges =
     let getTypeMemberRange source =
         let (SynModuleOrNamespace (decls = decls)) = parseSourceCodeAndGetModule source
         match decls with
-        | [ SynModuleDecl.Types ([ TypeDefn (_, SynTypeDefnRepr.ObjectModel (_, memberDecls, _), _, _, _) ], _) ] ->
+        | [ SynModuleDecl.Types ([ SynTypeDefn (_, SynTypeDefnRepr.ObjectModel (_, memberDecls, _), _, _, _) ], _) ] ->
             memberDecls |> List.map (fun memberDecl -> getRangeCoords memberDecl.Range)
         | _ -> failwith "Could not get member"
 

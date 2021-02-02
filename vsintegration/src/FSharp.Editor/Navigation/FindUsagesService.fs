@@ -10,6 +10,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
 
+open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
@@ -109,9 +110,9 @@ type internal FSharpFindUsagesService
             | Some SymbolDeclarationLocation.CurrentDocument ->
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
                 for symbolUse in symbolUses do
-                    match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) with
+                    match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with
                     | Some textSpan ->
-                        do! onFound document textSpan symbolUse.RangeAlternate |> liftAsync
+                        do! onFound document textSpan symbolUse.Range |> liftAsync
                     | _ ->
                         ()
             | scope ->

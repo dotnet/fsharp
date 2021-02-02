@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.TextLayout
 
 open System
+open System.Collections.Immutable
 open System.IO
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
@@ -165,4 +166,9 @@ module LayoutRender =
     let bufferL os layout = renderL (bufferR os) layout |> ignore
 
     let emitL f layout = renderL (taggedTextListR f) layout |> ignore
+
+    let toImmutableArray layout = 
+        let output = ResizeArray()
+        renderL (taggedTextListR (fun tt -> output.Add(tt))) layout |> ignore
+        output.ToImmutableArray()
     

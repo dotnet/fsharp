@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Collections.Generic
+open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
@@ -43,8 +44,8 @@ module internal RoslynHelpers =
         let endLine = sourceText.Lines.GetLineFromPosition textSpan.End
         mkRange 
             fileName 
-            (Pos.fromZ startLine.LineNumber (textSpan.Start - startLine.Start))
-            (Pos.fromZ endLine.LineNumber (textSpan.End - endLine.Start))
+            (Position.fromZ startLine.LineNumber (textSpan.Start - startLine.Start))
+            (Position.fromZ endLine.LineNumber (textSpan.End - endLine.Start))
 
     let GetCompletedTaskResult(task: Task<'TResult>) =
         if task.Status = TaskStatus.RanToCompletion then
@@ -218,3 +219,8 @@ module internal OpenDeclarationHelper =
             else sourceText
 
         sourceText, minPos |> Option.defaultValue 0
+
+[<AutoOpen>]
+module internal TaggedText =
+    let toString (tts: ImmutableArray<TaggedText>) =
+        tts |> Seq.toList |> List.map (fun tt -> tt.Text) |> String.concat ""

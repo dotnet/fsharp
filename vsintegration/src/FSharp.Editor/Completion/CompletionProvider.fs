@@ -20,6 +20,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger
 
@@ -37,7 +38,7 @@ type internal FSharpCompletionProvider
     static let userOpName = "CompletionProvider"
     // Save the backing data in a cache, we need to save for at least the length of the completion session
     // See https://github.com/Microsoft/visualfsharp/issues/4714
-    static let mutable declarationItems: FSharpDeclarationListItem[] = [||]
+    static let mutable declarationItems: DeclarationListItem[] = [||]
     static let [<Literal>] NameInCodePropName = "NameInCode"
     static let [<Literal>] FullNamePropName = "FullName"
     static let [<Literal>] IsExtensionMemberPropName = "IsExtensionMember"
@@ -167,7 +168,7 @@ type internal FSharpCompletionProvider
                         
                 let completionItem =
                     match declarationItem.Kind with
-                    | FSharpCompletionItemKind.Method (isExtension = true) ->
+                    | CompletionItemKind.Method (isExtension = true) ->
                             completionItem.AddProperty(IsExtensionMemberPropName, "")
                     | _ -> completionItem
                 
@@ -197,7 +198,7 @@ type internal FSharpCompletionProvider
                 let completionContext =
                     parseResults.ParseTree 
                     |> Option.bind (fun parseTree ->
-                         ParsedInput.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, parseTree, line))
+                         ParsedInput.TryGetCompletionContext(Position.fromZ caretLinePos.Line caretLinePos.Character, parseTree, line))
 
                 match completionContext with
                 | None -> results.AddRange(keywordCompletionItems)
@@ -244,7 +245,7 @@ type internal FSharpCompletionProvider
                 let completionItemIndex = int completionItemIndexStr
                 if completionItemIndex < declarationItems.Length then
                     let declarationItem = declarationItems.[completionItemIndex]
-                    let! description = declarationItem.StructuredDescriptionTextAsync
+                    let description = declarationItem.Description
                     let documentation = List()
                     let collector = RoslynHelpers.CollectTaggedText documentation
                     // mix main description and xmldoc by using one collector

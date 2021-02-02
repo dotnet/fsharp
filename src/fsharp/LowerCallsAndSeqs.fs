@@ -208,7 +208,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
         let (TBind(v, e, sp)) = bind
         let sp, spm =
             match sp with
-            | DebugPointAtBinding m -> DebugPointAtSequential.Both, m
+            | DebugPointAtBinding.Yes m -> DebugPointAtSequential.Both, m
             | _ -> DebugPointAtSequential.StmtOnly, e.Range
         let vref = mkLocalValRef v
         { res2 with
@@ -337,7 +337,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
         | SeqUsing(resource, v, body, elemTy, m) ->
             // printfn "found Seq.using"
             let reduction =
-                mkLet (DebugPointAtBinding body.Range) m v resource
+                mkLet (DebugPointAtBinding.Yes body.Range) m v resource
                     (mkCallSeqFinally g m elemTy body
                         (mkUnitDelayLambda g m
                             (mkCallDispose g m v.Type (exprForVal m v))))
@@ -647,7 +647,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
 
             // A utility to add a jump table to the three generated methods
             let addJumpTable isDisposal expr =
-                let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m )
+                let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
                 let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointForTarget.No)
                 let dtree =
                   TDSwitch(pcExpr,
@@ -714,7 +714,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 //  goto startLabel
                 // DONE_DISPOSE:
                 let whileLoop =
-                    let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m)
+                    let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
                     let addResultTarget e = mbuilder.AddResultTarget(e, DebugPointForTarget.No)
                     let dtree =
                         TDSwitch(pcExpr,
@@ -741,7 +741,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 // --loop--
                 // if exn != null then raise exn
                 mkLet
-                    NoDebugPointAtLetBinding m exnV  (Expr.Const (Const.Zero, m, g.exn_ty))
+                    DebugPointAtBinding.NoneAtLet m exnV  (Expr.Const (Const.Zero, m, g.exn_ty))
                         (mkCompGenSequential m whileLoop doRaise)
 
             // Add the jump table to the GenerateNext method

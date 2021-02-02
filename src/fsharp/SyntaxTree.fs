@@ -21,14 +21,14 @@ type LongIdent = Ident list
 
 /// Represents a long identifier with possible '.' at end.
 ///
-/// Typically dotms.Length = lid.Length-1, but they may be same if (incomplete) code ends in a dot, e.g. "Foo.Bar."
+/// Typically dotRanges.Length = lid.Length-1, but they may be same if (incomplete) code ends in a dot, e.g. "Foo.Bar."
 /// The dots mostly matter for parsing, and are typically ignored by the typechecker, but
-/// if dotms.Length = lid.Length, then the parser must have reported an error, so the typechecker is allowed
+/// if dotRanges.Length = lid.Length, then the parser must have reported an error, so the typechecker is allowed
 /// more freedom about typechecking these expressions.
 /// LongIdent can be empty list - it is used to denote that name of some AST element is absent (i.e. empty type name in inherit)
 type LongIdentWithDots =
     | //[<Experimental("This construct is subject to change in future versions of FSharp.Compiler.Service and should only be used if no adequate alternative is available.")>]
-      LongIdentWithDots of id: LongIdent * dotms: range list
+      LongIdentWithDots of id: LongIdent * dotRanges: range list
 
     /// Gets the syntax range of this construct
     member this.Range =
@@ -37,7 +37,7 @@ type LongIdentWithDots =
        | LongIdentWithDots([id], []) -> id.idRange
        | LongIdentWithDots([id], [m]) -> unionRanges id.idRange m
        | LongIdentWithDots(h :: t, []) -> unionRanges h.idRange (List.last t).idRange
-       | LongIdentWithDots(h :: t, dotms) -> unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last dotms)
+       | LongIdentWithDots(h :: t, dotRanges) -> unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last dotRanges)
 
     /// Get the long ident for this construct
     member this.Lid = match this with LongIdentWithDots(lid, _) -> lid
@@ -50,8 +50,8 @@ type LongIdentWithDots =
        match this with
        | LongIdentWithDots([], _) -> failwith "rangeOfLidwd"
        | LongIdentWithDots([id], _) -> id.idRange
-       | LongIdentWithDots(h :: t, dotms) ->
-           let nonExtraDots = if dotms.Length = t.Length then dotms else List.truncate t.Length dotms
+       | LongIdentWithDots(h :: t, dotRanges) ->
+           let nonExtraDots = if dotRanges.Length = t.Length then dotRanges else List.truncate t.Length dotRanges
            unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last nonExtraDots)
 
 /// Indicates if the construct arises from error recovery
@@ -64,22 +64,23 @@ type ParserDetail =
     | ErrorRecovery
 
 /// Represents whether a type parameter has a static requirement or not (^T or 'T)
+[<RequireQualifiedAccess>]
 type TyparStaticReq =
     /// The construct is a normal type inference variable
-    | NoStaticReq
+    | None
 
     /// The construct is a statically inferred type inference variable '^T'
-    | HeadTypeStaticReq
+    | HeadType
 
 /// Represents a syntactic type parameter
 [<NoEquality; NoComparison>]
 type SynTypar =
-    | Typar of ident: Ident * staticReq: TyparStaticReq * isCompGen: bool
+    | SynTypar of ident: Ident * staticReq: TyparStaticReq * isCompGen: bool
 
     /// Gets the syntax range of this construct
     member this.Range =
         match this with
-        | Typar(id, _, _) ->
+        | SynTypar(id, _, _) ->
             id.idRange
 
 /// The unchecked abstract syntax tree of constants in F# types and expressions.
@@ -277,35 +278,37 @@ type DebugPointAtWhile =
 
 /// Represents whether a debug point should be present for a 'let' binding,
 /// that is whether the construct corresponds to a debug point in the original source.
-type DebugPointForBinding =
-    | DebugPointAtBinding of range: range
+[<RequireQualifiedAccess>]
+type DebugPointAtBinding =
+    // Indicates emit of a debug point prior to the 'let'
+    | Yes of range: range
 
-    // Indicates the omission of a sequence point for a binding for a 'do expr'
-    | NoDebugPointAtDoBinding
+    // Indicates the omission of a debug point for a binding for a 'do expr'
+    | NoneAtDo
 
-    // Indicates the omission of a sequence point for a binding for a 'let e = expr' where
+    // Indicates the omission of a debug point for a binding for a 'let e = expr' where
     // 'expr' has immediate control flow
-    | NoDebugPointAtLetBinding
+    | NoneAtLet
 
-    // Indicates the omission of a sequence point for a compiler generated binding
+    // Indicates the omission of a debug point for a compiler generated binding
     // where we've done a local expansion of some construct into something that involves
     // a 'let'. e.g. we've inlined a function and bound its arguments using 'let'
     // The let bindings are 'sticky' in that the inversion of the inlining would involve
     // replacing the entire expression with the original and not just the let bindings alone.
-    | NoDebugPointAtStickyBinding
+    | NoneAtSticky
 
     // Given 'let v = e1 in e2', where this is a compiler generated binding,
-    // we are sometimes forced to generate a sequence point for the expression anyway based on its
+    // we are sometimes forced to generate a debug point for the expression anyway based on its
     // overall range. If the let binding is given the flag below then it is asserting that
     // the binding has no interesting side effects and can be totally ignored and the range
     // of the inner expression is used instead
-    | NoDebugPointAtInvisibleBinding
+    | NoneAtInvisible
 
-    // Don't drop sequence points when combining sequence points
-    member x.Combine(y: DebugPointForBinding) =
+    // Don't drop debug points when combining debug points
+    member x.Combine(y: DebugPointAtBinding) =
         match x, y with
-        | DebugPointAtBinding _ as g, _  -> g
-        | _, (DebugPointAtBinding _ as g)  -> g
+        | DebugPointAtBinding.Yes _ as g, _  -> g
+        | _, (DebugPointAtBinding.Yes _ as g)  -> g
         | _ -> x
 
 /// Indicates if a for loop is 'for x in e1 -> e2', only valid in sequence expressions
@@ -327,29 +330,31 @@ type RecordFieldName = LongIdentWithDots * bool
 /// 1, "3", ident, ident.[expr] and (expr). If an atomic expression has type T,
 /// then the largest expression ending at the same range as the atomic expression
 /// also has type T.
+[<RequireQualifiedAccess>]
 type ExprAtomicFlag =
     | Atomic = 0
     | NonAtomic = 1
 
 /// The kind associated with a binding - "let", "do" or a standalone expression
+[<RequireQualifiedAccess>]
 type SynBindingKind =
 
     /// A standalone expression in a module
     | StandaloneExpression
 
     /// A normal 'let' binding in a module
-    | NormalBinding
+    | Normal
 
     /// A 'do' binding in a module. Must have type 'unit'
-    | DoBinding
+    | Do
 
 /// Represents the explicit declaration of a type parameter
 [<NoEquality; NoComparison>]
 type SynTyparDecl =
-    | TyparDecl of attributes: SynAttributes * SynTypar
+    | SynTyparDecl of attributes: SynAttributes * SynTypar
 
 /// The unchecked abstract syntax tree of F# type constraints
-[<NoEquality; NoComparison>]
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeConstraint =
 
     /// F# syntax: is 'typar: struct
@@ -683,12 +688,12 @@ type SynExpr =
         isExnMatch: bool *
         keywordRange: range *
         matchClauses: SynMatchClause list *
-        matchSeqPoint: DebugPointForBinding *
+        matchSeqPoint: DebugPointAtBinding *
         range: range
 
     /// F# syntax: match expr with pat1 -> expr | ... | patN -> exprN
     | Match of
-        matchSeqPoint: DebugPointForBinding *
+        matchSeqPoint: DebugPointAtBinding *
         expr: SynExpr *
         clauses: SynMatchClause list *
         range: range 
@@ -775,7 +780,7 @@ type SynExpr =
         ifExpr: SynExpr *
         thenExpr: SynExpr *
         elseExpr: SynExpr option *
-        spIfToThen: DebugPointForBinding *
+        spIfToThen: DebugPointAtBinding *
         isFromErrorRecovery: bool *
         ifToThenRange: range *
         range: range
@@ -940,18 +945,18 @@ type SynExpr =
     /// F# syntax: let! pat = expr and! ... and! ... and! pat = expr in expr
     /// Computation expressions only
     | LetOrUseBang of
-        bindSeqPoint: DebugPointForBinding *
+        bindSeqPoint: DebugPointAtBinding *
         isUse: bool *
         isFromSource: bool *
         pat: SynPat *
         rhs: SynExpr *
-        andBangs:(DebugPointForBinding * bool * bool * SynPat * SynExpr * range) list *
+        andBangs:(DebugPointAtBinding * bool * bool * SynPat * SynExpr * range) list *
         body:SynExpr *
         range: range 
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of
-        matchSeqPoint: DebugPointForBinding *
+        matchSeqPoint: DebugPointAtBinding *
         expr: SynExpr *
         clauses: SynMatchClause list *
         range: range
@@ -1187,6 +1192,7 @@ type SynSimplePat =
         range: range
 
 /// Represents the alternative identifier for a simple pattern
+[<RequireQualifiedAccess>]
 type SynSimplePatAlternativeIdInfo =
 
     /// We have not decided to use an alternative name in the pattern and related expression
@@ -1196,7 +1202,7 @@ type SynSimplePatAlternativeIdInfo =
     | Decided of Ident
 
 /// Represents a syntax tree for a static optimization constraint in the F# core library
-[<NoEquality; NoComparison>]
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynStaticOptimizationConstraint =
 
     /// A static optimization conditional that activates for a particular type instantiation
@@ -1227,6 +1233,7 @@ type SynSimplePats =
         range: range
 
 /// Represents a syntax tree for arguments patterns 
+[<RequireQualifiedAccess>]
 type SynArgPats =
     | Pats of
         pats: SynPat list
@@ -1372,14 +1379,17 @@ type SynPat =
       | SynPat.FromParseError (range=m) -> m
 
 /// Represents a set of bindings that implement an interface
-[<NoEquality; NoComparison>]
+[<NoEquality; NoComparison;>]
 type SynInterfaceImpl =
-    | InterfaceImpl of interfaceTy: SynType * bindings: SynBinding list * range: range
+    | SynInterfaceImpl of
+        interfaceTy: SynType *
+        bindings: SynBinding list *
+        range: range
 
 /// Represents a clause in a 'match' expression
 [<NoEquality; NoComparison>]
 type SynMatchClause =
-    | Clause of
+    | SynMatchClause of
         pat: SynPat *
         whenExpr: SynExpr option *
         resultExpr: SynExpr *
@@ -1389,7 +1399,7 @@ type SynMatchClause =
     /// Gets the syntax range of part of this construct
     member this.RangeOfGuardAndRhs =
         match this with
-        | Clause(_, eo, e, _, _) ->
+        | SynMatchClause(_, eo, e, _, _) ->
             match eo with
             | None -> e.Range
             | Some x -> unionRanges e.Range x.Range
@@ -1397,7 +1407,7 @@ type SynMatchClause =
     /// Gets the syntax range of this construct
     member this.Range =
         match this with
-        | Clause(_, eo, e, m, _) ->
+        | SynMatchClause(_, eo, e, m, _) ->
             match eo with
             | None -> unionRanges e.Range m
             | Some x -> unionRanges (unionRanges e.Range m) x.Range
@@ -1422,6 +1432,7 @@ type SynAttribute =
     }
 
 /// List of attributes enclosed in [< ... >].
+[<RequireQualifiedAccess>]
 type SynAttributeList =
     { 
       /// The list of attributes
@@ -1437,7 +1448,7 @@ type SynAttributes = SynAttributeList list
 [<NoEquality; NoComparison>]
 type SynValData =
     | SynValData of
-        memberFlags: MemberFlags option *
+        memberFlags: SynMemberFlags option *
         valInfo: SynValInfo *
         thisIdOpt: Ident option
 
@@ -1446,7 +1457,7 @@ type SynValData =
 /// Represents a binding for a 'let' or 'member' declaration
 [<NoEquality; NoComparison>]
 type SynBinding =
-    | Binding of
+    | SynBinding of
         accessibility: SynAccess option *
         kind: SynBindingKind *
         mustInline: bool *
@@ -1458,29 +1469,29 @@ type SynBinding =
         returnInfo: SynBindingReturnInfo option *
         expr: SynExpr  *
         range: range *
-        seqPoint: DebugPointForBinding
+        seqPoint: DebugPointAtBinding
 
     // no member just named "Range", as that would be confusing:
     //  - for everything else, the 'range' member that appears last/second-to-last is the 'full range' of the whole tree construct
     //  - but for Binding, the 'range' is only the range of the left-hand-side, the right-hand-side range is in the SynExpr
     //  - so we use explicit names to avoid confusion
-    member x.RangeOfBindingSansRhs = let (Binding(range=m)) = x in m
+    member x.RangeOfBindingSansRhs = let (SynBinding(range=m)) = x in m
 
-    member x.RangeOfBindingAndRhs = let (Binding(expr=e; range=m)) = x in unionRanges e.Range m
+    member x.RangeOfBindingAndRhs = let (SynBinding(expr=e; range=m)) = x in unionRanges e.Range m
 
-    member x.RangeOfHeadPat = let (Binding(headPat=headPat)) = x in headPat.Range
+    member x.RangeOfHeadPat = let (SynBinding(headPat=headPat)) = x in headPat.Range
 
 /// Represents the return information in a binding for a 'let' or 'member' declaration
 [<NoEquality; NoComparison>]
 type SynBindingReturnInfo =
-    SynBindingReturnInfo of
+    | SynBindingReturnInfo of
         typeName: SynType *
         range: range *
         attributes: SynAttributes
 
 /// Represents the flags for a 'member' declaration
-[<NoComparison>]
-type MemberFlags =
+[<NoComparison; RequireQualifiedAccess>]
+type SynMemberFlags =
     { 
       /// The member is an instance member (non-static)
       IsInstance: bool
@@ -1495,12 +1506,12 @@ type MemberFlags =
       IsFinal: bool
 
       /// The kind of the member
-      MemberKind: MemberKind
+      MemberKind: SynMemberKind
     }
 
 /// Note the member kind is actually computed partially by a syntax tree transformation in tc.fs
 [<StructuralEquality; NoComparison; RequireQualifiedAccess>]
-type MemberKind =
+type SynMemberKind =
 
     /// The member is a class initializer
     | ClassConstructor
@@ -1529,7 +1540,7 @@ type SynMemberSig =
     /// A member definition in a type in a signature file
     | Member of
         memberSig: SynValSig *
-        flags: MemberFlags *
+        flags: SynMemberFlags *
         range: range
 
     /// An interface definition in a type in a signature file
@@ -1553,19 +1564,19 @@ type SynMemberSig =
         range: range
 
 /// Represents the kind of a type definition whether explicit or inferred
-[<NoEquality; NoComparison>]
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeDefnKind =
-    | TyconUnspecified
-    | TyconClass
-    | TyconInterface
-    | TyconStruct
-    | TyconRecord
-    | TyconUnion
-    | TyconAbbrev
-    | TyconHiddenRepr
-    | TyconAugmentation
-    | TyconILAssemblyCode
-    | TyconDelegate of signature: SynType * signatureInfo: SynValInfo
+    | Unspecified
+    | Class
+    | Interface
+    | Struct
+    | Record
+    | Union
+    | Abbrev
+    | Opaque
+    | Augmentation
+    | IL
+    | Delegate of signature: SynType * signatureInfo: SynValInfo
 
 /// Represents the syntax tree for the core of a simple type definition, in either signature
 /// or implementation.
@@ -1594,7 +1605,7 @@ type SynTypeDefnSimpleRepr =
     | General of
         kind: SynTypeDefnKind *
         inherits: (SynType * range * Ident option) list *
-        slotsigs: (SynValSig * MemberFlags) list *
+        slotsigs: (SynValSig * SynMemberFlags) list *
         fields: SynField list *
         isConcrete: bool *
         isIncrClass: bool *
@@ -1638,7 +1649,7 @@ type SynTypeDefnSimpleRepr =
 [<NoEquality; NoComparison>]
 type SynEnumCase =
 
-    | EnumCase of
+    | SynEnumCase of
         attributes: SynAttributes *
         ident: Ident * 
         value: SynConst *
@@ -1648,16 +1659,16 @@ type SynEnumCase =
     /// Gets the syntax range of this construct
     member this.Range =
         match this with
-        | EnumCase (range=m) -> m
+        | SynEnumCase (range=m) -> m
 
 /// Represents the syntax tree for one case in a union definition.
 [<NoEquality; NoComparison>]
 type SynUnionCase =
 
-    | UnionCase of
+    | SynUnionCase of
         attributes: SynAttributes *
         ident: Ident *
-        caseType: SynUnionCaseType *
+        caseType: SynUnionCaseKind *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         range: range
@@ -1665,19 +1676,19 @@ type SynUnionCase =
     /// Gets the syntax range of this construct
     member this.Range =
         match this with
-        | UnionCase (range=m) -> m
+        | SynUnionCase (range=m) -> m
 
 /// Represents the syntax tree for the right-hand-side of union definition, excluding members,
 /// in either a signature or implementation.
-[<NoEquality; NoComparison>]
-type SynUnionCaseType =
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynUnionCaseKind =
 
     /// Normal style declaration
-    | UnionCaseFields of
+    | Fields of
         cases: SynField list
 
     /// Full type spec given by 'UnionCase: ty1 * tyN -> rty'. Only used in FSharp.Core, otherwise a warning.
-    | UnionCaseFullType of
+    | FullType of
         fullType: SynType *
         fullTypeInfo: SynValInfo
 
@@ -1713,7 +1724,7 @@ type SynTypeDefnSigRepr =
 type SynTypeDefnSig =
 
     /// The information for a type definition in a signature
-    | TypeDefnSig of
+    | SynTypeDefnSig of
         typeInfo: SynComponentInfo *
         typeRepr: SynTypeDefnSigRepr *
         members: SynMemberSig list *
@@ -1722,7 +1733,7 @@ type SynTypeDefnSig =
 /// Represents the syntax tree for a field declaration in a record or class
 [<NoEquality; NoComparison>]
 type SynField =
-    | Field of
+    | SynField of
         attributes: SynAttributes *
         isStatic: bool *
         idOpt: Ident option *
@@ -1740,7 +1751,7 @@ type SynField =
 /// always empty.
 [<NoEquality; NoComparison>]
 type SynComponentInfo =
-    | ComponentInfo of
+    | SynComponentInfo of
         attributes: SynAttributes *
         typeParams: SynTyparDecl list *
         constraints: SynTypeConstraint list *
@@ -1753,12 +1764,12 @@ type SynComponentInfo =
     /// Gets the syntax range of this construct
     member this.Range =
         match this with
-        | ComponentInfo (range=m) -> m
+        | SynComponentInfo (range=m) -> m
 
 /// Represents the syntax tree for a 'val' definition in an abstract slot or a signature file
 [<NoEquality; NoComparison>]
 type SynValSig =
-    | ValSpfn of
+    | SynValSig of
         attributes: SynAttributes *
         ident: Ident *
         explicitValDecls: SynValTyparDecls *
@@ -1771,11 +1782,11 @@ type SynValSig =
         synExpr: SynExpr option *
         range: range
 
-    member x.RangeOfId  = let (ValSpfn(ident=id)) = x in id.idRange
+    member x.RangeOfId  = let (SynValSig(ident=id)) = x in id.idRange
 
-    member x.SynInfo = let (ValSpfn(arity=v)) = x in v
+    member x.SynInfo = let (SynValSig(arity=v)) = x in v
 
-    member x.SynType = let (ValSpfn(synType=ty)) = x in ty
+    member x.SynType = let (SynValSig(synType=ty)) = x in ty
 
 /// The argument names and other metadata for a member or function
 [<NoEquality; NoComparison>]
@@ -1814,6 +1825,7 @@ type SynValTyparDecls =
         constraints: SynTypeConstraint list
 
 /// Represents the syntactic elements associated with the "return" of a function or method. 
+[<NoEquality; NoComparison>]
 type SynReturnInfo =
     | SynReturnInfo of returnType: (SynType * SynArgInfo) * range: range
 
@@ -1878,7 +1890,7 @@ type SynTypeDefnRepr =
 /// any additional member definitions for the type
 [<NoEquality; NoComparison>]
 type SynTypeDefn =
-    | TypeDefn of
+    | SynTypeDefn of
         typeInfo: SynComponentInfo *
         typeRepr: SynTypeDefnRepr *
         members: SynMemberDefns *
@@ -1888,7 +1900,7 @@ type SynTypeDefn =
     /// Gets the syntax range of this construct
     member this.Range =
         match this with
-        | TypeDefn (range=m) -> m
+        | SynTypeDefn (range=m) -> m
 
 /// Represents a definition element within a type definition, e.g. 'member ... ' 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1930,7 +1942,7 @@ type SynMemberDefn =
     /// An abstract slot definition within a class or interface
     | AbstractSlot of
         slotSig: SynValSig *
-        flags: MemberFlags *
+        flags: SynMemberFlags *
         range: range
 
     /// An interface implementation definition within a class
@@ -1962,8 +1974,8 @@ type SynMemberDefn =
         isStatic: bool *
         ident: Ident *
         typeOpt: SynType option *
-        propKind: MemberKind *
-        memberFlags:(MemberKind -> MemberFlags) *
+        propKind: SynMemberKind *
+        memberFlags:(SynMemberKind -> SynMemberFlags) *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         synExpr: SynExpr *
@@ -2013,7 +2025,7 @@ type SynModuleDecl =
 
     /// A 'do expr' within a module
     | DoExpr of
-       spInfo: DebugPointForBinding *
+       spInfo: DebugPointAtBinding *
        expr: SynExpr *
        range: range
 
@@ -2139,11 +2151,11 @@ type SynModuleSigDecl =
         | SynModuleSigDecl.Types (range=m)
         | SynModuleSigDecl.Exception (range=m)
         | SynModuleSigDecl.Open (range=m)
-        | SynModuleSigDecl.NamespaceFragment (SynModuleOrNamespaceSig(range=m))
+        | SynModuleSigDecl.NamespaceFragment (SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(range=m))
         | SynModuleSigDecl.HashDirective (range=m) -> m
 
 /// Represents the kind of a module or namespace definition
-[<Struct>]
+[<Struct; RequireQualifiedAccess>]
 type SynModuleOrNamespaceKind =
     /// A module is explicitly named 'module N'
     | NamedModule
@@ -2249,13 +2261,13 @@ type ParsedSigFileFragment =
         range: range
 
 /// Represents a parsed syntax tree for an F# Interactive interaction
-[<NoEquality; NoComparison>]
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedFsiInteraction =
-    | IDefns of
+    | Definitions of
         defns: SynModuleDecl list *
         range: range
 
-    | IHash of
+    | HashDirective of
         hashDirective: ParsedHashDirective *
         range: range
 

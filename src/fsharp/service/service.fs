@@ -26,7 +26,9 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.ScriptClosure
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.Tokenization
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TcGlobals 
@@ -1391,37 +1393,58 @@ type FSharpChecker(legacyReferenceResolver,
                    yield tokens |]
         tokens
 
-type CompilerEnvironment =
-  static member BinFolderOfDefaultFSharpCompiler(?probePoint) =
-      FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(probePoint)
+namespace FSharp.Compiler
 
-/// Information about the compilation environment
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module CompilerEnvironment =
+open System
+open System.IO
+open Internal.Utilities
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.ErrorLogger
+
+type CompilerEnvironment() =
+    /// Source file extensions
+    static let compilableExtensions = FSharpSigFileSuffixes @ FSharpImplFileSuffixes @ FSharpScriptFileSuffixes
+
+    /// Single file projects extensions
+    static let singleFileProjectExtensions = FSharpScriptFileSuffixes
+
+    static member BinFolderOfDefaultFSharpCompiler(?probePoint) =
+        FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(probePoint)
 
     // Legacy entry point, no longer used by FSharp.Editor
-    let DefaultReferencesForOrphanSources assumeDotNetFramework =
+    static member DefaultReferencesForOrphanSources assumeDotNetFramework =
         let currentDirectory = Directory.GetCurrentDirectory()
         let fxResolver = FxResolver(Some assumeDotNetFramework, currentDirectory, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
         let references, _ = fxResolver.GetDefaultReferences (useFsiAuxLib=false, assumeDotNetFramework=assumeDotNetFramework)
         references
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.
-    let GetCompilationDefinesForEditing (parsingOptions: FSharpParsingOptions) =
+    static member GetCompilationDefinesForEditing (parsingOptions: FSharpParsingOptions) =
         SourceFileImpl.AdditionalDefinesForUseInEditor(parsingOptions.IsInteractive) @
         parsingOptions.ConditionalCompilationDefines
             
     /// Return true if this is a subcategory of error or warning message that the language service can emit
-    let IsCheckerSupportedSubcategory(subcategory:string) =
+    static member IsCheckerSupportedSubcategory(subcategory:string) =
         // Beware: This code logic is duplicated in DocumentTask.cs in the language service
         PhasedDiagnostic.IsSubcategoryOfCompile(subcategory)
 
-/// Information about the debugging environment
-module DebuggerEnvironment =
     /// Return the language ID, which is the expression evaluator id that the
     /// debugger will use.
-    let GetLanguageID() =
+    static member GetDebuggerLanguageID() =
         System.Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
         
-module FSharpFileUtilities =
-    let isScriptFile (fileName: string) = ParseAndCheckInputs.IsScript fileName
+    static member IsScriptFile (fileName: string) = ParseAndCheckInputs.IsScript fileName
+
+    /// Whether or not this file is compilable
+    static member IsCompilable file =
+        let ext = Path.GetExtension file
+        compilableExtensions |> List.exists(fun e->0 = String.Compare(e, ext, StringComparison.OrdinalIgnoreCase))
+
+    /// Whether or not this file should be a single-file project
+    static member MustBeSingleFileProject file =
+        let ext = Path.GetExtension file
+        singleFileProjectExtensions |> List.exists(fun e-> 0 = String.Compare(e, ext, StringComparison.OrdinalIgnoreCase))
+

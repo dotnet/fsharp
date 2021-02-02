@@ -1821,7 +1821,7 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
     match v.MemberInfo with 
     | Some memberInfo when not v.IsIncrClassGeneratedMember -> 
         match memberInfo.MemberFlags.MemberKind with 
-        | (MemberKind.PropertySet | MemberKind.PropertyGet)  ->
+        | (SynMemberKind.PropertySet | SynMemberKind.PropertyGet)  ->
             // These routines raise errors for ill-formed properties
             v |> ReturnTypeOfPropertyVal g |> ignore
             v |> ArgInfosOfPropertyVal g |> ignore

@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.CodeAnalysis
+namespace FSharp.Compiler.EditorServices
 
 open System.Diagnostics
 open System.Collections.Generic
@@ -60,7 +60,7 @@ type SemanticClassificationType =
 
 [<RequireQualifiedAccess>]
 [<Struct>]
-type FSharpSemanticClassificationItem =
+type SemanticClassificationItem =
     val Range: range
     val Type: SemanticClassificationType
     new((range, ty)) = { Range = range; Type = ty }
@@ -71,7 +71,7 @@ module TcResolutionsExtensions =
         (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.NameResolutionEnv, cnr.AccessorDomain, cnr.Range)
 
     type TcResolutions with
-        member sResolutions.GetSemanticClassification(g: TcGlobals, amap: ImportMap, formatSpecifierLocations: (range * int) [], range: range option) : FSharpSemanticClassificationItem [] =
+        member sResolutions.GetSemanticClassification(g: TcGlobals, amap: ImportMap, formatSpecifierLocations: (range * int) [], range: range option) : SemanticClassificationItem [] =
             ErrorScope.Protect Range.range0 (fun () ->
                 let (|LegitTypeOccurence|_|) = function
                     | ItemOccurence.UseInType
@@ -158,7 +158,7 @@ module TcResolutionsExtensions =
                 let results = ImmutableArray.CreateBuilder()
                 let inline add m (typ: SemanticClassificationType) =
                     if duplicates.Add m then
-                        results.Add (new FSharpSemanticClassificationItem((m, typ)))
+                        results.Add (new SemanticClassificationItem((m, typ)))
 
                 resolutions
                 |> Array.iter (fun cnr ->
@@ -375,7 +375,7 @@ module TcResolutionsExtensions =
 
                     | _, _, _, _, _, m ->
                         add m SemanticClassificationType.Plaintext)
-                results.AddRange(formatSpecifierLocations |> Array.map (fun (m, _) -> new FSharpSemanticClassificationItem((m, SemanticClassificationType.Printf))))
+                results.AddRange(formatSpecifierLocations |> Array.map (fun (m, _) -> new SemanticClassificationItem((m, SemanticClassificationType.Printf))))
                 results.ToArray()
                ) 
                (fun msg -> 

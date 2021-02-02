@@ -136,7 +136,7 @@ type SourceText with
     member this.ToFSharpSourceText() =
         SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(SourceText.create))
 
-type FSharpNavigationDeclarationItem with
+type NavigationItem with
     member x.RoslynGlyph : FSharpRoslynGlyph =
         match x.Glyph with
         | FSharpGlyph.Class

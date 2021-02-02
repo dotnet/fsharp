@@ -12,6 +12,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
+open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
@@ -104,9 +105,9 @@ type internal FSharpAddOpenCodeFixProvider
 
             let unresolvedIdentRange =
                 let startLinePos = sourceText.Lines.GetLinePosition context.Span.Start
-                let startPos = Pos.fromZ startLinePos.Line startLinePos.Character
+                let startPos = Position.fromZ startLinePos.Line startLinePos.Character
                 let endLinePos = sourceText.Lines.GetLinePosition context.Span.End
-                let endPos = Pos.fromZ endLinePos.Line endLinePos.Character
+                let endPos = Position.fromZ endLinePos.Line endLinePos.Character
                 Range.mkRange context.Document.FilePath startPos endPos
             
             let isAttribute = ParsedInput.GetEntityKind(unresolvedIdentRange.Start, parsedInput) = Some FSharpEntityKind.Attribute

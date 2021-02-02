@@ -17,42 +17,56 @@ namespace FSharp.Compiler.Diagnostics
         | Warning 
         | Error
 
-    /// Object model for diagnostics
+    /// Represents a diagnostic produced by the F# compiler
     [<Class>]
     type public FSharpDiagnostic = 
+
+        /// Gets the file name for the diagnostic
         member FileName: string
 
-        member Start: pos
+        /// Gets the start position for the diagnostic
+        member Start: Position
 
-        member End: pos
+        /// Gets the end position for the diagnostic
+        member End: Position
 
-        member StartLineAlternate: int
-
-        member EndLineAlternate: int
-
+        /// Gets the start column for the diagnostic
         member StartColumn: int
 
+        /// Gets the end column for the diagnostic
         member EndColumn: int
 
+        /// Gets the start column for the diagnostic
+        member StartLine: int
+
+        /// Gets the end column for the diagnostic
+        member EndLine: int
+
+        /// Gets the range for the diagnostic
         member Range: range
 
+        /// Gets the severity for the diagnostic
         member Severity: FSharpDiagnosticSeverity
 
+        /// Gets the message for the diagnostic
         member Message: string
 
+        /// Gets the sub-category for the diagnostic
         member Subcategory: string
 
+        /// Gets the number for the diagnostic
         member ErrorNumber: int
 
         static member internal CreateFromExceptionAndAdjustEof: PhasedDiagnostic * isError: bool * range * lastPosInFile: (int*int) * suggestNames: bool -> FSharpDiagnostic
         static member internal CreateFromException: PhasedDiagnostic * isError: bool * range * suggestNames: bool -> FSharpDiagnostic
 
+        /// Newlines are recognized and replaced with (ASCII 29, the 'group separator'), 
+        /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
         static member NewlineifyErrorString: message:string -> string
 
         /// Newlines are recognized and replaced with (ASCII 29, the 'group separator'), 
         /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
         static member NormalizeErrorString: text:string -> string
-  
 
     //----------------------------------------------------------------------------
     // Internal only
@@ -87,18 +101,7 @@ namespace FSharp.Compiler.Diagnostics
 
         val CreateDiagnostics: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpDiagnosticSeverity)> * suggestNames: bool -> FSharpDiagnostic[]
 
-namespace FSharp.Compiler.CodeAnalysis
-
-    open Internal.Utilities.Library
-    open FSharp.Compiler 
-    open FSharp.Compiler.TcGlobals 
-    open FSharp.Compiler.Infos
-    open FSharp.Compiler.NameResolution
-    open FSharp.Compiler.InfoReader
-    open FSharp.Compiler.Text
-    open FSharp.Compiler.TextLayout
-    open FSharp.Compiler.TypedTree
-    open FSharp.Compiler.TypedTreeOps
+namespace FSharp.Compiler.EditorServices
 
     /// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
     //
@@ -113,10 +116,24 @@ namespace FSharp.Compiler.CodeAnalysis
         /// XML produced after all checking and processing by the F# compiler, including
         /// insertion of summary tags, encoding and resolving of cross-references if
         // supported.
-        | Text of unprocessedLines: string[] * elaboratedXmlLines: string[]
+        | FromXmlText of unprocessedLines: string[] * elaboratedXmlLines: string[]
 
         /// Indicates that the XML for the documentation can be found in a .xml documentation file, using the given signature key
-        | XmlDocFileSignature of file: string * xmlSig: string
+        | FromXmlFile of file: string * xmlSig: string
+
+namespace FSharp.Compiler.Symbols
+
+    open Internal.Utilities.Library
+    open FSharp.Compiler 
+    open FSharp.Compiler.TcGlobals 
+    open FSharp.Compiler.Infos
+    open FSharp.Compiler.EditorServices
+    open FSharp.Compiler.NameResolution
+    open FSharp.Compiler.InfoReader
+    open FSharp.Compiler.Text
+    open FSharp.Compiler.TextLayout
+    open FSharp.Compiler.TypedTree
+    open FSharp.Compiler.TypedTreeOps
 
     // Implementation details used by other code in the compiler    
     module internal SymbolHelpers =

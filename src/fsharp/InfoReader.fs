@@ -123,11 +123,11 @@ type PropertyCollector(g, amap, m, ty, optFilter, ad) =
 
     member x.Collect(membInfo: ValMemberInfo, vref: ValRef) = 
         match membInfo.MemberFlags.MemberKind with 
-        | MemberKind.PropertyGet ->
+        | SynMemberKind.PropertyGet ->
             let pinfo = FSProp(g, ty, Some vref, None) 
             if checkFilter optFilter vref.PropertyName && IsPropInfoAccessible g amap m ad pinfo then
                 add pinfo
-        | MemberKind.PropertySet ->
+        | SynMemberKind.PropertySet ->
             let pinfo = FSProp(g, ty, None, Some vref)
             if checkFilter optFilter vref.PropertyName  && IsPropInfoAccessible g amap m ad pinfo then 
                 add pinfo
@@ -615,7 +615,7 @@ let rec GetIntrinsicConstructorInfosOfTypeAux (infoReader: InfoReader) m origTy 
                 |> NameMultiMap.find ".ctor"
                 |> List.choose(fun vref -> 
                     match vref.MemberInfo with 
-                    | Some membInfo when (membInfo.MemberFlags.MemberKind = MemberKind.Constructor) -> Some vref 
+                    | Some membInfo when (membInfo.MemberFlags.MemberKind = SynMemberKind.Constructor) -> Some vref 
                     | _ -> None) 
                 |> List.map (fun x -> FSMeth(g, origTy, x, None)) 
   )    

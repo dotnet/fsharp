@@ -10,6 +10,7 @@ open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Tokenization
 
 module internal OperatorToken =
     

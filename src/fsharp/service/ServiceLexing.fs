@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.EditorServices
+namespace FSharp.Compiler.Tokenization
 
 open System
 open System.Collections.Generic
@@ -17,12 +17,8 @@ open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
-
-type Position = int * int
-
-type Positions = Position * Position
 
 module FSharpTokenTag =
 
@@ -1547,7 +1543,7 @@ module FSharpLexerImpl =
 [<AbstractClass;Sealed>]
 type FSharpLexer =
 
-    static member Lex(text: ISourceText, tokenCallback, ?langVersion, ?filePath: string, ?conditionalCompilationDefines, ?flags, ?pathMap, ?ct) =
+    static member Tokenize(text: ISourceText, tokenCallback, ?langVersion, ?filePath: string, ?conditionalCompilationDefines, ?flags, ?pathMap, ?ct) =
         let langVersion = defaultArg langVersion "latestmajor"
         let flags = defaultArg flags FSharpLexerFlags.Default
         ignore filePath // can be removed at later point

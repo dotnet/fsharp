@@ -3,13 +3,13 @@
 namespace FSharp.Compiler.EditorServices
 
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 
 [<Sealed>]
-type FSharpNoteworthyParamInfoLocations(longId: string list, longIdRange: range, openParenLocation: pos,  tupleEndLocations: pos list, isThereACloseParen: bool, namedParamNames: string option list) =
+type ParameterLocations(longId: string list, longIdRange: range, openParenLocation: pos,  tupleEndLocations: pos list, isThereACloseParen: bool, namedParamNames: string option list) =
 
     let tupleEndLocations = Array.ofList tupleEndLocations
     let namedParamNames = Array.ofList namedParamNames
@@ -32,7 +32,7 @@ type FSharpNoteworthyParamInfoLocations(longId: string list, longIdRange: range,
     member this.NamedParamNames = namedParamNames
 
 [<AutoOpen>]
-module internal NoteworthyParamInfoLocationsImpl =
+module internal ParameterLocationsImpl =
 
     let isStaticArg (StripParenTypes synType) =
         match synType with
@@ -155,7 +155,7 @@ module internal NoteworthyParamInfoLocationsImpl =
             let betweenTheBrackets = mkRange wholem.FileName openm.Start wholem.End
             if SyntaxTraversal.rangeContainsPosEdgesExclusive betweenTheBrackets pos && args |> List.forall isStaticArg then
                 let commasAndCloseParen = [ for c in commas -> c.End ] @ [ wholem.End ]
-                Some (FSharpNoteworthyParamInfoLocations(pathOfLid lid, lidm, openm.Start, commasAndCloseParen, closemOpt.IsSome, args |> List.map digOutIdentFromStaticArg))
+                Some (ParameterLocations(pathOfLid lid, lidm, openm.Start, commasAndCloseParen, closemOpt.IsSome, args |> List.map digOutIdentFromStaticArg))
             else
                 None
         | _ ->
@@ -173,7 +173,7 @@ module internal NoteworthyParamInfoLocationsImpl =
                 match constrArgsResult, cacheOpt with
                 | Found(parenLoc, args, isThereACloseParen), _ ->
                     let typeName = getTypeName synType
-                    Some (FSharpNoteworthyParamInfoLocations(typeName, synType.Range, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd))
+                    Some (ParameterLocations(typeName, synType.Range, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd))
                 | NotFound, Some cache ->
                     cache
                 | _ ->
@@ -192,7 +192,7 @@ module internal NoteworthyParamInfoLocationsImpl =
                     if SyntaxTraversal.rangeContainsPosEdgesExclusive typeArgsm pos then
                         // We found it, dig out ident
                         match digOutIdentFromFuncExpr synExpr with
-                        | Some(lid, lidRange) -> Some (FSharpNoteworthyParamInfoLocations(lid, lidRange, op.idRange.Start, [ wholem.End ], false, []))
+                        | Some(lid, lidRange) -> Some (ParameterLocations(lid, lidRange, op.idRange.Start, [ wholem.End ], false, []))
                         | None -> None
                     else
                         None
@@ -217,7 +217,7 @@ module internal NoteworthyParamInfoLocationsImpl =
                                 // For now, we don't support infix operators.
                                 None
                             else
-                                Some (FSharpNoteworthyParamInfoLocations(lid, lidRange, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd))
+                                Some (ParameterLocations(lid, lidRange, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd))
                         | None -> None
                     | NotFound, Some cache -> cache
                     | _ -> traverseSynExpr synExpr2
@@ -230,7 +230,7 @@ module internal NoteworthyParamInfoLocationsImpl =
                     let typeArgsm = mkRange openm.FileName openm.Start wholem.End 
                     if SyntaxTraversal.rangeContainsPosEdgesExclusive typeArgsm pos && tyArgs |> List.forall isStaticArg then
                         let commasAndCloseParen = [ for c in commas -> c.End ] @ [ wholem.End ]
-                        let r = FSharpNoteworthyParamInfoLocations(["dummy"], synExpr.Range, openm.Start, commasAndCloseParen, closemOpt.IsSome, tyArgs |> List.map digOutIdentFromStaticArg)
+                        let r = ParameterLocations(["dummy"], synExpr.Range, openm.Start, commasAndCloseParen, closemOpt.IsSome, tyArgs |> List.map digOutIdentFromStaticArg)
                         Some r
                     else
                         None
@@ -254,13 +254,13 @@ module internal NoteworthyParamInfoLocationsImpl =
                     | Found(parenLoc, args, isThereACloseParen) ->
                         // we found it, dig out ident
                         let typeName = getTypeName ty
-                        let r = FSharpNoteworthyParamInfoLocations(typeName, ty.Range, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd)
+                        let r = ParameterLocations(typeName, ty.Range, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd)
                         Some r
                     | NotFound -> None
                 else None
         })
 
-type FSharpNoteworthyParamInfoLocations with 
+type ParameterLocations with 
     static member Find(pos, parseTree) =
         match traverseInput(pos, parseTree) with
         | Some nwpl as r -> 

@@ -5,6 +5,7 @@ open System.IO
 open Microsoft.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
 
 [<RequireQualifiedAccess; NoComparison>] 
 type SymbolDeclarationLocation = 

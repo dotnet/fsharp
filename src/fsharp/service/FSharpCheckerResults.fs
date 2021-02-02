@@ -17,7 +17,6 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CodeAnalysis.SymbolHelpers 
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
@@ -37,13 +36,15 @@ open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.ScriptClosure
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Symbols.SymbolHelpers 
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout
-open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -69,6 +70,66 @@ module internal FSharpCheckerResultsSettings =
 
     // Look for DLLs in the location of the service DLL first.
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location))).Value
+
+[<Sealed>]
+type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc, range: range) = 
+
+    member _.Symbol  = symbol
+
+    member _.DisplayContext  = FSharpDisplayContext(fun _ -> denv)
+
+    member x.IsDefinition = x.IsFromDefinition
+
+    member _.IsFromDefinition = itemOcc = ItemOccurence.Binding
+
+    member _.IsFromPattern = itemOcc = ItemOccurence.Pattern
+
+    member _.IsFromType = itemOcc = ItemOccurence.UseInType
+
+    member _.IsFromAttribute = itemOcc = ItemOccurence.UseInAttribute
+
+    member _.IsFromDispatchSlotImplementation = itemOcc = ItemOccurence.Implemented
+
+    member _.IsFromComputationExpression = 
+        match symbol.Item, itemOcc with 
+        // 'seq' in 'seq { ... }' gets colored as keywords
+        | (Item.Value vref), ItemOccurence.Use when valRefEq g g.seq_vref vref ->  true
+        // custom builders, custom operations get colored as keywords
+        | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use ->  true
+        | _ -> false
+
+    member _.IsFromOpenStatement = itemOcc = ItemOccurence.Open
+
+    member _.FileName = range.FileName
+
+    member _.Range = range
+     
+    member this.IsPrivateToFile = 
+        let isPrivate =
+            match this.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || m.Accessibility.IsPrivate
+            | :? FSharpEntity as m -> m.Accessibility.IsPrivate
+            | :? FSharpGenericParameter -> true
+            | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
+            | :? FSharpField as m -> m.Accessibility.IsPrivate
+            | _ -> false
+            
+        let declarationLocation =
+            match this.Symbol.SignatureLocation with
+            | Some x -> Some x
+            | _ ->
+                match this.Symbol.DeclarationLocation with
+                | Some x -> Some x
+                | _ -> this.Symbol.ImplementationLocation
+            
+        let declaredInTheFile = 
+            match declarationLocation with
+            | Some declRange -> declRange.FileName = this.Range.FileName
+            | _ -> false
+            
+        isPrivate && declaredInTheFile   
+
+    override _.ToString() = sprintf "%O, %O, %O" symbol itemOcc range 
 
 [<RequireQualifiedAccess>]
 type FSharpFindDeclFailureReason = 
@@ -148,7 +209,7 @@ type internal TypeCheckInfo
     // Is not keyed on 'Names' collection because this is invariant for the current position in 
     // this unchanged file. Keyed on lineStr though to prevent a change to the currently line
     // being available against a stale scope.
-    let getToolTipTextCache = AgedLookup<AnyCallerThreadToken, int*int*string, FSharpToolTipText<Layout>>(getToolTipTextSize,areSimilar=(fun (x,y) -> x = y))
+    let getToolTipTextCache = AgedLookup<AnyCallerThreadToken, int*int*string, FSharpToolTipText>(getToolTipTextSize,areSimilar=(fun (x,y) -> x = y))
     
     let amap = tcImports.GetImportMap()
     let infoReader = InfoReader(g,amap)
@@ -553,14 +614,14 @@ type internal TypeCheckInfo
     let CompletionItem (ty: ValueOption<TyconRef>) (assemblySymbol: ValueOption<AssemblySymbol>) (item: ItemWithInst) =
         let kind = 
             match item.Item with
-            | Item.MethodGroup (_, minfo :: _, _) -> FSharpCompletionItemKind.Method minfo.IsExtensionMember
+            | Item.MethodGroup (_, minfo :: _, _) -> CompletionItemKind.Method minfo.IsExtensionMember
             | Item.RecdField _
-            | Item.Property _ -> FSharpCompletionItemKind.Property
-            | Item.Event _ -> FSharpCompletionItemKind.Event
+            | Item.Property _ -> CompletionItemKind.Property
+            | Item.Event _ -> CompletionItemKind.Event
             | Item.ILField _ 
-            | Item.Value _ -> FSharpCompletionItemKind.Field
-            | Item.CustomOperation _ -> FSharpCompletionItemKind.CustomOperation
-            | _ -> FSharpCompletionItemKind.Other
+            | Item.Value _ -> CompletionItemKind.Field
+            | Item.CustomOperation _ -> CompletionItemKind.CustomOperation
+            | _ -> CompletionItemKind.Other
 
         { ItemWithInst = item
           MinorPriority = 0
@@ -744,7 +805,7 @@ type internal TypeCheckInfo
     let GetDeclItemsForNamesAtPosition(parseResultsOpt: FSharpParseFileResults option, origLongIdentOpt: string list option, 
                                        residueOpt:string option, lastDotPos: int option, line:int, lineStr:string, colAtEndOfNamesAndResidue, filterCtors, resolveOverloads, 
                                        getAllSymbols: unit -> AssemblySymbol list) 
-                                       : (CompletionItem list * DisplayEnv * FSharpCompletionContext option * range) option = 
+                                       : (CompletionItem list * DisplayEnv * CompletionContext option * range) option = 
 
         let loc = 
             match colAtEndOfNamesAndResidue with
@@ -762,28 +823,28 @@ type internal TypeCheckInfo
         let res =
             match completionContext with
             // Invalid completion locations
-            | Some FSharpCompletionContext.Invalid -> None
+            | Some CompletionContext.Invalid -> None
             
             // Completion at 'inherit C(...)"
-            | Some (FSharpCompletionContext.Inherit(FSharpInheritanceContext.Class, (plid, _))) ->
+            | Some (CompletionContext.Inherit(InheritanceContext.Class, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
                 |> FilterRelevantItemsBy getItem None (getItem >> GetBaseClassCandidates)
                 |> Option.map toCompletionItems
              
             // Completion at 'interface ..."
-            | Some (FSharpCompletionContext.Inherit(FSharpInheritanceContext.Interface, (plid, _))) ->
+            | Some (CompletionContext.Inherit(InheritanceContext.Interface, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
                 |> FilterRelevantItemsBy getItem None (getItem >> GetInterfaceCandidates)
                 |> Option.map toCompletionItems
             
             // Completion at 'implement ..."
-            | Some (FSharpCompletionContext.Inherit(FSharpInheritanceContext.Unknown, (plid, _))) ->
+            | Some (CompletionContext.Inherit(InheritanceContext.Unknown, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false) 
                 |> FilterRelevantItemsBy getItem None (getItem >> (fun t -> GetBaseClassCandidates t || GetInterfaceCandidates t))
                 |> Option.map toCompletionItems
             
             // Completion at ' { XXX = ... } "
-            | Some(FSharpCompletionContext.RecordField(FSharpRecordContext.New(plid, _))) ->
+            | Some(CompletionContext.RecordField(FSharpRecordContext.New(plid, _))) ->
                 // { x. } can be either record construction or computation expression. Try to get all visible record fields first
                 match GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid) |> toCompletionItems with
                 | [],_,_ -> 
@@ -792,7 +853,7 @@ type internal TypeCheckInfo
                 | result -> Some(result)
             
             // Completion at ' { XXX = ... with ... } "
-            | Some(FSharpCompletionContext.RecordField(FSharpRecordContext.CopyOnUpdate(r, (plid, _)))) -> 
+            | Some(CompletionContext.RecordField(FSharpRecordContext.CopyOnUpdate(r, (plid, _)))) -> 
                 match GetRecdFieldsForExpr(r) with
                 | None -> 
                     Some (GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid))
@@ -802,12 +863,12 @@ type internal TypeCheckInfo
                     |> Option.map toCompletionItems
             
             // Completion at ' { XXX = ... with ... } "
-            | Some(FSharpCompletionContext.RecordField(FSharpRecordContext.Constructor(typeName))) ->
+            | Some(CompletionContext.RecordField(FSharpRecordContext.Constructor(typeName))) ->
                 Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName]))
                 |> Option.map toCompletionItems
             
             // Completion at ' SomeMethod( ... ) ' with named arguments 
-            | Some(FSharpCompletionContext.ParameterList (endPos, fields)) ->
+            | Some(CompletionContext.ParameterList (endPos, fields)) ->
                 let results = GetNamedParametersAndSettableFields endPos
             
                 let declaredItems = 
@@ -823,7 +884,7 @@ type internal TypeCheckInfo
                         |> List.filter (fun item -> not (fields.Contains item.Item.DisplayName))
                         |> List.map (fun item -> 
                             { ItemWithInst = item
-                              Kind = FSharpCompletionItemKind.Argument
+                              Kind = CompletionItemKind.Argument
                               MinorPriority = 0
                               IsOwnMember = false
                               Type = None 
@@ -833,7 +894,7 @@ type internal TypeCheckInfo
                     | Some (declItems, declaredDisplayEnv, declaredRange) -> Some (filtered @ declItems, declaredDisplayEnv, declaredRange)
                 | _ -> declaredItems
             
-            | Some(FSharpCompletionContext.AttributeApplication) ->
+            | Some(CompletionContext.AttributeApplication) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) -> 
                      items 
@@ -843,7 +904,7 @@ type internal TypeCheckInfo
                          | _ when IsAttribute infoReader cItem.Item -> true
                          | _ -> false), denv, m)
             
-            | Some(FSharpCompletionContext.OpenDeclaration isOpenType) ->
+            | Some(CompletionContext.OpenDeclaration isOpenType) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
                     items 
@@ -854,7 +915,7 @@ type internal TypeCheckInfo
                         | _ -> false), denv, m)
             
             // Completion at '(x: ...)"
-            | Some (FSharpCompletionContext.PatternType) ->
+            | Some (CompletionContext.PatternType) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
                      items 
@@ -877,7 +938,7 @@ type internal TypeCheckInfo
                     // because providing generic parameters list is context aware, which we don't have here (yet).
                     None
                 | _ ->
-                    let isInRangeOperator = (match cc with Some (FSharpCompletionContext.RangeOperator) -> true | _ -> false)
+                    let isInRangeOperator = (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
                     GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue,
                         residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads,
                         isInRangeOperator, getAllSymbols)
@@ -926,19 +987,19 @@ type internal TypeCheckInfo
                         getAllEntities)
 
                 match declItemsOpt with
-                | None -> FSharpDeclarationListInfo.Empty  
+                | None -> DeclarationListInfo.Empty  
                 | Some (items, denv, ctx, m) ->
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
-                    let getAccessibility item = FSharpSymbol.GetAccessibility (FSharpSymbol.Create(cenv, item))
+                    let getAccessibility item = FSharpSymbol.Create(cenv, item).Accessibility
                     let currentNamespaceOrModule =
                         parseResultsOpt
                         |> Option.bind (fun x -> x.ParseTree)
                         |> Option.map (fun parsedInput -> ParsedInput.GetFullNameOfSmallestModuleOrNamespaceAtPoint(parsedInput, mkPos line 0))
-                    let isAttributeApplication = ctx = Some FSharpCompletionContext.AttributeApplication
-                    FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,currentNamespaceOrModule,isAttributeApplication))
+                    let isAttributeApplication = ctx = Some CompletionContext.AttributeApplication
+                    DeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,currentNamespaceOrModule,isAttributeApplication))
             (fun msg -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarations: '%s'" msg)
-                FSharpDeclarationListInfo.Error msg)
+                DeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location
     member _.GetDeclarationListSymbols (parseResultsOpt, line, lineStr, partialName, getAllEntities) =
@@ -1046,7 +1107,8 @@ type internal TypeCheckInfo
             | resolved::_ // Take the first seen
             | [resolved] -> 
                 let tip = wordL (TaggedText.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
-                FSharpStructuredToolTipText.FSharpToolTipText [FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
+                let tip = LayoutRender.toImmutableArray tip
+                FSharpToolTipText.FSharpToolTipText [FSharpToolTipElement.Single(tip, FSharpXmlDoc.None)]
 
             | [] -> 
                 let matches =
@@ -1056,19 +1118,20 @@ type internal TypeCheckInfo
                         loadClosure.PackageReferences
                         |> Array.tryFind (fun (m, _) -> Range.rangeContainsPos m pos)
                 match matches with 
-                | None -> FSharpStructuredToolTipText.FSharpToolTipText []
+                | None -> FSharpToolTipText.FSharpToolTipText []
                 | Some (_, lines) -> 
                     let lines = lines |> List.filter (fun line -> not (line.StartsWith("//")) && not (String.IsNullOrEmpty line))
-                    FSharpStructuredToolTipText.FSharpToolTipText 
+                    FSharpToolTipText.FSharpToolTipText 
                        [ for line in lines -> 
                             let tip = wordL (TaggedText.tagStringLiteral line)
-                            FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
+                            let tip = LayoutRender.toImmutableArray tip
+                            FSharpToolTipElement.Single(tip, FSharpXmlDoc.None)]
                                     
         ErrorScope.Protect Range.range0 
             dataTipOfReferences
             (fun err -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetReferenceResolutionStructuredToolTipText: '%s'" err)
-                FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
+                FSharpToolTipText [FSharpToolTipElement.CompositionError err])
 
     // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
     member _.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names) = 
@@ -1087,7 +1150,7 @@ type internal TypeCheckInfo
 
                 (fun err -> 
                     Trace.TraceInformation(sprintf "FCS: recovering from error in GetStructuredToolTipText: '%s'" err)
-                    FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
+                    FSharpToolTipText [FSharpToolTipElement.CompositionError err])
                
         // See devdiv bug 646520 for rationale behind truncating and caching these quick infos (they can be big!)
         let key = line,colAtEndOfNames,lineStr
@@ -1319,7 +1382,7 @@ type internal TypeCheckInfo
     member _.GetFormatSpecifierLocationsAndArity() = 
          sSymbolUses.GetFormatSpecifierLocationsAndArity()
 
-    member _.GetSemanticClassification(range: range option) : FSharpSemanticClassificationItem [] =
+    member _.GetSemanticClassification(range: range option) : SemanticClassificationItem [] =
         sResolutions.GetSemanticClassification(g, amap, sSymbolUses.GetFormatSpecifierLocationsAndArity(), range)
 
     /// The resolutions in the file
@@ -1793,7 +1856,7 @@ type FSharpCheckFileResults
     /// Intellisense autocompletions
     member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities) = 
         let getAllEntities = defaultArg getAllEntities (fun() -> [])
-        threadSafeOp (fun () -> FSharpDeclarationListInfo.Empty) (fun scope -> 
+        threadSafeOp (fun () -> DeclarationListInfo.Empty) (fun scope -> 
             scope.GetDeclarations(parsedFileResults, line, lineText, partialName, getAllEntities))
 
     member _.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, ?getAllEntities) = 
@@ -1802,7 +1865,7 @@ type FSharpCheckFileResults
             scope.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, getAllEntities))
 
     /// Resolve the names at the given location to give a data tip 
-    member _.GetStructuredToolTipText(line, colAtEndOfNames, lineText, names, tokenTag) = 
+    member _.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag) = 
         let dflt = FSharpToolTipText []
         match tokenTagToTokenId tokenTag with 
         | TOKEN_IDENT -> 
@@ -1813,10 +1876,6 @@ type FSharpCheckFileResults
                 scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames) )
         | _ -> 
             dflt
-
-    member info.GetToolTipText(line, colAtEndOfNames, lineText, names, tokenTag) = 
-        info.GetStructuredToolTipText(line, colAtEndOfNames, lineText, names, tokenTag)
-        |> FSharpToolTip.ToFSharpToolTipText
 
     member _.GetF1Keyword (line, colAtEndOfNames, lineText, names) =
         threadSafeOp (fun () -> None) (fun scope -> 
