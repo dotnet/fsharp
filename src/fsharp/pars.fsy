@@ -195,10 +195,10 @@ let rangeOfLongIdent(lid:LongIdent) =
 %} 
 
 // Producing these changes the lex state, e.g. string --> token, or nesting level of braces in interpolated strings
-%token <byte[] * bool * ParseHelpers.LexerContinuation> BYTEARRAY
-%token <string * bool * bool * ParseHelpers.LexerContinuation> STRING 
-%token <string * bool * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_END
-%token <string * bool * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_PART 
+%token <byte[] * FSharp.Compiler.SyntaxTree.SynByteStringKind * ParseHelpers.LexerContinuation> BYTEARRAY
+%token <string * FSharp.Compiler.SyntaxTree.SynStringKind * ParseHelpers.LexerContinuation> STRING 
+%token <string * FSharp.Compiler.SyntaxTree.SynStringKind * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_END
+%token <string * FSharp.Compiler.SyntaxTree.SynStringKind * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_PART 
 %token <string * ParseHelpers.LexerContinuation> INTERP_STRING_PART 
 %token <string * ParseHelpers.LexerContinuation> INTERP_STRING_END 
 %token <ParseHelpers.LexerContinuation> LBRACE RBRACE
@@ -647,7 +647,7 @@ hashDirectiveArgs:
 /* One argument to a #directive */
 hashDirectiveArg: 
   | stringOrKeywordString 
-      { let s, _, _ = $1
+      { let s, _ = $1
         s }
       
 
@@ -2241,7 +2241,7 @@ inlineAssemblyTyconRepr:
   | HASH stringOrKeywordString HASH 
      { libraryOnlyError (lhs parseState)
        let lhsm = lhs parseState
-       let s, _, _ = $2
+       let s, _ = $2
        let ilType = ParseAssemblyCodeType s parseState.LexBuffer.SupportsFeature (rhs parseState 2)
        SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (box ilType, lhsm) }
 
@@ -2911,16 +2911,11 @@ rawConstant:
     { SynConst.UserNum $1 } 
 
   | stringOrKeywordString
-    { let s, isVerbatim, isTripleQuote = $1
-      let synStringKind =
-          if isVerbatim then SynStringKind.Verbatim
-          elif isTripleQuote then SynStringKind.TripleQuote
-          else SynStringKind.Regular
+    { let s, synStringKind = $1
       SynConst.String (s, synStringKind, lhs parseState) } 
 
   | BYTEARRAY
-    { let (v, isVerbatim, _) = $1
-      let synByteStringKind = if isVerbatim then SynByteStringKind.Verbatim else SynByteStringKind.Regular
+    { let (v, synByteStringKind, _) = $1
       SynConst.Bytes (v, synByteStringKind, lhs parseState) }
 
 rationalConstant:
@@ -4255,8 +4250,7 @@ atomicExprAfterType:
       { $1 }
 
   | interpolatedString
-      { let parts, isTripleQuote = $1
-        let synStringKind = if isTripleQuote then SynStringKind.TripleQuote else SynStringKind.Regular 
+      { let parts, synStringKind = $1
         SynExpr.InterpolatedString(parts, synStringKind, rhs parseState 1) }
 
   | NULL 
@@ -4502,7 +4496,7 @@ forLoopDirection:
 inlineAssemblyExpr:
   | HASH stringOrKeywordString opt_inlineAssemblyTypeArg optCurriedArgExprs  optInlineAssemblyReturnTypes HASH 
       { libraryOnlyWarning (lhs parseState)
-        let (s, _, _), sm = $2, rhs parseState 2
+        let (s, _), sm = $2, rhs parseState 2
         (fun m ->
             let ilInstrs = ParseAssemblyCodeInstructions s parseState.LexBuffer.SupportsFeature sm
             SynExpr.LibraryOnlyILAssembly (box ilInstrs, $3, List.rev $4, $5, m)) }
@@ -5540,9 +5534,9 @@ colonOrEquals:
 /* A literal string or a string from a keyword like __SOURCE_FILE__ */
 stringOrKeywordString:
   | STRING 
-     { let (s, isVerbatim, isTripleQuote, _) = $1
-       s, isVerbatim, isTripleQuote }
-  | KEYWORD_STRING { $1, false, false }
+     { let (s, synStringKind, _) = $1
+       s, synStringKind }
+  | KEYWORD_STRING { $1, SynStringKind.Regular }
 
 interpolatedStringFill:
   | declExpr
@@ -5570,20 +5564,20 @@ interpolatedStringParts:
 /* INTERP_STRING_BEGIN_PART int32 INTERP_STRING_PART int32 INTERP_STRING_END */
 interpolatedString:
   | INTERP_STRING_BEGIN_PART interpolatedStringFill interpolatedStringParts
-    { let s, isTripleQuote, _ = $1
-      SynInterpolatedStringPart.String (s, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3, isTripleQuote }
+    { let s, synStringKind, _ = $1
+      SynInterpolatedStringPart.String (s, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3, synStringKind }
 
   | INTERP_STRING_BEGIN_END
-    { let s, isTripleQuote, _ = $1
-      [ SynInterpolatedStringPart.String (s, rhs parseState 1) ], isTripleQuote }
+    { let s, synStringKind, _ = $1
+      [ SynInterpolatedStringPart.String (s, rhs parseState 1) ], synStringKind }
 
   | INTERP_STRING_BEGIN_PART interpolatedStringParts
     { 
-      let s, isTripleQuote, _ = $1
+      let s, synStringKind, _ = $1
       let rbrace = parseState.InputEndPosition 1
       let lbrace = parseState.InputStartPosition 2
       reportParseErrorAt (mkSynRange rbrace lbrace) (FSComp.SR.parsEmptyFillInInterpolatedString())
-      SynInterpolatedStringPart.String (s, rhs parseState 1) :: $2, isTripleQuote }
+      SynInterpolatedStringPart.String (s, rhs parseState 1) :: $2, synStringKind }
   
 opt_HIGH_PRECEDENCE_APP:
   | HIGH_PRECEDENCE_BRACK_APP { }

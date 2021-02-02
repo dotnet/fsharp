@@ -143,22 +143,28 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
             let isVerbatim = context.HasFlag(LexerStringFinisherContext.Verbatim)
             let isTripleQuote = context.HasFlag(LexerStringFinisherContext.TripleQuote)
             
-            if kind.IsByteString then            
+            if kind.IsByteString then          
+                let synByteStringKind = if isVerbatim then SynByteStringKind.Verbatim else SynByteStringKind.Regular
                 if kind.IsInterpolated then 
                     fail args lexbuf (FSComp.SR.lexByteStringMayNotBeInterpolated()) ()
-                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf, isVerbatim, cont)
+                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf, synByteStringKind, cont)
                 elif Lexhelp.stringBufferIsBytes buf then
-                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf, isVerbatim, cont)
+                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf, synByteStringKind, cont)
                 else
                     fail args lexbuf (FSComp.SR.lexByteArrayCannotEncode()) ()
-                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf, isVerbatim, cont)
+                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf, synByteStringKind, cont)
             elif kind.IsInterpolated then 
                 let s = Lexhelp.stringBufferAsString buf
-                if kind.IsInterpolatedFirst then 
+                if kind.IsInterpolatedFirst then
+                    let synStringKind =
+                        if isTripleQuote then
+                            SynStringKind.TripleQuote
+                        else
+                            SynStringKind.Regular
                     if isPart then 
-                        INTERP_STRING_BEGIN_PART (s, isTripleQuote, cont)
+                        INTERP_STRING_BEGIN_PART (s, synStringKind, cont)
                     else
-                        INTERP_STRING_BEGIN_END (s, isTripleQuote, cont)
+                        INTERP_STRING_BEGIN_END (s, synStringKind, cont)
                 else
                     if isPart then
                         INTERP_STRING_PART (s, cont)
@@ -166,7 +172,14 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
                         INTERP_STRING_END (s, cont)
             else
                 let s = Lexhelp.stringBufferAsString buf
-                STRING (s, isVerbatim, isTripleQuote, cont))  
+                let synStringKind =
+                    if isVerbatim then
+                        SynStringKind.Verbatim
+                    elif isTripleQuote then
+                        SynStringKind.TripleQuote
+                    else
+                        SynStringKind.Regular
+                STRING (s, synStringKind, cont))  
     buf,fin,m
            
              

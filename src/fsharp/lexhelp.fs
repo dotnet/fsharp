@@ -18,6 +18,7 @@ open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.SyntaxTree
 
 /// The "mock" filename used by fsi.exe when reading from stdin.
 /// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
@@ -140,20 +141,33 @@ type LexerStringFinisher =
 
             if kind.IsInterpolated then 
                 let s = stringBufferAsString buf
-                if kind.IsInterpolatedFirst then 
+                if kind.IsInterpolatedFirst then
+                    let synStringKind =
+                        if isTripleQuote then
+                            SynStringKind.TripleQuote
+                        else
+                            SynStringKind.Regular
                     if isPart then 
-                        INTERP_STRING_BEGIN_PART (s, isTripleQuote, cont)
+                        INTERP_STRING_BEGIN_PART (s, synStringKind, cont)
                     else
-                        INTERP_STRING_BEGIN_END (s, isTripleQuote, cont)
+                        INTERP_STRING_BEGIN_END (s, synStringKind, cont)
                 else
                     if isPart then
                         INTERP_STRING_PART (s, cont)
                     else
                         INTERP_STRING_END (s, cont)
-            elif kind.IsByteString then 
-                BYTEARRAY (stringBufferAsBytes buf, isVerbatim, cont)
+            elif kind.IsByteString then
+                let synByteStringKind = if isVerbatim then SynByteStringKind.Verbatim else SynByteStringKind.Regular
+                BYTEARRAY (stringBufferAsBytes buf, synByteStringKind, cont)
             else
-                STRING (stringBufferAsString buf, isVerbatim, isTripleQuote, cont)
+                let synStringKind =
+                    if isVerbatim then
+                        SynStringKind.Verbatim
+                    elif isTripleQuote then
+                        SynStringKind.TripleQuote
+                    else
+                        SynStringKind.Regular
+                STRING (stringBufferAsString buf, synStringKind, cont)
         ) 
 
 let addUnicodeString (buf: ByteBuffer) (x:string) =
