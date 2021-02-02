@@ -18,6 +18,7 @@ open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.SyntaxTree
 
 /// The "mock" filename used by fsi.exe when reading from stdin.
 /// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
@@ -119,31 +120,54 @@ let stringBufferAsBytes (buf: ByteBuffer) =
     let bytes = buf.Close()
     Array.init (bytes.Length / 2) (fun i -> bytes.[i*2]) 
 
-type LexerStringFinisher =
-    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> LexerContinuation -> token)
+[<Flags>]
+type LexerStringFinisherContext = 
+    | InterpolatedPart = 1
+    | Verbatim = 2
+    | TripleQuote = 4
 
-    member fin.Finish (buf: ByteBuffer) kind isInterpolatedStringPart cont =
+type LexerStringFinisher =
+    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> LexerStringFinisherContext -> LexerContinuation -> token)
+
+    member fin.Finish (buf: ByteBuffer) kind context cont =
         let (LexerStringFinisher f)  = fin
-        f buf kind isInterpolatedStringPart cont
+        f buf kind context cont
 
     static member Default =
-        LexerStringFinisher (fun buf kind isPart cont ->
+        LexerStringFinisher (fun buf kind context cont ->
+            let isPart = context.HasFlag(LexerStringFinisherContext.InterpolatedPart)
+            let isVerbatim = context.HasFlag(LexerStringFinisherContext.Verbatim)
+            let isTripleQuote = context.HasFlag(LexerStringFinisherContext.TripleQuote)
+
             if kind.IsInterpolated then 
                 let s = stringBufferAsString buf
-                if kind.IsInterpolatedFirst then 
+                if kind.IsInterpolatedFirst then
+                    let synStringKind =
+                        if isTripleQuote then
+                            SynStringKind.TripleQuote
+                        else
+                            SynStringKind.Regular
                     if isPart then 
-                        INTERP_STRING_BEGIN_PART (s, cont)
+                        INTERP_STRING_BEGIN_PART (s, synStringKind, cont)
                     else
-                        INTERP_STRING_BEGIN_END (s, cont)
+                        INTERP_STRING_BEGIN_END (s, synStringKind, cont)
                 else
                     if isPart then
                         INTERP_STRING_PART (s, cont)
                     else
                         INTERP_STRING_END (s, cont)
-            elif kind.IsByteString then 
-                BYTEARRAY (stringBufferAsBytes buf, cont)
+            elif kind.IsByteString then
+                let synByteStringKind = if isVerbatim then SynByteStringKind.Verbatim else SynByteStringKind.Regular
+                BYTEARRAY (stringBufferAsBytes buf, synByteStringKind, cont)
             else
-                STRING (stringBufferAsString buf, cont)
+                let synStringKind =
+                    if isVerbatim then
+                        SynStringKind.Verbatim
+                    elif isTripleQuote then
+                        SynStringKind.TripleQuote
+                    else
+                        SynStringKind.Regular
+                STRING (stringBufferAsString buf, synStringKind, cont)
         ) 
 
 let addUnicodeString (buf: ByteBuffer) (x:string) =
