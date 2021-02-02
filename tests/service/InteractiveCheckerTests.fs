@@ -31,7 +31,7 @@ let internal identsAndRanges (input: ParsedInput) =
         // TODO : attrs, typarDecls and typarConstraints
         [identAndRange (longIdentToString longIdent) range]
     let extractFromTypeDefn (typeDefn: SynTypeDefn) =
-        let (SynTypeDefn.TypeDefn(componentInfo, _repr, _members, _)) = typeDefn
+        let (SynTypeDefn.TypeDefn(componentInfo, _repr, _members, _, _)) = typeDefn
         // TODO : repr and members
         extractFromComponentInfo componentInfo
     let rec extractFromModuleDecl (moduleDecl: SynModuleDecl) =

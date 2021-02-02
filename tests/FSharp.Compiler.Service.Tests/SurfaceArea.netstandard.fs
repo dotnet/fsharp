@@ -8870,7 +8870,9 @@ FSharp.Compiler.SyntaxTree+SynTypeDefn: Microsoft.FSharp.Collections.FSharpList`
 FSharp.Compiler.SyntaxTree+SynTypeDefn: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynMemberDefn] members
 FSharp.Compiler.SyntaxTree+SynTypeDefn: SynComponentInfo get_typeInfo()
 FSharp.Compiler.SyntaxTree+SynTypeDefn: SynComponentInfo typeInfo
-FSharp.Compiler.SyntaxTree+SynTypeDefn: SynTypeDefn NewTypeDefn(SynComponentInfo, SynTypeDefnRepr, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynMemberDefn], FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTree+SynTypeDefn: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+SynMemberDefn] get_implicitConstructor()
+FSharp.Compiler.SyntaxTree+SynTypeDefn: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+SynMemberDefn] implicitConstructor
+FSharp.Compiler.SyntaxTree+SynTypeDefn: SynTypeDefn NewTypeDefn(SynComponentInfo, SynTypeDefnRepr, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynMemberDefn], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+SynMemberDefn], FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynTypeDefn: SynTypeDefnRepr get_typeRepr()
 FSharp.Compiler.SyntaxTree+SynTypeDefn: SynTypeDefnRepr typeRepr
 FSharp.Compiler.SyntaxTree+SynTypeDefn: System.String ToString()

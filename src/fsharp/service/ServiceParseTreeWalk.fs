@@ -653,7 +653,7 @@ module public AstTraversal =
 #endif
                         )
 
-        and traverseSynTypeDefn path (SynTypeDefn.TypeDefn(synComponentInfo, synTypeDefnRepr, synMemberDefns, tRange) as tydef) =
+        and traverseSynTypeDefn path (SynTypeDefn.TypeDefn(synComponentInfo, synTypeDefnRepr, synMemberDefns, _, tRange) as tydef) =
             let path = TraverseStep.TypeDefn tydef :: path
             
             match visitor.VisitComponentInfo synComponentInfo with
