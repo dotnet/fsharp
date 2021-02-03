@@ -214,7 +214,7 @@ module public AstTraversal =
 
                 | SynExpr.Const (_synConst, _range) -> None
 
-                | SynExpr.InterpolatedString (parts, _) -> 
+                | SynExpr.InterpolatedString (parts, _, _) -> 
                     [ for part in parts do
                           match part with
                           | SynInterpolatedStringPart.String _ -> ()
@@ -653,7 +653,7 @@ module public AstTraversal =
 #endif
                         )
 
-        and traverseSynTypeDefn path (SynTypeDefn.TypeDefn(synComponentInfo, synTypeDefnRepr, synMemberDefns, tRange) as tydef) =
+        and traverseSynTypeDefn path (SynTypeDefn.TypeDefn(synComponentInfo, synTypeDefnRepr, synMemberDefns, _, tRange) as tydef) =
             let path = TraverseStep.TypeDefn tydef :: path
             
             match visitor.VisitComponentInfo synComponentInfo with

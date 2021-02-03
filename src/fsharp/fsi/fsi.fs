@@ -1880,11 +1880,10 @@ module internal MagicAssemblyResolution =
                // Special case: Mono Windows Forms attempts to load an assembly called something like "Windows.Forms.resources"
                // We can't resolve this, so don't try.
                // REVIEW: Suggest 4481, delete this special case.
-               if simpleAssemName.EndsWith(".resources",StringComparison.OrdinalIgnoreCase) || 
-                    // See F# 1.0 Product Studio bug 1171
-                    simpleAssemName.EndsWith(".XmlSerializers",StringComparison.OrdinalIgnoreCase) || 
-                    (runningOnMono && simpleAssemName = "UIAutomationWinforms") then null else
-
+               if (runningOnMono && simpleAssemName.EndsWith(".resources",StringComparison.OrdinalIgnoreCase)) ||
+                  simpleAssemName.EndsWith(".XmlSerializers", StringComparison.OrdinalIgnoreCase) ||
+                  (runningOnMono && simpleAssemName = "UIAutomationWinforms") then null
+               else
                // Special case: Is this the global unique dynamic assembly for FSI code? In this case just
                // return the dynamic assembly itself.       
                if fsiDynamicCompiler.DynamicAssemblyName = simpleAssemName then fsiDynamicCompiler.DynamicAssembly else

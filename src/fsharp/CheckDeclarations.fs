@@ -3165,7 +3165,7 @@ module EstablishTypeDefinitionCores =
             [ for def in defs do 
                 match def with 
                 | SynModuleDecl.Types (typeSpecs, _) -> 
-                    for (TypeDefn(ComponentInfo(_, typars, _, ids, _, _, _, _), trepr, _, _)) in typeSpecs do 
+                    for (TypeDefn(ComponentInfo(_, typars, _, ids, _, _, _, _), trepr, _, _, _)) in typeSpecs do 
                         if isNil typars then
                             match trepr with 
                             | SynTypeDefnRepr.ObjectModel(TyconAugmentation, _, _) -> ()
@@ -4643,7 +4643,7 @@ module TcDeclarations =
     ///        where simpleRepr can contain inherit type, declared fields and virtual slots.
     /// body = members
     ///        where members contain methods/overrides, also implicit ctor, inheritCall and local definitions.
-    let rec private SplitTyconDefn (TypeDefn(synTyconInfo, trepr, extraMembers, _)) = 
+    let rec private SplitTyconDefn (TypeDefn(synTyconInfo, trepr, extraMembers, _, _)) = 
         let implements1 = List.choose (function SynMemberDefn.Interface (ty, _, _) -> Some(ty, ty.Range) | _ -> None) extraMembers
         match trepr with
         | SynTypeDefnRepr.ObjectModel(kind, cspec, m) ->
@@ -5529,7 +5529,7 @@ and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
               | SynModuleDecl.Exception (SynExceptionDefn(repr, members, _), _m) -> 
                   let (SynExceptionDefnRepr(synAttrs, UnionCase(_, id, _args, _, _, _), _repr, doc, vis, m)) = repr
                   let compInfo = ComponentInfo(synAttrs, [], [], [id], doc, false, vis, id.idRange)
-                  let decls = [ MutRecShape.Tycon(SynTypeDefn.TypeDefn(compInfo, SynTypeDefnRepr.Exception repr, members, m)) ]
+                  let decls = [ MutRecShape.Tycon(SynTypeDefn.TypeDefn(compInfo, SynTypeDefnRepr.Exception repr, members, None, m)) ]
                   decls, (false, false, attrs)
 
               | SynModuleDecl.HashDirective _ -> 

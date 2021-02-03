@@ -295,7 +295,6 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
         let startPos =
             let startPos = file.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
             if startPos >= 0  then startPos + (pattern.Length) else startPos
-
         let length =
             if startPos >= 0 then
                 let ep = file.IndexOf("\"", startPos)
@@ -305,16 +304,21 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
         | -1, _
         | _, -1 ->
             if isRunningOnCoreClr then
-                // Running on coreclr but no deps.json was deployed with the host so default to 3.1
-                Some "netcoreapp3.1"
+                // Running on coreclr but no deps.json was deployed with the host so default to 5.0
+                Some "net5.0"
             else
                 // Running on desktop
                 None
         | pos, length ->
             // use value from the deps.json file
-            Some ("netcoreapp" + file.Substring(pos, length))
+            let suffix = file.Substring(pos, length)
+            let prefix =
+                match Double.TryParse(suffix) with
+                | true, value when value < 5.0 -> "netcoreapp"
+                | _ -> "net"
+            Some (prefix + suffix)
 
-    // Tries to figure out the tfm for the compiler instance on the Windows desktop.
+    // Tries to figure out the tfm for the compiler instance on the Windows desktop
     // On full clr it uses the mscorlib version number
     let getRunningDotNetFrameworkTfm () =
         let defaultMscorlibVersion = 4,8,3815,0

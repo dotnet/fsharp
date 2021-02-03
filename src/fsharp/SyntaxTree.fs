@@ -81,6 +81,19 @@ type SynTypar =
         | Typar(id, _, _) ->
             id.idRange
 
+/// Indicate if the string had a special format
+[<Struct; RequireQualifiedAccess>]
+type SynStringKind =
+    | Regular
+    | Verbatim
+    | TripleQuote
+
+/// Indicate if the byte string had a special format
+[<Struct; RequireQualifiedAccess>]
+type SynByteStringKind =
+    | Regular
+    | Verbatim
+
 /// The unchecked abstract syntax tree of constants in F# types and expressions.
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynConst =
@@ -139,13 +152,13 @@ type SynConst =
     | UserNum of value: string * suffix: string
 
     /// F# syntax: verbatim or regular string, e.g. "abc"
-    | String of text: string * range: range
+    | String of text: string * synStringKind :SynStringKind * range: range
 
     /// F# syntax: verbatim or regular byte string, e.g. "abc"B.
     ///
     /// Also used internally in the typechecker once an array of unit16 constants
     /// is detected, to allow more efficient processing of large arrays of uint16 constants.
-    | Bytes of bytes: byte[] * range: range
+    | Bytes of bytes: byte[] * synByteStringKind: SynByteStringKind * range: range
 
     /// Used internally in the typechecker once an array of unit16 constants
     /// is detected, to allow more efficient processing of large arrays of uint16 constants.
@@ -157,7 +170,7 @@ type SynConst =
     /// Gets the syntax range of this construct
     member c.Range dflt =
         match c with
-        | SynConst.String (_, m0) | SynConst.Bytes (_, m0) -> m0
+        | SynConst.String (_, _, m0) | SynConst.Bytes (_, _, m0) -> m0
         | _ -> dflt
 
 /// Represents an unchecked syntax tree of F# unit of measure annotations.
@@ -1022,6 +1035,7 @@ type SynExpr =
     /// Note the string ranges include the quotes, verbatim markers, dollar sign and braces
     | InterpolatedString of
         contents: SynInterpolatedStringPart list *
+        synStringKind :SynStringKind *
         range: range
 
     /// Gets the syntax range of this construct
@@ -1897,6 +1911,7 @@ type SynTypeDefn =
         typeInfo: SynComponentInfo *
         typeRepr: SynTypeDefnRepr *
         members: SynMemberDefns *
+        implicitConstructor: SynMemberDefn option *
         range: range
 
     /// Gets the syntax range of this construct
