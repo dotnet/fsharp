@@ -2,19 +2,15 @@
 
 namespace rec FSharp.Compiler.Syntax
 
-open System.Diagnostics
-
-open Internal.Utilities.Library
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Range
 
 /// Represents an identifier in F# code
-[<Struct; NoEquality; NoComparison; DebuggerDisplay("{idText}")>]
-type Ident (text: string, range: range) =
-     member _.idText = text
-     member _.idRange = range
-     override _.ToString() = text
+[<Struct; NoEquality; NoComparison>]
+type Ident =
+     new: text: string * range: range -> Ident
+     member idText: string
+     member idRange: range
 
 /// Represents a long identifier e.g. 'A.B.C'
 type LongIdent = Ident list
@@ -31,28 +27,16 @@ type LongIdentWithDots =
       LongIdentWithDots of id: LongIdent * dotRanges: range list
 
     /// Gets the syntax range of this construct
-    member this.Range =
-       match this with
-       | LongIdentWithDots([], _) -> failwith "rangeOfLidwd"
-       | LongIdentWithDots([id], []) -> id.idRange
-       | LongIdentWithDots([id], [m]) -> unionRanges id.idRange m
-       | LongIdentWithDots(h :: t, []) -> unionRanges h.idRange (List.last t).idRange
-       | LongIdentWithDots(h :: t, dotRanges) -> unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last dotRanges)
+    member Range: range
 
     /// Get the long ident for this construct
-    member this.Lid = match this with LongIdentWithDots(lid, _) -> lid
+    member Lid: LongIdent
 
     /// Indicates if the construct ends in '.' due to error recovery
-    member this.ThereIsAnExtraDotAtTheEnd = match this with LongIdentWithDots(lid, dots) -> lid.Length = dots.Length
+    member ThereIsAnExtraDotAtTheEnd: bool
 
     /// Gets the syntax range for part of this construct
-    member this.RangeWithoutAnyExtraDot =
-       match this with
-       | LongIdentWithDots([], _) -> failwith "rangeOfLidwd"
-       | LongIdentWithDots([id], _) -> id.idRange
-       | LongIdentWithDots(h :: t, dotRanges) ->
-           let nonExtraDots = if dotRanges.Length = t.Length then dotRanges else List.truncate t.Length dotRanges
-           unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last nonExtraDots)
+    member RangeWithoutAnyExtraDot: range
 
 /// Indicates if the construct arises from error recovery
 [<RequireQualifiedAccess>]
@@ -78,10 +62,7 @@ type SynTypar =
     | SynTypar of ident: Ident * staticReq: TyparStaticReq * isCompGen: bool
 
     /// Gets the syntax range of this construct
-    member this.Range =
-        match this with
-        | SynTypar(id, _, _) ->
-            id.idRange
+    member Range: range
 
 /// Indicate if the string had a special format
 [<Struct; RequireQualifiedAccess>]
@@ -170,10 +151,7 @@ type SynConst =
     | Measure of constant: SynConst * SynMeasure
 
     /// Gets the syntax range of this construct
-    member c.Range dflt =
-        match c with
-        | SynConst.String (_, _, m0) | SynConst.Bytes (_, _, m0) -> m0
-        | _ -> dflt
+    member Range: dflt: range -> range
 
 /// Represents an unchecked syntax tree of F# unit of measure annotations.
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -224,12 +202,6 @@ type SynAccess =
 
     /// A construct marked or assumed 'private'
     | Private
-
-    override this.ToString () =
-        match this with
-        | Public -> "Public"
-        | Internal -> "Internal"
-        | Private -> "Private"
 
 /// Represents whether a debug point should be present for the target
 /// of a decision tree, that is whether the construct corresponds to a debug
@@ -318,11 +290,7 @@ type DebugPointAtBinding =
     | NoneAtInvisible
 
     // Don't drop debug points when combining debug points
-    member x.Combine(y: DebugPointAtBinding) =
-        match x, y with
-        | DebugPointAtBinding.Yes _ as g, _  -> g
-        | _, (DebugPointAtBinding.Yes _ as g)  -> g
-        | _ -> x
+    member Combine: y: DebugPointAtBinding -> DebugPointAtBinding
 
 /// Indicates if a for loop is 'for x in e1 -> e2', only valid in sequence expressions
 type SeqExprOnly =
@@ -539,25 +507,7 @@ type SynType =
       range: range
 
     /// Gets the syntax range of this construct
-    member x.Range =
-        match x with
-        | SynType.App (range=m)
-        | SynType.LongIdentApp (range=m)
-        | SynType.Tuple (range=m)
-        | SynType.Array (range=m)
-        | SynType.AnonRecd (range=m)
-        | SynType.Fun (range=m)
-        | SynType.Var (range=m)
-        | SynType.Anon (range=m)
-        | SynType.WithGlobalConstraints (range=m)
-        | SynType.StaticConstant (range=m)
-        | SynType.StaticConstantExpr (range=m)
-        | SynType.StaticConstantNamed (range=m)
-        | SynType.HashConstraint (range=m)
-        | SynType.MeasureDivide (range=m)
-        | SynType.MeasurePower (range=m)
-        | SynType.Paren (range=m) -> m
-        | SynType.LongIdent lidwd -> lidwd.Range
+    member Range: range
 
 /// Represents a syntax tree for F# expressions
 [<NoEquality; NoComparison;RequireQualifiedAccess>]
@@ -1038,108 +988,16 @@ type SynExpr =
         range: range
 
     /// Gets the syntax range of this construct
-    member e.Range =
-        match e with
-        | SynExpr.Paren (_, leftParenRange, rightParenRange, r) ->
-            match rightParenRange with
-            | Some rightParenRange when leftParenRange.FileIndex <> rightParenRange.FileIndex -> leftParenRange
-            | _ -> r
-        | SynExpr.Quote (range=m)
-        | SynExpr.Const (range=m)
-        | SynExpr.Typed (range=m)
-        | SynExpr.Tuple (range=m)
-        | SynExpr.AnonRecd (range=m)
-        | SynExpr.ArrayOrList (range=m)
-        | SynExpr.Record (range=m)
-        | SynExpr.New (range=m)
-        | SynExpr.ObjExpr (range=m)
-        | SynExpr.While (range=m)
-        | SynExpr.For (range=m)
-        | SynExpr.ForEach (range=m)
-        | SynExpr.CompExpr (range=m)
-        | SynExpr.ArrayOrListOfSeqExpr (range=m)
-        | SynExpr.Lambda (range=m)
-        | SynExpr.Match (range=m)
-        | SynExpr.MatchLambda (range=m)
-        | SynExpr.Do (range=m)
-        | SynExpr.Assert (range=m)
-        | SynExpr.App (range=m)
-        | SynExpr.TypeApp (range=m)
-        | SynExpr.LetOrUse (range=m)
-        | SynExpr.TryWith (range=m)
-        | SynExpr.TryFinally (range=m)
-        | SynExpr.Sequential (range=m)
-        | SynExpr.SequentialOrImplicitYield (range=m)
-        | SynExpr.ArbitraryAfterError (range=m)
-        | SynExpr.FromParseError (range=m)
-        | SynExpr.DiscardAfterMissingQualificationAfterDot (range=m)
-        | SynExpr.IfThenElse (range=m)
-        | SynExpr.LongIdent (range=m)
-        | SynExpr.LongIdentSet (range=m)
-        | SynExpr.NamedIndexedPropertySet (range=m)
-        | SynExpr.DotIndexedGet (range=m)
-        | SynExpr.DotIndexedSet (range=m)
-        | SynExpr.DotGet (range=m)
-        | SynExpr.DotSet (range=m)
-        | SynExpr.Set (range=m)
-        | SynExpr.DotNamedIndexedPropertySet (range=m)
-        | SynExpr.LibraryOnlyUnionCaseFieldGet (range=m)
-        | SynExpr.LibraryOnlyUnionCaseFieldSet (range=m)
-        | SynExpr.LibraryOnlyILAssembly (range=m)
-        | SynExpr.LibraryOnlyStaticOptimization (range=m)
-        | SynExpr.TypeTest (range=m)
-        | SynExpr.Upcast (range=m)
-        | SynExpr.AddressOf (range=m)
-        | SynExpr.Downcast (range=m)
-        | SynExpr.JoinIn (range=m)
-        | SynExpr.InferredUpcast (range=m)
-        | SynExpr.InferredDowncast (range=m)
-        | SynExpr.Null (range=m)
-        | SynExpr.Lazy (range=m)
-        | SynExpr.TraitCall (range=m)
-        | SynExpr.ImplicitZero (range=m)
-        | SynExpr.YieldOrReturn (range=m)
-        | SynExpr.YieldOrReturnFrom (range=m)
-        | SynExpr.LetOrUseBang (range=m)
-        | SynExpr.MatchBang (range=m)
-        | SynExpr.DoBang (range=m)
-        | SynExpr.Fixed (range=m) 
-        | SynExpr.InterpolatedString (range=m) -> m
-        | SynExpr.Ident id -> id.idRange
+    member Range: range
 
-    /// Get the Range ignoring any (parse error) extra trailing dots
-    member e.RangeWithoutAnyExtraDot =
-        match e with
-        | SynExpr.DotGet (expr, _, lidwd, m) ->
-            if lidwd.ThereIsAnExtraDotAtTheEnd then
-                unionRanges expr.Range lidwd.RangeWithoutAnyExtraDot
-            else
-                m
-        | SynExpr.LongIdent (_, lidwd, _, _) -> lidwd.RangeWithoutAnyExtraDot
-        | SynExpr.DiscardAfterMissingQualificationAfterDot (expr, _) -> expr.Range
-        | _ -> e.Range
+    member RangeWithoutAnyExtraDot: range
 
     /// Attempt to get the range of the first token or initial portion only - this
     /// is ad-hoc, just a cheap way to improve a certain 'query custom operation' error range
-    member e.RangeOfFirstPortion =
-        match e with
-        // these are better than just .Range, and also commonly applicable inside queries
-        | SynExpr.Paren (_, m, _, _) -> m
-        | SynExpr.Sequential (_, _, e1, _, _)
-        | SynExpr.SequentialOrImplicitYield (_, e1, _, _, _)
-        | SynExpr.App (_, _, e1, _, _) ->
-            e1.RangeOfFirstPortion
-        | SynExpr.ForEach (_, _, _, pat, _, _, r) ->
-            let start = r.Start
-            let e = (pat.Range: range).Start
-            mkRange r.FileName start e
-        | _ -> e.Range
+    member RangeOfFirstPortion: range
 
     /// Indicates if this expression arises from error recovery
-    member this.IsArbExprAndThusAlreadyReportedError =
-        match this with
-        | SynExpr.ArbitraryAfterError _ -> true
-        | _ -> false
+    member IsArbExprAndThusAlreadyReportedError: bool
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =
@@ -1164,10 +1022,10 @@ type SynIndexerArg =
         fromEnd: bool * range
 
     /// Gets the syntax range of this construct
-    member x.Range = match x with Two (e1, _, e2, _, _, _) -> unionRanges e1.Range e2.Range | One (e, _, _) -> e.Range
+    member Range: range
 
     /// Get the one or two expressions as a list
-    member x.Exprs = match x with Two (e1, _, e2, _, _, _) -> [e1;e2] | One (e, _, _) -> [e]
+    member Exprs: SynExpr list
 
 /// Represents a syntax tree for simple F# patterns
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1370,27 +1228,7 @@ type SynPat =
         range: range
 
     /// Gets the syntax range of this construct
-    member p.Range =
-      match p with
-      | SynPat.Const (range=m)
-      | SynPat.Wild (range=m)
-      | SynPat.Named (range=m)
-      | SynPat.Or (range=m)
-      | SynPat.Ands (range=m)
-      | SynPat.LongIdent (range=m)
-      | SynPat.ArrayOrList (range=m)
-      | SynPat.Tuple (range=m)
-      | SynPat.Typed (range=m)
-      | SynPat.Attrib (range=m)
-      | SynPat.Record (range=m)
-      | SynPat.DeprecatedCharRange (range=m)
-      | SynPat.Null (range=m)
-      | SynPat.IsInst (range=m)
-      | SynPat.QuoteExpr (range=m)
-      | SynPat.InstanceMember (range=m)
-      | SynPat.OptionalVal (range=m)
-      | SynPat.Paren (range=m)
-      | SynPat.FromParseError (range=m) -> m
+    member Range: range
 
 /// Represents a set of bindings that implement an interface
 [<NoEquality; NoComparison;>]
@@ -1411,20 +1249,10 @@ type SynMatchClause =
         spInfo: DebugPointForTarget
 
     /// Gets the syntax range of part of this construct
-    member this.RangeOfGuardAndRhs =
-        match this with
-        | SynMatchClause(_, eo, e, _, _) ->
-            match eo with
-            | None -> e.Range
-            | Some x -> unionRanges e.Range x.Range
+    member RangeOfGuardAndRhs: range
 
     /// Gets the syntax range of this construct
-    member this.Range =
-        match this with
-        | SynMatchClause(_, eo, e, m, _) ->
-            match eo with
-            | None -> unionRanges e.Range m
-            | Some x -> unionRanges (unionRanges e.Range m) x.Range
+    member Range: range
 
 /// Represents an attribute
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1466,7 +1294,7 @@ type SynValData =
         valInfo: SynValInfo *
         thisIdOpt: Ident option
 
-    member x.SynValInfo = (let (SynValData(_flags, synValInfo, _)) = x in synValInfo)
+    member SynValInfo: SynValInfo
 
 /// Represents a binding for a 'let' or 'member' declaration
 [<NoEquality; NoComparison>]
@@ -1489,11 +1317,11 @@ type SynBinding =
     //  - for everything else, the 'range' member that appears last/second-to-last is the 'full range' of the whole tree construct
     //  - but for Binding, the 'range' is only the range of the left-hand-side, the right-hand-side range is in the SynExpr
     //  - so we use explicit names to avoid confusion
-    member x.RangeOfBindingWithoutRhs = let (SynBinding(range=m)) = x in m
+    member RangeOfBindingWithoutRhs: range
 
-    member x.RangeOfBindingWithRhs = let (SynBinding(expr=e; range=m)) = x in unionRanges e.Range m
+    member RangeOfBindingWithRhs: range
 
-    member x.RangeOfHeadPattern = let (SynBinding(headPat=headPat)) = x in headPat.Range
+    member RangeOfHeadPattern: range
 
 /// Represents the return information in a binding for a 'let' or 'member' declaration
 [<NoEquality; NoComparison>]
@@ -1648,16 +1476,7 @@ type SynTypeDefnSimpleRepr =
         exnRepr: SynExceptionDefnRepr
 
     /// Gets the syntax range of this construct
-    member this.Range =
-        match this with
-        | Union (range=m)
-        | Enum (range=m)
-        | Record (range=m)
-        | General (range=m)
-        | LibraryOnlyILAssembly (range=m)
-        | TypeAbbrev (range=m)
-        | None (range=m) -> m
-        | Exception t -> t.Range
+    member Range: range
 
 /// Represents the syntax tree for one case in an enum definition.
 [<NoEquality; NoComparison>]
@@ -1671,9 +1490,7 @@ type SynEnumCase =
         range: range
 
     /// Gets the syntax range of this construct
-    member this.Range =
-        match this with
-        | SynEnumCase (range=m) -> m
+    member Range: range
 
 /// Represents the syntax tree for one case in a union definition.
 [<NoEquality; NoComparison>]
@@ -1688,9 +1505,7 @@ type SynUnionCase =
         range: range
 
     /// Gets the syntax range of this construct
-    member this.Range =
-        match this with
-        | SynUnionCase (range=m) -> m
+    member Range: range
 
 /// Represents the syntax tree for the right-hand-side of union definition, excluding members,
 /// in either a signature or implementation.
@@ -1727,11 +1542,7 @@ type SynTypeDefnSigRepr =
         repr: SynExceptionDefnRepr
 
     /// Gets the syntax range of this construct
-    member this.Range =
-        match this with
-        | ObjectModel (range=m)
-        | Simple (range=m) -> m
-        | Exception e -> e.Range
+    member Range: range
 
 /// Represents the syntax tree for a type definition in a signature
 [<NoEquality; NoComparison>]
@@ -1776,9 +1587,7 @@ type SynComponentInfo =
         range: range
 
     /// Gets the syntax range of this construct
-    member this.Range =
-        match this with
-        | SynComponentInfo (range=m) -> m
+    member Range: range
 
 /// Represents the syntax tree for a 'val' definition in an abstract slot or a signature file
 [<NoEquality; NoComparison>]
@@ -1796,11 +1605,11 @@ type SynValSig =
         synExpr: SynExpr option *
         range: range
 
-    member x.RangeOfId  = let (SynValSig(ident=id)) = x in id.idRange
+    member RangeOfId: range
 
-    member x.SynInfo = let (SynValSig(arity=v)) = x in v
+    member SynInfo: SynValInfo
 
-    member x.SynType = let (SynValSig(synType=ty)) = x in ty
+    member SynType: SynType
 
 /// The argument names and other metadata for a member or function
 [<NoEquality; NoComparison>]
@@ -1809,14 +1618,9 @@ type SynValInfo =
     /// SynValInfo(curriedArgInfos, returnInfo)
     | SynValInfo of curriedArgInfos: SynArgInfo list list * returnInfo: SynArgInfo
 
-    member x.CurriedArgInfos = (let (SynValInfo(args, _)) = x in args)
+    member CurriedArgInfos: SynArgInfo list list
 
-    member x.ArgNames =
-        x.CurriedArgInfos 
-        |> List.concat 
-        |> List.map (fun info -> info.Ident) 
-        |> List.choose id 
-        |> List.map (fun id -> id.idText)
+    member ArgNames: string list
 
 /// Represents the argument names and other metadata for a parameter for a member or function
 [<NoEquality; NoComparison>]
@@ -1827,7 +1631,7 @@ type SynArgInfo =
         optional: bool *
         ident: Ident option
 
-    member x.Ident : Ident option = let (SynArgInfo(_,_,id)) = x in id
+    member Ident: Ident option
 
 /// Represents the names and other metadata for the type parameters for a member or function
 [<NoEquality; NoComparison>]
@@ -1856,7 +1660,7 @@ type SynExceptionDefnRepr =
         range: range
 
     /// Gets the syntax range of this construct
-    member this.Range = match this with SynExceptionDefnRepr (range=m) -> m
+    member Range: range 
 
 /// Represents the right hand side of an exception declaration 'exception E = ... ' plus
 /// any member definitions for the exception
@@ -1869,9 +1673,7 @@ type SynExceptionDefn =
         range: range
 
     /// Gets the syntax range of this construct
-    member this.Range =
-        match this with
-        | SynExceptionDefn (range=m) -> m
+    member Range: range
 
 /// Represents the right hand side of a type or exception declaration 'type C = ... ' plus
 /// any additional member definitions for the type
@@ -1894,11 +1696,7 @@ type SynTypeDefnRepr =
         exnRepr: SynExceptionDefnRepr
 
     /// Gets the syntax range of this construct
-    member this.Range =
-        match this with
-        | ObjectModel (range=m)
-        | Simple (range=m) -> m
-        | Exception t -> t.Range
+    member Range: range
 
 /// Represents a type or exception declaration 'type C = ... ' plus
 /// any additional member definitions for the type
@@ -1912,9 +1710,7 @@ type SynTypeDefn =
         range: range
 
     /// Gets the syntax range of this construct
-    member this.Range =
-        match this with
-        | SynTypeDefn (range=m) -> m
+    member Range: range
 
 /// Represents a definition element within a type definition, e.g. 'member ... ' 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1997,19 +1793,7 @@ type SynMemberDefn =
         range: range
 
     /// Gets the syntax range of this construct
-    member d.Range =
-        match d with
-        | SynMemberDefn.Member (range=m)
-        | SynMemberDefn.Interface (range=m)
-        | SynMemberDefn.Open (range=m)
-        | SynMemberDefn.LetBindings (range=m)
-        | SynMemberDefn.ImplicitCtor (range=m)
-        | SynMemberDefn.ImplicitInherit (range=m)
-        | SynMemberDefn.AbstractSlot (range=m)
-        | SynMemberDefn.Inherit (range=m)
-        | SynMemberDefn.ValField (range=m)
-        | SynMemberDefn.AutoProperty (range=m)
-        | SynMemberDefn.NestedType (range=m) -> m
+    member Range: range
 
 type SynMemberDefns = SynMemberDefn list
 
@@ -2073,18 +1857,7 @@ type SynModuleDecl =
         fragment: SynModuleOrNamespace
 
     /// Gets the syntax range of this construct
-    member d.Range =
-        match d with
-        | SynModuleDecl.ModuleAbbrev (range=m)
-        | SynModuleDecl.NestedModule (range=m)
-        | SynModuleDecl.Let (range=m)
-        | SynModuleDecl.DoExpr (range=m)
-        | SynModuleDecl.Types (range=m)
-        | SynModuleDecl.Exception (range=m)
-        | SynModuleDecl.Open (range=m)
-        | SynModuleDecl.HashDirective (range=m)
-        | SynModuleDecl.NamespaceFragment (SynModuleOrNamespace (range=m))
-        | SynModuleDecl.Attributes (range=m) -> m
+    member Range: range
 
 /// Represents the target of the open declaration
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -2097,10 +1870,7 @@ type SynOpenDeclTarget =
     | Type of typeName: SynType * range: range
 
     /// Gets the syntax range of this construct
-    member this.Range =
-        match this with
-        | ModuleOrNamespace (range=m) -> m
-        | Type (range=m) -> m
+    member Range: range
 
 /// Represents the right hand side of an exception definition in a signature file
 [<NoEquality; NoComparison>]
@@ -2157,16 +1927,7 @@ type SynModuleSigDecl =
         SynModuleOrNamespaceSig
 
     /// Gets the syntax range of this construct
-    member d.Range =
-        match d with
-        | SynModuleSigDecl.ModuleAbbrev (range=m)
-        | SynModuleSigDecl.NestedModule (range=m)
-        | SynModuleSigDecl.Val (range=m)
-        | SynModuleSigDecl.Types (range=m)
-        | SynModuleSigDecl.Exception (range=m)
-        | SynModuleSigDecl.Open (range=m)
-        | SynModuleSigDecl.NamespaceFragment (SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(range=m))
-        | SynModuleSigDecl.HashDirective (range=m) -> m
+    member Range: range
 
 /// Represents the kind of a module or namespace definition
 [<Struct; RequireQualifiedAccess>]
@@ -2184,10 +1945,7 @@ type SynModuleOrNamespaceKind =
     | GlobalNamespace
 
     /// Indicates if this is a module definition
-    member x.IsModule =
-        match x with
-        | NamedModule | AnonModule -> true
-        | _ -> false
+    member IsModule: bool
 
 /// Represents the definition of a module or namespace
 [<NoEquality; NoComparison>]
@@ -2203,9 +1961,7 @@ type SynModuleOrNamespace =
         range: range
 
     /// Gets the syntax range of this construct
-    member this.Range =
-        match this with
-        | SynModuleOrNamespace (range=m) -> m
+    member Range: range
 
 /// Represents the definition of a module or namespace in a signature file
 [<NoEquality; NoComparison>]
@@ -2311,13 +2067,13 @@ type QualifiedNameOfFile =
     | QualifiedNameOfFile of Ident
 
     /// The name of the file 
-    member x.Text = (let (QualifiedNameOfFile t) = x in t.idText)
+    member Text: string
 
     /// The identifier for the name of the file 
-    member x.Id = (let (QualifiedNameOfFile t) = x in t)
+    member Id: Ident
 
     /// Gets the syntax range of this construct
-    member x.Range = (let (QualifiedNameOfFile t) = x in t.idRange)
+    member Range: range
 
 /// Represents the full syntax tree, file name and other parsing information for an implementation file
 [<NoEquality; NoComparison>]
@@ -2351,9 +2107,4 @@ type ParsedInput =
     | SigFile of ParsedSigFileInput
 
     /// Gets the syntax range of this construct
-    member inp.Range =
-        match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput (modules=SynModuleOrNamespace(range=m) :: _))
-        | ParsedInput.SigFile (ParsedSigFileInput (modules=SynModuleOrNamespaceSig(range=m) :: _)) -> m
-        | ParsedInput.ImplFile (ParsedImplFileInput (fileName=filename))
-        | ParsedInput.SigFile (ParsedSigFileInput (fileName=filename)) -> rangeN filename 0
+    member Range: range

@@ -65,9 +65,9 @@ type internal FSharpCodeLensService
             override _.VisitTypeAbbrev(_, _, range) = Some range
 
             override _.VisitLetOrUse(_, _, _, bindings, range) =
-                match bindings |> Seq.tryFind (fun b -> b.RangeOfHeadPat.StartLine = pos.Line) with
+                match bindings |> Seq.tryFind (fun b -> b.RangeOfHeadPattern.StartLine = pos.Line) with
                 | Some entry ->
-                    Some entry.RangeOfBindingAndRhs
+                    Some entry.RangeOfBindingWithRhs
                 | None ->
                     // We choose to use the default range because
                     // it wasn't possible to find the complete range
@@ -75,7 +75,7 @@ type internal FSharpCodeLensService
                     Some range
 
             override _.VisitBinding (_, fn, binding) =
-                Some binding.RangeOfBindingAndRhs
+                Some binding.RangeOfBindingWithRhs
         })
 
     let formatMap = lazy classificationFormatMapService.GetClassificationFormatMap "tooltip"

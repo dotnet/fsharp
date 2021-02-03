@@ -4691,7 +4691,7 @@ FSharp.Compiler.Syntax.LongIdentWithDots: Boolean ThereIsAnExtraDotAtTheEnd
 FSharp.Compiler.Syntax.LongIdentWithDots: Boolean get_ThereIsAnExtraDotAtTheEnd()
 FSharp.Compiler.Syntax.LongIdentWithDots: FSharp.Compiler.Syntax.LongIdentWithDots NewLongIdentWithDots(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.Syntax.LongIdentWithDots: FSharp.Compiler.Text.Range Range
-FSharp.Compiler.Syntax.LongIdentWithDots: FSharp.Compiler.Text.Range RangeSansAnyExtraDot
+FSharp.Compiler.Syntax.LongIdentWithDots: FSharp.Compiler.Text.Range RangeWithoutAnyExtraDot
 FSharp.Compiler.Syntax.LongIdentWithDots: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.LongIdentWithDots: FSharp.Compiler.Text.Range get_RangeSansAnyExtraDot()
 FSharp.Compiler.Syntax.LongIdentWithDots: Int32 Tag
@@ -5088,9 +5088,9 @@ FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Syntax.SynPat get_headPat()
 FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Syntax.SynPat headPat
 FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Syntax.SynValData get_valData()
 FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Syntax.SynValData valData
-FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Text.Range RangeOfBindingAndRhs
-FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Text.Range RangeOfBindingSansRhs
-FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Text.Range RangeOfHeadPat
+FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Text.Range RangeOfBindingWithRhs
+FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Text.Range RangeOfBindingWithoutRhs
+FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Text.Range RangeOfHeadPattern
 FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Text.Range get_RangeOfBindingAndRhs()
 FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Text.Range get_RangeOfBindingSansRhs()
 FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Text.Range get_RangeOfHeadPat()
@@ -6224,7 +6224,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+YieldOrReturn
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+YieldOrReturnFrom
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Text.Range RangeOfFirstPortion
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Text.Range RangeSansAnyExtraDot
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Text.Range RangeWithoutAnyExtraDot
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Text.Range get_RangeOfFirstPortion()
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Text.Range get_RangeSansAnyExtraDot()

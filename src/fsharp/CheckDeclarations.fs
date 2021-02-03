@@ -5283,7 +5283,7 @@ let CheckLetOrDoInNamespace binds m =
     | [] -> 
         error(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(), m)) 
     | _ -> 
-        error(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(), binds.Head.RangeOfHeadPat)) 
+        error(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(), binds.Head.RangeOfHeadPattern)) 
 
 /// The non-mutually recursive case for a declaration
 let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem env synDecl = 

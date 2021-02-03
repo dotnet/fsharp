@@ -211,7 +211,7 @@ module SyntaxTraversal =
                 | SynModuleDecl.Let(isRecursive, synBindingList, range) ->
                     match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                     | Some x -> Some x
-                    | None -> synBindingList |> List.map (fun x -> dive x x.RangeOfBindingAndRhs (traverseSynBinding path)) |> pick decl
+                    | None -> synBindingList |> List.map (fun x -> dive x x.RangeOfBindingWithRhs (traverseSynBinding path)) |> pick decl
                 | SynModuleDecl.DoExpr(_sequencePointInfoForBinding, synExpr, _range) -> traverseSynExpr path synExpr  
                 | SynModuleDecl.Types(synTypeDefnList, _range) -> synTypeDefnList |> List.map (fun x -> dive x x.Range (traverseSynTypeDefn path)) |> pick decl
                 | SynModuleDecl.Exception(_synExceptionDefn, _range) -> None
@@ -383,10 +383,10 @@ module SyntaxTraversal =
                             yield dive newCall newCall.Range traverseSynExpr
                         | _ -> ()
                         for b in binds do
-                            yield dive b b.RangeOfBindingAndRhs (traverseSynBinding path)
+                            yield dive b b.RangeOfBindingWithRhs (traverseSynBinding path)
                         for SynInterfaceImpl(_ty, binds, _range) in ifaces do
                             for b in binds do
-                                yield dive b b.RangeOfBindingAndRhs (traverseSynBinding path)
+                                yield dive b b.RangeOfBindingWithRhs (traverseSynBinding path)
                     ] |> pick expr
 
                 | SynExpr.While (_sequencePointInfoForWhileLoop, synExpr, synExpr2, _range) -> 
@@ -466,7 +466,7 @@ module SyntaxTraversal =
                     match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                     | Some x -> Some x
                     | None ->
-                        [yield! synBindingList |> List.map (fun x -> dive x x.RangeOfBindingAndRhs (traverseSynBinding path))
+                        [yield! synBindingList |> List.map (fun x -> dive x x.RangeOfBindingWithRhs (traverseSynBinding path))
                          yield dive synExpr synExpr.Range traverseSynExpr]
                         |> pick expr
 
@@ -737,7 +737,7 @@ module SyntaxTraversal =
             | SynMemberDefn.LetBindings(synBindingList, isRecursive, _, range) -> 
                 match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                 | Some x -> Some x
-                | None -> synBindingList |> List.map (fun x -> dive x x.RangeOfBindingAndRhs (traverseSynBinding path)) |> pick m
+                | None -> synBindingList |> List.map (fun x -> dive x x.RangeOfBindingWithRhs (traverseSynBinding path)) |> pick m
             | SynMemberDefn.AbstractSlot(_synValSig, _memberFlags, _range) -> None
             | SynMemberDefn.Interface(synType, synMemberDefnsOption, _range) -> 
                 match visitor.VisitInterfaceSynMemberDefnType(path, synType) with

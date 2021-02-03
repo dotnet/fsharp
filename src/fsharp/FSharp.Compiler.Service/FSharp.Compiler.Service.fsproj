@@ -462,6 +462,9 @@
     <Compile Include="..\XmlDoc.fs">
       <Link>ParserAndUntypedAST\XmlDoc.fs</Link>
     </Compile>
+    <Compile Include="..\SyntaxTree.fsi">
+      <Link>ParserAndUntypedAST\SyntaxTree.fsi</Link>
+    </Compile>
     <Compile Include="..\SyntaxTree.fs">
       <Link>ParserAndUntypedAST\SyntaxTree.fs</Link>
     </Compile>

@@ -5369,7 +5369,7 @@ and TcExprThen cenv overallTy env tpenv synExpr delayed =
     // e1.id1.id2
     // etc.
     | SynExpr.DotGet (e1, _, LongIdentWithDots(longId, _), _) ->
-        TcExprThen cenv overallTy env tpenv e1 ((DelayedDotLookup (longId, synExpr.RangeSansAnyExtraDot)) :: delayed)
+        TcExprThen cenv overallTy env tpenv e1 ((DelayedDotLookup (longId, synExpr.RangeWithoutAnyExtraDot)) :: delayed)
            
     // e1.[e2]
     // e1.[e21, ..., e2n]
@@ -6448,7 +6448,7 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
             binds |> List.map (fun b -> 
                 match BindingNormalization.NormalizeBinding ObjExprBinding cenv env b with 
                 | NormalizedBinding (_, _, _, _, [], _, _, _, SynPat.Named(SynPat.Wild _, id, _, _, _), NormalizedBindingRhs(_, _, rhsExpr), _, _) -> id.idText, rhsExpr
-                | _ -> error(Error(FSComp.SR.tcOnlySimpleBindingsCanBeUsedInConstructionExpressions(), b.RangeOfBindingSansRhs)))
+                | _ -> error(Error(FSComp.SR.tcOnlySimpleBindingsCanBeUsedInConstructionExpressions(), b.RangeOfBindingWithoutRhs)))
         
         TcRecordConstruction cenv overallTy env tpenv None objTy fldsList mWholeExpr
     else
@@ -7463,7 +7463,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
         // expr.ID allowed 
         | SynExpr.DotGet (hd, _, LongIdentWithDots(longId, _), _) ->
             let result = defaultArg resultOpt (List.last longId)
-            check overallTyOpt (Some result) hd ((DelayedDotLookup (longId, expr.RangeSansAnyExtraDot)) :: delayed)
+            check overallTyOpt (Some result) hd ((DelayedDotLookup (longId, expr.RangeWithoutAnyExtraDot)) :: delayed)
 
         // "(expr)" allowed with no subsequent qualifications
         | SynExpr.Paren(expr, _, _, _) when delayed.IsEmpty && overallTyOpt.IsNone -> 

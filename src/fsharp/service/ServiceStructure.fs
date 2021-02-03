@@ -441,15 +441,15 @@ module Structure =
         and parseBinding (SynBinding(_, kind, _, _, attrs, _, SynValData(memberFlags, _, _), _, _, expr, br, _) as binding) =
             match kind with
             | SynBindingKind.Normal ->
-                let collapse = Range.endToEnd binding.RangeOfBindingSansRhs binding.RangeOfBindingAndRhs
+                let collapse = Range.endToEnd binding.RangeOfBindingWithoutRhs binding.RangeOfBindingWithRhs
                 match memberFlags with
                 | Some ({MemberKind=SynMemberKind.Constructor}) ->
                     let collapse = Range.startToEnd expr.Range br
                     rcheck Scope.New Collapse.Below br collapse
                 | Some _ ->
-                    rcheck Scope.Member Collapse.Below binding.RangeOfBindingAndRhs collapse
+                    rcheck Scope.Member Collapse.Below binding.RangeOfBindingWithRhs collapse
                 | None ->
-                    rcheck Scope.LetOrUse Collapse.Below binding.RangeOfBindingAndRhs collapse
+                    rcheck Scope.LetOrUse Collapse.Below binding.RangeOfBindingWithRhs collapse
             | SynBindingKind.Do ->
                 let r = Range.modStart 2 br
                 rcheck Scope.Do Collapse.Below br r
@@ -601,7 +601,7 @@ module Structure =
             match decl with
             | SynModuleDecl.Let (_, bindings, r) ->
                 for binding in bindings do
-                    let collapse = Range.endToEnd binding.RangeOfBindingSansRhs r
+                    let collapse = Range.endToEnd binding.RangeOfBindingWithoutRhs r
                     rcheck Scope.LetOrUse Collapse.Below r collapse
                 parseBindings bindings
             | SynModuleDecl.Types (types, _r) ->

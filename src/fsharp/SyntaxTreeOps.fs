@@ -58,7 +58,7 @@ let mkSynCompGenSimplePatVar id = SynSimplePat.Id (id, None, true, false, false,
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
 let (|LongOrSingleIdent|_|) inp =
     match inp with
-    | SynExpr.LongIdent (isOpt, lidwd, altId, _m) -> Some (isOpt, lidwd, altId, lidwd.RangeSansAnyExtraDot)
+    | SynExpr.LongIdent (isOpt, lidwd, altId, _m) -> Some (isOpt, lidwd, altId, lidwd.RangeWithoutAnyExtraDot)
     | SynExpr.Ident id -> Some (false, LongIdentWithDots([id], []), None, id.idRange)
     | _ -> None
 

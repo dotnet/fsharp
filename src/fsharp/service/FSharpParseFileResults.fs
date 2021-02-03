@@ -109,7 +109,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
             | SynExpr.LetOrUse(_, _, bindings, bodyExpr, _) ->
                 let potentialNestedRange =
                     bindings
-                    |> List.tryFind (fun binding -> rangeContainsPos binding.RangeOfBindingAndRhs pos)
+                    |> List.tryFind (fun binding -> rangeContainsPos binding.RangeOfBindingWithRhs pos)
                     |> Option.bind tryGetIdentRangeFromBinding
                 match potentialNestedRange with
                 | Some range ->
@@ -129,7 +129,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
 
                 override _.VisitBinding(_path, defaultTraverse, binding) =
                     match binding with
-                    | SynBinding(_, _, _, _, _, _, _, _, _, expr, _range, _) as b when rangeContainsPos b.RangeOfBindingAndRhs pos ->
+                    | SynBinding(_, _, _, _, _, _, _, _, _, expr, _range, _) as b when rangeContainsPos b.RangeOfBindingWithRhs pos ->
                         match tryGetIdentRangeFromBinding b with
                         | Some range -> walkBinding expr range
                         | None -> None
@@ -212,7 +212,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
             | SynExpr.LetOrUse(_, _, bindings, body, range) when rangeContainsPos range pos  ->
                 let binding =
                     bindings
-                    |> List.tryFind (fun x -> rangeContainsPos x.RangeOfBindingAndRhs pos)
+                    |> List.tryFind (fun x -> rangeContainsPos x.RangeOfBindingWithRhs pos)
                 match binding with
                 | Some(SynBinding(_, _, _, _, _, _, _, _, _, expr, _, _)) ->
                     getIdentRangeForFuncExprInApp traverseSynExpr expr pos
