@@ -245,13 +245,6 @@ let ``Test multi project 1 xmldoc`` () =
         | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
 
-    match ctorFromProjectMultiProject with 
-    | :? FSharpMemberOrFunctionOrValue as c ->
-        match c.XmlDoc with 
-        | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines.Length |> shouldEqual 1
-        | _ -> failwith "wrong kind"
-    | _ -> failwith "odd symbol!"
-
     match case1FromProjectMultiProject with 
     | :? FSharpUnionCase as c -> 
         match c.XmlDoc with 
