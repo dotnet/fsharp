@@ -311,7 +311,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <SynExpr> typedSeqExprEOF
 %type <ParsedImplFile> implementationFile
 %type <ParsedSigFile> signatureFile
-%type <ParsedFsiInteraction> interaction
+%type <ParsedScriptInteraction> interaction
 %type <Ident> ident
 %type <SynType> typ typEOF
 %type <SynTypeDefnSig list> tyconSpfns
@@ -538,14 +538,14 @@ let rangeOfLongIdent(lid:LongIdent) =
 /* An interaction in F# Interactive */
 interaction:
   | interactiveItemsTerminator
-     { ParsedFsiInteraction.Definitions ($1, lhs parseState) }
+     { ParsedScriptInteraction.Definitions ($1, lhs parseState) }
 
   | SEMICOLON 
      { warning(Error(FSComp.SR.parsUnexpectedSemicolon(), rhs parseState 1))
-       ParsedFsiInteraction.Definitions ([], lhs parseState) }
+       ParsedScriptInteraction.Definitions ([], lhs parseState) }
 
   | OBLOCKSEP
-     { ParsedFsiInteraction.Definitions ([], lhs parseState) }
+     { ParsedScriptInteraction.Definitions ([], lhs parseState) }
 
 
 interactiveTerminator: 

@@ -111,4 +111,4 @@ type NavigableItem =
       Container: NavigableContainer }
 
 module public NavigateTo =
-    val getNavigableItems: ParsedInput -> NavigableItem []
+    val GetNavigableItems: ParsedInput -> NavigableItem []

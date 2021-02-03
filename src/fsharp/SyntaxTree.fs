@@ -2276,7 +2276,7 @@ type ParsedSigFileFragment =
 
 /// Represents a parsed syntax tree for an F# Interactive interaction
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
-type ParsedFsiInteraction =
+type ParsedScriptInteraction =
     | Definitions of
         defns: SynModuleDecl list *
         range: range

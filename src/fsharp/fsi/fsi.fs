@@ -2163,7 +2163,7 @@ type internal FsiInteractionProcessor
             None
 
     /// Execute a single parsed interaction. Called on the GUI/execute/main thread.
-    let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedFsiInteraction, errorLogger: ErrorLogger) =
+    let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedScriptInteraction, errorLogger: ErrorLogger) =
         let packageManagerDirective directive path m =
             let dm = fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
             match dm with
@@ -2208,89 +2208,89 @@ type internal FsiInteractionProcessor
 
         istate |> InteractiveCatch errorLogger (fun istate ->
             match action with 
-            | ParsedFsiInteraction.Definitions ([], _) ->
+            | ParsedScriptInteraction.Definitions ([], _) ->
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 istate,Completed None
 
-            | ParsedFsiInteraction.Definitions ([SynModuleDecl.DoExpr(_, expr, _)], _) ->
+            | ParsedScriptInteraction.Definitions ([SynModuleDecl.DoExpr(_, expr, _)], _) ->
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 fsiDynamicCompiler.EvalParsedExpression(ctok, errorLogger, istate, expr)
 
-            | ParsedFsiInteraction.Definitions (defs,_) -> 
+            | ParsedScriptInteraction.Definitions (defs,_) -> 
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs)
 
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("load", sourceFiles, m), _) -> 
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("load", sourceFiles, m), _) -> 
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
 
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective(("reference" | "r"), [path], m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("reference" | "r"), [path], m), _) ->
                 packageManagerDirective Directive.Resolution path m
 
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("i", [path], m), _) -> 
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("i", [path], m), _) -> 
                 packageManagerDirective Directive.Include path m
 
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("I", [path], m), _) -> 
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("I", [path], m), _) -> 
                 tcConfigB.AddIncludePath (m, path, tcConfig.implicitIncludeDir)
                 fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiDidAHashI(tcConfig.MakePathAbsolute path))
                 istate, Completed None
 
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("cd", [path], m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("cd", [path], m), _) ->
                 ChangeDirectory path m
                 istate, Completed None
 
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("silentCd", [path], m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("silentCd", [path], m), _) ->
                 ChangeDirectory path m
                 fsiConsolePrompt.SkipNext() (* "silent" directive *)
                 istate, Completed None                  
                                
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("dbgbreak", [], _), _) -> 
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("dbgbreak", [], _), _) -> 
                 {istate with debugBreak = true}, Completed None
 
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("time", [], _), _) -> 
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("time", [], _), _) -> 
                 if istate.timing then
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff())
                 else
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
                 {istate with timing = not istate.timing}, Completed None
 
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("time", [("on" | "off") as v], _), _) -> 
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("time", [("on" | "off") as v], _), _) -> 
                 if v <> "on" then
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff())
                 else
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
                 {istate with timing = (v = "on")}, Completed None
 
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("nowarn", numbers, m), _) -> 
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("nowarn", numbers, m), _) -> 
                 List.iter (fun (d:string) -> tcConfigB.TurnWarningOff(m, d)) numbers
                 istate, Completed None
 
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("terms", [], _), _) -> 
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("terms", [], _), _) -> 
                 tcConfigB.showTerms <- not tcConfig.showTerms
                 istate, Completed None
 
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("types", [], _), _) -> 
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("types", [], _), _) -> 
                 fsiOptions.ShowTypes <- not fsiOptions.ShowTypes
                 istate, Completed None
 
     #if DEBUG
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("ilcode", [], _m), _) -> 
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("ilcode", [], _m), _) -> 
                 fsiOptions.ShowILCode <- not fsiOptions.ShowILCode; 
                 istate, Completed None
 
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("info", [], _m), _) -> 
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("info", [], _m), _) -> 
                 PrintOptionInfo tcConfigB
                 istate, Completed None
     #endif
 
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective(("q" | "quit"), [], _), _) -> 
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("q" | "quit"), [], _), _) -> 
                 fsiInterruptController.Exit()
 
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective("help", [], m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("help", [], m), _) ->
                 fsiOptions.ShowHelp(m)
                 istate, Completed None
 
-            | ParsedFsiInteraction.HashDirective (ParsedHashDirective(c, arg, m), _) -> 
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(c, arg, m), _) -> 
                 warning(Error((FSComp.SR.fsiInvalidDirective(c, String.concat " " arg)), m))
                 istate, Completed None
         )
@@ -2305,12 +2305,12 @@ type internal FsiInteractionProcessor
         let action,nextAction,istate = 
             match action with
             | None                                      -> None,None,istate
-            | Some (ParsedFsiInteraction.HashDirective _)                            -> action,None,istate
-            | Some (ParsedFsiInteraction.Definitions ([],_))                      -> None,None,istate
-            | Some (ParsedFsiInteraction.Definitions (SynModuleDecl.HashDirective(hash,mh) :: defs,m)) -> 
-                Some (ParsedFsiInteraction.HashDirective(hash,mh)),Some (ParsedFsiInteraction.Definitions(defs,m)),istate
+            | Some (ParsedScriptInteraction.HashDirective _)                            -> action,None,istate
+            | Some (ParsedScriptInteraction.Definitions ([],_))                      -> None,None,istate
+            | Some (ParsedScriptInteraction.Definitions (SynModuleDecl.HashDirective(hash,mh) :: defs,m)) -> 
+                Some (ParsedScriptInteraction.HashDirective(hash,mh)),Some (ParsedScriptInteraction.Definitions(defs,m)),istate
 
-            | Some (ParsedFsiInteraction.Definitions (defs,m))                    -> 
+            | Some (ParsedScriptInteraction.Definitions (defs,m))                    -> 
                 let isDefHash = function SynModuleDecl.HashDirective(_,_) -> true | _ -> false
                 let isBreakable def = 
                     // only add automatic debugger breaks before 'let' or 'do' expressions with sequence points
@@ -2345,7 +2345,7 @@ type internal FsiInteractionProcessor
                         | SynModuleDecl.DoExpr(_,exp,_) :: rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding exp)
                         | _ -> defsA
 
-                Some (ParsedFsiInteraction.Definitions(defsA,m)),Some (ParsedFsiInteraction.Definitions(defsB,m)),istate
+                Some (ParsedScriptInteraction.Definitions(defsA,m)),Some (ParsedScriptInteraction.Definitions(defsB,m)),istate
 
         match action, lastResult with
           | None, Some prev -> assert(nextAction.IsNone); istate, prev

@@ -502,7 +502,7 @@ type NavigableItem =
         
 [<RequireQualifiedAccess>]
 module NavigateTo =
-    let getNavigableItems (parsedInput: ParsedInput) : NavigableItem [] = 
+    let GetNavigableItems (parsedInput: ParsedInput) : NavigableItem [] = 
         let rec lastInLid (lid: LongIdent) = 
             match lid with
             | [x] -> Some x

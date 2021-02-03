@@ -174,14 +174,14 @@ type internal FSharpNavigateToSearchService
     // Save the backing navigation data in a memory cache held in a sliding window
     let itemsByDocumentId = new MemoryCache("FSharp.Editor.FSharpNavigateToSearchService")
 
-    let getNavigableItems(document: Document, parsingOptions: FSharpParsingOptions, kinds: IImmutableSet<string>) =
+    let GetNavigableItems(document: Document, parsingOptions: FSharpParsingOptions, kinds: IImmutableSet<string>) =
         async {
             let! cancellationToken = Async.CancellationToken
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! parseResults = checkerProvider.Checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions)
 
             let navItems parsedInput =
-                NavigateTo.getNavigableItems parsedInput
+                NavigateTo.GetNavigableItems parsedInput
                 |> Array.filter (fun i -> kinds.Contains(navigateToItemKindToRoslynKind i.Kind))
 
             return 
@@ -207,7 +207,7 @@ type internal FSharpNavigateToSearchService
             match itemsByDocumentId.Get(key) with
             | :? PerDocumentSavedData as data when data.Hash = textVersionHash -> return data.Items
             | _ -> 
-                let! items = getNavigableItems(document, parsingOptions, kinds)
+                let! items = GetNavigableItems(document, parsingOptions, kinds)
                 let indexedItems = Index.build items
                 let data = { Hash= textVersionHash; Items = indexedItems }
                 let cacheItem = CacheItem(key, data)

@@ -2669,7 +2669,7 @@ FSharp.Compiler.EditorServices.NavigableItemKind: Int32 Tag
 FSharp.Compiler.EditorServices.NavigableItemKind: Int32 get_Tag()
 FSharp.Compiler.EditorServices.NavigableItemKind: System.String ToString()
 FSharp.Compiler.EditorServices.NavigateTo
-FSharp.Compiler.EditorServices.NavigateTo: FSharp.Compiler.EditorServices.NavigableItem[] getNavigableItems(FSharp.Compiler.Syntax.ParsedInput)
+FSharp.Compiler.EditorServices.NavigateTo: FSharp.Compiler.EditorServices.NavigableItem[] GetNavigableItems(FSharp.Compiler.Syntax.ParsedInput)
 FSharp.Compiler.EditorServices.Navigation
 FSharp.Compiler.EditorServices.Navigation: FSharp.Compiler.EditorServices.NavigationItems getNavigation(FSharp.Compiler.Syntax.ParsedInput)
 FSharp.Compiler.EditorServices.NavigationEntityKind
@@ -4703,29 +4703,29 @@ FSharp.Compiler.Syntax.LongIdentWithDots: Microsoft.FSharp.Collections.FSharpLis
 FSharp.Compiler.Syntax.LongIdentWithDots: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] dotRanges
 FSharp.Compiler.Syntax.LongIdentWithDots: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] get_dotRanges()
 FSharp.Compiler.Syntax.LongIdentWithDots: System.String ToString()
-FSharp.Compiler.Syntax.ParsedFsiInteraction
-FSharp.Compiler.Syntax.ParsedFsiInteraction+Definitions: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.ParsedFsiInteraction+Definitions: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.ParsedFsiInteraction+Definitions: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl] defns
-FSharp.Compiler.Syntax.ParsedFsiInteraction+Definitions: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl] get_defns()
-FSharp.Compiler.Syntax.ParsedFsiInteraction+HashDirective: FSharp.Compiler.Syntax.ParsedHashDirective get_hashDirective()
-FSharp.Compiler.Syntax.ParsedFsiInteraction+HashDirective: FSharp.Compiler.Syntax.ParsedHashDirective hashDirective
-FSharp.Compiler.Syntax.ParsedFsiInteraction+HashDirective: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.ParsedFsiInteraction+HashDirective: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.ParsedFsiInteraction+Tags: Int32 Definitions
-FSharp.Compiler.Syntax.ParsedFsiInteraction+Tags: Int32 HashDirective
-FSharp.Compiler.Syntax.ParsedFsiInteraction: Boolean IsDefinitions
-FSharp.Compiler.Syntax.ParsedFsiInteraction: Boolean IsHashDirective
-FSharp.Compiler.Syntax.ParsedFsiInteraction: Boolean get_IsDefinitions()
-FSharp.Compiler.Syntax.ParsedFsiInteraction: Boolean get_IsHashDirective()
-FSharp.Compiler.Syntax.ParsedFsiInteraction: FSharp.Compiler.Syntax.ParsedFsiInteraction NewDefinitions(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl], FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.ParsedFsiInteraction: FSharp.Compiler.Syntax.ParsedFsiInteraction NewHashDirective(FSharp.Compiler.Syntax.ParsedHashDirective, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.ParsedFsiInteraction: FSharp.Compiler.Syntax.ParsedFsiInteraction+Definitions
-FSharp.Compiler.Syntax.ParsedFsiInteraction: FSharp.Compiler.Syntax.ParsedFsiInteraction+HashDirective
-FSharp.Compiler.Syntax.ParsedFsiInteraction: FSharp.Compiler.Syntax.ParsedFsiInteraction+Tags
-FSharp.Compiler.Syntax.ParsedFsiInteraction: Int32 Tag
-FSharp.Compiler.Syntax.ParsedFsiInteraction: Int32 get_Tag()
-FSharp.Compiler.Syntax.ParsedFsiInteraction: System.String ToString()
+FSharp.Compiler.Syntax.ParsedScriptInteraction
+FSharp.Compiler.Syntax.ParsedScriptInteraction+Definitions: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.ParsedScriptInteraction+Definitions: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.ParsedScriptInteraction+Definitions: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl] defns
+FSharp.Compiler.Syntax.ParsedScriptInteraction+Definitions: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl] get_defns()
+FSharp.Compiler.Syntax.ParsedScriptInteraction+HashDirective: FSharp.Compiler.Syntax.ParsedHashDirective get_hashDirective()
+FSharp.Compiler.Syntax.ParsedScriptInteraction+HashDirective: FSharp.Compiler.Syntax.ParsedHashDirective hashDirective
+FSharp.Compiler.Syntax.ParsedScriptInteraction+HashDirective: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.ParsedScriptInteraction+HashDirective: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.ParsedScriptInteraction+Tags: Int32 Definitions
+FSharp.Compiler.Syntax.ParsedScriptInteraction+Tags: Int32 HashDirective
+FSharp.Compiler.Syntax.ParsedScriptInteraction: Boolean IsDefinitions
+FSharp.Compiler.Syntax.ParsedScriptInteraction: Boolean IsHashDirective
+FSharp.Compiler.Syntax.ParsedScriptInteraction: Boolean get_IsDefinitions()
+FSharp.Compiler.Syntax.ParsedScriptInteraction: Boolean get_IsHashDirective()
+FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Syntax.ParsedScriptInteraction NewDefinitions(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Syntax.ParsedScriptInteraction NewHashDirective(FSharp.Compiler.Syntax.ParsedHashDirective, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Syntax.ParsedScriptInteraction+Definitions
+FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Syntax.ParsedScriptInteraction+HashDirective
+FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Syntax.ParsedScriptInteraction+Tags
+FSharp.Compiler.Syntax.ParsedScriptInteraction: Int32 Tag
+FSharp.Compiler.Syntax.ParsedScriptInteraction: Int32 get_Tag()
+FSharp.Compiler.Syntax.ParsedScriptInteraction: System.String ToString()
 FSharp.Compiler.Syntax.ParsedHashDirective
 FSharp.Compiler.Syntax.ParsedHashDirective: FSharp.Compiler.Syntax.ParsedHashDirective NewParsedHashDirective(System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.ParsedHashDirective: FSharp.Compiler.Text.Range get_range()
