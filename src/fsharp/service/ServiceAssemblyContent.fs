@@ -753,7 +753,7 @@ module ParsedInput =
             | SynTypeDefnSigRepr.Simple(defn, _) -> walkTypeDefnSimple defn
             | SynTypeDefnSigRepr.Exception _ -> ()
     
-        and walkTypeDefn (TypeDefn (info, repr, members, _)) =
+        and walkTypeDefn (TypeDefn (info, repr, members, _, _)) =
             let isTypeExtensionOrAlias =
                 match repr with
                 | SynTypeDefnRepr.ObjectModel (SynTypeDefnKind.TyconAugmentation, _, _)

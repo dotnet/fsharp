@@ -24,6 +24,7 @@ open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Pos
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.SyntaxTree
 
 open Internal.Utilities
 
@@ -34,12 +35,12 @@ type Positions = Position * Position
 module FSharpTokenTag =
 
     let Identifier = tagOfToken (IDENT "a")
-    let String = tagOfToken (STRING ("a", LexCont.Default))
+    let String = tagOfToken (STRING ("a", SynStringKind.Regular, LexCont.Default))
 
     let IDENT = tagOfToken (IDENT "a")
     let STRING = String
-    let INTERP_STRING_BEGIN_END = tagOfToken (INTERP_STRING_BEGIN_END ("a", LexCont.Default))
-    let INTERP_STRING_BEGIN_PART = tagOfToken (INTERP_STRING_BEGIN_PART ("a", LexCont.Default))
+    let INTERP_STRING_BEGIN_END = tagOfToken (INTERP_STRING_BEGIN_END ("a", SynStringKind.Regular, LexCont.Default))
+    let INTERP_STRING_BEGIN_PART = tagOfToken (INTERP_STRING_BEGIN_PART ("a", SynStringKind.Regular, LexCont.Default))
     let INTERP_STRING_PART = tagOfToken (INTERP_STRING_PART ("a", LexCont.Default))
     let INTERP_STRING_END = tagOfToken (INTERP_STRING_END ("a", LexCont.Default))
     let LPAREN = tagOfToken LPAREN
@@ -379,14 +380,14 @@ module internal LexerStateEncoding =
       | LINE_COMMENT cont
       | STRING_TEXT cont
       | EOF cont 
-      | INTERP_STRING_BEGIN_PART (_, cont)
+      | INTERP_STRING_BEGIN_PART (_, _, cont)
       | INTERP_STRING_PART (_, cont)
-      | INTERP_STRING_BEGIN_END (_, cont)
+      | INTERP_STRING_BEGIN_END (_, _, cont)
       | INTERP_STRING_END (_, cont)
       | LBRACE cont
       | RBRACE cont
-      | BYTEARRAY (_, cont)
-      | STRING (_, cont) -> cont
+      | BYTEARRAY (_, _, cont)
+      | STRING (_, _, cont) -> cont
       | _ -> prevLexcont
 
     // Note that this will discard all lexcont state, including the ifdefStack.
