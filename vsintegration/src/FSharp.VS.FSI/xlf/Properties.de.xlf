@@ -12,6 +12,11 @@
         <target state="translated">Wenn diese Einstellung auf "True" gesetzt ist und der aktuelle Computer eine 64-Bit-Version ist, müssen Sie F# Interactive als einen 64-Bit-Prozess ausführen (Andernfalls ist F# Interactive ein 32-Bit-Prozess).</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpInteractiveMisc">
+        <source>Misc</source>
+        <target state="translated">Verschiedene</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
         <source>F# Interactive options</source>
         <target state="translated">F# Interactive-Optionen</target>
@@ -20,11 +25,6 @@
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
         <target state="translated">Die an die ausführbare F# Interactive-Datei von Visual Studio übergebenen zusätzlichen Befehlszeilenargumente. (Optimierungs- und Debugflags werden bei aktiviertem Skriptdebuggen ignoriert.)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpInteractiveMisc">
-        <source>Misc</source>
-        <target state="translated">Verschiedene</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreview">
@@ -65,6 +65,16 @@
       <trans-unit id="FSharpInteractiveDebugging">
         <source>Debugging</source>
         <target state="translated">Debuggen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCore">
+        <source>Use .NET Core Scripting</source>
+        <target state="translated">.NET Core-Skripts verwenden</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCoreDescr">
+        <source>Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</source>
+        <target state="translated">.NET Core-Skriptbearbeitung und -ausführung für alle F#-Skripts und das F# Interactive-Fenster aktivieren</target>
         <note />
       </trans-unit>
     </body>

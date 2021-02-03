@@ -3,7 +3,6 @@
 namespace Microsoft.DotNet.DependencyManager
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Reflection
 open Internal.Utilities.FSharpEnvironment

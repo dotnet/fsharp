@@ -8,7 +8,6 @@ open System
 open System.Diagnostics
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop 
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 
 module internal OperatorToken =
@@ -72,7 +71,7 @@ module internal GotoDefinition =
                         Strings.GotoDefinitionFailed_NotIdentifier()
                         |> GotoDefinitionResult_DEPRECATED.MakeError
                     else
-                      match typedResults.GetDeclarationLocation (line+1, colIdent, lineStr, qualId, false) |> Async.RunSynchronously with
+                      match typedResults.GetDeclarationLocation (line+1, colIdent, lineStr, qualId, false) with
                       | FSharpFindDeclResult.DeclNotFound(reason) ->
                           if makeAnotherAttempt then gotoDefinition true
                           else

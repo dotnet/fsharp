@@ -10,8 +10,9 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open Microsoft.VisualStudio.FSharp.Editor.Symbols 
 
 module internal SymbolHelpers =
@@ -30,8 +31,9 @@ module internal SymbolHelpers =
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let settings = document.FSharpOptions
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.FilePath, textVersionHash, sourceText, projectOptions, settings.LanguageServicePerformance, userOpName = userOpName) 
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=userOpName)
-            let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
+            let! ct = Async.CancellationToken |> liftAsync
+            let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, cancellationToken=ct)
             return symbolUses
         }
 
@@ -75,7 +77,8 @@ module internal SymbolHelpers =
 
             match declLoc with
             | SymbolDeclarationLocation.CurrentDocument ->
-                let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbol)
+                let! ct = Async.CancellationToken
+                let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbol, ct)
                 return toDict (symbolUses |> Seq.map (fun symbolUse -> symbolUse.RangeAlternate))
             | SymbolDeclarationLocation.Projects (projects, isInternalToProject) -> 
                 let symbolUseRanges = ImmutableArray.CreateBuilder()
@@ -125,7 +128,7 @@ module internal SymbolHelpers =
             let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)
             let textLinePos = sourceText.Lines.GetLinePosition(symbolSpan.Start)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland, userOpName=userOpName)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
             let newText = textChanger originalText
             // defer finding all symbol uses throughout the solution

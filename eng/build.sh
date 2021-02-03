@@ -30,6 +30,7 @@ usage()
   echo "  --docker                   Run in a docker container if applicable"
   echo "  --skipAnalyzers            Do not run analyzers during build operations"
   echo "  --prepareMachine           Prepare machine for CI run, clean up processes after build"
+  echo "  --sourceBuild              Simulate building for source-build"
   echo ""
   echo "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -130,14 +131,12 @@ while [[ $# > 0 ]]; do
       ;;
     --docker)
       docker=true
-      shift
-      continue
+      ;;
+    --sourcebuild)
+      source_build=true
       ;;
     /p:*)
       properties="$properties $1"
-      if [[ "$1" == "/p:dotnetbuildfromsource=true" ]]; then
-        source_build=true
-      fi
       ;;
     *)
       echo "Invalid argument: $1"
@@ -245,21 +244,20 @@ function BuildSolution {
     BuildMessage="Error building tools"
     MSBuild "$repo_root/src/buildtools/buildtools.proj" \
       /restore \
-      /p:Configuration=$bootstrap_config \
-      /t:Publish
+      /p:Configuration=$bootstrap_config
 
     mkdir -p "$bootstrap_dir"
-    cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp3.1/publish $bootstrap_dir/fslex
-    cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp3.1/publish $bootstrap_dir/fsyacc
+    cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp3.1 $bootstrap_dir/fslex
+    cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp3.1 $bootstrap_dir/fsyacc
   fi
   if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
     BuildMessage="Error building bootstrap"
     MSBuild "$repo_root/proto.proj" \
       /restore \
       /p:Configuration=$bootstrap_config \
-      /t:Publish
 
-    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp3.1/publish $bootstrap_dir/fsc
+
+    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp3.1 $bootstrap_dir/fsc
   fi
 
   # do real build
@@ -279,6 +277,7 @@ function BuildSolution {
     /p:ContinuousIntegrationBuild=$ci \
     /p:QuietRestore=$quiet_restore \
     /p:QuietRestoreBinaryLog="$binary_log" \
+    /p:DotNetBuildFromSource=$source_build \
     $properties
 }
 

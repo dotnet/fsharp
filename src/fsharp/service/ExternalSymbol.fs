@@ -46,7 +46,7 @@ type ExternalType =
         | TypeVar name -> sprintf "'%s" name
         
 module ExternalType =
-    let rec internal tryOfILType (typeVarNames: string array) (ilType: ILType) =
+    let rec tryOfILType (typeVarNames: string array) (ilType: ILType) =
         
         match ilType with
         | ILType.Array (_, inner) ->
@@ -68,25 +68,28 @@ module ExternalType =
 
 [<RequireQualifiedAccess>]
 type ParamTypeSymbol =
-    | Param of ExternalType
-    | Byref of ExternalType
+
+    | Param of parameterType: ExternalType
+
+    | Byref of parameterType: ExternalType
+
     override this.ToString () =
         match this with
         | Param t -> t.ToString()
         | Byref t -> sprintf "ref %O" t
 
 module ParamTypeSymbol =
-    let rec internal tryOfILType (typeVarNames : string array) =
+    let tryOfILType (typeVarNames : string array) =
         function
         | ILType.Byref inner -> ExternalType.tryOfILType typeVarNames inner |> Option.map ParamTypeSymbol.Byref
         | ilType -> ExternalType.tryOfILType typeVarNames ilType |> Option.map ParamTypeSymbol.Param
 
-    let internal tryOfILTypes typeVarNames ilTypes =
+    let tryOfILTypes typeVarNames ilTypes =
         ilTypes |> List.map (tryOfILType typeVarNames) |> Option.ofOptionList
     
 [<RequireQualifiedAccess>]
 [<DebuggerDisplay "{ToDebuggerDisplay(),nq}">]
-type ExternalSymbol =
+type FSharpExternalSymbol =
     | Type of fullName: string
     | Constructor of typeName: string * args: ParamTypeSymbol list
     | Method of typeName: string * name: string * paramSyms: ParamTypeSymbol list * genericArity: int
@@ -116,6 +119,6 @@ type ExternalSymbol =
         | Property (typeName, name) ->
             sprintf "%s.%s" typeName name
 
-    member internal this.ToDebuggerDisplay () =
-        let caseInfo, _ = FSharpValue.GetUnionFields(this, typeof<ExternalSymbol>)
+    member this.ToDebuggerDisplay () =
+        let caseInfo, _ = FSharpValue.GetUnionFields(this, typeof<FSharpExternalSymbol>)
         sprintf "%s %O" caseInfo.Name this

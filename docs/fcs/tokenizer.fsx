@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../artifacts/bin/fcs/net461"
+#I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
 Compiler Services: Using the F# tokenizer
 =========================================
@@ -21,6 +21,7 @@ To use the tokenizer, reference `FSharp.Compiler.Service.dll` and open the
 *)
 #r "FSharp.Compiler.Service.dll"
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 (**
 Now you can create an instance of `FSharpSourceTokenizer`. The class takes two 
 arguments - the first is the list of defined symbols and the second is the

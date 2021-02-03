@@ -7,9 +7,12 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.Range
+open FSharp.Compiler
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 
 /// A range of utility functions to assist with traversing an AST
 module public AstTraversal =
@@ -659,7 +662,7 @@ module public AstTraversal =
             [
                 match synTypeDefnRepr with
                 | SynTypeDefnRepr.Exception _ -> 
-                    // This node is generated in TypeChecker.fs, not in the AST.  
+                    // This node is generated in CheckExpressions.fs, not in the AST.  
                     // But note exception declarations are missing from this tree walk.
                     () 
                 | SynTypeDefnRepr.ObjectModel(synTypeDefnKind, synMemberDefns, _oRange) ->

@@ -8,10 +8,10 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.SyntaxTree
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.XmlDoc
 
 //----------------------------------------------------------------------
@@ -22,8 +22,8 @@ type SynArgNameGenerator() =
     let mutable count = 0
     let generatedArgNamePrefix = "_arg"
 
-    member __.New() : string = count <- count + 1; generatedArgNamePrefix + string count
-    member __.Reset() = count <- 0
+    member _.New() : string = count <- count + 1; generatedArgNamePrefix + string count
+    member _.Reset() = count <- 0
 
 //----------------------------------------------------------------------
 // AST and parsing utilities.
@@ -102,7 +102,7 @@ let rec IsControlFlowExpression e =
 
 let mkAnonField (ty: SynType) = Field([], false, None, ty, false, PreXmlDoc.Empty, None, ty.Range)
 
-let mkNamedField (ident, ty: SynType) = Field([], false, Some ident, ty, false, PreXmlDoc.Empty, None, ty.Range)
+let mkNamedField (ident, ty: SynType, m) = Field([], false, Some ident, ty, false, PreXmlDoc.Empty, None, m)
 
 let mkSynPatVar vis (id: Ident) = SynPat.Named (SynPat.Wild id.idRange, id, false, vis, id.idRange)
 
@@ -175,6 +175,10 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
                 let altNameRefCell = Some (ref (Undecided (mkSynId m (synArgNameGenerator.New()))))
                 let item = mkSynIdGetWithAlt m id altNameRefCell
                 false, altNameRefCell, id, item
+            | SynPat.Named(_, ident, _, _, _) ->
+                // named pats should be referred to as their name in docs, tooltips, etc.
+                let item = mkSynIdGet m ident.idText
+                false, None, ident, item
             | _ ->
                 let nm = synArgNameGenerator.New()
                 let id = mkSynId m nm

@@ -138,3 +138,8 @@ msbuild.binlog
 _NCrunch_*
 .*crunch*.local.xml
 nCrunchTemp_*
+
+.idea
+/tests/fsharp/core/members/set-only-property/vb.dll
+/tests/fsharp/core/members/set-only-property/fs.dll
+/tests/fsharp/core/members/set-only-property/cs.dll

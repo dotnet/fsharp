@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Core.UnitTests.LibraryTestFx
+module Tests.Service.SurfaceArea.LibraryTestFx
 
 open System
 open System.Collections.Generic
@@ -28,7 +28,6 @@ module SurfaceArea =
         let path = Path.Combine(Path.GetDirectoryName(typeof<int list>.Assembly.Location), "FSharp.Compiler.Service.dll")
         let name = AssemblyName.GetAssemblyName (path)
         let asm = Assembly.Load(name)
-        let fsCompilerServiceFullName = asm.FullName
 
         // public types only
         let types = asm.ExportedTypes |> Seq.filter (fun ty -> let ti = ty.GetTypeInfo() in ti.IsPublic || ti.IsNestedPublic) |> Array.ofSeq
@@ -39,18 +38,20 @@ module SurfaceArea =
             let getMembers (t : Type) =
                 let ti = t.GetTypeInfo()
                 let cast (info: #MemberInfo) = (t, info :> MemberInfo)
-                let isDeclaredInFSharpCompilerService (m:MemberInfo) = m.DeclaringType.Assembly.FullName = fsCompilerServiceFullName
                 seq {
-                    yield! t.GetRuntimeEvents()     |> Seq.filter (fun m -> m.AddMethod.IsPublic && m |> isDeclaredInFSharpCompilerService) |> Seq.map cast
-                    yield! t.GetRuntimeProperties() |> Seq.filter (fun m -> m.GetMethod.IsPublic && m |> isDeclaredInFSharpCompilerService) |> Seq.map cast
-                    yield! t.GetRuntimeMethods()    |> Seq.filter (fun m -> m.IsPublic && m |> isDeclaredInFSharpCompilerService) |> Seq.map cast
-                    yield! t.GetRuntimeFields()     |> Seq.filter (fun m -> m.IsPublic && m |> isDeclaredInFSharpCompilerService) |> Seq.map cast
+                    yield! ti.DeclaredEvents |> Seq.filter (fun m -> m.AddMethod.IsPublic) |> Seq.map cast
+                    yield! ti.DeclaredProperties |> Seq.filter (fun m -> m.GetMethod.IsPublic) |> Seq.map cast
+                    yield! ti.DeclaredMethods |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
+                    yield! ti.DeclaredFields |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
                     yield! ti.DeclaredConstructors  |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
                     yield! ti.DeclaredNestedTypes   |> Seq.filter (fun ty -> ty.IsNestedPublic) |> Seq.map cast
                 } |> Array.ofSeq
 
-            getMembers t
-            |> Array.map (fun (ty, m) -> sprintf "%s: %s" (ty.ToString()) (m.ToString()))
+            [| for (ty,m) in getMembers t do
+                  yield sprintf "%s: %s" (ty.ToString()) (m.ToString())
+               if not t.IsNested then
+                   yield t.ToString()
+            |]
 
         let actual =
             types |> Array.collect getTypeMemberStrings
@@ -104,8 +105,11 @@ module SurfaceArea =
                 Printf.bprintf sb "    windiff %s %s" baseline logFile
                 newLine sb
                 newLine sb
-                sb.AppendLine "To update the baseline run:" |> ignore
-                Printf.bprintf sb "    copy /y %s %s" logFile baseline
+                sb.AppendLine "To update the baseline copy the contents of this:" |> ignore
+                Printf.bprintf sb "    %s" logFile
+                newLine sb
+                sb.AppendLine "into this:" |> ignore
+                Printf.bprintf sb "    %s" baseline
                 newLine sb
                 newLine sb
                 sb.Append "Unexpectedly missing (expected, not actual):" |> ignore

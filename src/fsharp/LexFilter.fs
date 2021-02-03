@@ -13,16 +13,17 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
-open FSharp.Compiler.SyntaxTree
+
 let debug = false
 
 let stringOfPos (p: Position) = sprintf "(%d:%d)" p.OriginalLine p.Column
+
 let outputPos os (p: Position) = Printf.fprintf os "(%d:%d)" p.OriginalLine p.Column
 
 /// Used for warning strings, which should display columns as 1-based and display 
 /// the lines after taking '# line' directives into account (i.e. do not use
 /// p.OriginalLine)
-let warningStringOfPos (p: Position) = sprintf "(%d:%d)" p.Line (p.Column + 1)
+let warningStringOfPosition (p: Position) = warningStringOfCoords p.Line p.Column
 
 type Context = 
     // Position is position of keyword.
@@ -198,7 +199,7 @@ let rec isIfBlockContinuator token =
     | ODUMMY token -> isIfBlockContinuator token
     | _ -> false
 
-/// Determine the token that may align with the 'try' of a 'try/catch' or 'try/finally' without closing
+/// Determine the token that may align with the 'try' of a 'try/with' or 'try/finally' without closing
 /// the construct
 let rec isTryBlockContinuator token =
     match token with 
@@ -427,12 +428,18 @@ type TokenTupPool() =
     [<Literal>]
     let maxSize = 100
 
-    let stack = System.Collections.Generic.Stack(Array.init maxSize (fun _ -> TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)))
+    let mutable currentPoolSize = 0
+    let stack = System.Collections.Generic.Stack(10)
 
-    member _.Rent() = 
+    member this.Rent() = 
         if stack.Count = 0 then
-            assert false
-            TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
+            if currentPoolSize < maxSize then
+                stack.Push(TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>))
+                currentPoolSize <- currentPoolSize + 1
+                this.Rent()
+            else
+                assert false
+                TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
         else
             stack.Pop()
 
@@ -645,7 +652,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         initialLookaheadTokenTup 
 
     let warn (s: TokenTup) msg = 
-        warning(Lexhelp.IndentationProblem(msg, mkSynRange (startPosOfTokenTup s) s.LexbufState.EndPos))
+        warning(IndentationProblem(msg, mkSynRange (startPosOfTokenTup s) s.LexbufState.EndPos))
 
     // 'query { join x in ys ... }'
     // 'query { ... 
@@ -859,9 +866,9 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 warn tokenTup 
                     (if debug then 
                         sprintf "possible incorrect indentation: this token is offside of context at position %s, newCtxt = %A, stack = %A, newCtxtPos = %s, c1 = %d, c2 = %d" 
-                            (warningStringOfPos p1.Position) newCtxt offsideStack (stringOfPos (newCtxt.StartPos)) p1.Column c2 
+                            (warningStringOfPosition p1.Position) newCtxt offsideStack (stringOfPos (newCtxt.StartPos)) p1.Column c2 
                      else
-                        FSComp.SR.lexfltTokenIsOffsideOfContextStartedEarlier(warningStringOfPos p1.Position))
+                        FSComp.SR.lexfltTokenIsOffsideOfContextStartedEarlier(warningStringOfPosition p1.Position))
         let newOffsideStack = newCtxt :: offsideStack
         if debug then dprintf "--> pushing, stack = %A\n" newOffsideStack
         offsideStack <- newOffsideStack
@@ -1743,7 +1750,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                                 let cond1 = tokenStartCol + (if leadingBar then 0 else 2) < offsidePos.Column
                                 let cond2 = tokenStartCol + (if leadingBar then 1 else 2) < offsidePos.Column
                                 if (cond1 <> cond2) then 
-                                    errorR(Lexhelp.IndentationProblem(FSComp.SR.lexfltSeparatorTokensOfPatternMatchMisaligned(), mkSynRange (startPosOfTokenTup tokenTup) tokenTup.LexbufState.EndPos))
+                                    errorR(IndentationProblem(FSComp.SR.lexfltSeparatorTokensOfPatternMatchMisaligned(), mkSynRange (startPosOfTokenTup tokenTup) tokenTup.LexbufState.EndPos))
                                 cond1
                             | END -> tokenStartCol + (if leadingBar then -1 else 1) < offsidePos.Column
                             | _ -> tokenStartCol + (if leadingBar then -1 else 1) < offsidePos.Column)) -> 
@@ -2060,6 +2067,11 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                     let offsidePos = tokenStartPos
                     pushCtxt tokenTup (CtxtWithAsLet offsidePos)
                     returnToken tokenLexbufState OWITH 
+
+                // Recovery for `interface ... with` member without further indented member implementations
+                elif lookaheadTokenStartPos.Column <= limCtxt.StartCol && (match limCtxt with CtxtInterfaceHead _ -> true | _ -> false) then
+                    returnToken tokenLexbufState token
+
                 else
                     // In these situations
                     //    interface I with 
@@ -2229,7 +2241,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
               true
 
           // Insert HIGH_PRECEDENCE_TYAPP if needed 
-          | (DELEGATE | IDENT _ | IEEE64 _ | IEEE32 _ | DECIMAL _ | INT8 _ | INT16 _ | INT32 _ | INT64 _ | NATIVEINT _ | UINT8 _ | UINT16 _ | UINT32 _ | UINT64 _ | BIGNUM _) when peekAdjacentTypars false tokenTup ->
+          | (DELEGATE | IDENT _ | IEEE64 _ | IEEE32 _ | DECIMAL _ | INT8 _ | INT16 _ | INT32 _ | INT64 _ | NATIVEINT _ | UINT8 _ | UINT16 _ | UINT32 _ | UINT64 _ | UNATIVEINT _ | BIGNUM _) when peekAdjacentTypars false tokenTup ->
               let lessTokenTup = popNextTokenTup()
               delayToken (pool.UseLocation(lessTokenTup, match lessTokenTup.Token with LESS _ -> LESS true | _ -> failwith "unreachable")) 
 
@@ -2348,8 +2360,9 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     // Part VI. Publish the new lexer function.  
     //--------------------------------------------------------------------------
 
-    member __.LexBuffer = lexbuf
-    member __.Lexer _ = 
+    member _.LexBuffer = lexbuf
+
+    member _.GetToken() = 
         if not initialized then 
             let _firstTokenTup = peekInitial()
             ()
@@ -2358,7 +2371,6 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         then hwTokenFetch true  
         else swTokenFetch()
   
-
 // LexFilterImpl does the majority of the work for offsides rules and other magic.
 // LexFilter just wraps it with light post-processing that introduces a few more 'coming soon' symbols, to
 // make it easier for the parser to 'look ahead' and safely shift tokens in a number of recovery scenarios.
@@ -2375,7 +2387,7 @@ type LexFilter (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: U
             let tokenTup = delayedStack.Pop()
             tokenTup
         else
-            inner.Lexer()
+            inner.GetToken()
 
     let insertComingSoonTokens comingSoon isHere =
         if debug then dprintf "inserting 6 copies of %+A before %+A\n" comingSoon isHere
@@ -2383,8 +2395,9 @@ type LexFilter (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: U
         for i in 1..6 do
             delayToken comingSoon
 
-    member __.LexBuffer = inner.LexBuffer 
-    member __.Lexer _ = 
+    member _.LexBuffer = inner.LexBuffer 
+
+    member _.GetToken () = 
         let rec loop() =
             let token = popNextToken()
             match token with
@@ -2399,5 +2412,3 @@ type LexFilter (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: U
                 loop()
             | _ -> token
         loop()
-
-let token lexargs skip = Lexer.token lexargs skip

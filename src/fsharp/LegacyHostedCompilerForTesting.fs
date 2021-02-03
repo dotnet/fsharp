@@ -7,12 +7,11 @@ namespace Legacy.FSharp.Compiler.Hosted
 
 open System
 open System.IO
-open System.Text
 open System.Text.RegularExpressions
-open FSharp.Compiler
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library 
 
@@ -66,7 +65,7 @@ type internal InProcCompiler(legacyReferenceResolver) =
             { new Exiter with
                  member this.Exit n = exitCode <- n; raise StopProcessing }
         try 
-            typecheckAndCompile(ctok, argv, legacyReferenceResolver, false, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.Yes, exiter, loggerProvider.Provider, None, None)
+            mainCompile(ctok, argv, legacyReferenceResolver, false, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.Yes, exiter, loggerProvider.Provider, None, None)
         with 
             | StopProcessing -> ()
             | ReportedError _  | WrappedError(ReportedError _,_)  ->

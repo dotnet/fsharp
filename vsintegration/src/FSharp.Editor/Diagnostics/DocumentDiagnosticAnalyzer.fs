@@ -10,14 +10,10 @@ open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
-
 
 [<RequireQualifiedAccess>]
 type internal DiagnosticsType =
@@ -25,18 +21,18 @@ type internal DiagnosticsType =
     | Semantic
 
 [<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>)>]
-type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
+type internal FSharpDocumentDiagnosticAnalyzer
+    [<ImportingConstructor>]
+    (
+        checkerProvider: FSharpCheckerProvider, 
+        projectInfoManager: FSharpProjectOptionsManager
+    ) =
 
     static let userOpName = "DocumentDiagnosticAnalyzer"
-    let getChecker(document: Document) =
-        document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
-
-    let getProjectInfoManager(document: Document) =
-        document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
 
     static let errorInfoEqualityComparer =
-        { new IEqualityComparer<FSharpErrorInfo> with 
-            member __.Equals (x, y) =
+        { new IEqualityComparer<FSharpDiagnostic> with 
+            member _.Equals (x, y) =
                 x.FileName = y.FileName &&
                 x.StartLineAlternate = y.StartLineAlternate &&
                 x.EndLineAlternate = y.EndLineAlternate &&
@@ -46,7 +42,7 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                 x.Message = y.Message &&
                 x.Subcategory = y.Subcategory &&
                 x.ErrorNumber = y.ErrorNumber
-            member __.GetHashCode x =
+            member _.GetHashCode x =
                 let mutable hash = 17
                 hash <- hash * 23 + x.StartLineAlternate.GetHashCode()
                 hash <- hash * 23 + x.EndLineAlternate.GetHashCode()
@@ -110,27 +106,25 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
     interface IFSharpDocumentDiagnosticAnalyzer with
 
         member this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
-            let projectInfoManager = getProjectInfoManager document
             asyncMaybe {
                 let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 return! 
-                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Syntax)
+                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checkerProvider.Checker, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Syntax)
                     |> liftAsync
             } 
             |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
         member this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
-            let projectInfoManager = getProjectInfoManager document
             asyncMaybe {
                 let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken, userOpName) 
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 if document.Project.Name <> FSharpConstants.FSharpMiscellaneousFilesName || isScriptFile document.FilePath then
                     return! 
-                        FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Semantic)
+                        FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checkerProvider.Checker, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Semantic)
                         |> liftAsync
                 else
                     return ImmutableArray<Diagnostic>.Empty

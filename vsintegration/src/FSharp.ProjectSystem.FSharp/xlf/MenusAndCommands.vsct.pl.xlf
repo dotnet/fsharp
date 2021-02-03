@@ -247,6 +247,16 @@
         <target state="translated">Nowy fol&amp;der</target>
         <note />
       </trans-unit>
+      <trans-unit id="cmdidQuitProcess|ButtonText">
+        <source>Quit F# Interactive Process</source>
+        <target state="translated">Zakończ proces narzędzia F# Interactive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cmdidQuitProcess|CommandName">
+        <source>FSharp.Interactive.QuitProcess</source>
+        <target state="translated">FSharp.Interactive.QuitProcess</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

@@ -125,6 +125,13 @@ let VerifyCompletionListExactly(fileContents: string, marker: string, expected: 
 let VerifyNoCompletionList(fileContents: string, marker: string) =
     VerifyCompletionListExactly(fileContents, marker, [])
 
+let VerifyCompletionListSpan(fileContents: string, marker: string, expected: string) =
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let sourceText = SourceText.From(fileContents)
+    let resultSpan = CompletionUtils.getDefaultCompletionListSpan(sourceText, caretPosition, documentId, filePath, [])
+    Assert.AreEqual(expected, sourceText.ToString(resultSpan))
+
 [<Test>]
 let ShouldTriggerCompletionAtCorrectMarkers() =
     let testCases = 
@@ -349,8 +356,8 @@ let x = $"1 not the same as {System.Int32.MaxValue} is it"
 let ``Class instance members are ordered according to their kind and where they are defined (simple case, by a variable)``() =
     let fileContents = """
 type Base() =
-    member __.BaseMethod() = 1
-    member __.BaseProp = 1
+    member _.BaseMethod() = 1
+    member _.BaseProp = 1
 
 type Class() = 
     inherit Base()
@@ -367,8 +374,8 @@ x.
 let ``Class instance members are ordered according to their kind and where they are defined (simple case, by a constructor)``() =
     let fileContents = """
 type Base() =
-    member __.BaseMethod() = 1
-    member __.BaseProp = 1
+    member _.BaseMethod() = 1
+    member _.BaseProp = 1
 
 type Class() = 
     inherit Base()
@@ -403,8 +410,8 @@ let ``Class instance members are ordered according to their kind and where they 
     let fileContents = """
 type Base() =
     inherit System.Collections.Generic.List<int>
-    member __.BaseMethod() = 1
-    member __.BaseProp = 1
+    member _.BaseMethod() = 1
+    member _.BaseProp = 1
 
 type Class() = 
     inherit Base()
@@ -472,8 +479,8 @@ let ``Extension methods go after everything else, extension properties are treat
 open System.Collections.Generic
 
 type List<'a> with
-    member __.ExtensionProp = 1
-    member __.ExtensionMeth() = 1
+    member _.ExtensionProp = 1
+    member _.ExtensionMeth() = 1
 
 List().
 """
@@ -686,6 +693,48 @@ module Extensions =
     wrappedMessage.
 """
     VerifyCompletionList(fileContents, "wrappedMessage.", ["PrintRef"], [])
+
+[<Test>]
+let ``Completion list span works with underscore in identifier``() =
+    let fileContents = """
+let x = A.B_C
+"""
+    VerifyCompletionListSpan(fileContents, "A.B_C", "B_C")
+
+[<Test>]
+let ``Completion list span works with digit in identifier``() =
+    let fileContents = """
+let x = A.B1C
+"""
+    VerifyCompletionListSpan(fileContents, "A.B1C", "B1C")
+
+[<Test>]
+let ``Completion list span works with enclosed backtick identifier``() =
+    let fileContents = """
+let x = A.``B C``
+"""
+    VerifyCompletionListSpan(fileContents, "A.``B C``", "``B C``")
+
+[<Test>]
+let ``Completion list span works with partial backtick identifier``() =
+    let fileContents = """
+let x = A.``B C
+"""
+    VerifyCompletionListSpan(fileContents, "A.``B C", "``B C")
+
+[<Test>]
+let ``Completion list span works with first of multiple enclosed backtick identifiers``() =
+    let fileContents = """
+let x = A.``B C`` + D.``E F``
+"""
+    VerifyCompletionListSpan(fileContents, "A.``B C``", "``B C``")
+
+[<Test>]
+let ``Completion list span works with last of multiple enclosed backtick identifiers``() =
+    let fileContents = """
+let x = A.``B C`` + D.``E F``
+"""
+    VerifyCompletionListSpan(fileContents, "D.``E F``", "``E F``")
 
 #if EXE
 ShouldDisplaySystemNamespace()

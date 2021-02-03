@@ -8,8 +8,8 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 open System
 open System.Text.RegularExpressions
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Layout
-open FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.TaggedText
 
 type internal ITaggedTextCollector_DEPRECATED =
     abstract Add: text: TaggedText -> unit
@@ -56,8 +56,8 @@ type internal TextSanitizingCollector_DEPRECATED(collector, ?lineLimit: int) =
             addTaggedTextEntry (tagText paragraph)
             if i < paragraphs.Length - 1 then
                 // insert two line breaks to separate paragraphs
-                addTaggedTextEntry Literals.lineBreak
-                addTaggedTextEntry Literals.lineBreak)
+                addTaggedTextEntry TaggedText.lineBreak
+                addTaggedTextEntry TaggedText.lineBreak)
 
     interface ITaggedTextCollector_DEPRECATED with
         member this.Add taggedText = 
@@ -99,7 +99,7 @@ module internal XmlDocumentation =
             else xml
 
     let AppendHardLine(collector: ITaggedTextCollector_DEPRECATED) =
-        collector.Add Literals.lineBreak
+        collector.Add TaggedText.lineBreak
        
     let EnsureHardLine(collector: ITaggedTextCollector_DEPRECATED) =
         if not collector.EndsWithLineBreak then AppendHardLine collector
@@ -107,7 +107,7 @@ module internal XmlDocumentation =
     let AppendOnNewLine (collector: ITaggedTextCollector_DEPRECATED) (line:string) =
         if line.Length > 0 then 
             EnsureHardLine collector
-            collector.Add(TaggedTextOps.tagText line)
+            collector.Add(TaggedText.tagText line)
 
  
     /// Append an XmlCommnet to the segment.
@@ -148,9 +148,9 @@ module internal XmlDocumentation =
                     addSeparatorIfNecessary add
                     if showText then 
                         let AppendOverload (item :FSharpToolTipElementData<_>) = 
-                            if not(FSharp.Compiler.Layout.isEmptyL item.MainDescription) then
-                                if not textCollector.IsEmpty then textCollector.Add Literals.lineBreak
-                                renderL (taggedTextListR textCollector.Add) item.MainDescription |> ignore
+                            if not(Layout.isEmptyL item.MainDescription) then
+                                if not textCollector.IsEmpty then textCollector.Add TaggedText.lineBreak
+                                LayoutRender.emitL textCollector.Add item.MainDescription |> ignore
 
                         AppendOverload(overloads.[0])
                         if len >= 2 then AppendOverload(overloads.[1])
@@ -158,14 +158,14 @@ module internal XmlDocumentation =
                         if len >= 4 then AppendOverload(overloads.[3])
                         if len >= 5 then AppendOverload(overloads.[4])
                         if len >= 6 then 
-                            textCollector.Add Literals.lineBreak
+                            textCollector.Add TaggedText.lineBreak
                             textCollector.Add (tagText(PrettyNaming.FormatAndOtherOverloadsString(len-5)))
 
                     let item0 = overloads.[0]
 
                     item0.Remarks |> Option.iter (fun r -> 
-                        textCollector.Add Literals.lineBreak
-                        renderL (taggedTextListR textCollector.Add) r |> ignore)
+                        textCollector.Add TaggedText.lineBreak
+                        LayoutRender.emitL textCollector.Add r |> ignore)
 
                     AppendXmlComment_DEPRECATED(documentationProvider, xmlCollector, item0.XmlDoc, showExceptions, showParameters, item0.ParamName)
 

@@ -11,6 +11,7 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 open System.Globalization
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
 
 module internal CompletionUtils =
 
@@ -105,11 +106,66 @@ module internal CompletionUtils =
 
     let inline getKindPriority kind =
         match kind with
-        | CompletionItemKind.CustomOperation -> 0
-        | CompletionItemKind.Property -> 1
-        | CompletionItemKind.Field -> 2
-        | CompletionItemKind.Method (isExtension = false) -> 3
-        | CompletionItemKind.Event -> 4
-        | CompletionItemKind.Argument -> 5
-        | CompletionItemKind.Other -> 6
-        | CompletionItemKind.Method (isExtension = true) -> 7
+        | FSharpCompletionItemKind.CustomOperation -> 0
+        | FSharpCompletionItemKind.Property -> 1
+        | FSharpCompletionItemKind.Field -> 2
+        | FSharpCompletionItemKind.Method (isExtension = false) -> 3
+        | FSharpCompletionItemKind.Event -> 4
+        | FSharpCompletionItemKind.Argument -> 5
+        | FSharpCompletionItemKind.Other -> 6
+        | FSharpCompletionItemKind.Method (isExtension = true) -> 7
+
+    /// Indicates the text span to be replaced by a committed completion list item.
+    let getDefaultCompletionListSpan(sourceText: SourceText, caretIndex, documentId, filePath, defines) =
+
+        // Gets connected identifier-part characters backward and forward from caret.
+        let getIdentifierChars() =
+            let mutable startIndex = caretIndex
+            let mutable endIndex = caretIndex
+            while startIndex > 0 && IsIdentifierPartCharacter sourceText.[startIndex - 1] do startIndex <- startIndex - 1
+            if startIndex <> caretIndex then
+                while endIndex < sourceText.Length && IsIdentifierPartCharacter sourceText.[endIndex] do endIndex <- endIndex + 1
+            TextSpan.FromBounds(startIndex, endIndex)
+
+        let line = sourceText.Lines.GetLineFromPosition(caretIndex)
+        if line.ToString().IndexOf "``" < 0 then
+            // No backticks on the line, capture standard identifier chars.
+            getIdentifierChars()
+        else
+            // Line contains backticks.
+            // Use tokenizer to check for identifier, in order to correctly handle extraneous backticks in comments, strings, etc.
+
+            // If caret is at a backtick-identifier, then that is our span.
+
+            // Else, check if we are after an unclosed ``, to support the common case of a manually typed leading ``.
+            // Tokenizer will not consider this an identifier, it will consider the bare `` a Keyword, followed by
+            // arbitrary tokens (Identifier, Operator, Text, etc.) depending on the trailing text.
+
+            // Else, backticks are not involved in caret location, fall back to standard identifier character scan.
+
+            // There may still be edge cases where backtick related spans are incorrectly captured, such as unclosed
+            // backticks before later valid backticks on a line, this is an acceptable compromise in order to support
+            // the majority of common cases.
+
+            let classifiedSpans = Tokenizer.getClassifiedSpans(documentId, sourceText, line.Span, Some filePath, defines, CancellationToken.None)
+
+            let isBacktickIdentifier (classifiedSpan: ClassifiedSpan) =
+                classifiedSpan.ClassificationType = ClassificationTypeNames.Identifier
+                    && Tokenizer.isDoubleBacktickIdent (sourceText.ToString(classifiedSpan.TextSpan))
+            let isUnclosedBacktick (classifiedSpan: ClassifiedSpan) =
+                classifiedSpan.ClassificationType = ClassificationTypeNames.Keyword
+                    && sourceText.ToString(classifiedSpan.TextSpan) = "``"
+
+            match classifiedSpans |> Seq.tryFind (fun cs -> isBacktickIdentifier cs && cs.TextSpan.IntersectsWith caretIndex) with
+            | Some backtickIdentifier ->
+                // Backtick enclosed identifier found intersecting with caret, use its span.
+                backtickIdentifier.TextSpan
+            | _ ->
+                match classifiedSpans |> Seq.tryFindBack (fun cs -> isUnclosedBacktick cs && caretIndex >= cs.TextSpan.Start) with
+                | Some unclosedBacktick ->
+                    // Unclosed backtick found before caret, use span from backtick to end of line.
+                    let lastSpan = classifiedSpans.[classifiedSpans.Count - 1]
+                    TextSpan.FromBounds(unclosedBacktick.TextSpan.Start, lastSpan.TextSpan.End)
+                | _ ->
+                    // No backticks involved at caret position, fall back to standard identifier chars.
+                    getIdentifierChars()

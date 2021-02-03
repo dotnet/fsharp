@@ -6,9 +6,17 @@ open System
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
+open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
 open Microsoft.FSharp.Reflection
 open System.Collections.Concurrent
+
+module Option = 
+
+    /// Convert string into Option string where null and String.Empty result in None
+    let ofString s = 
+        if String.IsNullOrEmpty(s) then None
+        else Some(s)
 
 [<AutoOpen>]
 module ReflectionHelper =
@@ -89,13 +97,23 @@ type IResolveDependenciesResult =
     /// The resolution error log (* process stderror *)
     abstract StdError: string[]
 
-    /// The resolution paths
+    /// The resolution paths - the full paths to selcted resolved dll's.
+    /// In scripts this is equivalent to #r @"c:\somepath\to\packages\ResolvedPackage\1.1.1\lib\netstandard2.0\ResolvedAssembly.dll"
     abstract Resolutions: seq<string>
 
     /// The source code file paths
     abstract SourceFiles: seq<string>
 
     /// The roots to package directories
+    ///     This points to the root of each located package.
+    ///     The layout of the package manager will be package manager specific.
+    ///     however, the dependency manager dll understands the nuget package layout
+    ///     and so if the package contains folders similar to the nuget layout then
+    ///     the dependency manager will be able to probe and resolve any native dependencies
+    ///     required by the nuget package.
+    ///
+    /// This path is also equivalent to
+    ///     #I @"c:\somepath\to\packages\1.1.1\ResolvedPackage"
     abstract Roots: seq<string>
 
 
@@ -104,7 +122,7 @@ type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
     abstract HelpMessages: string[]
-    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: (string * string) seq * tfm: string * rid: string -> IResolveDependenciesResult
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: (string * string) seq * tfm: string * rid: string * timeout: int-> IResolveDependenciesResult
 
 type ReflectionDependencyManagerProvider(theType: Type, 
         nameProperty: PropertyInfo,
@@ -112,8 +130,8 @@ type ReflectionDependencyManagerProvider(theType: Type,
         helpMessagesProperty: PropertyInfo option,
         resolveDeps: MethodInfo option,
         resolveDepsEx: MethodInfo option,
+        resolveDepsExWithTimeout: MethodInfo option,
         outputDir: string option) =
-
     let instance = Activator.CreateInstance(theType, [| outputDir :> obj |])
     let nameProperty = nameProperty.GetValue >> string
     let keyProperty = keyProperty.GetValue >> string
@@ -135,11 +153,13 @@ type ReflectionDependencyManagerProvider(theType: Type,
         | Some _, Some nameProperty, Some keyProperty, None ->
             let resolveMethod =   getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
             let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string> |] resolveDependenciesMethodName
-            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, None, resolveMethod, resolveMethodEx, outputDir) :> IDependencyManagerProvider)
+            let resolveMethodExWithTimeout = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string>; typeof<int> |] resolveDependenciesMethodName
+            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, None, resolveMethod, resolveMethodEx, resolveMethodExWithTimeout, outputDir) :> IDependencyManagerProvider)
         | Some _, Some nameProperty, Some keyProperty, Some helpMessagesProperty ->
             let resolveMethod =   getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
             let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string> |] resolveDependenciesMethodName
-            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, Some helpMessagesProperty, resolveMethod, resolveMethodEx, outputDir) :> IDependencyManagerProvider)
+            let resolveMethodExWithTimeout = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string>; typeof<int>; |] resolveDependenciesMethodName
+            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, Some helpMessagesProperty, resolveMethod, resolveMethodEx, resolveMethodExWithTimeout, outputDir) :> IDependencyManagerProvider)
 
     static member MakeResultFromObject(result: obj) = {
         new IResolveDependenciesResult with
@@ -214,15 +234,16 @@ type ReflectionDependencyManagerProvider(theType: Type,
         member _.HelpMessages = instance |> helpMessagesProperty
 
         /// Resolve the dependencies for the given arguments
-        member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm, rid): IResolveDependenciesResult =
-
+        member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm, rid, timeout): IResolveDependenciesResult =
             // The ResolveDependencies method, has two signatures, the original signaature in the variable resolveDeps and the updated signature resolveDepsEx
             // the resolve method can return values in two different tuples:
             //     (bool * string list * string list * string list)
             //     (bool * string list * string list)
             // We use reflection to get the correct method and to determine what we got back.
             let method, arguments =
-                if resolveDepsEx.IsSome then
+                if resolveDepsExWithTimeout.IsSome then
+                    resolveDepsExWithTimeout, [| box scriptExt; box packageManagerTextLines; box tfm; box rid; box timeout |]
+                elif resolveDepsEx.IsSome then
                     resolveDepsEx, [| box scriptExt; box packageManagerTextLines; box tfm; box rid |]
                 elif resolveDeps.IsSome then
                     resolveDeps, [| box scriptDir
@@ -249,7 +270,7 @@ type ReflectionDependencyManagerProvider(theType: Type,
                     let success, sourceFiles, packageRoots =
                         let tupleFields = result |> FSharpValue.GetTupleFields
                         match tupleFields |> Array.length with
-                        | 3 -> tupleFields.[0] :?> bool, tupleFields.[1] :?> string list  |> List.toSeq, tupleFields.[2] :?> string list |> List.toSeq
+                        | 3 -> tupleFields.[0] :?> bool, tupleFields.[1] :?> string list  |> List.toSeq, tupleFields.[2] :?> string list |> List.distinct |> List.toSeq
                         | _ -> false, seqEmpty, seqEmpty
                     ReflectionDependencyManagerProvider.MakeResultFromFields(success, Array.empty, Array.empty, Seq.empty, sourceFiles, packageRoots)
                 else
@@ -264,10 +285,7 @@ type ReflectionDependencyManagerProvider(theType: Type,
 type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe) =
 
     // Note: creating a NativeDllResolveHandler currently installs process-wide handlers
-    let dllResolveHandler =
-        match nativeProbingRoots with 
-        | null -> { new IDisposable with member _.Dispose() = () }
-        | _ -> new NativeDllResolveHandler(nativeProbingRoots) :> IDisposable
+    let dllResolveHandler = new NativeDllResolveHandler(nativeProbingRoots)
 
     // Note: creating a AssemblyResolveHandler currently installs process-wide handlers
     let assemblyResolveHandler = 
@@ -373,7 +391,6 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
 
     /// Fetch a dependencymanager that supports a specific key
     member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider =
-
         try
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
             |> Map.tryFind key
@@ -395,8 +412,9 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
                        [<Optional;DefaultParameterValue(null:string)>]executionRid: string,
                        [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string,
                        [<Optional;DefaultParameterValue("")>]mainScriptName: string,
-                       [<Optional;DefaultParameterValue("")>]fileName: string): IResolveDependenciesResult =
-        
+                       [<Optional;DefaultParameterValue("")>]fileName: string,
+                       [<Optional;DefaultParameterValue(-1)>]timeout: int): IResolveDependenciesResult =
+
         let key = (packageManager.Key, scriptExt, Seq.toArray packageManagerTextLines, executionTfm, executionRid, implicitIncludeDir, mainScriptName, fileName)
 
         let result = 
@@ -407,14 +425,16 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
                             RidHelpers.platformRid
                         else
                             executionRid
-                    Ok (packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm, executionRid))
+                    Ok (packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm, executionRid, timeout))
 
                 with e ->
                     let e = stripTieWrapper e
                     Error (DependencyManager.SR.packageManagerError(e.Message))
             ))
-        match result with 
-        | Ok res -> res
+        match result with
+        | Ok res ->
+            dllResolveHandler.RefreshPathsInEnvironment(res.Roots)
+            res
         | Error (errorNumber, errorData) ->
             reportError.Invoke(ErrorReportType.Error, errorNumber, errorData)
             ReflectionDependencyManagerProvider.MakeResultFromFields(false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty)
@@ -425,5 +445,5 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
 
             // Unregister everything
             registeredDependencyManagers <- None
-            dllResolveHandler.Dispose()
+            (dllResolveHandler :> IDisposable).Dispose()
             assemblyResolveHandler.Dispose()

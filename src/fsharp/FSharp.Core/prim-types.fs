@@ -369,11 +369,42 @@ namespace Microsoft.FSharp.Core
     [<MeasureAnnotatedAbbreviation>] type sbyte<[<Measure>] 'Measure> = sbyte
     [<MeasureAnnotatedAbbreviation>] type int16<[<Measure>] 'Measure> = int16
     [<MeasureAnnotatedAbbreviation>] type int64<[<Measure>] 'Measure> = int64
+    
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+    [<MeasureAnnotatedAbbreviation>] 
+    type nativeint<[<Measure>] 'Measure> = nativeint
+    
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+    [<MeasureAnnotatedAbbreviation>] 
+    type uint<[<Measure>] 'Measure> = uint
+    
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+    [<MeasureAnnotatedAbbreviation>] 
+    type byte<[<Measure>] 'Measure> = byte
+    
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+    [<MeasureAnnotatedAbbreviation>] 
+    type uint16<[<Measure>] 'Measure> = uint16
+    
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+    [<MeasureAnnotatedAbbreviation>] 
+    type uint64<[<Measure>] 'Measure> = uint64
+    
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+    [<MeasureAnnotatedAbbreviation>] 
+    type unativeint<[<Measure>] 'Measure> = unativeint
+    
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type double<[<Measure>] 'Measure> = float<'Measure>
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type single<[<Measure>] 'Measure> = float32<'Measure>
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type int8<[<Measure>] 'Measure> = sbyte<'Measure>
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type int32<[<Measure>] 'Measure> = int<'Measure>
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type uint8<[<Measure>] 'Measure> = byte<'Measure>
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type uint32<[<Measure>] 'Measure> = uint<'Measure>
 
     /// <summary>Represents a managed pointer in F# code.</summary>
     type byref<'T> = (# "!0&" #)
 
-    /// <summary>Represents a managed pointer in F# code.</summary>
+    /// <summary>Represents a managed pointer in F# code.</summary> 
     type byref<'T, 'Kind> = (# "!0&" #)
 
     /// Represents the types of byrefs in F# 4.5+
@@ -2109,7 +2140,7 @@ namespace Microsoft.FSharp.Core
 
         let inline MakeGenericComparer<'T>()  = 
             { new System.Collections.Generic.IComparer<'T> with 
-                 member __.Compare(x,y) = GenericComparison x y }
+                 member _.Compare(x,y) = GenericComparison x y }
 
         let CharComparer    = MakeGenericComparer<char>()
         let StringComparer  = MakeGenericComparer<string>()
@@ -2256,6 +2287,24 @@ namespace Microsoft.FSharp.Core
         let inline Int16WithMeasure (f : int16) : int16<'Measure> = retype f
         let inline SByteWithMeasure (f : sbyte) : sbyte<'Measure> = retype f
         let inline Int64WithMeasure (f : int64) : int64<'Measure> = retype f
+        
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+        let inline IntPtrWithMeasure (f : nativeint) : nativeint<'Measure> = retype f
+        
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+        let inline UInt32WithMeasure (f : uint) : uint<'Measure> = retype f
+        
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+        let inline UInt16WithMeasure (f : uint16) : uint16<'Measure> = retype f
+        
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+        let inline UInt64WithMeasure (f : uint64) : uint64<'Measure> = retype f
+        
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+        let inline ByteWithMeasure (f : byte) : byte<'Measure> = retype f
+        
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+        let inline UIntPtrWithMeasure (f : unativeint) : unativeint<'Measure> = retype f
 
         let inline formatError() = raise (new System.FormatException(SR.GetString(SR.badFormatString)))
 
@@ -4460,7 +4509,10 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("ToString")>]
         let inline string (value: 'T) = 
              anyToString "" value
-             when 'T : string     = (# "" value : string #)     // force no-op
+
+             when 'T : string =
+                if value = unsafeDefault<'T> then ""
+                else (# "" value : string #)     // force no-op
 
              // Using 'let x = (# ... #) in x.ToString()' leads to better IL, without it, an extra stloc and ldloca.s (get address-of)
              // gets emitted, which are unnecessary. With it, the extra address-of-variable is not created
@@ -4503,8 +4555,13 @@ namespace Microsoft.FSharp.Core
                 | _ -> value.ToString()
 
              // other commmon mscorlib reference types
-             when 'T : StringBuilder = let x = (# "" value : StringBuilder #) in x.ToString()
-             when 'T : IFormattable = let x = (# "" value : IFormattable #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : StringBuilder =
+                if value = unsafeDefault<'T> then ""
+                else let x = (# "" value : StringBuilder #) in x.ToString()
+
+             when 'T : IFormattable =
+                if value = unsafeDefault<'T> then ""
+                else let x = (# "" value : IFormattable #) in x.ToString(null, CultureInfo.InvariantCulture)
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToChar")>]
@@ -5256,20 +5313,20 @@ namespace Microsoft.FSharp.Core
                             state.Current
 
                     { new IEnumerator<'T> with
-                        member __.Current = current ()
+                        member _.Current = current ()
 
                       interface System.IDisposable with
-                        member __.Dispose () = ()
+                        member _.Dispose () = ()
 
                       interface IEnumerator with 
-                        member __.Current = box (current ())
+                        member _.Current = box (current ())
 
-                        member __.Reset () =
+                        member _.Reset () =
                             state.Started <- false
                             state.Complete <- false
                             state.Current <- Unchecked.defaultof<_> 
 
-                        member __.MoveNext () =
+                        member _.MoveNext () =
                             if not state.Started then
                                 state.Started <- true
                                 state.Current <- n
@@ -5287,7 +5344,7 @@ namespace Microsoft.FSharp.Core
                             not state.Complete}
 
                 { new IEnumerable<'T> with
-                    member __.GetEnumerator () = variableStepRangeEnumerator ()
+                    member _.GetEnumerator () = variableStepRangeEnumerator ()
 
                   interface IEnumerable with
                     member this.GetEnumerator () = (variableStepRangeEnumerator ()) :> IEnumerator }
@@ -5314,15 +5371,15 @@ namespace Microsoft.FSharp.Core
                                 derefValue
 
                         { new IEnumerator<'T> with
-                            member __.Current = current ()
+                            member _.Current = current ()
 
                           interface System.IDisposable with
-                            member __.Dispose () = ()
+                            member _.Dispose () = ()
 
                           interface IEnumerator with
-                            member __.Current = box (current ())
-                            member __.Reset () = value <- n - LanguagePrimitives.GenericOne
-                            member __.MoveNext () =
+                            member _.Current = box (current ())
+                            member _.Reset () = value <- n - LanguagePrimitives.GenericOne
+                            member _.MoveNext () =
                                 let derefValue = value
                                 if derefValue < m then
                                     value <- derefValue + LanguagePrimitives.GenericOne
@@ -5333,10 +5390,10 @@ namespace Microsoft.FSharp.Core
                                 else false }
 
                     { new IEnumerable<'T> with
-                        member __.GetEnumerator () = singleStepRangeEnumerator ()
+                        member _.GetEnumerator () = singleStepRangeEnumerator ()
 
                       interface IEnumerable with
-                        member __.GetEnumerator () = (singleStepRangeEnumerator ()) :> IEnumerator }
+                        member _.GetEnumerator () = (singleStepRangeEnumerator ()) :> IEnumerator }
 
             // For RangeStepGeneric, zero and add are functions representing the static resolution of GenericZero and (+)
             // for the particular static type. 

@@ -111,9 +111,9 @@ type InteractiveSession()  =
     member internal self.SetEventLoop (run: (unit -> bool), invoke: ((unit -> obj) -> obj), restart: (unit -> unit)) =
       evLoop.ScheduleRestart()
       evLoop <- { new IEventLoop with 
-                     member __.Run() = run()
-                     member __.Invoke(f) = invoke((fun () -> f() |> box)) |> unbox
-                     member __.ScheduleRestart() = restart() }
+                     member _.Run() = run()
+                     member _.Invoke(f) = invoke((fun () -> f() |> box)) |> unbox
+                     member _.ScheduleRestart() = restart() }
     
 [<assembly: CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1009:DeclareEventHandlersCorrectly", Scope="member", Target="FSharp.Compiler.Interactive.InteractiveSession.#ThreadException")>]
 do()

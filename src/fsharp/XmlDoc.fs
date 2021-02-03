@@ -5,9 +5,10 @@ module public FSharp.Compiler.XmlDoc
 open System
 open System.Xml.Linq
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 
 /// Represents collected XmlDoc lines
 [<RequireQualifiedAccess>]
@@ -21,7 +22,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
             elif lineAT.StartsWithOrdinal("<") then lines
             else 
                 ["<summary>"] @
-                (lines |> List.map Microsoft.FSharp.Core.XmlAdapters.escape) @
+                (lines |> List.map FSharp.Compiler.XmlAdapters.escape) @
                 ["</summary>"]
 
     /// Get the lines before insertion of implicit summary tags and encoding
@@ -181,12 +182,14 @@ type XmlDocCollector() =
 
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
 type PreXmlDoc =
+    | PreXmlDirect of unprocessedLines: string[] * range: range
     | PreXmlMerge of PreXmlDoc * PreXmlDoc
     | PreXmlDoc of pos * XmlDocCollector
     | PreXmlDocEmpty
 
-    member x.ToXmlDoc(check, paramNamesOpt: string list option) =
+    member x.ToXmlDoc(check: bool, paramNamesOpt: string list option) =
         match x with
+        | PreXmlDirect (lines, m) -> XmlDoc(lines, m)
         | PreXmlMerge(a, b) -> XmlDoc.Merge (a.ToXmlDoc(check, paramNamesOpt)) (b.ToXmlDoc(check, paramNamesOpt))
         | PreXmlDocEmpty -> XmlDoc.Empty
         | PreXmlDoc (pos, collector) ->
@@ -206,6 +209,8 @@ type PreXmlDoc =
         PreXmlDoc(grabPointPos, collector)
 
     static member Empty = PreXmlDocEmpty
+
+    static member Create(unprocessedLines, range) = PreXmlDirect(unprocessedLines, range)
 
     static member Merge a b = PreXmlMerge (a, b)
 

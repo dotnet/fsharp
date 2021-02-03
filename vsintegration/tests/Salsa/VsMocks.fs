@@ -1642,7 +1642,7 @@ module internal VsActual =
         static let jtc = new JoinableTaskContext()
 
         [<System.ComponentModel.Composition.Export(typeof<JoinableTaskContext>)>]
-        member public __.JoinableTaskContext : JoinableTaskContext = jtc
+        member public _.JoinableTaskContext : JoinableTaskContext = jtc
 
     let vsInstallDir =
         // use the environment variable to find the VS installdir
@@ -1664,7 +1664,8 @@ module internal VsActual =
             if File.Exists(fullPath) then
                 list.Add(new AssemblyCatalog(fullPath))
             else
-                failwith <| sprintf "unable to find assembly %s" p
+                
+                failwith <| sprintf "unable to find assembly '%s' in location '%s'" p thisAssemblyDir
 
         list.Add(new AssemblyCatalog(thisAssembly))
         [ "Microsoft.VisualStudio.Text.Data.dll"
@@ -1674,7 +1675,7 @@ module internal VsActual =
           "Microsoft.VisualStudio.Text.UI.Wpf.dll"
           "Microsoft.VisualStudio.Threading.dll"
           "Microsoft.VisualStudio.Platform.VSEditor.dll"
-          "Microsoft.VisualStudio.Editor.Implementation.dll"
+          "Microsoft.VisualStudio.Editor.dll"
           "Microsoft.VisualStudio.ComponentModelHost.dll"
           "Microsoft.VisualStudio.Shell.15.0.dll" ]
         |> List.iter add

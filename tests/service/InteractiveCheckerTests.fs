@@ -11,10 +11,10 @@ module FSharp.Compiler.Service.Tests.InteractiveChecker
 open NUnit.Framework
 open FsUnit
 open System
-open FSharp.Compiler
-open FSharp.Compiler.Range
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 
 let internal longIdentToString (longIdent: LongIdent) =
     String.Join(".", longIdent |> List.map (fun ident -> ident.ToString()))

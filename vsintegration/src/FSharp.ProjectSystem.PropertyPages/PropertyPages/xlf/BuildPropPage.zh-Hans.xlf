@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="chkXMLDocumentationFile.Text">
         <source>&amp;XML documentation file:</source>
-        <target state="translated">XML 文档文件(&amp;X): </target>
+        <target state="translated">XML 文档文件(&amp;X):</target>
         <note />
       </trans-unit>
       <trans-unit id="btnOutputPathBrowse.Text">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="lblOutputPath.Text">
         <source>&amp;Output path:</source>
-        <target state="translated">输出路径(&amp;O): </target>
+        <target state="translated">输出路径(&amp;O):</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">
@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="lblWarningLevel.Text">
         <source>&amp;Warning level:</source>
-        <target state="translated">警告等级(&amp;W): </target>
+        <target state="translated">警告等级(&amp;W):</target>
         <note />
       </trans-unit>
       <trans-unit id="chkOptimizeCode.Text">
@@ -119,12 +119,12 @@
       </trans-unit>
       <trans-unit id="lblPlatformTarget.Text">
         <source>Platform tar&amp;get:</source>
-        <target state="translated">目标平台(&amp;G): </target>
+        <target state="translated">目标平台(&amp;G):</target>
         <note />
       </trans-unit>
       <trans-unit id="lblOtherFlags.Text">
         <source>Other &amp;flags:</source>
-        <target state="translated">其他标志(&amp;F): </target>
+        <target state="translated">其他标志(&amp;F):</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDefineDebug.Text">

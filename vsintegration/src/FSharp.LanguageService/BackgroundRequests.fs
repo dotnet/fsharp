@@ -10,6 +10,7 @@ open System
 open Microsoft.VisualStudio.TextManager.Interop 
 open Microsoft.VisualStudio.Text
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 open Microsoft.VisualStudio.FSharp.Interactive.Session
 
@@ -178,8 +179,8 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                             interactiveChecker.TryGetRecentCheckResultsForFile(req.FileName,checkOptions)
                     
                     match possibleShortcutResults with 
-                    | Some (parseResults,typedResults,fileversion) -> 
-                        defaultArg syncParseInfoOpt parseResults,Some typedResults, false, false, fileversion // Note: untypedparse and typed results have different timestamps/snapshots, typed may be staler
+                    | Some (parseResults,typedResults,fileVersion) -> 
+                        defaultArg syncParseInfoOpt parseResults,Some typedResults, false, false, fileVersion // Note: untypedparse and typed results have different timestamps/snapshots, typed may be staler
                     | None -> 
                         // Perform a fresh two-phase parse of the source file
                         let parseResults = 
@@ -192,7 +193,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
 
                         // Type-checking
                         let typedResults,aborted = 
-                            match interactiveChecker.CheckFileInProjectAllowingStaleCachedResults(parseResults,req.FileName,req.Timestamp,req.Text,checkOptions,req.Snapshot) |> Async.RunSynchronously with 
+                            match interactiveChecker.CheckFileInProjectAllowingStaleCachedResults(parseResults,req.FileName,req.Timestamp,req.Text,checkOptions) |> Async.RunSynchronously with 
                             | None -> None,false
                             | Some FSharpCheckFileAnswer.Aborted -> 
                                 // isResultObsolete returned true during the type check.
@@ -240,8 +241,10 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                                 let span = new TextSpan(iStartLine=error.StartLineAlternate-1,iStartIndex=error.StartColumn,iEndLine=error.EndLineAlternate-1,iEndIndex=error.EndColumn)                             
                                 let sev = 
                                     match error.Severity with 
-                                    | FSharpErrorSeverity.Warning -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning
-                                    | FSharpErrorSeverity.Error -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error
+                                    | FSharpDiagnosticSeverity.Hidden -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Hint
+                                    | FSharpDiagnosticSeverity.Info -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Hint
+                                    | FSharpDiagnosticSeverity.Warning -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning
+                                    | FSharpDiagnosticSeverity.Error -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error
                                 req.ResultSink.AddError(req.FileName, error.Subcategory, error.Message, span, sev)
                           
 
@@ -291,7 +294,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
             // OK, the last request is still active, so try to wait again
             lastParseFileRequest.Result.TryWaitForBackgroundRequestCompletion(millisecondsTimeout) 
 
-    member __.OnActiveViewChanged(_textView: IVsTextView) =
+    member _.OnActiveViewChanged(_textView: IVsTextView) =
         parseFileResults <- None
         lastParseFileRequest <- null // abandon any request for untyped parse information, without cancellation
 
@@ -300,7 +303,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
     //
     // THIS MUST ONLY RETURN TRUE IF ---> ExecuteBackgroundRequest is equivalent to fetching a recent,
     // perhaps out-of-date scope.
-    member __.IsRecentScopeSufficientForBackgroundRequest(reason:BackgroundRequestReason) = 
+    member _.IsRecentScopeSufficientForBackgroundRequest(reason:BackgroundRequestReason) = 
     
         match reason with 
         | BackgroundRequestReason.MatchBraces 

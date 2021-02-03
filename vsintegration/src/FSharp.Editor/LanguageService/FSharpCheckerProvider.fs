@@ -6,6 +6,7 @@ open System
 open System.ComponentModel.Composition
 open System.Diagnostics
 open Microsoft.CodeAnalysis
+open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
@@ -40,14 +41,13 @@ type internal FSharpCheckerProvider
             let objToHold = box md
 
             // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
-            Debug.Assert((FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
+            // Debug.Assert((FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
 
             Some (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
         with ex -> 
             // We catch all and let the backup routines in the F# compiler find the error
             Assert.Exception(ex)
             None 
-
 
     let checker = 
         lazy
@@ -60,7 +60,8 @@ type internal FSharpCheckerProvider
                     legacyReferenceResolver=LegacyMSBuildReferenceResolver.getResolver(),
                     tryGetMetadataSnapshot = tryGetMetadataSnapshot,
                     keepAllBackgroundSymbolUses = false,
-                    enableBackgroundItemKeyStoreAndSemanticClassification = true)
+                    enableBackgroundItemKeyStoreAndSemanticClassification = true,
+                    enablePartialTypeChecking = true)
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,

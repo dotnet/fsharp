@@ -17,10 +17,14 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text.Pos
 open FSharp.Compiler.XmlDoc
 
 #if DEBUG
@@ -69,7 +73,7 @@ let mkSynDoBinding (vis, strict, expr, m) =
              None, expr, m, NoDebugPointAtDoBinding)
 
 let mkSynDoDecl (e: SynExpr) = 
-    let spExpr = if IsControlFlowExpression e then NoDebugPointAtDoBinding else DebugPointAtBinding e.Range in
+    let spExpr = if IsControlFlowExpression e then NoDebugPointAtDoBinding else DebugPointAtBinding e.Range
     SynModuleDecl.DoExpr(spExpr, e, e.Range)
 
 let addAttribs attrs p =  SynPat.Attrib(p, attrs, p.Range)
@@ -627,7 +631,8 @@ interactiveSeparator:
 /* A #directive in a module, namespace or an interaction */
 hashDirective:
   | HASH IDENT hashDirectiveArgs                            
-     { ParsedHashDirective ($2, $3, lhs parseState) }
+     { let m = match $3 with [] -> rhs2  parseState 1 2 | _ -> rhs2  parseState 1 3
+       ParsedHashDirective ($2, $3, m) }
 
 
 /* The arguments to a #directive */
@@ -1496,8 +1501,14 @@ tyconDefn:
   | typeNameInfo 
      { TypeDefn($1, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range), $1.Range), [], $1.Range) }
 
-  | typeNameInfo EQUALS tyconDefnRhsBlock
-     { let nameRange = rhs parseState 1
+  | typeNameInfo opt_equals tyconDefnRhsBlock 
+     { if not $2 then (
+            let (ComponentInfo(_, _, _, lid, _, _, _, _)) = $1 
+            // While the spec doesn't allow long idents here, the parser doesn't enforce this, so take one ident
+            let typeNameId = List.last lid
+            raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsEqualsMissingInTypeDefinition(typeNameId.ToString()))
+       )
+       let nameRange = rhs parseState 1
        let (tcDefRepr:SynTypeDefnRepr), members = $3 nameRange
        let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
        let mWhole = (declRange, members) ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)    
@@ -1586,8 +1597,7 @@ tyconClassDefn:
        needsCheck, (TyconUnspecified, decls), mopt }
 
   | classOrInterfaceOrStruct classDefnBlock END 
-     { let m = (rhs parseState 1, $2) ||> unionRangeWithListBy (fun (d:SynMemberDefn) -> d.Range)
-       false, ($1, $2), Some(m) }
+     { false, ($1, $2), Some (rhs2 parseState 1 3) }
 
   | classOrInterfaceOrStruct classDefnBlock recover 
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedClassInterfaceOrStruct())
@@ -1596,7 +1606,7 @@ tyconClassDefn:
 
   | classOrInterfaceOrStruct error END
      { // silent recovery 
-       false, ($1, []), Some(rhs parseState 1) }
+       false, ($1, []), Some (rhs2 parseState 1 3) }
 
 
 /* The right-hand-side of a object type definition where the class/interface/struct kind has not been specified */
@@ -1644,9 +1654,13 @@ classDefnMembers:
   
 
 /* The members of an object type definition or type augmentation */
-classDefnMembersAtLeastOne:  
-  | classDefnMember opt_seps classDefnMembers 
-     { $1 @  $3 }
+classDefnMembersAtLeastOne:
+  | classDefnMember opt_seps classDefnMembers
+     { match $1, $3 with
+       | [ SynMemberDefn.Interface (_, Some [], m) ], nextMember :: _ ->
+           warning(IndentationProblem(FSComp.SR.lexfltTokenIsOffsideOfContextStartedEarlier(warningStringOfPos m.Start), nextMember.Range))
+       | _ -> ()
+       $1 @ $3 }
 
 
 /* The "with get, set" part of a member definition */
@@ -1899,11 +1913,12 @@ classDefnMember:
   | opt_attributes opt_declVisibility interfaceMember appType opt_interfaceImplDefn  
      {  if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesAreNotPermittedOnInterfaceImplementations(), rhs parseState 1))
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsInterfacesHaveSameVisibilityAsEnclosingType(), rhs parseState 3))
-        let mWhole = 
+        let members = Option.map fst $5
+        let mWhole =
             match $5 with
             | None -> rhs2 parseState 1 4
-            | Some(mems) -> (rhs2 parseState 1 4, mems) ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
-        [ SynMemberDefn.Interface ($4, $5, mWhole) ] }
+            | Some (_, m) -> unionRanges (rhs2 parseState 1 4) m
+        [ SynMemberDefn.Interface ($4, members, mWhole) ] }
         
   | opt_attributes opt_declVisibility abstractMemberFlags opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet  opt_ODECLEND
      { let ty, arity = $8
@@ -2037,9 +2052,14 @@ opt_declVisibility:
      { None }
   
 
-opt_interfaceImplDefn: 
+opt_interfaceImplDefn:
   | WITH objectImplementationBlock declEnd
-     { Some($2) } 
+     { let members = $2
+       let m = (rhs parseState 1, members) ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
+       Some (members, m) }
+
+  | WITH
+     { Some ([], rhs parseState 1) }
 
   | /* EMPTY */
      { None }
@@ -2220,7 +2240,8 @@ inlineAssemblyTyconRepr:
   | HASH stringOrKeywordString HASH 
      { libraryOnlyError (lhs parseState)
        let lhsm = lhs parseState 
-       SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (internalParseAssemblyCodeType $2 parseState.LexBuffer.SupportsFeature (rhs parseState 2), lhsm) }
+       let ilType = ParseAssemblyCodeType $2 parseState.LexBuffer.SupportsFeature (rhs parseState 2)
+       SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (box ilType, lhsm) }
 
 classOrInterfaceOrStruct: 
   | CLASS 
@@ -2388,24 +2409,29 @@ attrUnionCaseDecls:
      { (fun xmlDoc -> [ $1 xmlDoc ]) }
 
 /* The core of a union case definition */
-attrUnionCaseDecl: 
-  | opt_attributes opt_access unionCaseName opt_OBLOCKSEP
+attrUnionCaseDecl:
+  | opt_attributes opt_access unionCaseName
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
         let mDecl = rhs parseState 3
-        (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3, UnionCaseFields [], xmlDoc, None, mDecl))) } 
+        (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3, UnionCaseFields [], xmlDoc, None, mDecl))) }
 
-  | opt_attributes opt_access unionCaseName OF unionCaseRepr  opt_OBLOCKSEP
+  | opt_attributes opt_access unionCaseName OF unionCaseRepr
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
         let mDecl = rhs2 parseState 1 5
-        (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3, UnionCaseFields $5, xmlDoc, None, mDecl))) } 
+        (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3, UnionCaseFields $5, xmlDoc, None, mDecl))) }
 
-  | opt_attributes opt_access unionCaseName COLON topType opt_OBLOCKSEP
+  | opt_attributes opt_access unionCaseName OF recover
+      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
+        let mDecl = rhs2 parseState 1 4
+        (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3, UnionCaseFields [], xmlDoc, None, mDecl))) }
+
+  | opt_attributes opt_access unionCaseName COLON topType
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
         libraryOnlyWarning(lhs parseState)
         let mDecl = rhs2 parseState 1 5
         (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3, UnionCaseFullType $5, xmlDoc, None, mDecl))) }
 
-  | opt_attributes opt_access unionCaseName EQUALS constant opt_OBLOCKSEP
+  | opt_attributes opt_access unionCaseName EQUALS constant
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsEnumFieldsCannotHaveVisibilityDeclarations(), rhs parseState 2))
         let mDecl = rhs2 parseState 1 5
         (fun xmlDoc -> Choice1Of2 (EnumCase ( $1, $3, $5, xmlDoc, mDecl))) } 
@@ -2447,7 +2473,8 @@ unionCaseReprElements:
 
 unionCaseReprElement:
   | ident COLON appType
-     { mkNamedField($1, $3) }
+     { let wholeRange = rhs2 parseState 1 3
+       mkNamedField($1, $3, wholeRange) }
 
   | appType
      { mkAnonField $1 }
@@ -2499,12 +2526,15 @@ exconCore:
      { SynExceptionDefnRepr($2, $4, $5, $1, $3, (match $5 with None -> rhs2 parseState 1 4 | Some p -> unionRanges (rangeOfLongIdent p) (rhs2 parseState 1 4))) }
   
 /* Part of an exception definition */
-exconIntro: 
-  | ident 
+exconIntro:
+  | ident
       { UnionCase([], $1, UnionCaseFields [], PreXmlDoc.Empty, None, lhs parseState) }
 
-  | ident OF unionCaseRepr 
+  | ident OF unionCaseRepr
       { UnionCase([], $1, UnionCaseFields $3, PreXmlDoc.Empty, None, lhs parseState) }
+
+  | ident OF recover
+      { UnionCase([], $1, UnionCaseFields [], PreXmlDoc.Empty, None, lhs parseState) }
 
 exconRepr: 
   | /* EMPTY */
@@ -2637,7 +2667,7 @@ cPrototype:
                                   SynExpr.Ident (ident("failwith", rhs parseState 6)),
                                   SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", rhs parseState 8), rhs parseState 8),
                                   mRhs)
-        (fun attrs vis -> 
+        (fun attrs _ -> 
             let bindingId = SynPat.LongIdent (LongIdentWithDots([nm], []), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
             let binding = mkSynBinding 
                               (xmlDoc, bindingId) 
@@ -3355,10 +3385,10 @@ declExpr:
        //reportParseErrorAt (match hwlb with (BindingSetPreAttrs(m, _, _, _, _))  -> m) (FSComp.SR.parsErrorInReturnForLetIncorrectIndentation())
        mkLocalBindings (unionRanges m (rhs parseState 3), hwlb, arbExpr("declExpr3", (rhs parseState 3))) }
 
-  | hardwhiteDoBinding  %prec expr_let
+  | hardwhiteDoBinding %prec expr_let
      { let e = snd $1
-       SynExpr.Do (e, e.Range) }
-  
+       SynExpr.Do (e, unionRanges (rhs parseState 1).StartRange e.Range) }
+
   | anonMatchingExpr %prec expr_function
       { $1 }
 
@@ -4462,7 +4492,9 @@ inlineAssemblyExpr:
   | HASH stringOrKeywordString opt_inlineAssemblyTypeArg optCurriedArgExprs  optInlineAssemblyReturnTypes HASH 
       { libraryOnlyWarning (lhs parseState)
         let s, sm = $2, rhs parseState 2
-        (fun m -> SynExpr.LibraryOnlyILAssembly (internalParseAssemblyCodeInstructions s parseState.LexBuffer.SupportsFeature sm, $3, List.rev $4, $5, m)) }
+        (fun m ->
+            let ilInstrs = ParseAssemblyCodeInstructions s parseState.LexBuffer.SupportsFeature sm
+            SynExpr.LibraryOnlyILAssembly (box ilInstrs, $3, List.rev $4, $5, m)) }
 
 optCurriedArgExprs:
   | optCurriedArgExprs argExpr  %prec expr_args
@@ -5444,6 +5476,10 @@ opt_ODECLEND:
 deprecated_opt_equals: 
   | EQUALS      { deprecatedWithError (FSComp.SR.parsNoEqualShouldFollowNamespace()) (lhs parseState); () } 
   | /* EMPTY */ {  }
+
+opt_equals:
+  | EQUALS      { true }
+  | /* EMPTY */ { false } 
 
 opt_OBLOCKSEP: 
   | OBLOCKSEP   { }

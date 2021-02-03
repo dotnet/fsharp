@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../artifacts/bin/fcs/net461"
+#I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
 Compiler Services: Editor services
 ==================================
@@ -128,7 +128,6 @@ identifier (the other option lets you get tooltip with full assembly location wh
 
 *)
 // Get tag of the IDENT token to be used as the last argument
-open FSharp.Compiler
 let identToken = FSharpTokenTag.Identifier
 
 // Get tool tip at the specified location
@@ -166,8 +165,7 @@ where we need to perform the completion.
 // Get declarations (autocomplete) for a location
 let decls = 
     checkFileResults.GetDeclarationListInfo
-      (Some parseFileResults, 7, inputLines.[6], PartialLongName.Empty 23, (fun () -> []), fun _ -> false)
-    |> Async.RunSynchronously
+      (Some parseFileResults, 7, inputLines.[6], PartialLongName.Empty 23, (fun () -> []))
 
 // Print the names of available items
 for item in decls.Items do
@@ -199,7 +197,6 @@ changes):
 // Get overloads of the String.Concat method
 let methods = 
     checkFileResults.GetMethods(5, 27, inputLines.[4], Some ["String"; "Concat"])
-    |> Async.RunSynchronously
 
 // Print concatenated parameter lists
 for mi in methods.Methods do

@@ -13,6 +13,7 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.Lib
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -113,8 +114,8 @@ let (|Seq|_|) g expr =
     | ValApp g g.seq_vref ([elemTy], [e], _m) -> Some (e, elemTy)
     | _ -> None
 
-let IsPossibleSequenceExpr g expr =
-    match expr with Seq g _ -> true | _ -> false
+let IsPossibleSequenceExpr g overallExpr =
+    match overallExpr with Seq g _ -> true | _ -> false
 
 /// Analyze a TAST expression to detect the elaborated form of a sequence expression.
 /// Then compile it to a state machine represented as a TAST containing goto, return and label nodes.

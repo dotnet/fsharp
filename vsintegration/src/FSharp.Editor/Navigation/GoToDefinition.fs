@@ -18,8 +18,8 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 
 open Microsoft.VisualStudio.Shell.Interop
 
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 module private Symbol =
     let fullName (root: ISymbol) : string =
@@ -72,7 +72,7 @@ module private ParamTypeSymbol =
         |> Option.ofOptionList
 
 module private ExternalSymbol =
-    let rec ofRoslynSymbol (symbol: ISymbol) : (ISymbol * ExternalSymbol) list =
+    let rec ofRoslynSymbol (symbol: ISymbol) : (ISymbol * FSharpExternalSymbol) list =
         let container = Symbol.fullName symbol.ContainingSymbol
 
         match symbol with
@@ -81,28 +81,28 @@ module private ExternalSymbol =
 
             let constructors =
                 typesym.InstanceConstructors
-                |> Seq.choose<_,ISymbol * ExternalSymbol> (fun methsym ->
+                |> Seq.choose<_,ISymbol * FSharpExternalSymbol> (fun methsym ->
                     ParamTypeSymbol.tryOfRoslynParameters methsym.Parameters
-                    |> Option.map (fun args -> upcast methsym, ExternalSymbol.Constructor(fullTypeName, args))
+                    |> Option.map (fun args -> upcast methsym, FSharpExternalSymbol.Constructor(fullTypeName, args))
                     )
                 |> List.ofSeq
                 
-            (symbol, ExternalSymbol.Type fullTypeName) :: constructors
+            (symbol, FSharpExternalSymbol.Type fullTypeName) :: constructors
 
         | :? IMethodSymbol as methsym ->
             ParamTypeSymbol.tryOfRoslynParameters methsym.Parameters
             |> Option.map (fun args ->
-                symbol, ExternalSymbol.Method(container, methsym.MetadataName, args, methsym.TypeParameters.Length))
+                symbol, FSharpExternalSymbol.Method(container, methsym.MetadataName, args, methsym.TypeParameters.Length))
             |> Option.toList
 
         | :? IPropertySymbol as propsym ->
-            [upcast propsym, ExternalSymbol.Property(container, propsym.MetadataName)]
+            [upcast propsym, FSharpExternalSymbol.Property(container, propsym.MetadataName)]
 
         | :? IFieldSymbol as fieldsym ->
-            [upcast fieldsym, ExternalSymbol.Field(container, fieldsym.MetadataName)]
+            [upcast fieldsym, FSharpExternalSymbol.Field(container, fieldsym.MetadataName)]
 
         | :? IEventSymbol as eventsym ->
-            [upcast eventsym, ExternalSymbol.Event(container, eventsym.MetadataName)]
+            [upcast eventsym, FSharpExternalSymbol.Event(container, eventsym.MetadataName)]
 
         | _ -> []
 
@@ -115,7 +115,7 @@ type internal StatusBar(statusBar: IVsStatusbar) =
         statusBar.FreezeOutput 0 |> ignore  
         statusBar.Clear() |> ignore
         
-    member __.Message(_msg: string) =
+    member _.Message(_msg: string) =
         ()
         //let _, frozen = statusBar.IsFrozen()
         //// unfreeze the status bar
@@ -134,13 +134,13 @@ type internal StatusBar(statusBar: IVsStatusbar) =
         //    | _ -> clear()
         //}|> Async.Start
     
-    member __.Clear() = () //clear()
+    member _.Clear() = () //clear()
 
     /// Animated magnifying glass that displays on the status bar while a symbol search is in progress.
-    member __.Animate() : IDisposable = 
+    member _.Animate() : IDisposable = 
         //statusBar.Animation (1, &searchIcon) |> ignore
         { new IDisposable with
-            member __.Dispose() = () } //statusBar.Animation(0, &searchIcon) |> ignore }
+            member _.Dispose() = () } //statusBar.Animation(0, &searchIcon) |> ignore }
 
 type internal FSharpGoToDefinitionNavigableItem(document, sourceSpan) =
     inherit FSharpNavigableItem(Glyph.BasicFile, ImmutableArray.Empty, document, sourceSpan)
@@ -166,7 +166,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
         }
 
     /// Helper function that is used to determine the navigation strategy to apply, can be tuned towards signatures or implementation files.
-    member private __.FindSymbolHelper (originDocument: Document, originRange: range, sourceText: SourceText, preferSignature: bool) =
+    member private _.FindSymbolHelper (originDocument: Document, originRange: range, sourceText: SourceText, preferSignature: bool) =
         asyncMaybe {
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(originDocument, CancellationToken.None, userOpName)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
@@ -180,7 +180,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
             
             let! _, _, checkFileResults = checker.ParseAndCheckDocument (originDocument, projectOptions, sourceText=sourceText, userOpName=userOpName)
             let idRange = lexerSymbol.Ident.idRange
-            let! fsSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
+            let! fsSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
             let symbol = fsSymbolUse.Symbol
             // if the tooltip was spawned in an implementation file and we have a range targeting
             // a signature file, try to find the corresponding implementation file and target the
@@ -192,7 +192,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                 let! implSourceText = implDoc.GetTextAsync ()
                 let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(implDoc, CancellationToken.None, userOpName)
                 let! _, _, checkFileResults = checker.ParseAndCheckDocument (implDoc, projectOptions, sourceText=implSourceText, userOpName=userOpName)
-                let! symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol |> liftAsync
+                let symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol
                 let! implSymbol  = symbolUses |> Array.tryHead 
                 let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, implSymbol.RangeAlternate)
                 return FSharpGoToDefinitionNavigableItem (implDoc, implTextSpan)
@@ -204,7 +204,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     /// if the symbol is defined in the given file, return its declaration location, otherwise use the targetSymbol to find the first 
     /// instance of its presence in the provided source file. The first case is needed to return proper declaration location for
     /// recursive type definitions, where the first its usage may not be the declaration.
-    member __.FindSymbolDeclarationInFile(targetSymbolUse: FSharpSymbolUse, filePath: string, sourceText: SourceText, options: FSharpProjectOptions, fileVersion:int) = 
+    member _.FindSymbolDeclarationInFile(targetSymbolUse: FSharpSymbolUse, filePath: string, sourceText: SourceText, options: FSharpProjectOptions, fileVersion:int) = 
         asyncMaybe {
             match targetSymbolUse.Symbol.DeclarationLocation with
             | Some decl when decl.FileName = filePath -> return decl
@@ -213,7 +213,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                 match checkFileAnswer with 
                 | FSharpCheckFileAnswer.Aborted -> return! None
                 | FSharpCheckFileAnswer.Succeeded checkFileResults ->
-                    let! symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol |> liftAsync
+                    let symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol
                     let! implSymbol  = symbolUses |> Array.tryHead 
                     return implSymbol.RangeAlternate
         }
@@ -235,8 +235,8 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
             let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position,originDocument.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let idRange = lexerSymbol.Ident.idRange
 
-            let! declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, preferSignature, userOpName=userOpName) |> liftAsync
-            let! targetSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
+            let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, preferSignature)
+            let! targetSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
 
             match declarations with
             | FSharpFindDeclResult.ExternalDecl (assembly, targetExternalSym) ->
@@ -276,7 +276,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                         let navItem = FSharpGoToDefinitionNavigableItem (implDocument, implTextSpan)
                         return (navItem, idRange)
                     else // jump from implementation to the corresponding signature
-                        let! declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, true, userOpName=userOpName) |> liftAsync
+                        let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, true)
                         match declarations with
                         | FSharpFindDeclResult.DeclFound targetRange -> 
                             let! sigDocument = originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName
@@ -342,7 +342,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
 
     /// Navigate to the positon of the textSpan in the provided document
     /// used by quickinfo link navigation when the tooltip contains the correct destination range.
-    member __.TryNavigateToTextSpan(document: Document, textSpan: TextSpan, statusBar: StatusBar) =
+    member _.TryNavigateToTextSpan(document: Document, textSpan: TextSpan, statusBar: StatusBar) =
         let navigableItem = FSharpGoToDefinitionNavigableItem(document, textSpan)
         let workspace = document.Project.Solution.Workspace
         let navigationService = workspace.Services.GetService<IFSharpDocumentNavigationService>()
@@ -352,7 +352,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
         if not navigationSucceeded then 
             statusBar.TempMessage (SR.CannotNavigateUnknown())
 
-    member __.NavigateToItem(navigableItem: FSharpNavigableItem, statusBar: StatusBar) =
+    member _.NavigateToItem(navigableItem: FSharpNavigableItem, statusBar: StatusBar) =
         use __ = statusBar.Animate()
 
         statusBar.Message (SR.NavigatingTo())

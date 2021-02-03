@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../artifacts/bin/fcs/net461"
+#I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
 Interactive Service: Embedding F# Interactive
 =============================================
@@ -31,8 +31,9 @@ First, we need to reference the libraries that contain F# interactive service:
 *)
 
 #r "FSharp.Compiler.Service.dll"
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 (**
 To communicate with F# interactive, we need to create streams that represent input and
@@ -115,7 +116,7 @@ Catching errors
 ``EvalExpression``, ``EvalInteraction`` and ``EvalScript`` are awkward if the
 code has type checking warnings or errors, or if evaluation fails with an exception.
 In these cases you can use ``EvalExpressionNonThrowing``, ``EvalInteractionNonThrowing``
-and ``EvalScriptNonThrowing``. These return a tuple of a result and an array of ``FSharpErrorInfo`` values.
+and ``EvalScriptNonThrowing``. These return a tuple of a result and an array of ``FSharpDiagnostic`` values.
 These represent the errors and warnings. The result part is a ``Choice<_,_>`` between an actual
 result and an exception.
 
@@ -227,7 +228,6 @@ based on the declarations executed so far.
 
 You can also request declaration list information, tooltip text and symbol resolution:
 *)
-open FSharp.Compiler
 
 // get a tooltip
 checkResults.GetToolTipText(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT)

@@ -8,6 +8,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Lib
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -631,10 +632,10 @@ type env =
 
       prefix: string
 
-      m: Range.range
+      m: range
     }
 
-    override __.ToString() = "<env>"
+    override _.ToString() = "<env>"
 
 let suffixE env s = {env with prefix = env.prefix + s}
 

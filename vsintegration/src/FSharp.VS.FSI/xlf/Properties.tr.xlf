@@ -12,6 +12,11 @@
         <target state="translated">True olarak ayarlanırsa ve geçerli makine 64 bit ise F# Etkileşimli'yi 64 bit işlem olarak çalıştırın. (Aksi takdirde F# Etkileşimli 32 bit işlemdir.)</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpInteractiveMisc">
+        <source>Misc</source>
+        <target state="translated">Çeşitli</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
         <source>F# Interactive options</source>
         <target state="translated">F# Etkileşimli seçenekleri</target>
@@ -20,11 +25,6 @@
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
         <target state="translated">Visual Studio tarafından çalıştırılabilen F# Etkileşimli'ye geçirilmiş ek komut satırı bağımsız değişkenleri. (Betik hata ayıklaması etkinleştirilmişse en iyi duruma getirme ve hata ayıklama bayrakları yok sayılır.)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpInteractiveMisc">
-        <source>Misc</source>
-        <target state="translated">Çeşitli</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreview">
@@ -65,6 +65,16 @@
       <trans-unit id="FSharpInteractiveDebugging">
         <source>Debugging</source>
         <target state="translated">Hata Ayıklama</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCore">
+        <source>Use .NET Core Scripting</source>
+        <target state="translated">.NET Core Betiği Kullan</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCoreDescr">
+        <source>Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</source>
+        <target state="translated">Tüm F# betikleri ile F# Etkileşimli penceresi için .NET Core betik düzenlemeyi ve yürütmeyi etkinleştirin</target>
         <note />
       </trans-unit>
     </body>

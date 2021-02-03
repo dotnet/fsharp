@@ -86,7 +86,7 @@ type internal CodeLensProvider
     member val LineLensAdornmentLayerDefinition : AdornmentLayerDefinition = null with get, set
 
     interface IViewTaggerProvider with
-        override __.CreateTagger(view, buffer) =
+        override _.CreateTagger(view, buffer) =
             if settings.CodeLens.Enabled && not settings.CodeLens.ReplaceWithLineLens then
                 let wpfView =
                     match view with
@@ -98,6 +98,6 @@ type internal CodeLensProvider
                 null
 
     interface IWpfTextViewCreationListener with
-        override __.TextViewCreated view =
+        override _.TextViewCreated view =
             if settings.CodeLens.Enabled && settings.CodeLens.ReplaceWithLineLens then
                 addLineLensProviderOnce view (view.TextBuffer) |> ignore

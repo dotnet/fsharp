@@ -92,6 +92,11 @@
         <target state="translated">literal float32 sem ponto</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExpandedMeasurables">
+        <source>more types support units of measure</source>
+        <target state="translated">mais tipos dão suporte para unidades de medida</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">fatia de índice fixo 3d/4d</target>
@@ -247,6 +252,11 @@
         <target state="translated">Valor não reconhecido '{0}' para --langversion use --langversion:? para a lista completa</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsVersion">
+        <source>Display compiler version banner and exit</source>
+        <target state="translated">Exibir a faixa de versão do compilador e sair</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">O recurso de gerenciamento de pacotes requer a versão de idioma 5.0. Use /langversion:preview</target>
@@ -277,6 +287,11 @@
         <target state="translated">A cadeia de caracteres verbatim interpolada incompleta foi iniciada aqui ou anteriormente</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsEqualsMissingInTypeDefinition">
+        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
+        <target state="translated">Token inesperado na definição de tipo. Esperava-se '=' após o tipo '{0}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">Símbolo inesperado '.' na definição de membro. Esperado 'com', '=' ou outro token.</target>
@@ -295,6 +310,11 @@
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
         <source>#i is not supported by the registered PackageManagers</source>
         <target state="translated">O PackageManagers registrado não dá suporte a #i</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDetermined">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
+        <target state="translated">Não foi possível determinar o SDK do .NET para esse script. Se o script estiver em um diretório usando um 'global.json', verifique se o SDK relevante do .NET está instalado. A saída de '{0} --version' no diretório '{1}' foi: '{2}' e o código de saída foi '{3}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -345,6 +365,11 @@
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">use! não pode ser combinado com and!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
+        <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
+        <target state="translated">Uma declaração [&lt;Literal&gt;] não pode usar um padrão ativo para seu identificador</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
@@ -889,7 +914,7 @@
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityAccessibilityMore">
         <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe accessibility specified in the signature is more than that specified in the implementation</source>
-        <target state="translated">O módulo '{0}' contém\n    {1}    \ n, mas sua assinatura especifica\n    {2}    \nA acessibilidade especificada na assinatura é maior que a especificada na implementação</target>
+        <target state="translated">O módulo '{0}' contém\n    {1}    \n, mas sua assinatura especifica\n    {2}    \nA acessibilidade especificada na assinatura é maior que a especificada na implementação</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityInlineFlagsDiffer">
@@ -1794,7 +1819,7 @@
       </trans-unit>
       <trans-unit id="crefQuotationsCantContainObjExprs">
         <source>Quotations cannot contain object expressions</source>
-        <target state="translated">Cotações não podem conter expressões de objeto </target>
+        <target state="translated">Cotações não podem conter expressões de objeto</target>
         <note />
       </trans-unit>
       <trans-unit id="crefQuotationsCantContainAddressOf">
@@ -1804,7 +1829,7 @@
       </trans-unit>
       <trans-unit id="crefQuotationsCantContainStaticFieldRef">
         <source>Quotations cannot contain expressions that fetch static fields</source>
-        <target state="translated">Cotações não podem conter expressões que buscam campos estáticos </target>
+        <target state="translated">Cotações não podem conter expressões que buscam campos estáticos</target>
         <note />
       </trans-unit>
       <trans-unit id="crefQuotationsCantContainInlineIL">
@@ -2708,8 +2733,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
-        <source>Units-of-measure supported only on float, float32, decimal and signed integer types</source>
-        <target state="translated">Unidades de medida só são suportadas em tipos float, float32, decimal e inteiro com sinal</target>
+        <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
+        <target state="translated">Há suporte para unidades de medida somente nos tipos float, float32, decimal e inteiro.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">
@@ -3104,7 +3129,7 @@
       </trans-unit>
       <trans-unit id="tcAnonymousTypeInvalidInDeclaration">
         <source>Anonymous type variables are not permitted in this declaration</source>
-        <target state="translated">Variáveis de tipos anônimos não são permitidas nesta declaração </target>
+        <target state="translated">Variáveis de tipos anônimos não são permitidas nesta declaração</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedSlashInType">
@@ -5159,7 +5184,7 @@
       </trans-unit>
       <trans-unit id="optRecursiveValValue">
         <source>Recursive ValValue {0}</source>
-        <target state="translated">ValValue {0} recursivo </target>
+        <target state="translated">ValValue {0} recursivo</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltIncorrentIndentationOfIn">
@@ -6319,7 +6344,7 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeZip">
         <source>{0} var in collection</source>
-        <target state="translated">{0} var na coleção</target>
+        <target state="translated">{0} var in collection</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBinaryOperatorRequiresVariable">

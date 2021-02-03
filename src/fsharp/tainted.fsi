@@ -4,12 +4,18 @@ namespace FSharp.Compiler
 
 #if !NO_EXTENSIONTYPING
 
-
-open System
-open System.Reflection
-open Microsoft.FSharp.Core.CompilerServices
-open FSharp.Compiler.Range
+open FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Text
+
+[<Sealed>]
+type internal TypeProviderToken = 
+    interface LockToken
+
+[<Sealed;Class>]
+type internal TypeProviderLock =
+    inherit Lock<TypeProviderToken>
 
 /// Stores and transports aggregated list of errors reported by the type provider
 type internal TypeProviderError =

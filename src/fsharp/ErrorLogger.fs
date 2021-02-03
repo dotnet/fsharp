@@ -3,8 +3,10 @@
 module public FSharp.Compiler.ErrorLogger
 
 open FSharp.Compiler 
-open FSharp.Compiler.Range
 open FSharp.Compiler.Features
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
 open System
 
 //------------------------------------------------------------------------
@@ -152,7 +154,7 @@ type Exiter =
 
 let QuitProcessExiter =  
     { new Exiter with  
-        member __.Exit n =                     
+        member _.Exit n =                     
             try  
                 System.Environment.Exit n 
             with _ ->  
@@ -254,8 +256,8 @@ type PhasedDiagnostic =
             // Recovery is to treat this as a 'build' error. Downstream, the project system and language service will treat this as
             // if it came from the build and not the language service.
             false
-    /// Return true if this phase is one that's known to be part of the 'compile'. This is the initial phase of the entire compilation that
 
+    /// Return true if this phase is one that's known to be part of the 'compile'. This is the initial phase of the entire compilation that
     /// the language service knows about.                
     member pe.IsPhaseInCompile() = 
         let isPhaseInCompile = 
@@ -278,7 +280,7 @@ type ErrorLogger(nameForDebugging:string) =
     // The 'Impl' factoring enables a developer to place a breakpoint at the non-Impl 
     // code just below and get a breakpoint for all error logger implementations.
     abstract DiagnosticSink: phasedError: PhasedDiagnostic * isError: bool -> unit
-    member __.DebugDisplay() = sprintf "ErrorLogger(%s)" nameForDebugging
+    member _.DebugDisplay() = sprintf "ErrorLogger(%s)" nameForDebugging
 
 let DiscardErrorsLogger = 
     { new ErrorLogger("DiscardErrorsLogger") with 
@@ -450,13 +452,13 @@ let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #Err
     let mutable newInstalled = true
     let newIsInstalled() = if newInstalled then () else (assert false; (); (*failwith "error logger used after unwind"*)) // REVIEW: ok to throw?
     let chkErrorLogger = { new ErrorLogger("PushErrorLoggerPhaseUntilUnwind") with
-                             member __.DiagnosticSink(phasedError, isError) = newIsInstalled(); newErrorLogger.DiagnosticSink(phasedError, isError)
-                             member __.ErrorCount = newIsInstalled(); newErrorLogger.ErrorCount }
+                             member _.DiagnosticSink(phasedError, isError) = newIsInstalled(); newErrorLogger.DiagnosticSink(phasedError, isError)
+                             member _.ErrorCount = newIsInstalled(); newErrorLogger.ErrorCount }
 
     CompileThreadStatic.ErrorLogger <- chkErrorLogger
 
     { new System.IDisposable with 
-         member __.Dispose() =
+         member _.Dispose() =
             CompileThreadStatic.ErrorLogger <- oldErrorLogger
             newInstalled <- false }
 
@@ -502,8 +504,8 @@ let suppressErrorReporting f =
     try
         let errorLogger = 
             { new ErrorLogger("suppressErrorReporting") with 
-                member __.DiagnosticSink(_phasedError, _isError) = ()
-                member __.ErrorCount = 0 }
+                member _.DiagnosticSink(_phasedError, _isError) = ()
+                member _.ErrorCount = 0 }
         SetThreadErrorLoggerNoUnwind errorLogger
         f()
     finally
@@ -513,13 +515,12 @@ let conditionallySuppressErrorReporting cond f = if cond then suppressErrorRepor
 
 //------------------------------------------------------------------------
 // Errors as data: Sometimes we have to reify errors as data, e.g. if backtracking 
-//
-// REVIEW: consider using F# computation expressions here
 
+/// The result type of a computational modality to colelct warnings and possibly fail
 [<NoEquality; NoComparison>]
 type OperationResult<'T> = 
-    | OkResult of (* warnings: *) exn list * 'T
-    | ErrorResult of (* warnings: *) exn list * exn
+    | OkResult of warnings: exn list * 'T
+    | ErrorResult of warnings: exn list * exn
     
 type ImperativeOperationResult = OperationResult<unit>
 
@@ -536,9 +537,13 @@ let CommitOperationResult res =
 let RaiseOperationResult res : unit = CommitOperationResult res
 
 let ErrorD err = ErrorResult([], err)
+
 let WarnD err = OkResult([err], ())
+
 let CompleteD = OkResult([], ())
+
 let ResultD x = OkResult([], x)
+
 let CheckNoErrorsAndGetWarnings res = 
     match res with 
     | OkResult (warns, _) -> Some warns
@@ -624,7 +629,6 @@ module OperationResult =
         | ErrorResult(warnings, err) -> ErrorResult(warnings, err)
 
 // Code below is for --flaterrors flag that is only used by the IDE
-
 let stringThatIsAProxyForANewlineInFlatErrors = new System.String [|char 29 |]
 
 let NewlineifyErrorString (message:string) = message.Replace(stringThatIsAProxyForANewlineInFlatErrors, Environment.NewLine)
@@ -655,32 +659,6 @@ let NormalizeErrorString (text : string) =
                 1
         i <- i + delta
     buf.ToString()
-
-type public FSharpErrorSeverityOptions =
-    {
-      WarnLevel: int
-      GlobalWarnAsError: bool
-      WarnOff: int list
-      WarnOn: int list
-      WarnAsError: int list
-      WarnAsWarn: int list
-    }
-    static member Default =
-        {
-          WarnLevel = 3
-          GlobalWarnAsError = false
-          WarnOff = []
-          WarnOn = []
-          WarnAsError = []
-          WarnAsWarn = []
-        }
-
-
-// See https://github.com/Microsoft/visualfsharp/issues/6417, if a compile of the FSharp.Compiler.Services.dll or other compiler
-// binary produces exactly 65536 methods then older versions of the compiler raise a bug.  If you hit this bug again then try adding
-// this back in.
-// let dummyMethodFOrBug6417A() = () 
-// let dummyMethodFOrBug6417B() = () 
 
 let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then

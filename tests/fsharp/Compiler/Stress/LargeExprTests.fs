@@ -9,6 +9,9 @@ open FSharp.Test.Utilities
 module LargeExprTests =
 
     [<Test>]
+#if NETCOREAPP
+    [<Ignore("SKIPPED: ")>]
+#endif
     let LargeRecordDoesNotStackOverflow() =
         CompilerAssert.CompileExe
             """

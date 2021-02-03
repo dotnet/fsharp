@@ -9,12 +9,13 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
     <DefineConstants Condition="'$(Configuration)' == 'Proto'">BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
-    <OtherFlags>$(OtherFlags) --warnon:1182 --warnon:3390 --compiling-fslib --compiling-fslib-40 --maxerrors:100 --extraoptimizationloops:1 --nowarn:57</OtherFlags>
+    <OtherFlags>$(OtherFlags) --warnon:3218 --warnon:1182 --warnon:3390 --compiling-fslib --compiling-fslib-40 --maxerrors:100 --extraoptimizationloops:1 --nowarn:57</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <NGenBinary>true</NGenBinary>
 
     <PreRelease>true</PreRelease>
     <PackageId>FSharp.Core</PackageId>
+    <PackageVersionPrefix>$(FSCorePackageVersion)</PackageVersionPrefix>
     <NuspecFile>FSharp.Core.nuspec</NuspecFile>
     <IsPackable>true</IsPackable>
     <PackageDescription>FSharp.Core redistributables from F# Tools version $(FSCorePackageVersion) For F# $(FSLanguageVersion).  Contains code from the F# Software Foundation.</PackageDescription>
@@ -131,10 +132,10 @@
     <Compile Include="math\z.fs">
       <Link>Numerics/z.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\sformat.fsi">
+    <Compile Include="..\utils\sformat.fsi">
       <Link>Printf/sformat.fsi</Link>
     </Compile>
-    <Compile Include="..\..\utils\sformat.fs">
+    <Compile Include="..\utils\sformat.fs">
       <Link>Printf/sformat.fs</Link>
     </Compile>
     <Compile Include="printf.fsi">
@@ -225,5 +226,14 @@
     <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsVersion)" />
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
   </ItemGroup>
+
+  <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
+    <PropertyGroup>
+      <BuildOutputGroupLocation>$(BaseOutputPath)\$(Configuration)\$(TargetFramework)</BuildOutputGroupLocation>
+    </PropertyGroup>
+    <ItemGroup>
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\FSharp.Core.xml" />
+    </ItemGroup>
+  </Target>
 
 </Project>

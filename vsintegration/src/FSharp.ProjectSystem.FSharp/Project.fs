@@ -88,21 +88,21 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
         // This interface is thread-safe, assuming "inner" is thread-safe
         interface Microsoft.VisualStudio.FSharp.Editor.IProjectSite with
-            member __.Description = inner.Description
-            member __.CompilationSourceFiles = inner.CompilationSourceFiles
-            member __.CompilationOptions = inner.CompilationOptions
-            member __.CompilationReferences = inner.CompilationReferences
-            member __.CompilationBinOutputPath = inner.CompilationBinOutputPath
-            member __.ProjectFileName = inner.ProjectFileName
-            member __.AdviseProjectSiteChanges(callbackOwnerKey,callback) = inner.AdviseProjectSiteChanges(callbackOwnerKey, callback)
-            member __.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = inner.AdviseProjectSiteCleaned(callbackOwnerKey, callback)
-            member __.AdviseProjectSiteClosed(callbackOwnerKey,callback) = inner.AdviseProjectSiteClosed(callbackOwnerKey, callback)
-            member __.BuildErrorReporter with get() = inner.BuildErrorReporter and set v = inner.BuildErrorReporter <- v
-            member __.TargetFrameworkMoniker = inner.TargetFrameworkMoniker
-            member __.ProjectGuid = inner.ProjectGuid
-            member __.IsIncompleteTypeCheckEnvironment = false
-            member __.LoadTime = inner.LoadTime 
-            member __.ProjectProvider = inner.ProjectProvider
+            member _.Description = inner.Description
+            member _.CompilationSourceFiles = inner.CompilationSourceFiles
+            member _.CompilationOptions = inner.CompilationOptions
+            member _.CompilationReferences = inner.CompilationReferences
+            member _.CompilationBinOutputPath = inner.CompilationBinOutputPath
+            member _.ProjectFileName = inner.ProjectFileName
+            member _.AdviseProjectSiteChanges(callbackOwnerKey,callback) = inner.AdviseProjectSiteChanges(callbackOwnerKey, callback)
+            member _.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = inner.AdviseProjectSiteCleaned(callbackOwnerKey, callback)
+            member _.AdviseProjectSiteClosed(callbackOwnerKey,callback) = inner.AdviseProjectSiteClosed(callbackOwnerKey, callback)
+            member _.BuildErrorReporter with get() = inner.BuildErrorReporter and set v = inner.BuildErrorReporter <- v
+            member _.TargetFrameworkMoniker = inner.TargetFrameworkMoniker
+            member _.ProjectGuid = inner.ProjectGuid
+            member _.IsIncompleteTypeCheckEnvironment = false
+            member _.LoadTime = inner.LoadTime 
+            member _.ProjectProvider = inner.ProjectProvider
         override x.ToString() = inner.ProjectFileName
 
     type internal ProjectSiteOptionLifetimeState =
@@ -792,7 +792,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             /// <param name="source">Full path to template file</param>
             /// <param name="target">Full path to destination file</param>
             override x.AddFileFromTemplate(source:string, target:string ) =
-                if not (FSharp.Compiler.AbstractIL.Internal.Library.Shim.FileSystem.SafeExists(source)) then
+                if not (File.Exists(source)) then
                     raise <| new FileNotFoundException(String.Format(FSharpSR.TemplateNotFound(), source))
 
                 // We assume that there is no token inside the file because the only
@@ -1265,9 +1265,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 else
                     0
 
-            member __.CompilationSourceFiles = match sourcesAndFlags with None -> [| |] | Some (sources,_) -> sources
-            member __.CompilationOptions = match sourcesAndFlags with None -> [| |] | Some (_,flags) -> flags
-            member __.CompilationReferences = match normalizedRefs with None -> [| |] | Some refs -> refs
+            member _.CompilationSourceFiles = match sourcesAndFlags with None -> [| |] | Some (sources,_) -> sources
+            member _.CompilationOptions = match sourcesAndFlags with None -> [| |] | Some (_,flags) -> flags
+            member _.CompilationReferences = match normalizedRefs with None -> [| |] | Some refs -> refs
 
             override x.ComputeSourcesAndFlags() =
 
@@ -1386,32 +1386,32 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let creationTime = System.DateTime.UtcNow
                 { new Microsoft.VisualStudio.FSharp.Editor.IProjectSite with
 
-                    member __.CompilationSourceFiles = x.CompilationSourceFiles
-                    member __.CompilationOptions = x.CompilationOptions
-                    member __.CompilationReferences = x.CompilationReferences
-                    member __.CompilationBinOutputPath = 
+                    member _.CompilationSourceFiles = x.CompilationSourceFiles
+                    member _.CompilationOptions = x.CompilationOptions
+                    member _.CompilationReferences = x.CompilationReferences
+                    member _.CompilationBinOutputPath = 
                         let outputPath = x.GetCurrentOutputAssembly()
                         if String.IsNullOrWhiteSpace(outputPath) then None else Some(outputPath)
 
-                    member __.Description = 
+                    member _.Description = 
                         match sourcesAndFlags with
                         | Some (sources,flags) -> sprintf "Project System: flags(%A) sources:\n%A" flags sources
                         | None -> sprintf "Project System, no flags available" 
 
-                    member __.ProjectFileName = MSBuildProject.GetFullPath(x.BuildProject)
+                    member _.ProjectFileName = MSBuildProject.GetFullPath(x.BuildProject)
 
-                    member __.BuildErrorReporter 
+                    member _.BuildErrorReporter 
                         with get() = buildErrorReporter 
                         and set v = buildErrorReporter <- v
 
-                    member __.AdviseProjectSiteChanges(callbackOwnerKey,callback) = sourcesAndFlagsNotifier.Advise(callbackOwnerKey,callback)
-                    member __.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = cleanNotifier.Advise(callbackOwnerKey,callback)
-                    member __.AdviseProjectSiteClosed(callbackOwnerKey,callback) = closeNotifier.Advise(callbackOwnerKey,callback)
-                    member __.IsIncompleteTypeCheckEnvironment = false
-                    member __.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
-                    member __.ProjectGuid = x.GetProjectGuid()
-                    member __.LoadTime = creationTime
-                    member __.ProjectProvider = Some (x :> Microsoft.VisualStudio.FSharp.Editor.IProvideProjectSite)
+                    member _.AdviseProjectSiteChanges(callbackOwnerKey,callback) = sourcesAndFlagsNotifier.Advise(callbackOwnerKey,callback)
+                    member _.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = cleanNotifier.Advise(callbackOwnerKey,callback)
+                    member _.AdviseProjectSiteClosed(callbackOwnerKey,callback) = closeNotifier.Advise(callbackOwnerKey,callback)
+                    member _.IsIncompleteTypeCheckEnvironment = false
+                    member _.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
+                    member _.ProjectGuid = x.GetProjectGuid()
+                    member _.LoadTime = creationTime
+                    member _.ProjectProvider = Some (x :> Microsoft.VisualStudio.FSharp.Editor.IProvideProjectSite)
                 }
 
             // Snapshot-capture relevent values from "this", and returns an IProjectSite 
@@ -1430,23 +1430,23 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
                 // This object is thread-safe
                 { new Microsoft.VisualStudio.FSharp.Editor.IProjectSite with
-                    member __.Description = description
-                    member __.CompilationSourceFiles = sourceFiles
-                    member __.CompilationOptions = options
-                    member __.CompilationReferences = refs
-                    member __.CompilationBinOutputPath = if String.IsNullOrWhiteSpace(outputPath) then None else Some(outputPath)
-                    member __.ProjectFileName = projFileName
-                    member __.BuildErrorReporter 
+                    member _.Description = description
+                    member _.CompilationSourceFiles = sourceFiles
+                    member _.CompilationOptions = options
+                    member _.CompilationReferences = refs
+                    member _.CompilationBinOutputPath = if String.IsNullOrWhiteSpace(outputPath) then None else Some(outputPath)
+                    member _.ProjectFileName = projFileName
+                    member _.BuildErrorReporter 
                         with get() = staticBuildErrorReporter
                         and set v = staticBuildErrorReporter <- v
-                    member __.AdviseProjectSiteChanges(_,_) = ()
-                    member __.AdviseProjectSiteCleaned(_,_) = ()
-                    member __.AdviseProjectSiteClosed(_,_) = ()
-                    member __.IsIncompleteTypeCheckEnvironment = false
-                    member __.TargetFrameworkMoniker = targetFrameworkMoniker
-                    member __.ProjectGuid = x.GetProjectGuid()
-                    member __.LoadTime = creationTime
-                    member __.ProjectProvider = Some (x :> Microsoft.VisualStudio.FSharp.Editor.IProvideProjectSite)
+                    member _.AdviseProjectSiteChanges(_,_) = ()
+                    member _.AdviseProjectSiteCleaned(_,_) = ()
+                    member _.AdviseProjectSiteClosed(_,_) = ()
+                    member _.IsIncompleteTypeCheckEnvironment = false
+                    member _.TargetFrameworkMoniker = targetFrameworkMoniker
+                    member _.ProjectGuid = x.GetProjectGuid()
+                    member _.LoadTime = creationTime
+                    member _.ProjectProvider = Some (x :> Microsoft.VisualStudio.FSharp.Editor.IProvideProjectSite)
                 }
 
             // let the language service ask us questions

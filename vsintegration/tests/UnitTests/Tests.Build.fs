@@ -70,16 +70,6 @@ type Build() =
         ()
 
     [<Test>]
-    member public this.MissingToolPathError() =
-        let tool = new FSharp.Build.Fsc()
-        tool.ToolPath <- ""
-        try
-            let p = tool.InternalGenerateFullPathToTool()
-            Assert.Fail("should not succeed")
-        with e -> 
-            e.Message.AssertMatchesPattern("ToolPath is unknown; specify the path to the tool.")
-        
-    [<Test>]
     member public this.TestCodePage() =
         let tool = new FSharp.Build.Fsc()
         printfn "By the way, the registry or app.config tool path is %s" tool.ToolPath

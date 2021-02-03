@@ -14,7 +14,6 @@ open System
 open System.IO
 open System.Text
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Service.Tests.Common
 
 let fileName1 = @"c:\mycode\test1.fs" // note, the path doesn' exist
@@ -32,45 +31,45 @@ let B = File1.A + File1.A"""
 
     interface IFileSystem with
         // Implement the service to open files for reading and writing
-        member __.FileStreamReadShim(fileName) = 
+        member _.FileStreamReadShim(fileName) = 
             match files.TryGetValue fileName with
             | true, text -> new MemoryStream(Encoding.UTF8.GetBytes(text)) :> Stream
             | _ -> defaultFileSystem.FileStreamReadShim(fileName)
             
-        member __.FileStreamCreateShim(fileName) = 
+        member _.FileStreamCreateShim(fileName) = 
             defaultFileSystem.FileStreamCreateShim(fileName)
 
-        member __.IsStableFileHeuristic(fileName) = 
+        member _.IsStableFileHeuristic(fileName) = 
             defaultFileSystem.IsStableFileHeuristic(fileName)
 
-        member __.FileStreamWriteExistingShim(fileName) = 
+        member _.FileStreamWriteExistingShim(fileName) = 
             defaultFileSystem.FileStreamWriteExistingShim(fileName)
 
-        member __.ReadAllBytesShim(fileName) = 
+        member _.ReadAllBytesShim(fileName) = 
             match files.TryGetValue fileName with
             | true, text -> Encoding.UTF8.GetBytes(text)
             | _ -> defaultFileSystem.ReadAllBytesShim(fileName)
 
         // Implement the service related to temporary paths and file time stamps
-        member __.GetTempPathShim() = defaultFileSystem.GetTempPathShim()
-        member __.GetLastWriteTimeShim(fileName) = defaultFileSystem.GetLastWriteTimeShim(fileName)
-        member __.GetFullPathShim(fileName) = defaultFileSystem.GetFullPathShim(fileName)
-        member __.IsInvalidPathShim(fileName) = defaultFileSystem.IsInvalidPathShim(fileName)
-        member __.IsPathRootedShim(fileName) = defaultFileSystem.IsPathRootedShim(fileName)
+        member _.GetTempPathShim() = defaultFileSystem.GetTempPathShim()
+        member _.GetLastWriteTimeShim(fileName) = defaultFileSystem.GetLastWriteTimeShim(fileName)
+        member _.GetFullPathShim(fileName) = defaultFileSystem.GetFullPathShim(fileName)
+        member _.IsInvalidPathShim(fileName) = defaultFileSystem.IsInvalidPathShim(fileName)
+        member _.IsPathRootedShim(fileName) = defaultFileSystem.IsPathRootedShim(fileName)
 
         // Implement the service related to file existence and deletion
-        member __.SafeExists(fileName) = files.ContainsKey(fileName) || defaultFileSystem.SafeExists(fileName)
-        member __.FileDelete(fileName) = defaultFileSystem.FileDelete(fileName)
+        member _.SafeExists(fileName) = files.ContainsKey(fileName) || defaultFileSystem.SafeExists(fileName)
+        member _.FileDelete(fileName) = defaultFileSystem.FileDelete(fileName)
 
         // Implement the service related to assembly loading, used to load type providers
         // and for F# interactive.
-        member __.AssemblyLoadFrom(fileName) = defaultFileSystem.AssemblyLoadFrom fileName
-        member __.AssemblyLoad(assemblyName) = defaultFileSystem.AssemblyLoad assemblyName 
+        member _.AssemblyLoadFrom(fileName) = defaultFileSystem.AssemblyLoadFrom fileName
+        member _.AssemblyLoad(assemblyName) = defaultFileSystem.AssemblyLoad assemblyName 
 
 let UseMyFileSystem() = 
-    let myFileSystem = MyFileSystem(Shim.FileSystem)
-    Shim.FileSystem <- myFileSystem
-    { new IDisposable with member x.Dispose() = Shim.FileSystem <- myFileSystem }
+    let myFileSystem = MyFileSystem(FileSystemAutoOpens.FileSystem)
+    FileSystemAutoOpens.FileSystem <- myFileSystem
+    { new IDisposable with member x.Dispose() = FileSystemAutoOpens.FileSystem <- myFileSystem }
 
 
 [<Test>]

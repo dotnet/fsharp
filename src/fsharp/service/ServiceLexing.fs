@@ -8,6 +8,7 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open System
 open System.Collections.Generic
+open System.Threading
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal
@@ -16,15 +17,19 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
+open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 
 open Internal.Utilities
 
 type Position = int * int
 
-type Range = Position * Position
+type Positions = Position * Position
 
 module FSharpTokenTag =
 
@@ -615,7 +620,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
     let fsx = 
         match filename with
         | None -> false
-        | Some value -> CompileOps.IsScript value
+        | Some value -> ParseAndCheckInputs.IsScript value
 
     // ----------------------------------------------------------------------------------
     // This implements post-processing of #directive tokens - not very elegant, but it works...
@@ -919,7 +924,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         { PosBits = 0L; OtherBits = LexerStateEncoding.lexStateOfColorState colorState }
 
 [<Sealed>]
-type FSharpSourceTokenizer(defineConstants: string list, filename: string option) =
+type FSharpSourceTokenizer(conditionalDefines: string list, filename: string option) =
 
     // Public callers are unable to answer LanguageVersion feature support questions.
     // External Tools including the VS IDE will enable the default LanguageVersion 
@@ -927,7 +932,7 @@ type FSharpSourceTokenizer(defineConstants: string list, filename: string option
  
     let lexResourceManager = new Lexhelp.LexResourceManager()
 
-    let lexargs = mkLexargs(defineConstants, LightSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
+    let lexargs = mkLexargs(conditionalDefines, LightSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
 
     member _.CreateLineTokenizer(lineText: string) =
         let lexbuf = UnicodeLexing.StringAsLexbuf(isFeatureSupported, lineText)
@@ -937,580 +942,582 @@ type FSharpSourceTokenizer(defineConstants: string list, filename: string option
         let lexbuf = UnicodeLexing.FunctionAsLexbuf(isFeatureSupported, bufferFiller)
         FSharpLineTokenizer(lexbuf, None, filename, lexargs)
 
-module Keywords =
+module FSharpKeywords =
     open FSharp.Compiler.Lexhelp.Keywords
 
     let DoesIdentifierNeedQuotation s = DoesIdentifierNeedQuotation s
+    
     let QuoteIdentifierIfNeeded s = QuoteIdentifierIfNeeded s
+    
     let NormalizeIdentifierBackticks s = NormalizeIdentifierBackticks s
+    
     let KeywordsWithDescription = keywordsWithDescription
 
-module Lexer =
+    let KeywordNames = Lexhelp.Keywords.keywordNames
 
-    open System.Threading
-    open FSharp.Compiler.Text
+[<Flags>]
+type FSharpLexerFlags =
+    | Default                       = 0x11011
+    | LightSyntaxOn                 = 0x00001
+    | Compiling                     = 0x00010 
+    | CompilingFSharpCore           = 0x00110
+    | SkipTrivia                    = 0x01000
+    | UseLexFilter                  = 0x10000
 
-    [<Flags>]
-    type FSharpLexerFlags =
-        | Default                       = 0x11011
-        | LightSyntaxOn                 = 0x00001
-        | Compiling                     = 0x00010 
-        | CompilingFSharpCore           = 0x00110
-        | SkipTrivia                    = 0x01000
-        | UseLexFilter                  = 0x10000
+[<RequireQualifiedAccess>]
+type FSharpTokenKind =
+    | None
+    | HashIf
+    | HashElse
+    | HashEndIf
+    | CommentTrivia
+    | WhitespaceTrivia
+    | HashLine
+    | HashLight
+    | InactiveCode
+    | LineCommentTrivia
+    | StringText
+    | Fixed
+    | OffsideInterfaceMember
+    | OffsideBlockEnd
+    | OffsideRightBlockEnd
+    | OffsideDeclEnd
+    | OffsideEnd
+    | OffsideBlockSep
+    | OffsideBlockBegin
+    | OffsideReset
+    | OffsideFun
+    | OffsideFunction
+    | OffsideWith
+    | OffsideElse
+    | OffsideThen
+    | OffsideDoBang
+    | OffsideDo
+    | OffsideBinder
+    | OffsideLet
+    | HighPrecedenceTypeApp
+    | HighPrecedenceParenthesisApp
+    | HighPrecedenceBracketApp
+    | Extern
+    | Void
+    | Public
+    | Private
+    | Internal
+    | Global
+    | Static
+    | Member
+    | Class
+    | Abstract
+    | Override
+    | Default
+    | Constructor
+    | Inherit
+    | GreaterRightBracket
+    | Struct
+    | Sig
+    | Bar
+    | RightBracket
+    | RightBrace
+    | Minus
+    | Dollar
+    | BarRightBracket
+    | BarRightBrace
+    | Underscore
+    | Semicolon
+    | SemicolonSemicolon
+    | LeftArrow
+    | Equals
+    | LeftBracket
+    | LeftBracketBar
+    | LeftBraceBar
+    | LeftBracketLess
+    | LeftBrace
+    | QuestionMark
+    | QuestionMarkQuestionMark
+    | Dot
+    | Colon
+    | ColonColon
+    | ColonGreater
+    | ColonQuestionMark
+    | ColonQuestionMarkGreater
+    | ColonEquals
+    | When
+    | While
+    | With
+    | Hash
+    | Ampersand
+    | AmpersandAmpersand
+    | Quote
+    | LeftParenthesis
+    | RightParenthesis
+    | Star
+    | Comma
+    | RightArrow
+    | GreaterBarRightBracket
+    | LeftParenthesisStarRightParenthesis
+    | Open
+    | Or
+    | Rec
+    | Then
+    | To
+    | True
+    | Try
+    | Type
+    | Val
+    | Inline
+    | Interface
+    | Instance
+    | Const
+    | Lazy
+    | OffsideLazy
+    | Match
+    | MatchBang
+    | Mutable
+    | New
+    | Of
+    | Exception
+    | False
+    | For
+    | Fun
+    | Function
+    | If
+    | In
+    | JoinIn
+    | Finally
+    | DoBang
+    | And
+    | As
+    | Assert
+    | OffsideAssert
+    | Begin
+    | Do
+    | Done
+    | DownTo
+    | Else
+    | Elif
+    | End
+    | DotDot
+    | DotDotHat
+    | BarBar
+    | Upcast
+    | Downcast
+    | Null
+    | Reserved
+    | Module
+    | Namespace
+    | Delegate
+    | Constraint
+    | Base
+    | LeftQuote
+    | RightQuote
+    | RightQuoteDot
+    | PercentOperator
+    | Binder
+    | Less
+    | Greater
+    | Let
+    | Yield
+    | YieldBang
+    | BigNumber
+    | Decimal
+    | Char
+    | Ieee64
+    | Ieee32
+    | NativeInt
+    | UNativeInt
+    | UInt64
+    | UInt32
+    | UInt16
+    | UInt8
+    | Int64
+    | Int32
+    | Int32DotDot
+    | Int16
+    | Int8
+    | FunkyOperatorName
+    | AdjacentPrefixOperator
+    | PlusMinusOperator
+    | InfixAmpersandOperator
+    | InfixStarDivideModuloOperator
+    | PrefixOperator
+    | InfixBarOperator
+    | InfixAtHatOperator
+    | InfixCompareOperator
+    | InfixStarStarOperator
+    | Identifier
+    | KeywordString
+    | String
+    | ByteArray
+    | Asr
+    | InfixAsr
+    | InfixLand
+    | InfixLor
+    | InfixLsl
+    | InfixLsr
+    | InfixLxor
+    | InfixMod
 
-    [<RequireQualifiedAccess>]
-    type FSharpSyntaxTokenKind =
-        | None
-        | HashIf
-        | HashElse
-        | HashEndIf
-        | CommentTrivia
-        | WhitespaceTrivia
-        | HashLine
-        | HashLight
-        | InactiveCode
-        | LineCommentTrivia
-        | StringText
-        | Fixed
-        | OffsideInterfaceMember
-        | OffsideBlockEnd
-        | OffsideRightBlockEnd
-        | OffsideDeclEnd
-        | OffsideEnd
-        | OffsideBlockSep
-        | OffsideBlockBegin
-        | OffsideReset
-        | OffsideFun
-        | OffsideFunction
-        | OffsideWith
-        | OffsideElse
-        | OffsideThen
-        | OffsideDoBang
-        | OffsideDo
-        | OffsideBinder
-        | OffsideLet
-        | HighPrecedenceTypeApp
-        | HighPrecedenceParenthesisApp
-        | HighPrecedenceBracketApp
-        | Extern
-        | Void
-        | Public
-        | Private
-        | Internal
-        | Global
-        | Static
-        | Member
-        | Class
-        | Abstract
-        | Override
-        | Default
-        | Constructor
-        | Inherit
-        | GreaterRightBracket
-        | Struct
-        | Sig
-        | Bar
-        | RightBracket
-        | RightBrace
-        | Minus
-        | Dollar
-        | BarRightBracket
-        | BarRightBrace
-        | Underscore
-        | Semicolon
-        | SemicolonSemicolon
-        | LeftArrow
-        | Equals
-        | LeftBracket
-        | LeftBracketBar
-        | LeftBraceBar
-        | LeftBracketLess
-        | LeftBrace
-        | QuestionMark
-        | QuestionMarkQuestionMark
-        | Dot
-        | Colon
-        | ColonColon
-        | ColonGreater
-        | ColonQuestionMark
-        | ColonQuestionMarkGreater
-        | ColonEquals
-        | When
-        | While
-        | With
-        | Hash
-        | Ampersand
-        | AmpersandAmpersand
-        | Quote
-        | LeftParenthesis
-        | RightParenthesis
-        | Star
-        | Comma
-        | RightArrow
-        | GreaterBarRightBracket
-        | LeftParenthesisStarRightParenthesis
-        | Open
-        | Or
-        | Rec
-        | Then
-        | To
-        | True
-        | Try
-        | Type
-        | Val
-        | Inline
-        | Interface
-        | Instance
-        | Const
-        | Lazy
-        | OffsideLazy
-        | Match
-        | MatchBang
-        | Mutable
-        | New
-        | Of
-        | Exception
-        | False
-        | For
-        | Fun
-        | Function
-        | If
-        | In
-        | JoinIn
-        | Finally
-        | DoBang
-        | And
-        | As
-        | Assert
-        | OffsideAssert
-        | Begin
-        | Do
-        | Done
-        | DownTo
-        | Else
-        | Elif
-        | End
-        | DotDot
-        | DotDotHat
-        | BarBar
-        | Upcast
-        | Downcast
-        | Null
-        | Reserved
-        | Module
-        | Namespace
-        | Delegate
-        | Constraint
-        | Base
-        | LeftQuote
-        | RightQuote
-        | RightQuoteDot
-        | PercentOperator
-        | Binder
-        | Less
-        | Greater
-        | Let
-        | Yield
-        | YieldBang
-        | BigNumber
-        | Decimal
-        | Char
-        | Ieee64
-        | Ieee32
-        | NativeInt
-        | UNativeInt
-        | UInt64
-        | UInt32
-        | UInt16
-        | UInt8
-        | Int64
-        | Int32
-        | Int32DotDot
-        | Int16
-        | Int8
-        | FunkyOperatorName
-        | AdjacentPrefixOperator
-        | PlusMinusOperator
-        | InfixAmpersandOperator
-        | InfixStarDivideModuloOperator
-        | PrefixOperator
-        | InfixBarOperator
-        | InfixAtHatOperator
-        | InfixCompareOperator
-        | InfixStarStarOperator
-        | Identifier
-        | KeywordString
-        | String
-        | ByteArray
-        | Asr
-        | InfixAsr
-        | InfixLand
-        | InfixLor
-        | InfixLsl
-        | InfixLsr
-        | InfixLxor
-        | InfixMod
+[<Struct;NoComparison;NoEquality>]
+type FSharpToken =
 
-    [<Struct;NoComparison;NoEquality>]
-    type FSharpSyntaxToken =
+    val private tok: Parser.token
+    val private tokRange: range
 
-        val private tok: Parser.token
-        val private tokRange: range
+    new (tok, tokRange) = { tok = tok; tokRange = tokRange }
 
-        new (tok, tokRange) = { tok = tok; tokRange = tokRange }
+    member this.Range = this.tokRange
 
-        member this.Range = this.tokRange
+    member this.Kind =
+        match this.tok with
+        | ASR -> FSharpTokenKind.Asr
+        | INFIX_STAR_STAR_OP "asr" -> FSharpTokenKind.Asr
+        | INFIX_STAR_DIV_MOD_OP "land" -> FSharpTokenKind.InfixLand
+        | INFIX_STAR_DIV_MOD_OP "lor" -> FSharpTokenKind.InfixLor
+        | INFIX_STAR_STAR_OP "lsl" -> FSharpTokenKind.InfixLsl
+        | INFIX_STAR_STAR_OP "lsr" -> FSharpTokenKind.InfixLsr
+        | INFIX_STAR_DIV_MOD_OP "lxor" -> FSharpTokenKind.InfixLxor
+        | INFIX_STAR_DIV_MOD_OP "mod" -> FSharpTokenKind.InfixMod
+        | HASH_IF _ -> FSharpTokenKind.HashIf 
+        | HASH_ELSE _ -> FSharpTokenKind.HashElse 
+        | HASH_ENDIF _ -> FSharpTokenKind.HashEndIf 
+        | COMMENT _ -> FSharpTokenKind.CommentTrivia 
+        | WHITESPACE _ -> FSharpTokenKind.WhitespaceTrivia 
+        | HASH_LINE _ -> FSharpTokenKind.HashLine 
+        | HASH_LIGHT _ -> FSharpTokenKind.HashLight 
+        | INACTIVECODE _ -> FSharpTokenKind.InactiveCode
+        | LINE_COMMENT _ -> FSharpTokenKind.LineCommentTrivia 
+        | STRING_TEXT _ -> FSharpTokenKind.StringText 
+        | FIXED  -> FSharpTokenKind.Fixed 
+        | OINTERFACE_MEMBER  -> FSharpTokenKind.OffsideInterfaceMember 
+        | OBLOCKEND  -> FSharpTokenKind.OffsideBlockEnd 
+        | ORIGHT_BLOCK_END  -> FSharpTokenKind.OffsideRightBlockEnd 
+        | ODECLEND  -> FSharpTokenKind.OffsideDeclEnd 
+        | OEND  -> FSharpTokenKind.OffsideEnd 
+        | OBLOCKSEP  -> FSharpTokenKind.OffsideBlockSep 
+        | OBLOCKBEGIN  -> FSharpTokenKind.OffsideBlockBegin 
+        | ORESET  -> FSharpTokenKind.OffsideReset 
+        | OFUN  -> FSharpTokenKind.OffsideFun 
+        | OFUNCTION  -> FSharpTokenKind.OffsideFunction 
+        | OWITH  -> FSharpTokenKind.OffsideWith 
+        | OELSE  -> FSharpTokenKind.OffsideElse 
+        | OTHEN  -> FSharpTokenKind.OffsideThen 
+        | ODO_BANG  -> FSharpTokenKind.OffsideDoBang 
+        | ODO  -> FSharpTokenKind.OffsideDo 
+        | OBINDER _ -> FSharpTokenKind.OffsideBinder
+        | OLET _ -> FSharpTokenKind.OffsideLet
+        | HIGH_PRECEDENCE_TYAPP  -> FSharpTokenKind.HighPrecedenceTypeApp 
+        | HIGH_PRECEDENCE_PAREN_APP  -> FSharpTokenKind.HighPrecedenceParenthesisApp 
+        | HIGH_PRECEDENCE_BRACK_APP  -> FSharpTokenKind.HighPrecedenceBracketApp 
+        | EXTERN  -> FSharpTokenKind.Extern 
+        | VOID  -> FSharpTokenKind.Void 
+        | PUBLIC  -> FSharpTokenKind.Public 
+        | PRIVATE  -> FSharpTokenKind.Private 
+        | INTERNAL  -> FSharpTokenKind.Internal 
+        | GLOBAL  -> FSharpTokenKind.Global 
+        | STATIC  -> FSharpTokenKind.Static 
+        | MEMBER  -> FSharpTokenKind.Member 
+        | CLASS  -> FSharpTokenKind.Class 
+        | ABSTRACT  -> FSharpTokenKind.Abstract 
+        | OVERRIDE  -> FSharpTokenKind.Override
+        | DEFAULT  -> FSharpTokenKind.Default 
+        | CONSTRUCTOR  -> FSharpTokenKind.Constructor 
+        | INHERIT  -> FSharpTokenKind.Inherit 
+        | GREATER_RBRACK  -> FSharpTokenKind.GreaterRightBracket 
+        | STRUCT  -> FSharpTokenKind.Struct 
+        | SIG  -> FSharpTokenKind.Sig 
+        | BAR  -> FSharpTokenKind.Bar 
+        | RBRACK  -> FSharpTokenKind.RightBracket 
+        | RBRACE _ -> FSharpTokenKind.RightBrace 
+        | MINUS  -> FSharpTokenKind.Minus 
+        | DOLLAR  -> FSharpTokenKind.Dollar 
+        | BAR_RBRACK  -> FSharpTokenKind.BarRightBracket 
+        | BAR_RBRACE  -> FSharpTokenKind.BarRightBrace
+        | UNDERSCORE  -> FSharpTokenKind.Underscore 
+        | SEMICOLON_SEMICOLON  -> FSharpTokenKind.SemicolonSemicolon 
+        | LARROW  -> FSharpTokenKind.LeftArrow 
+        | EQUALS  -> FSharpTokenKind.Equals 
+        | LBRACK  -> FSharpTokenKind.LeftBracket 
+        | LBRACK_BAR  -> FSharpTokenKind.LeftBracketBar 
+        | LBRACE_BAR  -> FSharpTokenKind.LeftBraceBar 
+        | LBRACK_LESS  -> FSharpTokenKind.LeftBracketLess 
+        | LBRACE _ -> FSharpTokenKind.LeftBrace 
+        | QMARK  -> FSharpTokenKind.QuestionMark 
+        | QMARK_QMARK  -> FSharpTokenKind.QuestionMarkQuestionMark
+        | DOT  -> FSharpTokenKind.Dot 
+        | COLON  -> FSharpTokenKind.Colon 
+        | COLON_COLON  -> FSharpTokenKind.ColonColon 
+        | COLON_GREATER  -> FSharpTokenKind.ColonGreater 
+        | COLON_QMARK_GREATER  -> FSharpTokenKind.ColonQuestionMarkGreater
+        | COLON_QMARK  -> FSharpTokenKind.ColonQuestionMark
+        | COLON_EQUALS  -> FSharpTokenKind.ColonEquals
+        | SEMICOLON  -> FSharpTokenKind.SemicolonSemicolon 
+        | WHEN  -> FSharpTokenKind.When 
+        | WHILE  -> FSharpTokenKind.While 
+        | WITH  -> FSharpTokenKind.With 
+        | HASH  -> FSharpTokenKind.Hash 
+        | AMP  -> FSharpTokenKind.Ampersand 
+        | AMP_AMP  -> FSharpTokenKind.AmpersandAmpersand 
+        | QUOTE  -> FSharpTokenKind.RightQuote 
+        | LPAREN  -> FSharpTokenKind.LeftParenthesis 
+        | RPAREN  -> FSharpTokenKind.RightParenthesis 
+        | STAR  -> FSharpTokenKind.Star 
+        | COMMA  -> FSharpTokenKind.Comma 
+        | RARROW  -> FSharpTokenKind.RightArrow 
+        | GREATER_BAR_RBRACK  -> FSharpTokenKind.GreaterBarRightBracket 
+        | LPAREN_STAR_RPAREN  -> FSharpTokenKind.LeftParenthesisStarRightParenthesis 
+        | OPEN  -> FSharpTokenKind.Open 
+        | OR  -> FSharpTokenKind.Or
+        | REC  -> FSharpTokenKind.Rec
+        | THEN  -> FSharpTokenKind.Then
+        | TO  -> FSharpTokenKind.To
+        | TRUE  -> FSharpTokenKind.True
+        | TRY  -> FSharpTokenKind.Try
+        | TYPE  -> FSharpTokenKind.Type
+        | VAL  -> FSharpTokenKind.Val
+        | INLINE  -> FSharpTokenKind.Inline
+        | INTERFACE  -> FSharpTokenKind.Interface
+        | INSTANCE  -> FSharpTokenKind.Instance
+        | CONST  -> FSharpTokenKind.Const
+        | LAZY  -> FSharpTokenKind.Lazy
+        | OLAZY  -> FSharpTokenKind.OffsideLazy
+        | MATCH  -> FSharpTokenKind.Match
+        | MATCH_BANG  -> FSharpTokenKind.MatchBang
+        | MUTABLE  -> FSharpTokenKind.Mutable
+        | NEW  -> FSharpTokenKind.New
+        | OF  -> FSharpTokenKind.Of
+        | EXCEPTION  -> FSharpTokenKind.Exception
+        | FALSE  -> FSharpTokenKind.False
+        | FOR  -> FSharpTokenKind.For
+        | FUN  -> FSharpTokenKind.Fun
+        | FUNCTION  -> FSharpTokenKind.Function
+        | IF  -> FSharpTokenKind.If
+        | IN  -> FSharpTokenKind.In
+        | JOIN_IN  -> FSharpTokenKind.JoinIn
+        | FINALLY  -> FSharpTokenKind.Finally
+        | DO_BANG  -> FSharpTokenKind.DoBang
+        | AND  -> FSharpTokenKind.And
+        | AS  -> FSharpTokenKind.As
+        | ASSERT  -> FSharpTokenKind.Assert
+        | OASSERT  -> FSharpTokenKind.OffsideAssert
+        | BEGIN  -> FSharpTokenKind.Begin
+        | DO  -> FSharpTokenKind.Do
+        | DONE  -> FSharpTokenKind.Done
+        | DOWNTO  -> FSharpTokenKind.DownTo
+        | ELSE  -> FSharpTokenKind.Else
+        | ELIF  -> FSharpTokenKind.Elif
+        | END  -> FSharpTokenKind.End
+        | DOT_DOT  -> FSharpTokenKind.DotDot
+        | DOT_DOT_HAT  -> FSharpTokenKind.DotDotHat
+        | BAR_BAR  -> FSharpTokenKind.BarBar
+        | UPCAST  -> FSharpTokenKind.Upcast
+        | DOWNCAST  -> FSharpTokenKind.Downcast
+        | NULL  -> FSharpTokenKind.Null
+        | RESERVED  -> FSharpTokenKind.Reserved
+        | MODULE  -> FSharpTokenKind.Module
+        | NAMESPACE  -> FSharpTokenKind.Namespace
+        | DELEGATE  -> FSharpTokenKind.Delegate
+        | CONSTRAINT  -> FSharpTokenKind.Constraint
+        | BASE  -> FSharpTokenKind.Base
+        | LQUOTE _ -> FSharpTokenKind.LeftQuote
+        | RQUOTE _ -> FSharpTokenKind.RightQuote
+        | RQUOTE_DOT _ -> FSharpTokenKind.RightQuoteDot
+        | PERCENT_OP _ -> FSharpTokenKind.PercentOperator
+        | BINDER _ -> FSharpTokenKind.Binder 
+        | LESS _ -> FSharpTokenKind.Less
+        | GREATER _ -> FSharpTokenKind.Greater
+        | LET _ -> FSharpTokenKind.Let
+        | YIELD _ -> FSharpTokenKind.Yield
+        | YIELD_BANG _ -> FSharpTokenKind.YieldBang
+        | BIGNUM _ -> FSharpTokenKind.BigNumber
+        | DECIMAL _ -> FSharpTokenKind.Decimal
+        | CHAR _ -> FSharpTokenKind.Char
+        | IEEE64 _ -> FSharpTokenKind.Ieee64
+        | IEEE32 _ -> FSharpTokenKind.Ieee32
+        | NATIVEINT _ -> FSharpTokenKind.NativeInt
+        | UNATIVEINT _ -> FSharpTokenKind.UNativeInt
+        | UINT64 _ -> FSharpTokenKind.UInt64
+        | UINT32 _ -> FSharpTokenKind.UInt32
+        | UINT16 _ -> FSharpTokenKind.UInt16
+        | UINT8 _ -> FSharpTokenKind.UInt8
+        | INT64 _ -> FSharpTokenKind.UInt64
+        | INT32 _ -> FSharpTokenKind.Int32
+        | INT32_DOT_DOT _ -> FSharpTokenKind.Int32DotDot
+        | INT16 _ -> FSharpTokenKind.Int16
+        | INT8 _ -> FSharpTokenKind.Int8
+        | FUNKY_OPERATOR_NAME _ -> FSharpTokenKind.FunkyOperatorName
+        | ADJACENT_PREFIX_OP _ -> FSharpTokenKind.AdjacentPrefixOperator
+        | PLUS_MINUS_OP _ -> FSharpTokenKind.PlusMinusOperator
+        | INFIX_AMP_OP _ -> FSharpTokenKind.InfixAmpersandOperator 
+        | INFIX_STAR_DIV_MOD_OP _ -> FSharpTokenKind.InfixStarDivideModuloOperator
+        | PREFIX_OP _ -> FSharpTokenKind.PrefixOperator
+        | INFIX_BAR_OP _ -> FSharpTokenKind.InfixBarOperator
+        | INFIX_AT_HAT_OP _ -> FSharpTokenKind.InfixAtHatOperator 
+        | INFIX_COMPARE_OP _ -> FSharpTokenKind.InfixCompareOperator
+        | INFIX_STAR_STAR_OP _ -> FSharpTokenKind.InfixStarStarOperator
+        | IDENT _ -> FSharpTokenKind.Identifier 
+        | KEYWORD_STRING _ -> FSharpTokenKind.KeywordString
+        | INTERP_STRING_BEGIN_END _
+        | INTERP_STRING_BEGIN_PART _
+        | INTERP_STRING_PART _
+        | INTERP_STRING_END _
+        | STRING _ -> FSharpTokenKind.String
+        | BYTEARRAY _ -> FSharpTokenKind.ByteArray
+        | _ -> FSharpTokenKind.None           
 
-        member this.Kind =
-            match this.tok with
-            | ASR -> FSharpSyntaxTokenKind.Asr
-            | INFIX_STAR_STAR_OP "asr" -> FSharpSyntaxTokenKind.Asr
-            | INFIX_STAR_DIV_MOD_OP "land" -> FSharpSyntaxTokenKind.InfixLand
-            | INFIX_STAR_DIV_MOD_OP "lor" -> FSharpSyntaxTokenKind.InfixLor
-            | INFIX_STAR_STAR_OP "lsl" -> FSharpSyntaxTokenKind.InfixLsl
-            | INFIX_STAR_STAR_OP "lsr" -> FSharpSyntaxTokenKind.InfixLsr
-            | INFIX_STAR_DIV_MOD_OP "lxor" -> FSharpSyntaxTokenKind.InfixLxor
-            | INFIX_STAR_DIV_MOD_OP "mod" -> FSharpSyntaxTokenKind.InfixMod
-            | HASH_IF _ -> FSharpSyntaxTokenKind.HashIf 
-            | HASH_ELSE _ -> FSharpSyntaxTokenKind.HashElse 
-            | HASH_ENDIF _ -> FSharpSyntaxTokenKind.HashEndIf 
-            | COMMENT _ -> FSharpSyntaxTokenKind.CommentTrivia 
-            | WHITESPACE _ -> FSharpSyntaxTokenKind.WhitespaceTrivia 
-            | HASH_LINE _ -> FSharpSyntaxTokenKind.HashLine 
-            | HASH_LIGHT _ -> FSharpSyntaxTokenKind.HashLight 
-            | INACTIVECODE _ -> FSharpSyntaxTokenKind.InactiveCode
-            | LINE_COMMENT _ -> FSharpSyntaxTokenKind.LineCommentTrivia 
-            | STRING_TEXT _ -> FSharpSyntaxTokenKind.StringText 
-            | FIXED  -> FSharpSyntaxTokenKind.Fixed 
-            | OINTERFACE_MEMBER  -> FSharpSyntaxTokenKind.OffsideInterfaceMember 
-            | OBLOCKEND  -> FSharpSyntaxTokenKind.OffsideBlockEnd 
-            | ORIGHT_BLOCK_END  -> FSharpSyntaxTokenKind.OffsideRightBlockEnd 
-            | ODECLEND  -> FSharpSyntaxTokenKind.OffsideDeclEnd 
-            | OEND  -> FSharpSyntaxTokenKind.OffsideEnd 
-            | OBLOCKSEP  -> FSharpSyntaxTokenKind.OffsideBlockSep 
-            | OBLOCKBEGIN  -> FSharpSyntaxTokenKind.OffsideBlockBegin 
-            | ORESET  -> FSharpSyntaxTokenKind.OffsideReset 
-            | OFUN  -> FSharpSyntaxTokenKind.OffsideFun 
-            | OFUNCTION  -> FSharpSyntaxTokenKind.OffsideFunction 
-            | OWITH  -> FSharpSyntaxTokenKind.OffsideWith 
-            | OELSE  -> FSharpSyntaxTokenKind.OffsideElse 
-            | OTHEN  -> FSharpSyntaxTokenKind.OffsideThen 
-            | ODO_BANG  -> FSharpSyntaxTokenKind.OffsideDoBang 
-            | ODO  -> FSharpSyntaxTokenKind.OffsideDo 
-            | OBINDER _ -> FSharpSyntaxTokenKind.OffsideBinder
-            | OLET _ -> FSharpSyntaxTokenKind.OffsideLet
-            | HIGH_PRECEDENCE_TYAPP  -> FSharpSyntaxTokenKind.HighPrecedenceTypeApp 
-            | HIGH_PRECEDENCE_PAREN_APP  -> FSharpSyntaxTokenKind.HighPrecedenceParenthesisApp 
-            | HIGH_PRECEDENCE_BRACK_APP  -> FSharpSyntaxTokenKind.HighPrecedenceBracketApp 
-            | EXTERN  -> FSharpSyntaxTokenKind.Extern 
-            | VOID  -> FSharpSyntaxTokenKind.Void 
-            | PUBLIC  -> FSharpSyntaxTokenKind.Public 
-            | PRIVATE  -> FSharpSyntaxTokenKind.Private 
-            | INTERNAL  -> FSharpSyntaxTokenKind.Internal 
-            | GLOBAL  -> FSharpSyntaxTokenKind.Global 
-            | STATIC  -> FSharpSyntaxTokenKind.Static 
-            | MEMBER  -> FSharpSyntaxTokenKind.Member 
-            | CLASS  -> FSharpSyntaxTokenKind.Class 
-            | ABSTRACT  -> FSharpSyntaxTokenKind.Abstract 
-            | OVERRIDE  -> FSharpSyntaxTokenKind.Override
-            | DEFAULT  -> FSharpSyntaxTokenKind.Default 
-            | CONSTRUCTOR  -> FSharpSyntaxTokenKind.Constructor 
-            | INHERIT  -> FSharpSyntaxTokenKind.Inherit 
-            | GREATER_RBRACK  -> FSharpSyntaxTokenKind.GreaterRightBracket 
-            | STRUCT  -> FSharpSyntaxTokenKind.Struct 
-            | SIG  -> FSharpSyntaxTokenKind.Sig 
-            | BAR  -> FSharpSyntaxTokenKind.Bar 
-            | RBRACK  -> FSharpSyntaxTokenKind.RightBracket 
-            | RBRACE _ -> FSharpSyntaxTokenKind.RightBrace 
-            | MINUS  -> FSharpSyntaxTokenKind.Minus 
-            | DOLLAR  -> FSharpSyntaxTokenKind.Dollar 
-            | BAR_RBRACK  -> FSharpSyntaxTokenKind.BarRightBracket 
-            | BAR_RBRACE  -> FSharpSyntaxTokenKind.BarRightBrace
-            | UNDERSCORE  -> FSharpSyntaxTokenKind.Underscore 
-            | SEMICOLON_SEMICOLON  -> FSharpSyntaxTokenKind.SemicolonSemicolon 
-            | LARROW  -> FSharpSyntaxTokenKind.LeftArrow 
-            | EQUALS  -> FSharpSyntaxTokenKind.Equals 
-            | LBRACK  -> FSharpSyntaxTokenKind.LeftBracket 
-            | LBRACK_BAR  -> FSharpSyntaxTokenKind.LeftBracketBar 
-            | LBRACE_BAR  -> FSharpSyntaxTokenKind.LeftBraceBar 
-            | LBRACK_LESS  -> FSharpSyntaxTokenKind.LeftBracketLess 
-            | LBRACE _ -> FSharpSyntaxTokenKind.LeftBrace 
-            | QMARK  -> FSharpSyntaxTokenKind.QuestionMark 
-            | QMARK_QMARK  -> FSharpSyntaxTokenKind.QuestionMarkQuestionMark
-            | DOT  -> FSharpSyntaxTokenKind.Dot 
-            | COLON  -> FSharpSyntaxTokenKind.Colon 
-            | COLON_COLON  -> FSharpSyntaxTokenKind.ColonColon 
-            | COLON_GREATER  -> FSharpSyntaxTokenKind.ColonGreater 
-            | COLON_QMARK_GREATER  -> FSharpSyntaxTokenKind.ColonQuestionMarkGreater
-            | COLON_QMARK  -> FSharpSyntaxTokenKind.ColonQuestionMark
-            | COLON_EQUALS  -> FSharpSyntaxTokenKind.ColonEquals
-            | SEMICOLON  -> FSharpSyntaxTokenKind.SemicolonSemicolon 
-            | WHEN  -> FSharpSyntaxTokenKind.When 
-            | WHILE  -> FSharpSyntaxTokenKind.While 
-            | WITH  -> FSharpSyntaxTokenKind.With 
-            | HASH  -> FSharpSyntaxTokenKind.Hash 
-            | AMP  -> FSharpSyntaxTokenKind.Ampersand 
-            | AMP_AMP  -> FSharpSyntaxTokenKind.AmpersandAmpersand 
-            | QUOTE  -> FSharpSyntaxTokenKind.RightQuote 
-            | LPAREN  -> FSharpSyntaxTokenKind.LeftParenthesis 
-            | RPAREN  -> FSharpSyntaxTokenKind.RightParenthesis 
-            | STAR  -> FSharpSyntaxTokenKind.Star 
-            | COMMA  -> FSharpSyntaxTokenKind.Comma 
-            | RARROW  -> FSharpSyntaxTokenKind.RightArrow 
-            | GREATER_BAR_RBRACK  -> FSharpSyntaxTokenKind.GreaterBarRightBracket 
-            | LPAREN_STAR_RPAREN  -> FSharpSyntaxTokenKind.LeftParenthesisStarRightParenthesis 
-            | OPEN  -> FSharpSyntaxTokenKind.Open 
-            | OR  -> FSharpSyntaxTokenKind.Or
-            | REC  -> FSharpSyntaxTokenKind.Rec
-            | THEN  -> FSharpSyntaxTokenKind.Then
-            | TO  -> FSharpSyntaxTokenKind.To
-            | TRUE  -> FSharpSyntaxTokenKind.True
-            | TRY  -> FSharpSyntaxTokenKind.Try
-            | TYPE  -> FSharpSyntaxTokenKind.Type
-            | VAL  -> FSharpSyntaxTokenKind.Val
-            | INLINE  -> FSharpSyntaxTokenKind.Inline
-            | INTERFACE  -> FSharpSyntaxTokenKind.Interface
-            | INSTANCE  -> FSharpSyntaxTokenKind.Instance
-            | CONST  -> FSharpSyntaxTokenKind.Const
-            | LAZY  -> FSharpSyntaxTokenKind.Lazy
-            | OLAZY  -> FSharpSyntaxTokenKind.OffsideLazy
-            | MATCH  -> FSharpSyntaxTokenKind.Match
-            | MATCH_BANG  -> FSharpSyntaxTokenKind.MatchBang
-            | MUTABLE  -> FSharpSyntaxTokenKind.Mutable
-            | NEW  -> FSharpSyntaxTokenKind.New
-            | OF  -> FSharpSyntaxTokenKind.Of
-            | EXCEPTION  -> FSharpSyntaxTokenKind.Exception
-            | FALSE  -> FSharpSyntaxTokenKind.False
-            | FOR  -> FSharpSyntaxTokenKind.For
-            | FUN  -> FSharpSyntaxTokenKind.Fun
-            | FUNCTION  -> FSharpSyntaxTokenKind.Function
-            | IF  -> FSharpSyntaxTokenKind.If
-            | IN  -> FSharpSyntaxTokenKind.In
-            | JOIN_IN  -> FSharpSyntaxTokenKind.JoinIn
-            | FINALLY  -> FSharpSyntaxTokenKind.Finally
-            | DO_BANG  -> FSharpSyntaxTokenKind.DoBang
-            | AND  -> FSharpSyntaxTokenKind.And
-            | AS  -> FSharpSyntaxTokenKind.As
-            | ASSERT  -> FSharpSyntaxTokenKind.Assert
-            | OASSERT  -> FSharpSyntaxTokenKind.OffsideAssert
-            | BEGIN  -> FSharpSyntaxTokenKind.Begin
-            | DO  -> FSharpSyntaxTokenKind.Do
-            | DONE  -> FSharpSyntaxTokenKind.Done
-            | DOWNTO  -> FSharpSyntaxTokenKind.DownTo
-            | ELSE  -> FSharpSyntaxTokenKind.Else
-            | ELIF  -> FSharpSyntaxTokenKind.Elif
-            | END  -> FSharpSyntaxTokenKind.End
-            | DOT_DOT  -> FSharpSyntaxTokenKind.DotDot
-            | DOT_DOT_HAT  -> FSharpSyntaxTokenKind.DotDotHat
-            | BAR_BAR  -> FSharpSyntaxTokenKind.BarBar
-            | UPCAST  -> FSharpSyntaxTokenKind.Upcast
-            | DOWNCAST  -> FSharpSyntaxTokenKind.Downcast
-            | NULL  -> FSharpSyntaxTokenKind.Null
-            | RESERVED  -> FSharpSyntaxTokenKind.Reserved
-            | MODULE  -> FSharpSyntaxTokenKind.Module
-            | NAMESPACE  -> FSharpSyntaxTokenKind.Namespace
-            | DELEGATE  -> FSharpSyntaxTokenKind.Delegate
-            | CONSTRAINT  -> FSharpSyntaxTokenKind.Constraint
-            | BASE  -> FSharpSyntaxTokenKind.Base
-            | LQUOTE _ -> FSharpSyntaxTokenKind.LeftQuote
-            | RQUOTE _ -> FSharpSyntaxTokenKind.RightQuote
-            | RQUOTE_DOT _ -> FSharpSyntaxTokenKind.RightQuoteDot
-            | PERCENT_OP _ -> FSharpSyntaxTokenKind.PercentOperator
-            | BINDER _ -> FSharpSyntaxTokenKind.Binder 
-            | LESS _ -> FSharpSyntaxTokenKind.Less
-            | GREATER _ -> FSharpSyntaxTokenKind.Greater
-            | LET _ -> FSharpSyntaxTokenKind.Let
-            | YIELD _ -> FSharpSyntaxTokenKind.Yield
-            | YIELD_BANG _ -> FSharpSyntaxTokenKind.YieldBang
-            | BIGNUM _ -> FSharpSyntaxTokenKind.BigNumber
-            | DECIMAL _ -> FSharpSyntaxTokenKind.Decimal
-            | CHAR _ -> FSharpSyntaxTokenKind.Char
-            | IEEE64 _ -> FSharpSyntaxTokenKind.Ieee64
-            | IEEE32 _ -> FSharpSyntaxTokenKind.Ieee32
-            | NATIVEINT _ -> FSharpSyntaxTokenKind.NativeInt
-            | UNATIVEINT _ -> FSharpSyntaxTokenKind.UNativeInt
-            | UINT64 _ -> FSharpSyntaxTokenKind.UInt64
-            | UINT32 _ -> FSharpSyntaxTokenKind.UInt32
-            | UINT16 _ -> FSharpSyntaxTokenKind.UInt16
-            | UINT8 _ -> FSharpSyntaxTokenKind.UInt8
-            | INT64 _ -> FSharpSyntaxTokenKind.UInt64
-            | INT32 _ -> FSharpSyntaxTokenKind.Int32
-            | INT32_DOT_DOT _ -> FSharpSyntaxTokenKind.Int32DotDot
-            | INT16 _ -> FSharpSyntaxTokenKind.Int16
-            | INT8 _ -> FSharpSyntaxTokenKind.Int8
-            | FUNKY_OPERATOR_NAME _ -> FSharpSyntaxTokenKind.FunkyOperatorName
-            | ADJACENT_PREFIX_OP _ -> FSharpSyntaxTokenKind.AdjacentPrefixOperator
-            | PLUS_MINUS_OP _ -> FSharpSyntaxTokenKind.PlusMinusOperator
-            | INFIX_AMP_OP _ -> FSharpSyntaxTokenKind.InfixAmpersandOperator 
-            | INFIX_STAR_DIV_MOD_OP _ -> FSharpSyntaxTokenKind.InfixStarDivideModuloOperator
-            | PREFIX_OP _ -> FSharpSyntaxTokenKind.PrefixOperator
-            | INFIX_BAR_OP _ -> FSharpSyntaxTokenKind.InfixBarOperator
-            | INFIX_AT_HAT_OP _ -> FSharpSyntaxTokenKind.InfixAtHatOperator 
-            | INFIX_COMPARE_OP _ -> FSharpSyntaxTokenKind.InfixCompareOperator
-            | INFIX_STAR_STAR_OP _ -> FSharpSyntaxTokenKind.InfixStarStarOperator
-            | IDENT _ -> FSharpSyntaxTokenKind.Identifier 
-            | KEYWORD_STRING _ -> FSharpSyntaxTokenKind.KeywordString
-            | INTERP_STRING_BEGIN_END _
-            | INTERP_STRING_BEGIN_PART _
-            | INTERP_STRING_PART _
-            | INTERP_STRING_END _
-            | STRING _ -> FSharpSyntaxTokenKind.String
-            | BYTEARRAY _ -> FSharpSyntaxTokenKind.ByteArray
-            | _ -> FSharpSyntaxTokenKind.None           
+    member this.IsKeyword =
+        match this.Kind with
+        | FSharpTokenKind.Abstract
+        | FSharpTokenKind.And
+        | FSharpTokenKind.As
+        | FSharpTokenKind.Assert
+        | FSharpTokenKind.OffsideAssert
+        | FSharpTokenKind.Base
+        | FSharpTokenKind.Begin
+        | FSharpTokenKind.Class
+        | FSharpTokenKind.Default
+        | FSharpTokenKind.Delegate
+        | FSharpTokenKind.Do
+        | FSharpTokenKind.OffsideDo
+        | FSharpTokenKind.Done
+        | FSharpTokenKind.Downcast
+        | FSharpTokenKind.DownTo
+        | FSharpTokenKind.Elif
+        | FSharpTokenKind.Else
+        | FSharpTokenKind.OffsideElse
+        | FSharpTokenKind.End
+        | FSharpTokenKind.OffsideEnd
+        | FSharpTokenKind.Exception
+        | FSharpTokenKind.Extern
+        | FSharpTokenKind.False
+        | FSharpTokenKind.Finally
+        | FSharpTokenKind.Fixed
+        | FSharpTokenKind.For
+        | FSharpTokenKind.Fun
+        | FSharpTokenKind.OffsideFun
+        | FSharpTokenKind.Function
+        | FSharpTokenKind.OffsideFunction
+        | FSharpTokenKind.Global
+        | FSharpTokenKind.If
+        | FSharpTokenKind.In
+        | FSharpTokenKind.Inherit
+        | FSharpTokenKind.Inline
+        | FSharpTokenKind.Interface
+        | FSharpTokenKind.OffsideInterfaceMember
+        | FSharpTokenKind.Internal
+        | FSharpTokenKind.Lazy
+        | FSharpTokenKind.OffsideLazy
+        | FSharpTokenKind.Let // "let" and "use"
+        | FSharpTokenKind.OffsideLet
+        | FSharpTokenKind.DoBang //  "let!", "use!" and "do!"
+        | FSharpTokenKind.OffsideDoBang
+        | FSharpTokenKind.Match
+        | FSharpTokenKind.MatchBang
+        | FSharpTokenKind.Member
+        | FSharpTokenKind.Module
+        | FSharpTokenKind.Mutable
+        | FSharpTokenKind.Namespace
+        | FSharpTokenKind.New
+        // | FSharpTokenKind.Not // Not actually a keyword. However, not struct in combination is used as a generic parameter constraint.
+        | FSharpTokenKind.Null
+        | FSharpTokenKind.Of
+        | FSharpTokenKind.Open
+        | FSharpTokenKind.Or
+        | FSharpTokenKind.Override
+        | FSharpTokenKind.Private
+        | FSharpTokenKind.Public
+        | FSharpTokenKind.Rec
+        | FSharpTokenKind.Yield // "yield" and "return"
+        | FSharpTokenKind.YieldBang // "yield!" and "return!"
+        | FSharpTokenKind.Static
+        | FSharpTokenKind.Struct
+        | FSharpTokenKind.Then
+        | FSharpTokenKind.To
+        | FSharpTokenKind.True
+        | FSharpTokenKind.Try
+        | FSharpTokenKind.Type
+        | FSharpTokenKind.Upcast
+        | FSharpTokenKind.Val
+        | FSharpTokenKind.Void
+        | FSharpTokenKind.When
+        | FSharpTokenKind.While
+        | FSharpTokenKind.With
+        | FSharpTokenKind.OffsideWith
 
-        member this.IsKeyword =
-            match this.Kind with
-            | FSharpSyntaxTokenKind.Abstract
-            | FSharpSyntaxTokenKind.And
-            | FSharpSyntaxTokenKind.As
-            | FSharpSyntaxTokenKind.Assert
-            | FSharpSyntaxTokenKind.OffsideAssert
-            | FSharpSyntaxTokenKind.Base
-            | FSharpSyntaxTokenKind.Begin
-            | FSharpSyntaxTokenKind.Class
-            | FSharpSyntaxTokenKind.Default
-            | FSharpSyntaxTokenKind.Delegate
-            | FSharpSyntaxTokenKind.Do
-            | FSharpSyntaxTokenKind.OffsideDo
-            | FSharpSyntaxTokenKind.Done
-            | FSharpSyntaxTokenKind.Downcast
-            | FSharpSyntaxTokenKind.DownTo
-            | FSharpSyntaxTokenKind.Elif
-            | FSharpSyntaxTokenKind.Else
-            | FSharpSyntaxTokenKind.OffsideElse
-            | FSharpSyntaxTokenKind.End
-            | FSharpSyntaxTokenKind.OffsideEnd
-            | FSharpSyntaxTokenKind.Exception
-            | FSharpSyntaxTokenKind.Extern
-            | FSharpSyntaxTokenKind.False
-            | FSharpSyntaxTokenKind.Finally
-            | FSharpSyntaxTokenKind.Fixed
-            | FSharpSyntaxTokenKind.For
-            | FSharpSyntaxTokenKind.Fun
-            | FSharpSyntaxTokenKind.OffsideFun
-            | FSharpSyntaxTokenKind.Function
-            | FSharpSyntaxTokenKind.OffsideFunction
-            | FSharpSyntaxTokenKind.Global
-            | FSharpSyntaxTokenKind.If
-            | FSharpSyntaxTokenKind.In
-            | FSharpSyntaxTokenKind.Inherit
-            | FSharpSyntaxTokenKind.Inline
-            | FSharpSyntaxTokenKind.Interface
-            | FSharpSyntaxTokenKind.OffsideInterfaceMember
-            | FSharpSyntaxTokenKind.Internal
-            | FSharpSyntaxTokenKind.Lazy
-            | FSharpSyntaxTokenKind.OffsideLazy
-            | FSharpSyntaxTokenKind.Let // "let" and "use"
-            | FSharpSyntaxTokenKind.OffsideLet
-            | FSharpSyntaxTokenKind.DoBang //  "let!", "use!" and "do!"
-            | FSharpSyntaxTokenKind.OffsideDoBang
-            | FSharpSyntaxTokenKind.Match
-            | FSharpSyntaxTokenKind.MatchBang
-            | FSharpSyntaxTokenKind.Member
-            | FSharpSyntaxTokenKind.Module
-            | FSharpSyntaxTokenKind.Mutable
-            | FSharpSyntaxTokenKind.Namespace
-            | FSharpSyntaxTokenKind.New
-            // | FSharpSyntaxTokenKind.Not // Not actually a keyword. However, not struct in combination is used as a generic parameter constraint.
-            | FSharpSyntaxTokenKind.Null
-            | FSharpSyntaxTokenKind.Of
-            | FSharpSyntaxTokenKind.Open
-            | FSharpSyntaxTokenKind.Or
-            | FSharpSyntaxTokenKind.Override
-            | FSharpSyntaxTokenKind.Private
-            | FSharpSyntaxTokenKind.Public
-            | FSharpSyntaxTokenKind.Rec
-            | FSharpSyntaxTokenKind.Yield // "yield" and "return"
-            | FSharpSyntaxTokenKind.YieldBang // "yield!" and "return!"
-            | FSharpSyntaxTokenKind.Static
-            | FSharpSyntaxTokenKind.Struct
-            | FSharpSyntaxTokenKind.Then
-            | FSharpSyntaxTokenKind.To
-            | FSharpSyntaxTokenKind.True
-            | FSharpSyntaxTokenKind.Try
-            | FSharpSyntaxTokenKind.Type
-            | FSharpSyntaxTokenKind.Upcast
-            | FSharpSyntaxTokenKind.Val
-            | FSharpSyntaxTokenKind.Void
-            | FSharpSyntaxTokenKind.When
-            | FSharpSyntaxTokenKind.While
-            | FSharpSyntaxTokenKind.With
-            | FSharpSyntaxTokenKind.OffsideWith
+        // * Reserved - from OCAML *
+        | FSharpTokenKind.Asr
+        | FSharpTokenKind.InfixAsr
+        | FSharpTokenKind.InfixLand
+        | FSharpTokenKind.InfixLor
+        | FSharpTokenKind.InfixLsl
+        | FSharpTokenKind.InfixLsr
+        | FSharpTokenKind.InfixLxor
+        | FSharpTokenKind.InfixMod
+        | FSharpTokenKind.Sig
 
-            // * Reserved - from OCAML *
-            | FSharpSyntaxTokenKind.Asr
-            | FSharpSyntaxTokenKind.InfixAsr
-            | FSharpSyntaxTokenKind.InfixLand
-            | FSharpSyntaxTokenKind.InfixLor
-            | FSharpSyntaxTokenKind.InfixLsl
-            | FSharpSyntaxTokenKind.InfixLsr
-            | FSharpSyntaxTokenKind.InfixLxor
-            | FSharpSyntaxTokenKind.InfixMod
-            | FSharpSyntaxTokenKind.Sig
+        // * Reserved - for future *
+        // atomic
+        // break
+        // checked
+        // component
+        // const
+        // constraint
+        // constructor
+        // continue
+        // eager
+        // event
+        // external
+        // functor
+        // include
+        // method
+        // mixin
+        // object
+        // parallel
+        // process
+        // protected
+        // pure
+        // sealed
+        // tailcall
+        // trait
+        // virtual
+        // volatile
+        | FSharpTokenKind.Reserved
+        | FSharpTokenKind.KeywordString
+        | FSharpTokenKind.Binder
+        | FSharpTokenKind.OffsideBinder -> true
+        | _ -> false
 
-            // * Reserved - for future *
-            // atomic
-            // break
-            // checked
-            // component
-            // const
-            // constraint
-            // constructor
-            // continue
-            // eager
-            // event
-            // external
-            // functor
-            // include
-            // method
-            // mixin
-            // object
-            // parallel
-            // process
-            // protected
-            // pure
-            // sealed
-            // tailcall
-            // trait
-            // virtual
-            // volatile
-            | FSharpSyntaxTokenKind.Reserved
-            | FSharpSyntaxTokenKind.KeywordString
-            | FSharpSyntaxTokenKind.Binder
-            | FSharpSyntaxTokenKind.OffsideBinder -> true
-            | _ -> false
+    member this.IsIdentifier =
+        match this.Kind with
+        | FSharpTokenKind.Identifier -> true
+        | _ -> false
 
-        member this.IsIdentifier =
-            match this.Kind with
-            | FSharpSyntaxTokenKind.Identifier -> true
-            | _ -> false
+    member this.IsStringLiteral =
+        match this.Kind with
+        | FSharpTokenKind.String -> true
+        | _ -> false
 
-        member this.IsStringLiteral =
-            match this.Kind with
-            | FSharpSyntaxTokenKind.String -> true
-            | _ -> false
+    member this.IsNumericLiteral =
+        match this.Kind with
+        | FSharpTokenKind.UInt8
+        | FSharpTokenKind.UInt16
+        | FSharpTokenKind.UInt64
+        | FSharpTokenKind.Int8
+        | FSharpTokenKind.Int16
+        | FSharpTokenKind.Int32
+        | FSharpTokenKind.Int64
+        | FSharpTokenKind.Ieee32
+        | FSharpTokenKind.Ieee64
+        | FSharpTokenKind.BigNumber -> true
+        | _ -> false
 
-        member this.IsNumericLiteral =
-            match this.Kind with
-            | FSharpSyntaxTokenKind.UInt8
-            | FSharpSyntaxTokenKind.UInt16
-            | FSharpSyntaxTokenKind.UInt64
-            | FSharpSyntaxTokenKind.Int8
-            | FSharpSyntaxTokenKind.Int16
-            | FSharpSyntaxTokenKind.Int32
-            | FSharpSyntaxTokenKind.Int64
-            | FSharpSyntaxTokenKind.Ieee32
-            | FSharpSyntaxTokenKind.Ieee64
-            | FSharpSyntaxTokenKind.BigNumber -> true
-            | _ -> false
+    member this.IsCommentTrivia =
+        match this.Kind with
+        | FSharpTokenKind.CommentTrivia
+        | FSharpTokenKind.LineCommentTrivia -> true
+        | _ -> false
 
-        member this.IsCommentTrivia =
-            match this.Kind with
-            | FSharpSyntaxTokenKind.CommentTrivia
-            | FSharpSyntaxTokenKind.LineCommentTrivia -> true
-            | _ -> false
-
+[<AutoOpen>]
+module FSharpLexerImpl =
     let lexWithErrorLogger (text: ISourceText) conditionalCompilationDefines (flags: FSharpLexerFlags) supportsFeature errorLogger onToken pathMap (ct: CancellationToken) =
         let canSkipTrivia = (flags &&& FSharpLexerFlags.SkipTrivia) = FSharpLexerFlags.SkipTrivia
         let isLightSyntaxOn = (flags &&& FSharpLexerFlags.LightSyntaxOn) = FSharpLexerFlags.LightSyntaxOn
@@ -1527,7 +1534,8 @@ module Lexer =
             let lexer = Lexer.token lexargs canSkipTrivia
 
             if canUseLexFilter then
-                LexFilter.LexFilter(lexargs.lightStatus, isCompilingFSharpCore, lexer, lexbuf).Lexer
+                let lexFilter = LexFilter.LexFilter(lexargs.lightStatus, isCompilingFSharpCore, lexer, lexbuf)
+                (fun _ -> lexFilter.GetToken())
             else
                 lexer
 
@@ -1540,31 +1548,30 @@ module Lexer =
             onToken (getNextToken lexbuf) lexbuf.LexemeRange
 
     let lex text conditionalCompilationDefines flags supportsFeature lexCallback pathMap ct =
-        let errorLogger = CompilationErrorLogger("Lexer", ErrorLogger.FSharpErrorSeverityOptions.Default)
+        let errorLogger = CompilationErrorLogger("Lexer", FSharpDiagnosticOptions.Default)
         lexWithErrorLogger text conditionalCompilationDefines flags supportsFeature errorLogger lexCallback pathMap ct
 
-    [<AbstractClass;Sealed>]
-    type FSharpLexer =
+[<AbstractClass;Sealed>]
+type FSharpLexer =
 
-        static member Lex(text: ISourceText, tokenCallback, ?langVersion, ?filePath: string, ?conditionalCompilationDefines, ?flags, ?pathMap, ?ct) =
-            let langVersion = defaultArg langVersion "latestmajor"
-            let flags = defaultArg flags FSharpLexerFlags.Default
-            ignore filePath // can be removed at later point
-            let conditionalCompilationDefines = defaultArg conditionalCompilationDefines []
-            let pathMap = defaultArg pathMap Map.Empty
-            let ct = defaultArg ct CancellationToken.None
+    static member Lex(text: ISourceText, tokenCallback, ?langVersion, ?filePath: string, ?conditionalCompilationDefines, ?flags, ?pathMap, ?ct) =
+        let langVersion = defaultArg langVersion "latestmajor"
+        let flags = defaultArg flags FSharpLexerFlags.Default
+        ignore filePath // can be removed at later point
+        let conditionalCompilationDefines = defaultArg conditionalCompilationDefines []
+        let pathMap = defaultArg pathMap Map.Empty
+        let ct = defaultArg ct CancellationToken.None
 
-            let supportsFeature = (LanguageVersion langVersion).SupportsFeature
+        let supportsFeature = (LanguageVersion langVersion).SupportsFeature
 
-            let pathMap =
-                (PathMap.empty, pathMap)
-                ||> Seq.fold (fun state pair -> state |> PathMap.addMapping pair.Key pair.Value)
+        let pathMap =
+            (PathMap.empty, pathMap)
+            ||> Seq.fold (fun state pair -> state |> PathMap.addMapping pair.Key pair.Value)
 
-            let onToken =
-                fun tok m ->
-                    let fsTok = FSharpSyntaxToken(tok, m)
-                    match fsTok.Kind with
-                    | FSharpSyntaxTokenKind.None -> ()
-                    | _ -> tokenCallback fsTok
+        let onToken tok m =
+                let fsTok = FSharpToken(tok, m)
+                match fsTok.Kind with
+                | FSharpTokenKind.None -> ()
+                | _ -> tokenCallback fsTok
 
-            lex text conditionalCompilationDefines flags supportsFeature onToken pathMap ct
+        lex text conditionalCompilationDefines flags supportsFeature onToken pathMap ct

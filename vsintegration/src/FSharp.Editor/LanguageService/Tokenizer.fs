@@ -1,4 +1,4 @@
-﻿namespace Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Collections.Generic
@@ -13,9 +13,9 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 
 open Microsoft.VisualStudio.Core.Imaging
 open Microsoft.VisualStudio.Imaging
@@ -42,7 +42,7 @@ type internal LexerSymbol =
       Ident: Ident
       /// All parts of `LongIdent`
       FullIsland: string list }
-    member x.Range: Range.range = x.Ident.idRange
+    member x.Range: Range = x.Ident.idRange
 
 [<RequireQualifiedAccess>]
 type internal SymbolLookupKind =
@@ -244,7 +244,10 @@ module internal Tokenizer =
                         | Protected -> KnownImageIds.ClassProtected
                         | Private -> KnownImageIds.ClassPrivate
                 | _ -> KnownImageIds.None
-        ImageId(KnownImageIds.ImageCatalogGuid, imageId)
+        if imageId = KnownImageIds.None then
+            None
+        else
+            Some(ImageId(KnownImageIds.ImageCatalogGuid, imageId))
 
     let GetGlyphForSymbol (symbol: FSharpSymbol, kind: LexerSymbolKind) =
         match kind with
@@ -720,8 +723,8 @@ module internal Tokenizer =
                     Ident(identStr, 
                         Range.mkRange 
                             fileName 
-                            (Range.mkPos (linePos.Line + 1) token.LeftColumn)
-                            (Range.mkPos (linePos.Line + 1) (token.RightColumn + 1))) 
+                            (Pos.mkPos (linePos.Line + 1) token.LeftColumn)
+                            (Pos.mkPos (linePos.Line + 1) (token.RightColumn + 1))) 
                 FullIsland = partialName.QualifyingIdents @ [identStr] })
 
     let private getCachedSourceLineData(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list) = 
@@ -802,15 +805,16 @@ module internal Tokenizer =
             | -1 | 0 -> span
             | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
 
+    let private doubleBackTickDelimiter = "``"
+
+    let isDoubleBacktickIdent (s: string) =
+        let doubledDelimiter = 2 * doubleBackTickDelimiter.Length
+        if s.Length > doubledDelimiter && s.StartsWith(doubleBackTickDelimiter, StringComparison.Ordinal) && s.EndsWith(doubleBackTickDelimiter, StringComparison.Ordinal) then
+            let inner = s.AsSpan(doubleBackTickDelimiter.Length, s.Length - doubledDelimiter)
+            not (inner.Contains(doubleBackTickDelimiter.AsSpan(), StringComparison.Ordinal))
+        else false
+
     let isValidNameForSymbol (lexerSymbolKind: LexerSymbolKind, symbol: FSharpSymbol, name: string) : bool =
-        let doubleBackTickDelimiter = "``"
-        
-        let isDoubleBacktickIdent (s: string) =
-            let doubledDelimiter = 2 * doubleBackTickDelimiter.Length
-            if s.Length > doubledDelimiter && s.StartsWith(doubleBackTickDelimiter, StringComparison.Ordinal) && s.EndsWith(doubleBackTickDelimiter, StringComparison.Ordinal) then
-                let inner = s.AsSpan(doubleBackTickDelimiter.Length, s.Length - doubledDelimiter)
-                not (inner.Contains(doubleBackTickDelimiter.AsSpan(), StringComparison.Ordinal))
-            else false
         
         let isIdentifier (ident: string) =
             if isDoubleBacktickIdent ident then
@@ -823,7 +827,7 @@ module internal Tokenizer =
                         else PrettyNaming.IsIdentifierPartCharacter c) 
         
         let isFixableIdentifier (s: string) = 
-            not (String.IsNullOrEmpty s) && Keywords.NormalizeIdentifierBackticks s |> isIdentifier
+            not (String.IsNullOrEmpty s) && FSharpKeywords.NormalizeIdentifierBackticks s |> isIdentifier
         
         let forbiddenChars = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"' |]
         

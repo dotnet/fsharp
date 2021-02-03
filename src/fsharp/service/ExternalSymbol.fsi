@@ -27,17 +27,22 @@ module ExternalType =
 /// Represents the type of a single method parameter
 [<RequireQualifiedAccess>]
 type ParamTypeSymbol =
-    | Param of ExternalType
-    | Byref of ExternalType
+
+    | Param of parameterType: ExternalType
+
+    | Byref of parameterType: ExternalType
+
     override ToString : unit -> string
 
 module ParamTypeSymbol =
+
     val internal tryOfILType : string array -> ILType -> ParamTypeSymbol option
+
     val internal tryOfILTypes : string array -> ILType list -> ParamTypeSymbol list option
 
 /// Represents a symbol in an external (non F#) assembly
 [<RequireQualifiedAccess>]
-type ExternalSymbol =
+type FSharpExternalSymbol =
     | Type of fullName: string
     | Constructor of typeName: string * args: ParamTypeSymbol list
     | Method of typeName: string * name: string * paramSyms: ParamTypeSymbol list * genericArity: int 

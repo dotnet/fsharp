@@ -2,9 +2,12 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
+open FSharp.Compiler
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.Range
 
 [<Sealed>]
 type FSharpNoteworthyParamInfoLocations(longId: string list, longIdRange: range, openParenLocation: pos,  tupleEndLocations: pos list, isThereACloseParen: bool, namedParamNames: string option list) =
@@ -272,3 +275,59 @@ type FSharpNoteworthyParamInfoLocations with
             r
         | _ -> None
 
+
+module internal SynExprAppLocationsImpl =
+    let rec private searchSynArgExpr traverseSynExpr expr ranges =
+        match expr with
+        | SynExpr.Const(SynConst.Unit, _) ->
+            None, None
+
+        | SynExpr.Paren(SynExpr.Tuple (_, exprs, _commas, _tupRange), _, _, _parenRange) ->
+            let rec loop (exprs: SynExpr list) ranges =
+                match exprs with
+                | [] -> ranges
+                | h::t ->
+                    loop t (h.Range :: ranges)
+
+            let res = loop exprs ranges
+            Some (res), None
+
+        | SynExpr.Paren(SynExpr.Paren(_, _, _, _) as synExpr, _, _, _parenRange) -> 
+            let r, _cacheOpt = searchSynArgExpr traverseSynExpr synExpr ranges
+            r, None
+
+        | SynExpr.Paren(SynExpr.App (_, _isInfix, _, _, _range), _, _, parenRange) ->
+            Some (parenRange :: ranges), None
+
+        | e -> 
+            let inner = traverseSynExpr e
+            match inner with
+            | None ->
+                Some (e.Range :: ranges), Some inner
+            | _ -> None, Some inner
+
+    let getAllCurriedArgsAtPosition pos parseTree =
+        AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
+            member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+                match expr with
+                | SynExpr.App (_exprAtomicFlag, _isInfix, funcExpr, argExpr, range) when posEq pos range.Start ->
+                    let isInfixFuncExpr =
+                        match funcExpr with
+                        | SynExpr.App (_, isInfix, _, _, _) -> isInfix
+                        | _ -> false
+
+                    if isInfixFuncExpr then
+                        traverseSynExpr funcExpr
+                    else
+                        let workingRanges =
+                            match traverseSynExpr funcExpr with
+                            | Some ranges -> ranges
+                            | None -> []
+
+                        let xResult, cacheOpt = searchSynArgExpr traverseSynExpr argExpr workingRanges
+                        match xResult, cacheOpt with
+                        | Some ranges, _ -> Some ranges
+                        | None, Some cache -> cache
+                        | _ -> traverseSynExpr argExpr
+                | _ -> defaultTraverse expr })
+        |> Option.map List.rev

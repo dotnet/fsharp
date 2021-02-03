@@ -679,7 +679,7 @@
       </trans-unit>
       <trans-unit id="ListFilter-Line1">
         <source>There are many other list combinations. The following computes the sum of the squares of the</source>
-        <target state="translated">还有许多其他列表组合。下面计算以下内容的平方和:</target>
+        <target state="translated">还有许多其他列表组合。下面计算以下内容的平方和</target>
         <note />
       </trans-unit>
       <trans-unit id="ListFilter-Line2">
@@ -849,7 +849,7 @@
       </trans-unit>
       <trans-unit id="RecFunDef-Line1">
         <source>This example shows a recursive function that computes the factorial of an</source>
-        <target state="translated">此示例演示递归函数，计算以下内容的阶乘:</target>
+        <target state="translated">此示例演示递归函数，计算以下内容的阶乘</target>
         <note />
       </trans-unit>
       <trans-unit id="RecRunDef-Line2">
@@ -934,7 +934,7 @@
       </trans-unit>
       <trans-unit id="UpdateRecord-Line2">
         <source>a new record value that is a copy of contact1, but has different values for</source>
-        <target state="translated">新的记录值，该值是 contact1 的副本，但对以下内容具有不同的值:</target>
+        <target state="translated">新的记录值，该值是 contact1 的副本，但对以下内容具有不同的值</target>
         <note />
       </trans-unit>
       <trans-unit id="UpdateRecord-Line3">
@@ -1434,7 +1434,7 @@
       </trans-unit>
       <trans-unit id="ClassInternalField-Line1">
         <source>This internal field stores the length of the vector, computed when the</source>
-        <target state="translated">此内部字段存储矢量的长度，当发生以下情况时进行计算:</target>
+        <target state="translated">此内部字段存储矢量的长度，当发生以下情况时进行计算</target>
         <note />
       </trans-unit>
       <trans-unit id="ClassInternalField-Line2">
