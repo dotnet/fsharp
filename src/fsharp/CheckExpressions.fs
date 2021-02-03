@@ -809,7 +809,7 @@ let TcConst cenv ty m env c =
     | SynConst.Measure(SynConst.UInt64 i, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0UL) cenv.g.puint64_tcr c; Const.UInt64 i
     | SynConst.Measure(SynConst.UIntPtr i, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0UL) cenv.g.punativeint_tcr c; Const.UIntPtr i
     | SynConst.Char c -> unif cenv.g.char_ty; Const.Char c
-    | SynConst.String (s, _) -> unif cenv.g.string_ty; Const.String s
+    | SynConst.String (s, _, _) -> unif cenv.g.string_ty; Const.String s
     | SynConst.UserNum _ -> error (InternalError(FSComp.SR.tcUnexpectedBigRationalConstant(), m))
     | SynConst.Measure _ -> error (Error(FSComp.SR.tcInvalidTypeForUnitsOfMeasure(), m))
     | SynConst.UInt16s _ -> error (InternalError(FSComp.SR.tcUnexpectedConstUint16Array(), m))
@@ -4413,7 +4413,7 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) i
             | SynConst.Single n when typeEquiv g g.float32_ty kind -> record(g.float32_ty); box (n: single)
             | SynConst.Double n when typeEquiv g g.float_ty kind -> record(g.float_ty); box (n: double)
             | SynConst.Char n when typeEquiv g g.char_ty kind -> record(g.char_ty); box (n: char)
-            | SynConst.String (s, _) when s <> null && typeEquiv g g.string_ty kind -> record(g.string_ty); box (s: string)
+            | SynConst.String (s, _, _) when s <> null && typeEquiv g g.string_ty kind -> record(g.string_ty); box (s: string)
             | SynConst.Bool b when typeEquiv g g.bool_ty kind -> record(g.bool_ty); box (b: bool)
             | _ -> fail()
         v, tpenv
@@ -4793,7 +4793,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
     match pat with 
     | SynPat.Const (c, m) -> 
         match c with 
-        | SynConst.Bytes (bytes, m) -> 
+        | SynConst.Bytes (bytes, _, m) -> 
             UnifyTypes cenv env m ty (mkByteArrayTy cenv.g) 
             TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty (SynPat.ArrayOrList (true, [ for b in bytes -> SynPat.Const(SynConst.Byte b, m) ], m))
 
@@ -5424,11 +5424,11 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.DotIndexedGet _ | SynExpr.DotIndexedSet _
     | SynExpr.TypeApp _ | SynExpr.Ident _ | SynExpr.LongIdent _ | SynExpr.App _ | SynExpr.DotGet _ -> error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
 
-    | SynExpr.Const (SynConst.String (s, m), _) -> 
+    | SynExpr.Const (SynConst.String (s, _, m), _) -> 
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
         TcConstStringExpr cenv overallTy env m tpenv s
 
-    | SynExpr.InterpolatedString (parts, m) -> 
+    | SynExpr.InterpolatedString (parts, _, m) -> 
         checkLanguageFeatureError cenv.g.langVersion LanguageFeature.StringInterpolation m
 
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
@@ -6783,7 +6783,7 @@ and TcConstExpr cenv overallTy env m tpenv c =
     match c with 
 
     // NOTE: these aren't "really" constants 
-    | SynConst.Bytes (bytes, m) -> 
+    | SynConst.Bytes (bytes, _, m) -> 
        UnifyTypes cenv env m overallTy (mkByteArrayTy cenv.g) 
        Expr.Op (TOp.Bytes bytes, [], [], m), tpenv
 
@@ -6809,7 +6809,7 @@ and TcConstExpr cenv overallTy env m tpenv c =
                             let i64 = int64 s  
                             SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromInt64", SynExpr.Const (SynConst.Int64 i64, m), m)
                         with _ ->             
-                            SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromString", SynExpr.Const (SynConst.String (s, m), m), m) 
+                            SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromString", SynExpr.Const (SynConst.String (s, SynStringKind.Regular, m), m), m) 
                 
                 if suffix <> "I" then
                     expr

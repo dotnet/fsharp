@@ -53,10 +53,15 @@ val reusingLexbufForParsing: Lexbuf -> (unit -> 'a) -> 'a
 
 val usingLexbufForParsing: Lexbuf * string -> (UnicodeLexing.Lexbuf -> 'a) -> 'a
 
+type LexerStringFinisherContext = 
+    | InterpolatedPart = 1
+    | Verbatim = 2
+    | TripleQuote = 4
+
 type LexerStringFinisher =
-    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> LexerContinuation -> token)
+    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> LexerStringFinisherContext -> LexerContinuation -> token)
     
-    member Finish: buf: ByteBuffer -> kind: LexerStringKind -> isInterpolatedStringPart: bool -> cont: LexerContinuation -> token
+    member Finish: buf: ByteBuffer -> kind: LexerStringKind -> context: LexerStringFinisherContext -> cont: LexerContinuation -> token
 
     static member Default: LexerStringFinisher
 

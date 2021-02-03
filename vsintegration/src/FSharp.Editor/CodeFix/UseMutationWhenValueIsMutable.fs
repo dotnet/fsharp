@@ -2,6 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Composition
 open System.Threading
 open System.Threading.Tasks
@@ -38,20 +39,29 @@ type internal FSharpUseMutationWhenValueIsMutableFixProvider
 
             let document = context.Document
             do! Option.guard (not(isSignatureFile document.FilePath))
-            let position = context.Span.Start
             let checker = checkerProvider.Checker
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, CancellationToken.None, userOpName)
             let! sourceText = document.GetTextAsync () |> liftTaskAsync
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
-            let textLine = sourceText.Lines.GetLineFromPosition position
-            let textLinePos = sourceText.Lines.GetLinePosition position
+            
+            let adjustedPosition =
+                let rec loop ch pos =
+                    if Char.IsWhiteSpace(ch) then
+                        pos
+                    else
+                        loop sourceText.[pos + 1] (pos + 1)
+
+                loop sourceText.[context.Span.Start] context.Span.Start
+
+            let textLine = sourceText.Lines.GetLineFromPosition adjustedPosition
+            let textLinePos = sourceText.Lines.GetLinePosition adjustedPosition
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! _, _, checkFileResults = checker.ParseAndCheckDocument (document, projectOptions, sourceText=sourceText, userOpName=userOpName)
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, adjustedPosition, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
 
             match symbolUse.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsValue && mfv.IsMutable ->
+            | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsMutable || mfv.HasSetterMethod ->
                 let title = SR.UseMutationWhenValueIsMutable()
                 let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
                 let mutable pos = symbolSpan.End

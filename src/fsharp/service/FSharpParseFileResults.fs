@@ -438,7 +438,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
                   | SynExpr.Paren (e, _, _, _) -> 
                       yield! walkExpr false e
 
-                  | SynExpr.InterpolatedString (parts, _) -> 
+                  | SynExpr.InterpolatedString (parts, _, _) -> 
                       yield! walkExprs [ for part in parts do 
                                             match part with 
                                             | SynInterpolatedStringPart.String _ -> ()

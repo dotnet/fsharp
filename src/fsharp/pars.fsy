@@ -192,10 +192,10 @@ let rangeOfLongIdent(lid:LongIdent) =
 %} 
 
 // Producing these changes the lex state, e.g. string --> token, or nesting level of braces in interpolated strings
-%token <byte[] * ParseHelpers.LexerContinuation> BYTEARRAY
-%token <string * ParseHelpers.LexerContinuation> STRING 
-%token <string * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_END
-%token <string * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_PART 
+%token <byte[] * SynByteStringKind * ParseHelpers.LexerContinuation> BYTEARRAY
+%token <string * SynStringKind * ParseHelpers.LexerContinuation> STRING 
+%token <string * SynStringKind * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_END
+%token <string * SynStringKind * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_PART 
 %token <string * ParseHelpers.LexerContinuation> INTERP_STRING_PART 
 %token <string * ParseHelpers.LexerContinuation> INTERP_STRING_END 
 %token <ParseHelpers.LexerContinuation> LBRACE RBRACE
@@ -644,7 +644,8 @@ hashDirectiveArgs:
 /* One argument to a #directive */
 hashDirectiveArg: 
   | stringOrKeywordString 
-      { $1 }
+      { let s, _ = $1
+        s }
       
 
 /*--------------------------------------------------------------------------*/
@@ -2235,8 +2236,9 @@ braceBarFieldDeclListCore:
 inlineAssemblyTyconRepr:
   | HASH stringOrKeywordString HASH 
      { libraryOnlyError (lhs parseState)
-       let lhsm = lhs parseState 
-       let ilType = ParseAssemblyCodeType $2 parseState.LexBuffer.SupportsFeature (rhs parseState 2)
+       let lhsm = lhs parseState
+       let s, _ = $2
+       let ilType = ParseAssemblyCodeType s parseState.LexBuffer.SupportsFeature (rhs parseState 2)
        SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (box ilType, lhsm) }
 
 classOrInterfaceOrStruct: 
@@ -2664,7 +2666,7 @@ cPrototype:
         let rhsExpr = SynExpr.App (ExprAtomicFlag.NonAtomic,
                                   false,
                                   SynExpr.Ident (ident("failwith", rhs parseState 6)),
-                                  SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", rhs parseState 8), rhs parseState 8),
+                                  SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", SynStringKind.Regular, rhs parseState 8), rhs parseState 8),
                                   mRhs)
         (fun attrs _ -> 
             let bindingId = SynPat.LongIdent (LongIdentWithDots([nm], []), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
@@ -2908,10 +2910,12 @@ rawConstant:
     { SynConst.UserNum $1 } 
 
   | stringOrKeywordString
-    { SynConst.String ($1, lhs parseState) } 
+    { let s, synStringKind = $1
+      SynConst.String (s, synStringKind, lhs parseState) } 
 
   | BYTEARRAY
-    { SynConst.Bytes (fst $1, lhs parseState) }
+    { let (v, synByteStringKind, _) = $1
+      SynConst.Bytes (v, synByteStringKind, lhs parseState) }
 
 rationalConstant:
   | INT32 INFIX_STAR_DIV_MOD_OP INT32
@@ -3850,7 +3854,7 @@ declExpr:
 
 dynamicArg:
   | IDENT
-      { let con = SynConst.String ($1, rhs parseState 1)
+      { let con = SynConst.String ($1, SynStringKind.Regular, rhs parseState 1)
         let arg2 = SynExpr.Const (con, con.Range (rhs parseState 1)) 
         arg2 }
 
@@ -4245,7 +4249,8 @@ atomicExprAfterType:
       { $1 }
 
   | interpolatedString
-      { SynExpr.InterpolatedString($1, rhs parseState 1) }
+      { let parts, synStringKind = $1
+        SynExpr.InterpolatedString(parts, synStringKind, rhs parseState 1) }
 
   | NULL 
       { SynExpr.Null (lhs parseState) } 
@@ -4490,7 +4495,7 @@ forLoopDirection:
 inlineAssemblyExpr:
   | HASH stringOrKeywordString opt_inlineAssemblyTypeArg optCurriedArgExprs  optInlineAssemblyReturnTypes HASH 
       { libraryOnlyWarning (lhs parseState)
-        let s, sm = $2, rhs parseState 2
+        let (s, _), sm = $2, rhs parseState 2
         (fun m ->
             let ilInstrs = ParseAssemblyCodeInstructions s parseState.LexBuffer.SupportsFeature sm
             SynExpr.LibraryOnlyILAssembly (box ilInstrs, $3, List.rev $4, $5, m)) }
@@ -5071,7 +5076,7 @@ atomType:
 
   | NULL
      { let m = rhs parseState 1
-       SynType.StaticConstant(SynConst.String (null, m), m) }
+       SynType.StaticConstant(SynConst.String (null, SynStringKind.Regular, m), m) }
 
   | CONST atomicExpr
      {  let e, _ = $2
@@ -5527,8 +5532,10 @@ colonOrEquals:
 
 /* A literal string or a string from a keyword like __SOURCE_FILE__ */
 stringOrKeywordString:
-  | STRING { fst $1 }
-  | KEYWORD_STRING { $1 }
+  | STRING 
+     { let (s, synStringKind, _) = $1
+       s, synStringKind }
+  | KEYWORD_STRING { $1, SynStringKind.Regular }
 
 interpolatedStringFill:
   | declExpr
@@ -5556,17 +5563,20 @@ interpolatedStringParts:
 /* INTERP_STRING_BEGIN_PART int32 INTERP_STRING_PART int32 INTERP_STRING_END */
 interpolatedString:
   | INTERP_STRING_BEGIN_PART interpolatedStringFill interpolatedStringParts
-    { SynInterpolatedStringPart.String (fst $1, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3 }
+    { let s, synStringKind, _ = $1
+      SynInterpolatedStringPart.String (s, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3, synStringKind }
 
   | INTERP_STRING_BEGIN_END
-    { [ SynInterpolatedStringPart.String (fst $1, rhs parseState 1) ] }
+    { let s, synStringKind, _ = $1
+      [ SynInterpolatedStringPart.String (s, rhs parseState 1) ], synStringKind }
 
   | INTERP_STRING_BEGIN_PART interpolatedStringParts
     { 
+      let s, synStringKind, _ = $1
       let rbrace = parseState.InputEndPosition 1
       let lbrace = parseState.InputStartPosition 2
       reportParseErrorAt (mkSynRange rbrace lbrace) (FSComp.SR.parsEmptyFillInInterpolatedString())
-      SynInterpolatedStringPart.String (fst $1, rhs parseState 1) :: $2 }
+      SynInterpolatedStringPart.String (s, rhs parseState 1) :: $2, synStringKind }
   
 opt_HIGH_PRECEDENCE_APP:
   | HIGH_PRECEDENCE_BRACK_APP { }

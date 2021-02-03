@@ -246,7 +246,7 @@ module SyntaxTraversal =
 
                 | SynExpr.Const (_synConst, _range) -> None
 
-                | SynExpr.InterpolatedString (parts, _) -> 
+                | SynExpr.InterpolatedString (parts, _, _) -> 
                     [ for part in parts do
                           match part with
                           | SynInterpolatedStringPart.String _ -> ()
