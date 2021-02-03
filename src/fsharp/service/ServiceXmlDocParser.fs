@@ -159,26 +159,26 @@ module XmlDocParsing =
             []
 
 module XmlDocComment =
-    let private ws (s: string, pos) = 
+    let ws (s: string, pos) = 
         let res = s.TrimStart()
         Some (res, pos + (s.Length - res.Length))
 
-    let private str (prefix: string) (s: string, pos) =
+    let str (prefix: string) (s: string, pos) =
         match s.StartsWithOrdinal(prefix) with
         | true -> 
             let res = s.Substring prefix.Length
             Some (res, pos + (s.Length - res.Length))
         | _ -> None
 
-    let private eol (s: string, pos) = 
+    let eol (s: string, pos) = 
         match s with
         | "" -> Some ("", pos)
         | _ -> None
 
-    let inline private (>=>) f g = f >> Option.bind g
+    let (>=>) f g = f >> Option.bind g
     
     // if it's a blank XML comment with trailing "<", returns Some (index of the "<"), otherwise returns None
-    let isBlank (s: string) =
+    let IsBlank (s: string) =
         let parser = ws >=> str "///" >=> ws >=> str "<" >=> eol
         let res = parser (s.TrimEnd(), 0) |> Option.map snd |> Option.map (fun x -> x - 1)
         res
@@ -186,5 +186,5 @@ module XmlDocComment =
 module XmlDocParser =
 
     /// Get the list of Xml documentation from current source code
-    let getXmlDocables (sourceText: ISourceText, input) =
+    let GetXmlDocables (sourceText: ISourceText, input) =
         XmlDocParsing.getXmlDocablesImpl (sourceText, input)

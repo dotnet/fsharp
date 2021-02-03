@@ -2,6 +2,8 @@
 
 namespace FSharp.Compiler.Diagnostics
 
+open FSharp.Compiler.ErrorResolutionHints
+
 [<RequireQualifiedAccess>]
 type FSharpDiagnosticKind =
     | AddIndexerDot
@@ -14,3 +16,11 @@ module CompilerDiagnostics =
         match diagnosticKind with
         | FSharpDiagnosticKind.AddIndexerDot -> FSComp.SR.addIndexerDot()
         | FSharpDiagnosticKind.ReplaceWithSuggestion s -> FSComp.SR.replaceWithSuggestion(s)
+
+    let GetSuggestedNames (suggestionsF: FSharp.Compiler.ErrorLogger.Suggestions) (unresolvedIdentifier: string) =
+        let buffer = SuggestionBuffer(unresolvedIdentifier)
+        if buffer.Disabled then
+            Seq.empty
+        else
+            suggestionsF buffer.Add
+            buffer :> seq<string>

@@ -57,7 +57,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
                 |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
                 |> Seq.toImmutableArray
 
-            for suggestion in ErrorResolutionHints.GetSuggestedNames addNames unresolvedIdentifierText do
+            for suggestion in CompilerDiagnostics.GetSuggestedNames addNames unresolvedIdentifierText do
                 let replacement = FSharpKeywords.QuoteIdentifierIfNeeded suggestion
                 let codeFix =
                     CodeFixHelpers.createTextChangeCodeFix(

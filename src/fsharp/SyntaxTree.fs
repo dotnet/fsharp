@@ -46,7 +46,7 @@ type LongIdentWithDots =
     member this.ThereIsAnExtraDotAtTheEnd = match this with LongIdentWithDots(lid, dots) -> lid.Length = dots.Length
 
     /// Gets the syntax range for part of this construct
-    member this.RangeWithoutAnyExtraDot =
+    member this.RangeSansAnyExtraDot =
        match this with
        | LongIdentWithDots([], _) -> failwith "rangeOfLidwd"
        | LongIdentWithDots([id], _) -> id.idRange
@@ -1108,14 +1108,14 @@ type SynExpr =
         | SynExpr.Ident id -> id.idRange
 
     /// Get the Range ignoring any (parse error) extra trailing dots
-    member e.RangeWithoutAnyExtraDot =
+    member e.RangeSansAnyExtraDot =
         match e with
         | SynExpr.DotGet (expr, _, lidwd, m) ->
             if lidwd.ThereIsAnExtraDotAtTheEnd then
-                unionRanges expr.Range lidwd.RangeWithoutAnyExtraDot
+                unionRanges expr.Range lidwd.RangeSansAnyExtraDot
             else
                 m
-        | SynExpr.LongIdent (_, lidwd, _, _) -> lidwd.RangeWithoutAnyExtraDot
+        | SynExpr.LongIdent (_, lidwd, _, _) -> lidwd.RangeSansAnyExtraDot
         | SynExpr.DiscardAfterMissingQualificationAfterDot (expr, _) -> expr.Range
         | _ -> e.Range
 
@@ -1489,11 +1489,11 @@ type SynBinding =
     //  - for everything else, the 'range' member that appears last/second-to-last is the 'full range' of the whole tree construct
     //  - but for Binding, the 'range' is only the range of the left-hand-side, the right-hand-side range is in the SynExpr
     //  - so we use explicit names to avoid confusion
-    member x.RangeOfBindingWithoutRhs = let (SynBinding(range=m)) = x in m
+    member x.RangeOfBindingSansRhs = let (SynBinding(range=m)) = x in m
 
-    member x.RangeOfBindingWithRhs = let (SynBinding(expr=e; range=m)) = x in unionRanges e.Range m
+    member x.RangeOfBindingAndRhs = let (SynBinding(expr=e; range=m)) = x in unionRanges e.Range m
 
-    member x.RangeOfHeadPattern = let (SynBinding(headPat=headPat)) = x in headPat.Range
+    member x.RangeOfHeadPat = let (SynBinding(headPat=headPat)) = x in headPat.Range
 
 /// Represents the return information in a binding for a 'let' or 'member' declaration
 [<NoEquality; NoComparison>]
@@ -2276,7 +2276,7 @@ type ParsedSigFileFragment =
 
 /// Represents a parsed syntax tree for an F# Interactive interaction
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
-type ParsedScriptInteraction =
+type ParsedFsiInteraction =
     | Definitions of
         defns: SynModuleDecl list *
         range: range
