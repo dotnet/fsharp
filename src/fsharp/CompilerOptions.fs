@@ -1400,8 +1400,12 @@ let deprecatedFlagsFsc tcConfigB =
 
     CompilerOption
        ("keycontainer", tagString,
-        OptionString(fun s -> tcConfigB.container <- Some s),
-        Some(DeprecatedCommandLineOptionSuggestAlternative("--keycontainer", "--keyfile", rangeCmdArgs)), None)
+        OptionString(fun s ->
+            if FSharpEnvironment.isRunningOnCoreClr then error(Error(FSComp.SR.containerSigningUnsupportedOnThisPlatform(), rangeCmdArgs))
+            else tcConfigB.container <- Some s),
+            if FSharpEnvironment.isRunningOnCoreClr then None
+            else Some(DeprecatedCommandLineOptionSuggestAlternative("--keycontainer", "--keyfile", rangeCmdArgs))
+        ,None)
 
     mlKeywordsFlag 
     gnuStyleErrorsFlag tcConfigB ]

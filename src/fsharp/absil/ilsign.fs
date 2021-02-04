@@ -493,6 +493,8 @@ open FSharp.Compiler.SourceCodeServices
         iclrSN.StrongNameSignatureVerificationEx(fileName, true, &ok) |> ignore
 #endif
 
+    let failWithContainerSigningUnsupportedOnThisPlatform() = failwith (FSComp.SR.containerSigningUnsupportedOnThisPlatform() |> snd)
+
     //---------------------------------------------------------------------
     // Strong name signing
     //---------------------------------------------------------------------
@@ -517,7 +519,7 @@ open FSharp.Compiler.SourceCodeServices
                 legacySignerCloseKeyContainer containerName
 #else
                 ignore containerName
-                failwith ("Key container signing is not supported on this platform")
+                failWithContainerSigningUnsupportedOnThisPlatform()
 #endif
         member s.IsFullySigned =
             match s with 
@@ -529,7 +531,7 @@ open FSharp.Compiler.SourceCodeServices
 #if !FX_NO_CORHOST_SIGNER
                 true
 #else
-                failwith ("Key container signing is not supported on this platform")
+                failWithContainerSigningUnsupportedOnThisPlatform()
 #endif
 
         member s.PublicKey = 
@@ -543,7 +545,7 @@ open FSharp.Compiler.SourceCodeServices
                 legacySignerGetPublicKeyForKeyContainer containerName
 #else
                 ignore containerName
-                failwith ("Key container signing is not supported on this platform")
+                failWithContainerSigningUnsupportedOnThisPlatform()
 #endif
 
         member s.SignatureSize =
@@ -563,7 +565,7 @@ open FSharp.Compiler.SourceCodeServices
                 pkSignatureSize (legacySignerGetPublicKeyForKeyContainer containerName)
 #else
                 ignore containerName
-                failwith ("Key container signing is not supported on this platform")
+                failWithContainerSigningUnsupportedOnThisPlatform()
 #endif
 
         member s.SignFile file = 
@@ -576,5 +578,5 @@ open FSharp.Compiler.SourceCodeServices
                 legacySignerSignFileWithKeyContainer file containerName
 #else
                 ignore containerName
-                failwith ("Key container signing is not supported on this platform")
+                failWithContainerSigningUnsupportedOnThisPlatform()
 #endif
