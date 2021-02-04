@@ -5,28 +5,40 @@
 
 namespace FSharp.Compiler.Text
 
+/// Represents an input to the F# compiler
 type ISourceText =
 
-    abstract Item: int -> char with get
+    /// Gets a character in an input based on an index of characters from the start of the file
+    abstract Item: index: int -> char with get
 
+    /// Gets a line of an input by index
     abstract GetLineString: lineIndex: int -> string
 
+    /// Gets the count of lines in the input
     abstract GetLineCount: unit -> int
 
+    /// Gets the last character position in the input, returning line and column
     abstract GetLastCharacterPosition: unit -> int * int
 
+    /// Gets a section of the input
     abstract GetSubTextString: start: int * length: int -> string
 
+    /// Checks if a section of the input is equal to the given string
     abstract SubTextEquals: target: string * startIndex: int -> bool
 
+    /// Gets the total length of the input in characters
     abstract Length: int
 
+    /// Checks if one input is equal to another
     abstract ContentEquals: sourceText: ISourceText -> bool
 
+    /// Copies a section of the input to the given destination ad the given index
     abstract CopyTo: sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit
 
+/// Functions related to ISourceText objects
 module SourceText =
 
+    /// Creates an ISourceText object from the given string
     val ofString: string -> ISourceText
 
 //
@@ -37,8 +49,6 @@ namespace Internal.Utilities.Text.Lexing
 
 open System.Collections.Generic
 open FSharp.Compiler.Text
-open FSharp.Core
-open FSharp.Control
 open FSharp.Compiler.Features
 
 /// Position information stored for lexing tokens

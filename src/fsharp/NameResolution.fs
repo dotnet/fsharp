@@ -7,11 +7,12 @@ module internal FSharp.Compiler.NameResolution
 open System.Collections.Generic
 
 open Internal.Utilities
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
+open Internal.Utilities.Library.ResultOrException
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.Library.ResultOrException
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
@@ -21,15 +22,13 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Features
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Text.Pos
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.Text.Range
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Position
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -251,9 +250,9 @@ type Item =
         | Item.Event einfo -> einfo.EventName
         | Item.Property(_, FSProp(_, _, Some v, _) :: _)
         | Item.Property(_, FSProp(_, _, _, Some v) :: _) -> v.DisplayName
-        | Item.Property(nm, _) -> PrettyNaming.DemangleOperatorName nm
+        | Item.Property(nm, _) -> DemangleOperatorName nm
         | Item.MethodGroup(_, (FSMeth(_, _, v, _) :: _), _) -> v.DisplayName
-        | Item.MethodGroup(nm, _, _) -> PrettyNaming.DemangleOperatorName nm
+        | Item.MethodGroup(nm, _, _) -> DemangleOperatorName nm
         | Item.CtorGroup(nm, _) -> DemangleGenericTypeName nm
         | Item.FakeInterfaceCtor (AbbrevOrAppTy tcref)
         | Item.DelegateCtor (AbbrevOrAppTy tcref) -> DemangleGenericTypeName tcref.DisplayName
@@ -740,7 +739,7 @@ let AddValRefToNameEnv nenv (vref: ValRef) =
 
 
 /// Add a set of active pattern result tags to the environment.
-let AddActivePatternResultTagsToNameEnv (apinfo: PrettyNaming.ActivePatternInfo) nenv ty m =
+let AddActivePatternResultTagsToNameEnv (apinfo: ActivePatternInfo) nenv ty m =
     if List.isEmpty apinfo.Names then nenv else
     let apresl = List.indexed apinfo.Names
     { nenv with
@@ -1036,7 +1035,7 @@ let ChooseMethInfosForNameEnv g m ty (minfos: MethInfo list) =
     |> List.filter (fun minfo ->
         not (minfo.IsInstance || minfo.IsClassConstructor || minfo.IsConstructor) && typeEquiv g minfo.ApparentEnclosingType ty &&
         not (IsMethInfoPlainCSharpStyleExtensionMember g m isExtTy minfo) &&
-        not (PrettyNaming.IsMangledOpName minfo.LogicalName))
+        not (IsMangledOpName minfo.LogicalName))
     |> List.groupBy (fun minfo -> minfo.LogicalName)
     |> List.filter (fun (_, methGroup) -> not methGroup.IsEmpty)
     |> List.map (fun (methName, methGroup) -> KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)))
@@ -4184,7 +4183,7 @@ let rec private EntityRefContainsSomethingAccessible (ncenv: NameResolver) m ad 
 let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv isApplicableMeth m ad (modref: ModuleOrNamespaceRef) plid allowObsolete =
     let g = ncenv.g
     let mty = modref.ModuleOrNamespaceType
-
+    
     match plid with
     | [] ->
          let tycons =
@@ -4221,6 +4220,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
          // Collect up the accessible discriminated union cases in the module
        @ (UnionCaseRefsInModuleOrNamespace modref
           |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
+          |> List.filter (fun ucref -> not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute ucref.TyconRef.Attribs))
           |> List.map (fun x -> Item.UnionCase(GeneralizeUnionCaseRef x, false)))
 
          // Collect up the accessible active patterns in the module
@@ -4228,7 +4228,6 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
           |> NameMap.range
           |> List.filter (fun apref -> apref.ActivePatternVal |> IsValUnseen ad g m |> not)
           |> List.map Item.ActivePatternCase)
-
 
          // Collect up the accessible F# exception declarations in the module
        @ (mty.ExceptionDefinitionsByDemangledName
@@ -4809,6 +4808,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                   yield!
                       UnionCaseRefsInModuleOrNamespace modref
                       |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
+                      |> List.filter (fun ucref -> not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute ucref.TyconRef.Attribs))
                       |> List.map (fun x -> Item.UnionCase(GeneralizeUnionCaseRef x,  false))
              | Item.ActivePatternCase _ ->
              // Collect up the accessible active patterns in the module

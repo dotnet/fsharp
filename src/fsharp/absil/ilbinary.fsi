@@ -1,13 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Compiler use only.  Code and constants shared between binary reader/writer.
-module internal FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
+module internal FSharp.Compiler.AbstractIL.BinaryConstants 
 
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Internal 
-
 
 [<Struct>]
 type TableName =

@@ -9,8 +9,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 open System
 open Microsoft.VisualStudio.TextManager.Interop 
 open Microsoft.VisualStudio.Text
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Text
+open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
 open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 open Microsoft.VisualStudio.FSharp.Interactive.Session
 
@@ -91,7 +93,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
             |   _ ->       
                 // For scripts, GetProjectOptionsFromScript involves parsing and sync op, so is run on the language service thread later
                 // For projects, we need to access RDT on UI thread, so do it on the GUI thread now
-                if SourceFile.MustBeSingleFileProject(fileName) then
+                if CompilerEnvironment.MustBeSingleFileProject(fileName) then
                     let data = 
                         lazy // This portion is executed on the language service thread
                             let timestamp = if source=null then System.DateTime(2000,1,1) else source.OpenedTime // source is null in unit tests
@@ -110,7 +112,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                     let rdt = getServiceProvider().RunningDocumentTable
                     let projectSite = getProjectSitesAndFiles().FindOwningProject_DEPRECATED(rdt,fileName)
                     let enableInMemoryCrossProjectReferences = true
-                    let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, getServiceProvider(), None(*projectId*), fileName, None(*extraProjectInfo*), None(*FSharpProjectOptionsTable*), false)
+                    let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, getServiceProvider(), fileName, false)
                     let projectFileName = projectSite.ProjectFileName
                     let data = 
                         {   ProjectSite = projectSite
@@ -237,8 +239,8 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                     | Some typedResults -> 
                         // Post the parse errors. 
                         if containsFreshFullTypeCheck then 
-                            for error in typedResults.Errors do
-                                let span = new TextSpan(iStartLine=error.StartLineAlternate-1,iStartIndex=error.StartColumn,iEndLine=error.EndLineAlternate-1,iEndIndex=error.EndColumn)                             
+                            for error in typedResults.Diagnostics do
+                                let span = new TextSpan(iStartLine=error.StartLine-1,iStartIndex=error.StartColumn,iEndLine=error.EndLine-1,iEndIndex=error.EndColumn)                             
                                 let sev = 
                                     match error.Severity with 
                                     | FSharpDiagnosticSeverity.Hidden -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Hint

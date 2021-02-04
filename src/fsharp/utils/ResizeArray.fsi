@@ -2,12 +2,6 @@
 
 namespace Internal.Utilities
 
-
-open System
-open System.Collections.Generic
-open Microsoft.FSharp.Core
-open Microsoft.FSharp.Collections
-
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 /// Generic operations on the type System.Collections.Generic.List, which is called ResizeArray in the F# libraries.
 module internal ResizeArray =

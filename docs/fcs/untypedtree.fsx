@@ -30,7 +30,7 @@ To use the interactive checker, reference `FSharp.Compiler.Service.dll` and open
 *)
 #r "FSharp.Compiler.Service.dll"
 open System
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 (**
 
@@ -84,7 +84,7 @@ code](https://github.com/fsharp/fsharp/blob/master/src/fsharp/ast.fs#L464).
 
 The relevant parts are in the following namespace:
 *)
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 (**
 
 When processing the AST, you will typically write a number of mutually recursive functions

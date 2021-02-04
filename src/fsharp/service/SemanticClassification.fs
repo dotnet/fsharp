@@ -1,20 +1,20 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.EditorServices
 
 open System.Diagnostics
 open System.Collections.Generic
 open System.Collections.Immutable
-
-open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal.Library  
+open Internal.Utilities.Library  
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
@@ -60,7 +60,7 @@ type SemanticClassificationType =
 
 [<RequireQualifiedAccess>]
 [<Struct>]
-type FSharpSemanticClassificationItem =
+type SemanticClassificationItem =
     val Range: range
     val Type: SemanticClassificationType
     new((range, ty)) = { Range = range; Type = ty }
@@ -71,7 +71,7 @@ module TcResolutionsExtensions =
         (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.NameResolutionEnv, cnr.AccessorDomain, cnr.Range)
 
     type TcResolutions with
-        member sResolutions.GetSemanticClassification(g: TcGlobals, amap: Import.ImportMap, formatSpecifierLocations: (range * int) [], range: range option) : FSharpSemanticClassificationItem [] =
+        member sResolutions.GetSemanticClassification(g: TcGlobals, amap: ImportMap, formatSpecifierLocations: (range * int) [], range: range option) : SemanticClassificationItem [] =
             ErrorScope.Protect Range.range0 (fun () ->
                 let (|LegitTypeOccurence|_|) = function
                     | ItemOccurence.UseInType
@@ -129,14 +129,14 @@ module TcResolutionsExtensions =
 
                 let isDisposableTy (ty: TType) =
                     not (typeEquiv g ty g.system_IDisposable_ty) &&
-                    protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
+                    protectAssemblyExplorationNoReraise false false (fun () -> ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
                     
                 let isDiscard (str: string) = str.StartsWith("_")
 
                 let isValRefDisposable (vref: ValRef) =
                     not (isDiscard vref.DisplayName) &&
                     // For values, we actually do want to color things if they literally are IDisposables 
-                    protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 vref.Type g.tcref_System_IDisposable)
+                    protectAssemblyExplorationNoReraise false false (fun () -> ExistsHeadTypeInEntireHierarchy g amap range0 vref.Type g.tcref_System_IDisposable)
 
                 let isStructTyconRef (tyconRef: TyconRef) = 
                     let ty = generalizedTyconRef tyconRef
@@ -158,7 +158,7 @@ module TcResolutionsExtensions =
                 let results = ImmutableArray.CreateBuilder()
                 let inline add m (typ: SemanticClassificationType) =
                     if duplicates.Add m then
-                        results.Add (new FSharpSemanticClassificationItem((m, typ)))
+                        results.Add (new SemanticClassificationItem((m, typ)))
 
                 resolutions
                 |> Array.iter (fun cnr ->
@@ -375,7 +375,7 @@ module TcResolutionsExtensions =
 
                     | _, _, _, _, _, m ->
                         add m SemanticClassificationType.Plaintext)
-                results.AddRange(formatSpecifierLocations |> Array.map (fun (m, _) -> new FSharpSemanticClassificationItem((m, SemanticClassificationType.Printf))))
+                results.AddRange(formatSpecifierLocations |> Array.map (fun (m, _) -> new SemanticClassificationItem((m, SemanticClassificationType.Printf))))
                 results.ToArray()
                ) 
                (fun msg -> 

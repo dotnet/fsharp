@@ -9,8 +9,8 @@ module Tests.Service.StructureTests
 
 open System.IO
 open NUnit.Framework
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Structure
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.EditorServices.Structure
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Text
 open System.Text

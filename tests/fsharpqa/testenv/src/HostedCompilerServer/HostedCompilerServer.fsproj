@@ -8,6 +8,7 @@
     <DisableOutputPathCopying>true</DisableOutputPathCopying>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>$(RepoRoot)tests\fsharpqa\testenv\bin</OutputPath>
+    <NoWarn>$(NoWarn);44</NoWarn>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Prefer32Bit>true</Prefer32Bit>
     <NGenBinary>true</NGenBinary>

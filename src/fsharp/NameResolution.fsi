@@ -2,19 +2,18 @@
 
 module internal FSharp.Compiler.NameResolution
 
+open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.AbstractIL.Internal.Library
 
 /// A NameResolver is a context for name resolution. It primarily holds an InfoReader.
 type NameResolver =

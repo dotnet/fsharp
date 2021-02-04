@@ -8,18 +8,28 @@ open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
 open System.Linq
+open System.Text
 open System.Runtime.InteropServices
+open System.Reflection.PortableExecutable
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.FindSymbols
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
+open Microsoft.VisualStudio.ComponentModelHost
 
+open Microsoft.VisualStudio
+open Microsoft.VisualStudio.Editor
+open Microsoft.VisualStudio.Threading
+open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.TextManager.Interop
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
+
 
 module private Symbol =
     let fullName (root: ISymbol) : string =
@@ -37,42 +47,40 @@ module private Symbol =
 
         inner [] root |> String.concat "."
 
-module private ExternalType =
-    let rec tryOfRoslynType (typesym: ITypeSymbol): ExternalType option =
+module private FindDeclExternalType =
+    let rec tryOfRoslynType (typesym: ITypeSymbol): FindDeclExternalType option =
         match typesym with
         | :? IPointerTypeSymbol as ptrparam ->
-            tryOfRoslynType ptrparam.PointedAtType |> Option.map ExternalType.Pointer
+            tryOfRoslynType ptrparam.PointedAtType |> Option.map FindDeclExternalType.Pointer
         | :? IArrayTypeSymbol as arrparam ->
-            tryOfRoslynType arrparam.ElementType |> Option.map ExternalType.Array
+            tryOfRoslynType arrparam.ElementType |> Option.map FindDeclExternalType.Array
         | :? ITypeParameterSymbol as typaram ->
-            Some (ExternalType.TypeVar typaram.Name)
+            Some (FindDeclExternalType.TypeVar typaram.Name)
         | :? INamedTypeSymbol as namedTypeSym ->
             namedTypeSym.TypeArguments
             |> Seq.map tryOfRoslynType
             |> List.ofSeq
             |> Option.ofOptionList
             |> Option.map (fun genericArgs ->
-                ExternalType.Type (Symbol.fullName typesym, genericArgs))
+                FindDeclExternalType.Type (Symbol.fullName typesym, genericArgs))
         | _ ->
             Debug.Assert(false, sprintf "GoToDefinitionService: Unexpected Roslyn type symbol subclass: %O" (typesym.GetType()))
             None
 
-module private ParamTypeSymbol =
+module private FindDeclExternalParam =
 
-    let tryOfRoslynParameter (param: IParameterSymbol): ParamTypeSymbol option =
-        ExternalType.tryOfRoslynType param.Type
-        |> Option.map (
-            if param.RefKind = RefKind.None then ParamTypeSymbol.Param
-            else ParamTypeSymbol.Byref)
+    let tryOfRoslynParameter (param: IParameterSymbol): FindDeclExternalParam option =
+        FindDeclExternalType.tryOfRoslynType param.Type
+        |> Option.map (fun ty -> FindDeclExternalParam.Create(ty, param.RefKind <> RefKind.None))
 
-    let tryOfRoslynParameters (paramSyms: ImmutableArray<IParameterSymbol>): ParamTypeSymbol list option =
+    let tryOfRoslynParameters (paramSyms: ImmutableArray<IParameterSymbol>): FindDeclExternalParam list option =
         paramSyms
         |> Seq.map tryOfRoslynParameter
         |> Seq.toList
         |> Option.ofOptionList
 
 module private ExternalSymbol =
-    let rec ofRoslynSymbol (symbol: ISymbol) : (ISymbol * FSharpExternalSymbol) list =
+    let rec ofRoslynSymbol (symbol: ISymbol) : (ISymbol * FindDeclExternalSymbol) list =
         let container = Symbol.fullName symbol.ContainingSymbol
 
         match symbol with
@@ -81,28 +89,28 @@ module private ExternalSymbol =
 
             let constructors =
                 typesym.InstanceConstructors
-                |> Seq.choose<_,ISymbol * FSharpExternalSymbol> (fun methsym ->
-                    ParamTypeSymbol.tryOfRoslynParameters methsym.Parameters
-                    |> Option.map (fun args -> upcast methsym, FSharpExternalSymbol.Constructor(fullTypeName, args))
+                |> Seq.choose<_,ISymbol * FindDeclExternalSymbol> (fun methsym ->
+                    FindDeclExternalParam.tryOfRoslynParameters methsym.Parameters
+                    |> Option.map (fun args -> upcast methsym, FindDeclExternalSymbol.Constructor(fullTypeName, args))
                     )
                 |> List.ofSeq
                 
-            (symbol, FSharpExternalSymbol.Type fullTypeName) :: constructors
+            (symbol, FindDeclExternalSymbol.Type fullTypeName) :: constructors
 
         | :? IMethodSymbol as methsym ->
-            ParamTypeSymbol.tryOfRoslynParameters methsym.Parameters
+            FindDeclExternalParam.tryOfRoslynParameters methsym.Parameters
             |> Option.map (fun args ->
-                symbol, FSharpExternalSymbol.Method(container, methsym.MetadataName, args, methsym.TypeParameters.Length))
+                symbol, FindDeclExternalSymbol.Method(container, methsym.MetadataName, args, methsym.TypeParameters.Length))
             |> Option.toList
 
         | :? IPropertySymbol as propsym ->
-            [upcast propsym, FSharpExternalSymbol.Property(container, propsym.MetadataName)]
+            [upcast propsym, FindDeclExternalSymbol.Property(container, propsym.MetadataName)]
 
         | :? IFieldSymbol as fieldsym ->
-            [upcast fieldsym, FSharpExternalSymbol.Field(container, fieldsym.MetadataName)]
+            [upcast fieldsym, FindDeclExternalSymbol.Field(container, fieldsym.MetadataName)]
 
         | :? IEventSymbol as eventsym ->
-            [upcast eventsym, FSharpExternalSymbol.Event(container, eventsym.MetadataName)]
+            [upcast eventsym, FindDeclExternalSymbol.Event(container, eventsym.MetadataName)]
 
         | _ -> []
 
@@ -144,6 +152,11 @@ type internal StatusBar(statusBar: IVsStatusbar) =
 
 type internal FSharpGoToDefinitionNavigableItem(document, sourceSpan) =
     inherit FSharpNavigableItem(Glyph.BasicFile, ImmutableArray.Empty, document, sourceSpan)
+
+[<RequireQualifiedAccess>]
+type internal FSharpGoToDefinitionResult =
+    | NavigableItem of FSharpNavigableItem
+    | ExternalAssembly of ProjectInfo * DocumentInfo * FSharpSymbolUse * FindDeclExternalSymbol
 
 type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager) =
     let userOpName = "GoToDefinition"
@@ -194,11 +207,11 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                 let! _, _, checkFileResults = checker.ParseAndCheckDocument (implDoc, projectOptions, sourceText=implSourceText, userOpName=userOpName)
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol
                 let! implSymbol  = symbolUses |> Array.tryHead 
-                let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, implSymbol.RangeAlternate)
+                let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, implSymbol.Range)
                 return FSharpGoToDefinitionNavigableItem (implDoc, implTextSpan)
             else
-                let! targetDocument = originDocument.Project.Solution.TryGetDocumentFromFSharpRange fsSymbolUse.RangeAlternate
-                return! rangeToNavigableItem (fsSymbolUse.RangeAlternate, targetDocument)
+                let! targetDocument = originDocument.Project.Solution.TryGetDocumentFromFSharpRange fsSymbolUse.Range
+                return! rangeToNavigableItem (fsSymbolUse.Range, targetDocument)
         }
 
     /// if the symbol is defined in the given file, return its declaration location, otherwise use the targetSymbol to find the first 
@@ -215,7 +228,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                 | FSharpCheckFileAnswer.Succeeded checkFileResults ->
                     let symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol
                     let! implSymbol  = symbolUses |> Array.tryHead 
-                    return implSymbol.RangeAlternate
+                    return implSymbol.Range
         }
 
     member private this.FindDefinitionAtPosition(originDocument: Document, position: int) =
@@ -240,26 +253,31 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
             let! targetSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
 
             match declarations with
-            | FSharpFindDeclResult.ExternalDecl (assembly, targetExternalSym) ->
-                let! project = originDocument.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName.Equals(assembly, StringComparison.OrdinalIgnoreCase))
-                let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, fun _ -> true)
+            | FindDeclResult.ExternalDecl (assembly, targetExternalSym) ->
+                let projectOpt = originDocument.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName.Equals(assembly, StringComparison.OrdinalIgnoreCase))
+                match projectOpt with
+                | Some project ->
+                    let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, fun _ -> true)
 
-                let roslynSymbols =
-                    symbols
-                    |> Seq.collect ExternalSymbol.ofRoslynSymbol
-                    |> Array.ofSeq
+                    let roslynSymbols =
+                        symbols
+                        |> Seq.collect ExternalSymbol.ofRoslynSymbol
+                        |> Array.ofSeq
 
-                let! symbol =
-                    roslynSymbols
-                    |> Seq.tryPick (fun (sym, externalSym) ->
-                        if externalSym = targetExternalSym then Some sym
-                        else None
-                        )
- 
-                let! location = symbol.Locations |> Seq.tryHead
-                return (FSharpGoToDefinitionNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan), idRange)
+                    let! symbol =
+                        roslynSymbols
+                        |> Seq.tryPick (fun (sym, externalSym) ->
+                            if externalSym = targetExternalSym then Some sym
+                            else None
+                            )
 
-            | FSharpFindDeclResult.DeclFound targetRange -> 
+                    let! location = symbol.Locations |> Seq.tryHead
+                    return (FSharpGoToDefinitionResult.NavigableItem(FSharpGoToDefinitionNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan)), idRange)
+                | _ ->
+                    let tmpProjInfo, tmpDocId = MetadataAsSource.generateTemporaryCSharpDocument(AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName), targetSymbolUse.Symbol.DisplayName, originDocument.Project.MetadataReferences)
+                    return (FSharpGoToDefinitionResult.ExternalAssembly(tmpProjInfo, tmpDocId, targetSymbolUse, targetExternalSym), idRange)
+
+            | FindDeclResult.DeclFound targetRange -> 
                 // if goto definition is called at we are alread at the declaration location of a symbol in
                 // either a signature or an implementation file then we jump to it's respective postion in thethe
                 if lexerSymbol.Range = targetRange then
@@ -275,16 +293,16 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
 
                         let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
                         let navItem = FSharpGoToDefinitionNavigableItem (implDocument, implTextSpan)
-                        return (navItem, idRange)
+                        return (FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
                     else // jump from implementation to the corresponding signature
                         let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineString, lexerSymbol.FullIsland, true)
                         match declarations with
-                        | FSharpFindDeclResult.DeclFound targetRange -> 
+                        | FindDeclResult.DeclFound targetRange -> 
                             let! sigDocument = originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName
                             let! sigSourceText = sigDocument.GetTextAsync () |> liftTaskAsync
                             let! sigTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sigSourceText, targetRange)
                             let navItem = FSharpGoToDefinitionNavigableItem (sigDocument, sigTextSpan)
-                            return (navItem, idRange)
+                            return (FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
                         | _ ->
                             return! None
                 // when the target range is different follow the navigation convention of 
@@ -297,7 +315,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                     // if the gotodef call originated from a signature and the returned target is a signature, navigate there
                     if isSignatureFile targetRange.FileName && preferSignature then 
                         let navItem = FSharpGoToDefinitionNavigableItem (sigDocument, sigTextSpan)
-                        return (navItem, idRange)
+                        return (FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
                     else // we need to get an FSharpSymbol from the targetRange found in the signature
                          // that symbol will be used to find the destination in the corresponding implementation file
                         let implFilePath =
@@ -314,7 +332,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                         
                         let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
                         let navItem = FSharpGoToDefinitionNavigableItem (implDocument, implTextSpan)
-                        return (navItem, idRange)
+                        return (FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
                 | _ ->
                     return! None
         }
@@ -330,8 +348,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     member this.FindDefinitionsForPeekTask(originDocument: Document, position: int, cancellationToken: CancellationToken) =
         this.FindDefinitionAtPosition(originDocument, position)
         |> Async.map (
-                Option.map (fun (navItem, _) -> navItem :> FSharpNavigableItem)
-                >> Option.toArray
+                Option.toArray
                 >> Array.toSeq)
         |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
@@ -343,7 +360,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
 
     /// Navigate to the positon of the textSpan in the provided document
     /// used by quickinfo link navigation when the tooltip contains the correct destination range.
-    member _.TryNavigateToTextSpan(document: Document, textSpan: TextSpan, statusBar: StatusBar) =
+    member _.TryNavigateToTextSpan(document: Document, textSpan: Microsoft.CodeAnalysis.Text.TextSpan, statusBar: StatusBar) =
         let navigableItem = FSharpGoToDefinitionNavigableItem(document, textSpan)
         let workspace = document.Project.Solution.Workspace
         let navigationService = workspace.Services.GetService<IFSharpDocumentNavigationService>()

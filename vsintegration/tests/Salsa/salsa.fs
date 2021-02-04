@@ -25,8 +25,8 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.TextManager.Interop
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open Microsoft.Build.Framework
-open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 
 open Microsoft.Build.Evaluation
 
@@ -1443,16 +1443,16 @@ module internal Salsa =
             let documentationProvider = 
                 { new IDocumentationBuilder_DEPRECATED with
                     override doc.AppendDocumentationFromProcessedXML(appendTo,processedXml:string,showExceptions, showReturns, paramName) = 
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.tagText processedXml)
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.lineBreak)
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.tagText processedXml)
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.lineBreak)
                     override doc.AppendDocumentation(appendTo,filename:string,signature:string, showExceptions, showReturns, paramName) = 
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.tagText (sprintf "[Filename:%s]" filename))
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.lineBreak)
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.tagText (sprintf "[Signature:%s]" signature))
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.lineBreak)
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.tagText (sprintf "[Filename:%s]" filename))
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.lineBreak)
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.tagText (sprintf "[Signature:%s]" signature))
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.lineBreak)
                         if paramName.IsSome then
-                            appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.tagText (sprintf "[ParamName: %s]" paramName.Value))
-                            appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.lineBreak)
+                            appendTo.Add(FSharp.Compiler.Text.TaggedText.tagText (sprintf "[ParamName: %s]" paramName.Value))
+                            appendTo.Add(FSharp.Compiler.Text.TaggedText.lineBreak)
                 } 
 
             let sp2 = 
@@ -1546,8 +1546,8 @@ module internal Salsa =
             member ops.CleanUp vs = VsImpl(vs).CleanUp()
             member ops.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs = VsImpl(vs).ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             member ops.AutoCompleteMemberDataTipsThrowsScope message = 
-                SymbolHelpers.ToolTipFault <- Some message
-                { new System.IDisposable with member x.Dispose() = SymbolHelpers.ToolTipFault <- None }
+                DeclarationListHelpers.ToolTipFault <- Some message
+                { new System.IDisposable with member x.Dispose() = DeclarationListHelpers.ToolTipFault <- None }
             member ops.OutOfConeFilesAreAddedAsLinks = false                
             member ops.SupportsOutputWindowPane = false
             member ops.CleanInvisibleProject vs = VsImpl(vs).CleanInvisibleProject()

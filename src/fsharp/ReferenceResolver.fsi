@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler
+namespace FSharp.Compiler.CodeAnalysis
+
+open System
 
 exception internal LegacyResolutionFailure
 
@@ -55,7 +57,7 @@ type internal ILegacyReferenceResolver =
   
 // Note, two implementations of this are provided, and no further implementations can be added from
 // outside FSharp.Compiler.Service
-[<Class; AllowNullLiteralAttribute>]
+[<Class; AllowNullLiteralAttribute; Obsolete("This API is obsolete and not for external use")>]
 type LegacyReferenceResolver =
     internal new: impl: ILegacyReferenceResolver -> LegacyReferenceResolver
     member internal Impl: ILegacyReferenceResolver

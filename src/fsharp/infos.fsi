@@ -4,11 +4,12 @@ module internal FSharp.Compiler.Infos
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Import
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.Text
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -200,7 +201,7 @@ type ReflectedArgInfo =
 /// Partial information about a parameter returned for use by the Language Service
 [<NoComparison; NoEquality>]
 type ParamNameAndType =
-    | ParamNameAndType of SyntaxTree.Ident option * TType
+    | ParamNameAndType of Ident option * TType
 
     static member FromArgInfo: ty:TType * argInfo:ArgReprInfo -> ParamNameAndType
 
@@ -219,7 +220,7 @@ type ParamData =
       isOut: bool *
       optArgInfo: OptionalArgInfo * 
       callerInfo: CallerInfo *
-      nameOpt: SyntaxTree.Ident option * 
+      nameOpt: Ident option * 
       reflArgInfo: ReflectedArgInfo *
       ttype: TType
 
@@ -519,7 +520,7 @@ type MethInfo =
     member TcGlobals: TcGlobals
 
     /// Get the XML documentation associated with the method
-    member XmlDoc: XmlDoc.XmlDoc
+    member XmlDoc: XmlDoc
   
     /// Build IL method infos.
     static member CreateILMeth: amap:ImportMap * m:range * ty:TType * md:ILMethodDef -> MethInfo
@@ -871,7 +872,7 @@ type PropInfo =
     member TcGlobals: TcGlobals
 
     /// Get the intra-assembly XML documentation for the property.
-    member XmlDoc: XmlDoc.XmlDoc
+    member XmlDoc: XmlDoc
 
     /// Test whether two property infos have the same underlying definition.
     /// Uses the same techniques as 'MethInfosUseIdenticalDefinitions'.
@@ -992,7 +993,7 @@ type EventInfo =
     member TcGlobals: TcGlobals
 
     /// Get the intra-assembly XML documentation for the property.
-    member XmlDoc: XmlDoc.XmlDoc
+    member XmlDoc: XmlDoc
   
     /// Test whether two event infos have the same underlying definition.
     /// Compatible with ItemsAreEffectivelyEqual relation.

@@ -9,23 +9,23 @@ open System.IO
 
 type ISourceText =
 
-    abstract Item : int -> char with get
+    abstract Item: index: int -> char with get
 
-    abstract GetLineString : lineIndex: int -> string
+    abstract GetLineString: lineIndex: int -> string
 
-    abstract GetLineCount : unit -> int
+    abstract GetLineCount: unit -> int
 
-    abstract GetLastCharacterPosition : unit -> int * int
+    abstract GetLastCharacterPosition: unit -> int * int
 
-    abstract GetSubTextString : start: int * length: int -> string
+    abstract GetSubTextString: start: int * length: int -> string
 
-    abstract SubTextEquals : target: string * startIndex: int -> bool
+    abstract SubTextEquals: target: string * startIndex: int -> bool
 
-    abstract Length : int
+    abstract Length: int
 
-    abstract ContentEquals : sourceText: ISourceText -> bool
+    abstract ContentEquals: sourceText: ISourceText -> bool
 
-    abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit
+    abstract CopyTo: sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit
 
 [<Sealed>]
 type StringText(str: string) =

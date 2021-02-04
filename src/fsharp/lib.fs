@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.Lib
+module internal Internal.Utilities.Library.Extras
 
 open System
 open System.IO
 open System.Collections.Generic
 open System.Runtime.InteropServices
 open Internal.Utilities
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.SourceCodeServices
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open FSharp.Compiler.IO
 
 let debug = false 
 

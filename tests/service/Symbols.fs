@@ -8,8 +8,11 @@ module Tests.Service.Symbols
 #endif
 
 open FSharp.Compiler.Service.Tests.Common
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
 open FsUnit
 open NUnit.Framework
 
@@ -40,7 +43,7 @@ match "foo" with
           
          checkResults.GetAllUsesOfAllSymbolsInFile()
          |> Array.ofSeq
-         |> Array.filter (fun su -> su.RangeAlternate.StartLine = line && su.Symbol :? FSharpActivePatternCase)
+         |> Array.filter (fun su -> su.Range.StartLine = line && su.Symbol :? FSharpActivePatternCase)
          |> Array.map (fun su -> su.Symbol :?> FSharpActivePatternCase)
 
     [<Test>]
@@ -74,7 +77,7 @@ extern int private c()
         |> List.zip decls
         |> List.iter (fun (actual, expected) ->
             match actual with
-            | SynModuleDecl.Let (_, [Binding (accessibility = access)], _) -> access |> should equal expected
+            | SynModuleDecl.Let (_, [SynBinding (accessibility = access)], _) -> access |> should equal expected
             | decl -> failwithf "unexpected decl: %O" decl)
 
         [ "a", (true, false, false, false)
@@ -273,14 +276,14 @@ module SyntaxExpressions =
             expectedEndColumn
             (actualRange: FSharp.Compiler.Text.range)
             =
-                Assert.AreEqual(FSharp.Compiler.Text.Pos.mkPos expectedStartLine expectedStartColumn, actualRange.Start)
-                Assert.AreEqual(FSharp.Compiler.Text.Pos.mkPos expectedEndLine expectedEndColumn, actualRange.End)
+                Assert.AreEqual(Position.mkPos expectedStartLine expectedStartColumn, actualRange.Start)
+                Assert.AreEqual(Position.mkPos expectedEndLine expectedEndColumn, actualRange.End)
 
         match ast with
         | Some(ParsedInput.ImplFile(ParsedImplFileInput(modules = [
                     SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                         SynModuleDecl.Let(bindings = [
-                            SynBinding.Binding(expr = SynExpr.Sequential(expr1 = SynExpr.Do(_, doRange) ; expr2 = SynExpr.DoBang(_, doBangRange)))
+                            SynBinding(expr = SynExpr.Sequential(expr1 = SynExpr.Do(_, doRange) ; expr2 = SynExpr.DoBang(_, doBangRange)))
                         ])
                     ])
                 ]))) ->
@@ -288,3 +291,109 @@ module SyntaxExpressions =
             assertRange 4 4 5 18 doBangRange
         | _ ->
             failwith "Could not find SynExpr.Do"
+
+module Strings =
+    let getBindingExpressionValue (parseResults: ParsedInput option) =
+        parseResults
+        |> Option.bind (fun tree ->
+            match tree with
+            | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) ->
+                modules |> List.tryPick (fun (SynModuleOrNamespace (decls = decls)) ->
+                    decls |> List.tryPick (fun decl ->
+                        match decl with
+                        | SynModuleDecl.Let (bindings = bindings) ->
+                            bindings |> List.tryPick (fun binding ->
+                                match binding with
+                                | SynBinding.SynBinding (_,_,_,_,_,_,_,SynPat.Named _,_,e,_,_) -> Some e
+                                | _ -> None)
+                        | _ -> None))
+            | _ -> None)
+
+    let getBindingConstValue parseResults =
+        match getBindingExpressionValue parseResults with
+        | Some (SynExpr.Const(c,_)) -> Some c
+        | _ -> None
+    
+    [<Test>]
+    let ``SynConst.String with SynStringKind.Regular`` () =
+        let parseResults =
+            getParseResults
+                """
+ let s = "yo"
+ """
+
+        match getBindingConstValue parseResults with
+        | Some (SynConst.String (_,  kind, _)) -> kind |> should equal SynStringKind.Regular
+        | _ -> failwithf "Couldn't find const"
+
+    [<Test>]
+    let ``SynConst.String with SynStringKind.Verbatim`` () =
+        let parseResults =
+            getParseResults
+                """
+ let s = @"yo"
+ """
+
+        match getBindingConstValue parseResults with
+        | Some (SynConst.String (_,  kind, _)) -> kind |> should equal SynStringKind.Verbatim
+        | _ -> failwithf "Couldn't find const"
+
+    [<Test>]
+    let ``SynConst.String with SynStringKind.TripleQuote`` () =
+        let parseResults =
+            getParseResults
+                "
+ let s = \"\"\"yo\"\"\"
+ "
+
+        match getBindingConstValue parseResults with
+        | Some (SynConst.String (_,  kind, _)) -> kind |> should equal SynStringKind.TripleQuote
+        | _ -> failwithf "Couldn't find const"
+
+    [<Test>]
+    let ``SynConst.Bytes with SynByteStringKind.Regular`` () =
+        let parseResults =
+            getParseResults
+                """
+let bytes = "yo"B
+ """
+
+        match getBindingConstValue parseResults with
+        | Some (SynConst.Bytes (_,  kind, _)) -> kind |> should equal SynByteStringKind.Regular
+        | _ -> failwithf "Couldn't find const"
+
+    [<Test>]
+    let ``SynConst.Bytes with SynByteStringKind.Verbatim`` () =
+        let parseResults =
+            getParseResults
+                """
+let bytes = @"yo"B
+ """
+
+        match getBindingConstValue parseResults with
+        | Some (SynConst.Bytes (_,  kind, _)) -> kind |> should equal SynByteStringKind.Verbatim
+        | _ -> failwithf "Couldn't find const"
+
+    [<Test>]
+    let ``SynExpr.InterpolatedString with SynStringKind.TripleQuote`` () =
+        let parseResults =
+            getParseResults
+                "
+ let s = $\"\"\"yo {42}\"\"\"
+ "
+
+        match getBindingExpressionValue parseResults with
+        | Some (SynExpr.InterpolatedString(_,  kind, _)) -> kind |> should equal SynStringKind.TripleQuote
+        | _ -> failwithf "Couldn't find const"
+
+    [<Test>]
+    let ``SynExpr.InterpolatedString with SynStringKind.Regular`` () =
+        let parseResults =
+            getParseResults
+                """
+ let s = $"yo {42}"
+ """
+
+        match getBindingExpressionValue parseResults with
+        | Some (SynExpr.InterpolatedString(_,  kind, _)) -> kind |> should equal SynStringKind.Regular
+        | _ -> failwithf "Couldn't find const"
