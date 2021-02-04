@@ -21,7 +21,6 @@ open System.IO
 open System.Text
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
-open FSharp.Compiler.Text
 
 let defaultFileSystem = FileSystem
 
@@ -126,7 +125,6 @@ let projectOptions =
       ProjectId = None
       SourceFiles = [| fileName1; fileName2 |]
       OriginalLoadReferences = []
-      ExtraProjectInfo=None
       Stamp = None
       OtherOptions = allFlags 
       ReferencedProjects=[| |]
