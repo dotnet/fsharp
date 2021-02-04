@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Reflection
+open System.Text.RegularExpressions
 
 open NUnit.Framework
 
@@ -17,9 +18,6 @@ let sleep(n : int32) =
     System.Threading.Thread.Sleep(n)
 
 module SurfaceArea =
-    open System.Reflection
-    open System
-    open System.Text.RegularExpressions
 
     // gets string form of public surface area for FSharp.CompilerService
     let private getActual () =

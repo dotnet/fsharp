@@ -3,7 +3,7 @@
 module internal FSharp.Compiler.CheckComputationExpressions
 
 open FSharp.Compiler.CheckExpressions
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree

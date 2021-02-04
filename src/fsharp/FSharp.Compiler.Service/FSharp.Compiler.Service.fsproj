@@ -5,7 +5,7 @@
   <PropertyGroup>
     <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
     <OutputType>Library</OutputType>
-    <NoWarn>$(NoWarn);44;45;54;55;61;62;69;65;75;1204;2003;NU5125</NoWarn>
+    <NoWarn>$(NoWarn);44;45;54;55;57;61;62;69;65;75;1204;2003;NU5125</NoWarn>
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
@@ -285,10 +285,10 @@
       <Link>AbsIL\illex.fsl</Link>
     </None>
     <FsYacc Include="..\absil\ilpars.fsy">
-      <OtherFlags>--module FSharp.Compiler.AbstractIL.Internal.AsciiParser --open FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiParser --open FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>AbsIL\ilpars.fsy</Link>
     </FsYacc>
-    <None Include="..\..\absil\ilpars.fsy">
+    <None Include="..\absil\ilpars.fsy">
       <Link>AbsIL\FsYacc\ilpars.fsy</Link>
     </None>
     <Compile Include="..\absil\il.fsi">
@@ -427,7 +427,7 @@
       <Link>ParserAndUntypedAST\pplex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\pppars.fsy">
-      <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST\pppars.fsy</Link>
     </FsYacc>
     <FsLex Include="..\lex.fsl">
@@ -435,7 +435,7 @@
       <Link>ParserAndUntypedAST\lex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\pars.fsy">
-      <OtherFlags>--module FSharp.Compiler.Parser --open FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST\pars.fsy</Link>
     </FsYacc>
     <None Include="..\pplex.fsl">
@@ -461,6 +461,9 @@
     </Compile>
     <Compile Include="..\XmlDoc.fs">
       <Link>ParserAndUntypedAST\XmlDoc.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree.fsi">
+      <Link>ParserAndUntypedAST\SyntaxTree.fsi</Link>
     </Compile>
     <Compile Include="..\SyntaxTree.fs">
       <Link>ParserAndUntypedAST\SyntaxTree.fs</Link>
@@ -901,11 +904,17 @@
     <Compile Include="..\service\ServiceParamInfoLocations.fs">
       <Link>Service/ServiceParamInfoLocations.fs</Link>
     </Compile>
-    <Compile Include="..\service\ServiceUntypedParse.fsi">
-      <Link>Service/ServiceUntypedParse.fsi</Link>
+    <Compile Include="..\service\FSharpParseFileResults.fsi">
+      <Link>Service/FSharpParseFileResults.fsi</Link>
     </Compile>
-    <Compile Include="..\service\ServiceUntypedParse.fs">
-      <Link>Service/ServiceUntypedParse.fs</Link>
+    <Compile Include="..\service\FSharpParseFileResults.fs">
+      <Link>Service/FSharpParseFileResults.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceParsedInputOps.fsi">
+      <Link>Service/ServiceParsedInputOps.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceParsedInputOps.fs">
+      <Link>Service/ServiceParsedInputOps.fs</Link>
     </Compile>
     <Compile Include="..\service\ServiceAssemblyContent.fsi">
       <Link>Service/ServiceAssemblyContent.fsi</Link>
@@ -942,12 +951,6 @@
     </Compile>
     <Compile Include="..\service\service.fs">
       <Link>Service/service.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceErrorResolutionHints.fsi">
-      <Link>Service/ServiceErrorResolutionHints.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceErrorResolutionHints.fs">
-      <Link>Service/ServiceErrorResolutionHints.fs</Link>
     </Compile>
     <Compile Include="..\service\ServiceInterfaceStubGenerator.fsi">
       <Link>Service/ServiceInterfaceStubGenerator.fsi</Link>

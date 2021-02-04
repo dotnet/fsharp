@@ -1453,7 +1453,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         internal abstract bool IsThereACloseParen();  // false if either this is a call without parens "f x" or the parser recovered as in "f(x,y"
 
-        internal abstract Tuple<int, int>[] GetNoteworthyParamInfoLocations(); // 0-based: longId start, longId end, open paren, <tuple ends> (see below) - relative to the ITextSnapshot this was created against
+        internal abstract Tuple<int, int>[] GetParameterLocations(); // 0-based: longId start, longId end, open paren, <tuple ends> (see below) - relative to the ITextSnapshot this was created against
         //          let resultVal = some.functionOrMethod.call   (   arg1 ,  arg2 )
         //                          ^                        ^   ^        ^       ^
         // start of call identifier ^                        ^   ^        ^       ^
@@ -1465,7 +1465,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         // and thus arg ranges are e.g. computed to be:          |--------|-------|
         // and so when in those regions, we bold that param
 
-        internal abstract ITrackingSpan[] GetParameterRanges();  // GetNoteworthyParamInfoLocations above is for unit testing; VS uses GetParameterRanges instead, to track changes as user types // TODO can we remove GetNoteworthyParamInfoLocations and move unit tests to GetParameterRanges?
+        internal abstract ITrackingSpan[] GetParameterRanges();  // GetParameterLocations above is for unit testing; VS uses GetParameterRanges instead, to track changes as user types // TODO can we remove GetParameterLocations and move unit tests to GetParameterRanges?
 
         internal abstract string[] GetParameterNames(); // an entry for each actual parameter, either null, or the parameter name if this is a named parameter (e.g. "f(0,y=4)" has [|null;"y"|] )
 

@@ -4,8 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Editor
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open System.Runtime.InteropServices
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 

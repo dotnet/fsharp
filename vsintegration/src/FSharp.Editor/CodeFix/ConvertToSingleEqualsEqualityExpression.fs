@@ -3,12 +3,10 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
-open Microsoft.CodeAnalysis.CodeActions
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ConvertToSingleEqualsEqualityExpression"); Shared>]
 type internal FSharpConvertToSingleEqualsEqualityExpressionCodeFixProvider() =

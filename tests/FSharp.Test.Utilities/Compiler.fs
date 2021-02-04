@@ -3,7 +3,7 @@
 namespace FSharp.Test.Utilities
 
 open FSharp.Compiler.Interactive.Shell
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Diagnostics
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Assert
 open FSharp.Test.Utilities.Utilities
@@ -135,15 +135,15 @@ module rec Compiler =
 
             { Error   = error
               Range   =
-                  { StartLine   = e.StartLineAlternate
+                  { StartLine   = e.StartLine
                     StartColumn = e.StartColumn
-                    EndLine     = e.EndLineAlternate
+                    EndLine     = e.EndLine
                     EndColumn   = e.EndColumn }
               Message = e.Message }
 
         errors
         |> List.ofArray
-        |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
+        |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
         |> List.map toErrorInfo
 
     let private partitionErrors diagnostics = diagnostics |> List.partition (fun e -> match e.Error with Error _ -> true | _ -> false)
@@ -367,7 +367,7 @@ module rec Compiler =
         let parseResults = CompilerAssert.Parse source
         let failed = parseResults.ParseHadErrors
 
-        let diagnostics =  parseResults.Errors |> fromFSharpDiagnostic
+        let diagnostics =  parseResults.Diagnostics |> fromFSharpDiagnostic
 
         let result =
             { OutputPath   = None

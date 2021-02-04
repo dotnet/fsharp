@@ -11,13 +11,12 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.SyntaxTree
 
-type private FSharpGlyph = FSharp.Compiler.SourceCodeServices.FSharpGlyph
+type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph
 type private FSharpRoslynGlyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
-
 
 type Path with
     static member GetFullPathSafe path =
@@ -137,7 +136,7 @@ type SourceText with
     member this.ToFSharpSourceText() =
         SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(SourceText.create))
 
-type FSharpNavigationDeclarationItem with
+type NavigationItem with
     member x.RoslynGlyph : FSharpRoslynGlyph =
         match x.Glyph with
         | FSharpGlyph.Class
