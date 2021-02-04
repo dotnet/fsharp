@@ -71,7 +71,6 @@ do ()
     [<Fact>]
 #endif
     let ``AssemblyKeyNameAttribute NETCOREAPP`` () =
-        
         FSharp """
 module SignMe
 
@@ -84,6 +83,6 @@ do ()
              |> asFs
              |> compile
              |> shouldFail
-             |> withWarningCode 2014
-             |> withDiagnosticMessageMatches "A call to StrongNameGetPublicKey failed (Keyset does not exist"
+             |> withErrorCode 2014
+             |> withDiagnosticMessageMatches "A call to StrongNameGetPublicKey failed"
              |> ignore
