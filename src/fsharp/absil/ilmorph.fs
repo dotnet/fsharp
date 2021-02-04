@@ -4,7 +4,7 @@ module internal FSharp.Compiler.AbstractIL.Morphs
 
 open System.Collections.Generic
 open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open Internal.Utilities.Library 
 open FSharp.Compiler.AbstractIL.IL 
 
 let mutable morphCustomAttributeData = false
@@ -213,12 +213,12 @@ let ilmbody_instr2instr_ty2ty fs (il: ILMethodBody) =
     {il with Code=code_instr2instr_ty2ty (finstr,ftye) il.Code
              Locals = locals_ty2ty ftye il.Locals }
 
-let morphILMethodBody (filmbody) (x: ILLazyMethodBody) = 
-    let c = 
-        match x.Contents with
-        | MethodBody.IL il -> MethodBody.IL (filmbody il)
-        | x -> x
-    mkMethBodyAux c
+let morphILMethodBody (filmbody) (x: MethodBody) = 
+    match x with
+    | MethodBody.IL il -> 
+        let ilCode = filmbody il.Value // Eager
+        MethodBody.IL (lazy ilCode)
+    | x -> x
 
 let ospec_ty2ty f (OverridesSpec(mref,ty)) = OverridesSpec(mref_ty2ty f mref, f ty)
 
@@ -227,7 +227,7 @@ let mdef_ty2ty_ilmbody2ilmbody ilg fs (md: ILMethodDef)  =
     let ftye' = ftye (Some md) 
     let body' = morphILMethodBody (filmbody (Some md))  md.Body 
     md.With(genericParams=gparams_ty2ty ftye' md.GenericParams,
-            body= body',
+            body= notlazy body',
             parameters = List.map (param_ty2ty ilg ftye') md.Parameters,
             ret = return_ty2ty ilg ftye' md.Return,
             customAttrs=cattrs_ty2ty ilg ftye' md.CustomAttrs)

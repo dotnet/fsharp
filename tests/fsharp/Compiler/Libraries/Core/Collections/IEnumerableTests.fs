@@ -15,22 +15,22 @@ module ``IEnumerable Tests`` =
     
     type E(_c:int) = class
         interface System.IDisposable with
-            member __.Dispose () = dispose_called_in_E <- dispose_called_in_E + 1
+            member _.Dispose () = dispose_called_in_E <- dispose_called_in_E + 1
     end
     
     type C() = class
         let mutable i = 0
         interface System.Collections.IEnumerator with
-            member __.Current with get () = new E(i) :> obj
-            member __.MoveNext () = 
+            member _.Current with get () = new E(i) :> obj
+            member _.MoveNext () = 
                 i <- i+1 
                 i<4
-            member __.Reset () = i <- 0
+            member _.Reset () = i <- 0
         interface System.Collections.IEnumerable with
             member x.GetEnumerator () = x :> System.Collections.IEnumerator
                             
         interface System.IDisposable with
-            member __.Dispose () = dispose_called_in_C <- dispose_called_in_C + 1
+            member _.Dispose () = dispose_called_in_C <- dispose_called_in_C + 1
         end
     end
 

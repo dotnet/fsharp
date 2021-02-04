@@ -13,14 +13,14 @@ module XmlCommentChecking =
 /// <summary>
 let x = 1
 
-/// 
+///
 /// <summary>Yo</summary>
 /// <remark>Yo</rem>
 module M =
     /// <summary> <
     let y = 1
 
-        """ 
+        """
          |> withXmlCommentChecking
          |> ignoreWarnings
          |> compile
@@ -39,7 +39,7 @@ module M =
     /// <summary> Return <paramref name="b" /> </summary>
     /// <param name="a"> the parameter </param>
     let f a = a
-        """ 
+        """
          |> withXmlCommentChecking
          |> ignoreWarnings
          |> compile
@@ -55,7 +55,7 @@ module M =
     /// <summary> Return <paramref name="b" /> </summary>
     /// <param name="b"> the parameter </param>
     let f a = a
-        """ 
+        """
          |> withXmlCommentChecking
          |> ignoreWarnings
          |> compile
@@ -74,7 +74,7 @@ module M =
     /// <param name="a"> the parameter </param>
     /// <param name="a"> the parameter </param>
     let f a = a
-        """ 
+        """
          |> withXmlCommentChecking
          |> ignoreWarnings
          |> compile
@@ -90,7 +90,7 @@ module M =
     /// <summary> Return <paramref/> </summary>
     /// <param> the parameter </param>
     let f a = a
-        """ 
+        """
          |> withXmlCommentChecking
          |> ignoreWarnings
          |> compile
@@ -118,7 +118,7 @@ module M =
         /// <summary> The instance method</summary>
         /// <param name="p2"> the other parameter </param>
          member x.OtherM((a,b): (string * string), p2: string) = ((a,b), p2)
-        """ 
+        """
          |> withXmlCommentChecking
          |> ignoreWarnings
          |> compile
@@ -137,7 +137,7 @@ module M =
          let _unused = (x1, x2)
 
          member x.M(p1: string, p2: string) = (p1, p2)
-        """ 
+        """
          |> withXmlCommentChecking
          |> ignoreWarnings
          |> compile
@@ -156,7 +156,24 @@ module M =
          let _unused = (x1, x2)
 
          member x.M(p1: string, p2: string) = (p1, p2)
-        """ 
+        """
+         |> withXmlCommentChecking
+         |> ignoreWarnings
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics [ ]
+
+    [<Fact>]
+    let ``valid parameter names are reported for documented implicit constructor`` () =
+        Fsx"""
+    /// <summary> The type with an implicit constructor with visibility</summary>
+    /// <param name="x1"> the first parameter </param>
+    /// <param name="x2"> the second parameter </param>
+    type C (x1: string, x2: string) =
+         let _unused = (x1, x2)
+
+         member x.M(p1: string, p2: string) = (p1, p2)
+        """
          |> withXmlCommentChecking
          |> ignoreWarnings
          |> compile
@@ -170,7 +187,21 @@ module M =
     /// <param name="sender"> The sender</param>
     /// <param name="args"> The args</param>
     type C = delegate of sender: obj * args: int -> C
-        """ 
+        """
+         |> withXmlCommentChecking
+         |> ignoreWarnings
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics [ ]
+
+    [<Fact>]
+    let ``function parameters use names from as patterns`` () =
+        Fsx"""
+        type Thing = Inner of s: string
+        /// <summary> A function with an extracted inner value</summary>
+        /// <param name="inner"> The innver value to unwrap</param>
+        let doer ((Inner s) as inner) = ignore s; ignore inner
+        """
          |> withXmlCommentChecking
          |> ignoreWarnings
          |> compile

@@ -5,10 +5,14 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Collections.Generic
-open FSharp.Compiler
-open FSharp.Compiler.Range
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open System.Collections.Immutable
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Symbols.FSharpExprPatterns
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text
 open FsUnit
 open NUnit.Framework
 
@@ -59,13 +63,13 @@ type TempFile(ext, contents) =
 
 let getBackgroundParseResultsForScriptText (input) = 
     use file =  new TempFile("fsx", input)
-    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, FSharp.Compiler.Text.SourceText.ofString input) |> Async.RunSynchronously
+    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString input) |> Async.RunSynchronously
     checker.GetBackgroundParseResultsForFileInProject(file.Name, checkOptions)  |> Async.RunSynchronously
 
 
 let getBackgroundCheckResultsForScriptText (input) = 
     use file =  new TempFile("fsx", input)
-    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, FSharp.Compiler.Text.SourceText.ofString input) |> Async.RunSynchronously
+    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString input) |> Async.RunSynchronously
     checker.GetBackgroundCheckResultsForFileInProject(file.Name, checkOptions) |> Async.RunSynchronously
 
 
@@ -83,7 +87,7 @@ let sysLib nm =
 [<AutoOpen>]
 module Helpers = 
     type DummyType = A | B
-    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<FSharp.Compiler.SourceCodeServices.FSharpChecker>.Assembly.CodeBase).LocalPath), p)
+    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<FSharpChecker>.Assembly.CodeBase).LocalPath), p)
 
 let fsCoreDefaultReference() = 
     PathRelativeToTestAssembly "FSharp.Core.dll"
@@ -166,7 +170,7 @@ let mkTestFileAndOptions source additionalArgs =
     fileName, options
 
 let parseAndCheckFile fileName source options =
-    match checker.ParseAndCheckFileInProject(fileName, 0, FSharp.Compiler.Text.SourceText.ofString source, options) |> Async.RunSynchronously with
+    match checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunSynchronously with
     | parseResults, FSharpCheckFileAnswer.Succeeded(checkResults) -> parseResults, checkResults
     | _ -> failwithf "Parsing aborted unexpectedly..."
 
@@ -191,12 +195,12 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
                 Directory.Delete(path, true)
 
 #else    
-    let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, FSharp.Compiler.Text.SourceText.ofString input) |> Async.RunSynchronously
+    let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) |> Async.RunSynchronously
     //printfn "projectOptions = %A" projectOptions
 #endif
 
     let projectOptions = { projectOptions with OtherOptions = Array.append opts projectOptions.OtherOptions }
-    let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, FSharp.Compiler.Text.SourceText.ofString input, projectOptions) |> Async.RunSynchronously
+    let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, projectOptions) |> Async.RunSynchronously
     
     // if parseResult.Errors.Length > 0 then
     //     printfn "---> Parse Input = %A" input
@@ -215,7 +219,7 @@ let parseSourceCode (name: string, code: string) =
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
-    let parseResults = checker.ParseFile(filePath, FSharp.Compiler.Text.SourceText.ofString code, options) |> Async.RunSynchronously
+    let parseResults = checker.ParseFile(filePath, SourceText.ofString code, options) |> Async.RunSynchronously
     parseResults.ParseTree
 
 let matchBraces (name: string, code: string) =
@@ -225,7 +229,7 @@ let matchBraces (name: string, code: string) =
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
-    let braces = checker.MatchBraces(filePath, FSharp.Compiler.Text.SourceText.ofString code, options) |> Async.RunSynchronously
+    let braces = checker.MatchBraces(filePath, SourceText.ofString code, options) |> Async.RunSynchronously
     braces
 
 
@@ -239,10 +243,10 @@ let parseSourceCodeAndGetModule (source: string) =
 
 
 /// Extract range info 
-let tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
+let tups (m: range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
 
 /// Extract range info  and convert to zero-based line  - please don't use this one any more
-let tupsZ (m:Range.range) = (m.StartLine-1, m.StartColumn), (m.EndLine-1, m.EndColumn)
+let tupsZ (m: range) = (m.StartLine-1, m.StartColumn), (m.EndLine-1, m.EndColumn)
 
 let attribsOfSymbolUse (s:FSharpSymbolUse) = 
     [ if s.IsFromDefinition then yield "defn" 
@@ -329,7 +333,7 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
                yield (gp :> FSharpSymbol)
           for x in e.UnionCases do
              yield (x :> FSharpSymbol)
-             for f in x.UnionCaseFields do
+             for f in x.Fields do
                  if compGen || not f.IsCompilerGenerated then 
                      yield (f :> FSharpSymbol)
           for x in e.FSharpFields do
@@ -344,9 +348,8 @@ let getParseResults (source: string) =
 let getParseAndCheckResults (source: string) =
     parseAndCheckScript("/home/user/Test.fsx", source)
 
-
 let inline dumpErrors results =
-    (^TResults: (member Errors: FSharpDiagnostic[]) results)
+    (^TResults: (member Diagnostics: FSharpDiagnostic[]) results)
     |> Array.map (fun e ->
         let message =
             e.Message.Split('\n')
@@ -354,7 +357,6 @@ let inline dumpErrors results =
             |> String.concat " "
         sprintf "%s: %s" (e.Range.ToShortString()) message)
     |> List.ofArray
-
 
 let getSymbolUses (results: FSharpCheckFileResults) =
     results.GetAllUsesOfAllSymbolsInFile()
@@ -417,6 +419,8 @@ let findSymbolByName (name: string) (results: FSharpCheckFileResults) =
     let symbolUse = findSymbolUseByName name results
     symbolUse.Symbol
 
+let taggedTextToString (tts: TaggedText[]) =
+    tts |> Array.map (fun tt -> tt.Text) |> String.concat ""
 
 let getRangeCoords (r: range) =
     (r.StartLine, r.StartColumn), (r.EndLine, r.EndColumn)

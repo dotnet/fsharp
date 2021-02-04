@@ -5,6 +5,7 @@ module TestFramework
 open Microsoft.Win32
 open System
 open System.IO
+open System.Reflection
 open System.Text.RegularExpressions
 open System.Diagnostics
 open Scripting
@@ -55,8 +56,17 @@ module Commands =
                 else
                     p.WaitForExit()
     #if DEBUG
-            File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), outputList)
-            File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), errorsList)
+            let workingDir' =
+                if workingDir = ""
+                then
+                    // Assign working dir to prevent default to C:\Windows\System32
+                    let executionLocation = Assembly.GetExecutingAssembly().Location
+                    Path.GetDirectoryName executionLocation
+                else
+                    workingDir
+
+            File.WriteAllLines(Path.Combine(workingDir', "StandardOutput.txt"), outputList)
+            File.WriteAllLines(Path.Combine(workingDir', "StandardError.txt"), errorsList)
     #endif
             p.ExitCode, outputList.ToArray(), errorsList.ToArray()
         | None -> -1, Array.empty, Array.empty
@@ -411,11 +421,6 @@ type public InitializeSuiteAttribute () =
         ()
 
     override x.Targets = ActionTargets.Test ||| ActionTargets.Suite
-
-
-[<assembly:ParallelizableAttribute(ParallelScope.Fixtures)>]
-[<assembly:InitializeSuite()>]
-()
 
 let fsharpSuiteDirectory = __SOURCE_DIRECTORY__
 

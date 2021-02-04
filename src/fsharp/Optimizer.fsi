@@ -4,7 +4,7 @@ module internal FSharp.Compiler.Optimizer
 
 open FSharp.Compiler 
 open FSharp.Compiler.TcGlobals 
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreePickle
@@ -17,14 +17,17 @@ type OptimizationSettings =
       bigTargetSize: int
       veryBigExprSize: int 
       lambdaInlineThreshold: int
-      reportingPhase: bool;
+      reportingPhase: bool
       reportNoNeedToTailcall: bool
       reportFunctionSizes: bool
       reportHasEffect: bool
-      reportTotalSizes: bool }
+      reportTotalSizes: bool
+    }
 
     member jitOpt: unit -> bool 
+
     member localOpt: unit -> bool 
+
     static member Defaults: OptimizationSettings
 
 /// Optimization information 

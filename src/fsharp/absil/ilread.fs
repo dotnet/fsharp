@@ -16,22 +16,17 @@ open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
 open System.IO.MemoryMappedFiles
-open System.Runtime.InteropServices
 open System.Text
 open Internal.Utilities
 open Internal.Utilities.Collections
-open FSharp.NativeInterop
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.Support
-open FSharp.Compiler.AbstractIL.Internal.Utils
+open FSharp.Compiler.AbstractIL.BinaryConstants 
+open Internal.Utilities.Library
+open FSharp.Compiler.AbstractIL.Support
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.IO
+open FSharp.Compiler.Text.Range
 open System.Reflection
 
 #nowarn "9"
@@ -123,17 +118,17 @@ type BinaryFile =
 type RawMemoryFile(fileName: string, obj: obj, addr: nativeint, length: int) =
     do stats.rawMemoryFileCount <- stats.rawMemoryFileCount + 1
     let view = ByteMemory.FromUnsafePointer(addr, length, obj).AsReadOnly()
-    member __.HoldObj() = obj // make sure we capture 'obj'
-    member __.FileName = fileName
+    member _.HoldObj() = obj // make sure we capture 'obj'
+    member _.FileName = fileName
     interface BinaryFile with
-        override __.GetView() = view
+        override _.GetView() = view
 
 /// A BinaryFile backed by an array of bytes held strongly as managed memory
 [<DebuggerDisplay("{FileName}")>]
 type ByteFile(fileName: string, bytes: byte[]) = 
     let view = ByteMemory.FromArray(bytes).AsReadOnly()
     do stats.byteFileCount <- stats.byteFileCount + 1
-    member __.FileName = fileName
+    member _.FileName = fileName
     interface BinaryFile with
         override bf.GetView() = view
  
@@ -151,7 +146,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
     /// The weak handle to the bytes for the file
     let weakBytes = new WeakReference<byte[]> (null)
 
-    member __.FileName = fileName
+    member _.FileName = fileName
 
     /// Get the bytes for the file
     interface BinaryFile with
@@ -2493,7 +2488,8 @@ and seekReadConstant (ctxt: ILMetadataReader) idx =
   | _ -> ILFieldInit.Null
 
 and seekReadImplMap (ctxt: ILMetadataReader) nm midx = 
-   mkMethBodyLazyAux 
+ lazy
+   MethodBody.PInvoke
       (lazy 
             let mdv = ctxt.mdfile.GetView()
             let (flags, nameIdx, scopeIdx) = seekReadIndexedRow (ctxt.getNumRows TableNames.ImplMap, 
@@ -2534,17 +2530,17 @@ and seekReadImplMap (ctxt: ILMetadataReader) nm midx =
                 elif masked = 0x2000 then PInvokeThrowOnUnmappableChar.Disabled 
                 else (dprintn "strange ThrowOnUnmappableChar"; PInvokeThrowOnUnmappableChar.UseAssembly)
 
-            MethodBody.PInvoke { CallingConv = cc 
-                                 CharEncoding = enc
-                                 CharBestFit=bestfit
-                                 ThrowOnUnmappableChar=unmap
-                                 NoMangle = (flags &&& 0x0001) <> 0x0
-                                 LastError = (flags &&& 0x0040) <> 0x0
-                                 Name = 
-                                     (match readStringHeapOption ctxt nameIdx with 
-                                      | None -> nm
-                                      | Some nm2 -> nm2)
-                                 Where = seekReadModuleRef ctxt mdv scopeIdx })
+            { CallingConv = cc 
+              CharEncoding = enc
+              CharBestFit=bestfit
+              ThrowOnUnmappableChar=unmap
+              NoMangle = (flags &&& 0x0001) <> 0x0
+              LastError = (flags &&& 0x0040) <> 0x0
+              Name = 
+                  (match readStringHeapOption ctxt nameIdx with 
+                   | None -> nm
+                   | Some nm2 -> nm2)
+              Where = seekReadModuleRef ctxt mdv scopeIdx })
 
 and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start seqpoints = 
    let labelsOfRawOffsets = new Dictionary<_, _>(sz/2)
@@ -2796,7 +2792,21 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (_idx, nm, _in
 #else
 and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _internalcall, noinline, aggressiveinline, numtypars) rva = 
 #endif
-  mkMethBodyLazyAux 
+ lazy
+  let pev = pectxt.pefile.GetView()
+  let baseRVA = pectxt.anyV2P("method rva", rva)
+  // ": reading body of method "+nm+" at rva "+string rva+", phys "+string baseRVA
+  let b = seekReadByte pev baseRVA
+
+  let isTinyFormat = (b &&& e_CorILMethod_FormatMask) = e_CorILMethod_TinyFormat
+  let isFatFormat = (b &&& e_CorILMethod_FormatMask) = e_CorILMethod_FatFormat
+
+  if not isTinyFormat && not isFatFormat then
+    if logging then failwith "unknown format"
+    MethodBody.Abstract
+  else
+
+  MethodBody.IL 
    (lazy
        let pev = pectxt.pefile.GetView()
        let mdv = ctxt.mdfile.GetView()
@@ -2866,10 +2876,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                    [], None, []
 #endif
        
-       let baseRVA = pectxt.anyV2P("method rva", rva)
-       // ": reading body of method "+nm+" at rva "+string rva+", phys "+string baseRVA
-       let b = seekReadByte pev baseRVA
-       if (b &&& e_CorILMethod_FormatMask) = e_CorILMethod_TinyFormat then 
+       if isTinyFormat then 
            let codeBase = baseRVA + 1
            let codeSize = (int32 b >>>& 2)
            // tiny format for "+nm+", code size = " + string codeSize)
@@ -2877,16 +2884,15 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
            (* Convert the linear code format to the nested code format *)
            let localPdbInfos2 = List.map (fun f -> f raw2nextLab) localPdbInfos
            let code = buildILCode nm lab2pc instrs [] localPdbInfos2
-           MethodBody.IL
-             { IsZeroInit=false
-               MaxStack= 8
-               NoInlining=noinline
-               AggressiveInlining=aggressiveinline
-               Locals=List.empty
-               SourceMarker=methRangePdbInfo 
-               Code=code }
+           { IsZeroInit=false
+             MaxStack= 8
+             NoInlining=noinline
+             AggressiveInlining=aggressiveinline
+             Locals=List.empty
+             SourceMarker=methRangePdbInfo 
+             Code=code }
 
-       elif (b &&& e_CorILMethod_FormatMask) = e_CorILMethod_FatFormat then 
+       else 
            let hasMoreSections = (b &&& e_CorILMethod_MoreSects) <> 0x0uy
            let initlocals = (b &&& e_CorILMethod_InitLocals) <> 0x0uy
            let maxstack = seekReadUInt16AsInt32 pev (baseRVA + 2)
@@ -3001,17 +3007,13 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
            if logging then dprintn ("done localPdbInfos2, checking code...") 
            let code = buildILCode nm lab2pc instrs !seh localPdbInfos2
            if logging then dprintn ("done checking code.") 
-           MethodBody.IL
-             { IsZeroInit=initlocals
-               MaxStack= maxstack
-               NoInlining=noinline
-               AggressiveInlining=aggressiveinline
-               Locals = locals
-               Code=code
-               SourceMarker=methRangePdbInfo}
-       else 
-           if logging then failwith "unknown format"
-           MethodBody.Abstract)
+           { IsZeroInit=initlocals
+             MaxStack= maxstack
+             NoInlining=noinline
+             AggressiveInlining=aggressiveinline
+             Locals = locals
+             Code=code
+             SourceMarker=methRangePdbInfo})
 
 and int32AsILVariantType (ctxt: ILMetadataReader) (n: int32) = 
     if List.memAssoc n (Lazy.force ILVariantTypeRevMap) then 
@@ -4009,7 +4011,7 @@ module Shim =
     [<Sealed>]
     type DefaultAssemblyReader() =
         interface IAssemblyReader with
-            member __.GetILModuleReader(filename, readerOptions) =
+            member _.GetILModuleReader(filename, readerOptions) =
                 OpenILModuleReader filename readerOptions
 
     let mutable AssemblyReader = DefaultAssemblyReader() :> IAssemblyReader

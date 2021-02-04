@@ -15,20 +15,21 @@ open System.Globalization
 open System.Text
 
 open Internal.Utilities
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 
 module Ranges =
     /// Whether valid as signed int8 when a minus sign is prepended, compares true to 0x80
@@ -134,25 +135,35 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
     let m = lexbuf.LexemeRange 
     let startp = lexbuf.StartPos 
     let fin =
-        LexerStringFinisher (fun buf kind isPart cont -> 
+        LexerStringFinisher (fun buf kind context cont -> 
             // Adjust the start-of-token mark back to the true start of the token 
             lexbuf.StartPos <- startp
-            if kind.IsByteString then
+            let isPart = context.HasFlag(LexerStringFinisherContext.InterpolatedPart)
+            let isVerbatim = context.HasFlag(LexerStringFinisherContext.Verbatim)
+            let isTripleQuote = context.HasFlag(LexerStringFinisherContext.TripleQuote)
+            
+            if kind.IsByteString then          
+                let synByteStringKind = if isVerbatim then SynByteStringKind.Verbatim else SynByteStringKind.Regular
                 if kind.IsInterpolated then 
                     fail args lexbuf (FSComp.SR.lexByteStringMayNotBeInterpolated()) ()
-                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf, cont)
+                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf, synByteStringKind, cont)
                 elif Lexhelp.stringBufferIsBytes buf then
-                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf, cont)
+                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf, synByteStringKind, cont)
                 else
                     fail args lexbuf (FSComp.SR.lexByteArrayCannotEncode()) ()
-                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf, cont)
+                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf, synByteStringKind, cont)
             elif kind.IsInterpolated then 
                 let s = Lexhelp.stringBufferAsString buf
-                if kind.IsInterpolatedFirst then 
+                if kind.IsInterpolatedFirst then
+                    let synStringKind =
+                        if isTripleQuote then
+                            SynStringKind.TripleQuote
+                        else
+                            SynStringKind.Regular
                     if isPart then 
-                        INTERP_STRING_BEGIN_PART (s, cont)
+                        INTERP_STRING_BEGIN_PART (s, synStringKind, cont)
                     else
-                        INTERP_STRING_BEGIN_END (s, cont)
+                        INTERP_STRING_BEGIN_END (s, synStringKind, cont)
                 else
                     if isPart then
                         INTERP_STRING_PART (s, cont)
@@ -160,7 +171,14 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
                         INTERP_STRING_END (s, cont)
             else
                 let s = Lexhelp.stringBufferAsString buf
-                STRING (s, cont))  
+                let synStringKind =
+                    if isVerbatim then
+                        SynStringKind.Verbatim
+                    elif isTripleQuote then
+                        SynStringKind.TripleQuote
+                    else
+                        SynStringKind.Regular
+                STRING (s, synStringKind, cont))  
     buf,fin,m
            
              
@@ -717,7 +735,7 @@ rule token args skip = parse
 
           // Construct the new position
           if args.applyLineDirectives then 
-              lexbuf.EndPos <- pos.ApplyLineDirective((match file with Some f -> fileIndexOfFile f | None -> pos.FileIndex), line)
+              lexbuf.EndPos <- pos.ApplyLineDirective((match file with Some f -> FileIndex.fileIndexOfFile f | None -> pos.FileIndex), line)
           else
               // add a newline when we don't apply a directive since we consumed a newline getting here
               newline lexbuf
@@ -1122,13 +1140,13 @@ and singleQuoteString sargs skip = parse
  |  '"' 
     { let (buf, fin, _m, kind, args) = sargs 
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf kind false cont
+      fin.Finish buf kind (enum<LexerStringFinisherContext>(0)) cont
     }
 
  |  '"''B' 
     { let (buf, fin, _m, kind, args) = sargs 
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf { kind with IsByteString = true } false cont
+      fin.Finish buf { kind with IsByteString = true } (enum<LexerStringFinisherContext>(0)) cont
     }
 
  | ("{{" | "}}")
@@ -1145,7 +1163,7 @@ and singleQuoteString sargs skip = parse
           let m2 = lexbuf.LexemeRange
           args.stringNest <- (1, LexerStringStyle.SingleQuote, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-          fin.Finish buf kind true cont
+          fin.Finish buf kind LexerStringFinisherContext.InterpolatedPart cont
       else
           addUnicodeString buf (lexeme lexbuf) 
           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
@@ -1212,13 +1230,13 @@ and verbatimString sargs skip = parse
  |  '"' 
     { let (buf, fin, _m, kind, args) = sargs 
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf kind false cont
+      fin.Finish buf kind LexerStringFinisherContext.Verbatim cont
     }
 
  |  '"''B' 
     { let (buf, fin, _m, kind, args) = sargs 
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf { kind with IsByteString = true } false cont
+      fin.Finish buf { kind with IsByteString = true } LexerStringFinisherContext.Verbatim cont
     }
 
  | newline 
@@ -1242,7 +1260,7 @@ and verbatimString sargs skip = parse
           let m2 = lexbuf.LexemeRange
           args.stringNest <- (1, LexerStringStyle.Verbatim, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-          fin.Finish buf kind true cont
+          fin.Finish buf kind (enum<LexerStringFinisherContext>(3)) cont
       else
           addUnicodeString buf (lexeme lexbuf) 
           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
@@ -1295,7 +1313,7 @@ and tripleQuoteString sargs skip = parse
  |  '"' '"' '"' 
     { let (buf, fin, _m, kind, args) = sargs 
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf kind false cont }
+      fin.Finish buf kind (enum<LexerStringFinisherContext>(4)) cont }
 
  | newline 
     { let (buf, _fin, m, kind, args) = sargs 
@@ -1338,7 +1356,7 @@ and tripleQuoteString sargs skip = parse
           let m2 = lexbuf.LexemeRange
           args.stringNest <- (1, LexerStringStyle.TripleQuote, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-          fin.Finish buf kind true cont
+          fin.Finish buf kind (enum<LexerStringFinisherContext>(5)) cont
       else
           addUnicodeString buf (lexeme lexbuf) 
           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))

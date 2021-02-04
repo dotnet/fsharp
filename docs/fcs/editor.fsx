@@ -26,7 +26,8 @@ of `InteractiveChecker`:
 #r "FSharp.Compiler.Service.dll"
 
 open System
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
 // Create an interactive checker instance 
@@ -128,7 +129,6 @@ identifier (the other option lets you get tooltip with full assembly location wh
 
 *)
 // Get tag of the IDENT token to be used as the last argument
-open FSharp.Compiler
 let identToken = FSharpTokenTag.Identifier
 
 // Get tool tip at the specified location
@@ -202,6 +202,7 @@ let methods =
 // Print concatenated parameter lists
 for mi in methods.Methods do
     [ for p in mi.Parameters -> p.Display ]
+    |> List.collect (Array.map (fun tt -> tt.Text) >> Array.toList)
     |> String.concat ", " 
     |> printfn "%s(%s)" methods.MethodName
 (**

@@ -8,7 +8,6 @@
 /// the ILMethodDef (if any) where the item occurs. etc.
 module internal FSharp.Compiler.AbstractIL.Morphs 
 
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 
 /// Morph each scope reference inside a type signature.

@@ -5,10 +5,12 @@ module FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Range
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.UnicodeLexing
-open FSharp.Compiler.XmlDoc
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Position
+open FSharp.Compiler.Text.Range
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
 
@@ -227,8 +229,8 @@ let ParseAssemblyCodeInstructions s (isFeatureSupported: LanguageFeature -> bool
     [| |]
 #else
     try
-        FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilInstrs
-           FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
+        FSharp.Compiler.AbstractIL.AsciiParser.ilInstrs
+           FSharp.Compiler.AbstractIL.AsciiLexer.token
            (UnicodeLexing.StringAsLexbuf(isFeatureSupported, s))
     with _ ->
       errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [||]
@@ -244,8 +246,8 @@ let ParseAssemblyCodeType s (isFeatureSupported: Features.LanguageFeature -> boo
 #else
     let isFeatureSupported (_featureId:LanguageFeature) = true
     try
-        FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilType
-           FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
+        FSharp.Compiler.AbstractIL.AsciiParser.ilType
+           FSharp.Compiler.AbstractIL.AsciiLexer.token
            (UnicodeLexing.StringAsLexbuf(isFeatureSupported, s))
     with RecoverableParseError ->
       errorR(Error(FSComp.SR.astParseEmbeddedILTypeError(), m));

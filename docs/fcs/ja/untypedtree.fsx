@@ -41,7 +41,7 @@
 *)
 #r "FSharp.Compiler.Service.dll"
 open System
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 (**
 
@@ -102,7 +102,7 @@ ASTを理解するには
 
 ASTに関連する要素は以下の名前空間に含まれています:
 *)
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 (**
 
 ASTを処理する場合、異なる文法的要素に対するパターンマッチを行うような

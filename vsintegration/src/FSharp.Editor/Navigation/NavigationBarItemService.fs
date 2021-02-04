@@ -6,14 +6,9 @@ open System.Composition
 open System.Collections.Generic
 open System.Threading.Tasks
 
-open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Navigation
-open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Notification
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.EditorServices
 
 type internal NavigationBarSymbolItem(text, glyph, spans, childItems) =
     inherit FSharpNavigationBarItem(text, glyph, spans, childItems)
@@ -30,12 +25,12 @@ type internal FSharpNavigationBarItemService
     static let emptyResult: IList<FSharpNavigationBarItem> = upcast [||]
 
     interface IFSharpNavigationBarItemService with
-        member __.GetItemsAsync(document, cancellationToken) : Task<IList<FSharpNavigationBarItem>> = 
+        member _.GetItemsAsync(document, cancellationToken) : Task<IList<FSharpNavigationBarItem>> = 
             asyncMaybe {
                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! parsedInput = checkerProvider.Checker.ParseDocument(document, parsingOptions, sourceText=sourceText, userOpName=userOpName)
-                let navItems = FSharpNavigation.getNavigation parsedInput
+                let navItems = Navigation.getNavigation parsedInput
                 let rangeToTextSpan range = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
                 return
                     navItems.Declarations

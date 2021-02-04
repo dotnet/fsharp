@@ -5,10 +5,11 @@ namespace FSharp.Compiler
 #if !NO_EXTENSIONTYPING
 
 open System
-open FSharp.Compiler.Range
-open Microsoft.FSharp.Core.CompilerServices
+open Internal.Utilities.Library 
+open FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 
 [<Sealed>]
 type internal TypeProviderToken() = interface LockToken
@@ -19,26 +20,26 @@ type internal TypeProviderLock() =
 
 type internal TypeProviderError
     (
-        errNum : int,
-        tpDesignation : string,
-        m:FSharp.Compiler.Range.range,
-        errors : string list,
-        typeNameContext : string option,
-        methodNameContext : string option
+        errNum: int,
+        tpDesignation: string,
+        m: range,
+        errors: string list,
+        typeNameContext: string option,
+        methodNameContext: string option
     ) =
 
-    inherit System.Exception()
+    inherit Exception()
 
-    new((errNum, msg : string), tpDesignation,m) = 
+    new((errNum, msg: string), tpDesignation,m) = 
         TypeProviderError(errNum, tpDesignation, m, [msg])
     
-    new(errNum, tpDesignation, m, messages : seq<string>) =         
+    new(errNum, tpDesignation, m, messages: seq<string>) =         
         TypeProviderError(errNum, tpDesignation, m, List.ofSeq messages, None, None)
 
-    member this.Number = errNum
-    member this.Range = m
+    member _.Number = errNum
+    member _.Range = m
 
-    override this.Message = 
+    override _.Message = 
         match errors with
         | [text] -> text
         | inner -> 
@@ -47,11 +48,11 @@ type internal TypeProviderError
             inner            
             |> String.concat Environment.NewLine
 
-    member this.MapText(f, tpDesignation, m) = 
-        let (errNum : int), _ = f ""
+    member _.MapText(f, tpDesignation, m) = 
+        let (errNum: int), _ = f ""
         new TypeProviderError(errNum, tpDesignation, m,  (Seq.map (f >> snd) errors))
 
-    member this.WithContext(typeNameContext:string, methodNameContext:string) = 
+    member _.WithContext(typeNameContext:string, methodNameContext:string) = 
         new TypeProviderError(errNum, tpDesignation, m, errors, Some typeNameContext, Some methodNameContext)
 
     // .Message is just the error, whereas .ContextualErrorMessage has contextual prefix information
@@ -76,10 +77,10 @@ type internal TypeProviderError
             for msg in errors do
                 f (new TypeProviderError(errNum, tpDesignation, m, [msg], typeNameContext, methodNameContext))
 
-type TaintedContext = { TypeProvider : ITypeProvider; TypeProviderAssemblyRef : ILScopeRef; Lock: TypeProviderLock }
+type TaintedContext = { TypeProvider: ITypeProvider; TypeProviderAssemblyRef: ILScopeRef; Lock: TypeProviderLock }
 
 [<NoEquality>][<NoComparison>] 
-type internal Tainted<'T> (context : TaintedContext, value : 'T) =
+type internal Tainted<'T> (context: TaintedContext, value: 'T) =
     do
         match box context.TypeProvider with 
         | null -> 
@@ -87,10 +88,10 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
             failwith "null ITypeProvider in Tainted constructor"
         | _ -> ()
 
-    member this.TypeProviderDesignation = 
+    member _.TypeProviderDesignation = 
         context.TypeProvider.GetType().FullName
 
-    member this.TypeProviderAssemblyRef = 
+    member _.TypeProviderAssemblyRef = 
         context.TypeProviderAssemblyRef
 
     member this.Protect f  (range:range) =
@@ -136,7 +137,6 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
         |   null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
         |   _ -> a |> Array.map (fun u -> Tainted(context,u))
 
-
     member this.PApplyOption(f,range:range) =        
         let a = this.Protect f range
         match a with 
@@ -148,7 +148,7 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
     /// Access the target object directly. Use with extreme caution.
     member this.AccessObjectDirectly = value
 
-    static member CreateAll(providerSpecs : (ITypeProvider * ILScopeRef) list) =
+    static member CreateAll(providerSpecs: (ITypeProvider * ILScopeRef) list) =
         [for (tp,nm) in providerSpecs do
              yield Tainted<_>({ TypeProvider=tp; TypeProviderAssemblyRef=nm; Lock=TypeProviderLock() },tp) ] 
 

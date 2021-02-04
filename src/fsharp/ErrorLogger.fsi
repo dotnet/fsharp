@@ -3,8 +3,8 @@
 module internal FSharp.Compiler.ErrorLogger
 
 open System
-open FSharp.Compiler.Range
 open FSharp.Compiler.Features
+open FSharp.Compiler.Text
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccessAttribute>]

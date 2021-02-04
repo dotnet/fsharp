@@ -26,7 +26,7 @@ of `InteractiveChecker`:
 
 open System
 open System.Collections.Generic
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 
 // Create an interactive checker instance 
@@ -128,13 +128,13 @@ let wholeProjectResults = checker.ParseAndCheckProject(projectOptions) |> Async.
 (**
 Now look at the errors and warnings:
 *)
-wholeProjectResults .Errors.Length // 1
-wholeProjectResults.Errors.[0].Message.Contains("Incomplete pattern matches on this expression") // yes it does
+wholeProjectResults.Diagnostics.Length // 1
+wholeProjectResults.Diagnostics.[0].Message.Contains("Incomplete pattern matches on this expression") // yes it does
 
-wholeProjectResults.Errors.[0].StartLineAlternate // 13
-wholeProjectResults.Errors.[0].EndLineAlternate // 13
-wholeProjectResults.Errors.[0].StartColumn // 15
-wholeProjectResults.Errors.[0].EndColumn // 16
+wholeProjectResults.Diagnostics.[0].StartLineAlternate // 13
+wholeProjectResults.Diagnostics.[0].EndLineAlternate // 13
+wholeProjectResults.Diagnostics.[0].StartColumn // 15
+wholeProjectResults.Diagnostics.[0].EndColumn // 16
 
 (**
 Now look at the inferred signature for the project:

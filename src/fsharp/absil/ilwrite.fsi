@@ -4,11 +4,9 @@
 module internal FSharp.Compiler.AbstractIL.ILBinaryWriter
 
 open Internal.Utilities
-open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILPdbWriter
-open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
+open FSharp.Compiler.AbstractIL.StrongNameSign
 
 type options =
  { ilg: ILGlobals

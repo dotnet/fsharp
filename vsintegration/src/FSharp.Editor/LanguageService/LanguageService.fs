@@ -8,8 +8,8 @@ open System.Runtime.InteropServices
 open System.Threading
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Options
-open FSharp.Compiler.SourceCodeServices
-open FSharp.NativeInterop
+open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices
@@ -19,10 +19,7 @@ open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text.Outlining
-open FSharp.NativeInterop
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
-
-#nowarn "9" // NativePtr.toNativeInt
 
 // Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
 // Diagnostic providers can be executed in environment that does not use MEF so they can rely only
@@ -35,7 +32,7 @@ type internal FSharpCheckerWorkspaceService =
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
     
-    member __.GetKeyNameForLanguage(languageName: string) =
+    member _.GetKeyNameForLanguage(languageName: string) =
         let unsubstitutedKeyName = keyName
         match languageName with
         | null -> unsubstitutedKeyName
@@ -52,43 +49,43 @@ type internal FSharpCheckerWorkspaceServiceFactory
         projectInfoManager: FSharpProjectOptionsManager
     ) =
     interface Microsoft.CodeAnalysis.Host.Mef.IWorkspaceServiceFactory with
-        member __.CreateService(_workspaceServices) =
+        member _.CreateService(_workspaceServices) =
             upcast { new FSharpCheckerWorkspaceService with
-                member __.Checker = checkerProvider.Checker
-                member __.FSharpProjectOptionsManager = projectInfoManager }
+                member _.Checker = checkerProvider.Checker
+                member _.FSharpProjectOptionsManager = projectInfoManager }
 
 [<Sealed>]
 type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager) =
 
     interface IVsSolutionEvents with
 
-        member __.OnAfterCloseSolution(_) =
+        member _.OnAfterCloseSolution(_) =
             projectManager.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             VSConstants.S_OK
 
-        member __.OnAfterLoadProject(_, _) = VSConstants.E_NOTIMPL
+        member _.OnAfterLoadProject(_, _) = VSConstants.E_NOTIMPL
 
-        member __.OnAfterOpenProject(_, _) = VSConstants.E_NOTIMPL
+        member _.OnAfterOpenProject(_, _) = VSConstants.E_NOTIMPL
 
-        member __.OnAfterOpenSolution(_, _) = VSConstants.E_NOTIMPL
+        member _.OnAfterOpenSolution(_, _) = VSConstants.E_NOTIMPL
 
-        member __.OnBeforeCloseProject(_, _) = VSConstants.E_NOTIMPL
+        member _.OnBeforeCloseProject(_, _) = VSConstants.E_NOTIMPL
 
-        member __.OnBeforeCloseSolution(_) = VSConstants.E_NOTIMPL
+        member _.OnBeforeCloseSolution(_) = VSConstants.E_NOTIMPL
 
-        member __.OnBeforeUnloadProject(_, _) = VSConstants.E_NOTIMPL
+        member _.OnBeforeUnloadProject(_, _) = VSConstants.E_NOTIMPL
 
-        member __.OnQueryCloseProject(_, _, _) = VSConstants.E_NOTIMPL
+        member _.OnQueryCloseProject(_, _, _) = VSConstants.E_NOTIMPL
 
-        member __.OnQueryCloseSolution(_, _) = VSConstants.E_NOTIMPL
+        member _.OnQueryCloseSolution(_, _) = VSConstants.E_NOTIMPL
 
-        member __.OnQueryUnloadProject(_, _) = VSConstants.E_NOTIMPL       
+        member _.OnQueryUnloadProject(_, _) = VSConstants.E_NOTIMPL       
 
 [<Microsoft.CodeAnalysis.Host.Mef.ExportWorkspaceServiceFactory(typeof<EditorOptions>, Microsoft.CodeAnalysis.Host.Mef.ServiceLayer.Default)>]
 type internal FSharpSettingsFactory
     [<Composition.ImportingConstructor>] (settings: EditorOptions) =
     interface Microsoft.CodeAnalysis.Host.Mef.IWorkspaceServiceFactory with
-        member __.CreateService(_) = upcast settings
+        member _.CreateService(_) = upcast settings
 
 [<Guid(FSharpConstants.packageGuidString)>]
 [<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>,
@@ -226,14 +223,14 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
 
-    override __.ContentTypeName = FSharpConstants.FSharpContentTypeName
-    override __.LanguageName = FSharpConstants.FSharpLanguageName
-    override __.RoslynLanguageName = FSharpConstants.FSharpLanguageName
+    override _.ContentTypeName = FSharpConstants.FSharpContentTypeName
+    override _.LanguageName = FSharpConstants.FSharpLanguageName
+    override _.RoslynLanguageName = FSharpConstants.FSharpLanguageName
 
-    override __.LanguageServiceId = new Guid(FSharpConstants.languageServiceGuidString)
-    override __.DebuggerLanguageId = DebuggerEnvironment.GetLanguageID()
+    override _.LanguageServiceId = new Guid(FSharpConstants.languageServiceGuidString)
+    override _.DebuggerLanguageId = CompilerEnvironment.GetDebuggerLanguageID()
 
-    override __.CreateContext(_,_,_,_,_) = raise(System.NotImplementedException())
+    override _.CreateContext(_,_,_,_,_) = raise(System.NotImplementedException())
 
     override this.SetupNewTextView(textView) =
         base.SetupNewTextView(textView)

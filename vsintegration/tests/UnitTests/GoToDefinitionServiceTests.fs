@@ -12,12 +12,12 @@
 //   and capturing large amounts of structured output.
 (*
     cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\GoToDefinitionServiceTests.fs 
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Service.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\GoToDefinitionServiceTests.fs 
     .\VisualFSharp.UnitTests.exe 
 *)
 // Technique 3: 
 // 
-//    Use F# Interactive.  This only works for FSharp.Compiler.Private.dll which has a public API
+//    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
 
 namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
@@ -28,8 +28,10 @@ open NUnit.Framework
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Range
+open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Text
 open UnitTests.TestLib.LanguageService
 
 [<TestFixture>][<Category "Roslyn Services">]
@@ -58,7 +60,7 @@ module GoToDefinitionServiceTests =
             let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
             
             match declarations with
-            | FSharpFindDeclResult.DeclFound range -> return range
+            | FindDeclResult.DeclFound range -> return range
             | _ -> return! None
         }
 
@@ -74,7 +76,6 @@ module GoToDefinitionServiceTests =
             LoadTime = DateTime.MaxValue
             OriginalLoadReferences = []
             UnresolvedReferences = None
-            ExtraProjectInfo = None
             Stamp = None
         }
 

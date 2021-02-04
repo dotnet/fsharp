@@ -7,30 +7,26 @@ open System.IO
 open System.Composition
 open System.Collections.Generic
 open System.Collections.Immutable
-open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 open System.Runtime.Caching
 open System.Globalization
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.NavigateTo
-open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.PatternMatching
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.NavigateTo
 
-open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 
 type internal NavigableItem(document: Document, sourceSpan: TextSpan, glyph: Glyph, name: string, kind: string, additionalInfo: string) =
     inherit FSharpNavigableItem(glyph, ImmutableArray.Create (TaggedText(TextTags.Text, name)), document, sourceSpan)
 
-    member __.Name = name
-    member __.Kind = kind
-    member __.AdditionalInfo = additionalInfo
+    member _.Name = name
+    member _.Kind = kind
+    member _.AdditionalInfo = additionalInfo
 
 type internal NavigateToSearchResult(item: NavigableItem, matchKind: FSharpNavigateToMatchKind) =
     inherit FSharpNavigateToSearchResult(item.AdditionalInfo, item.Kind, matchKind, item.Name, item)
@@ -38,19 +34,19 @@ type internal NavigateToSearchResult(item: NavigableItem, matchKind: FSharpNavig
 module private Index =
     [<System.Diagnostics.DebuggerDisplay("{DebugString()}")>]
     type private IndexEntry(str: string, offset: int, item: NavigableItem, isOperator: bool) =
-        member __.String = str
-        member __.Offset = offset
-        member __.Length = str.Length - offset
-        member __.Item = item
-        member __.IsOperator = isOperator
+        member _.String = str
+        member _.Offset = offset
+        member _.Length = str.Length - offset
+        member _.Item = item
+        member _.IsOperator = isOperator
         member x.StartsWith (s: string) = 
             if s.Length > x.Length then false
             else CultureInfo.CurrentCulture.CompareInfo.IndexOf(str, s, offset, s.Length, CompareOptions.IgnoreCase) = offset
-        member private __.DebugString() = sprintf "%s (offset %d) (%s)" (str.Substring offset) offset str
+        member private _.DebugString() = sprintf "%s (offset %d) (%s)" (str.Substring offset) offset str
 
     let private indexEntryComparer =
         { new IComparer<IndexEntry> with
-            member __.Compare(a, b) = 
+            member _.Compare(a, b) = 
                 let res = CultureInfo.CurrentCulture.CompareInfo.Compare(a.String, a.Offset, b.String, b.Offset, CompareOptions.IgnoreCase)
                 if res = 0 then a.Offset.CompareTo(b.Offset) else res }
 
@@ -60,13 +56,13 @@ module private Index =
 
     let private navigateToSearchResultComparer =
         { new IEqualityComparer<FSharpNavigateToSearchResult> with 
-            member __.Equals(x: FSharpNavigateToSearchResult, y: FSharpNavigateToSearchResult) =
+            member _.Equals(x: FSharpNavigateToSearchResult, y: FSharpNavigateToSearchResult) =
                 match x, y with
                 | null, _ | _, null -> false
                 | _ -> x.NavigableItem.Document.Id = y.NavigableItem.Document.Id &&
                        x.NavigableItem.SourceSpan = y.NavigableItem.SourceSpan
             
-            member __.GetHashCode(x: FSharpNavigateToSearchResult) =
+            member _.GetHashCode(x: FSharpNavigateToSearchResult) =
                 if isNull x then 0
                 else 23 * (17 * 23 + x.NavigableItem.Document.Id.GetHashCode()) + x.NavigableItem.SourceSpan.GetHashCode() }
 
@@ -84,7 +80,7 @@ module private Index =
 
         entries.Sort(indexEntryComparer)
         { new IIndexedNavigableItems with
-              member __.Find (searchValue) =
+              member _.Find (searchValue) =
                   let result = HashSet(navigateToSearchResultComparer)
                   if entries.Count > 0 then 
                      let entryToFind = IndexEntry(searchValue, 0, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
@@ -116,48 +112,48 @@ module private Index =
                          handle pos
                          pos <- pos + 1
                   Seq.toArray result 
-              member __.AllItems = items }
+              member _.AllItems = items }
 
 [<AutoOpen>]
 module private Utils =
 
     let navigateToItemKindToRoslynKind = function
-        | NavigateTo.NavigableItemKind.Module -> FSharpNavigateToItemKind.Module
-        | NavigateTo.NavigableItemKind.ModuleAbbreviation -> FSharpNavigateToItemKind.Module
-        | NavigateTo.NavigableItemKind.Exception -> FSharpNavigateToItemKind.Class
-        | NavigateTo.NavigableItemKind.Type -> FSharpNavigateToItemKind.Class
-        | NavigateTo.NavigableItemKind.ModuleValue -> FSharpNavigateToItemKind.Field
-        | NavigateTo.NavigableItemKind.Field -> FSharpNavigateToItemKind.Field
-        | NavigateTo.NavigableItemKind.Property -> FSharpNavigateToItemKind.Property
-        | NavigateTo.NavigableItemKind.Constructor -> FSharpNavigateToItemKind.Method
-        | NavigateTo.NavigableItemKind.Member -> FSharpNavigateToItemKind.Method
-        | NavigateTo.NavigableItemKind.EnumCase -> FSharpNavigateToItemKind.EnumItem
-        | NavigateTo.NavigableItemKind.UnionCase -> FSharpNavigateToItemKind.EnumItem
+        | NavigableItemKind.Module -> FSharpNavigateToItemKind.Module
+        | NavigableItemKind.ModuleAbbreviation -> FSharpNavigateToItemKind.Module
+        | NavigableItemKind.Exception -> FSharpNavigateToItemKind.Class
+        | NavigableItemKind.Type -> FSharpNavigateToItemKind.Class
+        | NavigableItemKind.ModuleValue -> FSharpNavigateToItemKind.Field
+        | NavigableItemKind.Field -> FSharpNavigateToItemKind.Field
+        | NavigableItemKind.Property -> FSharpNavigateToItemKind.Property
+        | NavigableItemKind.Constructor -> FSharpNavigateToItemKind.Method
+        | NavigableItemKind.Member -> FSharpNavigateToItemKind.Method
+        | NavigableItemKind.EnumCase -> FSharpNavigateToItemKind.EnumItem
+        | NavigableItemKind.UnionCase -> FSharpNavigateToItemKind.EnumItem
 
     let navigateToItemKindToGlyph = function
-        | NavigateTo.NavigableItemKind.Module -> Glyph.ModulePublic
-        | NavigateTo.NavigableItemKind.ModuleAbbreviation -> Glyph.ModulePublic
-        | NavigateTo.NavigableItemKind.Exception -> Glyph.ClassPublic
-        | NavigateTo.NavigableItemKind.Type -> Glyph.ClassPublic
-        | NavigateTo.NavigableItemKind.ModuleValue -> Glyph.FieldPublic
-        | NavigateTo.NavigableItemKind.Field -> Glyph.FieldPublic
-        | NavigateTo.NavigableItemKind.Property -> Glyph.PropertyPublic
-        | NavigateTo.NavigableItemKind.Constructor -> Glyph.MethodPublic
-        | NavigateTo.NavigableItemKind.Member -> Glyph.MethodPublic
-        | NavigateTo.NavigableItemKind.EnumCase -> Glyph.EnumPublic
-        | NavigateTo.NavigableItemKind.UnionCase -> Glyph.EnumPublic
+        | NavigableItemKind.Module -> Glyph.ModulePublic
+        | NavigableItemKind.ModuleAbbreviation -> Glyph.ModulePublic
+        | NavigableItemKind.Exception -> Glyph.ClassPublic
+        | NavigableItemKind.Type -> Glyph.ClassPublic
+        | NavigableItemKind.ModuleValue -> Glyph.FieldPublic
+        | NavigableItemKind.Field -> Glyph.FieldPublic
+        | NavigableItemKind.Property -> Glyph.PropertyPublic
+        | NavigableItemKind.Constructor -> Glyph.MethodPublic
+        | NavigableItemKind.Member -> Glyph.MethodPublic
+        | NavigableItemKind.EnumCase -> Glyph.EnumPublic
+        | NavigableItemKind.UnionCase -> Glyph.EnumPublic
 
-    let containerToString (container: NavigateTo.Container) (project: Project) =
+    let containerToString (container: NavigableContainer) (project: Project) =
         let typeAsString =
             match container.Type with
-            | NavigateTo.ContainerType.File -> "project "
-            | NavigateTo.ContainerType.Namespace -> "namespace "
-            | NavigateTo.ContainerType.Module -> "module "
-            | NavigateTo.ContainerType.Exception -> "exception "
-            | NavigateTo.ContainerType.Type -> "type "
+            | NavigableContainerType.File -> "project "
+            | NavigableContainerType.Namespace -> "namespace "
+            | NavigableContainerType.Module -> "module "
+            | NavigableContainerType.Exception -> "exception "
+            | NavigableContainerType.Type -> "type "
         let name =
             match container.Type with
-            | NavigateTo.ContainerType.File ->
+            | NavigableContainerType.File ->
                 (Path.GetFileNameWithoutExtension project.Name) + ", " + (Path.GetFileName container.Name)
             | _ -> container.Name
         typeAsString + name
@@ -178,14 +174,14 @@ type internal FSharpNavigateToSearchService
     // Save the backing navigation data in a memory cache held in a sliding window
     let itemsByDocumentId = new MemoryCache("FSharp.Editor.FSharpNavigateToSearchService")
 
-    let getNavigableItems(document: Document, parsingOptions: FSharpParsingOptions, kinds: IImmutableSet<string>) =
+    let GetNavigableItems(document: Document, parsingOptions: FSharpParsingOptions, kinds: IImmutableSet<string>) =
         async {
             let! cancellationToken = Async.CancellationToken
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! parseResults = checkerProvider.Checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions)
 
             let navItems parsedInput =
-                NavigateTo.getNavigableItems parsedInput
+                NavigateTo.GetNavigableItems parsedInput
                 |> Array.filter (fun i -> kinds.Contains(navigateToItemKindToRoslynKind i.Kind))
 
             return 
@@ -211,7 +207,7 @@ type internal FSharpNavigateToSearchService
             match itemsByDocumentId.Get(key) with
             | :? PerDocumentSavedData as data when data.Hash = textVersionHash -> return data.Items
             | _ -> 
-                let! items = getNavigableItems(document, parsingOptions, kinds)
+                let! items = GetNavigableItems(document, parsingOptions, kinds)
                 let indexedItems = Index.build items
                 let data = { Hash= textVersionHash; Items = indexedItems }
                 let cacheItem = CacheItem(key, data)
@@ -228,7 +224,7 @@ type internal FSharpNavigateToSearchService
         | _ -> FSharpNavigateToMatchKind.Regular
 
     interface IFSharpNavigateToSearchService with
-        member __.SearchProjectAsync(project, _priorityDocuments, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
+        member _.SearchProjectAsync(project, _priorityDocuments, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
             asyncMaybe {
                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsByProject(project, cancellationToken)
                 let! items =
@@ -260,7 +256,7 @@ type internal FSharpNavigateToSearchService
             |> Async.map Seq.toImmutableArray
             |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
 
-        member __.SearchDocumentAsync(document, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
+        member _.SearchDocumentAsync(document, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
             asyncMaybe {
                 let! parsingOptions, _, _ = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken, userOpName)
                 let! items = getCachedIndexedNavigableItems(document, parsingOptions, kinds) |> liftAsync
@@ -270,6 +266,6 @@ type internal FSharpNavigateToSearchService
             |> Async.map Seq.toImmutableArray
             |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
 
-        member __.KindsProvided = kindsProvided
+        member _.KindsProvided = kindsProvided
 
-        member __.CanFilter = true
+        member _.CanFilter = true

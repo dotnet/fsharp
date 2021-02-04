@@ -9,10 +9,14 @@ module Tests.Service.ServiceUntypedParseTests
 
 open System.IO
 open FsUnit
-open FSharp.Compiler.Range
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Position
 open NUnit.Framework
 
 let [<Literal>] private Marker = "(* marker *)"
@@ -42,7 +46,7 @@ let private (=>) (source: string) (expected: CompletionContext option) =
         match parseSourceCode("C:\\test.fs", source) with
         | None -> failwith "No parse tree"
         | Some parseTree ->
-            let actual = UntypedParseImpl.TryGetCompletionContext(markerPos, parseTree, lines.[Line.toZ markerPos.Line])
+            let actual = ParsedInput.TryGetCompletionContext(markerPos, parseTree, lines.[Line.toZ markerPos.Line])
             try Assert.AreEqual(expected, actual)
             with e ->
                 printfn "ParseTree: %A" parseTree
@@ -133,7 +137,7 @@ let foo8 = ()
     let (SynModuleOrNamespace (decls = decls)) = parseSourceCodeAndGetModule source
     decls |> List.map (fun decl ->
         match decl with
-        | SynModuleDecl.Let (_, [Binding (attributes = attributeLists)], _) ->
+        | SynModuleDecl.Let (_, [SynBinding (attributes = attributeLists)], _) ->
             attributeLists |> List.map (fun list -> list.Attributes.Length, getRangeCoords list.Range)
         | _ -> failwith "Could not get binding")
     |> shouldEqual
@@ -198,7 +202,7 @@ module TypeMemberRanges =
     let getTypeMemberRange source =
         let (SynModuleOrNamespace (decls = decls)) = parseSourceCodeAndGetModule source
         match decls with
-        | [ SynModuleDecl.Types ([ TypeDefn (_, SynTypeDefnRepr.ObjectModel (_, memberDecls, _), _, _) ], _) ] ->
+        | [ SynModuleDecl.Types ([ SynTypeDefn (_, SynTypeDefnRepr.ObjectModel (_, memberDecls, _), _, _, _) ], _) ] ->
             memberDecls |> List.map (fun memberDecl -> getRangeCoords memberDecl.Range)
         | _ -> failwith "Could not get member"
 
@@ -671,6 +675,37 @@ add2 x y
         Assert.True(parseFileResults.IsPosContainedInApplication (mkPos 3 6), "Pos should be in application")
 
     [<Test>]
+    let ``IsPosContainedInApplication - inside computation expression - no``() =
+        let source = """
+async {
+    sqrt
+}
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.False(parseFileResults.IsPosContainedInApplication (mkPos 2 5), "Pos should not be in application")
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside CE return - no``() =
+        let source = """
+async {
+    return sqrt
+}
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.False(parseFileResults.IsPosContainedInApplication (mkPos 2 5), "Pos should not be in application")
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside CE - yes``() =
+        let source = """
+let myAdd x y = x + y
+async {
+    return myAdd 1
+}
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.False(parseFileResults.IsPosContainedInApplication (mkPos 3 18), "Pos should not be in application")
+
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - no application``() =
         let source = """
 let add2 x y = x + y
@@ -786,6 +821,43 @@ add2 1 2
             |> tups
             |> shouldEqual ((3, 17), (3, 18))
 
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside CE``() =
+        let source = """
+let myAdd x y = x + y
+async {
+    return myAdd 1 
+}
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 4 18)
+        match res with
+        | None -> Assert.Fail("Expected 'myAdd' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((4, 11), (4, 16))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda``() =
+        let source = """
+let add n1 n2 = n1 + n2
+let lst = [1; 2; 3]
+let mapped = 
+    lst |> List.map (fun n ->
+        let sum = add
+        n.ToString()
+    )
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 6 21)
+        match res with
+        | None -> Assert.Fail("Expected 'add' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((6, 18), (6, 21))
+
 module PipelinesAndArgs =
     [<Test>]
     let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - No pipeline, no infix app``() =
@@ -847,6 +919,21 @@ let square x = x *
             |> shouldEqual ("op_PipeRight3", 3)
         | None ->
             Assert.Fail("No pipeline found")
+
+    [<Test>]
+    let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - none when inside lambda``() =
+        let source = """
+let add n1 n2 = n1 + n2
+let lst = [1; 2; 3]
+let mapped = 
+    lst |> List.map (fun n ->
+        let sum = add 1
+        n.ToString()
+    )
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 6 22)
+        Assert.IsTrue(res.IsNone, "Inside a lambda but counted the pipeline outside of that lambda.")
 
 [<Test>]
 let ``TryRangeOfExprInYieldOrReturn - not contained``() =

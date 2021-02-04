@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.AbstractIL.Extensions.ILX.IlxSettings 
+module internal FSharp.Compiler.AbstractIL.ILX.IlxSettings 
 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Internal 
+open Internal.Utilities
 
 type IlxCallImplementation = 
   | VirtEntriesVirtCode

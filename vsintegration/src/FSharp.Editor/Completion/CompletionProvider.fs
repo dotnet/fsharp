@@ -16,9 +16,11 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 
 open Microsoft.VisualStudio.Shell
 
-open FSharp.Compiler
-open FSharp.Compiler.Range
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger
 
@@ -36,7 +38,7 @@ type internal FSharpCompletionProvider
     static let userOpName = "CompletionProvider"
     // Save the backing data in a cache, we need to save for at least the length of the completion session
     // See https://github.com/Microsoft/visualfsharp/issues/4714
-    static let mutable declarationItems: FSharpDeclarationListItem[] = [||]
+    static let mutable declarationItems: DeclarationListItem[] = [||]
     static let [<Literal>] NameInCodePropName = "NameInCode"
     static let [<Literal>] FullNamePropName = "FullName"
     static let [<Literal>] IsExtensionMemberPropName = "IsExtensionMember"
@@ -115,13 +117,13 @@ type internal FSharpCompletionProvider
             let caretLine = textLines.GetLineFromPosition(caretPosition)
             let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
             let caretLineColumn = caretLinePos.Character
-            let partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
+            let line = caretLine.ToString()
+            let partialName = QuickParse.GetPartialLongNameEx(line, caretLineColumn - 1) 
             let getAllSymbols() =
                 getAllSymbols checkFileResults 
                 |> List.filter (fun assemblySymbol ->
                      assemblySymbol.FullName.Contains "." && not (PrettyNaming.IsOperatorName assemblySymbol.Symbol.DisplayName))
-            let declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLine.ToString(), 
-                                                                       partialName, getAllSymbols)
+            let declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, line, partialName, getAllSymbols)
             let results = List<Completion.CompletionItem>()
             
             declarationItems <-
@@ -166,7 +168,7 @@ type internal FSharpCompletionProvider
                         
                 let completionItem =
                     match declarationItem.Kind with
-                    | FSharpCompletionItemKind.Method (isExtension = true) ->
+                    | CompletionItemKind.Method (isExtension = true) ->
                             completionItem.AddProperty(IsExtensionMemberPropName, "")
                     | _ -> completionItem
                 
@@ -193,12 +195,10 @@ type internal FSharpCompletionProvider
 
             
             if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
-                let lineStr = textLines.[caretLinePos.Line].ToString()
-
                 let completionContext =
                     parseResults.ParseTree 
                     |> Option.bind (fun parseTree ->
-                         UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, parseTree, lineStr))
+                         ParsedInput.TryGetCompletionContext(Position.fromZ caretLinePos.Line caretLinePos.Character, parseTree, line))
 
                 match completionContext with
                 | None -> results.AddRange(keywordCompletionItems)
@@ -245,7 +245,7 @@ type internal FSharpCompletionProvider
                 let completionItemIndex = int completionItemIndexStr
                 if completionItemIndex < declarationItems.Length then
                     let declarationItem = declarationItems.[completionItemIndex]
-                    let! description = declarationItem.StructuredDescriptionTextAsync
+                    let description = declarationItem.Description
                     let documentation = List()
                     let collector = RoslynHelpers.CollectTaggedText documentation
                     // mix main description and xmldoc by using one collector
@@ -302,7 +302,7 @@ type internal FSharpCompletionProvider
                         if settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then OpenStatementInsertionPoint.TopLevel
                         else OpenStatementInsertionPoint.Nearest
 
-                    let ctx = ParsedInput.findNearestPointToInsertOpenDeclaration line.LineNumber parsedInput fullNameIdents insertionPoint
+                    let ctx = ParsedInput.FindNearestPointToInsertOpenDeclaration line.LineNumber parsedInput fullNameIdents insertionPoint
                     let finalSourceText, changedSpanStartPos = OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
                     let fullChangingSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End)
                     let changedSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End + (finalSourceText.Length - sourceText.Length))

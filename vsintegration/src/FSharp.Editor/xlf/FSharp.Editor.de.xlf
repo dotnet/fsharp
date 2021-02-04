@@ -69,7 +69,7 @@
       </trans-unit>
       <trans-unit id="MakeOuterBindingRecursive">
         <source>Make '{0}' recursive</source>
-        <target state="new">Make '{0}' recursive</target>
+        <target state="translated">"{0}" als rekursiv festlegen</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -79,17 +79,17 @@
       </trans-unit>
       <trans-unit id="RemoveReturn">
         <source>Remove 'return'</source>
-        <target state="new">Remove 'return'</target>
+        <target state="translated">"return" entfernen</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
-        <target state="new">Remove 'return!'</target>
+        <target state="translated">"return!" entfernen</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveYield">
         <source>Remove 'yield'</source>
-        <target state="new">Remove 'yield'</target>
+        <target state="translated">"yield" entfernen</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveYieldBang">
@@ -229,7 +229,7 @@
       </trans-unit>
       <trans-unit id="UseFSharpLambda">
         <source>Use F# lambda syntax</source>
-        <target state="new">Use F# lambda syntax</target>
+        <target state="translated">F#-Lambdasyntax verwenden</target>
         <note />
       </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">

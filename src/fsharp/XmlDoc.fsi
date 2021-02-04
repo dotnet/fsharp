@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public FSharp.Compiler.XmlDoc
+namespace FSharp.Compiler.Syntax
 
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
 
 /// Represents collected XmlDoc lines
 [<Class>]
-type XmlDoc =
+type public XmlDoc =
 
     new: unprocessedLines:string [] * range:range -> XmlDoc
 
@@ -38,17 +38,17 @@ type internal XmlDocCollector =
 
     new: unit -> XmlDocCollector
 
-    member AddGrabPoint: pos:pos -> unit
+    member AddGrabPoint: pos: pos -> unit
 
     member AddXmlDocLine: line:string * range:range -> unit
 
-    member LinesBefore: grabPointPos:pos -> (string * range) []
+    member LinesBefore: grabPointPos: pos -> (string * range) []
   
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
 [<Sealed>]
 type public PreXmlDoc =
 
-    static member internal CreateFromGrabPoint: collector:XmlDocCollector * grabPointPos:pos -> PreXmlDoc
+    static member internal CreateFromGrabPoint: collector:XmlDocCollector * grabPointPos: pos -> PreXmlDoc
 
     static member Merge: a:PreXmlDoc -> b:PreXmlDoc -> PreXmlDoc
     

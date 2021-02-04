@@ -11,7 +11,7 @@
 //   and capturing large amounts of structured output.
 (*
     cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\CompletionProviderTests.fs 
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Service.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\CompletionProviderTests.fs 
     .\VisualFSharp.UnitTests.exe 
 *)
 // Technique 3: 
@@ -31,7 +31,7 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
@@ -46,7 +46,6 @@ let internal projectOptions opts = {
     LoadTime = DateTime.MaxValue
     OriginalLoadReferences = []
     UnresolvedReferences = None
-    ExtraProjectInfo = None
     Stamp = None
 }
 
@@ -356,8 +355,8 @@ let x = $"1 not the same as {System.Int32.MaxValue} is it"
 let ``Class instance members are ordered according to their kind and where they are defined (simple case, by a variable)``() =
     let fileContents = """
 type Base() =
-    member __.BaseMethod() = 1
-    member __.BaseProp = 1
+    member _.BaseMethod() = 1
+    member _.BaseProp = 1
 
 type Class() = 
     inherit Base()
@@ -374,8 +373,8 @@ x.
 let ``Class instance members are ordered according to their kind and where they are defined (simple case, by a constructor)``() =
     let fileContents = """
 type Base() =
-    member __.BaseMethod() = 1
-    member __.BaseProp = 1
+    member _.BaseMethod() = 1
+    member _.BaseProp = 1
 
 type Class() = 
     inherit Base()
@@ -410,8 +409,8 @@ let ``Class instance members are ordered according to their kind and where they 
     let fileContents = """
 type Base() =
     inherit System.Collections.Generic.List<int>
-    member __.BaseMethod() = 1
-    member __.BaseProp = 1
+    member _.BaseMethod() = 1
+    member _.BaseProp = 1
 
 type Class() = 
     inherit Base()
@@ -479,8 +478,8 @@ let ``Extension methods go after everything else, extension properties are treat
 open System.Collections.Generic
 
 type List<'a> with
-    member __.ExtensionProp = 1
-    member __.ExtensionMeth() = 1
+    member _.ExtensionProp = 1
+    member _.ExtensionMeth() = 1
 
 List().
 """

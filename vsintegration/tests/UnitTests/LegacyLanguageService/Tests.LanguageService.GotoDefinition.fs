@@ -13,6 +13,8 @@ open System.Collections.Generic
 open System.Text.RegularExpressions
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 
 [<TestFixture>]
 [<Category "LanguageService">] 
@@ -1343,7 +1345,7 @@ type UsingMSBuild()  =
     member this.GetCompleteIdTest tolerate (s : string)(exp : string option) : unit =
       let n = s.IndexOf '$'
       let s = s.Remove (n, 1)
-      match (FSharp.Compiler.QuickParse.GetCompleteIdentifierIsland tolerate s n, exp) with
+      match (QuickParse.GetCompleteIdentifierIsland tolerate s n, exp) with
       | (Some (s1, _, _), Some s2) -> 
         printfn "%s" "Received result, as expected."
         Assert.AreEqual (s1, s2)

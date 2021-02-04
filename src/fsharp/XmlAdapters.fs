@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.XmlAdapters
+module internal Internal.Utilities.XmlAdapters
 
 //Replacement for: System.Security.SecurityElement.Escape(line) All platforms
 let s_escapeChars = [| '<'; '>'; '\"'; '\''; '&' |]
