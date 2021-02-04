@@ -2768,8 +2768,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMemberKindPropertyGetSetNotExpected">
-        <source>MemberKind.PropertyGetSet only expected in parse trees</source>
-        <target state="translated">只有剖析樹狀目錄中需要 MemberKind.PropertyGetSet</target>
+        <source>SynMemberKind.PropertyGetSet only expected in parse trees</source>
+        <target state="needs-review-translation">只有剖析樹狀目錄中需要 MemberKind.PropertyGetSet</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainValues">

@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public FSharp.Compiler.XmlDoc
+namespace FSharp.Compiler.Syntax
 
 open System
 open System.Xml.Linq
+open Internal.Utilities.Library
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
 /// Represents collected XmlDoc lines
@@ -22,7 +22,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
             elif lineAT.StartsWithOrdinal("<") then lines
             else 
                 ["<summary>"] @
-                (lines |> List.map FSharp.Compiler.XmlAdapters.escape) @
+                (lines |> List.map Internal.Utilities.XmlAdapters.escape) @
                 ["</summary>"]
 
     /// Get the lines before insertion of implicit summary tags and encoding

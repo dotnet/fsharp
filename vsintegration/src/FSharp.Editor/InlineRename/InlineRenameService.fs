@@ -9,14 +9,15 @@ open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
+open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Tokenization
 open Symbols
 
 type internal FailureInlineRenameInfo private () =
@@ -159,7 +160,7 @@ type internal InlineRenameService
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
 
-            let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+            let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
             let triggerSpan = Tokenizer.fixupSpan(sourceText, span)
 
             return InlineRenameInfo(checker, projectInfoManager, document, triggerSpan, symbol, symbolUse, declLoc, checkFileResults) :> IFSharpInlineRenameInfo

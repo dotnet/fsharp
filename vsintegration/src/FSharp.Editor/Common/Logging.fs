@@ -20,7 +20,6 @@ type LogType =
         | Warn      -> "Warning"
         | Error     -> "Error"
 
-
 module Config =
     let [<Literal>] fsharpOutputGuidString = "E721F849-446C-458C-997A-99E14A04CFD3"
     let fsharpOutputGuid = Guid fsharpOutputGuidString

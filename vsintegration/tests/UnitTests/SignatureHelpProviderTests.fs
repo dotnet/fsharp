@@ -12,8 +12,8 @@ open VisualFSharp.UnitTests.Roslyn
 
 open UnitTests.TestLib.LanguageService
 
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
-open FSharp.Compiler.SourceCodeServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
@@ -33,7 +33,6 @@ let internal projectOptions = {
     LoadTime = DateTime.MaxValue
     OriginalLoadReferences = []
     UnresolvedReferences = None
-    ExtraProjectInfo = None
     Stamp = None
 }
 
@@ -63,7 +62,7 @@ let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:in
                 |> Async.RunSynchronously
             x.Value
 
-        let paramInfoLocations = parseResults.FindNoteworthyParamInfoLocations(Pos.fromZ caretLinePos.Line caretLineColumn).Value
+        let paramInfoLocations = parseResults.FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn).Value
         let triggered =
             FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(
                 caretLinePos,
@@ -117,7 +116,7 @@ let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (e
         x.Value
 
     let actual = 
-        let paramInfoLocations = parseResults.FindNoteworthyParamInfoLocations(Pos.fromZ caretLinePos.Line caretLineColumn)
+        let paramInfoLocations = parseResults.FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn)
         match paramInfoLocations with
         | None -> None
         | Some paramInfoLocations ->

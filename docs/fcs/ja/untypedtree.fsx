@@ -37,11 +37,11 @@
 
 インタラクティブチェッカーを使用するには、
 `FSharp.Compiler.Service.dll` への参照を追加した後、
-`SourceCodeServices` 名前空間をオープンします：
+`CodeAnalysis` 名前空間をオープンします：
 *)
 #r "FSharp.Compiler.Service.dll"
 open System
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 (**
 
@@ -102,7 +102,7 @@ ASTを理解するには
 
 ASTに関連する要素は以下の名前空間に含まれています:
 *)
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 (**
 
 ASTを処理する場合、異なる文法的要素に対するパターンマッチを行うような
@@ -164,8 +164,8 @@ let rec visitExpression = function
       // ('let .. = .. and .. = .. in ...' に対しては複数回走査されることがある)
       printfn "以下のバインディングを含むLetOrUse:"
       for binding in bindings do
-        let (Binding(access, kind, inlin, mutabl, attrs, xmlDoc, 
-                     data, pat, retInfo, init, m, sp)) = binding
+        let (SynBinding(access, kind, inlin, mutabl, attrs, xmlDoc, 
+                        data, pat, retInfo, init, m, sp)) = binding
         visitPattern pat 
         visitExpression init
       // 本体の式を走査
@@ -199,8 +199,8 @@ let visitDeclarations decls =
         // (visitExpressionで処理したような)式としてのletバインディングと
         // 似ているが、本体を持たない
         for binding in bindings do
-          let (Binding(access, kind, inlin, mutabl, attrs, xmlDoc, 
-                       data, pat, retInfo, body, m, sp)) = binding
+          let (SynBinding(access, kind, inlin, mutabl, attrs, xmlDoc, 
+                          data, pat, retInfo, body, m, sp)) = binding
           visitPattern pat 
           visitExpression body         
     | _ -> printfn " - サポート対象外の宣言: %A" declaration

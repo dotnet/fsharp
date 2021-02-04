@@ -11,7 +11,7 @@ open System.Threading
 open Microsoft.CodeAnalysis
 open System.Runtime.Caching
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
 type private PerDocumentSavedData = { Hash: int; Diagnostics: ImmutableArray<Diagnostic> }

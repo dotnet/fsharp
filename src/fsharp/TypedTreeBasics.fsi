@@ -6,7 +6,9 @@
 
 module internal FSharp.Compiler.TypedTreeBasics
 
-open FSharp.Compiler.AbstractIL.IL 
+open Internal.Utilities.Library.Extras
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
@@ -79,15 +81,15 @@ val mkRecdFieldRef: tcref:TyconRef -> f:string -> RecdFieldRef
 
 val mkUnionCaseRef: tcref:TyconRef -> c:string -> UnionCaseRef
 
-val ERefLocal: x:Lib.NonNullSlot<Entity> -> EntityRef
+val ERefLocal: x:NonNullSlot<Entity> -> EntityRef
 
 val ERefNonLocal: x:NonLocalEntityRef -> EntityRef
 
-val ERefNonLocalPreResolved: x:Lib.NonNullSlot<Entity> -> xref:NonLocalEntityRef -> EntityRef
+val ERefNonLocalPreResolved: x:NonNullSlot<Entity> -> xref:NonLocalEntityRef -> EntityRef
 
-val ( |ERefLocal|ERefNonLocal| ): x:EntityRef -> Choice<Lib.NonNullSlot<Entity>,NonLocalEntityRef>
+val ( |ERefLocal|ERefNonLocal| ): x:EntityRef -> Choice<NonNullSlot<Entity>,NonLocalEntityRef>
 
-val mkLocalTyconRef: x:Lib.NonNullSlot<Entity> -> EntityRef
+val mkLocalTyconRef: x:NonNullSlot<Entity> -> EntityRef
 
 val mkNonLocalEntityRef: ccu:CcuThunk -> mp:string [] -> NonLocalEntityRef
 
@@ -95,24 +97,24 @@ val mkNestedNonLocalEntityRef: nleref:NonLocalEntityRef -> id:string -> NonLocal
 
 val mkNonLocalTyconRef: nleref:NonLocalEntityRef -> id:string -> EntityRef
 
-val mkNonLocalTyconRefPreResolved: x:Lib.NonNullSlot<Entity> -> nleref:NonLocalEntityRef -> id:string -> EntityRef
+val mkNonLocalTyconRefPreResolved: x:NonNullSlot<Entity> -> nleref:NonLocalEntityRef -> id:string -> EntityRef
 
 type EntityRef with
     member NestedTyconRef: x:Entity -> EntityRef
-    member RecdFieldRefInNestedTycon: tycon:Entity -> id:SyntaxTree.Ident -> RecdFieldRef
+    member RecdFieldRefInNestedTycon: tycon:Entity -> id:Ident -> RecdFieldRef
 
 /// Make a reference to a union case for type in a module or namespace
-val mkModuleUnionCaseRef: modref:ModuleOrNamespaceRef -> tycon:Entity -> uc:UnionCase -> UnionCaseRef val VRefLocal: x:Lib.NonNullSlot<Val> -> ValRef
+val mkModuleUnionCaseRef: modref:ModuleOrNamespaceRef -> tycon:Entity -> uc:UnionCase -> UnionCaseRef val VRefLocal: x:NonNullSlot<Val> -> ValRef
 
 val VRefNonLocal: x:NonLocalValOrMemberRef -> ValRef
 
-val VRefNonLocalPreResolved: x:Lib.NonNullSlot<Val> -> xref:NonLocalValOrMemberRef -> ValRef
+val VRefNonLocalPreResolved: x:NonNullSlot<Val> -> xref:NonLocalValOrMemberRef -> ValRef
 
-val ( |VRefLocal|VRefNonLocal| ): x:ValRef -> Choice<Lib.NonNullSlot<Val>,NonLocalValOrMemberRef>
+val ( |VRefLocal|VRefNonLocal| ): x:ValRef -> Choice<NonNullSlot<Val>,NonLocalValOrMemberRef>
 
 val mkNonLocalValRef: mp:NonLocalEntityRef -> id:ValLinkageFullKey -> ValRef
 
-val mkNonLocalValRefPreResolved: x:Lib.NonNullSlot<Val> -> mp:NonLocalEntityRef -> id:ValLinkageFullKey -> ValRef
+val mkNonLocalValRefPreResolved: x:NonNullSlot<Val> -> mp:NonLocalEntityRef -> id:ValLinkageFullKey -> ValRef
 
 val ccuOfValRef: vref:ValRef -> CcuThunk option
 

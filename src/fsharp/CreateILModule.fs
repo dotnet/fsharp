@@ -7,14 +7,11 @@ open System.IO
 open System.Reflection
 
 open Internal.Utilities
-
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.Utils
-open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
+open FSharp.Compiler.AbstractIL.StrongNameSign
 open FSharp.Compiler.BinaryResourceFormats
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
@@ -22,18 +19,14 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IlxGen
-open FSharp.Compiler.Lib
+open FSharp.Compiler.IO
 open FSharp.Compiler.OptimizeInputs
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
-//----------------------------------------------------------------------------
-// Helpers for finding attributes
-//----------------------------------------------------------------------------
-
+/// Helpers for finding attributes
 module AttributeHelpers = 
 
     /// Try to find an attribute that takes a string argument
@@ -62,7 +55,7 @@ module AttributeHelpers =
         | _ -> None
 
     let (|ILVersion|_|) (versionString: string) =
-        try Some (IL.parseILVersion versionString)
+        try Some (parseILVersion versionString)
         with e -> 
             None
 

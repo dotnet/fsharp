@@ -26,7 +26,6 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.TextManager.Interop
 
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 
 module internal MetadataAsSource =

@@ -1,80 +1,92 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Syntax
 
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
-module AstTraversal = 
-  val rangeContainsPosLeftEdgeInclusive : m1:range -> p:pos -> bool
-  val rangeContainsPosEdgesExclusive : m1:range -> p:pos -> bool
-  val rangeContainsPosLeftEdgeExclusiveAndRightEdgeInclusive : m1:range -> p:pos -> bool
+/// Used to track route during traversal of syntax using SyntaxTraversal.Traverse
+[<RequireQualifiedAccess>]
+type SyntaxNode =
+    | SynPat of SynPat
+    | SynType of SynType
+    | SynExpr of SynExpr
+    | SynModule of SynModuleDecl
+    | SynModuleOrNamespace of SynModuleOrNamespace
+    | SynTypeDefn of SynTypeDefn
+    | SynMemberDefn of SynMemberDefn
+    | SynMatchClause of SynMatchClause
+    | SynBinding of SynBinding
 
-  [<RequireQualifiedAccess>]
-  type TraverseStep =
-    | Expr of SynExpr
-    | Module of SynModuleDecl
-    | ModuleOrNamespace of SynModuleOrNamespace
-    | TypeDefn of SynTypeDefn
-    | MemberDefn of SynMemberDefn
-    | MatchClause of SynMatchClause
-    | Binding of SynBinding
+type SyntaxVisitorPath = SyntaxNode list
 
-  type TraversePath = TraverseStep list
+[<AbstractClass>]
+type SyntaxVisitorBase<'T> =
+      new: unit -> SyntaxVisitorBase<'T>
 
-  [<AbstractClass>]
-  type AstVisitorBase<'T> =
-      new : unit -> AstVisitorBase<'T>
+      default VisitBinding: path: SyntaxVisitorPath * defaultTraverse: (SynBinding -> 'T option) * synBinding: SynBinding -> 'T option
+      abstract VisitBinding: path: SyntaxVisitorPath * defaultTraverse: (SynBinding -> 'T option) * synBinding: SynBinding -> 'T option
 
-      default VisitBinding : defaultTraverse:(SynBinding -> 'T option) * binding:SynBinding -> 'T option
-      abstract VisitBinding : (SynBinding -> 'T option) * SynBinding -> 'T option
+      default VisitComponentInfo: path: SyntaxVisitorPath * synComponentInfo: SynComponentInfo -> 'T option
+      abstract VisitComponentInfo: path: SyntaxVisitorPath * synComponentInfo: SynComponentInfo -> 'T option
 
-      default VisitComponentInfo : SynComponentInfo -> 'T option
-      abstract member VisitComponentInfo : SynComponentInfo -> 'T option
+      /// Controls the behavior when a SynExpr is reached; it can just do 
+      ///          defaultTraverse(expr)      if you have no special logic for this node, and want the default processing to pick which sub-node to dive deeper into
+      /// or can inject non-default behavior, which might incorporate: 
+      ///          traverseSynExpr(subExpr)   to recurse deeper on some particular sub-expression based on your own logic
+      /// path helps to track AST nodes that were passed during traversal
+      abstract VisitExpr: path: SyntaxVisitorPath * traverseSynExpr: (SynExpr -> 'T option) * defaultTraverse: (SynExpr -> 'T option) * synExpr: SynExpr -> 'T option
+      default VisitExpr: path: SyntaxVisitorPath * traverseSynExpr: (SynExpr -> 'T option) * defaultTraverse: (SynExpr -> 'T option) * synExpr: SynExpr -> 'T option
 
-      abstract member VisitExpr : TraversePath * (SynExpr -> 'T option) * (SynExpr -> 'T option) * SynExpr -> 'T option
-      default VisitHashDirective : range -> 'T option
+      abstract VisitHashDirective: path: SyntaxVisitorPath * hashDirective: ParsedHashDirective * range: range -> 'T option
+      default VisitHashDirective: path: SyntaxVisitorPath * hashDirective: ParsedHashDirective * range: range -> 'T option
 
-      abstract VisitHashDirective : range -> 'T option
-      default VisitImplicitInherit : defaultTraverse:(SynExpr -> 'T option) * _ty:SynType * expr:SynExpr * _m:range -> 'T option
+      abstract VisitImplicitInherit: path: SyntaxVisitorPath * defaultTraverse: (SynExpr -> 'T option) * inheritedType: SynType * synArgs: SynExpr * range: range -> 'T option 
+      default VisitImplicitInherit: path: SyntaxVisitorPath * defaultTraverse: (SynExpr -> 'T option) * inheritedType: SynType * synArgs: SynExpr * range: range -> 'T option
 
-      abstract member VisitImplicitInherit : (SynExpr -> 'T option) * SynType * SynExpr * range -> 'T option 
-      default VisitInheritSynMemberDefn : _componentInfo:SynComponentInfo * _typeDefnKind:SynTypeDefnKind * _synType:SynType * _members:SynMemberDefns * _range:range -> 'T option
+      abstract VisitInheritSynMemberDefn: path: SyntaxVisitorPath * componentInfo: SynComponentInfo * typeDefnKind: SynTypeDefnKind * synType: SynType * members: SynMemberDefns * range: range -> 'T option
+      default VisitInheritSynMemberDefn: path: SyntaxVisitorPath * componentInfo: SynComponentInfo * typeDefnKind: SynTypeDefnKind * synType: SynType * members: SynMemberDefns * range: range -> 'T option
 
-      abstract member VisitInheritSynMemberDefn : SynComponentInfo * SynTypeDefnKind * SynType * SynMemberDefns * range -> 'T option
-      default VisitInterfaceSynMemberDefnType : _synType:SynType -> 'T option
+      abstract VisitInterfaceSynMemberDefnType: path: SyntaxVisitorPath * synType: SynType -> 'T option
+      default VisitInterfaceSynMemberDefnType: path: SyntaxVisitorPath * synType: SynType -> 'T option
 
-      abstract member VisitInterfaceSynMemberDefnType : SynType -> 'T option
-      default VisitLetOrUse : TraversePath * (SynBinding -> 'T option) * SynBinding list * range -> 'T option
+      abstract VisitLetOrUse: path: SyntaxVisitorPath * isRecursive: bool * defaultTraverse: (SynBinding -> 'T option) * bindings: SynBinding list * range: range -> 'T option
+      default VisitLetOrUse: path: SyntaxVisitorPath * isRecursive: bool * defaultTraverse: (SynBinding -> 'T option) * bindings: SynBinding list * range: range -> 'T option
 
-      abstract member VisitLetOrUse : TraversePath * (SynBinding -> 'T option) * SynBinding list * range -> 'T option
-      default VisitMatchClause : defaultTraverse:(SynMatchClause -> 'T option) * mc:SynMatchClause -> 'T option
+      abstract VisitMatchClause: path: SyntaxVisitorPath * defaultTraverse: (SynMatchClause -> 'T option) * matchClause: SynMatchClause -> 'T option
+      default VisitMatchClause: path: SyntaxVisitorPath * defaultTraverse: (SynMatchClause -> 'T option) * matchClause: SynMatchClause -> 'T option
 
-      abstract member VisitMatchClause : (SynMatchClause -> 'T option) * SynMatchClause -> 'T option
-      default VisitModuleDecl : defaultTraverse:(SynModuleDecl -> 'T option) * decl:SynModuleDecl -> 'T option
+      abstract VisitModuleDecl: path: SyntaxVisitorPath * defaultTraverse: (SynModuleDecl -> 'T option) * synModuleDecl: SynModuleDecl -> 'T option
+      default VisitModuleDecl: path: SyntaxVisitorPath * defaultTraverse: (SynModuleDecl -> 'T option) * synModuleDecl: SynModuleDecl -> 'T option
 
-      abstract member VisitModuleDecl : (SynModuleDecl -> 'T option) * SynModuleDecl -> 'T option
-      default VisitModuleOrNamespace : SynModuleOrNamespace -> 'T option
+      abstract VisitModuleOrNamespace: path: SyntaxVisitorPath * synModuleOrNamespace: SynModuleOrNamespace -> 'T option
+      default VisitModuleOrNamespace: path: SyntaxVisitorPath * synModuleOrNamespace: SynModuleOrNamespace -> 'T option
 
-      abstract member VisitModuleOrNamespace : SynModuleOrNamespace -> 'T option
-      default VisitPat : defaultTraverse:(SynPat -> 'T option) * pat:SynPat -> 'T option
+      abstract VisitPat: path: SyntaxVisitorPath * defaultTraverse: (SynPat -> 'T option) * synPat: SynPat -> 'T option
+      default VisitPat: path: SyntaxVisitorPath * defaultTraverse: (SynPat -> 'T option) * synPat: SynPat -> 'T option
 
-      abstract member VisitPat : (SynPat -> 'T option) * SynPat -> 'T option
-      default VisitRecordField : _path:TraversePath * _copyOpt:SynExpr option * _recordField:LongIdentWithDots option -> 'T option
+      abstract VisitRecordField: path: SyntaxVisitorPath * copyOpt: SynExpr option * recordField: LongIdentWithDots option -> 'T option
+      default VisitRecordField: path: SyntaxVisitorPath * copyOpt: SynExpr option * recordField: LongIdentWithDots option -> 'T option
 
-      abstract member VisitRecordField : TraversePath * SynExpr option * LongIdentWithDots option -> 'T option
-      default VisitSimplePats : SynSimplePat list -> 'T option
+      abstract VisitSimplePats: path: SyntaxVisitorPath * synPats: SynSimplePat list -> 'T option
+      default VisitSimplePats: path: SyntaxVisitorPath * synPats: SynSimplePat list -> 'T option
 
-      abstract member VisitSimplePats : SynSimplePat list -> 'T option
-      default VisitType : defaultTraverse:(SynType -> 'T option) * ty:SynType -> 'T option
+      abstract VisitType: path: SyntaxVisitorPath * defaultTraverse: (SynType -> 'T option) * synType: SynType -> 'T option
+      default VisitType: path: SyntaxVisitorPath * defaultTraverse: (SynType -> 'T option) * synType: SynType -> 'T option
 
-      abstract member VisitType : (SynType -> 'T option) * SynType -> 'T option
-      default VisitTypeAbbrev : _ty:SynType * _m:range -> 'T option
+      abstract VisitTypeAbbrev: path: SyntaxVisitorPath * synType: SynType * range: range -> 'T option
+      default VisitTypeAbbrev: path: SyntaxVisitorPath * synType: SynType * range: range -> 'T option
 
-      abstract member VisitTypeAbbrev : SynType * range -> 'T option
+module public SyntaxTraversal = 
 
-  val dive : node:'a -> range:'b -> project:('a -> 'c) -> 'b * (unit -> 'c)
+  val internal rangeContainsPosLeftEdgeInclusive: m1: range -> p: pos -> bool
 
-  val pick : pos:pos -> outerRange:range -> _debugObj:obj -> diveResults:(range * (unit -> 'a option)) list -> 'a option
+  val internal rangeContainsPosEdgesExclusive: m1: range -> p: pos -> bool
 
-  val Traverse : pos:pos * parseTree:ParsedInput * visitor:AstVisitorBase<'T> -> 'T option
+  val internal rangeContainsPosLeftEdgeExclusiveAndRightEdgeInclusive: m1: range -> p: pos -> bool
+
+  val internal dive: node: 'a -> range: 'b -> project: ('a -> 'c) -> 'b * (unit -> 'c)
+
+  val internal pick: pos: pos -> outerRange: range -> debugObj: obj -> diveResults: (range * (unit -> 'a option)) list -> 'a option
+
+  val Traverse: pos: pos * parseTree: ParsedInput * visitor: SyntaxVisitorBase<'T> -> 'T option

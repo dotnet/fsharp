@@ -4,8 +4,8 @@
 /// constraint solving and method overload resolution.
 module internal FSharp.Compiler.TypeRelations
 
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open Internal.Utilities.Collections
+open Internal.Utilities.Library 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals

@@ -10,7 +10,9 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "UseMutationWhenValueIsMutable"); Shared>]
@@ -61,7 +63,7 @@ type internal FSharpUseMutationWhenValueIsMutableFixProvider
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsMutable || mfv.HasSetterMethod ->
                 let title = SR.UseMutationWhenValueIsMutable()
-                let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+                let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
                 let mutable pos = symbolSpan.End
                 let mutable ch = sourceText.[pos]
 

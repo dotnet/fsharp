@@ -8,14 +8,14 @@
 module Tests.Service.MultiProjectAnalysisTests
 #endif
 
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Text
-
 open NUnit.Framework
 open FsUnit
 open System.IO
 open System.Collections.Generic
-
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
 
 let toIList (x: _ array) = x :> IList<_>
@@ -211,31 +211,45 @@ let ``Test multi project 1 xmldoc`` () =
 
 
     match x1FromProject1A with 
-    | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc.Count |> shouldEqual 1
+    | :? FSharpMemberOrFunctionOrValue as v -> 
+        match v.XmlDoc with 
+        | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines.Length |> shouldEqual 1
+        | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
     
     match x3FromProject1A with 
-    | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc |> shouldEqual ([|" This is"; " x3"|] |> toIList)
+    | :? FSharpMemberOrFunctionOrValue as v ->
+        match v.XmlDoc with 
+        | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines |> shouldEqual [|" This is"; " x3"|]
+        | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
 
     match x3FromProject1A with 
-    | :? FSharpMemberOrFunctionOrValue as v -> v.ElaboratedXmlDoc |> shouldEqual ([|"<summary>"; " This is"; " x3"; "</summary>" |] |> toIList)
+    | :? FSharpMemberOrFunctionOrValue as v -> 
+        match v.XmlDoc with 
+        | FSharpXmlDoc.FromXmlText t -> t.GetElaboratedXmlLines() |> shouldEqual [|"<summary>"; " This is"; " x3"; "</summary>" |]
+        | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
 
     match x1FromProjectMultiProject with 
-    | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc.Count |> shouldEqual 1
+    | :? FSharpMemberOrFunctionOrValue as v ->
+        match v.XmlDoc with 
+        | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines.Length |> shouldEqual 1
+        | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
 
     match ctorFromProjectMultiProject with 
-    | :? FSharpMemberOrFunctionOrValue as c -> c.XmlDoc.Count |> shouldEqual 0
-    | _ -> failwith "odd symbol!"
-
-    match ctorFromProjectMultiProject with 
-    | :? FSharpMemberOrFunctionOrValue as c -> c.DeclaringEntity.Value.XmlDoc.Count |> shouldEqual 1
+    | :? FSharpMemberOrFunctionOrValue as c ->
+        match c.XmlDoc with 
+        | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines.Length |> shouldEqual 0
+        | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
 
     match case1FromProjectMultiProject with 
-    | :? FSharpUnionCase as c -> c.XmlDoc.Count |> shouldEqual 1
+    | :? FSharpUnionCase as c -> 
+        match c.XmlDoc with 
+        | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines.Length |> shouldEqual 1
+        | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
 
 //------------------------------------------------------------------------------------
@@ -456,7 +470,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject1 = 
         wholeProjectResults1.GetUsesOfSymbol(xSymbol) 
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject1
     |> shouldEqual 
@@ -464,7 +478,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject2 = 
         wholeProjectResults2.GetUsesOfSymbol(xSymbol) 
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject2 
     |> shouldEqual 
@@ -505,7 +519,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject1AfterChange1 = 
         wholeProjectResults1AfterChange1.GetUsesOfSymbol(xSymbolAfterChange1) 
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.Range)
     
     usesOfXSymbolInProject1AfterChange1
     |> shouldEqual 
@@ -513,7 +527,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject2AfterChange1 = 
         wholeProjectResults2AfterChange1.GetUsesOfSymbol(xSymbolAfterChange1) 
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject2AfterChange1 
     |> shouldEqual 
@@ -556,7 +570,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject1AfterChange2 = 
         wholeProjectResults1AfterChange2.GetUsesOfSymbol(xSymbolAfterChange2) 
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject1AfterChange2
     |> shouldEqual 
@@ -565,7 +579,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject2AfterChange2 = 
         wholeProjectResults2AfterChange2.GetUsesOfSymbol(xSymbolAfterChange2) 
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject2AfterChange2
     |> shouldEqual 
@@ -655,14 +669,14 @@ let v = Project2A.C().InternalMember // access an internal symbol
 let ``Test multi project2 errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project2B.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "multi project2 error: <<<%s>>>" e.Message
 
-    wholeProjectResults .Errors.Length |> shouldEqual 0
+    wholeProjectResults .Diagnostics.Length |> shouldEqual 0
 
 
     let wholeProjectResultsC = checker.ParseAndCheckProject(Project2C.options) |> Async.RunSynchronously
-    wholeProjectResultsC.Errors.Length |> shouldEqual 1
+    wholeProjectResultsC.Diagnostics.Length |> shouldEqual 1
 
 
 
@@ -748,10 +762,10 @@ let fizzBuzz = function
 let ``Test multi project 3 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "multi project 3 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 [<Test>]
 let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
@@ -767,8 +781,11 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
     divisibleBySymbol.ToString() |> shouldEqual "symbol DivisibleBy"
 
     let divisibleByActivePatternCase = divisibleBySymbol :?> FSharpActivePatternCase
-    divisibleByActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual [ "A parameterized active pattern of divisibility" ]
-    divisibleByActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual [ "<summary>"; "A parameterized active pattern of divisibility"; "</summary>" ]
+    match divisibleByActivePatternCase.XmlDoc with 
+    | FSharpXmlDoc.FromXmlText t ->
+        t.UnprocessedLines |> shouldEqual [| "A parameterized active pattern of divisibility" |]
+        t.GetElaboratedXmlLines() |> shouldEqual [| "<summary>"; "A parameterized active pattern of divisibility"; "</summary>" |]
+    | _ -> failwith "wrong kind"
     divisibleByActivePatternCase.XmlDocSig |> shouldEqual "M:Project3A.|DivisibleBy|_|(System.Int32,System.Int32)"
     let divisibleByGroup = divisibleByActivePatternCase.Group
     divisibleByGroup.IsTotal |> shouldEqual false
@@ -859,14 +876,12 @@ let ``Type provider project references should not throw exceptions`` () =
                 UseScriptResolutionRules = false;
                 LoadTime = System.DateTime.Now
                 UnresolvedReferences = None;
-                OriginalLoadReferences = [];
-                ExtraProjectInfo = None;})|];
+                OriginalLoadReferences = [] })|];
            IsIncompleteTypeCheckEnvironment = false;
            UseScriptResolutionRules = false;
            LoadTime = System.DateTime.Now
            UnresolvedReferences = None;
-           OriginalLoadReferences = [];
-           ExtraProjectInfo = None;}
+           OriginalLoadReferences = [];}
 
     //printfn "options: %A" options
     let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/Program.fs"    
@@ -877,12 +892,9 @@ let ``Type provider project references should not throw exceptions`` () =
         | FSharpCheckFileAnswer.Succeeded(res) -> res
         | res -> failwithf "Parsing did not finish... (%A)" res
 
-    printfn "Parse Errors: %A" fileParseResults.Errors
-    printfn "Errors: %A" fileCheckResults.Errors
-    fileCheckResults.Errors |> Array.exists (fun error -> error.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual false
-
-
-
+    printfn "Parse Errors: %A" fileParseResults.Diagnostics
+    printfn "Errors: %A" fileCheckResults.Diagnostics
+    fileCheckResults.Diagnostics |> Array.exists (fun error -> error.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual false
 
 //------------------------------------------------------------------------------------
 
@@ -955,15 +967,13 @@ let ``Projects creating generated types should not utilize cross-project-referen
                 LoadTime = System.DateTime.Now
                 UnresolvedReferences = None;
                 OriginalLoadReferences = [];
-                Stamp = None;
-                ExtraProjectInfo = None;})|];
+                Stamp = None})|];
            IsIncompleteTypeCheckEnvironment = false;
            UseScriptResolutionRules = false;
            LoadTime = System.DateTime.Now
            UnresolvedReferences = None;
            Stamp = None;
-           OriginalLoadReferences = [];
-           ExtraProjectInfo = None;}
+           OriginalLoadReferences = [] }
     //printfn "options: %A" options
     let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/Program.fs"    
     let fileSource = File.ReadAllText(fileName)
@@ -973,8 +983,8 @@ let ``Projects creating generated types should not utilize cross-project-referen
         | FSharpCheckFileAnswer.Succeeded(res) -> res
         | res -> failwithf "Parsing did not finish... (%A)" res
 
-    printfn "Parse Errors: %A" fileParseResults.Errors
-    printfn "Errors: %A" fileCheckResults.Errors
-    fileCheckResults.Errors |> Array.exists (fun error -> error.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual false
+    printfn "Parse Errors: %A" fileParseResults.Diagnostics
+    printfn "Errors: %A" fileCheckResults.Diagnostics
+    fileCheckResults.Diagnostics |> Array.exists (fun error -> error.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual false
 
 //------------------------------------------------------------------------------------

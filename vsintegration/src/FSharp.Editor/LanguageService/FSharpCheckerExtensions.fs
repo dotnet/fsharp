@@ -6,7 +6,7 @@ open System
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 
 type FSharpChecker with
     member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, sourceText: SourceText, userOpName: string) =

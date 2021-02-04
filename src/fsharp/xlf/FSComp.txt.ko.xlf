@@ -2768,8 +2768,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMemberKindPropertyGetSetNotExpected">
-        <source>MemberKind.PropertyGetSet only expected in parse trees</source>
-        <target state="translated">MemberKind.PropertyGetSet은 구문 분석 트리에만 필요합니다.</target>
+        <source>SynMemberKind.PropertyGetSet only expected in parse trees</source>
+        <target state="needs-review-translation">MemberKind.PropertyGetSet은 구문 분석 트리에만 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainValues">

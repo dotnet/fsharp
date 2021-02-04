@@ -3,12 +3,11 @@
 module internal FSharp.Compiler.CheckFormatStrings
 
 open System.Text
-open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open Internal.Utilities.Library 
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.ConstraintSolver
-open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
@@ -24,7 +23,7 @@ let copyAndFixupFormatTypar m tp =
 let lowestDefaultPriority = 0 (* See comment on TyparConstraint.DefaultsTo *)
 
 let mkFlexibleFormatTypar m tys dflt = 
-    let tp = Construct.NewTypar (TyparKind.Type,TyparRigidity.Rigid,Typar(mkSynId m "fmt",HeadTypeStaticReq,true),false,TyparDynamicReq.Yes,[],false,false)
+    let tp = Construct.NewTypar (TyparKind.Type, TyparRigidity.Rigid, SynTypar(mkSynId m "fmt",TyparStaticReq.HeadType,true),false,TyparDynamicReq.Yes,[],false,false)
     tp.SetConstraints [ TyparConstraint.SimpleChoice (tys,m); TyparConstraint.DefaultsTo (lowestDefaultPriority,dflt,m)]
     copyAndFixupFormatTypar m tp
 
@@ -356,8 +355,8 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                         numStdArgs + (if widthArg then 1 else 0) + (if precisionArg then 1 else 0)
                       specifierLocations.Add(
                           (Range.mkFileIndexRange m.FileIndex 
-                              (Pos.mkPos fragLine startFragCol) 
-                              (Pos.mkPos fragLine (fragCol + 1))), numArgsForSpecifier)
+                              (Position.mkPos fragLine startFragCol) 
+                              (Position.mkPos fragLine (fragCol + 1))), numArgsForSpecifier)
                   | None -> ()
 
               let ch = fmt.[i]

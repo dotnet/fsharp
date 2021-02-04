@@ -9,8 +9,8 @@ open System.Runtime.InteropServices
 open System.Threading
 
 open FSharp.Compiler.Interactive.Shell
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
 open FSharp.Test.ScriptHelpers
 open FSharp.DependencyManager.Nuget
 

@@ -42,8 +42,7 @@ F# Interactiveの開始
 *)
 
 #r "FSharp.Compiler.Service.dll"
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 open FSharp.Compiler.Interactive.Shell
 
 (**
@@ -157,7 +156,7 @@ match result with
 
 // エラーと警告を表示する
 for w in warnings do 
-   printfn "警告 %s 場所 %d,%d" w.Message w.StartLineAlternate w.StartColumn
+   printfn "警告 %s 場所 %d,%d" w.Message w.StartLine w.StartColumn
 
 (**
 は次のようになります:
@@ -172,7 +171,7 @@ for w in warnings do
 let evalExpressionTyped2<'T> text =
    let res, warnings = fsiSession.EvalExpressionNonThrowing(text)
    for w in warnings do 
-       printfn "警告 %s 場所 %d,%d" w.Message w.StartLineAlternate w.StartColumn 
+       printfn "警告 %s 場所 %d,%d" w.Message w.StartLine w.StartColumn 
    match res with 
    | Choice1Of2 (Some value) -> value.ReflectionValue |> unbox<'T>
    | Choice1Of2 None -> failwith "null または結果がありません"
@@ -232,10 +231,10 @@ let parseResults, checkResults, checkProjectResults =
 
 (** 
 `parseResults` と `checkResults` はそれぞれ [エディタ](editor.html)
-のページで説明している `ParseFileResults` と `CheckFileResults` 型です。
+のページで説明している `FSharpParseFileResults` と `FSharpCheckFileResults` 型です。
 たとえば以下のようなコードでエラーを確認出来ます:
 *)
-checkResults.Errors.Length // 1
+checkResults.Diagnostics.Length // 1
 
 (** 
 コードはF# Interactiveセッション内において、その時点までに実行された
@@ -247,7 +246,7 @@ checkResults.Errors.Length // 1
 *)
 
 // ツールチップを取得する
-checkResults.GetToolTipText(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT) 
+checkResults.GetToolTip(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT) 
 
 checkResults.GetSymbolUseAtLocation(1, 2, "xxx + xx", ["xxx"]) // シンボル xxx
   

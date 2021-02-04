@@ -2,9 +2,8 @@
 
 module internal FSharp.Compiler.Detuple 
 
-open FSharp.Compiler.AbstractIL.Internal 
+open Internal.Utilities.Collections
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
 val DetupleImplFile: CcuThunk -> TcGlobals -> TypedImplFile -> TypedImplFile
@@ -14,9 +13,6 @@ module GlobalUsageAnalysis =
 
     type accessor 
 
-    /// Results is "expr information".
-    /// This could extend to be a full graph view of the expr.
-    /// Later could support "safe" change operations, and optimisations could be in terms of those.
     type Results =
        {
          /// v -> context / APP inst args 

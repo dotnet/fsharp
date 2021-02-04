@@ -8,7 +8,8 @@ open System.Composition
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddMissingFunKeyword"); Shared>]
 type internal FSharpAddMissingFunKeywordCodeFixProvider
