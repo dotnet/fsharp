@@ -9,7 +9,8 @@ open System.Text
 open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.Interactive.Shell
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
 
 type CapturedTextReader() =
     inherit TextReader()

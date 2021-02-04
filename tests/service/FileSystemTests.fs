@@ -13,7 +13,8 @@ open FsUnit
 open System
 open System.IO
 open System.Text
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 
 let fileName1 = @"c:\mycode\test1.fs" // note, the path doesn' exist
@@ -106,12 +107,11 @@ let ``FileSystem compilation test``() =
           LoadTime = System.DateTime.Now // Not 'now', we don't want to force reloading
           UnresolvedReferences = None 
           OriginalLoadReferences = []
-          ExtraProjectInfo = None 
           Stamp = None }
 
     let results = checker.ParseAndCheckProject(projectOptions) |> Async.RunSynchronously
 
-    results.Errors.Length |> shouldEqual 0
+    results.Diagnostics.Length |> shouldEqual 0
     results.AssemblySignature.Entities.Count |> shouldEqual 2
     results.AssemblySignature.Entities.[0].MembersFunctionsAndValues.Count |> shouldEqual 1
     results.AssemblySignature.Entities.[0].MembersFunctionsAndValues.[0].DisplayName |> shouldEqual "B"

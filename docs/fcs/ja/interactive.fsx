@@ -42,7 +42,8 @@ F# Interactiveの開始
 *)
 
 #r "FSharp.Compiler.Service.dll"
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Interactive.Shell
 
@@ -232,10 +233,10 @@ let parseResults, checkResults, checkProjectResults =
 
 (** 
 `parseResults` と `checkResults` はそれぞれ [エディタ](editor.html)
-のページで説明している `ParseFileResults` と `CheckFileResults` 型です。
+のページで説明している `FSharpParseFileResults` と `FSharpCheckFileResults` 型です。
 たとえば以下のようなコードでエラーを確認出来ます:
 *)
-checkResults.Errors.Length // 1
+checkResults.Diagnostics.Length // 1
 
 (** 
 コードはF# Interactiveセッション内において、その時点までに実行された

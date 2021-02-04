@@ -17,10 +17,9 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 
-open Microsoft.CodeAnalysis
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Range
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Tokenization
 
 // IEditorClassificationService is marked as Obsolete, but is still supported. The replacement (IClassificationService)
 // is internal to Microsoft.CodeAnalysis.Workspaces which we don't have internals visible to. Rather than add yet another
@@ -29,8 +28,8 @@ open FSharp.Compiler.Text.Range
 
 #nowarn "57"
 
-type SemanticClassificationData = FSharpSemanticClassificationView option
-type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<FSharpSemanticClassificationItem>>
+type SemanticClassificationData = SemanticClassificationView option
+type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<SemanticClassificationItem>>
 
 [<Sealed>]
 type DocumentCache<'Value when 'Value : not struct>() =
@@ -95,11 +94,11 @@ type internal FSharpClassificationService
                 | _ -> ()
                 
         let flags = FSharpLexerFlags.Default &&& ~~~FSharpLexerFlags.Compiling &&& ~~~FSharpLexerFlags.UseLexFilter
-        FSharpLexer.Lex(text.ToFSharpSourceText(), tokenCallback, filePath = filePath, conditionalCompilationDefines = defines, flags = flags, ct = ct)
+        FSharpLexer.Tokenize(text.ToFSharpSourceText(), tokenCallback, filePath = filePath, conditionalCompilationDefines = defines, flags = flags, ct = ct)
 
         result.ToImmutable()
 
-    static let addSemanticClassification sourceText (targetSpan: TextSpan) (items: seq<FSharpSemanticClassificationItem>) (outputResult: List<ClassifiedSpan>) =
+    static let addSemanticClassification sourceText (targetSpan: TextSpan) (items: seq<SemanticClassificationItem>) (outputResult: List<ClassifiedSpan>) =
         for item in items do
             match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with
             | None -> ()
@@ -119,11 +118,11 @@ type internal FSharpClassificationService
             | _ -> ()
 
     static let toSemanticClassificationLookup (data: SemanticClassificationData) =
-        let lookup = System.Collections.Generic.Dictionary<int, ResizeArray<FSharpSemanticClassificationItem>>()
+        let lookup = System.Collections.Generic.Dictionary<int, ResizeArray<SemanticClassificationItem>>()
         match data with
         | None -> ()
         | Some d ->
-            let f (dataItem: FSharpSemanticClassificationItem) =
+            let f (dataItem: SemanticClassificationItem) =
                 let items =
                     match lookup.TryGetValue dataItem.Range.StartLine with
                     | true, items -> items

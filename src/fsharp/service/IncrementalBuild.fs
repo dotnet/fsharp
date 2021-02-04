@@ -1,19 +1,17 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler
-
+namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.Collections.Generic
 open System.IO
 open System.Runtime.InteropServices
 open System.Threading
-
+open Internal.Utilities.Library 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
@@ -23,11 +21,15 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.IO
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
@@ -89,7 +91,7 @@ module IncrementalBuilderEventTesting =
 
 module Tc = FSharp.Compiler.CheckExpressions
 
-// This module is only here to contain the SyntaxTree type as to avoid amiguity with the module FSharp.Compiler.SyntaxTree.
+// This module is only here to contain the SyntaxTree type as to avoid amiguity with the module FSharp.Compiler.Syntax.
 [<AutoOpen>]
 module IncrementalBuildSyntaxTree =
 
@@ -99,7 +101,7 @@ module IncrementalBuildSyntaxTree =
 
         let mutable weakCache: WeakReference<_> option = None
 
-        let parse(sigNameOpt: SyntaxTree.QualifiedNameOfFile option) =
+        let parse(sigNameOpt: QualifiedNameOfFile option) =
             let errorLogger = CompilationErrorLogger("Parse", tcConfig.errorSeverityOptions)
             // Return the disposable object that cleans up
             use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parse)
@@ -110,8 +112,8 @@ module IncrementalBuildSyntaxTree =
                 let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (Filename.checkSuffix lower)
                 let input = 
                     if canSkip then
-                        SyntaxTree.ParsedInput.ImplFile(
-                            SyntaxTree.ParsedImplFileInput(
+                        ParsedInput.ImplFile(
+                            ParsedImplFileInput(
                                 filename, 
                                 false, 
                                 sigNameOpt.Value,
@@ -169,7 +171,7 @@ type TcInfo =
 
         tcDependencyFiles: string list
 
-        sigNameOpt: (string * SyntaxTree.QualifiedNameOfFile) option
+        sigNameOpt: (string * QualifiedNameOfFile) option
     }
 
     member x.TcErrors = 
@@ -437,7 +439,7 @@ type BoundModel private (tcConfig: TcConfig,
                                     tcDependencyFiles = filename :: prevTcDependencyFiles
                                     sigNameOpt =
                                         match input with
-                                        | SyntaxTree.ParsedInput.SigFile(SyntaxTree.ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
+                                        | ParsedInput.SigFile(ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
                                             Some(fileName, qualName)
                                         | _ ->
                                             None
@@ -456,7 +458,7 @@ type BoundModel private (tcConfig: TcConfig,
                                             let sResolutions = sink.GetResolutions()
                                             let builder = ItemKeyStoreBuilder()
                                             let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with 
-                                                                                member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Pos.posEq s1 s2 && Pos.posEq e1 e2
+                                                                                member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Position.posEq s1 s2 && Position.posEq e1 e2
                                                                                 member _.GetHashCode o = o.GetHashCode() })
                                             sResolutions.CapturedNameResolutions
                                             |> Seq.iter (fun cnr ->

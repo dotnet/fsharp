@@ -6,7 +6,7 @@ module internal FSharp.Compiler.LexFilter
 
 open Internal.Utilities.Text.Lexing
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features

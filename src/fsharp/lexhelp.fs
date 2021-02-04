@@ -6,19 +6,19 @@ open System
 open System.Text
 
 open Internal.Utilities
+open Internal.Utilities.Library
 open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.IO
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Parser
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.SyntaxTree
 
 /// The "mock" filename used by fsi.exe when reading from stdin.
 /// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
@@ -88,11 +88,11 @@ let reusingLexbufForParsing lexbuf f =
     with e ->
       raise (WrappedError(e, (try lexbuf.LexemeRange with _ -> range0)))
 
-let resetLexbufPos filename (lexbuf: UnicodeLexing.Lexbuf) = 
+let resetLexbufPos filename (lexbuf: Lexbuf) = 
     lexbuf.EndPos <- Position.FirstLine (FileIndex.fileIndexOfFile filename)
 
 /// Reset the lexbuf, configure the initial position with the given filename and call the given function
-let usingLexbufForParsing (lexbuf:UnicodeLexing.Lexbuf, filename) f =
+let usingLexbufForParsing (lexbuf:Lexbuf, filename) f =
     resetLexbufPos filename lexbuf
     reusingLexbufForParsing lexbuf (fun () -> f lexbuf)
 
@@ -365,12 +365,12 @@ module Keywords =
         
     let KeywordToken s = keywordTable.[s]
 
-    let IdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) (s:string) =
+    let IdentifierToken args (lexbuf:Lexbuf) (s:string) =
         if IsCompilerGeneratedName s then 
             warning(Error(FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved(), lexbuf.LexemeRange))
         args.resourceManager.InternIdentifierToken s
 
-    let KeywordOrIdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) s =
+    let KeywordOrIdentifierToken args (lexbuf:Lexbuf) s =
         match keywordTable.TryGetValue s with
         | true, v ->
             match v with 

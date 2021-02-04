@@ -6,7 +6,7 @@ open System
 
 open Microsoft.CodeAnalysis
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
 open Microsoft.VisualStudio.Shell.Interop

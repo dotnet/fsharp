@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.Diagnostics
 open System.Globalization
 open System.Threading
 
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 
 /// Represents the capability to schedule work in the compiler service operations queue for the compilation thread
 type internal IReactorOperations = 

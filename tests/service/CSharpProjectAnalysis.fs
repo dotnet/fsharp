@@ -9,12 +9,13 @@
 module FSharp.Compiler.Service.Tests.CSharpProjectAnalysis
 #endif
 
-
 open NUnit.Framework
 open FsUnit
 open System.IO
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Compiler.Symbols
 
 let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) = 
     let otherFlags = defaultArg otherFlags []
@@ -44,7 +45,7 @@ let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) =
     let results = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
     if results.HasCriticalErrors then
         let builder = new System.Text.StringBuilder()
-        for err in results.Errors do
+        for err in results.Diagnostics do
             builder.AppendLine(sprintf "**** %s: %s" (if err.Severity = FSharpDiagnosticSeverity.Error then "error" else "warning") err.Message)
             |> ignore
         failwith (builder.ToString())

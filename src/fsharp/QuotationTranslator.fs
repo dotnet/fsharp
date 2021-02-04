@@ -3,15 +3,15 @@
 module internal FSharp.Compiler.QuotationTranslator
 
 open Internal.Utilities
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
@@ -1243,7 +1243,7 @@ let ConvMethodBase cenv env (methName, v: Val) =
         let numEnclTypeArgs = vref.MemberApparentEntity.TyparsNoRange.Length
         let argTys = argInfos |> List.concat |> List.map fst
 
-        let isNewObj = (vspr.MemberFlags.MemberKind = MemberKind.Constructor)
+        let isNewObj = (vspr.MemberFlags.MemberKind = SynMemberKind.Constructor)
 
         // The signature types are w.r.t. to the formal context
         let envinner = BindFormalTypars env tps

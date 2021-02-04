@@ -13,8 +13,10 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Text
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
 
@@ -86,7 +88,7 @@ module internal ColorStateLookup_DEPRECATED =
 type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineTokenizer) =
     let mutable lineTokenizer = makeLineTokenizer ""
 
-    let mutable extraColorizations : IDictionary<Line0, FSharpSemanticClassificationItem[] > option = None
+    let mutable extraColorizations : IDictionary<Line0, SemanticClassificationItem[] > option = None
 
     /// Decode compiler FSharpTokenColorKind into VS TokenColor.
     let lookupTokenColor colorKind =
@@ -147,7 +149,7 @@ type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineT
         lineTokenizer <- makeLineTokenizer lineText
 
     /// Adjust the set of extra colorizations and return a sorted list of affected lines.
-    member _.SetExtraColorizations (tokens: FSharpSemanticClassificationItem[]) =
+    member _.SetExtraColorizations (tokens: SemanticClassificationItem[]) =
         if tokens.Length = 0 && extraColorizations.IsNone then
             [| |]
         else

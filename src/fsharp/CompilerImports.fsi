@@ -5,10 +5,9 @@
 module internal FSharp.Compiler.CompilerImports
 
 open System
-
+open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.DependencyManager
@@ -40,6 +39,7 @@ val IsOptimizationDataResource: ILResource -> bool
 
 /// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource: ILResource -> bool
+
 val GetSignatureDataResourceName: ILResource -> string
 
 /// Write F# signature data as an IL resource

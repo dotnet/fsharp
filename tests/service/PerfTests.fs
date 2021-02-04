@@ -11,10 +11,8 @@ module FSharp.Compiler.Service.Tests.PerfTests
 open NUnit.Framework
 open FsUnit
 open System.IO
-
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
-
 open FSharp.Compiler.Service.Tests.Common
 
 // Create an interactive checker instance 

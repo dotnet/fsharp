@@ -4,7 +4,9 @@ module Tests.ServiceAnalysis.UnusedOpens
 
 open System
 open NUnit.Framework
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
 /// like "should equal", but validates same-type
@@ -23,7 +25,6 @@ let private projectOptions : FSharpProjectOptions =
       LoadTime = DateTime.MaxValue
       OriginalLoadReferences = []
       UnresolvedReferences = None
-      ExtraProjectInfo = None
       Stamp = None }
 
 let private checker = FSharpChecker.Create()
