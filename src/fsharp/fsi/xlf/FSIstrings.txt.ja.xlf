@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
-        <target state="translated">操作に失敗しました。エラー テキストがエラー ストリームで印刷されました。対応する FSharpDiagnostic を戻すには、EvalInteractionNonThrowing、EvalScriptuNonThrowing、または EvalExpressionNonThrowing を使用します</target>
+        <target state="translated">操作に失敗しました。エラー テキストがエラー ストリームに出力されました。対応する FSharpDiagnostic を戻すには、EvalInteractionNonThrowing、EvalScriptNonThrowing、または EvalExpressionNonThrowing を使用します</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">

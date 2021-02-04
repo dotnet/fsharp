@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.AbstractIL.Internal.Library 
-#nowarn "1178" // The struct, record or union type 'internal_instr_extension' is not structurally comparable because the type
-
+namespace Internal.Utilities.Library 
 
 open System
 open System.Collections.Generic
@@ -12,54 +10,81 @@ open System.IO
 open System.Threading
 open System.Runtime.CompilerServices
 
-/// Logical shift right treating int32 as unsigned integer.
-/// Code that uses this should probably be adjusted to use unsigned integer types.
-let (>>>&) (x: int32) (n: int32) = int32 (uint32 x >>> n)
+[<AutoOpen>]
+module internal PervasiveAutoOpens =
+    /// Logical shift right treating int32 as unsigned integer.
+    /// Code that uses this should probably be adjusted to use unsigned integer types.
+    let (>>>&) (x: int32) (n: int32) = int32 (uint32 x >>> n)
 
-let notlazy v = Lazy<_>.CreateFromValue v
+    let notlazy v = Lazy<_>.CreateFromValue v
 
-let inline isNil l = List.isEmpty l
+    let inline isNil l = List.isEmpty l
 
-/// Returns true if the list has less than 2 elements. Otherwise false.
-let inline isNilOrSingleton l =
-    match l with
-    | [] 
-    | [_] -> true
-    | _ -> false
+    /// Returns true if the list has less than 2 elements. Otherwise false.
+    let inline isNilOrSingleton l =
+        match l with
+        | [] 
+        | [_] -> true
+        | _ -> false
 
-/// Returns true if the list contains exactly 1 element. Otherwise false.
-let inline isSingleton l =
-    match l with
-    | [_] -> true
-    | _ -> false
+    /// Returns true if the list contains exactly 1 element. Otherwise false.
+    let inline isSingleton l =
+        match l with
+        | [_] -> true
+        | _ -> false
 
-let inline isNonNull x = not (isNull x)
+    let inline isNonNull x = not (isNull x)
 
-let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
+    let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
 
-let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
+    let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
-/// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
-/// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
-let LOH_SIZE_THRESHOLD_BYTES = 80_000
+    /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
+    /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
+    let LOH_SIZE_THRESHOLD_BYTES = 80_000
 
-//---------------------------------------------------------------------
-// Library: ReportTime
-//---------------------------------------------------------------------
-let reportTime =
-    let mutable tFirst =None
-    let mutable tPrev = None
-    fun showTimes descr ->
-        if showTimes then 
-            let t = Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
-            let prev = match tPrev with None -> 0.0 | Some t -> t
-            let first = match tFirst with None -> (tFirst <- Some t; t) | Some t -> t
-            printf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
-            tPrev <- Some t
+    let runningOnMono =
+#if ENABLE_MONO_SUPPORT
+        // Officially supported way to detect if we are running on Mono.
+        // See http://www.mono-project.com/FAQ:_Technical
+        // "How can I detect if am running in Mono?" section
+        try
+            System.Type.GetType ("Mono.Runtime") <> null
+        with _ ->
+            // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
+            // that is not reliable.
+            // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is
+            // called by OnTypeResolveEvent. The function throws a NullReferenceException. I'm working with that team to get
+            // their issue fixed but we need to be robust here anyway.
+            false
+#else
+        false
+#endif
 
-//-------------------------------------------------------------------------
-// Library: projections
-//------------------------------------------------------------------------
+    type String with
+        member inline x.StartsWithOrdinal value =
+            x.StartsWith(value, StringComparison.Ordinal)
+
+        member inline x.EndsWithOrdinal value =
+            x.EndsWith(value, StringComparison.Ordinal)
+
+    /// Get an initialization hole 
+    let getHole r = match !r with None -> failwith "getHole" | Some x -> x
+
+    let reportTime =
+        let mutable tFirst =None
+        let mutable tPrev = None
+        fun showTimes descr ->
+            if showTimes then 
+                let t = Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
+                let prev = match tPrev with None -> 0.0 | Some t -> t
+                let first = match tFirst with None -> (tFirst <- Some t; t) | Some t -> t
+                printf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
+                tPrev <- Some t
+
+    let foldOn p f z x = f z (p x)
+
+    let notFound() = raise (KeyNotFoundException())
 
 [<Struct>]
 /// An efficient lazy for inline storage in a class type. Results in fewer thunks.
@@ -80,16 +105,12 @@ type InlineDelayInit<'T when 'T : not struct> =
 // Library: projections
 //------------------------------------------------------------------------
 
-let foldOn p f z x = f z (p x)
-
-let notFound() = raise (KeyNotFoundException())
-
 module Order = 
     let orderBy (p : 'T -> 'U) = 
-        { new IComparer<'T> with member __.Compare(x, xx) = compare (p x) (p xx) }
+        { new IComparer<'T> with member _.Compare(x, xx) = compare (p x) (p xx) }
 
     let orderOn p (pxOrder: IComparer<'U>) = 
-        { new IComparer<'T> with member __.Compare(x, xx) = pxOrder.Compare (p x, p xx) }
+        { new IComparer<'T> with member _.Compare(x, xx) = pxOrder.Compare (p x, p xx) }
 
     let toFunction (pxOrder: IComparer<'U>) x y = pxOrder.Compare(x, y)
 
@@ -118,7 +139,7 @@ module Array =
 
     let order (eltOrder: IComparer<'T>) = 
         { new IComparer<array<'T>> with 
-              member __.Compare(xs, ys) = 
+              member _.Compare(xs, ys) = 
                   let c = compare xs.Length ys.Length 
                   if c <> 0 then c else
                   let rec loop i = 
@@ -349,7 +370,7 @@ module List =
 
     let order (eltOrder: IComparer<'T>) =
         { new IComparer<list<'T>> with 
-              member __.Compare(xs, ys) = 
+              member _.Compare(xs, ys) = 
                   let rec loop xs ys = 
                       match xs, ys with
                       | [], [] -> 0
@@ -478,13 +499,6 @@ module ValueOptionInternal =
     let inline ofOption x = match x with Some x -> ValueSome x | None -> ValueNone
 
     let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
-
-type String with
-    member inline x.StartsWithOrdinal value =
-        x.StartsWith(value, StringComparison.Ordinal)
-
-    member inline x.EndsWithOrdinal value =
-        x.EndsWith(value, StringComparison.Ordinal)
 
 module String =
     let make (n: int) (c: char) : string = new String(c, n)
@@ -625,36 +639,37 @@ type ExecutionToken = interface end
 /// the lifetime of stack-based calls. This is not checked, it is a discipline within the compiler code. 
 type CompilationThreadToken() = interface ExecutionToken
 
-/// Represents a place where we are stating that execution on the compilation thread is required. The
-/// reason why will be documented in a comment in the code at the callsite.
-let RequireCompilationThread (_ctok: CompilationThreadToken) = ()
-
-/// Represents a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
-/// This represents code that may potentially not need to be executed on the compilation thread.
-let DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent (_ctok: CompilationThreadToken) = ()
-
-/// Represents a place in the compiler codebase where we assume we are executing on a compilation thread
-let AssumeCompilationThreadWithoutEvidence () = Unchecked.defaultof<CompilationThreadToken>
-
-/// Represents a token that indicates execution on any of several potential user threads calling the F# compiler services.
-type AnyCallerThreadToken() = interface ExecutionToken
-let AnyCallerThread = Unchecked.defaultof<AnyCallerThreadToken>
-
 /// A base type for various types of tokens that must be passed when a lock is taken.
 /// Each different static lock should declare a new subtype of this type.
 type LockToken = inherit ExecutionToken
-let AssumeLockWithoutEvidence<'LockTokenType when 'LockTokenType :> LockToken> () = Unchecked.defaultof<'LockTokenType>
+
+/// Represents a token that indicates execution on any of several potential user threads calling the F# compiler services.
+type AnyCallerThreadToken() = interface ExecutionToken
+
+[<AutoOpen>]
+module internal LockAutoOpens =
+    /// Represents a place where we are stating that execution on the compilation thread is required. The
+    /// reason why will be documented in a comment in the code at the callsite.
+    let RequireCompilationThread (_ctok: CompilationThreadToken) = ()
+
+    /// Represents a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
+    /// This represents code that may potentially not need to be executed on the compilation thread.
+    let DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent (_ctok: CompilationThreadToken) = ()
+
+    /// Represents a place in the compiler codebase where we assume we are executing on a compilation thread
+    let AssumeCompilationThreadWithoutEvidence () = Unchecked.defaultof<CompilationThreadToken>
+
+    let AnyCallerThread = Unchecked.defaultof<AnyCallerThreadToken>
+
+    let AssumeLockWithoutEvidence<'LockTokenType when 'LockTokenType :> LockToken> () = Unchecked.defaultof<'LockTokenType>
 
 /// Encapsulates a lock associated with a particular token-type representing the acquisition of that lock.
 type Lock<'LockTokenType when 'LockTokenType :> LockToken>() = 
     let lockObj = obj()
-    member __.AcquireLock f = lock lockObj (fun () -> f (AssumeLockWithoutEvidence<'LockTokenType>()))
+    member _.AcquireLock f = lock lockObj (fun () -> f (AssumeLockWithoutEvidence<'LockTokenType>()))
 
 //---------------------------------------------------
 // Misc
-
-/// Get an initialization hole 
-let getHole r = match !r with None -> failwith "getHole" | Some x -> x
 
 module Map = 
     let tryFindMulti k map = match Map.tryFind k map with Some res -> res | None -> []
@@ -823,7 +838,9 @@ type CancellableBuilder() =
 
     member x.Zero() = Cancellable.ret ()
 
-let cancellable = CancellableBuilder()
+[<AutoOpen>]
+module CancellableAutoOpens =
+    let cancellable = CancellableBuilder()
 
 /// Computations that can cooperatively yield by returning a continuation
 ///
@@ -947,7 +964,10 @@ type EventuallyBuilder() =
 
     member x.Zero() = Eventually.Done ()
 
-let eventually = new EventuallyBuilder()
+[<AutoOpen>]
+module internal EventuallyAutoOpens =
+
+    let eventually = new EventuallyBuilder()
 
 (*
 let _ = eventually { return 1 }
@@ -1087,9 +1107,9 @@ module IPartialEqualityComparer =
 
     let On f (c: IPartialEqualityComparer<_>) = 
           { new IPartialEqualityComparer<_> with 
-                member __.InEqualityRelation x = c.InEqualityRelation (f x)
-                member __.Equals(x, y) = c.Equals(f x, f y)
-                member __.GetHashCode x = c.GetHashCode(f x) }
+                member _.InEqualityRelation x = c.InEqualityRelation (f x)
+                member _.Equals(x, y) = c.Equals(f x, f y)
+                member _.GetHashCode x = c.GetHashCode(f x) }
     
     // Wrapper type for use by the 'partialDistinctBy' function
     [<StructuralEquality; NoComparison>]
@@ -1099,9 +1119,9 @@ module IPartialEqualityComparer =
     let partialDistinctBy (per: IPartialEqualityComparer<'T>) seq =
         let wper = 
             { new IPartialEqualityComparer<WrapType<'T>> with
-                member __.InEqualityRelation (Wrap x) = per.InEqualityRelation x
-                member __.Equals(Wrap x, Wrap y) = per.Equals(x, y)
-                member __.GetHashCode (Wrap x) = per.GetHashCode x }
+                member _.InEqualityRelation (Wrap x) = per.InEqualityRelation x
+                member _.Equals(Wrap x, Wrap y) = per.Equals(x, y)
+                member _.GetHashCode (Wrap x) = per.GetHashCode x }
         // Wrap a Wrap _ around all keys in case the key type is itself a type using null as a representation
         let dict = Dictionary<WrapType<'T>, obj>(wper)
         seq |> List.filter (fun v -> 
@@ -1230,17 +1250,19 @@ module MultiMap =
 
 type LayeredMap<'Key, 'Value when 'Key : comparison> = Map<'Key, 'Value>
 
-type Map<'Key, 'Value when 'Key : comparison> with
+[<AutoOpen>]
+module MapAutoOpens =
+    type Map<'Key, 'Value when 'Key : comparison> with
 
-    static member Empty : Map<'Key, 'Value> = Map.empty
+        static member Empty : Map<'Key, 'Value> = Map.empty
 
-    member x.Values = [ for (KeyValue(_, v)) in x -> v ]
+        member x.Values = [ for (KeyValue(_, v)) in x -> v ]
 
-    member x.AddAndMarkAsCollapsible (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
+        member x.AddAndMarkAsCollapsible (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
-    member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
+        member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
 
-    member x.MarkAsCollapsible () = x
+        member x.MarkAsCollapsible () = x
 
 /// Immutable map collection, with explicit flattening to a backing dictionary 
 [<Sealed>]

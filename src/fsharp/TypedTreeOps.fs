@@ -6,31 +6,29 @@ module internal FSharp.Compiler.TypedTreeOps
 open System.Collections.Generic
 open System.Collections.Immutable
 open Internal.Utilities
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
+open Internal.Utilities.Rational
 
-open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.AbstractIL.Extensions.ILX 
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
-open FSharp.Compiler.Rational
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.Layout
-open FSharp.Compiler.TextLayout.LayoutRender
-open FSharp.Compiler.TextLayout.TaggedText
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Layout
+open FSharp.Compiler.Text.LayoutRender
+open FSharp.Compiler.Text.TaggedText
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.XmlDoc
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif
@@ -1097,18 +1095,18 @@ let rec getErasedTypes g ty =
 // Standard orderings, e.g. for order set/map keys
 //---------------------------------------------------------------------------
 
-let valOrder = { new IComparer<Val> with member __.Compare(v1, v2) = compare v1.Stamp v2.Stamp }
-let tyconOrder = { new IComparer<Tycon> with member __.Compare(tc1, tc2) = compare tc1.Stamp tc2.Stamp }
+let valOrder = { new IComparer<Val> with member _.Compare(v1, v2) = compare v1.Stamp v2.Stamp }
+let tyconOrder = { new IComparer<Tycon> with member _.Compare(tc1, tc2) = compare tc1.Stamp tc2.Stamp }
 let recdFieldRefOrder = 
     { new IComparer<RecdFieldRef> with 
-         member __.Compare(RecdFieldRef(tcref1, nm1), RecdFieldRef(tcref2, nm2)) = 
+         member _.Compare(RecdFieldRef(tcref1, nm1), RecdFieldRef(tcref2, nm2)) = 
             let c = tyconOrder.Compare (tcref1.Deref, tcref2.Deref) 
             if c <> 0 then c else 
             compare nm1 nm2 }
 
 let unionCaseRefOrder = 
     { new IComparer<UnionCaseRef> with 
-         member __.Compare(UnionCaseRef(tcref1, nm1), UnionCaseRef(tcref2, nm2)) = 
+         member _.Compare(UnionCaseRef(tcref1, nm1), UnionCaseRef(tcref2, nm2)) = 
             let c = tyconOrder.Compare (tcref1.Deref, tcref2.Deref) 
             if c <> 0 then c else 
             compare nm1 nm2 }
@@ -1201,7 +1199,7 @@ type Expr with
 
 let primMkMatch(spBind, exprm, tree, targets, matchm, ty) = Expr.Match (spBind, exprm, tree, targets, matchm, ty)
 
-type MatchBuilder(spBind, inpRange: Range.range) = 
+type MatchBuilder(spBind, inpRange: range) = 
 
     let targets = new ResizeArray<_>(10) 
     member x.AddTarget tg = 
@@ -1282,13 +1280,13 @@ let mkLetsFromBindings m binds body = List.foldBack (mkLetBind m) binds body
 let mkLet seqPtOpt m v x body = mkLetBind m (mkBind seqPtOpt v x) body
 
 /// Make sticky bindings that are compiler generated (though the variables may not be - e.g. they may be lambda arguments in a beta reduction)
-let mkCompGenBind v e = TBind(v, e, NoDebugPointAtStickyBinding)
+let mkCompGenBind v e = TBind(v, e, DebugPointAtBinding.NoneAtSticky)
 let mkCompGenBinds (vs: Val list) (es: Expr list) = List.map2 mkCompGenBind vs es
 let mkCompGenLet m v x body = mkLetBind m (mkCompGenBind v x) body
 let mkCompGenLets m vs xs body = mkLetsBind m (mkCompGenBinds vs xs) body
 let mkCompGenLetsFromBindings m vs xs body = mkLetsFromBindings m (mkCompGenBinds vs xs) body
 
-let mkInvisibleBind v e = TBind(v, e, NoDebugPointAtInvisibleBinding)
+let mkInvisibleBind v e = TBind(v, e, DebugPointAtBinding.NoneAtInvisible)
 let mkInvisibleBinds (vs: Val list) (es: Expr list) = List.map2 mkInvisibleBind vs es
 let mkInvisibleLet m v x body = mkLetBind m (mkInvisibleBind v x) body
 let mkInvisibleLets m vs xs body = mkLetsBind m (mkInvisibleBinds vs xs) body
@@ -1347,8 +1345,8 @@ let isBeingGeneralized tp typeScheme =
 // Build conditional expressions...
 //------------------------------------------------------------------------- 
 
-let mkLazyAnd (g: TcGlobals) m e1 e2 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.bool_ty e1 e2 (Expr.Const (Const.Bool false, m, g.bool_ty))
-let mkLazyOr (g: TcGlobals) m e1 e2 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.bool_ty e1 (Expr.Const (Const.Bool true, m, g.bool_ty)) e2
+let mkLazyAnd (g: TcGlobals) m e1 e2 = mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m g.bool_ty e1 e2 (Expr.Const (Const.Bool false, m, g.bool_ty))
+let mkLazyOr (g: TcGlobals) m e1 e2 = mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m g.bool_ty e1 (Expr.Const (Const.Bool true, m, g.bool_ty)) e2
 
 let mkCoerceExpr(e, to_ty, m, from_ty) = Expr.Op (TOp.Coerce, [to_ty;from_ty], [e], m)
 
@@ -2286,7 +2284,7 @@ let valsOfBinds (binds: Bindings) = binds |> List.map (fun b -> b.Var)
 
 // Pull apart the type for an F# value that represents an object model method. Do not strip off a 'unit' argument.
 // Review: Should GetMemberTypeInFSharpForm have any other direct callers? 
-let GetMemberTypeInFSharpForm g memberFlags arities ty m = 
+let GetMemberTypeInFSharpForm g (memberFlags: SynMemberFlags) arities ty m = 
     let tps, argInfos, rty, retInfo = GetTopValTypeInFSharpForm g arities ty m
 
     let argInfos = 
@@ -2441,14 +2439,14 @@ let GetFSharpViewOfReturnType (g: TcGlobals) retTy =
 let ReturnTypeOfPropertyVal g (v: Val) = 
     let membInfo, topValInfo = checkMemberVal v.MemberInfo v.ValReprInfo v.Range
     match membInfo.MemberFlags.MemberKind with 
-    | MemberKind.PropertySet ->
+    | SynMemberKind.PropertySet ->
         let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
         let _, _, arginfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo numEnclosingTypars v.Type v.Range
         if not arginfos.IsEmpty && not arginfos.Head.IsEmpty then
             arginfos.Head |> List.last |> fst 
         else
             error(Error(FSComp.SR.tastValueDoesNotHaveSetterType(), v.Range))
-    | MemberKind.PropertyGet ->
+    | SynMemberKind.PropertyGet ->
         let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
         let _, _, _, rty, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo numEnclosingTypars v.Type v.Range
         GetFSharpViewOfReturnType g rty
@@ -2460,9 +2458,9 @@ let ReturnTypeOfPropertyVal g (v: Val) =
 let ArgInfosOfPropertyVal g (v: Val) = 
     let membInfo, topValInfo = checkMemberVal v.MemberInfo v.ValReprInfo v.Range
     match membInfo.MemberFlags.MemberKind with 
-    | MemberKind.PropertyGet ->
+    | SynMemberKind.PropertyGet ->
         ArgInfosOfMemberVal g v |> List.concat
-    | MemberKind.PropertySet ->
+    | SynMemberKind.PropertySet ->
         let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
         let _, _, arginfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo numEnclosingTypars v.Type v.Range
         if not arginfos.IsEmpty && not arginfos.Head.IsEmpty then
@@ -2493,8 +2491,8 @@ let isTTyparCoercesToType = function TyparConstraint.CoercesTo _ -> true | _ -> 
 
 let prefixOfStaticReq s =
     match s with 
-    | NoStaticReq -> "'"
-    | HeadTypeStaticReq -> " ^"
+    | TyparStaticReq.None -> "'"
+    | TyparStaticReq.HeadType -> " ^"
 
 let prefixOfRigidTypar (typar: Typar) =  
   if (typar.Rigidity <> TyparRigidity.Rigid) then "_" else ""
@@ -2507,7 +2505,7 @@ type TyparConstraintsWithTypars = (Typar * TyparConstraint) list
 
 module PrettyTypes =
     let newPrettyTypar (tp: Typar) nm = 
-        Construct.NewTypar (tp.Kind, tp.Rigidity, Typar(ident(nm, tp.Range), tp.StaticReq, false), false, TyparDynamicReq.Yes, [], false, false)
+        Construct.NewTypar (tp.Kind, tp.Rigidity, SynTypar(ident(nm, tp.Range), tp.StaticReq, false), false, TyparDynamicReq.Yes, [], false, false)
 
     let NewPrettyTypars renaming tps names = 
         let niceTypars = List.map2 newPrettyTypar tps names
@@ -2933,12 +2931,12 @@ let fullDisplayTextOfValRefAsLayout (vref: ValRef) =
             else tagUnknownEntity vref.DisplayName
         | Some memberInfo ->
             match memberInfo.MemberFlags.MemberKind with
-            | MemberKind.PropertyGet
-            | MemberKind.PropertySet
-            | MemberKind.PropertyGetSet -> tagProperty vref.DisplayName
-            | MemberKind.ClassConstructor
-            | MemberKind.Constructor -> tagMethod vref.DisplayName
-            | MemberKind.Member -> tagMember vref.DisplayName
+            | SynMemberKind.PropertyGet
+            | SynMemberKind.PropertySet
+            | SynMemberKind.PropertyGetSet -> tagProperty vref.DisplayName
+            | SynMemberKind.ClassConstructor
+            | SynMemberKind.Constructor -> tagMethod vref.DisplayName
+            | SynMemberKind.Member -> tagMember vref.DisplayName
     match fullNameOfParentOfValRefAsLayout vref with 
     | ValueNone -> wordL n 
     | ValueSome pathText -> 
@@ -3011,6 +3009,11 @@ let superOfTycon (g: TcGlobals) (tycon: Tycon) =
     match tycon.TypeContents.tcaug_super with 
     | None -> g.obj_ty 
     | Some ty -> ty 
+
+/// walk a TyconRef's inheritance tree, yielding any parent types as an array
+let supersOfTyconRef (tcref: TyconRef) =
+    Array.unfold (fun (tcref: TyconRef) -> match tcref.TypeContents.tcaug_super with Some (TType_app(sup, _)) -> Some(sup, sup) | _ -> None) tcref
+
 
 //----------------------------------------------------------------------------
 // Detect attributes
@@ -3118,12 +3121,16 @@ let TryFindTyconRefBoolAttribute g m attribSpec tcref =
                    | ([ Some ((:? bool as v) : obj) ], _) -> Some v 
                    | _ -> None)
 
+/// Try to find the resolved attributeusage for an type by walking its inheritance tree and picking the correct attribute usage value
 let TryFindAttributeUsageAttribute g m tcref =
-    TryBindTyconRefAttribute g m g.attrib_AttributeUsageAttribute tcref 
+    [| yield tcref
+       yield! supersOfTyconRef tcref |]
+    |> Array.tryPick (fun tcref ->
+        TryBindTyconRefAttribute g m g.attrib_AttributeUsageAttribute tcref
                 (fun (_, named) -> named |> List.tryPick (function ("AllowMultiple", _, _, ILAttribElem.Bool res) -> Some res | _ -> None))
                 (fun (Attrib(_, _, _, named, _, _, _)) -> named |> List.tryPick (function AttribNamedArg("AllowMultiple", _, _, AttribBoolArg res ) -> Some res | _ -> None))
                 (fun (_, named) -> named |> List.tryPick (function ("AllowMultiple", Some ((:? bool as res) : obj)) -> Some res | _ -> None))
-
+    )
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
 ///
@@ -3453,9 +3460,9 @@ module DebugPrint =
 
     let angleBracketListL l = angleBracketL (sepListL (sepL (tagText ",")) l)
 
-    let layoutMemberFlags memFlags = 
+    let layoutMemberFlags (memFlags: SynMemberFlags) = 
         let stat = 
-            if memFlags.IsInstance || (memFlags.MemberKind = MemberKind.Constructor) then emptyL 
+            if memFlags.IsInstance || (memFlags.MemberKind = SynMemberKind.Constructor) then emptyL 
             else wordL (tagText "static")
         let stat =
             if memFlags.IsDispatchSlot then stat ++ wordL (tagText "abstract")
@@ -5005,7 +5012,7 @@ let decideStaticOptimizationConstraint g c haveWitnesses =
     match c with 
     // When witnesses are available in generic code during codegen, "when ^T : ^T" resolves StaticOptimizationAnswer.Yes
     // This doesn't apply to "when 'T : 'T" use for "FastGenericEqualityComparer" and others.
-    | TTyconEqualsTycon (a, b) when haveWitnesses && typeEquiv g a b && (match tryDestTyparTy g a with ValueSome tp -> tp.StaticReq = TyparStaticReq.HeadTypeStaticReq | _ -> false) ->
+    | TTyconEqualsTycon (a, b) when haveWitnesses && typeEquiv g a b && (match tryDestTyparTy g a with ValueSome tp -> tp.StaticReq = TyparStaticReq.HeadType | _ -> false) ->
          StaticOptimizationAnswer.Yes
     | TTyconEqualsTycon (a, b) ->
         // Both types must be nominal for a definite result
@@ -5703,7 +5710,7 @@ let rec remarkExpr m x =
 
     | Expr.Match (_, _, pt, targets, _, ty) ->
         let targetsR = targets |> Array.map (fun (TTarget(vs, e, _, flags)) -> TTarget(vs, remarkExpr m e, DebugPointForTarget.No, flags))
-        primMkMatch (NoDebugPointAtInvisibleBinding, m, remarkDecisionTree m pt, targetsR, m, ty)
+        primMkMatch (DebugPointAtBinding.NoneAtInvisible, m, remarkDecisionTree m pt, targetsR, m, ty)
 
     | Expr.Val (x, valUseFlags, _) ->
         Expr.Val (x, valUseFlags, m)
@@ -5768,7 +5775,7 @@ and remarkBinds m binds = List.map (remarkBind m) binds
 
 // This very deliberately drops the sequence points since this is used when adjusting the marks for inlined expressions 
 and remarkBind m (TBind(v, repr, _)) = 
-    TBind(v, remarkExpr m repr, NoDebugPointAtStickyBinding)
+    TBind(v, remarkExpr m repr, DebugPointAtBinding.NoneAtSticky)
 
 //--------------------------------------------------------------------------
 // Mutability analysis
@@ -6500,8 +6507,8 @@ let rec IterateRecursiveFixups g (selfv: Val option) rvs ((access: Expr), set) e
 
 let JoinTyparStaticReq r1 r2 = 
   match r1, r2 with
-  | NoStaticReq, r | r, NoStaticReq -> r 
-  | HeadTypeStaticReq, r | r, HeadTypeStaticReq -> r
+  | TyparStaticReq.None, r | r, TyparStaticReq.None -> r 
+  | TyparStaticReq.HeadType, r | r, TyparStaticReq.HeadType -> r
   
 //-------------------------------------------------------------------------
 // ExprFolder - fold steps
@@ -8096,12 +8103,12 @@ let XmlDocSigOfVal g full path (v: Val) =
         let tps, witnessInfos, argInfos, rty, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags (Option.get v.ValReprInfo) numEnclosingTypars v.Type v.Range
         let prefix, name = 
           match membInfo.MemberFlags.MemberKind with 
-          | MemberKind.ClassConstructor 
-          | MemberKind.Constructor -> "M:", "#ctor"
-          | MemberKind.Member -> "M:", v.CompiledName g.CompilerGlobalState
-          | MemberKind.PropertyGetSet 
-          | MemberKind.PropertySet
-          | MemberKind.PropertyGet -> "P:", v.PropertyName
+          | SynMemberKind.ClassConstructor 
+          | SynMemberKind.Constructor -> "M:", "#ctor"
+          | SynMemberKind.Member -> "M:", v.CompiledName g.CompilerGlobalState
+          | SynMemberKind.PropertyGetSet 
+          | SynMemberKind.PropertySet
+          | SynMemberKind.PropertyGet -> "P:", v.PropertyName
         let path = if v.HasDeclaringEntity then prependPath path v.TopValDeclaringEntity.CompiledName else path
         let parentTypars, methTypars = 
           match PartitionValTypars g v with
@@ -8322,7 +8329,7 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
     
     if canUseTypeTestFast g tgty then 
 
-        let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m)
+        let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
         let tg2 = mbuilder.AddResultTarget(e2, DebugPointForTarget.No)
         let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)
         let dtree = TDSwitch(exprForVal m v, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
@@ -8330,7 +8337,7 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
         mkCompGenLet m v (mkIsInst tgty vinpe m) expr
 
     else
-        let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m)
+        let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
         let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, DebugPointForTarget.No, None)))
         let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)
         let dtree = TDSwitch(vinpe, [TCase(DecisionTreeTest.IsInst(tyOfExpr g vinpe, tgty), tg2)], Some tg3, m)
@@ -8341,7 +8348,7 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
 //    1. The compilation of array patterns in the pattern match compiler
 //    2. The compilation of string patterns in the pattern match compiler
 let mkNullTest g m e1 e2 e3 =
-        let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m)
+        let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
         let tg2 = mbuilder.AddResultTarget(e2, DebugPointForTarget.No)
         let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)            
         let dtree = TDSwitch(e1, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
@@ -8350,9 +8357,9 @@ let mkNullTest g m e1 e2 e3 =
 
 let mkNonNullTest (g: TcGlobals) m e = mkAsmExpr ([ IL.AI_ldnull ; IL.AI_cgt_un ], [], [e], [g.bool_ty], m)
 
-let mkNonNullCond g m ty e1 e2 e3 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m ty (mkNonNullTest g m e1) e2 e3
+let mkNonNullCond g m ty e1 e2 e3 = mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m ty (mkNonNullTest g m e1) e2 e3
 
-let mkIfThen (g: TcGlobals) m e1 e2 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.unit_ty e1 e2 (mkUnit g m)
+let mkIfThen (g: TcGlobals) m e1 e2 = mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m g.unit_ty e1 e2 (mkUnit g m)
 
 let ModuleNameIsMangled g attrs =
     match TryFindFSharpInt32Attribute g g.attrib_CompilationRepresentationAttribute attrs with
@@ -8431,13 +8438,13 @@ let GetMemberCallInfo g (vref: ValRef, vFlags) =
            membInfo.MemberFlags.IsDispatchSlot) && 
           not membInfo.MemberFlags.IsFinal && 
           (match vFlags with VSlotDirectCall -> false | _ -> true)
-      let isNewObj = (membInfo.MemberFlags.MemberKind = MemberKind.Constructor) && (match vFlags with NormalValUse -> true | _ -> false)
-      let isSuperInit = (membInfo.MemberFlags.MemberKind = MemberKind.Constructor) && (match vFlags with CtorValUsedAsSuperInit -> true | _ -> false) 
-      let isSelfInit = (membInfo.MemberFlags.MemberKind = MemberKind.Constructor) && (match vFlags with CtorValUsedAsSelfInit -> true | _ -> false) 
+      let isNewObj = (membInfo.MemberFlags.MemberKind = SynMemberKind.Constructor) && (match vFlags with NormalValUse -> true | _ -> false)
+      let isSuperInit = (membInfo.MemberFlags.MemberKind = SynMemberKind.Constructor) && (match vFlags with CtorValUsedAsSuperInit -> true | _ -> false) 
+      let isSelfInit = (membInfo.MemberFlags.MemberKind = SynMemberKind.Constructor) && (match vFlags with CtorValUsedAsSelfInit -> true | _ -> false) 
       let isCompiledAsInstance = ValRefIsCompiledAsInstanceMember g vref
       let takesInstanceArg = isCompiledAsInstance && not isNewObj
-      let isPropGet = (membInfo.MemberFlags.MemberKind = MemberKind.PropertyGet) && (membInfo.MemberFlags.IsInstance = isCompiledAsInstance)
-      let isPropSet = (membInfo.MemberFlags.MemberKind = MemberKind.PropertySet) && (membInfo.MemberFlags.IsInstance = isCompiledAsInstance)
+      let isPropGet = (membInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGet) && (membInfo.MemberFlags.IsInstance = isCompiledAsInstance)
+      let isPropSet = (membInfo.MemberFlags.MemberKind = SynMemberKind.PropertySet) && (membInfo.MemberFlags.IsInstance = isCompiledAsInstance)
       numEnclTypeArgs, virtualCall, isNewObj, isSuperInit, isSelfInit, takesInstanceArg, isPropGet, isPropSet
     | _ -> 
       0, false, false, false, false, false, false, false
@@ -9152,8 +9159,8 @@ let (|CompiledForEachExpr|_|) g expr =
         let mBody = bodyExpr.Range
         let mWholeExpr = expr.Range
 
-        let spForLoop, mForLoop = match enumeratorBind with DebugPointAtBinding spStart -> DebugPointAtFor.Yes spStart, spStart | _ -> DebugPointAtFor.No, mEnumExpr
-        let spWhileLoop = match enumeratorBind with DebugPointAtBinding spStart -> DebugPointAtWhile.Yes spStart| _ -> DebugPointAtWhile.No
+        let spForLoop, mForLoop = match enumeratorBind with DebugPointAtBinding.Yes spStart -> DebugPointAtFor.Yes spStart, spStart | _ -> DebugPointAtFor.No, mEnumExpr
+        let spWhileLoop = match enumeratorBind with DebugPointAtBinding.Yes spStart -> DebugPointAtWhile.Yes spStart| _ -> DebugPointAtWhile.No
         let enumerableTy = tyOfExpr g enumerableExpr
 
         Some (enumerableTy, enumerableExpr, elemVar, bodyExpr, (mEnumExpr, mBody, spForLoop, mForLoop, spWhileLoop, mWholeExpr))
@@ -9234,7 +9241,7 @@ let DetectAndOptimizeForExpression g option expr =
 
             let expr =
                 // let mutable current = enumerableExpr
-                let spBind = (match spForLoop with DebugPointAtFor.Yes spStart -> DebugPointAtBinding spStart | DebugPointAtFor.No -> NoDebugPointAtStickyBinding)
+                let spBind = (match spForLoop with DebugPointAtFor.Yes spStart -> DebugPointAtBinding.Yes spStart | DebugPointAtFor.No -> DebugPointAtBinding.NoneAtSticky)
                 mkLet spBind mEnumExpr currentVar enumerableExpr
                     // let mutable next = current.TailOrNull
                     (mkCompGenLet mForLoop nextVar tailOrNullExpr 
@@ -9259,7 +9266,7 @@ let BindUnitVars g (mvs: Val list, paramInfos: ArgReprInfo list, body) =
     match mvs, paramInfos with 
     | [v], [] -> 
         assert isUnitTy g v.Type
-        [], mkLet NoDebugPointAtInvisibleBinding v.Range v (mkUnit g v.Range) body 
+        [], mkLet DebugPointAtBinding.NoneAtInvisible v.Range v (mkUnit g v.Range) body 
     | _ -> mvs, body
 
 let isThreadOrContextStatic g attrs = 
@@ -9367,8 +9374,8 @@ type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
 let EmptyTraitWitnessInfoHashMap g : TraitWitnessInfoHashMap<'T> =
     ImmutableDictionary.Create(
          { new IEqualityComparer<_> with 
-                member __.Equals(a, b) = traitKeysAEquiv g TypeEquivEnv.Empty a b
-                member __.GetHashCode(a) = hash a.MemberName
+                member _.Equals(a, b) = traitKeysAEquiv g TypeEquivEnv.Empty a b
+                member _.GetHashCode(a) = hash a.MemberName
          })
 
 let (|WhileExpr|_|) expr = 

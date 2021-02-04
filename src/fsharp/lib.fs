@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.Lib
+module internal Internal.Utilities.Library.Extras
 
 open System
 open System.IO
 open System.Collections.Generic
 open System.Runtime.InteropServices
 open Internal.Utilities
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.SourceCodeServices
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open FSharp.Compiler.IO
 
 let debug = false 
 
@@ -78,7 +78,7 @@ module Int64 =
 module Pair = 
     let order (compare1: IComparer<'T1>, compare2: IComparer<'T2>) =
         { new IComparer<'T1 * 'T2> with 
-             member __.Compare((a1, a2), (aa1, aa2)) =
+             member _.Compare((a1, a2), (aa1, aa2)) =
                   let res1 = compare1.Compare (a1, aa1)
                   if res1 <> 0 then res1 else compare2.Compare (a2, aa2) }
 

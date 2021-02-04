@@ -192,15 +192,12 @@ function Update-Arguments() {
     }
 }
 
-function BuildSolution() {
-    # VisualFSharp.sln can't be built with dotnet due to WPF, WinForms and VSIX build task dependencies
-    $solution = "VisualFSharp.sln"
-
-    Write-Host "$($solution):"
+function BuildSolution([string] $solutionName) {
+    Write-Host "${solutionName}:"
 
     $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.binlog") } else { "" }
 
-    $projects = Join-Path $RepoRoot $solution
+    $projects = Join-Path $RepoRoot  $solutionName
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset
     $quietRestore = !$ci
@@ -297,32 +294,6 @@ function TestUsingXUnit([string] $testProject, [string] $targetFramework, [strin
 
 function TestUsingNUnit([string] $testProject, [string] $targetFramework, [string]$testadapterpath) {
     TestUsingMsBuild -testProject $testProject -targetFramework $targetFramework -testadapterpath $testadapterpath -noTestFilter $false
-}
-
-function BuildCompiler() {
-    if ($bootstrapTfm -eq "netcoreapp3.1") {
-        $dotnetPath = InitializeDotNetCli
-        $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
-        $fscProject = "`"$RepoRoot\src\fsharp\fsc\fsc.fsproj`""
-        $fsiProject = "`"$RepoRoot\src\fsharp\fsi\fsi.fsproj`""
-
-        $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
-        $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
-
-        if ($binaryLog) {
-            $logFilePath = Join-Path $LogDir "fscBootstrapLog.binlog"
-            $args += " /bl:$logFilePath"
-        }
-        $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp3.1" + $argNoRestore + $argNoIncremental
-        Exec-Console $dotnetExe $args
-
-        if ($binaryLog) {
-            $logFilePath = Join-Path $LogDir "fsiBootstrapLog.binlog"
-            $args += " /bl:$logFilePath"
-        }
-        $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp3.1" + $argNoRestore + $argNoIncremental
-        Exec-Console $dotnetExe $args
-    }
 }
 
 function Prepare-TempDir() {
@@ -474,9 +445,9 @@ try {
     $script:BuildMessage = "Failure building product"
     if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish) {
         if ($noVisualStudio) {
-            BuildCompiler
+            BuildSolution "FSharp.sln"
         } else {
-            BuildSolution
+            BuildSolution "VisualFSharp.sln"
         }
     }
 
@@ -492,6 +463,7 @@ try {
     if ($testDesktop) {
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
@@ -542,6 +514,7 @@ try {
     }
 
     if ($testCompilerService) {
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
     }
 

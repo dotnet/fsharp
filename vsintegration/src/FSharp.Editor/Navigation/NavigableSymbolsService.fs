@@ -21,12 +21,12 @@ open Microsoft.VisualStudio.Shell
 [<AllowNullLiteral>]
 type internal FSharpNavigableSymbol(item: FSharpNavigableItem, span: SnapshotSpan, gtd: GoToDefinition, statusBar: StatusBar) =
     interface INavigableSymbol with
-        member __.Navigate(_: INavigableRelationship) =
+        member _.Navigate(_: INavigableRelationship) =
             gtd.NavigateToItem(item, statusBar)
 
-        member __.Relationships = seq { yield PredefinedNavigableRelationships.Definition }
+        member _.Relationships = seq { yield PredefinedNavigableRelationships.Definition }
 
-        member __.SymbolSpan = span
+        member _.SymbolSpan = span
 
 type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager, serviceProvider: IServiceProvider) =
     
@@ -35,7 +35,7 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
     let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
 
     interface INavigableSymbolSource with
-        member __.GetNavigableSymbolAsync(triggerSpan: SnapshotSpan, cancellationToken: CancellationToken) =
+        member _.GetNavigableSymbolAsync(triggerSpan: SnapshotSpan, cancellationToken: CancellationToken) =
             // Yes, this is a code smell. But this is how the editor API accepts what we would treat as None.
             if disposed then null
             else
@@ -58,13 +58,17 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                         statusBar.Clear()
 
                         if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
-                            let navigableItem, range = gtdTask.Result.Value
+                            let result, range = gtdTask.Result.Value
 
                             let declarationTextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
                             let declarationSpan = Span(declarationTextSpan.Start, declarationTextSpan.Length)
                             let symbolSpan = SnapshotSpan(snapshot, declarationSpan)
 
-                            return FSharpNavigableSymbol(navigableItem, symbolSpan, gtd, statusBar) :> INavigableSymbol
+                            match result with
+                            | FSharpGoToDefinitionResult.NavigableItem(navItem) ->
+                                return FSharpNavigableSymbol(navItem, symbolSpan, gtd, statusBar) :> INavigableSymbol
+                            | _ ->
+                                return null
                         else 
                             statusBar.TempMessage(SR.CannotDetermineSymbol())
 
@@ -79,7 +83,7 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                 |> Async.map Option.toObj
                 |> RoslynHelpers.StartAsyncAsTask cancellationToken
         
-        member __.Dispose() =
+        member _.Dispose() =
             disposed <- true
 
 [<Export(typeof<INavigableSymbolSourceProvider>)>]
@@ -95,5 +99,5 @@ type internal FSharpNavigableSymbolService
     ) =
 
     interface INavigableSymbolSourceProvider with
-        member __.TryCreateNavigableSymbolSource(_: ITextView, _: ITextBuffer) =
+        member _.TryCreateNavigableSymbolSource(_: ITextView, _: ITextBuffer) =
             new FSharpNavigableSymbolSource(checkerProvider, projectInfoManager, serviceProvider) :> INavigableSymbolSource

@@ -12,11 +12,11 @@ open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
 open System.Text
-open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 
 /// Resolves the references for a chosen or currently-executing framework, for
 ///   - script execution
@@ -56,7 +56,8 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
     static let getDotnetHostPath() =
         match (Environment.GetEnvironmentVariable("DOTNET_HOST_PATH")) with
         | value when not (String.IsNullOrEmpty(value)) ->
-            value                           // Value set externally
+            // Set externally
+            value
         | _ ->
             match getDotnetDirectory() with
             | Some dotnetDir ->
@@ -68,32 +69,75 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
     /// we repeatedly try to run dotnet.exe on every keystroke for a script
     static let desiredDotNetSdkVersionForDirectoryCache = ConcurrentDictionary<string, Result<string, exn>>()
 
+    // Execute the process pathToExe passing the arguments: arguments with the working directory: workingDir timeout after timeout milliseconds -1 = wait forever
+    // returns exit code, stdio and stderr as string arrays
+    let executeProcess pathToExe arguments (workingDir:string option) timeout =
+        if not (String.IsNullOrEmpty pathToExe) then
+            let errorsList = ResizeArray()
+            let outputList = ResizeArray()
+            let mutable errorslock = obj
+            let mutable outputlock = obj
+            let outputDataReceived (message: string) =
+                if not (isNull message) then
+                    lock outputlock (fun () -> outputList.Add(message))
+
+            let errorDataReceived (message: string) =
+                if not (isNull message) then
+                    lock errorslock (fun () -> errorsList.Add(message))
+
+            let psi = ProcessStartInfo()
+            psi.FileName <- pathToExe
+            if workingDir.IsSome  then
+                psi.WorkingDirectory <- workingDir.Value
+            psi.RedirectStandardOutput <- true
+            psi.RedirectStandardError <- true
+            psi.Arguments <- arguments
+            psi.CreateNoWindow <- true
+            psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
+            psi.UseShellExecute <- false
+
+            use p = new Process()
+            p.StartInfo <- psi
+
+            p.OutputDataReceived.Add(fun a -> outputDataReceived a.Data)
+            p.ErrorDataReceived.Add(fun a ->  errorDataReceived a.Data)
+
+            if p.Start() then
+                p.BeginOutputReadLine()
+                p.BeginErrorReadLine()
+                if not(p.WaitForExit(timeout)) then
+                    // Timed out resolving throw a diagnostic.
+                    raise (new TimeoutException(sprintf "Timeout executing command '%s' '%s'" (psi.FileName) (psi.Arguments)))
+                else
+                    p.WaitForExit()
+#if DEBUG
+            if workingDir.IsSome then
+                File.WriteAllLines(Path.Combine(workingDir.Value, "StandardOutput.txt"), outputList)
+                File.WriteAllLines(Path.Combine(workingDir.Value, "StandardError.txt"), errorsList)
+#endif
+            p.ExitCode, outputList.ToArray(), errorsList.ToArray()
+        else
+            -1, Array.empty, Array.empty
+
     /// Find the relevant sdk version by running `dotnet --version` in the script/project location,
     /// taking into account any global.json
     let tryGetDesiredDotNetSdkVersionForDirectoryInfo() =
         desiredDotNetSdkVersionForDirectoryCache.GetOrAdd(projectDir, (fun _ -> 
             let dotnetHostPath = getDotnetHostPath()
             try
-                let psi = ProcessStartInfo(dotnetHostPath, "--version")
-                psi.RedirectStandardOutput <- true
-                psi.RedirectStandardError <- true
-                psi.UseShellExecute <- false
-                psi.CreateNoWindow <- true
-                psi.StandardOutputEncoding <- Encoding.UTF8
-                psi.StandardErrorEncoding <- Encoding.UTF8
-                if Directory.Exists(projectDir) then
-                    psi.WorkingDirectory <- projectDir
-                let p = Process.Start(psi)
-                let stdout = p.StandardOutput.ReadToEnd()
-                let stderr = p.StandardError.ReadToEnd()
-                p.WaitForExit()
-                if p.ExitCode <> 0 then 
-                    Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, stderr, p.ExitCode), rangeForErrors))
+                let workingDir =
+                    if Directory.Exists(projectDir) then
+                        Some projectDir
+                    else
+                        None
+                let exitCode, output, errors = executeProcess dotnetHostPath "--version" workingDir 30000
+                if exitCode <> 0 then
+                    Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, (errors |> String.concat "\n"), exitCode), rangeForErrors))
                 else
-                    Result.Ok (stdout.Trim())
+                    Result.Ok (output |> String.concat "\n")
             with err -> 
                 Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, err.Message, 1), rangeForErrors))))
-    
+
     let tryGetDesiredDotNetSdkVersionForDirectory() =
     // Make sure the warning gets replayed each time we call this
         match tryGetDesiredDotNetSdkVersionForDirectoryInfo() with
@@ -251,7 +295,6 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
         let startPos =
             let startPos = file.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
             if startPos >= 0  then startPos + (pattern.Length) else startPos
-
         let length =
             if startPos >= 0 then
                 let ep = file.IndexOf("\"", startPos)
@@ -261,16 +304,21 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
         | -1, _
         | _, -1 ->
             if isRunningOnCoreClr then
-                // Running on coreclr but no deps.json was deployed with the host so default to 3.1
-                Some "netcoreapp3.1"
+                // Running on coreclr but no deps.json was deployed with the host so default to 5.0
+                Some "net5.0"
             else
                 // Running on desktop
                 None
         | pos, length ->
             // use value from the deps.json file
-            Some ("netcoreapp" + file.Substring(pos, length))
+            let suffix = file.Substring(pos, length)
+            let prefix =
+                match Double.TryParse(suffix) with
+                | true, value when value < 5.0 -> "netcoreapp"
+                | _ -> "net"
+            Some (prefix + suffix)
 
-    // Tries to figure out the tfm for the compiler instance on the Windows desktop.
+    // Tries to figure out the tfm for the compiler instance on the Windows desktop
     // On full clr it uses the mscorlib version number
     let getRunningDotNetFrameworkTfm () =
         let defaultMscorlibVersion = 4,8,3815,0
@@ -719,38 +767,40 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
 
     // The set of references entered into the TcConfigBuilder for scripts prior to computing the load closure. 
     member _.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework) =
-        if assumeDotNetFramework then
-            getDotNetFrameworkDefaultReferences useFsiAuxLib, assumeDotNetFramework
-        else
-            if useSdkRefs then
-                // Go fetch references
-                match tryGetSdkRefsPackDirectory() with
-                | Some path ->
-                    try 
-                        let sdkReferences = 
-                            [ yield! Directory.GetFiles(path, "*.dll")
-                              yield getFSharpCoreImplementationReference()
-                              if useFsiAuxLib then yield getFsiLibraryImplementationReference()
-                            ]
-                        sdkReferences, false
-                    with _ -> 
+        let defaultReferences =
+            if assumeDotNetFramework then
+                getDotNetFrameworkDefaultReferences useFsiAuxLib, assumeDotNetFramework
+            else
+                if useSdkRefs then
+                    // Go fetch references
+                    match tryGetSdkRefsPackDirectory() with
+                    | Some path ->
+                        try 
+                            let sdkReferences = 
+                                [ yield! Directory.GetFiles(path, "*.dll")
+                                  yield getFSharpCoreImplementationReference()
+                                  if useFsiAuxLib then yield getFsiLibraryImplementationReference()
+                                ]
+                            sdkReferences, false
+                        with _ -> 
+                            if isRunningOnCoreClr then
+                                // If running on .NET Core and something goes wrong with getting the
+                                // .NET Core references then use .NET Core implementation assemblies for running process
+                                getDotNetCoreImplementationReferences useFsiAuxLib, false
+                            else
+                                // If running on .NET Framework and something goes wrong with getting the
+                                // .NET Core references then default back to .NET Framework and return a flag indicating this has been done
+                                getDotNetFrameworkDefaultReferences useFsiAuxLib, true
+                    | None ->
                         if isRunningOnCoreClr then
-                            // If running on .NET Core and something goes wrong with getting the
-                            // .NET Core references then use .NET Core implementation assemblies for running process
+                            // If running on .NET Core and there is no Sdk refs pack directory
+                            // then use .NET Core implementation assemblies for running process
                             getDotNetCoreImplementationReferences useFsiAuxLib, false
                         else
-                            // If running on .NET Framework and something goes wrong with getting the
-                            // .NET Core references then default back to .NET Framework and return a flag indicating this has been done
+                            // If running on .NET Framework and there is no Sdk refs pack directory
+                            // then default back to .NET Framework and return a flag indicating this has been done
                             getDotNetFrameworkDefaultReferences useFsiAuxLib, true
-                | None ->
-                    if isRunningOnCoreClr then
-                        // If running on .NET Core and there is no Sdk refs pack directory
-                        // then use .NET Core implementation assemblies for running process
-                        getDotNetCoreImplementationReferences useFsiAuxLib, false
-                    else
-                        // If running on .NET Framework and there is no Sdk refs pack directory
-                        // then default back to .NET Framework and return a flag indicating this has been done
-                        getDotNetFrameworkDefaultReferences useFsiAuxLib, true
-            else
-                getDotNetCoreImplementationReferences useFsiAuxLib, assumeDotNetFramework
+                else
+                    getDotNetCoreImplementationReferences useFsiAuxLib, assumeDotNetFramework
+        defaultReferences
 

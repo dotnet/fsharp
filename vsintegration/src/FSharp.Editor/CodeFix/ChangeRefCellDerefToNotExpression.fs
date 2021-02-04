@@ -20,14 +20,14 @@ type internal FSharpChangeRefCellDerefToNotExpressionCodeFixProvider
     static let userOpName = "FSharpChangeRefCellDerefToNotExpressionCodeFix"
     let fixableDiagnosticIds = set ["FS0001"]
 
-    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override this.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             let document = context.Document
             let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! parseResults = checkerProvider.Checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName) |> liftAsync
+            let! parseResults = checkerProvider.Checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName=userOpName) |> liftAsync
 
             let errorRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
             let! derefRange = parseResults.TryRangeOfRefCellDereferenceContainingPos errorRange.Start

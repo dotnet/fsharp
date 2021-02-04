@@ -11,7 +11,7 @@
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
 
 #if COMPILER
-namespace FSharp.Compiler.TextLayout
+namespace FSharp.Compiler.Text
 #else
 // FSharp.Core.dll:
 namespace Microsoft.FSharp.Text.StructuredPrintfImpl
@@ -31,7 +31,7 @@ open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Collections
 
 [<StructuralEquality; NoComparison>]
-type LayoutTag =
+type TextTag =
     | ActivePatternCase
     | ActivePatternResult
     | Alias
@@ -67,7 +67,7 @@ type LayoutTag =
     | UnknownType
     | UnknownEntity
 
-type TaggedText(tag: LayoutTag, text: string) =
+type TaggedText(tag: TextTag, text: string) =
     member x.Tag = tag
     member x.Text = text
     override x.ToString() = text + "(tag: " + tag.ToString() + ")"
@@ -122,20 +122,20 @@ module TaggedText =
 
     let length (tt: TaggedText) = tt.Text.Length
     let toText (tt: TaggedText) = tt.Text
-    let tagClass name = mkTag LayoutTag.Class name
-    let tagUnionCase t = mkTag LayoutTag.UnionCase t
-    let tagField t = mkTag LayoutTag.Field t
-    let tagNumericLiteral t = mkTag LayoutTag.NumericLiteral t
-    let tagKeyword t = mkTag LayoutTag.Keyword t
-    let tagStringLiteral t = mkTag LayoutTag.StringLiteral t
-    let tagLocal t = mkTag LayoutTag.Local t
-    let tagText t = mkTag LayoutTag.Text t
-    let tagRecordField t = mkTag LayoutTag.RecordField t
-    let tagProperty t = mkTag LayoutTag.Property t
-    let tagMethod t = mkTag LayoutTag.Method t
-    let tagPunctuation t = mkTag LayoutTag.Punctuation t
-    let tagOperator t = mkTag LayoutTag.Operator t
-    let tagSpace t = mkTag LayoutTag.Space t
+    let tagClass name = mkTag TextTag.Class name
+    let tagUnionCase t = mkTag TextTag.UnionCase t
+    let tagField t = mkTag TextTag.Field t
+    let tagNumericLiteral t = mkTag TextTag.NumericLiteral t
+    let tagKeyword t = mkTag TextTag.Keyword t
+    let tagStringLiteral t = mkTag TextTag.StringLiteral t
+    let tagLocal t = mkTag TextTag.Local t
+    let tagText t = mkTag TextTag.Text t
+    let tagRecordField t = mkTag TextTag.RecordField t
+    let tagProperty t = mkTag TextTag.Property t
+    let tagMethod t = mkTag TextTag.Method t
+    let tagPunctuation t = mkTag TextTag.Punctuation t
+    let tagOperator t = mkTag TextTag.Operator t
+    let tagSpace t = mkTag TextTag.Space t
 
     let leftParen = tagPunctuation "("
     let rightParen = tagPunctuation ")"
@@ -150,7 +150,7 @@ module TaggedText =
     let equals = tagOperator "="
 
 #if COMPILER
-    let tagAlias t = mkTag LayoutTag.Alias t
+    let tagAlias t = mkTag TextTag.Alias t
     let keywordFunctions =
         [
             "raise"
@@ -182,25 +182,25 @@ module TaggedText =
             "unativeint"
         ]
         |> Set.ofList
-    let tagDelegate t = mkTag LayoutTag.Delegate t
-    let tagEnum t = mkTag LayoutTag.Enum t
-    let tagEvent t = mkTag LayoutTag.Event t
-    let tagInterface t = mkTag LayoutTag.Interface t
-    let tagLineBreak t = mkTag LayoutTag.LineBreak t
-    let tagRecord t = mkTag LayoutTag.Record t
-    let tagModule t = mkTag LayoutTag.Module t
-    let tagModuleBinding name = if keywordFunctions.Contains name then mkTag LayoutTag.Keyword name else mkTag LayoutTag.ModuleBinding name
-    let tagFunction t = mkTag LayoutTag.Function t
-    let tagNamespace t = mkTag LayoutTag.Namespace t
-    let tagParameter t = mkTag LayoutTag.Parameter t
-    let tagStruct t = mkTag LayoutTag.Struct t
-    let tagTypeParameter t = mkTag LayoutTag.TypeParameter t
-    let tagActivePatternCase t = mkTag LayoutTag.ActivePatternCase t
-    let tagActivePatternResult t = mkTag LayoutTag.ActivePatternResult t
-    let tagUnion t = mkTag LayoutTag.Union t
-    let tagMember t = mkTag LayoutTag.Member t
-    let tagUnknownEntity t = mkTag LayoutTag.UnknownEntity t
-    let tagUnknownType t = mkTag LayoutTag.UnknownType t
+    let tagDelegate t = mkTag TextTag.Delegate t
+    let tagEnum t = mkTag TextTag.Enum t
+    let tagEvent t = mkTag TextTag.Event t
+    let tagInterface t = mkTag TextTag.Interface t
+    let tagLineBreak t = mkTag TextTag.LineBreak t
+    let tagRecord t = mkTag TextTag.Record t
+    let tagModule t = mkTag TextTag.Module t
+    let tagModuleBinding name = if keywordFunctions.Contains name then mkTag TextTag.Keyword name else mkTag TextTag.ModuleBinding name
+    let tagFunction t = mkTag TextTag.Function t
+    let tagNamespace t = mkTag TextTag.Namespace t
+    let tagParameter t = mkTag TextTag.Parameter t
+    let tagStruct t = mkTag TextTag.Struct t
+    let tagTypeParameter t = mkTag TextTag.TypeParameter t
+    let tagActivePatternCase t = mkTag TextTag.ActivePatternCase t
+    let tagActivePatternResult t = mkTag TextTag.ActivePatternResult t
+    let tagUnion t = mkTag TextTag.Union t
+    let tagMember t = mkTag TextTag.Member t
+    let tagUnknownEntity t = mkTag TextTag.UnknownEntity t
+    let tagUnknownType t = mkTag TextTag.UnknownType t
 
     // common tagged literals
     let lineBreak = tagLineBreak "\n"
@@ -251,7 +251,7 @@ module Layout =
     // constructors
     let objL (value:obj) = 
         match value with 
-        | :? string as s -> Leaf (false, mkTag LayoutTag.Text s, false)
+        | :? string as s -> Leaf (false, mkTag TextTag.Text s, false)
         | o -> ObjLeaf (false, o, false)
 
     let wordL text = Leaf (false, text, false)
@@ -262,7 +262,7 @@ module Layout =
 
     let leftL text = Leaf (false, text, true)
 
-    let emptyL = Leaf (true, mkTag LayoutTag.Text "", true)
+    let emptyL = Leaf (true, mkTag TextTag.Text "", true)
 
     let isEmptyL layout = 
         match layout with 
@@ -1330,8 +1330,8 @@ module Display =
 
     let asTaggedTextWriter (writer: TextWriter) =
         { new TaggedTextWriter with
-            member __.Write(t) = writer.Write t.Text
-            member __.WriteLine() = writer.WriteLine() }
+            member _.Write(t) = writer.Write t.Text
+            member _.WriteLine() = writer.WriteLine() }
 
     let output_layout_tagged options writer layout = 
         layout |> squash_layout options 

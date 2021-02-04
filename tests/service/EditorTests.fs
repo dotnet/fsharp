@@ -31,8 +31,12 @@ open NUnit.Framework
 open FsUnit
 open System
 open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 let stringMethods = 
     ["Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
@@ -66,24 +70,24 @@ let ``Intro test`` () =
 //    let projectOptions = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
 
     // So we check that the messages are the same
-    for msg in typeCheckResults.Errors do 
+    for msg in typeCheckResults.Diagnostics do 
         printfn "Got an error, hopefully with the right text: %A" msg
 
-    printfn "typeCheckResults.Errors.Length = %d" typeCheckResults.Errors.Length
+    printfn "typeCheckResults.Diagnostics.Length = %d" typeCheckResults.Diagnostics.Length
 
     // We only expect one reported error. However,
     // on Unix, using filenames like /home/user/Test.fsx gives a second copy of all parse errors due to the
     // way the load closure for scripts is generated. So this returns two identical errors
-    (match typeCheckResults.Errors.Length with 1 | 2 -> true | _ -> false)  |> shouldEqual true
+    (match typeCheckResults.Diagnostics.Length with 1 | 2 -> true | _ -> false)  |> shouldEqual true
 
     // So we check that the messages are the same
-    for msg in typeCheckResults.Errors do 
+    for msg in typeCheckResults.Diagnostics do 
         printfn "Good! got an error, hopefully with the right text: %A" msg
         msg.Message.Contains("Missing qualification after '.'") |> shouldEqual true
 
     // Get tool tip at the specified location
-    let tip = typeCheckResults.GetToolTipText(4, 7, inputLines.[1], ["foo"], identToken)
-    // (sprintf "%A" tip).Replace("\n","") |> shouldEqual """FSharpToolTipText [Single ("val foo : unit -> unitFull name: Test.foo",None)]"""
+    let tip = typeCheckResults.GetToolTip(4, 7, inputLines.[1], ["foo"], identToken)
+    // (sprintf "%A" tip).Replace("\n","") |> shouldEqual """ToolTipText [Single ("val foo : unit -> unitFull name: Test.foo",None)]"""
     // Get declarations (autocomplete) for a location
     let partialName = { QualifyingIdents = []; PartialIdent = "msg"; EndColumn = 22; LastDotPos = None }
     let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines.[6], partialName, (fun _ -> []))
@@ -95,7 +99,7 @@ let ``Intro test`` () =
 
     // Print concatenated parameter lists
     [ for mi in methods.Methods do
-        yield methods.MethodName , [ for p in mi.Parameters do yield p.Display ] ]
+        yield methods.MethodName , [ for p in mi.Parameters do yield p.Display |> taggedTextToString ] ]
         |> shouldEqual
               [("Concat", ["[<ParamArray>] args: obj []"]);
                ("Concat", ["[<ParamArray>] values: string []"]);
@@ -112,25 +116,25 @@ let ``Intro test`` () =
 
 
 // TODO: check if this can be enabled in .NET Core testing of FSharp.Compiler.Service
-#if !INTERACTIVE && !NETCOREAPP // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
-[<Test>]
-let ``Basic cancellation test`` () = 
-   try 
-    printfn "locally injecting a cancellation condition in incremental building"
-    use _holder = IncrementalBuild.LocallyInjectCancellationFault()
-    
-    // Split the input & define file name
-    let inputLines = input.Split('\n')
-    let file = "/home/user/Test.fsx"
-    async { 
-        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-        let! checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, FSharp.Compiler.Text.SourceText.ofString input) 
-        let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, FSharp.Compiler.Text.SourceText.ofString input, checkOptions) 
-        return parseResult, typedRes
-    } |> Async.RunSynchronously
-      |> ignore
-    Assert.Fail("expected a cancellation")
-   with :? OperationCanceledException -> ()
+#if !INTERACTIVE // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
+//[<Test>]
+//let ``Basic cancellation test`` () = 
+//   try 
+//    printfn "locally injecting a cancellation condition in incremental building"
+//    use _holder = IncrementalBuild.LocallyInjectCancellationFault()
+//    
+//    // Split the input & define file name
+//    let inputLines = input.Split('\n')
+//    let file = "/home/user/Test.fsx"
+//    async { 
+//        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+//        let! checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) 
+//        let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, checkOptions) 
+//        return parseResult, typedRes
+//    } |> Async.RunSynchronously
+//      |> ignore
+//    Assert.Fail("expected a cancellation")
+//   with :? OperationCanceledException -> ()
 #endif
 
 [<Test>]
@@ -278,10 +282,10 @@ let ``Expression typing test`` () =
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input3) 
     let identToken = FSharpTokenTag.IDENT
 
-    for msg in typeCheckResults.Errors do 
+    for msg in typeCheckResults.Diagnostics do 
         printfn "***Expression typing test: Unexpected  error: %A" msg.Message
 
-    typeCheckResults.Errors.Length |> shouldEqual 0
+    typeCheckResults.Diagnostics.Length |> shouldEqual 0
 
     // Get declarations (autocomplete) for a location
     //
@@ -484,7 +488,7 @@ let _ =  printf "            %*a" 3 (fun _ _ -> ()) 2
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
 
-    typeCheckResults.Errors |> shouldEqual [||]
+    typeCheckResults.Diagnostics |> shouldEqual [||]
     typeCheckResults.GetFormatSpecifierLocationsAndArity() 
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual
@@ -514,7 +518,7 @@ let _ = List.iter(printfn \"\"\"%-A
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
 
-    typeCheckResults.Errors |> shouldEqual [||]
+    typeCheckResults.Diagnostics |> shouldEqual [||]
     typeCheckResults.GetFormatSpecifierLocationsAndArity() 
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual [|(2, 19, 2, 22, 1);
@@ -535,7 +539,7 @@ let _ = debug "[LanguageService] Type checking fails for '%s' with content=%A an
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
 
-    typeCheckResults.Errors |> shouldEqual [||]
+    typeCheckResults.Diagnostics |> shouldEqual [||]
     typeCheckResults.GetFormatSpecifierLocationsAndArity() 
     |> Array.map (fun (range, numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual [|(3, 24, 3, 26, 1); 
@@ -575,7 +579,7 @@ let s3 = $"abc %d{s.Length}
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScriptWithOptions(file, input, [| "/langversion:preview" |]) 
 
-    typeCheckResults.Errors |> shouldEqual [||]
+    typeCheckResults.Diagnostics |> shouldEqual [||]
     typeCheckResults.GetFormatSpecifierLocationsAndArity() 
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual
@@ -593,7 +597,7 @@ let ``Printf specifiers for triple quote interpolated strings`` () =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScriptWithOptions(file, input, [| "/langversion:preview" |]) 
 
-    typeCheckResults.Errors |> shouldEqual [||]
+    typeCheckResults.Diagnostics |> shouldEqual [||]
     typeCheckResults.GetFormatSpecifierLocationsAndArity() 
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual
@@ -627,7 +631,7 @@ type DU = Case1
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
     |> Array.map (fun su -> 
-        let r = su.RangeAlternate 
+        let r = su.Range 
         r.StartLine, r.StartColumn, r.EndLine, r.EndColumn)
     |> shouldEqual [|(2, 10, 2, 15); (2, 5, 2, 7); (1, 0, 1, 0)|]
 
@@ -646,7 +650,7 @@ let _ = arr.[..number2]
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
     |> Array.map (fun su -> 
-        let r = su.RangeAlternate 
+        let r = su.Range 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> shouldEqual 
         [|("val arr", (2, 4, 2, 7))
@@ -734,7 +738,7 @@ let _ =
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
     |> Array.map (fun su -> 
-        let r = su.RangeAlternate 
+        let r = su.Range 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> Array.distinct
     |> shouldEqual 
@@ -781,7 +785,7 @@ type Class1() =
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
     |> Array.map (fun su -> 
-        let r = su.RangeAlternate 
+        let r = su.Range 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> shouldEqual 
         [|("LiteralAttribute", (3, 10, 3, 17))
@@ -831,7 +835,7 @@ let x: T()
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
     |> Array.map (fun su -> 
-        let r = su.RangeAlternate
+        let r = su.Range
         let isConstructor =
             match su.Symbol with
             | :? FSharpMemberOrFunctionOrValue as f -> f.IsConstructor
@@ -860,7 +864,7 @@ let f x =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
     let lines = input.Replace("\r", "").Split( [| '\n' |])
-    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Range.mkPos (Range.Line.fromZ i) j, line ]
+    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Position.mkPos (Line.fromZ i) j, line ]
     let results = [ for pos, line in positions do 
                         match parseResult.ValidateBreakpointLocation pos with 
                         | Some r -> yield ((line, pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))  
@@ -914,7 +918,7 @@ type FooImpl() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
     let lines = input.Replace("\r", "").Split( [| '\n' |])
-    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Range.mkPos (Range.Line.fromZ i) j, line ]
+    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Position.mkPos (Line.fromZ i) j, line ]
     let results = [ for pos, line in positions do 
                         match parseResult.ValidateBreakpointLocation pos with 
                         | Some r -> yield ((line, pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))  
@@ -1145,7 +1149,7 @@ let _ = Threading.Buzz = null
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
     |> Array.map (fun su -> 
-        let r = su.RangeAlternate 
+        let r = su.Range 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> Array.distinct
     |> shouldEqual 
@@ -1167,7 +1171,7 @@ let ``GetDeclarationLocation should not require physical file`` () =
     let _, typeCheckResults = parseAndCheckScript(file, input) 
     let location = typeCheckResults.GetDeclarationLocation(2, 13, "let xyz = abc", ["abc"])
     match location with
-    | FSharpFindDeclResult.DeclFound r -> Some (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn, "<=== Found here."                             ) 
+    | FindDeclResult.DeclFound r -> Some (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn, "<=== Found here."                             ) 
     | _                                -> Some (0          , 0            , 0        , 0          , "Not Found. Should not require physical file." )
     |> shouldEqual                       (Some (1          , 4            , 1        , 7          , "<=== Found here."                             ))
 
@@ -1213,7 +1217,7 @@ let ``Test TPProject all symbols`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunSynchronously
     let allSymbolUses = wholeProjectResults.GetAllUsesOfAllSymbols() 
-    let allSymbolUsesInfo =  [ for s in allSymbolUses -> s.Symbol.DisplayName, tups s.RangeAlternate, attribsOfSymbol s.Symbol ]
+    let allSymbolUsesInfo =  [ for s in allSymbolUses -> s.Symbol.DisplayName, tups s.Range, attribsOfSymbol s.Symbol ]
     //printfn "allSymbolUsesInfo = \n----\n%A\n----" allSymbolUsesInfo
 
     allSymbolUsesInfo |> shouldEqual
@@ -1256,7 +1260,7 @@ let ``Test TPProject errors`` () =
         | FSharpCheckFileAnswer.Succeeded(res) -> res
         | res -> failwithf "Parsing did not finish... (%A)" res
 
-    let errorMessages = [ for msg in typeCheckResults.Errors -> msg.StartLineAlternate, msg.StartColumn, msg.EndLineAlternate, msg.EndColumn, msg.Message.Replace("\r","").Replace("\n","") ]
+    let errorMessages = [ for msg in typeCheckResults.Diagnostics -> msg.StartLine, msg.StartColumn, msg.EndLine, msg.EndColumn, msg.Message.Replace("\r","").Replace("\n","") ]
     //printfn "errorMessages = \n----\n%A\n----" errorMessages
 
     errorMessages |> shouldEqual
@@ -1271,12 +1275,12 @@ let ``Test TPProject errors`` () =
          (15, 33, 15, 38, "No static parameter exists with name ''");
          (16, 40, 16, 50, "This expression was expected to have type    'string'    but here has type    'unit'    ")]
 
-let internal extractToolTipText (FSharpToolTipText(els)) = 
+let internal extractToolTipText (ToolTipText(els)) = 
     [ for e in els do 
         match e with
-        | FSharpToolTipElement.Group txts -> for item in txts do yield item.MainDescription
-        | FSharpToolTipElement.CompositionError err -> yield err
-        | FSharpToolTipElement.None -> yield "NONE!" ] 
+        | ToolTipElement.Group txts -> for item in txts do yield item.MainDescription
+        | ToolTipElement.CompositionError err -> yield err
+        | ToolTipElement.None -> yield "NONE!" ] 
 
 [<Test>]
 let ``Test TPProject quick info`` () = 
@@ -1363,7 +1367,7 @@ let ``FSharpField.IsNameGenerated`` () =
         |> Array.choose (fun su ->
             match su.Symbol with
             | :? FSharpEntity as entity -> Some entity.FSharpFields
-            | :? FSharpUnionCase as unionCase -> Some unionCase.UnionCaseFields 
+            | :? FSharpUnionCase as unionCase -> Some unionCase.Fields 
             | _ -> None)
         |> Seq.concat
         |> Seq.map (fun (field: FSharpField) -> field.Name, field.IsNameGenerated)

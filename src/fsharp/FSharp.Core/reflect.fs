@@ -777,7 +777,7 @@ type UnionCaseInfo(typ: System.Type, tag: int) =
 
     let getMethInfo() = getUnionCaseConstructorMethod (typ, tag, BindingFlags.Public ||| BindingFlags.NonPublic)
 
-    member __.Name =
+    member _.Name =
         match names with
         | None ->
             let conv = getUnionTagConverter (typ, BindingFlags.Public ||| BindingFlags.NonPublic)
@@ -786,27 +786,27 @@ type UnionCaseInfo(typ: System.Type, tag: int) =
         | Some conv ->
             conv tag
 
-    member __.DeclaringType = typ
+    member _.DeclaringType = typ
 
-    member __.GetFields() =
+    member _.GetFields() =
         fieldsPropsOfUnionCase (typ, tag, BindingFlags.Public ||| BindingFlags.NonPublic)
 
-    member __.GetCustomAttributes() =
+    member _.GetCustomAttributes() =
         getMethInfo().GetCustomAttributes false
 
-    member __.GetCustomAttributes attributeType =
+    member _.GetCustomAttributes attributeType =
         getMethInfo().GetCustomAttributes(attributeType, false)
 
-    member __.GetCustomAttributesData() =
+    member _.GetCustomAttributesData() =
         getMethInfo().CustomAttributes |> Seq.toArray :> IList<_>
 
-    member __.Tag = tag
+    member _.Tag = tag
 
     override x.ToString() = typ.Name + "." + x.Name
 
     override x.GetHashCode() = typ.GetHashCode() + tag
 
-    override __.Equals(obj: obj) =
+    override _.Equals(obj: obj) =
         match obj with
         | :? UnionCaseInfo as uci -> uci.DeclaringType = typ && uci.Tag = tag
         | _ -> false
@@ -898,7 +898,7 @@ type FSharpType =
 
 type DynamicFunction<'T1, 'T2>() =
     inherit FSharpFunc<obj -> obj, obj>()
-    override __.Invoke(impl: obj -> obj) : obj =
+    override _.Invoke(impl: obj -> obj) : obj =
         box<('T1 -> 'T2)> (fun inp -> unbox<'T2>(impl (box<'T1>(inp))))
 
 [<AbstractClass; Sealed>]

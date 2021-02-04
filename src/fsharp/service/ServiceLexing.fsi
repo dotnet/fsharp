@@ -1,20 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Tokenization
 
 open System
 open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.Text
-open FSharp.Compiler.Range
-
 
 // Prevents warnings of experimental APIs within the signature file itself.
 #nowarn "57"
-
-type Position = int * int
-
-type Range = Position * Position
 
 /// Represents encoded information for the end-of-line continuation of lexing
 [<Struct; CustomEquality; NoComparison>]
@@ -87,130 +81,194 @@ type FSharpTokenCharKind =
 module FSharpTokenTag = 
     /// Indicates the token is an identifier
     val Identifier: int
+
     /// Indicates the token is a string
     val String : int
+
     /// Indicates the token is an identifier (synonym for FSharpTokenTag.Identifier)
     val IDENT : int
+
     /// Indicates the token is a string (synonym for FSharpTokenTag.String)
     val STRING : int
+
     /// Indicates the token is a part of an interpolated string
     val INTERP_STRING_BEGIN_END : int
+
     /// Indicates the token is a part of an interpolated string
     val INTERP_STRING_BEGIN_PART : int
+
     /// Indicates the token is a part of an interpolated string
     val INTERP_STRING_PART : int
+
     /// Indicates the token is a part of an interpolated string
     val INTERP_STRING_END : int
+
     /// Indicates the token is a `(`
     val LPAREN : int
+
     /// Indicates the token is a `)`
     val RPAREN : int
+
     /// Indicates the token is a `[`
     val LBRACK : int
+
     /// Indicates the token is a `]`
     val RBRACK : int
+
     /// Indicates the token is a `{`
     val LBRACE : int
+
     /// Indicates the token is a `}`
     val RBRACE : int
+
     /// Indicates the token is a `[<`
     val LBRACK_LESS : int
+
     /// Indicates the token is a `>]`
     val GREATER_RBRACK : int
+
     /// Indicates the token is a `<`
     val LESS : int
+
     /// Indicates the token is a `>`
     val GREATER : int
+
     /// Indicates the token is a `[|`
     val LBRACK_BAR : int
+
     /// Indicates the token is a `|]`
     val BAR_RBRACK : int
+
     /// Indicates the token is a `+` or `-`
     val PLUS_MINUS_OP : int
+
     /// Indicates the token is a `-`
     val MINUS : int
+
     /// Indicates the token is a `*`
     val STAR : int
+
     /// Indicates the token is a `%`
     val INFIX_STAR_DIV_MOD_OP : int
+
     /// Indicates the token is a `%`
     val PERCENT_OP : int
+
     /// Indicates the token is a `^`
     val INFIX_AT_HAT_OP : int
+
     /// Indicates the token is a `?`
     val QMARK : int
+
     /// Indicates the token is a `:`
     val COLON : int
+
     /// Indicates the token is a `=`
     val EQUALS : int
+
     /// Indicates the token is a `;`
     val SEMICOLON : int
+
     /// Indicates the token is a `,`
     val COMMA : int
+
     /// Indicates the token is a `.`
     val DOT : int
+
     /// Indicates the token is a `..`
     val DOT_DOT : int
+
     /// Indicates the token is a `..`
     val DOT_DOT_HAT : int
+
     /// Indicates the token is a `..^`
     val INT32_DOT_DOT : int
+
     /// Indicates the token is a `..`
     val UNDERSCORE : int
+
     /// Indicates the token is a `_`
     val BAR : int
+
     /// Indicates the token is a `:>`
     val COLON_GREATER : int
+
     /// Indicates the token is a `:?>`
     val COLON_QMARK_GREATER : int
+
     /// Indicates the token is a `:?`
     val COLON_QMARK : int
+
     /// Indicates the token is a `|`
     val INFIX_BAR_OP : int
+
     /// Indicates the token is a `|`
     val INFIX_COMPARE_OP : int
+
     /// Indicates the token is a `::`
     val COLON_COLON : int
+
     /// Indicates the token is a `@@`
     val AMP_AMP : int
+
     /// Indicates the token is a `~`
     val PREFIX_OP : int
+
     /// Indicates the token is a `:=`
     val COLON_EQUALS : int
+
     /// Indicates the token is a `||`
     val BAR_BAR : int
+
     /// Indicates the token is a `->`
     val RARROW : int
+
     /// Indicates the token is a `<-`
     val LARROW : int
+
     /// Indicates the token is a `"`
     val QUOTE : int
+
     /// Indicates the token is a whitespace
     val WHITESPACE : int
+
     /// Indicates the token is a comment
+
     val COMMENT : int
     /// Indicates the token is a line comment
+
     val LINE_COMMENT : int
+
     /// Indicates the token is keyword `begin`
     val BEGIN : int
+
     /// Indicates the token is keyword `do`
     val DO : int
+
     /// Indicates the token is keyword `function`
     val FUNCTION : int
+
     /// Indicates the token is keyword `then`
     val THEN : int
+
     /// Indicates the token is keyword `else`
     val ELSE : int
+
     /// Indicates the token is keyword `struct`
     val STRUCT : int
+
     /// Indicates the token is keyword `class`
     val CLASS : int
+
     /// Indicates the token is keyword `try`
     val TRY : int
+
     /// Indicates the token is keyword `with`
     val WITH : int
+
     /// Indicates the token is keyword `with` in #light
     val OWITH : int
+
     /// Indicates the token is keyword `new` 
     val NEW : int
     
@@ -289,6 +347,12 @@ module FSharpKeywords =
 
     /// Keywords paired with their descriptions. Used in completion and quick info.
     val KeywordsWithDescription : (string * string) list
+
+    /// A utility to help determine if an identifier needs to be quoted, this doesn't quote F# keywords.
+    val QuoteIdentifierIfNeeded: string -> string
+
+    /// All the keywords in the F# language
+    val KeywordNames: string list
 
 [<Flags;Experimental("This FCS API is experimental and subject to change.")>]
 type public FSharpLexerFlags =
@@ -516,5 +580,5 @@ type public FSharpToken =
 type public FSharpLexer =
         
     [<Experimental("This FCS API is experimental and subject to change.")>]
-    static member Lex: text: ISourceText * tokenCallback: (FSharpToken -> unit) * ?langVersion: string * ?filePath: string * ?conditionalCompilationDefines: string list * ?flags: FSharpLexerFlags * ?pathMap: Map<string, string> * ?ct: CancellationToken -> unit
+    static member Tokenize: text: ISourceText * tokenCallback: (FSharpToken -> unit) * ?langVersion: string * ?filePath: string * ?conditionalCompilationDefines: string list * ?flags: FSharpLexerFlags * ?pathMap: Map<string, string> * ?ct: CancellationToken -> unit
 

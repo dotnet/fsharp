@@ -5,7 +5,7 @@ module internal FSharp.Compiler.LowerStateMachines
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Import
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
 
 /// Analyze a TAST expression to detect the elaborated form of a state machine expression, a special kind
 /// of object expression that uses special code generation constructs.

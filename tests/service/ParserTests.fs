@@ -1,7 +1,7 @@
 ﻿module Tests.Parser
 
 open FSharp.Compiler.Service.Tests.Common
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open NUnit.Framework
 
 module Recovery =
@@ -16,7 +16,7 @@ let x = ()
 """
         let (SynModuleOrNamespace (decls = decls)) = getSingleModuleLikeDecl parseResults
         match decls with
-        | [ SynModuleDecl.Types ([ TypeDefn (typeRepr = SynTypeDefnRepr.ObjectModel (members = [ _; _ ])) ], _)
+        | [ SynModuleDecl.Types ([ SynTypeDefn (typeRepr = SynTypeDefnRepr.ObjectModel (members = [ _; _ ])) ], _)
             SynModuleDecl.Let _ ] -> ()
         | _ -> failwith "Unexpected tree"
 
@@ -34,8 +34,8 @@ let x = ()
     """
         let (|UnionWithCases|_|) typeDefn =
             match typeDefn with
-            | TypeDefn (typeRepr = SynTypeDefnRepr.Simple (SynTypeDefnSimpleRepr.Union (unionCases = cases), _)) ->
-                cases |> List.map (fun (UnionCase (ident = ident)) -> ident.idText) |> Some
+            | SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (SynTypeDefnSimpleRepr.Union (unionCases = cases), _)) ->
+                cases |> List.map (fun (SynUnionCase (ident = ident)) -> ident.idText) |> Some
             | _ -> None
 
         let (SynModuleOrNamespace (decls = decls)) = getSingleModuleLikeDecl parseResults

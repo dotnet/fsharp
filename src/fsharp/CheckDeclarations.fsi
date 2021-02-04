@@ -3,18 +3,20 @@
 module internal FSharp.Compiler.CheckDeclarations
 
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Range
 open FSharp.Compiler.Import
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
 val AddLocalRootModuleOrNamespace : NameResolution.TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv
+
 val CreateInitialTcEnv : TcGlobals * ImportMap * range * assemblyName: string * (CcuThunk * string list * string list) list -> TcEnv 
+
 val AddCcuToTcEnv: TcGlobals * ImportMap * range * TcEnv * assemblyName: string * ccu: CcuThunk * autoOpens: string list * internalsVisibleToAttributes: string list -> TcEnv 
 
 type TopAttribs =
@@ -25,6 +27,7 @@ type TopAttribs =
 type ConditionalDefines = string list
 
 val EmptyTopAttrs : TopAttribs
+
 val CombineTopAttrs : TopAttribs -> TopAttribs -> TopAttribs
 
 val TcOpenModuleOrNamespaceDecl: TcResultsSink  -> TcGlobals -> ImportMap -> range -> TcEnv -> (LongIdent * range) -> TcEnv
@@ -45,4 +48,5 @@ val TypeCheckOneSigFile :
       -> Eventually<TcEnv * ModuleOrNamespaceType * bool>
 
 exception ParameterlessStructCtor of range
+
 exception NotUpperCaseConstructor of range

@@ -5,24 +5,25 @@ module internal FSharp.Compiler.MethodCalls
 
 open Internal.Utilities
 
+open Internal.Utilities.Library 
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Lib
+open FSharp.Compiler.IO
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -220,7 +221,7 @@ let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnown
                         destTy
                     | _ ->
                         let compgenId = mkSynId range0 unassignedTyparName
-                        mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
+                        mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false))
             else
                 calledArgTy
 
@@ -1517,7 +1518,7 @@ module ProvidedMethodCalls =
                 let testExpr = exprToExpr test
                 let ifTrueExpr = exprToExpr thenBranch
                 let ifFalseExpr = exprToExpr elseBranch
-                let te = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
+                let te = mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
                 None, (te, tyOfExpr g te)
             | ProvidedVarExpr providedVar ->
                 let _, vTe = varToExpr (exprType.PApply((fun _ -> providedVar), m))

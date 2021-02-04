@@ -10,7 +10,7 @@
 //   and capturing large amounts of structured output.
 (*
     cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\FsxCompletionProviderTests.fs 
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Service.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\FsxCompletionProviderTests.fs 
     .\VisualFSharp.UnitTests.exe 
 *)
 // Technique 3: 
@@ -33,7 +33,7 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open UnitTests.TestLib.LanguageService
 
 // AppDomain helper
@@ -52,7 +52,6 @@ type Worker () =
         LoadTime = DateTime.MaxValue
         OriginalLoadReferences = []
         UnresolvedReferences = None
-        ExtraProjectInfo = None
         Stamp = None
     }
 
@@ -106,7 +105,7 @@ type Worker () =
 
             Assert.Fail(msg)
 
-    member __.VerifyCompletionListExactly(fileContents: string, marker: string, expected: List<string>) =
+    member _.VerifyCompletionListExactly(fileContents: string, marker: string, expected: List<string>) =
 
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let expected = expected |> Seq.toList

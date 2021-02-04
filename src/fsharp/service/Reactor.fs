@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.Diagnostics
 open System.Globalization
 open System.Threading
 
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Lib
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 
 /// Represents the capability to schedule work in the compiler service operations queue for the compilation thread
 type internal IReactorOperations = 
@@ -136,7 +136,7 @@ type Reactor() =
                     Debug.Assert(false, String.Format("unexpected failure in reactor loop {0}, restarting", e))
         }
 
-    member __.SetPreferredUILang(preferredUiLang: string option) = 
+    member _.SetPreferredUILang(preferredUiLang: string option) = 
         match preferredUiLang with
         | Some s -> 
             culture <- CultureInfo s
@@ -198,7 +198,7 @@ type Reactor() =
             return! resultCell.AsyncResult 
         }
 
-    member __.PauseBeforeBackgroundWork with get() = pauseBeforeBackgroundWork and set v = pauseBeforeBackgroundWork <- v
+    member _.PauseBeforeBackgroundWork with get() = pauseBeforeBackgroundWork and set v = pauseBeforeBackgroundWork <- v
 
     static member Singleton = theReactor 
 

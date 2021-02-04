@@ -13,7 +13,7 @@
 // Note no layout objects are ever transferred between the above implementations.
 
 #if COMPILER
-namespace FSharp.Compiler.TextLayout
+namespace FSharp.Compiler.Text
 #else
 namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #endif
@@ -34,8 +34,9 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         | Breakable of indentation: int
         | Broken of indentation: int
     
+    /// Represents the tag of some tagged text
     [<StructuralEquality; NoComparison; RequireQualifiedAccess>]
-    type LayoutTag =
+    type TextTag =
         | ActivePatternCase
         | ActivePatternResult
         | Alias
@@ -73,8 +74,13 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
     /// Represents text with a tag
     type public TaggedText =
-        new: tag: LayoutTag * text: string -> TaggedText
-        member Tag: LayoutTag
+        /// Creates text with a tag
+        new: tag: TextTag * text: string -> TaggedText
+
+        /// Gets the tag
+        member Tag: TextTag
+
+        /// Gets the text
         member Text: string
     
     type internal TaggedTextWriter =
@@ -83,24 +89,24 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
     /// Data representing structured layouts of terms.
     [<NoEquality; NoComparison>]
-    type public Layout =
-        internal
+    type internal Layout =
         | ObjLeaf of juxtLeft: bool * object: obj * juxtRight: bool
         | Leaf of juxtLeft: bool * text: TaggedText * justRight: bool
         | Node of leftLayout: Layout * rightLayout: Layout * joint: Joint
         | Attr of text: string * attributes: (string * string) list * layout: Layout
 
         static member internal JuxtapositionMiddle: left: Layout * right: Layout -> bool
+
 #else  // FSharp.Compiler.Service.dll, fsc.exe
     /// Data representing structured layouts of terms.  
     // FSharp.Core.dll makes things internal and hides representations
     type internal Layout
 
-    type internal LayoutTag
+    type internal TextTag
 
     [<Class>]
     type internal TaggedText =
-        member Tag: LayoutTag
+        member Tag: TextTag
         member Text: string
 #endif
 
@@ -110,97 +116,99 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     module internal TaggedText =
 #endif
         val tagText: string -> TaggedText
-        val tagField: string -> TaggedText
-        val tagKeyword: string -> TaggedText
-        val tagLocal: string -> TaggedText
-        val tagProperty: string -> TaggedText
-        val tagMethod: string -> TaggedText
         val tagClass: string -> TaggedText
-        val tagUnionCase: string -> TaggedText
+        val internal tagField: string -> TaggedText
+        val internal tagKeyword: string -> TaggedText
+        val internal tagLocal: string -> TaggedText
+        val internal tagProperty: string -> TaggedText
+        val internal tagMethod: string -> TaggedText
+        val internal tagUnionCase: string -> TaggedText
 
         val comma: TaggedText
 
 #if COMPILER
-        val mkTag: LayoutTag -> string -> TaggedText
-        val keywordFunctions: Set<string>
-        val tagAlias: string -> TaggedText
-        val tagDelegate: string -> TaggedText
-        val tagEnum: string -> TaggedText
-        val tagEvent: string -> TaggedText
-        val tagInterface: string -> TaggedText
-        val tagLineBreak: string -> TaggedText
-        val tagModuleBinding: string -> TaggedText
-        val tagFunction: string -> TaggedText
-        val tagRecord: string -> TaggedText
-        val tagRecordField: string -> TaggedText
-        val tagModule: string -> TaggedText
         val tagNamespace: string -> TaggedText
-        val tagNumericLiteral: string -> TaggedText
-        val tagOperator: string -> TaggedText
         val tagParameter: string -> TaggedText
         val tagSpace: string -> TaggedText
-        val tagStringLiteral: string -> TaggedText
-        val tagStruct: string -> TaggedText
-        val tagTypeParameter: string -> TaggedText
-        val tagPunctuation: string -> TaggedText
-        val tagActivePatternCase: string -> TaggedText
-        val tagActivePatternResult: string -> TaggedText
-        val tagUnion: string -> TaggedText
-        val tagMember: string -> TaggedText
-        val tagUnknownEntity: string -> TaggedText
-        val tagUnknownType: string -> TaggedText
 
         // common tagged literals
         val dot: TaggedText
-        val leftAngle: TaggedText
-        val rightAngle: TaggedText
         val colon: TaggedText
         val minus: TaggedText
-        val keywordTrue: TaggedText
-        val keywordFalse: TaggedText
         val lineBreak: TaggedText
         val space: TaggedText
-        val semicolon: TaggedText
-        val leftParen: TaggedText
-        val rightParen: TaggedText
-        val leftBracket: TaggedText
-        val rightBracket: TaggedText
-        val leftBrace: TaggedText
-        val rightBrace: TaggedText
-        val leftBraceBar: TaggedText
-        val rightBraceBar: TaggedText
-        val equals: TaggedText
-        val arrow: TaggedText
-        val questionMark: TaggedText
-        val structUnit: TaggedText
-        val keywordStatic: TaggedText
-        val keywordMember: TaggedText
-        val keywordVal: TaggedText
-        val keywordEvent: TaggedText
-        val keywordWith: TaggedText
-        val keywordSet: TaggedText
-        val keywordGet: TaggedText
-        val bar: TaggedText
-        val keywordStruct: TaggedText
-        val keywordInherit: TaggedText
-        val keywordEnd: TaggedText
-        val keywordNested: TaggedText
-        val keywordType: TaggedText
-        val keywordDelegate: TaggedText
-        val keywordOf: TaggedText
-        val keywordInternal: TaggedText
-        val keywordPrivate: TaggedText
-        val keywordAbstract: TaggedText
-        val keywordOverride: TaggedText
-        val keywordEnum: TaggedText
-        val leftBracketBar: TaggedText
-        val rightBracketBar: TaggedText
-        val keywordTypeof: TaggedText
-        val keywordTypedefof: TaggedText
-        val leftBracketAngle: TaggedText
-        val rightBracketAngle: TaggedText
-        val star: TaggedText
-        val keywordNew: TaggedText
+
+        val internal mkTag: TextTag -> string -> TaggedText
+        val internal keywordFunctions: Set<string>
+        val internal tagAlias: string -> TaggedText
+        val internal tagDelegate: string -> TaggedText
+        val internal tagEnum: string -> TaggedText
+        val internal tagEvent: string -> TaggedText
+        val internal tagInterface: string -> TaggedText
+        val internal tagLineBreak: string -> TaggedText
+        val internal tagModuleBinding: string -> TaggedText
+        val internal tagFunction: string -> TaggedText
+        val internal tagRecord: string -> TaggedText
+        val internal tagRecordField: string -> TaggedText
+        val internal tagModule: string -> TaggedText
+        val internal tagNumericLiteral: string -> TaggedText
+        val internal tagOperator: string -> TaggedText
+        val internal tagStringLiteral: string -> TaggedText
+        val internal tagStruct: string -> TaggedText
+        val internal tagTypeParameter: string -> TaggedText
+        val internal tagPunctuation: string -> TaggedText
+        val internal tagActivePatternCase: string -> TaggedText
+        val internal tagActivePatternResult: string -> TaggedText
+        val internal tagUnion: string -> TaggedText
+        val internal tagMember: string -> TaggedText
+        val internal tagUnknownEntity: string -> TaggedText
+        val internal tagUnknownType: string -> TaggedText
+
+        val internal leftAngle: TaggedText
+        val internal rightAngle: TaggedText
+        val internal keywordTrue: TaggedText
+        val internal keywordFalse: TaggedText
+        val internal semicolon: TaggedText
+        val internal leftParen: TaggedText
+        val internal rightParen: TaggedText
+        val internal leftBracket: TaggedText
+        val internal rightBracket: TaggedText
+        val internal leftBrace: TaggedText
+        val internal rightBrace: TaggedText
+        val internal leftBraceBar: TaggedText
+        val internal rightBraceBar: TaggedText
+        val internal equals: TaggedText
+        val internal arrow: TaggedText
+        val internal questionMark: TaggedText
+        val internal structUnit: TaggedText
+        val internal keywordStatic: TaggedText
+        val internal keywordMember: TaggedText
+        val internal keywordVal: TaggedText
+        val internal keywordEvent: TaggedText
+        val internal keywordWith: TaggedText
+        val internal keywordSet: TaggedText
+        val internal keywordGet: TaggedText
+        val internal bar: TaggedText
+        val internal keywordStruct: TaggedText
+        val internal keywordInherit: TaggedText
+        val internal keywordEnd: TaggedText
+        val internal keywordNested: TaggedText
+        val internal keywordType: TaggedText
+        val internal keywordDelegate: TaggedText
+        val internal keywordOf: TaggedText
+        val internal keywordInternal: TaggedText
+        val internal keywordPrivate: TaggedText
+        val internal keywordAbstract: TaggedText
+        val internal keywordOverride: TaggedText
+        val internal keywordEnum: TaggedText
+        val internal leftBracketBar: TaggedText
+        val internal rightBracketBar: TaggedText
+        val internal keywordTypeof: TaggedText
+        val internal keywordTypedefof: TaggedText
+        val internal leftBracketAngle: TaggedText
+        val internal rightBracketAngle: TaggedText
+        val internal star: TaggedText
+        val internal keywordNew: TaggedText
 
     type internal IEnvironment = 
         /// Return to the layout-generation 
@@ -223,11 +231,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     /// A joint is either unbreakable, breakable or broken.
     /// If a joint is broken the RHS layout occurs on the next line with optional indentation.
     /// A layout can be squashed to for given width which forces breaks as required.
-#if COMPILER
-    module public Layout =
-#else
     module internal Layout =
-#endif
         /// The empty layout
         val emptyL: Layout
 

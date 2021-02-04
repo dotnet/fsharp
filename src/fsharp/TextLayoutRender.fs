@@ -1,17 +1,18 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.TextLayout
+namespace FSharp.Compiler.Text
 
 open System
+open System.Collections.Immutable
 open System.IO
-open FSharp.Compiler
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Layout
 open FSharp.Core.Printf
 
 #nowarn "62" // This construct is for ML compatibility.
 
-type NavigableTaggedText(taggedText: TaggedText, range: Range.range) =
+type NavigableTaggedText(taggedText: TaggedText, range: range) =
     inherit TaggedText(taggedText.Tag, taggedText.Text)
     member val Range = range
 
@@ -165,4 +166,8 @@ module LayoutRender =
     let bufferL os layout = renderL (bufferR os) layout |> ignore
 
     let emitL f layout = renderL (taggedTextListR f) layout |> ignore
-    
+
+    let toArray layout = 
+        let output = ResizeArray()
+        renderL (taggedTextListR (fun tt -> output.Add(tt))) layout |> ignore
+        output.ToArray()

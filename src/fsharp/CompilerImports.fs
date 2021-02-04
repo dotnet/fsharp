@@ -13,38 +13,36 @@ open System.IO
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.FSharpEnvironment
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Extensions.ILX
+open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Import
-open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.IO
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.Range
-open FSharp.Compiler.ReferenceResolver
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.XmlDoc
-
-open Microsoft.DotNet.DependencyManager
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
-open Microsoft.FSharp.Core.CompilerServices
+open FSharp.Core.CompilerServices
 #endif
 
 let (++) x s = x @ [s]
@@ -373,7 +371,7 @@ type TcConfig with
             | Some IA64 -> "ia64"
  
         try 
-            tcConfig.legacyReferenceResolver.Resolve
+            tcConfig.legacyReferenceResolver.Impl.Resolve
                (tcConfig.resolutionEnvironment, 
                 references, 
                 tcConfig.targetFrameworkVersion, 
@@ -384,7 +382,7 @@ type TcConfig with
                 tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)
                 logMessage showMessages, logDiagnostic showMessages)
         with 
-            ReferenceResolver.ResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(), errorAndWarningRange))
+            | LegacyResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(), errorAndWarningRange))
 
 
     // NOTE!! if mode=Speculative then this method must not report ANY warnings or errors through 'warning' or 'error'. Instead
@@ -630,13 +628,13 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
     let externalSigAndOptData = ["FSharp.Core"]
     interface IRawFSharpAssemblyData with 
 
-         member __.GetAutoOpenAttributes ilg = GetAutoOpenAttributes ilg ilModule 
+         member _.GetAutoOpenAttributes ilg = GetAutoOpenAttributes ilg ilModule 
 
-         member __.GetInternalsVisibleToAttributes ilg = GetInternalsVisibleToAttributes ilg ilModule 
+         member _.GetInternalsVisibleToAttributes ilg = GetInternalsVisibleToAttributes ilg ilModule 
 
-         member __.TryGetILModuleDef() = Some ilModule 
+         member _.TryGetILModuleDef() = Some ilModule 
 
-         member __.GetRawFSharpSignatureData(m, ilShortAssemName, filename) = 
+         member _.GetRawFSharpSignatureData(m, ilShortAssemName, filename) = 
             let resources = ilModule.Resources.AsList
             let sigDataReaders = 
                 [ for iresource in resources do
@@ -654,7 +652,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                     sigDataReaders
             sigDataReaders
 
-         member __.GetRawFSharpOptimizationData(m, ilShortAssemName, filename) =             
+         member _.GetRawFSharpOptimizationData(m, ilShortAssemName, filename) =             
             let optDataReaders = 
                 ilModule.Resources.AsList
                 |> List.choose (fun r -> if IsOptimizationDataResource r then Some(GetOptimizationDataResourceName r, (fun () -> r.GetBytes())) else None)
@@ -670,24 +668,24 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                     optDataReaders
             optDataReaders
 
-         member __.GetRawTypeForwarders() =
+         member _.GetRawTypeForwarders() =
             match ilModule.Manifest with 
             | Some manifest -> manifest.ExportedTypes
             | None -> mkILExportedTypes []
 
-         member __.ShortAssemblyName = GetNameOfILModule ilModule 
+         member _.ShortAssemblyName = GetNameOfILModule ilModule 
 
-         member __.ILScopeRef = MakeScopeRefForILModule ilModule
+         member _.ILScopeRef = MakeScopeRefForILModule ilModule
 
-         member __.ILAssemblyRefs = ilAssemblyRefs
+         member _.ILAssemblyRefs = ilAssemblyRefs
 
-         member __.HasAnyFSharpSignatureDataAttribute = 
+         member _.HasAnyFSharpSignatureDataAttribute = 
             let attrs = GetCustomAttributesOfILModule ilModule
             List.exists IsSignatureDataVersionAttr attrs
 
-         member __.HasMatchingFSharpSignatureDataAttribute ilg = 
+         member _.HasMatchingFSharpSignatureDataAttribute ilg = 
             let attrs = GetCustomAttributesOfILModule ilModule
-            List.exists (IsMatchingSignatureDataVersionAttr ilg (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
+            List.exists (IsMatchingSignatureDataVersionAttr ilg (parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
 
 //----------------------------------------------------------------------------
 // TcImports
@@ -730,10 +728,10 @@ type TcImportsDllInfoHack =
 and TcImportsWeakHack (tcImports: WeakReference<TcImports>) =
     let mutable dllInfos: TcImportsDllInfoHack list = []
 
-    member __.SetDllInfos (value: ImportedBinary list) =
+    member _.SetDllInfos (value: ImportedBinary list) =
         dllInfos <- value |> List.map (fun x -> { FileName = x.FileName })
 
-    member __.Base: TcImportsWeakHack option =
+    member _.Base: TcImportsWeakHack option =
         match tcImports.TryGetTarget() with
         | true, strong ->
             match strong.Base with
@@ -744,7 +742,7 @@ and TcImportsWeakHack (tcImports: WeakReference<TcImports>) =
         | _ -> 
             None
 
-    member __.SystemRuntimeContainsType typeName =
+    member _.SystemRuntimeContainsType typeName =
         match tcImports.TryGetTarget () with
         | true, strong -> strong.SystemRuntimeContainsType typeName
         | _ -> false
@@ -1331,7 +1329,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
     /// Query information about types available in target system runtime library
     member tcImports.SystemRuntimeContainsType (typeName: string) : bool = 
-        let ns, typeName = IL.splitILTypeName typeName
+        let ns, typeName = splitILTypeName typeName
         let tcGlobals = tcImports.GetTcGlobals()
         tcGlobals.TryFindSysTyconRef ns typeName |> Option.isSome
 

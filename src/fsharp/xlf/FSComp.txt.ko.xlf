@@ -374,7 +374,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
-        <target state="new">The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</target>
+        <target state="translated">이 스크립트에 대한 .NET SDK를 확인할 수 없습니다. 스크립트가 'global.json'을 사용하는 디렉터리에 있는 경우 관련 .NET SDK가 설치되어 있는지 확인하세요. '{1}' 디렉터리에 있는 '{0} --version'의 출력은 '{2}'이고 종료 코드는 '{3}'입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -425,6 +425,11 @@
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">use!는 and!와 함께 사용할 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
+        <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
+        <target state="new">A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
@@ -2813,8 +2818,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMemberKindPropertyGetSetNotExpected">
-        <source>MemberKind.PropertyGetSet only expected in parse trees</source>
-        <target state="translated">MemberKind.PropertyGetSet은 구문 분석 트리에만 필요합니다.</target>
+        <source>SynMemberKind.PropertyGetSet only expected in parse trees</source>
+        <target state="needs-review-translation">MemberKind.PropertyGetSet은 구문 분석 트리에만 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainValues">

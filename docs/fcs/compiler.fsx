@@ -29,7 +29,8 @@ First, we need to reference the libraries that contain F# interactive service:
 
 #r "FSharp.Compiler.Service.dll"
 open System.IO
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
 
 // Create an interactive checker instance 
 let checker = FSharpChecker.Create()

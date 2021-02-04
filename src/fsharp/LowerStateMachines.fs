@@ -2,23 +2,22 @@
 
 module internal FSharp.Compiler.LowerStateMachines
 
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Lib
 open FSharp.Compiler.MethodCalls
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-
 
 let mkLabelled m l e = mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e
 
@@ -102,7 +101,7 @@ let RepresentBindingAsStateVar (bind: Binding) (res2: StateMachineConversionFirs
     let (TBind(v, e, sp)) = bind
     let sp, spm =
         match sp with
-        | DebugPointAtBinding m -> DebugPointAtSequential.Both, m
+        | DebugPointAtBinding.Yes m -> DebugPointAtSequential.Both, m
         | _ -> DebugPointAtSequential.StmtOnly, e.Range
     let vref = mkLocalValRef v
     { res2 with
@@ -455,7 +454,7 @@ let ConvertStateMachineExprToObject g overallExpr =
             expr
         else
             let initLabel = IL.generateCodeLabel()
-            let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m )
+            let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
             let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointForTarget.No)
             let dtree =
                 TDSwitch(pcExpr,
@@ -496,7 +495,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                 let m = someBranchExpr.Range
                 let recreate reenterLabOpt e1 e2 = 
                     let lab = (match reenterLabOpt with Some l -> l | _ -> IL.generateCodeLabel())
-                    mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No  m (tyOfExpr g noneBranchExpr) (mkFalse g m) (mkLabelled m lab e1) e2
+                    mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No  m (tyOfExpr g noneBranchExpr) (mkFalse g m) (mkLabelled m lab e1) e2
 
                 { phase1 = recreate None resNone.phase1 resSome.phase1
                   phase2 = (fun ctxt ->

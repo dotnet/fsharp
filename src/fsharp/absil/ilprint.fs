@@ -2,14 +2,15 @@
 
 module internal FSharp.Compiler.AbstractIL.ILAsciiWriter
 
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
-open FSharp.Compiler.AbstractIL.Internal.AsciiConstants
-open FSharp.Compiler.AbstractIL.IL
-
 open System.IO
 open System.Reflection
+
+open Internal.Utilities
+open Internal.Utilities.Library
+
+open FSharp.Compiler.AbstractIL.AsciiConstants
+open FSharp.Compiler.AbstractIL.ILX.Types
+open FSharp.Compiler.AbstractIL.IL
 
 #if DEBUG
 let pretty () = true
@@ -459,7 +460,7 @@ let output_at os b =
 
 let output_option f os = function None -> () | Some x -> f os x
 
-let goutput_alternative_ref env os (alt: IlxUnionAlternative) =
+let goutput_alternative_ref env os (alt: IlxUnionCase) =
   output_id os alt.Name
   alt.FieldDefs |> output_parens (output_array ", " (fun os fdef -> goutput_typ env os fdef.Type)) os
 
@@ -807,8 +808,8 @@ let goutput_mbody is_entrypoint env os (md: ILMethodDef) =
   output_string os " \n{ \n"
   goutput_security_decls env os md.SecurityDecls
   goutput_custom_attrs env os md.CustomAttrs
-  match md.Body.Contents with
-    | MethodBody.IL il -> goutput_ilmbody env os il
+  match md.Body with
+    | MethodBody.IL il -> goutput_ilmbody env os il.Value
     | _ -> ()
   if is_entrypoint then output_string os " .entrypoint"
   output_string os "\n"
@@ -827,8 +828,9 @@ let goutput_mdef env os (md:ILMethodDef) =
       elif md.IsConstructor then "rtspecialname"
       elif md.IsStatic then
             "static " +
-            (match md.Body.Contents with
-              MethodBody.PInvoke (attr) ->
+            (match md.Body with
+              MethodBody.PInvoke (attrLazy) ->
+                let attr = attrLazy.Value
                 "pinvokeimpl(\"" + attr.Where.Name + "\" as \"" + attr.Name + "\"" +
                 (match attr.CallingConv with
                 | PInvokeCallingConvention.None -> ""

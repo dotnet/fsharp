@@ -4,7 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 open FSharp.Test.Utilities
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Diagnostics
 
 #nowarn "9"
 
@@ -143,8 +143,8 @@ let _ = NativeInterop.NativePtr.stackalloc<System.EventHandler> 1
 
 type C() = 
     class
-        member __.M = 10
-        member __.N(x) = x + 1
+        member _.M = 10
+        member _.N(x) = x + 1
     end
 
 let _ = NativeInterop.NativePtr.stackalloc<C> 1

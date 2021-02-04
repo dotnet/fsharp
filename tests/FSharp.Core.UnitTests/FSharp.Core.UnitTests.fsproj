@@ -35,7 +35,7 @@
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />
     <Compile Include="FSharp.Core\ComparersRegression.fs" />
-    <Compile Include="FSharp.Core\DiscrimantedUnionType.fs" />
+    <Compile Include="FSharp.Core\DiscriminatedUnionType.fs" />
     <Compile Include="FSharp.Core\RecordTypes.fs" />
     <Compile Include="FSharp.Core\OperatorsModule1.fs" />
     <Compile Include="FSharp.Core\OperatorsModule2.fs" />

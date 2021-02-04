@@ -4,17 +4,17 @@
     <body>
       <trans-unit id="FSharpInteractive64Bit">
         <source>64-bit F# Interactive</source>
-        <target state="needs-review-translation">64 位元 F# 互動</target>
+        <target state="translated">64 位元 F# 互動</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
         <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
-        <target state="needs-review-translation">如果設為 true，並且目前電腦為 64 位元，則 F# 互動會當做 64 位元處理序來執行 (反之，F# 互動則為 32 位元處理序)。</target>
+        <target state="translated">如果設為 true，並且目前電腦為 64 位元，則 F# 互動會當做 64 位元處理序來執行 (反之，F# 互動則為 32 位元處理序)。</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
         <source>Misc</source>
-        <target state="new">Misc</target>
+        <target state="translated">其他</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractivePreviewModeDescr">
         <source>Enable preview of in-development language features in F# Interactive</source>
-        <target state="needs-review-translation">在 F# Interactive 中啟用開發中語言功能的預覽</target>
+        <target state="translated">在 F# Interactive 中啟用開發中語言功能的預覽</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopy">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopyDescr">
         <source>Prevents referenced assemblies from being locked by the F# Interactive process.</source>
-        <target state="needs-review-translation">避免參考的組件遭 F# 互動處理序封鎖。</target>
+        <target state="translated">避免參考的組件遭 F# 互動處理序封鎖。</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugMode">
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugModeDescr">
         <source>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</source>
-        <target state="needs-review-translation">啟用 F# 指令碼偵錯 (可能會影響指令碼效能，必須重設 F# 互動)</target>
+        <target state="translated">啟用 F# 指令碼偵錯 (可能會影響指令碼效能，必須重設 F# 互動)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugging">
@@ -69,12 +69,12 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveUseNetCore">
         <source>Use .NET Core Scripting</source>
-        <target state="new">Use .NET Core Scripting</target>
+        <target state="translated">使用 .NET Core 指令碼</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveUseNetCoreDescr">
         <source>Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</source>
-        <target state="new">Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</target>
+        <target state="translated">為所有 F# 指令碼及 F# 互動視窗啟用 .NET Core 指令碼編輯與執行</target>
         <note />
       </trans-unit>
     </body>
