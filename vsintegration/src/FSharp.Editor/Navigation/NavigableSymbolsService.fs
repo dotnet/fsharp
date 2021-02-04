@@ -65,7 +65,7 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
 
                             match result with
                             | FSharpGoToDefinitionResult.NavigableItem(navItem) ->
-                                return FSharpNavigableSymbol(navigableItem, symbolSpan, gtd, statusBar) :> INavigableSymbol?
+                                return FSharpNavigableSymbol(navItem, symbolSpan, gtd, statusBar) :> INavigableSymbol?
                             | _ ->
                                 return null
                         else 
