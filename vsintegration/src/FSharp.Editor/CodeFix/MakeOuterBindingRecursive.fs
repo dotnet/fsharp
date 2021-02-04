@@ -26,7 +26,7 @@ type internal FSharpMakeOuterBindingRecursiveCodeFixProvider
         asyncMaybe {
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document, context.CancellationToken, userOpName)
-            let! parseResults = checkerProvider.Checker.ParseFile(context.Document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName) |> liftAsync
+            let! parseResults = checkerProvider.Checker.ParseFile(context.Document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName=userOpName) |> liftAsync
 
             let diagnosticRange = RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)
             do! Option.guard (parseResults.IsPosContainedInApplication diagnosticRange.Start)

@@ -4,21 +4,19 @@
 module internal FSharp.Compiler.CompilerConfig
 
 open System
-
 open Internal.Utilities
-
+open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Range
-open FSharp.Compiler.SourceCodeServices
-
-open Microsoft.DotNet.DependencyManager
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
 
 exception FileNameNotResolved of (*filename*) string * (*description of searched locations*) string * range
 exception LoadedSourceNotFoundIgnoring of (*filename*) string * range
@@ -145,7 +143,7 @@ type TcConfigBuilder =
       mutable implicitOpens: string list
       mutable useFsiAuxLib: bool
       mutable framework: bool
-      mutable resolutionEnvironment: ReferenceResolver.ResolutionEnvironment
+      mutable resolutionEnvironment: LegacyResolutionEnvironment
       mutable implicitlyResolveAssemblies: bool
       /// Set if the user has explicitly turned indentation-aware syntax on/off
       mutable light: bool option
@@ -214,8 +212,7 @@ type TcConfigBuilder =
       mutable win32manifest: string
       mutable includewin32manifest: bool
       mutable linkResources: string list
-      mutable legacyReferenceResolver: ReferenceResolver.Resolver 
-      mutable fxResolver: FxResolver
+      mutable legacyReferenceResolver: LegacyReferenceResolver
       mutable showFullPaths: bool
       mutable errorStyle: ErrorStyle
       mutable utf8output: bool
@@ -258,6 +255,8 @@ type TcConfigBuilder =
       mutable copyFSharpCore: CopyFSharpCoreFlag
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
+      mutable fxResolver: FxResolver
+      mutable rangeForErrors: range
       mutable sdkDirOverride: string option
 
       /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
@@ -275,18 +274,19 @@ type TcConfigBuilder =
       mutable langVersion : LanguageVersion
     }
 
-    static member Initial: ReferenceResolver.Resolver -> TcConfigBuilder
+    static member Initial: LegacyReferenceResolver -> TcConfigBuilder
 
-    static member CreateNew: 
-        legacyReferenceResolver: ReferenceResolver.Resolver *
-        fxResolver: FxResolver *
+    static member CreateNew:
+        legacyReferenceResolver: LegacyReferenceResolver *
         defaultFSharpBinariesDir: string * 
         reduceMemoryUsage: ReduceMemoryFlag * 
         implicitIncludeDir: string * 
         isInteractive: bool * 
         isInvalidationSupported: bool *
         defaultCopyFSharpCore: CopyFSharpCoreFlag *
-        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
+        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
+        sdkDirOverride: string option *
+        rangeForErrors: range
           -> TcConfigBuilder
 
     member DecideNames: string list -> outfile: string * pdbfile: string option * assemblyName: string 
@@ -317,6 +317,9 @@ type TcConfigBuilder =
     member AddReferenceDirective: dependencyProvider: DependencyProvider * m: range * path: string * directive: Directive -> unit
 
     member AddLoadedSource: m: range * originalPath: string * pathLoadedFrom: string -> unit
+
+    member FxResolver: FxResolver
+
 
 /// Immutable TcConfig, modifications are made via a TcConfigBuilder
 [<Sealed>]
@@ -451,7 +454,7 @@ type TcConfig =
     /// File system query based on TcConfig settings
     member MakePathAbsolute: string -> string
 
-    member resolutionEnvironment: ReferenceResolver.ResolutionEnvironment
+    member resolutionEnvironment: LegacyResolutionEnvironment
 
     member copyFSharpCore: CopyFSharpCoreFlag
 
@@ -461,7 +464,7 @@ type TcConfig =
 
     member sdkDirOverride: string option
 
-    member legacyReferenceResolver: ReferenceResolver.Resolver
+    member legacyReferenceResolver: LegacyReferenceResolver
 
     member emitDebugInfoInQuotations: bool
 

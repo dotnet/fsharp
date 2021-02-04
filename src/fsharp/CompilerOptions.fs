@@ -6,28 +6,22 @@ module internal FSharp.Compiler.CompilerOptions
 
 open System
 open System.IO
-
+open Internal.Utilities.Library 
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILPdbWriter
-open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractIL.Internal.Utils
-open FSharp.Compiler.AbstractIL.Extensions.ILX
+open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
-open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
-open FSharp.Compiler.IlxGen
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.Layout
-open FSharp.Compiler.TextLayout.TaggedText
-open FSharp.Compiler.TypedTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.IO
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTreeOps 
 open FSharp.Compiler.ErrorLogger
 
@@ -1037,7 +1031,7 @@ let testFlag tcConfigB =
                 match s with
                 | "StackSpan"        -> tcConfigB.internalTestSpanStackReferring <- true
                 | "ErrorRanges"      -> tcConfigB.errorStyle <- ErrorStyle.TestErrors
-                | "Tracking"         -> Lib.tracking <- true (* general purpose on/off diagnostics flag *)
+                | "Tracking"         -> tracking <- true (* general purpose on/off diagnostics flag *)
                 | "NoNeedToTailcall" -> tcConfigB.optSettings <- { tcConfigB.optSettings with reportNoNeedToTailcall = true }
                 | "FunctionSizes"    -> tcConfigB.optSettings <- { tcConfigB.optSettings with reportFunctionSizes = true }
                 | "TotalSizes"       -> tcConfigB.optSettings <- { tcConfigB.optSettings with reportTotalSizes = true }

@@ -4,37 +4,32 @@
 module internal FSharp.Compiler.CompilerConfig
 
 open System
-open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
-open System.Text
-
 open Internal.Utilities
 open Internal.Utilities.Filename
 open Internal.Utilities.FSharpEnvironment
-
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.Utils
+open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
-open FSharp.Compiler.ReferenceResolver
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.IO
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
-
-open Microsoft.DotNet.DependencyManager
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
-open Microsoft.FSharp.Core.CompilerServices
+open FSharp.Core.CompilerServices
 #endif
 
 let (++) x s = x @ [s]
@@ -44,10 +39,15 @@ let (++) x s = x @ [s]
 //--------------------------------------------------------------------------
 
 let FSharpSigFileSuffixes = [".mli";".fsi"]
+
 let mlCompatSuffixes = [".mli";".ml"]
+
 let FSharpImplFileSuffixes = [".ml";".fs";".fsscript";".fsx"]
+
 let FSharpScriptFileSuffixes = [".fsscript";".fsx"]
+
 let doNotRequireNamespaceOrModuleSuffixes = [".mli";".ml"] @ FSharpScriptFileSuffixes
+
 let FSharpLightSyntaxFileSuffixes: string list = [ ".fs";".fsscript";".fsx";".fsi" ]
 
 //--------------------------------------------------------------------------
@@ -228,10 +228,12 @@ type AssemblyReference =
 
     member x.SimpleAssemblyNameIs name = 
         (String.Compare(fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase) = 0) ||
-        (let text = x.Text.ToLowerInvariant()
-         not (text.Contains "/") && not (text.Contains "\\") && not (text.Contains ".dll") && not (text.Contains ".exe") &&
-           try let aname = System.Reflection.AssemblyName x.Text in aname.Name = name 
-           with _ -> false) 
+        not (x.Text.Contains "/") &&
+        not (x.Text.Contains "\\") &&
+        not (x.Text.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase)) &&
+        not (x.Text.EndsWith(".exe", StringComparison.InvariantCultureIgnoreCase)) &&
+        (try let aname = System.Reflection.AssemblyName x.Text in aname.Name = name 
+         with _ -> false)
 
     override x.ToString() = sprintf "AssemblyReference(%s)" x.Text
 
@@ -316,7 +318,8 @@ type PackageManagerLine =
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
-    { mutable primaryAssembly: PrimaryAssembly
+    {
+      mutable primaryAssembly: PrimaryAssembly
       mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string (* normally "." *)
@@ -328,7 +331,7 @@ type TcConfigBuilder =
       mutable implicitOpens: string list
       mutable useFsiAuxLib: bool
       mutable framework: bool
-      mutable resolutionEnvironment: ReferenceResolver.ResolutionEnvironment
+      mutable resolutionEnvironment: LegacyResolutionEnvironment
       mutable implicitlyResolveAssemblies: bool
       mutable light: bool option
       mutable conditionalCompilationDefines: string list
@@ -400,8 +403,7 @@ type TcConfigBuilder =
       mutable win32manifest: string
       mutable includewin32manifest: bool
       mutable linkResources: string list
-      mutable legacyReferenceResolver: ReferenceResolver.Resolver 
-      mutable fxResolver: FxResolver 
+      mutable legacyReferenceResolver: LegacyReferenceResolver
 
       mutable showFullPaths: bool
       mutable errorStyle: ErrorStyle
@@ -465,7 +467,11 @@ type TcConfigBuilder =
       /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false (*default*)
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
-      
+      mutable fxResolver: FxResolver
+
+      /// specify the error range for FxResolver
+      mutable rangeForErrors: range
+
       /// Override the SDK directory used by FxResolver, used for FCS only
       mutable sdkDirOverride: string option
 
@@ -497,7 +503,7 @@ type TcConfigBuilder =
           useFsiAuxLib = false
           implicitOpens = []
           includes = []
-          resolutionEnvironment = ResolutionEnvironment.EditingOrCompilation false
+          resolutionEnvironment = LegacyResolutionEnvironment.EditingOrCompilation false
           framework = true
           implicitlyResolveAssemblies = true
           compilerToolPaths = []
@@ -573,7 +579,6 @@ type TcConfigBuilder =
           includewin32manifest = true
           linkResources = []
           legacyReferenceResolver = legacyReferenceResolver
-          fxResolver = Unchecked.defaultof<_>
           showFullPaths = false
           errorStyle = ErrorStyle.DefaultErrors
 
@@ -613,6 +618,8 @@ type TcConfigBuilder =
           copyFSharpCore = CopyFSharpCoreFlag.No
           shadowCopyReferences = false
           useSdkRefs = true
+          fxResolver = Unchecked.defaultof<FxResolver>
+          rangeForErrors = range0
           sdkDirOverride = None
           tryGetMetadataSnapshot = (fun _ -> None)
           internalTestSpanStackReferring = false
@@ -640,8 +647,16 @@ type TcConfigBuilder =
         } 
         |> Seq.distinct
 
-    static member CreateNew(legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
-                            isInteractive, isInvalidationSupported, defaultCopyFSharpCore, tryGetMetadataSnapshot) =
+    static member CreateNew(legacyReferenceResolver,
+                            defaultFSharpBinariesDir,
+                            reduceMemoryUsage,
+                            implicitIncludeDir,
+                            isInteractive,
+                            isInvalidationSupported,
+                            defaultCopyFSharpCore,
+                            tryGetMetadataSnapshot,
+                            sdkDirOverride,
+                            rangeForErrors) =
 
         Debug.Assert(FileSystem.IsPathRootedShim implicitIncludeDir, sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
 
@@ -654,14 +669,28 @@ type TcConfigBuilder =
                 defaultFSharpBinariesDir = defaultFSharpBinariesDir
                 reduceMemoryUsage = reduceMemoryUsage
                 legacyReferenceResolver = legacyReferenceResolver
-                fxResolver = fxResolver
                 isInteractive = isInteractive
                 isInvalidationSupported = isInvalidationSupported
                 copyFSharpCore = defaultCopyFSharpCore
                 tryGetMetadataSnapshot = tryGetMetadataSnapshot
                 useFsiAuxLib = isInteractive
+                rangeForErrors = rangeForErrors
+                sdkDirOverride = sdkDirOverride
             }
         tcConfigBuilder
+
+    member tcConfigB.FxResolver =
+        let resolver =
+            lazy (let assumeDotNetFramework = Some (tcConfigB.primaryAssembly = PrimaryAssembly.Mscorlib)
+                  FxResolver(assumeDotNetFramework, tcConfigB.implicitIncludeDir, rangeForErrors=tcConfigB.rangeForErrors, useSdkRefs=tcConfigB.useSdkRefs, isInteractive=tcConfigB.isInteractive, sdkDirOverride=tcConfigB.sdkDirOverride))
+
+        if tcConfigB.fxResolver = Unchecked.defaultof<FxResolver> then
+            lock tcConfigB (fun () ->
+                if tcConfigB.fxResolver = Unchecked.defaultof<FxResolver> then
+                    tcConfigB.fxResolver <- resolver.Force()
+            )
+
+        tcConfigB.fxResolver
 
     member tcConfigB.ResolveSourceFile(m, nm, pathLoadedFrom) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
@@ -806,7 +835,7 @@ type TcConfigBuilder =
 
     member tcConfigB.AddPathMapping (oldPrefix, newPrefix) =
         tcConfigB.pathMap <- tcConfigB.pathMap |> PathMap.addMapping oldPrefix newPrefix
-    
+
     static member SplitCommandLineResourceInfo (ri: string) =
         let p = ri.IndexOf ','
         if p <> -1 then
@@ -877,7 +906,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
             try 
                 let clrRoot = Some(Path.GetDirectoryName(FileSystem.GetFullPathShim filename))
-                clrRoot, data.legacyReferenceResolver.HighestInstalledNetFrameworkVersion()
+                clrRoot, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
             with e ->
                 // We no longer expect the above to fail but leaving this just in case
                 error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
@@ -888,11 +917,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 None, ""
             else
 #endif
-                None, data.legacyReferenceResolver.HighestInstalledNetFrameworkVersion()
+                None, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
 
-    let systemAssemblies = data.fxResolver.GetSystemAssemblies()
-
-    member x.FxResolver = data.fxResolver
+    member x.FxResolver = data.FxResolver
     member x.primaryAssembly = data.primaryAssembly
     member x.noFeedback = data.noFeedback
     member x.stackReserveSize = data.stackReserveSize   
@@ -1056,7 +1083,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 let runtimeRootWPF = Path.Combine(runtimeRootWithoutSlash, "WPF")
 
                 match tcConfig.resolutionEnvironment with
-                | ResolutionEnvironment.CompilationAndEvaluation ->
+                | LegacyResolutionEnvironment.CompilationAndEvaluation ->
                     // Default compilation-and-execution-time references on .NET Framework and Mono, e.g. for F# Interactive
                     //
                     // In the current way of doing things, F# Interactive refers to implementation assemblies.
@@ -1071,7 +1098,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         yield path
                     | _ -> ()
 
-                | ResolutionEnvironment.EditingOrCompilation _ ->
+                | LegacyResolutionEnvironment.EditingOrCompilation _ ->
 #if ENABLE_MONO_SUPPORT
                     if runningOnMono then 
                         // Default compilation-time references on Mono
@@ -1095,7 +1122,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         // Default compilation-time references on .NET Framework
                         //
                         // This is the normal case for "fsc.exe a.fs". We refer to the reference assemblies folder.
-                        let frameworkRoot = tcConfig.legacyReferenceResolver.DotNetFrameworkReferenceAssembliesRootDirectory
+                        let frameworkRoot = tcConfig.legacyReferenceResolver.Impl.DotNetFrameworkReferenceAssembliesRootDirectory
                         let frameworkRootVersion = Path.Combine(frameworkRoot, tcConfig.targetFrameworkVersion)
                         yield frameworkRootVersion
                         let facades = Path.Combine(frameworkRootVersion, "Facades")
@@ -1172,7 +1199,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         try
             FileSystem.SafeExists filename &&
             ((tcConfig.GetTargetFrameworkDirectories() |> List.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName filename)) ||
-             (systemAssemblies.Contains (fileNameWithoutExtension filename)) ||
+             (tcConfig.FxResolver.GetSystemAssemblies().Contains (fileNameWithoutExtension filename)) ||
              tcConfig.FxResolver.IsInReferenceAssemblyPackDirectory filename)
         with _ ->
             false

@@ -9,11 +9,10 @@ open System.Runtime.InteropServices
 open System.Threading
 
 open FSharp.Compiler.Interactive.Shell
-open FSharp.Compiler.Scripting
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Scripting.UnitTests
+open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
+open FSharp.Test.ScriptHelpers
 open FSharp.DependencyManager.Nuget
-open Microsoft.DotNet.DependencyManager
 
 open Internal.Utilities
 
@@ -40,7 +39,7 @@ type DependencyManagerInteractiveTests() =
     let ignoreValue = getValue >> ignore
 
     [<Fact>]
-    member __.``SmokeTest - #r nuget``() =
+    member _.``SmokeTest - #r nuget``() =
         let text = """
 #r @"nuget:Newtonsoft.Json, Version=9.0.1"
 0"""
@@ -51,7 +50,7 @@ type DependencyManagerInteractiveTests() =
         Assert.Equal(0, value.ReflectionValue :?> int)
 
     [<Fact>]
-    member __.``SmokeTest - #r nuget package not found``() =
+    member _.``SmokeTest - #r nuget package not found``() =
         let text = """
 #r @"nuget:System.Collections.Immutable.DoesNotExist, version=1.5.0"
 0"""
@@ -62,13 +61,13 @@ type DependencyManagerInteractiveTests() =
 (*
     [<Theory>]
     [<InlineData("""#r "#i "unknown:Astring" """, """ """)>]
-    member __.``syntax produces error messages in FSharp 4.7``(code:string, message: string) =
+    member _.``syntax produces error messages in FSharp 4.7``(code:string, message: string) =
         use script = new scriptHost()
         let errors = script.Eval(code) |> getErrors
         Assert.Contains(message, errors |> Array.map(fun e -> e.Message))
 *)
     [<Fact>]
-    member __.``Use Dependency Manager to resolve dependency FSharp.Data``() =
+    member _.``Use Dependency Manager to resolve dependency FSharp.Data``() =
 
         let nativeProbingRoots () = Seq.empty<string>
 
@@ -97,7 +96,7 @@ type DependencyManagerInteractiveTests() =
         ()
 
     [<Fact>]
-    member __.``Dependency Manager Reports package root for nuget package with no build artifacts``() =
+    member _.``Dependency Manager Reports package root for nuget package with no build artifacts``() =
 
         let nativeProbingRoots () = Seq.empty<string>
 
@@ -120,7 +119,7 @@ type DependencyManagerInteractiveTests() =
 
 
     [<Fact>]
-    member __.``Dependency add with nonexistent package should fail``() =
+    member _.``Dependency add with nonexistent package should fail``() =
 
         let nativeProbingRoots () = Seq.empty<string>
 
@@ -150,7 +149,7 @@ type DependencyManagerInteractiveTests() =
 
 
     [<Fact>]
-    member __.``Multiple Instances of DependencyProvider should be isolated``() =
+    member _.``Multiple Instances of DependencyProvider should be isolated``() =
 
         let assemblyProbingPaths () = Seq.empty<string>
         let nativeProbingRoots () = Seq.empty<string>
@@ -206,7 +205,7 @@ type DependencyManagerInteractiveTests() =
         ()
 
     [<Fact>]
-    member __.``Nuget Reference package with dependencies we should get package roots and dependent references``() =
+    member _.``Nuget Reference package with dependencies we should get package roots and dependent references``() =
 
         let nativeProbingRoots () = Seq.empty<string>
 
@@ -244,7 +243,7 @@ type DependencyManagerInteractiveTests() =
 /// Native dll resolution is not implemented on desktop
 #if NETCOREAPP
     [<Fact(Skip="downloads very large ephemeral packages"); >]
-    member __.``Script using TorchSharp``() =
+    member _.``Script using TorchSharp``() =
         let text = """
 #r "nuget:RestoreSources=https://donsyme.pkgs.visualstudio.com/TorchSharp/_packaging/packages2/nuget/v3/index.json"
 #r "nuget:libtorch-cpu,0.3.52118"
@@ -263,7 +262,7 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
 
 
     [<Fact>]
-    member __.``Use Dependency Manager to restore packages with native dependencies, build and run script that depends on the results``() =
+    member _.``Use Dependency Manager to restore packages with native dependencies, build and run script that depends on the results``() =
         let packagemanagerlines = [|
             "r", "Microsoft.ML,version=1.4.0-preview"
             "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
@@ -359,7 +358,7 @@ printfn ""%A"" result
         Assert.Equal(123, value.ReflectionValue :?> int32)
 
     [<Fact>]
-    member __.``Use NativeResolver to resolve native dlls.``() =
+    member _.``Use NativeResolver to resolve native dlls.``() =
         let packagemanagerlines = [|
             "r", "Microsoft.ML,version=1.4.0-preview"
             "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
@@ -441,7 +440,7 @@ printfn ""%A"" result
         Assert.Equal(123, value.ReflectionValue :?> int32)
 
     [<Fact>]
-    member __.``Use AssemblyResolver to resolve assemblies``() =
+    member _.``Use AssemblyResolver to resolve assemblies``() =
         let packagemanagerlines = [|
             "r", "Microsoft.ML,version=1.4.0-preview"
             "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
@@ -502,7 +501,7 @@ x |> Seq.iter(fun r ->
         Assert.Equal(123, value.ReflectionValue :?> int32)
 
     [<Fact>]
-    member __.``Verify that referencing FSharp.Core fails with FSharp Scripts``() =
+    member _.``Verify that referencing FSharp.Core fails with FSharp Scripts``() =
         let packagemanagerlines = [| "r", "FSharp.Core,version=4.7.1" |]
 
         let reportError =
@@ -528,7 +527,7 @@ x |> Seq.iter(fun r ->
         Assert.False(result.Success, "resolve succeeded but should have failed")
 
     [<Fact>]
-    member __.``Verify that referencing FSharp.Core succeeds with CSharp Scripts``() =
+    member _.``Verify that referencing FSharp.Core succeeds with CSharp Scripts``() =
         let packagemanagerlines = [| "r", "FSharp.Core,version=4.7.1" |]
 
         let reportError =
@@ -554,7 +553,7 @@ x |> Seq.iter(fun r ->
 
 
     [<Fact>]
-    member __.``Verify that Dispose on DependencyProvider unhooks ResolvingUnmanagedDll event handler``() =
+    member _.``Verify that Dispose on DependencyProvider unhooks ResolvingUnmanagedDll event handler``() =
 
         let mutable found = false
         let nativeProbingRoots () =
@@ -600,7 +599,7 @@ x |> Seq.iter(fun r ->
 
 
     [<Fact>]
-    member __.``Verify that Dispose on DependencyProvider unhooks ResolvingUnmanagedDll and AssemblyResolver event handler``() =
+    member _.``Verify that Dispose on DependencyProvider unhooks ResolvingUnmanagedDll and AssemblyResolver event handler``() =
 
         let mutable assemblyFound = false
         let assemblyProbingPaths () =
@@ -636,7 +635,7 @@ x |> Seq.iter(fun r ->
 #endif
 
     [<Fact>]
-    member __.``Verify that Dispose on AssemblyResolveHandler unhooks AssemblyResolve event handler``() =
+    member _.``Verify that Dispose on AssemblyResolveHandler unhooks AssemblyResolve event handler``() =
 
         let mutable assemblyFound = false
         let assemblyProbingPaths () =
@@ -658,7 +657,7 @@ x |> Seq.iter(fun r ->
         Assert.False (assemblyFound, "Invoke the assemblyProbingRoots callback -- Error the AssemblyResolve still fired ")
 
     [<Fact>]
-    member __.``Verify that Dispose cleans up the native paths added``() =
+    member _.``Verify that Dispose cleans up the native paths added``() =
         let nativeProbingRoots () = Seq.empty<string>
 
         let appendSemiColon (p:string) =
@@ -708,7 +707,7 @@ x |> Seq.iter(fun r ->
         ()
 
     [<Fact>]
-    member __.``Verify that #help produces help text for fsi + dependency manager``() =
+    member _.``Verify that #help produces help text for fsi + dependency manager``() =
         let expected = [|
             """  F# Interactive directives:"""
             """"""
@@ -755,7 +754,7 @@ x |> Seq.iter(fun r ->
 
 
     [<Fact>]
-    member __.``Verify that #help produces help text for fsi + dependency manager language version preview``() =
+    member _.``Verify that #help produces help text for fsi + dependency manager language version preview``() =
         let expected = [|
             """  F# Interactive directives:"""
             """"""
@@ -804,7 +803,7 @@ x |> Seq.iter(fun r ->
 
 
     [<Fact>]
-    member __.``Verify that timeout --- times out and fails``() =
+    member _.``Verify that timeout --- times out and fails``() =
         let nativeProbingRoots () = Seq.empty<string>
         let mutable foundCorrectError = false
         let mutable foundWrongError = false
@@ -814,7 +813,7 @@ x |> Seq.iter(fun r ->
             let report errorType code message =
                 match errorType with
                 | ErrorReportType.Error ->
-                    if code = 3401 then foundCorrectError <- true
+                    if code = 3217 then foundCorrectError <- true
                     else foundWrongError <- true
                 | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
             ResolvingErrorReport (report)
@@ -827,7 +826,7 @@ x |> Seq.iter(fun r ->
         ()
 
     [<Fact>]
-    member __.``Verify that script based timeout overrides api based - timeout on script``() =
+    member _.``Verify that script based timeout overrides api based - timeout on script``() =
         let nativeProbingRoots () = Seq.empty<string>
         let mutable foundCorrectError = false
         let mutable foundWrongError = false
@@ -837,7 +836,7 @@ x |> Seq.iter(fun r ->
             let report errorType code message =
                 match errorType with
                 | ErrorReportType.Error ->
-                    if code = 3401 then foundCorrectError <- true
+                    if code = 3217 then foundCorrectError <- true
                     else foundWrongError <- true
                 | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
             ResolvingErrorReport (report)
@@ -850,7 +849,7 @@ x |> Seq.iter(fun r ->
         ()
 
     [<Fact>]
-    member __.``Verify that script based timeout overrides api based - timeout on api , forever on script``() =
+    member _.``Verify that script based timeout overrides api based - timeout on api , forever on script``() =
         let nativeProbingRoots () = Seq.empty<string>
         let mutable foundCorrectError = false
         let mutable foundWrongError = false

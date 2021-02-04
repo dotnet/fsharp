@@ -2,13 +2,14 @@
 
 module internal FSharp.Compiler.PatternMatchCompilation
 
-open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Range
-open FSharp.Compiler.InfoReader
 
 /// What should the decision tree contain for any incomplete match? 
 type ActionOnFailure = 
@@ -26,7 +27,7 @@ type Pattern =
     | TPat_as of Pattern * PatternValBinding * range
     | TPat_disjs of Pattern list * range
     | TPat_conjs of Pattern list * range
-    | TPat_query of (Expr * TType list * (ValRef * TypeInst) option * int * PrettyNaming.ActivePatternInfo) * Pattern * range
+    | TPat_query of (Expr * TType list * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
     | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
     | TPat_exnconstr of TyconRef * Pattern list * range
     | TPat_tuple of TupInfo * Pattern list * TType list * range

@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace Microsoft.DotNet.DependencyManager
+namespace FSharp.Compiler.DependencyManager
 
 open System
 
@@ -11,9 +11,9 @@ type NativeResolutionProbe = delegate of Unit -> seq<string>
 // Cut down AssemblyLoadContext, for loading native libraries
 type NativeDllResolveHandler =
 
-    member internal RefreshPathsInEnvironment: string seq -> unit
-
     /// Construct a new NativeDllResolveHandler
     new: nativeProbingRoots: NativeResolutionProbe option -> NativeDllResolveHandler
+
+    member internal RefreshPathsInEnvironment: string seq -> unit
 
     interface IDisposable

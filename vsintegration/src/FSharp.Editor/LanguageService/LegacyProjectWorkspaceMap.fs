@@ -147,15 +147,15 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
 
     interface IVsSolutionEvents with
 
-        member __.OnAfterCloseSolution(_) = 
+        member _.OnAfterCloseSolution(_) = 
             // Clear
             let mutable setup = Unchecked.defaultof<_>
             while setupQueue.TryDequeue(&setup) do ()
             VSConstants.S_OK
 
-        member __.OnAfterLoadProject(_, _) = VSConstants.S_OK
+        member _.OnAfterLoadProject(_, _) = VSConstants.S_OK
 
-        member __.OnAfterOpenProject(hier, _) = 
+        member _.OnAfterOpenProject(hier, _) = 
             match hier with
             | :? IProvideProjectSite as siteProvider ->
                 let setup = fun () -> this.SetupLegacyProjectFile(siteProvider)
@@ -167,13 +167,13 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
             | _ -> ()
             VSConstants.S_OK
 
-        member __.OnAfterOpenSolution(_, _) =
+        member _.OnAfterOpenSolution(_, _) =
             let mutable setup = Unchecked.defaultof<_>
             while setupQueue.TryDequeue(&setup) do
                 setup ()
             VSConstants.S_OK
 
-        member __.OnBeforeCloseProject(hier, _) = 
+        member _.OnBeforeCloseProject(hier, _) = 
             match hier with
             | :? IProvideProjectSite as siteProvider ->
                 let site = siteProvider.GetProjectSite()
@@ -186,12 +186,12 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
             | _ -> ()
             VSConstants.S_OK
 
-        member __.OnBeforeCloseSolution(_) = VSConstants.S_OK
+        member _.OnBeforeCloseSolution(_) = VSConstants.S_OK
 
-        member __.OnBeforeUnloadProject(_, _) = VSConstants.S_OK
+        member _.OnBeforeUnloadProject(_, _) = VSConstants.S_OK
 
-        member __.OnQueryCloseProject(_, _, _) = VSConstants.S_OK
+        member _.OnQueryCloseProject(_, _, _) = VSConstants.S_OK
 
-        member __.OnQueryCloseSolution(_, _) = VSConstants.S_OK
+        member _.OnQueryCloseSolution(_, _) = VSConstants.S_OK
 
-        member __.OnQueryUnloadProject(_, _) = VSConstants.S_OK
+        member _.OnQueryUnloadProject(_, _) = VSConstants.S_OK

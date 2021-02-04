@@ -22,12 +22,13 @@ open System.Threading
 
 open Internal.Utilities
 open Internal.Utilities.Filename
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
@@ -37,26 +38,24 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CreateILModule
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Lib
+open FSharp.Compiler.IO
 open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.ScriptClosure
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
-open FSharp.Compiler.Range
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.Layout
-open FSharp.Compiler.TextLayout.TaggedText
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.StaticLinking
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.XmlDocFileWriter
-open FSharp.Compiler.StaticLinking
-open Microsoft.DotNet.DependencyManager
 
 //----------------------------------------------------------------------------
 // Reporting - warnings, errors
@@ -66,7 +65,7 @@ open Microsoft.DotNet.DependencyManager
 [<AbstractClass>]
 type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameForDebugging) = 
     inherit ErrorLogger(nameForDebugging)
-
+    
     let mutable errors = 0
 
     /// Called when an error or warning occurs
@@ -101,10 +100,10 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
 let ConsoleErrorLoggerUpToMaxErrors (tcConfigB: TcConfigBuilder, exiter : Exiter) = 
     { new ErrorLoggerUpToMaxErrors(tcConfigB, exiter, "ConsoleErrorLoggerUpToMaxErrors") with
             
-            member __.HandleTooManyErrors(text : string) = 
+            member _.HandleTooManyErrors(text : string) = 
                 DoWithErrorColor false (fun () -> Printf.eprintfn "%s" text)
 
-            member __.HandleIssue(tcConfigB, err, isError) =
+            member _.HandleIssue(tcConfigB, err, isError) =
                 DoWithErrorColor isError (fun () -> 
                     let diag = OutputDiagnostic (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths, tcConfigB.flatErrors, tcConfigB.errorStyle, isError)
                     writeViaBuffer stderr diag err
@@ -135,7 +134,7 @@ type InProcErrorLoggerProvider() =
     let errors = ResizeArray()
     let warnings = ResizeArray()
 
-    member __.Provider = 
+    member _.Provider = 
         { new ErrorLoggerProvider() with
 
             member log.CreateErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter) =
@@ -154,9 +153,9 @@ type InProcErrorLoggerProvider() =
                         container.AddRange(errs) }
                 :> ErrorLogger }
 
-    member __.CapturedErrors = errors.ToArray()
+    member _.CapturedErrors = errors.ToArray()
 
-    member __.CapturedWarnings = warnings.ToArray()
+    member _.CapturedWarnings = warnings.ToArray()
 
 /// The default ErrorLogger implementation, reporting messages to the Console up to the maxerrors maximum
 type ConsoleLoggerProvider() = 
@@ -447,16 +446,20 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
-    let fxResolver = FxResolver(None, directoryBuildingFrom, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
-
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
-    let tcConfigB = 
-       TcConfigBuilder.CreateNew(legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, 
-          reduceMemoryUsage=reduceMemoryUsage, implicitIncludeDir=directoryBuildingFrom, 
-          isInteractive=false, isInvalidationSupported=false, 
-          defaultCopyFSharpCore=defaultCopyFSharpCore, 
-          tryGetMetadataSnapshot=tryGetMetadataSnapshot)
+    let tcConfigB =
+       TcConfigBuilder.CreateNew(legacyReferenceResolver,
+                                 defaultFSharpBinariesDir,
+                                 reduceMemoryUsage=reduceMemoryUsage,
+                                 implicitIncludeDir=directoryBuildingFrom,
+                                 isInteractive=false,
+                                 isInvalidationSupported=false,
+                                 defaultCopyFSharpCore=defaultCopyFSharpCore,
+                                 tryGetMetadataSnapshot=tryGetMetadataSnapshot,
+                                 sdkDirOverride=None,
+                                 rangeForErrors=range0
+                                 )
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
@@ -466,8 +469,8 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     // Now install a delayed logger to hold all errors from flags until after all flags have been parsed (for example, --vserrors)
     let delayForFlagsLogger =  errorLoggerProvider.CreateDelayAndForwardLogger exiter
 
-    let _unwindEL_1 = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayForFlagsLogger)          
-    
+    let _unwindEL_1 = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayForFlagsLogger)
+
     // Share intern'd strings across all lexing/parsing
     let lexResourceManager = new Lexhelp.LexResourceManager()
 
@@ -484,10 +487,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
         with e -> 
             errorRecovery e rangeStartup
             delayForFlagsLogger.ForwardDelayedDiagnostics tcConfigB
-            exiter.Exit 1 
-    
-    let assumeDotNetFramework = (tcConfigB.primaryAssembly = PrimaryAssembly.Mscorlib)
-    tcConfigB.fxResolver <- FxResolver(Some assumeDotNetFramework, directoryBuildingFrom, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
+            exiter.Exit 1
 
     tcConfigB.conditionalCompilationDefines <- "COMPILED" :: tcConfigB.conditionalCompilationDefines 
 
@@ -635,16 +635,16 @@ let main1OfAst
 
     let directoryBuildingFrom = Directory.GetCurrentDirectory()
 
-    let fxResolver = FxResolver(None, directoryBuildingFrom, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
-
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
     let tcConfigB = 
-        TcConfigBuilder.CreateNew(legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, 
+        TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, 
             reduceMemoryUsage=reduceMemoryUsage, implicitIncludeDir=directoryBuildingFrom, 
             isInteractive=false, isInvalidationSupported=false, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
-            tryGetMetadataSnapshot=tryGetMetadataSnapshot)
+            tryGetMetadataSnapshot=tryGetMetadataSnapshot,
+            sdkDirOverride=None,
+            rangeForErrors=range0)
 
     let primaryAssembly =
         // temporary workaround until https://github.com/dotnet/fsharp/pull/8043 is merged:
@@ -970,7 +970,7 @@ let mainCompile
     let savedOut = System.Console.Out
     use __ =
         { new IDisposable with
-            member __.Dispose() = 
+            member _.Dispose() = 
                 try 
                     System.Console.SetOut(savedOut)
                 with _ -> ()}

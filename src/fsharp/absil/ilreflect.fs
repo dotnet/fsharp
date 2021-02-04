@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-//----------------------------------------------------------------------------
-// Write Abstract IL structures at runtime using Reflection.Emit
-//----------------------------------------------------------------------------
-
-
+/// Write Abstract IL structures at runtime using Reflection.Emit
 module internal FSharp.Compiler.AbstractIL.ILRuntimeWriter    
 
 open System
@@ -14,16 +10,14 @@ open System.Reflection.Emit
 open System.Runtime.InteropServices
 open System.Collections.Generic
 
-open FSharp.Compiler
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.IO
+open FSharp.Compiler.Text.Range
 open FSharp.Core.Printf
 
 let codeLabelOrder = ComparisonIdentity.Structural<ILCodeLabel>
@@ -1393,9 +1387,9 @@ let emitILMethodBody cenv modB emEnv (ilG: ILGenerator) (ilmbody: ILMethodBody) 
     emitCode cenv modB emEnv ilG ilmbody.Code 
 
 
-let emitMethodBody cenv modB emEnv ilG _name (mbody: ILLazyMethodBody) =
-    match mbody.Contents with
-    | MethodBody.IL ilmbody -> emitILMethodBody cenv modB emEnv (ilG()) ilmbody
+let emitMethodBody cenv modB emEnv ilG _name (mbody: MethodBody) =
+    match mbody with
+    | MethodBody.IL ilmbody -> emitILMethodBody cenv modB emEnv (ilG()) ilmbody.Value
     | MethodBody.PInvoke _pinvoke -> ()
     | MethodBody.Abstract -> ()
     | MethodBody.Native -> failwith "emitMethodBody: native"               
@@ -1510,8 +1504,9 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
             envAddEntryPt emEnv (typB, mdef.Name)
         else
             emEnv
-    match mdef.Body.Contents with
-    | MethodBody.PInvoke p when enablePInvoke ->
+    match mdef.Body with
+    | MethodBody.PInvoke pLazy when enablePInvoke ->
+        let p = pLazy.Value
         let argtys = convTypesToArray cenv emEnv mdef.ParameterTypes
         let rty = convType cenv emEnv mdef.Return.Type
 
@@ -1588,7 +1583,7 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
 let rec buildMethodPass3 cenv tref modB (typB: TypeBuilder) emEnv (mdef: ILMethodDef) =
     let mref = mkRefToILMethod (tref, mdef)
     let isPInvoke = 
-        match mdef.Body.Contents with
+        match mdef.Body with
         | MethodBody.PInvoke _p -> true
         | _ -> false
     match mdef.Name with

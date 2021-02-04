@@ -885,22 +885,22 @@ module internal RangeTestsHelpers =
 
 
 type RangeTests() =
-    [<Fact>] member __.``Range.SByte``  () = RangeTestsHelpers.signed   System.SByte.MinValue  System.SByte.MaxValue
-    [<Fact>] member __.``Range.Byte``   () = RangeTestsHelpers.unsigned System.Byte.MinValue   System.Byte.MaxValue
-    [<Fact>] member __.``Range.Int16``  () = RangeTestsHelpers.signed   System.Int16.MinValue  System.Int16.MaxValue
-    [<Fact>] member __.``Range.UInt16`` () = RangeTestsHelpers.unsigned System.UInt16.MinValue System.UInt16.MaxValue
-    [<Fact>] member __.``Range.Int32``  () = RangeTestsHelpers.signed   System.Int32.MinValue  System.Int32.MaxValue
-    [<Fact>] member __.``Range.UInt32`` () = RangeTestsHelpers.unsigned System.UInt32.MinValue System.UInt32.MaxValue
-    [<Fact>] member __.``Range.Int64``  () = RangeTestsHelpers.signed   System.Int64.MinValue  System.Int64.MaxValue
-    [<Fact>] member __.``Range.UInt64`` () = RangeTestsHelpers.unsigned System.UInt64.MinValue System.UInt64.MaxValue
+    [<Fact>] member _.``Range.SByte``  () = RangeTestsHelpers.signed   System.SByte.MinValue  System.SByte.MaxValue
+    [<Fact>] member _.``Range.Byte``   () = RangeTestsHelpers.unsigned System.Byte.MinValue   System.Byte.MaxValue
+    [<Fact>] member _.``Range.Int16``  () = RangeTestsHelpers.signed   System.Int16.MinValue  System.Int16.MaxValue
+    [<Fact>] member _.``Range.UInt16`` () = RangeTestsHelpers.unsigned System.UInt16.MinValue System.UInt16.MaxValue
+    [<Fact>] member _.``Range.Int32``  () = RangeTestsHelpers.signed   System.Int32.MinValue  System.Int32.MaxValue
+    [<Fact>] member _.``Range.UInt32`` () = RangeTestsHelpers.unsigned System.UInt32.MinValue System.UInt32.MaxValue
+    [<Fact>] member _.``Range.Int64``  () = RangeTestsHelpers.signed   System.Int64.MinValue  System.Int64.MaxValue
+    [<Fact>] member _.``Range.UInt64`` () = RangeTestsHelpers.unsigned System.UInt64.MinValue System.UInt64.MaxValue
 
     [<Fact>]
-    member __.``Range.IntPtr`` () =
+    member _.``Range.IntPtr`` () =
         if System.IntPtr.Size >= 4 then RangeTestsHelpers.signed (System.IntPtr System.Int32.MinValue) (System.IntPtr System.Int32.MaxValue)
         if System.IntPtr.Size >= 8 then RangeTestsHelpers.signed (System.IntPtr System.Int64.MinValue) (System.IntPtr System.Int64.MaxValue)
         
     [<Fact>]
-    member __.``Range.UIntPtr`` () =
+    member _.``Range.UIntPtr`` () =
         if System.UIntPtr.Size >= 4 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt32.MinValue) (System.UIntPtr System.UInt32.MaxValue)
         if System.UIntPtr.Size >= 8 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt64.MinValue) (System.UIntPtr System.UInt64.MaxValue)
         
@@ -911,7 +911,7 @@ open NonStructuralComparison
 type NonStructuralComparisonTests() =
 
     [<Fact>]
-    member __.CompareFloat32() = // https://github.com/Microsoft/visualfsharp/pull/4493
+    member _.CompareFloat32() = // https://github.com/Microsoft/visualfsharp/pull/4493
 
         let x = 32 |> float32
         let y = 32 |> float32

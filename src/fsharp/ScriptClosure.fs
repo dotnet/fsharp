@@ -7,24 +7,21 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Text
-
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
+open FSharp.Compiler.IO
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
-open FSharp.Compiler.Range
-open FSharp.Compiler.ReferenceResolver
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-
-open Microsoft.DotNet.DependencyManager
+open FSharp.Compiler.Text.Range
 
 [<RequireQualifiedAccess>]
 type LoadClosureInput = 
@@ -80,7 +77,6 @@ type CodeContext =
     | Editing // in VS
 
 module ScriptPreprocessClosure = 
-    open Internal.Utilities.Text.Lexing
     
     /// Represents an input to the closure finding process
     type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: ISourceText * parseRequired: bool 
@@ -126,20 +122,27 @@ module ScriptPreprocessClosure =
             useSimpleResolution, useFsiAuxLib, 
             basicReferences, applyCommandLineArgs, 
             assumeDotNetFramework, useSdkRefs, sdkDirOverride,
-            tryGetMetadataSnapshot, reduceMemoryUsage) =  
+            tryGetMetadataSnapshot, reduceMemoryUsage) =
 
         let projectDir = Path.GetDirectoryName filename
         let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
 
         let rangeForErrors = mkFirstLineOfFile filename
-        let fxResolver = FxResolver(Some assumeDotNetFramework, projectDir, rangeForErrors=rangeForErrors, useSdkRefs=useSdkRefs, isInteractive=isInteractive, sdkDirOverride=sdkDirOverride)
-
-        let tcConfigB = 
-            TcConfigBuilder.CreateNew
-                (legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, reduceMemoryUsage, projectDir, 
-                 isInteractive, isInvalidationSupported, CopyFSharpCoreFlag.No, 
-                 tryGetMetadataSnapshot) 
+        let tcConfigB =
+            let tcb =
+                TcConfigBuilder.CreateNew(legacyReferenceResolver,
+                                          defaultFSharpBinariesDir,
+                                          reduceMemoryUsage,
+                                          projectDir,
+                                          isInteractive,
+                                          isInvalidationSupported,
+                                          CopyFSharpCoreFlag.No,
+                                          tryGetMetadataSnapshot,
+                                          sdkDirOverride,
+                                          rangeForErrors)
+            tcb.useSdkRefs <- useSdkRefs
+            tcb
 
         applyCommandLineArgs tcConfigB
 
@@ -150,7 +153,7 @@ module ScriptPreprocessClosure =
             | None ->
                 let errorLogger = CapturingErrorLogger("ScriptDefaultReferences") 
                 use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                let references, assumeDotNetFramework = fxResolver.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework)
+                let references, assumeDotNetFramework = tcConfigB.FxResolver.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework)
                 // Add script references
                 for reference in references do
                     tcConfigB.AddReferencedAssemblyByPath(range0, reference)
@@ -162,9 +165,9 @@ module ScriptPreprocessClosure =
 
         tcConfigB.resolutionEnvironment <-
             match codeContext with 
-            | CodeContext.Editing -> ResolutionEnvironment.EditingOrCompilation true
-            | CodeContext.Compilation -> ResolutionEnvironment.EditingOrCompilation false
-            | CodeContext.CompilationAndEvaluation -> ResolutionEnvironment.CompilationAndEvaluation
+            | CodeContext.Editing -> LegacyResolutionEnvironment.EditingOrCompilation true
+            | CodeContext.Compilation -> LegacyResolutionEnvironment.EditingOrCompilation false
+            | CodeContext.CompilationAndEvaluation -> LegacyResolutionEnvironment.CompilationAndEvaluation
         tcConfigB.framework <- false 
         tcConfigB.useSimpleResolution <- useSimpleResolution
         // Indicates that there are some references not in basicReferencesForScriptLoadClosure which should

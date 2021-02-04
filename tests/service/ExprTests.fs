@@ -16,8 +16,13 @@ open System.Text
 open System.Collections.Generic
 open System.Diagnostics
 open System.Threading
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Symbols.FSharpExprPatterns
 
 type FSharpCore = 
     | FC45 
@@ -95,62 +100,62 @@ module internal Utils =
 
     let rec printExpr low (e:FSharpExpr) = 
         match e with 
-        | BasicPatterns.AddressOf(e1) -> "&"+printExpr 0 e1
-        | BasicPatterns.AddressSet(e1,e2) -> printExpr 0 e1 + " <- " + printExpr 0 e2
-        | BasicPatterns.Application(f,tyargs,args) -> quote low (printExpr 10 f + printTyargs tyargs + " " + printCurriedArgs args)
-        | BasicPatterns.BaseValue(_) -> "base"
-        | BasicPatterns.CallWithWitnesses(Some obj,v,tyargs1,tyargs2,witnessL,argsL) -> printObjOpt (Some obj) + v.CompiledName  + printTyargs tyargs2 + printTupledArgs (witnessL @ argsL)
-        | BasicPatterns.CallWithWitnesses(None,v,tyargs1,tyargs2,witnessL,argsL) -> v.DeclaringEntity.Value.CompiledName + printTyargs tyargs1 + "." + v.CompiledName  + printTyargs tyargs2 + " " + printTupledArgs (witnessL @ argsL)
-        | BasicPatterns.Call(Some obj,v,tyargs1,tyargs2,argsL) -> printObjOpt (Some obj) + v.CompiledName  + printTyargs tyargs2 + printTupledArgs argsL
-        | BasicPatterns.Call(None,v,tyargs1,tyargs2,argsL) -> v.DeclaringEntity.Value.CompiledName + printTyargs tyargs1 + "." + v.CompiledName  + printTyargs tyargs2 + " " + printTupledArgs argsL
-        | BasicPatterns.Coerce(ty1,e1) -> quote low (printExpr 10 e1 + " :> " + printTy ty1)
-        | BasicPatterns.DefaultValue(ty1) -> "dflt"
-        | BasicPatterns.FastIntegerForLoop _ -> "for-loop"
-        | BasicPatterns.ILAsm(s,tyargs,args) -> s + printTupledArgs args 
-        | BasicPatterns.ILFieldGet _ -> "ILFieldGet"
-        | BasicPatterns.ILFieldSet _ -> "ILFieldSet"
-        | BasicPatterns.IfThenElse (a,b,c) -> "(if " + printExpr 0 a + " then " + printExpr 0 b + " else " + printExpr 0 c + ")"
-        | BasicPatterns.Lambda(v,e1) -> "fun " + v.CompiledName + " -> " + printExpr 0 e1
-        | BasicPatterns.Let((v,e1),b) -> "let " + (if v.IsMutable then "mutable " else "") + v.CompiledName + ": " + printTy v.FullType + " = " + printExpr 0 e1 + " in " + printExpr 0 b
-        | BasicPatterns.LetRec(vse,b) -> "let rec ... in " + printExpr 0 b
-        | BasicPatterns.NewArray(ty,es) -> "[|" + (es |> Seq.map (printExpr 0) |> String.concat "; ") +  "|]" 
-        | BasicPatterns.NewDelegate(ty,es) -> "new-delegate" 
-        | BasicPatterns.NewObject(v,tys,args) -> "new " + v.DeclaringEntity.Value.CompiledName + printTupledArgs args 
-        | BasicPatterns.NewRecord(v,args) -> 
+        | AddressOf(e1) -> "&"+printExpr 0 e1
+        | AddressSet(e1,e2) -> printExpr 0 e1 + " <- " + printExpr 0 e2
+        | Application(f,tyargs,args) -> quote low (printExpr 10 f + printTyargs tyargs + " " + printCurriedArgs args)
+        | BaseValue(_) -> "base"
+        | CallWithWitnesses(Some obj,v,tyargs1,tyargs2,witnessL,argsL) -> printObjOpt (Some obj) + v.CompiledName  + printTyargs tyargs2 + printTupledArgs (witnessL @ argsL)
+        | CallWithWitnesses(None,v,tyargs1,tyargs2,witnessL,argsL) -> v.DeclaringEntity.Value.CompiledName + printTyargs tyargs1 + "." + v.CompiledName  + printTyargs tyargs2 + " " + printTupledArgs (witnessL @ argsL)
+        | Call(Some obj,v,tyargs1,tyargs2,argsL) -> printObjOpt (Some obj) + v.CompiledName  + printTyargs tyargs2 + printTupledArgs argsL
+        | Call(None,v,tyargs1,tyargs2,argsL) -> v.DeclaringEntity.Value.CompiledName + printTyargs tyargs1 + "." + v.CompiledName  + printTyargs tyargs2 + " " + printTupledArgs argsL
+        | Coerce(ty1,e1) -> quote low (printExpr 10 e1 + " :> " + printTy ty1)
+        | DefaultValue(ty1) -> "dflt"
+        | FastIntegerForLoop _ -> "for-loop"
+        | ILAsm(s,tyargs,args) -> s + printTupledArgs args 
+        | ILFieldGet _ -> "ILFieldGet"
+        | ILFieldSet _ -> "ILFieldSet"
+        | IfThenElse (a,b,c) -> "(if " + printExpr 0 a + " then " + printExpr 0 b + " else " + printExpr 0 c + ")"
+        | Lambda(v,e1) -> "fun " + v.CompiledName + " -> " + printExpr 0 e1
+        | Let((v,e1),b) -> "let " + (if v.IsMutable then "mutable " else "") + v.CompiledName + ": " + printTy v.FullType + " = " + printExpr 0 e1 + " in " + printExpr 0 b
+        | LetRec(vse,b) -> "let rec ... in " + printExpr 0 b
+        | NewArray(ty,es) -> "[|" + (es |> Seq.map (printExpr 0) |> String.concat "; ") +  "|]" 
+        | NewDelegate(ty,es) -> "new-delegate" 
+        | NewObject(v,tys,args) -> "new " + v.DeclaringEntity.Value.CompiledName + printTupledArgs args 
+        | NewRecord(v,args) -> 
             let fields = v.TypeDefinition.FSharpFields
             "{" + ((fields, args) ||> Seq.map2 (fun f a -> f.Name + " = " + printExpr 0 a) |> String.concat "; ") + "}" 
-        | BasicPatterns.NewAnonRecord(v,args) -> 
+        | NewAnonRecord(v,args) -> 
             let fields = v.AnonRecordTypeDetails.SortedFieldNames 
             "{" + ((fields, args) ||> Seq.map2 (fun f a -> f+ " = " + printExpr 0 a) |> String.concat "; ") + "}" 
-        | BasicPatterns.NewTuple(v,args) -> printTupledArgs args 
-        | BasicPatterns.NewUnionCase(ty,uc,args) -> uc.CompiledName + printTupledArgs args 
-        | BasicPatterns.Quote(e1) -> "quote" + printTupledArgs [e1]
-        | BasicPatterns.FSharpFieldGet(obj, ty,f) -> printObjOpt obj + f.Name 
-        | BasicPatterns.AnonRecordGet(obj, ty, n) -> printExpr 0 obj + "." + ty.AnonRecordTypeDetails.SortedFieldNames.[n]
-        | BasicPatterns.FSharpFieldSet(obj, ty,f,arg) -> printObjOpt obj + f.Name + " <- " + printExpr 0 arg
-        | BasicPatterns.Sequential(e1,e2) -> "(" + printExpr 0 e1 + "; " + printExpr 0 e2 + ")"
-        | BasicPatterns.ThisValue _ -> "this"
-        | BasicPatterns.TryFinally(e1,e2) -> "try " + printExpr 0 e1 + " finally " + printExpr 0 e2
-        | BasicPatterns.TryWith(e1,_,_,vC,eC) -> "try " + printExpr 0 e1 + " with " + vC.CompiledName + " -> " + printExpr 0 eC
-        | BasicPatterns.TupleGet(ty,n,e1) -> printExpr 10 e1 + ".Item" + string n
-        | BasicPatterns.DecisionTree(dtree,targets) -> "match " + printExpr 10 dtree + " targets ..."
-        | BasicPatterns.DecisionTreeSuccess (tg,es) -> "$" + string tg
-        | BasicPatterns.TypeLambda(gp1,e1) -> "FUN ... -> " + printExpr 0 e1 
-        | BasicPatterns.TypeTest(ty,e1) -> printExpr 10 e1 + " :? " + printTy ty
-        | BasicPatterns.UnionCaseSet(obj,ty,uc,f1,e1) -> printExpr 10 obj + "." + f1.Name + " <- " + printExpr 0 e1
-        | BasicPatterns.UnionCaseGet(obj,ty,uc,f1) -> printExpr 10 obj + "." + f1.Name
-        | BasicPatterns.UnionCaseTest(obj,ty,f1) -> printExpr 10 obj + ".Is" + f1.Name
-        | BasicPatterns.UnionCaseTag(obj,ty) -> printExpr 10 obj + ".Tag" 
-        | BasicPatterns.ObjectExpr(ty,basecall,overrides,iimpls) -> "{ " + printExpr 10 basecall + " with " + printOverrides overrides + " " + printIimpls iimpls + " }"
-        | BasicPatterns.TraitCall(tys,nm,_,argtys,tinst,args) -> "trait call " + nm + printTupledArgs args
-        | BasicPatterns.Const(obj,ty) -> 
+        | NewTuple(v,args) -> printTupledArgs args 
+        | NewUnionCase(ty,uc,args) -> uc.CompiledName + printTupledArgs args 
+        | Quote(e1) -> "quote" + printTupledArgs [e1]
+        | FSharpFieldGet(obj, ty,f) -> printObjOpt obj + f.Name 
+        | AnonRecordGet(obj, ty, n) -> printExpr 0 obj + "." + ty.AnonRecordTypeDetails.SortedFieldNames.[n]
+        | FSharpFieldSet(obj, ty,f,arg) -> printObjOpt obj + f.Name + " <- " + printExpr 0 arg
+        | Sequential(e1,e2) -> "(" + printExpr 0 e1 + "; " + printExpr 0 e2 + ")"
+        | ThisValue _ -> "this"
+        | TryFinally(e1,e2) -> "try " + printExpr 0 e1 + " finally " + printExpr 0 e2
+        | TryWith(e1,_,_,vC,eC) -> "try " + printExpr 0 e1 + " with " + vC.CompiledName + " -> " + printExpr 0 eC
+        | TupleGet(ty,n,e1) -> printExpr 10 e1 + ".Item" + string n
+        | DecisionTree(dtree,targets) -> "match " + printExpr 10 dtree + " targets ..."
+        | DecisionTreeSuccess (tg,es) -> "$" + string tg
+        | TypeLambda(gp1,e1) -> "FUN ... -> " + printExpr 0 e1 
+        | TypeTest(ty,e1) -> printExpr 10 e1 + " :? " + printTy ty
+        | UnionCaseSet(obj,ty,uc,f1,e1) -> printExpr 10 obj + "." + f1.Name + " <- " + printExpr 0 e1
+        | UnionCaseGet(obj,ty,uc,f1) -> printExpr 10 obj + "." + f1.Name
+        | UnionCaseTest(obj,ty,f1) -> printExpr 10 obj + ".Is" + f1.Name
+        | UnionCaseTag(obj,ty) -> printExpr 10 obj + ".Tag" 
+        | ObjectExpr(ty,basecall,overrides,iimpls) -> "{ " + printExpr 10 basecall + " with " + printOverrides overrides + " " + printIimpls iimpls + " }"
+        | TraitCall(tys,nm,_,argtys,tinst,args) -> "trait call " + nm + printTupledArgs args
+        | Const(obj,ty) -> 
             match obj with 
             | :? string  as s -> "\"" + s + "\""
             | null -> "()"
             | _ -> string obj
-        | BasicPatterns.Value(v) -> v.CompiledName
-        | BasicPatterns.ValueSet(v,e1) -> quote low (v.CompiledName + " <- " + printExpr 0 e1)
-        | BasicPatterns.WhileLoop(e1,e2) -> "while " + printExpr 0 e1 + " do " + printExpr 0 e2 + " done"
+        | Value(v) -> v.CompiledName
+        | ValueSet(v,e1) -> quote low (v.CompiledName + " <- " + printExpr 0 e1)
+        | WhileLoop(e1,e2) -> "while " + printExpr 0 e1 + " do " + printExpr 0 e2 + " done"
         | _ -> failwith (sprintf "unrecognized %+A" e)
 
     and quote low s = if low > 0 then "(" + s + ")" else s
@@ -277,49 +282,49 @@ module internal Utils =
 
     let rec collectMembers (e:FSharpExpr) = 
         match e with 
-        | BasicPatterns.AddressOf(e) -> collectMembers e
-        | BasicPatterns.AddressSet(e1,e2) -> Seq.append (collectMembers e1) (collectMembers e2)
-        | BasicPatterns.Application(f,_,args) -> Seq.append (collectMembers f) (Seq.collect collectMembers args)
-        | BasicPatterns.BaseValue(_) -> Seq.empty
-        | BasicPatterns.Call(Some obj,v,_,_,argsL) -> Seq.concat [ collectMembers obj; Seq.singleton v; Seq.collect collectMembers argsL ]
-        | BasicPatterns.Call(None,v,_,_,argsL) -> Seq.concat [ Seq.singleton v; Seq.collect collectMembers argsL ]
-        | BasicPatterns.Coerce(_,e) -> collectMembers e
-        | BasicPatterns.DefaultValue(_) -> Seq.empty
-        | BasicPatterns.FastIntegerForLoop (fromArg, toArg, body, _) -> Seq.collect collectMembers [ fromArg; toArg; body ]
-        | BasicPatterns.ILAsm(_,_,args) -> Seq.collect collectMembers args 
-        | BasicPatterns.ILFieldGet (Some e,_,_) -> collectMembers e
-        | BasicPatterns.ILFieldGet _ -> Seq.empty
-        | BasicPatterns.ILFieldSet (Some e,_,_,v) -> Seq.append (collectMembers e) (collectMembers v)
-        | BasicPatterns.ILFieldSet _ -> Seq.empty
-        | BasicPatterns.IfThenElse (a,b,c) -> Seq.collect collectMembers [ a; b; c ]
-        | BasicPatterns.Lambda(v,e1) -> collectMembers e1
-        | BasicPatterns.Let((v,e1),b) -> Seq.append (collectMembers e1) (collectMembers b)
-        | BasicPatterns.LetRec(vse,b) -> Seq.append (vse |> Seq.collect (snd >> collectMembers)) (collectMembers b)
-        | BasicPatterns.NewArray(_,es) -> Seq.collect collectMembers es
-        | BasicPatterns.NewDelegate(ty,es) -> collectMembers es
-        | BasicPatterns.NewObject(v,tys,args) -> Seq.append (Seq.singleton v) (Seq.collect collectMembers args)
-        | BasicPatterns.NewRecord(v,args) -> Seq.collect collectMembers args
-        | BasicPatterns.NewTuple(v,args) -> Seq.collect collectMembers args
-        | BasicPatterns.NewUnionCase(ty,uc,args) -> Seq.collect collectMembers args
-        | BasicPatterns.Quote(e1) -> collectMembers e1
-        | BasicPatterns.FSharpFieldGet(Some obj, _,_) -> collectMembers obj
-        | BasicPatterns.FSharpFieldGet _ -> Seq.empty
-        | BasicPatterns.FSharpFieldSet(Some obj,_,_,arg) -> Seq.append (collectMembers obj) (collectMembers arg)
-        | BasicPatterns.FSharpFieldSet(None,_,_,arg) -> collectMembers arg
-        | BasicPatterns.Sequential(e1,e2) -> Seq.append (collectMembers e1) (collectMembers e2)
-        | BasicPatterns.ThisValue _ -> Seq.empty
-        | BasicPatterns.TryFinally(e1,e2) -> Seq.append (collectMembers e1) (collectMembers e2)
-        | BasicPatterns.TryWith(e1,_,f,_,eC) -> Seq.collect collectMembers [ e1; f; eC ]
-        | BasicPatterns.TupleGet(ty,n,e1) -> collectMembers e1
-        | BasicPatterns.DecisionTree(dtree,targets) -> Seq.append (collectMembers dtree) (targets |> Seq.collect (snd >> collectMembers))
-        | BasicPatterns.DecisionTreeSuccess (tg,es) -> Seq.collect collectMembers es
-        | BasicPatterns.TypeLambda(gp1,e1) -> collectMembers e1
-        | BasicPatterns.TypeTest(ty,e1) -> collectMembers e1
-        | BasicPatterns.UnionCaseSet(obj,ty,uc,f1,e1) -> Seq.append (collectMembers obj) (collectMembers e1)
-        | BasicPatterns.UnionCaseGet(obj,ty,uc,f1) -> collectMembers obj
-        | BasicPatterns.UnionCaseTest(obj,ty,f1) -> collectMembers obj
-        | BasicPatterns.UnionCaseTag(obj,ty) -> collectMembers obj
-        | BasicPatterns.ObjectExpr(ty,basecall,overrides,iimpls) -> 
+        | AddressOf(e) -> collectMembers e
+        | AddressSet(e1,e2) -> Seq.append (collectMembers e1) (collectMembers e2)
+        | Application(f,_,args) -> Seq.append (collectMembers f) (Seq.collect collectMembers args)
+        | BaseValue(_) -> Seq.empty
+        | Call(Some obj,v,_,_,argsL) -> Seq.concat [ collectMembers obj; Seq.singleton v; Seq.collect collectMembers argsL ]
+        | Call(None,v,_,_,argsL) -> Seq.concat [ Seq.singleton v; Seq.collect collectMembers argsL ]
+        | Coerce(_,e) -> collectMembers e
+        | DefaultValue(_) -> Seq.empty
+        | FastIntegerForLoop (fromArg, toArg, body, _) -> Seq.collect collectMembers [ fromArg; toArg; body ]
+        | ILAsm(_,_,args) -> Seq.collect collectMembers args 
+        | ILFieldGet (Some e,_,_) -> collectMembers e
+        | ILFieldGet _ -> Seq.empty
+        | ILFieldSet (Some e,_,_,v) -> Seq.append (collectMembers e) (collectMembers v)
+        | ILFieldSet _ -> Seq.empty
+        | IfThenElse (a,b,c) -> Seq.collect collectMembers [ a; b; c ]
+        | Lambda(v,e1) -> collectMembers e1
+        | Let((v,e1),b) -> Seq.append (collectMembers e1) (collectMembers b)
+        | LetRec(vse,b) -> Seq.append (vse |> Seq.collect (snd >> collectMembers)) (collectMembers b)
+        | NewArray(_,es) -> Seq.collect collectMembers es
+        | NewDelegate(ty,es) -> collectMembers es
+        | NewObject(v,tys,args) -> Seq.append (Seq.singleton v) (Seq.collect collectMembers args)
+        | NewRecord(v,args) -> Seq.collect collectMembers args
+        | NewTuple(v,args) -> Seq.collect collectMembers args
+        | NewUnionCase(ty,uc,args) -> Seq.collect collectMembers args
+        | Quote(e1) -> collectMembers e1
+        | FSharpFieldGet(Some obj, _,_) -> collectMembers obj
+        | FSharpFieldGet _ -> Seq.empty
+        | FSharpFieldSet(Some obj,_,_,arg) -> Seq.append (collectMembers obj) (collectMembers arg)
+        | FSharpFieldSet(None,_,_,arg) -> collectMembers arg
+        | Sequential(e1,e2) -> Seq.append (collectMembers e1) (collectMembers e2)
+        | ThisValue _ -> Seq.empty
+        | TryFinally(e1,e2) -> Seq.append (collectMembers e1) (collectMembers e2)
+        | TryWith(e1,_,f,_,eC) -> Seq.collect collectMembers [ e1; f; eC ]
+        | TupleGet(ty,n,e1) -> collectMembers e1
+        | DecisionTree(dtree,targets) -> Seq.append (collectMembers dtree) (targets |> Seq.collect (snd >> collectMembers))
+        | DecisionTreeSuccess (tg,es) -> Seq.collect collectMembers es
+        | TypeLambda(gp1,e1) -> collectMembers e1
+        | TypeTest(ty,e1) -> collectMembers e1
+        | UnionCaseSet(obj,ty,uc,f1,e1) -> Seq.append (collectMembers obj) (collectMembers e1)
+        | UnionCaseGet(obj,ty,uc,f1) -> collectMembers obj
+        | UnionCaseTest(obj,ty,f1) -> collectMembers obj
+        | UnionCaseTag(obj,ty) -> collectMembers obj
+        | ObjectExpr(ty,basecall,overrides,iimpls) -> 
             seq {
                 yield! collectMembers basecall
                 for o in overrides do
@@ -328,11 +333,11 @@ module internal Utils =
                     for o in i do
                         yield! collectMembers o.Body
             }
-        | BasicPatterns.TraitCall(tys,nm,_,argtys,tinst,args) -> Seq.collect collectMembers args
-        | BasicPatterns.Const(obj,ty) -> Seq.empty
-        | BasicPatterns.Value(v) -> Seq.singleton v
-        | BasicPatterns.ValueSet(v,e1) -> Seq.append (Seq.singleton v) (collectMembers e1)
-        | BasicPatterns.WhileLoop(e1,e2) -> Seq.append (collectMembers e1) (collectMembers e2) 
+        | TraitCall(tys,nm,_,argtys,tinst,args) -> Seq.collect collectMembers args
+        | Const(obj,ty) -> Seq.empty
+        | Value(v) -> Seq.singleton v
+        | ValueSet(v,e1) -> Seq.append (Seq.singleton v) (collectMembers e1)
+        | WhileLoop(e1,e2) -> Seq.append (collectMembers e1) (collectMembers e2) 
         | _ -> failwith (sprintf "unrecognized %+A" e)
 
     let rec printMembersOfDeclatations ds = 
@@ -427,7 +432,7 @@ type ClassWithImplicitConstructor(compiledAsArg: int) =
     member __.M2() = compiledAsInstanceMethod()
     static member SM1() = compiledAsStaticField + compiledAsGenericStaticMethod compiledAsStaticField 
     static member SM2() = compiledAsStaticMethod()
-    //override __.ToString() = base.ToString() + string 999
+    //override _.ToString() = base.ToString() + string 999
     member this.TestCallinToString() = this.ToString()
 
 exception Error of int * int
@@ -725,13 +730,13 @@ let ``Test Unoptimized Declarations Project1`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project1 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Errors.Length |> shouldEqual 3 // recursive value warning
-    wholeProjectResults.Errors.[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Errors.[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Errors.[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 3 // recursive value warning
+    wholeProjectResults.Diagnostics.[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
 
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 2
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
@@ -860,13 +865,13 @@ let ``Test Optimized Declarations Project1`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project1 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Errors.Length |> shouldEqual 3 // recursive value warning
-    wholeProjectResults.Errors.[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Errors.[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Errors.[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 3 // recursive value warning
+    wholeProjectResults.Diagnostics.[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
 
     wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> shouldEqual 2
     let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0]
@@ -1025,12 +1030,12 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
             printfn "Referenced assembly %s: %O" r.QualifiedName r.FileName
 
         let errors = StringBuilder()
-        for e in wholeProjectResults.Errors do 
+        for e in wholeProjectResults.Diagnostics do 
             printfn "%s Operator Tests error: <<<%s>>>" dnName e.Message
             errors.AppendLine e.Message |> ignore
 
         errors.ToString() |> shouldEqual ""
-        wholeProjectResults.Errors.Length |> shouldEqual 0
+        wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
         let resultUnoptimized = 
             wholeProjectResults.AssemblyContents.ImplementationFiles.[0].Declarations 
@@ -3197,7 +3202,7 @@ let ``Test expressions of declarations stress big expressions`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
@@ -3213,7 +3218,7 @@ let ``Test expressions of optimized declarations stress big expressions`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
     wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0]
@@ -3273,7 +3278,7 @@ let ``Test ProjectForWitnesses1`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project1 error: <<<%s>>>" e.Message
 
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
@@ -3317,7 +3322,7 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "ProjectForWitnesses1 error: <<<%s>>>" e.Message
 
     begin
@@ -3397,10 +3402,10 @@ let ``Test ProjectForWitnesses2`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "ProjectForWitnesses2 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
 
@@ -3452,10 +3457,10 @@ let ``Test ProjectForWitnesses3`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "ProjectForWitnesses3 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
 
@@ -3483,7 +3488,7 @@ let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "ProjectForWitnesses3 error: <<<%s>>>" e.Message
 
     begin

@@ -4,7 +4,7 @@ namespace FSharp.Compiler.ComponentTests.ErrorMessages
 
 open Xunit
 open FSharp.Test.Utilities
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Diagnostics
 
 // Disabled this test, see https://github.com/dotnet/fsharp/commit/98dc1b09fa1ff15176998dc2d28c5b5c8d0f80b1#r43542750
 //module ``Type definition missing equals`` =

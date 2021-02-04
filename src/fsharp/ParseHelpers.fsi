@@ -2,9 +2,9 @@
 
 module internal FSharp.Compiler.ParseHelpers
 
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.Range
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
 
@@ -39,9 +39,12 @@ type IParseState with
     member ResetSynArgNameGenerator: unit -> unit
 
 module LexbufLocalXmlDocStore =
+
     val ClearXmlDoc: lexbuf:UnicodeLexing.Lexbuf -> unit
+
     val SaveXmlDocLine: lexbuf:UnicodeLexing.Lexbuf * lineText:string * range:range -> unit
-    val GrabXmlDocBeforeMarker: lexbuf:UnicodeLexing.Lexbuf * markerRange:range -> XmlDoc.PreXmlDoc
+
+    val GrabXmlDocBeforeMarker: lexbuf:UnicodeLexing.Lexbuf * markerRange:range -> PreXmlDoc
   
 type LexerIfdefStackEntry =
     | IfDefIf
@@ -74,9 +77,13 @@ type LexerStringKind =
     { IsByteString: bool
       IsInterpolated: bool
       IsInterpolatedFirst: bool }
+
     static member ByteString: LexerStringKind
+
     static member InterpolatedStringFirst: LexerStringKind
+
     static member InterpolatedStringPart: LexerStringKind
+
     static member String: LexerStringKind
     
 type LexerInterpolatedStringNesting =

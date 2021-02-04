@@ -1,13 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Blobs of bytes, cross-compiling 
-namespace FSharp.Compiler.AbstractIL.Internal
+namespace Internal.Utilities
 
 open System.IO
 open System.IO.MemoryMappedFiles
-
-module internal Utils =
-    val runningOnMono: bool
 
 module internal Bytes = 
     /// returned int will be 0 <= x <= 255

@@ -11,9 +11,8 @@ module FSharp.Compiler.Service.Tests.PerfTests
 open NUnit.Framework
 open FsUnit
 open System.IO
-
-open FSharp.Compiler.SourceCodeServices
-
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
 
 // Create an interactive checker instance 
@@ -27,7 +26,7 @@ module internal Project1 =
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSources = [ for (i,f) in fileNamesI -> (f, "module M" + string i) ]
     for (f,text) in fileSources do File.WriteAllText(f, text)
-    let fileSources2 = [ for (i,f) in fileSources -> FSharp.Compiler.Text.SourceText.ofString f ]
+    let fileSources2 = [ for (i,f) in fileSources -> SourceText.ofString f ]
 
     let fileNames = [ for (_,f) in fileNamesI -> f ]
     let args = mkProjectCommandLineArgs (dllName, fileNames)

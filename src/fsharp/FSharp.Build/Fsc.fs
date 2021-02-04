@@ -87,6 +87,7 @@ type public Fsc () as this =
     let mutable warningsNotAsErrors : string = null
     let mutable versionFile : string = null
     let mutable warningLevel : string = null
+    let mutable warnOn : string = null
     let mutable win32res : string = null
     let mutable win32manifest : string = null
     let mutable vslcid : string = null
@@ -113,6 +114,7 @@ type public Fsc () as this =
     let mutable subsystemVersion : string? = null
     let mutable targetProfile : string? = null
     let mutable targetType : string? = null
+    let mutable warnOn: string? = null
     let mutable warningsAsErrors : string? = null
     let mutable warningsNotAsErrors : string? = null
     let mutable versionFile : string? = null
@@ -131,6 +133,21 @@ type public Fsc () as this =
         match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
         | Some s -> s
         | None -> ""
+
+
+    /// Trim whitespace ... spaces, tabs, newlines,returns, Double quotes and single quotes
+    let wsCharsToTrim = [| ' '; '\t'; '\"'; '\'' |]
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    let splitAndWsTrim (s:string) =
+#else
+    let splitAndWsTrim (s:string?) =
+#endif
+        match s with
+        | Null -> [||]
+        | NonNull s ->
+            let array = s.Split([| ';'; ','; '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
+            array |> Array.map(fun item -> item.Trim(wsCharsToTrim)) |> Array.filter(fun s -> not (String.IsNullOrEmpty s))
+
     // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
     do this.YieldDuringToolExecution <- true
 
@@ -228,14 +245,7 @@ type public Fsc () as this =
         for item in references do
             builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
 
-        // ReferencePath
-        let referencePathArray = // create a array of strings
-            match referencePath with
-            | Null -> null
-            | NonNull referencePath ->
-                 referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
-
-        builder.AppendSwitchesIfNotNull("--lib:", referencePathArray, ",")   
+        builder.AppendSwitchesIfNotNull("--lib:", referencePath |> splitAndWsTrim, ",")
 
         // TargetType
         builder.AppendSwitchIfNotNull("--target:", 
@@ -250,33 +260,22 @@ type public Fsc () as this =
                 | _ -> null)
 
         // NoWarn
-        match disabledWarnings with
-        | Null -> ()
-        | NonNull disabledWarnings ->
-            builder.AppendSwitchesIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
+        builder.AppendSwitchesIfNotNull("--nowarn:", disabledWarnings |> splitAndWsTrim, ",")
         
         // WarningLevel
         builder.AppendSwitchIfNotNull("--warn:", warningLevel)
+
+        builder.AppendSwitchesIfNotNull("--warnon:", warnOn |> splitAndWsTrim, ",")
 
         // TreatWarningsAsErrors
         if treatWarningsAsErrors then
             builder.AppendSwitch("--warnaserror")
 
         // WarningsAsErrors
-        // Change warning 76, HashReferenceNotAllowedInNonScript/HashDirectiveNotAllowedInNonScript/HashIncludeNotAllowedInNonScript, into an error
-        // REVIEW: why is this logic here? In any case these are errors already by default!
-        let warningsAsErrorsArray =
-            match warningsAsErrors with
-            | Null -> [|"76"|]
-            | NonNull warningsAsErrors -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
-
-        builder.AppendSwitchesIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
+        builder.AppendSwitchesIfNotNull("--warnaserror:", warningsAsErrors |> splitAndWsTrim, ",")
 
         // WarningsNotAsErrors
-        match warningsNotAsErrors with
-        | Null -> ()
-        | NonNull warningsNotAsErrors ->
-            builder.AppendSwitchesIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
+        builder.AppendSwitchesIfNotNull("--warnaserror-:", warningsNotAsErrors |> splitAndWsTrim, ",")
 
         // Win32ResourceFile
         builder.AppendSwitchIfNotNull("--win32res:", win32res)
@@ -312,13 +311,7 @@ type public Fsc () as this =
 
         builder.AppendSwitch("--nocopyfsharpcore")
         
-        let pathMapArray = // create a array of strings
-            match pathMap with
-            | Null -> null
-            | NonNull pathMap ->
-                 pathMap.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
-
-        builder.AppendSwitchesIfNotNull("--pathmap:", pathMapArray, ",")   
+        builder.AppendSwitchesIfNotNull("--pathmap:", pathMap |> splitAndWsTrim, ",")   
 
         if deterministic then
             builder.AppendSwitch("--deterministic+")
@@ -569,6 +562,10 @@ type public Fsc () as this =
     member fsc.WarningsNotAsErrors
         with get() = warningsNotAsErrors
         and set(s) = warningsNotAsErrors <- s
+
+    member fsc.WarnOn 
+        with get() = warnOn
+        and set(s) = warnOn <- s
 
     member fsc.VisualStudioStyleErrors
         with get() = vserrors

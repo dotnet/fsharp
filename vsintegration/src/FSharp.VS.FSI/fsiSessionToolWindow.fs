@@ -721,7 +721,7 @@ type internal FsiToolWindow() as this =
                     context.AddAttribute(VSUSERCONTEXTATTRIBUTEUSAGE.VSUC_Usage_LookupF1, "Keyword", "VS.FSharpInteractive") |> ignore
             |   _ -> Debug.Assert(false)
 
-    member __.QueryCommandStatus(guidCmdGroup:Guid, nCmdId:uint32) =
+    member _.QueryCommandStatus(guidCmdGroup:Guid, nCmdId:uint32) =
         match () with
         | _ when guidCmdGroup = Guids.guidFsiConsoleCmdSet && nCmdId = uint32 Guids.cmdIDAttachDebugger ->
             if debuggerIsRunning () then Some(OLECMDF.OLECMDF_INVISIBLE)

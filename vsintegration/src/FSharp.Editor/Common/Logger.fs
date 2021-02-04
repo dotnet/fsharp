@@ -77,12 +77,12 @@ module Logger =
     let LogBlock(functionId) =
         FSharpEditorEventSource.Instance.BlockStart(functionId)
         { new IDisposable with
-            member __.Dispose() =
+            member _.Dispose() =
                 FSharpEditorEventSource.Instance.BlockStop(functionId) }
 
     let LogBlockMessage message functionId =
         FSharpEditorEventSource.Instance.BlockMessageStart(message, functionId)
         { new IDisposable with
-            member __.Dispose() =
+            member _.Dispose() =
                 FSharpEditorEventSource.Instance.BlockMessageStop(message, functionId) }
     

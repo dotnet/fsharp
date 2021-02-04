@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace Microsoft.DotNet.DependencyManager
+namespace FSharp.Compiler.DependencyManager
 
 open System
 open System.Collections.Concurrent
@@ -14,23 +14,20 @@ open Internal.Utilities.FSharpEnvironment
 /// host implements this, it's job is to return a list of package roots to probe.
 type NativeResolutionProbe = delegate of Unit -> seq<string>
 
-#if NETSTANDARD
-open System.Runtime.Loader
-
-// Cut down AssemblyLoadContext, for loading native libraries
-type NativeAssemblyLoadContext () =
-    inherit AssemblyLoadContext()
-
-    member this.LoadNativeLibrary(path: string): IntPtr =
-        base.LoadUnmanagedDllFromPath(path)
-
-    override _.Load(_path: AssemblyName): Assembly =
-        raise (NotImplementedException())
-
-    static member NativeLoadContext = new NativeAssemblyLoadContext()
-
 /// Type that encapsulates Native library probing for managed packages
 type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe option) =
+
+    let nativeLibraryTryLoad =
+        let nativeLibraryType: Type = Type.GetType("System.Runtime.InteropServices.NativeLibrary, System.Runtime.InteropServices", false)
+        nativeLibraryType.GetMethod("TryLoad", [| typeof<string>; typeof<IntPtr>.MakeByRefType() |])
+
+    let loadNativeLibrary path =
+        let arguments = [| path:>obj; IntPtr.Zero:>obj |]
+        if nativeLibraryTryLoad.Invoke(null, arguments) :?> bool then
+            arguments.[1] :?> IntPtr
+        else
+            IntPtr.Zero
+
     let probingFileNames (name: string) =
         // coreclr native library probing algorithm: https://github.com/dotnet/coreclr/blob/9773db1e7b1acb3ec75c9cc0e36bd62dcbacd6d5/src/System.Private.CoreLib/shared/System/Runtime/Loader/LibraryNameVariation.Unix.cs
         let isRooted = Path.IsPathRooted name
@@ -64,7 +61,7 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe o
                             yield (sprintf "%s%s" p name)
         |]
 
-    let _resolveUnmanagedDll (_: Assembly) (name: string): IntPtr =
+    let resolveUnmanagedDll (_: Assembly) (name: string): IntPtr =
         // Enumerate probing roots looking for a dll that matches the probing name in the probed locations
         let probeForNativeLibrary root rid name =
             // Look for name in root
@@ -89,38 +86,32 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe o
                             RidHelpers.probingRids |> Seq.tryPick(fun rid -> probeForNativeLibrary root rid name)))
 
         match probe with
-        | Some path -> NativeAssemblyLoadContext.NativeLoadContext.LoadNativeLibrary(path)
+        | Some path -> loadNativeLibrary(path)
         | None -> IntPtr.Zero
 
     // netstandard 2.1 has this property, unfortunately we don't build with that yet
     //public event Func<Assembly, string, IntPtr> ResolvingUnmanagedDll
-    let eventInfo = typeof<AssemblyLoadContext>.GetEvent("ResolvingUnmanagedDll")
-    let handler = Func<Assembly, string, IntPtr> (_resolveUnmanagedDll)
+    let assemblyLoadContextType: Type = Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
+    let eventInfo, handler, defaultAssemblyLoadContext =
+        assemblyLoadContextType.GetEvent("ResolvingUnmanagedDll"), 
+        Func<Assembly, string, IntPtr> (resolveUnmanagedDll), 
+        assemblyLoadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public).GetValue(null, null)
 
-    do
-        if not (isNull eventInfo) then
-            eventInfo.AddEventHandler(AssemblyLoadContext.Default, handler)
+    do eventInfo.AddEventHandler(defaultAssemblyLoadContext, handler)
 
     interface IDisposable with
-        member _x.Dispose() =
-            if not (isNull eventInfo) then
-                eventInfo.RemoveEventHandler(AssemblyLoadContext.Default, handler)
-            ()
-#endif
+        member _x.Dispose() = eventInfo.RemoveEventHandler(defaultAssemblyLoadContext, handler)
+
 
 type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe option) =
 
     let handler: IDisposable option =
-#if NETSTANDARD
         if isRunningOnCoreClr then
             Some (new NativeDllResolveHandlerCoreClr(nativeProbingRoots) :> IDisposable)
         else
-#else
-            ignore nativeProbingRoots
-#endif
             None
 
-    let appendSemiColon (p:string) =
+    let appendSemiColon (p: string) =
         if not(p.EndsWith(";", StringComparison.OrdinalIgnoreCase)) then
             p + ";"
         else

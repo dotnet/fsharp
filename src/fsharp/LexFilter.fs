@@ -6,7 +6,7 @@ module internal FSharp.Compiler.LexFilter
 
 open Internal.Utilities.Text.Lexing
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
@@ -2383,9 +2383,9 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     // Part VI. Publish the new lexer function.  
     //--------------------------------------------------------------------------
 
-    member __.LexBuffer = lexbuf
+    member _.LexBuffer = lexbuf
 
-    member __.GetToken() = 
+    member _.GetToken() = 
         if not initialized then 
             let _firstTokenTup = peekInitial()
             ()

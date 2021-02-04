@@ -6,7 +6,7 @@ open System.Collections.Immutable
 open NUnit.Framework
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Utilities
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Diagnostics
 open Microsoft.CodeAnalysis
 
 [<TestFixture>]

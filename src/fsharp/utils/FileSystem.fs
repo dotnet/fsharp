@@ -1,10 +1,17 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.IO
 
 open System
 open System.IO
 open System.Reflection
+
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+[<AutoOpen>]
+module FileSystemHelpers =
+        // Shim to match nullness checking library support in preview
+        let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+#endif
 
 type IFileSystem = 
 
@@ -53,84 +60,80 @@ type IFileSystem =
     abstract IsStableFileHeuristic: fileName: string -> bool
 
 
+type DefaultFileSystem() =
+    interface IFileSystem with
+
+        member _.AssemblyLoadFrom(fileName: string) = 
+            Assembly.UnsafeLoadFrom fileName
+
+        member _.AssemblyLoad(assemblyName: AssemblyName) = 
+            Assembly.Load assemblyName
+
+        member _.ReadAllBytesShim (fileName: string) = File.ReadAllBytes fileName
+
+        member _.FileStreamReadShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)  :> Stream
+
+        member _.FileStreamCreateShim (fileName: string) = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.Read, 0x1000, false) :> Stream
+
+        member _.FileStreamWriteExistingShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Write, FileShare.Read, 0x1000, false) :> Stream
+
+        member _.GetFullPathShim (fileName: string) = System.IO.Path.GetFullPath fileName
+
+        member _.IsPathRootedShim (path: string) = Path.IsPathRooted path
+
+        member __.IsInvalidPathShim(path: string) = 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+            let isInvalidPath(p: string) = 
+#else
+            let isInvalidPath(p: string?) = 
+#endif
+                match p with 
+                | Null | "" -> true
+                | NonNull p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+
+            let isInvalidFilename(p: string) = 
+#else
+            let isInvalidFilename(p: string?) = 
+#endif
+                match p with 
+                | Null | "" -> true
+                | NonNull p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
+
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+
+            let isInvalidDirectory(d: string) = 
+#else
+            let isInvalidDirectory(d: string?) = 
+#endif
+                match d with 
+                | Null -> true
+                | NonNull d -> d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+
+            isInvalidPath path || 
+            let directory = Path.GetDirectoryName path
+            let filename = Path.GetFileName path
+            isInvalidDirectory directory || isInvalidFilename filename
+
+        member _.GetTempPathShim() = Path.GetTempPath()
+
+        member _.GetLastWriteTimeShim (fileName: string) = File.GetLastWriteTimeUtc fileName
+
+        member _.SafeExists (fileName: string) = File.Exists fileName 
+
+        member _.FileDelete (fileName: string) = File.Delete fileName
+
+        member _.IsStableFileHeuristic (fileName: string) = 
+            let directory = Path.GetDirectoryName fileName
+            directory.Contains("Reference Assemblies/") || 
+            directory.Contains("Reference Assemblies\\") || 
+            directory.Contains("packages/") || 
+            directory.Contains("packages\\") || 
+            directory.Contains("lib/mono/")
+
 [<AutoOpen>]
 module FileSystemAutoOpens =
-    #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    // Shim to match nullness checking library support in preview
-    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
-    #endif
-
-    type DefaultFileSystem() =
-        interface IFileSystem with
-
-            member __.AssemblyLoadFrom(fileName: string) = 
-                Assembly.UnsafeLoadFrom fileName
-
-            member __.AssemblyLoad(assemblyName: AssemblyName) = 
-                Assembly.Load assemblyName
-
-            member __.ReadAllBytesShim (fileName: string) = File.ReadAllBytes fileName
-
-            member __.FileStreamReadShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)  :> Stream
-
-            member __.FileStreamCreateShim (fileName: string) = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.Read, 0x1000, false) :> Stream
-
-            member __.FileStreamWriteExistingShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Write, FileShare.Read, 0x1000, false) :> Stream
-
-            member __.GetFullPathShim (fileName: string) = System.IO.Path.GetFullPath fileName
-
-            member __.IsPathRootedShim (path: string) = Path.IsPathRooted path
-
-            member __.IsInvalidPathShim(path: string) = 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-                let isInvalidPath(p: string) = 
-#else
-                let isInvalidPath(p: string?) = 
-#endif
-                    match p with 
-                    | Null | "" -> true
-                    | NonNull p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
-
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-
-                let isInvalidFilename(p: string) = 
-#else
-                let isInvalidFilename(p: string?) = 
-#endif
-                    match p with 
-                    | Null | "" -> true
-                    | NonNull p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
-
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-
-                let isInvalidDirectory(d: string) = 
-#else
-                let isInvalidDirectory(d: string?) = 
-#endif
-                    match d with 
-                    | Null -> true
-                    | NonNull d -> d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
-
-                isInvalidPath path || 
-                let directory = Path.GetDirectoryName path
-                let filename = Path.GetFileName path
-                isInvalidDirectory directory || isInvalidFilename filename
-
-            member __.GetTempPathShim() = Path.GetTempPath()
-
-            member __.GetLastWriteTimeShim (fileName: string) = File.GetLastWriteTimeUtc fileName
-
-            member __.SafeExists (fileName: string) = File.Exists fileName 
-
-            member __.FileDelete (fileName: string) = File.Delete fileName
-
-            member __.IsStableFileHeuristic (fileName: string) = 
-                let directory = Path.GetDirectoryName fileName
-                directory.Contains("Reference Assemblies/") || 
-                directory.Contains("Reference Assemblies\\") || 
-                directory.Contains("packages/") || 
-                directory.Contains("packages\\") || 
-                directory.Contains("lib/mono/")
 
     let mutable FileSystem = DefaultFileSystem() :> IFileSystem
 

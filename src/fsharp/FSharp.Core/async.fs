@@ -92,7 +92,7 @@ namespace Microsoft.FSharp.Control
         /// Use this trampoline on the synchronous stack if none exists, and execute
         /// the given function. The function might write its continuation into the trampoline.
         [<DebuggerHidden>]
-        member __.Execute (firstAction: unit -> AsyncReturn) =
+        member _.Execute (firstAction: unit -> AsyncReturn) =
 
             let thisThreadHadTrampoline = Trampoline.thisThreadHasTrampoline
             Trampoline.thisThreadHasTrampoline <- true
@@ -124,19 +124,19 @@ namespace Microsoft.FSharp.Control
 
         /// Increment the counter estimating the size of the synchronous stack and
         /// return true if time to jump on trampoline.
-        member __.IncrementBindCount() =
+        member _.IncrementBindCount() =
             bindCount <- bindCount + 1
             bindCount >= bindLimitBeforeHijack
 
         /// Prepare to abandon the synchronous stack of the current execution and save the continuation in the trampoline.
-        member __.Set action =
+        member _.Set action =
             assert storedCont.IsNone
             bindCount <- 0
             storedCont <- Some action
             AsyncReturn.Fake()
 
         /// Save the exception continuation during propagation of an exception, or prior to raising an exception
-        member __.OnExceptionRaised (action: econt) =
+        member _.OnExceptionRaised (action: econt) =
             assert storedExnCont.IsNone
             storedExnCont <- Some action
 
@@ -164,7 +164,7 @@ namespace Microsoft.FSharp.Control
 
         /// Execute an async computation after installing a trampoline on its synchronous stack.
         [<DebuggerHidden>]
-        member __.ExecuteWithTrampoline firstAction =
+        member _.ExecuteWithTrampoline firstAction =
             trampoline <- Trampoline()
             trampoline.Execute firstAction
 
@@ -183,16 +183,16 @@ namespace Microsoft.FSharp.Control
             | _ -> this.PostWithTrampoline syncCtxt f
 
         // This should be the only call to Thread.Start in this library. We must always install a trampoline.
-        member __.StartThreadWithTrampoline (f: unit -> AsyncReturn) =
+        member _.StartThreadWithTrampoline (f: unit -> AsyncReturn) =
             Thread(threadStartCallbackForStartThreadWithTrampoline, IsBackground=true).Start(f|>box)
             AsyncReturn.Fake()
 
         /// Save the exception continuation during propagation of an exception, or prior to raising an exception
-        member inline __.OnExceptionRaised econt =
+        member inline _.OnExceptionRaised econt =
             trampoline.OnExceptionRaised econt
 
         /// Call a continuation, but first check if an async computation should trampoline on its synchronous stack.
-        member inline __.HijackCheckThenCall (cont: 'T -> AsyncReturn) res =
+        member inline _.HijackCheckThenCall (cont: 'T -> AsyncReturn) res =
             if trampoline.IncrementBindCount() then
                 trampoline.Set (fun () -> cont res)
             else
@@ -643,7 +643,7 @@ namespace Microsoft.FSharp.Control
 
             let trampolineHolder = ctxt.trampolineHolder
 
-            member __.ContinueImmediate res =
+            member _.ContinueImmediate res =
                 let action () = ctxt.cont res
                 let inline executeImmediately () = trampolineHolder.ExecuteWithTrampoline action
                 let currentSyncCtxt = SynchronizationContext.Current
@@ -657,7 +657,7 @@ namespace Microsoft.FSharp.Control
                 | _ ->
                     trampolineHolder.PostOrQueueWithTrampoline syncCtxt action
 
-            member __.ContinueWithPostOrQueue res =
+            member _.ContinueWithPostOrQueue res =
                 trampolineHolder.PostOrQueueWithTrampoline syncCtxt (fun () -> ctxt.cont res)
 
         /// A utility type to provide a synchronization point between an asynchronous computation
@@ -800,7 +800,7 @@ namespace Microsoft.FSharp.Control
 
         /// Create an instance of an arbitrary delegate type delegating to the given F# function
         type FuncDelegate<'T>(f) =
-            member __.Invoke(sender:obj, a:'T) : unit = ignore sender; f a
+            member _.Invoke(sender:obj, a:'T) : unit = ignore sender; f a
             static member Create<'Delegate when 'Delegate :> Delegate>(f) =
                 let obj = FuncDelegate<'T>(f)
                 let invokeMeth = (typeof<FuncDelegate<'T>>).GetMethod("Invoke", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
@@ -1047,29 +1047,29 @@ namespace Microsoft.FSharp.Control
 
     [<Sealed; CompiledName("FSharpAsyncBuilder")>]
     type AsyncBuilder() =
-        member __.Zero () = unitAsync
+        member _.Zero () = unitAsync
 
-        member __.Delay generator = CreateDelayAsync generator
+        member _.Delay generator = CreateDelayAsync generator
 
-        member inline __.Return value = CreateReturnAsync value
+        member inline _.Return value = CreateReturnAsync value
 
-        member inline __.ReturnFrom (computation:Async<_>) = computation
+        member inline _.ReturnFrom (computation:Async<_>) = computation
 
-        member inline __.Bind (computation, binder) = CreateBindAsync computation binder
+        member inline _.Bind (computation, binder) = CreateBindAsync computation binder
 
-        member __.Using (resource, binder) = CreateUsingAsync resource binder
+        member _.Using (resource, binder) = CreateUsingAsync resource binder
 
-        member __.While (guard, computation) = CreateWhileAsync guard computation
+        member _.While (guard, computation) = CreateWhileAsync guard computation
 
-        member __.For (sequence, body) = CreateForLoopAsync sequence body
+        member _.For (sequence, body) = CreateForLoopAsync sequence body
 
-        member inline __.Combine (computation1, computation2) = CreateSequentialAsync computation1 computation2
+        member inline _.Combine (computation1, computation2) = CreateSequentialAsync computation1 computation2
 
-        member inline __.TryFinally (computation, compensation) = CreateTryFinallyAsync compensation computation
+        member inline _.TryFinally (computation, compensation) = CreateTryFinallyAsync compensation computation
 
-        member inline __.TryWith (computation, catchHandler) = CreateTryWithAsync catchHandler computation
+        member inline _.TryWith (computation, catchHandler) = CreateTryWithAsync catchHandler computation
 
-        // member inline __.TryWithFilter (computation, catchHandler) = CreateTryWithFilterAsync catchHandler computation
+        // member inline _.TryWithFilter (computation, catchHandler) = CreateTryWithFilterAsync catchHandler computation
 
     [<AutoOpen>]
     module AsyncBuilderImpl =

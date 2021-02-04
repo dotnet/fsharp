@@ -4,7 +4,7 @@
 // FSharp.Compiler.Service API but which are also used throughout the
 // F# compiler.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Diagnostics
 
 type FSharpDiagnosticOptions =
     { WarnLevel: int

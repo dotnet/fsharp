@@ -13,8 +13,8 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
 
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Range
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
 
 open UnitTests.TestLib.LanguageService
 
@@ -33,7 +33,6 @@ type BreakpointResolutionServiceTests()  =
         LoadTime = DateTime.MaxValue
         OriginalLoadReferences = []
         UnresolvedReferences = None
-        ExtraProjectInfo = None
         Stamp = None
     }
     let code = "

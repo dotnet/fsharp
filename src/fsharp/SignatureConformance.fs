@@ -6,16 +6,18 @@ module internal FSharp.Compiler.SignatureConformance
 
 open System.Text
 
+open Internal.Utilities.Collections
+open Internal.Utilities.Library 
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -635,10 +637,10 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             checkModuleOrNamespaceContents implModRef.Range aenv implModRef sigModRef.ModuleOrNamespaceType &&
             checkAttribs aenv implModRef.Attribs sigModRef.Attribs implModRef.Deref.SetAttribs
 
-        member __.CheckSignature aenv (implModRef: ModuleOrNamespaceRef) (signModType: ModuleOrNamespaceType) = 
+        member _.CheckSignature aenv (implModRef: ModuleOrNamespaceRef) (signModType: ModuleOrNamespaceType) = 
             checkModuleOrNamespaceContents implModRef.Range aenv implModRef signModType
 
-        member __.CheckTypars m aenv (implTypars: Typars) (signTypars: Typars) = 
+        member _.CheckTypars m aenv (implTypars: Typars) (signTypars: Typars) = 
             checkTypars m aenv implTypars signTypars
 
 

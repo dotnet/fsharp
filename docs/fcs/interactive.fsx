@@ -31,8 +31,8 @@ First, we need to reference the libraries that contain F# interactive service:
 *)
 
 #r "FSharp.Compiler.Service.dll"
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.Tokenization
 
 (**
 To communicate with F# interactive, we need to create streams that represent input and
@@ -142,7 +142,7 @@ Gives:
 
 // show the errors and warnings
 for w in warnings do
-   printfn "Warning %s at %d,%d" w.Message w.StartLineAlternate w.StartColumn
+   printfn "Warning %s at %d,%d" w.Message w.StartLine w.StartColumn
 
 (**
 Gives:
@@ -157,7 +157,7 @@ For expressions:
 let evalExpressionTyped2<'T> text =
    let res, warnings = fsiSession.EvalExpressionNonThrowing(text)
    for w in warnings do
-       printfn "Warning %s at %d,%d" w.Message w.StartLineAlternate w.StartColumn
+       printfn "Warning %s at %d,%d" w.Message w.StartLine w.StartColumn
    match res with
    | Choice1Of2 (Some value) -> value.ReflectionValue |> unbox<'T>
    | Choice1Of2 None -> failwith "null or no result"
@@ -219,7 +219,7 @@ let parseResults, checkResults, checkProjectResults =
 The `parseResults` and `checkResults` have types `ParseFileResults` and `CheckFileResults`
 explained in [Editor](editor.html). You can, for example, look at the type errors in the code:
 *)
-checkResults.Errors.Length // 1
+checkResults.Diagnostics.Length // 1
 
 (**
 The code is checked with respect to the logical type context available in the F# interactive session
@@ -227,10 +227,9 @@ based on the declarations executed so far.
 
 You can also request declaration list information, tooltip text and symbol resolution:
 *)
-open FSharp.Compiler
 
 // get a tooltip
-checkResults.GetToolTipText(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT)
+checkResults.GetToolTip(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT)
 
 checkResults.GetSymbolUseAtLocation(1, 2, "xxx + xx", ["xxx"]) // symbol xxx
 

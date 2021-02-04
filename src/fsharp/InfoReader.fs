@@ -4,23 +4,21 @@
 /// Select members from a type by name, searching the type hierarchy if needed
 module internal FSharp.Compiler.InfoReader
 
-open System
-open System.Collections.Generic
 open System.Collections.Concurrent
-
+open Internal.Utilities.Library
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Features
 open FSharp.Compiler.TypeRelations
 
 #if !NO_EXTENSIONTYPING
@@ -129,11 +127,11 @@ type PropertyCollector(g, amap, m, ty, optFilter, ad) =
 
     member x.Collect(membInfo: ValMemberInfo, vref: ValRef) = 
         match membInfo.MemberFlags.MemberKind with 
-        | MemberKind.PropertyGet ->
+        | SynMemberKind.PropertyGet ->
             let pinfo = FSProp(g, ty, Some vref, None) 
             if checkFilter optFilter vref.PropertyName && IsPropInfoAccessible g amap m ad pinfo then
                 add pinfo
-        | MemberKind.PropertySet ->
+        | SynMemberKind.PropertySet ->
             let pinfo = FSProp(g, ty, None, Some vref)
             if checkFilter optFilter vref.PropertyName  && IsPropInfoAccessible g amap m ad pinfo then 
                 add pinfo
@@ -621,7 +619,7 @@ let rec GetIntrinsicConstructorInfosOfTypeAux (infoReader: InfoReader) m origTy 
                 |> NameMultiMap.find ".ctor"
                 |> List.choose(fun vref -> 
                     match vref.MemberInfo with 
-                    | Some membInfo when (membInfo.MemberFlags.MemberKind = MemberKind.Constructor) -> Some vref 
+                    | Some membInfo when (membInfo.MemberFlags.MemberKind = SynMemberKind.Constructor) -> Some vref 
                     | _ -> None) 
                 |> List.map (fun x -> FSMeth(g, origTy, x, None)) 
   )    

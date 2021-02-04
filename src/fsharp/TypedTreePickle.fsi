@@ -3,9 +3,9 @@
 /// Defines the framework for serializing and de-serializing TAST data structures as binary blobs for the F# metadata format.
 module internal FSharp.Compiler.TypedTreePickle 
 
+open Internal.Utilities
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 
@@ -21,6 +21,7 @@ type PickledDataWithReferences<'RawData> =
     } 
 
     member Fixup : (CcuReference -> CcuThunk) -> 'RawData
+
     /// Like Fixup but loader may return None, in which case there is no fixup.
     member OptionalFixup: (CcuReference -> CcuThunk option) -> 'RawData
     
@@ -143,6 +144,3 @@ val internal unpickleCcuInfo : ReaderState -> PickledCcuInfo
 
 /// Deserialize an arbitrary object which may have holes referring to other compilation units
 val internal unpickleObjWithDanglingCcus : file:string -> viewedScope:ILScopeRef -> ilModule:ILModuleDef option -> ('T  unpickler) -> ReadOnlyByteMemory -> ReadOnlyByteMemory -> PickledDataWithReferences<'T>
-
-
-

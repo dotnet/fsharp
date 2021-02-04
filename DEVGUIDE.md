@@ -108,8 +108,8 @@ Running any of the above will build the latest changes and run tests against the
 
 If your changes involve modifying the list of language keywords in any way, (e.g. when implementing a new keyword), the XLF localization files need to be synced with the corresponding resx files. This can be done automatically by running
 
-    pushd src\fsharp\FSharp.Compiler.Private
-    msbuild FSharp.Compiler.Private.fsproj /t:UpdateXlf
+    pushd src\fsharp\FSharp.Compiler.Service
+    msbuild FSharp.Compiler.Service.fsproj /t:UpdateXlf
     popd
 
 This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.

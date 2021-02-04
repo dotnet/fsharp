@@ -1,36 +1,16 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Byte arrays
-namespace FSharp.Compiler.AbstractIL.Internal
+namespace Internal.Utilities
 
 open System
 open System.IO
 open System.IO.MemoryMappedFiles
 open System.Runtime.InteropServices
-open System.Runtime.CompilerServices
 open FSharp.NativeInterop
+open Internal.Utilities.Library
 
 #nowarn "9"
-
-module Utils =
-    let runningOnMono =
-    #if ENABLE_MONO_SUPPORT
-        // Officially supported way to detect if we are running on Mono.
-        // See http://www.mono-project.com/FAQ:_Technical
-        // "How can I detect if am running in Mono?" section
-        try
-            System.Type.GetType ("Mono.Runtime") <> null
-        with _ ->
-            // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
-            // that is not reliable.
-            // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is
-            // called by OnTypeResolveEvent. The function throws a NullReferenceException. I'm working with that team to get
-            // their issue fixed but we need to be robust here anyway.
-            false
-    #else
-        false
-    #endif
-
 module internal Bytes = 
     let b0 n =  (n &&& 0xFF)
     let b1 n =  ((n >>> 8) &&& 0xFF)
@@ -321,8 +301,7 @@ module MemoryMappedFileExtensions =
             if length = 0L then
                 None
             else
-                if Utils.runningOnMono
-                then
+                if runningOnMono then
                     // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/1024
                     None
                 else
@@ -355,8 +334,7 @@ type ByteMemory with
     static member FromFile(path, access, ?canShadowCopy: bool) =
         let canShadowCopy = defaultArg canShadowCopy false
 
-        if Utils.runningOnMono
-        then
+        if runningOnMono then
             // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/10245
             let bytes = File.ReadAllBytes path
             ByteArrayMemory.FromArray bytes

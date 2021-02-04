@@ -10,10 +10,11 @@ open System.Text
 
 open Internal.Utilities
 open Internal.Utilities.Filename
+open Internal.Utilities.Library.Extras
+open Internal.Utilities.Library
 open Internal.Utilities.Text
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
@@ -21,22 +22,22 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticMessage
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
+open FSharp.Compiler.IO
 open FSharp.Compiler.Lexhelp
-open FSharp.Compiler.Lib
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
-open FSharp.Compiler.Range
 open FSharp.Compiler.SignatureConformance
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.Layout
-open FSharp.Compiler.TextLayout.TaggedText
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Position
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -847,7 +848,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                       let nameOrOneBasedIndexMessage =
                           x.calledArg.NameOpt
                           |> Option.map (fun n -> FSComp.SR.csOverloadCandidateNamedArgumentTypeMismatch n.idText)
-                          |> Option.defaultValue (FSComp.SR.csOverloadCandidateIndexedArgumentTypeMismatch ((Lib.vsnd x.calledArg.Position) + 1)) //snd
+                          |> Option.defaultValue (FSComp.SR.csOverloadCandidateIndexedArgumentTypeMismatch ((vsnd x.calledArg.Position) + 1)) //snd
                       sprintf " // %s" nameOrOneBasedIndexMessage
                   | _ -> ""
                   
@@ -1578,9 +1579,9 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               match v.MemberInfo with 
               | Some membInfo when 
                   begin match membInfo.MemberFlags.MemberKind with 
-                  | MemberKind.PropertyGet 
-                  | MemberKind.PropertySet 
-                  | MemberKind.Constructor -> true (* can't infer extra polymorphism *)
+                  | SynMemberKind.PropertyGet 
+                  | SynMemberKind.PropertySet 
+                  | SynMemberKind.Constructor -> true (* can't infer extra polymorphism *)
                   | _ -> false (* can infer extra polymorphism *)
                   end -> 
                       os.Append(ValueRestriction3E().Format (NicePrint.stringOfQualifiedValOrMember denv v)) |> ignore
@@ -1944,7 +1945,7 @@ type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger:
                     | ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma) -> 
                         warningNum = warningNumFromPragma && 
                         (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
-                        Range.posGeq m.Start pragmaRange.Start))  
+                        Position.posGeq m.Start pragmaRange.Start))  
             | None -> true
           if report then errorLogger.DiagnosticSink(phasedError, false)
 

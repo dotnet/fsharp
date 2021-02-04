@@ -903,7 +903,7 @@ type UsingMSBuild()  =
         let info = info.Value
         AssertEqual("f1", info.GetName(0))
         // note about (5,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(2,10);(2,12);(2,13);(3,0)|], info.GetNoteworthyParamInfoLocations())
+        AssertEqual([|(2,10);(2,12);(2,13);(3,0)|], info.GetParameterLocations())
 
     [<Test>]
     [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
@@ -926,7 +926,7 @@ type UsingMSBuild()  =
         let info = info.Value
         AssertEqual("Foo", info.GetName(0))
         // note about (4,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(1,14);(1,17);(1,18);(2,0)|], info.GetNoteworthyParamInfoLocations())
+        AssertEqual([|(1,14);(1,17);(1,18);(2,0)|], info.GetParameterLocations())
 
 
 (*
@@ -953,7 +953,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         let info = GetParameterInfoAtCursor file // this will fall back to using the name environment, which is stale, but sufficient to look up the call to 'f1'
         AssertEqual("Foo", info.GetName(0))
         // note about (4,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(1,14);(1,21);(1,21);(4,0)|], info.GetNoteworthyParamInfoLocations())
+        AssertEqual([|(1,14);(1,21);(1,21);(4,0)|], info.GetParameterLocations())
 *)
 
     [<Test>]
@@ -1003,7 +1003,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         let info = GetParameterInfoAtCursor file
         Assert.IsTrue(info.IsSome, "expected parameter info")
         let info = info.Value
-        AssertEqual(expectedLocs, info.GetNoteworthyParamInfoLocations()) 
+        AssertEqual(expectedLocs, info.GetParameterLocations()) 
 
     // These pin down known failing cases
     member public this.TestNoParameterInfo (testLine, ?additionalReferenceAssemblies) =
@@ -1153,7 +1153,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     [<Test>]
     member public this.``LocationOfParams.InsideObjectExpression``() =        
         this.TestParameterInfoLocationOfParams("""
-                let _ = { new ^System.Object^(^$^) with member __.GetHashCode() = 2}""")
+                let _ = { new ^System.Object^(^$^) with member _.GetHashCode() = 2}""")
 
     [<Test>]
     member public this.``LocationOfParams.Nested1``() =        
@@ -1653,7 +1653,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     [<Test>]
     member public this.``Multi.Constructor.WithinObjectExpression``() = 
-        let fileContents = "let _ = { new System.Object((*Mark*)) with member __.GetHashCode() = 2}"
+        let fileContents = "let _ = { new System.Object((*Mark*)) with member _.GetHashCode() = 2}"
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",[])
 
     [<Test>]

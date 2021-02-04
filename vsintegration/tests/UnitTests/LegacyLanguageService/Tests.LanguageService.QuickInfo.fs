@@ -3365,19 +3365,19 @@ query."
             open Microsoft.FSharp.Quotations
 
             type EventBuilder() = 
-                member __.For(ev:IObservable<'T>, loop:('T -> #IObservable<'U>)) : IObservable<'U> = failwith ""
-                member __.Yield(v:'T) : IObservable<'T> = failwith ""
-                member __.Quote(v:Quotations.Expr<'T>) : Expr<'T> = v
-                member __.Run(x:Expr<'T>) = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation x :?> 'T
+                member _.For(ev:IObservable<'T>, loop:('T -> #IObservable<'U>)) : IObservable<'U> = failwith ""
+                member _.Yield(v:'T) : IObservable<'T> = failwith ""
+                member _.Quote(v:Quotations.Expr<'T>) : Expr<'T> = v
+                member _.Run(x:Expr<'T>) = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation x :?> 'T
          
                 [<CustomOperation("myWhere",MaintainsVariableSpace=true)>]
-                member __.Where (x, [<ProjectionParameter>] f) = Observable.filter f x
+                member _.Where (x, [<ProjectionParameter>] f) = Observable.filter f x
          
                 [<CustomOperation("mySelect")>]
-                member __.Select (x, [<ProjectionParameter>] f) = Observable.map f x
+                member _.Select (x, [<ProjectionParameter>] f) = Observable.map f x
 
                 [<CustomOperation("scanSumBy")>]
-                member inline __.ScanSumBy (source, [<ProjectionParameter>] f : 'T -> 'U) : IObservable<'U> = Observable.scan (fun a b -> a + f b) LanguagePrimitives.GenericZero<'U> source
+                member inline _.ScanSumBy (source, [<ProjectionParameter>] f : 'T -> 'U) : IObservable<'U> = Observable.scan (fun a b -> a + f b) LanguagePrimitives.GenericZero<'U> source
  
             let myquery = EventBuilder()
             let f = new Event<int * int >()

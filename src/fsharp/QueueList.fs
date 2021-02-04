@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Internal.Utilities 
+namespace Internal.Utilities.Collections 
 
 open System.Collections
 open System.Collections.Generic

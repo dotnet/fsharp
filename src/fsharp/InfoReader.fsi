@@ -4,14 +4,14 @@
 /// Select members from a type by name, searching the type hierarchy if needed
 module internal FSharp.Compiler.InfoReader
 
+open Internal.Utilities.Library
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Range
-open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.TypedTree
 
 /// Try to select an F# value when querying members, and if so return a MethInfo that wraps the F# value.
 val TrySelectMemberVal: g:TcGlobals -> optFilter:string option -> ty:TType -> pri:ExtensionMethodPriority option -> _membInfo:'a -> vref:ValRef -> MethInfo option

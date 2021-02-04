@@ -6,13 +6,13 @@ open System.Composition
 open System.Collections.Generic
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Formatting
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Tokenization
 open System.Threading
 open System.Windows.Forms
 
@@ -148,7 +148,7 @@ type internal FSharpEditorFormattingService
                 return stripIndentation removeIndentation
         }
 
-    member __.GetFormattingChangesAsync (document: Document, position: int, cancellationToken: CancellationToken) =
+    member _.GetFormattingChangesAsync (document: Document, position: int, cancellationToken: CancellationToken) =
         async {
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
@@ -158,7 +158,7 @@ type internal FSharpEditorFormattingService
             return textChange |> Option.toList |> toIList
         }
         
-    member __.OnPasteAsync (document: Document, span: TextSpan, currentClipboard: string, cancellationToken: CancellationToken) =
+    member _.OnPasteAsync (document: Document, span: TextSpan, currentClipboard: string, cancellationToken: CancellationToken) =
         async {
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
@@ -175,7 +175,7 @@ type internal FSharpEditorFormattingService
         member val SupportsFormatOnPaste = true
         member val SupportsFormatOnReturn = true
 
-        override __.SupportsFormattingOnTypedCharacter (document, ch) =
+        override _.SupportsFormattingOnTypedCharacter (document, ch) =
             if FSharpIndentationService.IsSmartIndentEnabled document.Project.Solution.Workspace.Options then
                 match ch with
                 | ')' | ']' | '}' -> true
@@ -183,7 +183,7 @@ type internal FSharpEditorFormattingService
             else
                 false
 
-        override __.GetFormattingChangesAsync (_document, _span, cancellationToken) =
+        override _.GetFormattingChangesAsync (_document, _span, cancellationToken) =
             async { return ResizeArray() :> IList<_> }
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
