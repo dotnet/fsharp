@@ -3,6 +3,7 @@
 /// The basic logic of private/internal/protected/InternalsVisibleTo/public accessibility
 module internal FSharp.Compiler.AccessibilityLogic
 
+open Internal.Utilities.Library
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.ErrorLogger
