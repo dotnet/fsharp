@@ -2,7 +2,7 @@
 
 /// Some general F# utilities for mangling / unmangling / manipulating names.
 /// Anything to do with special names of identifiers and other lexical rules 
-module public FSharp.Compiler.SourceCodeServices.PrettyNaming
+module public FSharp.Compiler.Syntax.PrettyNaming
 
 open System
 open System.Collections.Generic
@@ -12,10 +12,10 @@ open System.Text
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.Text
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Layout
 
 //------------------------------------------------------------------------
 // Operator name compilation
@@ -640,16 +640,16 @@ let ActivePatternInfoOfValName nm (m: range) =
     let rec loop (nm: string) (mp: range) = 
         let n = nm.IndexOf '|'
         if n > 0 then 
-            let m1 = Range.mkRange mp.FileName mp.Start (Pos.mkPos mp.StartLine (mp.StartColumn + n))
-            let m2 = Range.mkRange mp.FileName (Pos.mkPos mp.StartLine (mp.StartColumn + n + 1)) mp.End
+            let m1 = Range.mkRange mp.FileName mp.Start (Position.mkPos mp.StartLine (mp.StartColumn + n))
+            let m2 = Range.mkRange mp.FileName (Position.mkPos mp.StartLine (mp.StartColumn + n + 1)) mp.End
             (nm.[0..n-1], m1) :: loop nm.[n+1..] m2
         else
-            let m1 = Range.mkRange mp.FileName mp.Start (Pos.mkPos mp.StartLine (mp.StartColumn + nm.Length))
+            let m1 = Range.mkRange mp.FileName mp.Start (Position.mkPos mp.StartLine (mp.StartColumn + nm.Length))
             [(nm, m1)]
     let nm = DecompileOpName nm
     if IsActivePatternName nm then 
         // Skip the '|' at each end when recovering ranges
-        let m0 = Range.mkRange m.FileName (Pos.mkPos m.StartLine (m.StartColumn + 1)) (Pos.mkPos m.EndLine (m.EndColumn - 1)) 
+        let m0 = Range.mkRange m.FileName (Position.mkPos m.StartLine (m.StartColumn + 1)) (Position.mkPos m.EndLine (m.EndColumn - 1)) 
         let names = loop nm.[1..nm.Length-2] m0
         let resH, resT = List.frontAndBack names
         Some(if fst resT = "_" then APInfo(false, resH, m) else APInfo(true, names, m))

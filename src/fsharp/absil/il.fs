@@ -8,7 +8,6 @@ module FSharp.Compiler.AbstractIL.IL
 
 open System
 open System.Diagnostics
-open System.IO
 open System.Collections
 open System.Collections.Generic
 open System.Collections.Concurrent
@@ -17,11 +16,8 @@ open System.Reflection
 open System.Text
 open System.Threading
 
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
-
+open Internal.Utilities.Library
 open Internal.Utilities
 
 let logging = false

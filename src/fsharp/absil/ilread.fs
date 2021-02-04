@@ -16,22 +16,16 @@ open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
 open System.IO.MemoryMappedFiles
-open System.Runtime.InteropServices
 open System.Text
 open Internal.Utilities
 open Internal.Utilities.Collections
-open FSharp.NativeInterop
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.Support
-open FSharp.Compiler.AbstractIL.Internal.Utils
+open FSharp.Compiler.AbstractIL.BinaryConstants 
+open Internal.Utilities.Library
+open FSharp.Compiler.AbstractIL.Support
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Text
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
 open System.Reflection
 

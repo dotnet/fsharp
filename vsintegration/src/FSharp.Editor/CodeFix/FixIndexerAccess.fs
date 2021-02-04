@@ -8,7 +8,7 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Diagnostics
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "FixIndexerAccess"); Shared>]
 type internal FSharpFixIndexerAccessCodeFixProvider() =
@@ -47,7 +47,7 @@ type internal FSharpFixIndexerAccessCodeFixProvider() =
 
                     let codefix = 
                         CodeFixHelpers.createTextChangeCodeFix(
-                            CompilerDiagnostics.getErrorMessage AddIndexerDot, 
+                            CompilerDiagnostics.GetErrorMessage FSharpDiagnosticKind.AddIndexerDot, 
                             context,
                             (fun () -> asyncMaybe.Return [| TextChange(span, replacement.TrimEnd() + ".") |]))
 

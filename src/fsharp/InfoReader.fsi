@@ -4,8 +4,8 @@
 /// Select members from a type by name, searching the type hierarchy if needed
 module internal FSharp.Compiler.InfoReader
 
+open Internal.Utilities.Library
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos

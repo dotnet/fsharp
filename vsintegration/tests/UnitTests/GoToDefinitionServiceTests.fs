@@ -29,7 +29,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open UnitTests.TestLib.LanguageService
 
@@ -59,7 +60,7 @@ module GoToDefinitionServiceTests =
             let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
             
             match declarations with
-            | FSharpFindDeclResult.DeclFound range -> return range
+            | FindDeclResult.DeclFound range -> return range
             | _ -> return! None
         }
 
@@ -75,7 +76,6 @@ module GoToDefinitionServiceTests =
             LoadTime = DateTime.MaxValue
             OriginalLoadReferences = []
             UnresolvedReferences = None
-            ExtraProjectInfo = None
             Stamp = None
         }
 

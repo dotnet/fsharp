@@ -6,13 +6,14 @@ open System
 open System.Reflection
 open System.Runtime.CompilerServices
 
-open FSharp.Compiler
+open Internal.Utilities.Library 
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.ILBinaryReader 
-open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 
 [<Dependency("FSharp.Compiler.Service",LoadHint.Always)>] 
@@ -28,7 +29,7 @@ let main(argv) =
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
 
     // An SDL recommendation
-    Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption()
+    UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption()
 
     try 
 

@@ -2,24 +2,22 @@
 
 module internal FSharp.Compiler.InnerLambdasToTopLevelFuncs
 
-open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Detuple.GlobalUsageAnalysis
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.TextLayout.Layout
-open FSharp.Compiler.TextLayout.LayoutRender
+open FSharp.Compiler.Text.Layout
+open FSharp.Compiler.Text.LayoutRender
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.XmlDoc
 
 let verboseTLR = false
 
@@ -767,7 +765,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
            let unpackSubenv f =
                let subCMap  = carrierMapFor f
                let vaenvs   = Zmap.toList subCMap
-               vaenvs |> List.map (fun (subv, subaenv) -> mkBind NoDebugPointAtInvisibleBinding subaenv (aenvExprFor subv))
+               vaenvs |> List.map (fun (subv, subaenv) -> mkBind DebugPointAtBinding.NoneAtInvisible subaenv (aenvExprFor subv))
            List.map unpackCarrier (Zmap.toList cmap) @
            List.collect unpackSubenv env.ReqdSubEnvs
 

@@ -28,7 +28,8 @@
 #r "FSharp.Compiler.Service.dll"
 
 open System
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
 // インタラクティブチェッカーのインスタンスを作成

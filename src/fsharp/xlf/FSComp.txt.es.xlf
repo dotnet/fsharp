@@ -2758,8 +2758,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMemberKindPropertyGetSetNotExpected">
-        <source>MemberKind.PropertyGetSet only expected in parse trees</source>
-        <target state="translated">MemberKind.PropertyGetSet se espera solo en árboles de análisis.</target>
+        <source>SynMemberKind.PropertyGetSet only expected in parse trees</source>
+        <target state="needs-review-translation">MemberKind.PropertyGetSet se espera solo en árboles de análisis.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainValues">

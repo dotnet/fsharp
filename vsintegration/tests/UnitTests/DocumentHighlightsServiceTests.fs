@@ -31,7 +31,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open UnitTests.TestLib.LanguageService
 
@@ -48,7 +48,6 @@ let internal projectOptions = {
     LoadTime = DateTime.MaxValue
     UnresolvedReferences = None
     OriginalLoadReferences = []
-    ExtraProjectInfo = None
     Stamp = None
 }
 
@@ -59,7 +58,7 @@ let private getSpans (sourceText: SourceText) (caretPosition: int) =
     |> Option.defaultValue [||]
 
 let private span sourceText isDefinition (startLine, startCol) (endLine, endCol) =
-    let range = Range.mkRange filePath (Pos.mkPos startLine startCol) (Pos.mkPos endLine endCol)
+    let range = Range.mkRange filePath (Position.mkPos startLine startCol) (Position.mkPos endLine endCol)
     { IsDefinition = isDefinition
       TextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range) }
 

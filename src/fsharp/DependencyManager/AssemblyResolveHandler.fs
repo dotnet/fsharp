@@ -5,13 +5,12 @@ namespace FSharp.Compiler.DependencyManager
 open System
 open System.IO
 open System.Reflection
+open System.Runtime.Loader
 open Internal.Utilities.FSharpEnvironment
 
 /// Signature for ResolutionProbe callback
 /// host implements this, it's job is to return a list of assembly paths to probe.
 type AssemblyResolutionProbe = delegate of Unit -> seq<string>
-
-open System.Runtime.Loader
 
 /// Type that encapsulates AssemblyResolveHandler for managed packages
 type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProbe) as this =

@@ -1,22 +1,20 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.EditorServices
 
 open System
 open System.IO
 open System.IO.MemoryMappedFiles
 open System.Reflection.Metadata
-open System.Runtime.Serialization.Formatters.Binary
-
 open FSharp.NativeInterop
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
 #nowarn "9"
 
 [<Sealed>]
-type FSharpSemanticClassificationView(mmf: MemoryMappedFile, length) =
+type SemanticClassificationView(mmf: MemoryMappedFile, length) =
     member _.ReadRange(reader: byref<BlobReader>) =
         let startLine = reader.ReadInt32()
         let startColumn = reader.ReadInt32()
@@ -28,7 +26,7 @@ type FSharpSemanticClassificationView(mmf: MemoryMappedFile, length) =
         let posEnd = mkPos endLine endColumn
         mkFileIndexRange fileIndex posStart posEnd
 
-    member this.ForEach(f: FSharpSemanticClassificationItem -> unit) =
+    member this.ForEach(f: SemanticClassificationItem -> unit) =
         use view = mmf.CreateViewAccessor(0L, length)
         let mutable reader = BlobReader(view.SafeMemoryMappedViewHandle.DangerousGetHandle() |> NativePtr.ofNativeInt, int length)
 
@@ -36,10 +34,11 @@ type FSharpSemanticClassificationView(mmf: MemoryMappedFile, length) =
         while reader.Offset < reader.Length do
             let m = this.ReadRange &reader
             let sct = reader.ReadInt32()
-            let item = FSharpSemanticClassificationItem((m, (enum<SemanticClassificationType>(sct))))
+            let item = SemanticClassificationItem((m, (enum<SemanticClassificationType>(sct))))
             f item
 
-and [<Sealed>] SemanticClassificationKeyStore(mmf: MemoryMappedFile, length) =
+[<Sealed>]
+type SemanticClassificationKeyStore(mmf: MemoryMappedFile, length) =
     let mutable isDisposed = false
     let checkDispose() =
         if isDisposed then
@@ -47,7 +46,7 @@ and [<Sealed>] SemanticClassificationKeyStore(mmf: MemoryMappedFile, length) =
 
     member _.GetView() =
         checkDispose()
-        FSharpSemanticClassificationView(mmf, length)
+        SemanticClassificationView(mmf, length)
 
     interface IDisposable with
 
@@ -55,13 +54,14 @@ and [<Sealed>] SemanticClassificationKeyStore(mmf: MemoryMappedFile, length) =
                 isDisposed <- true
                 mmf.Dispose()
 
-and [<Sealed>] SemanticClassificationKeyStoreBuilder() =
+[<Sealed>] 
+type SemanticClassificationKeyStoreBuilder() =
 
     let b = BlobBuilder()
 
-    member _.WriteAll (semanticClassification: FSharpSemanticClassificationItem[]) =
+    member _.WriteAll (semanticClassification: SemanticClassificationItem[]) =
         use ptr = fixed semanticClassification
-        b.WriteBytes(NativePtr.ofNativeInt (NativePtr.toNativeInt ptr), semanticClassification.Length * sizeof<FSharpSemanticClassificationItem>)
+        b.WriteBytes(NativePtr.ofNativeInt (NativePtr.toNativeInt ptr), semanticClassification.Length * sizeof<SemanticClassificationItem>)
 
     member _.TryBuildAndReset() =
         if b.Count > 0 then

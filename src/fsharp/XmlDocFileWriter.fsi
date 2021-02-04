@@ -6,6 +6,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 
 module XmlDocWriter =
+
     /// Writes the XML document signature to the XmlDocSig property of each 
     /// element (field, union case, etc) of the specified compilation unit.
     /// The XmlDocSig is the unique identifier of this XmlDoc in the generated Xml documentation file.

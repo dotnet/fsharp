@@ -26,7 +26,8 @@ of `InteractiveChecker`:
 #r "FSharp.Compiler.Service.dll"
 
 open System
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
 // Create an interactive checker instance 
@@ -201,6 +202,7 @@ let methods =
 // Print concatenated parameter lists
 for mi in methods.Methods do
     [ for p in mi.Parameters -> p.Display ]
+    |> List.collect (Array.map (fun tt -> tt.Text) >> Array.toList)
     |> String.concat ", " 
     |> printfn "%s(%s)" methods.MethodName
 (**

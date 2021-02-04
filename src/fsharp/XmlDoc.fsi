@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public FSharp.Compiler.XmlDoc
+namespace FSharp.Compiler.Syntax
 
 open FSharp.Compiler.Text
 
 /// Represents collected XmlDoc lines
 [<Class>]
-type XmlDoc =
+type public XmlDoc =
 
     new: unprocessedLines:string [] * range:range -> XmlDoc
 

@@ -5,20 +5,19 @@ module internal FSharp.Compiler.Import
 
 open System.Collections.Concurrent
 open System.Collections.Generic
-
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.XmlDoc
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping

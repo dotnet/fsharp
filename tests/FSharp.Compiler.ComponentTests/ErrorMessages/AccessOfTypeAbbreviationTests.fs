@@ -4,7 +4,7 @@ namespace FSharp.Compiler.ComponentTests.ErrorMessages
 
 open Xunit
 open FSharp.Test.Utilities.Compiler
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Diagnostics
 
 module ``Access Of Type Abbreviation`` =
 

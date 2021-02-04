@@ -11,11 +11,15 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.SignatureHelp
 
 open Microsoft.VisualStudio.Shell
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 type SignatureHelpParameterInfo =
     { ParameterName: string
@@ -67,7 +71,7 @@ type internal FSharpSignatureHelpProvider
         (
             caretLinePos: LinePosition,
             caretLineColumn: int,
-            paramLocations: FSharpNoteworthyParamInfoLocations,
+            paramLocations: ParameterLocations,
             checkFileResults: FSharpCheckFileResults,
             documentationBuilder: IDocumentationBuilder,
             sourceText: SourceText,
@@ -86,7 +90,7 @@ type internal FSharpSignatureHelpProvider
             do! Option.guard (methods.Length > 0 && not(methodGroup.MethodName.EndsWith("> )")))
 
             let isStaticArgTip =
-                let parenLine, parenCol = Pos.toZ paramLocations.OpenParenLocation 
+                let parenLine, parenCol = Position.toZ paramLocations.OpenParenLocation 
                 assert (parenLine < textLines.Count)
                 let parenLineText = sourceText.GetSubText(textLines.[parenLine].Span)
                 parenCol < parenLineText.Length && parenLineText.[parenCol] = '<'
@@ -102,7 +106,7 @@ type internal FSharpSignatureHelpProvider
             do! Option.guard (filteredMethods.Length > 0)
 
             let posToLinePosition pos = 
-                let (l,c) = Pos.toZ  pos
+                let (l,c) = Position.toZ  pos
                 let result = LinePosition(l,c)
                 let lastPosInDocument = textLines.GetLinePosition(textLines.[textLines.Count-1].End)
                 if lastPosInDocument.CompareTo(result) > 0 then result else lastPosInDocument
@@ -181,7 +185,7 @@ type internal FSharpSignatureHelpProvider
                                 documentationBuilder,
                                 RoslynHelpers.CollectTaggedText mainDescription,
                                 RoslynHelpers.CollectTaggedText documentation,
-                                method.StructuredDescription, false)
+                                method.Description, false)
 
                             let parameters = 
                                 let parameters = if isStaticArgTip then method.StaticParameters else method.Parameters
@@ -190,7 +194,7 @@ type internal FSharpSignatureHelpProvider
                                         let doc = ResizeArray()
                                         let parts = ResizeArray()
                                         XmlDocumentation.BuildMethodParamText(documentationBuilder, RoslynHelpers.CollectTaggedText doc, method.XmlDoc, p.ParameterName)
-                                        LayoutRender.emitL (RoslynHelpers.CollectTaggedText parts) p.StructuredDisplay |> ignore
+                                        p.Display |> Seq.iter (RoslynHelpers.CollectTaggedText parts)
                                         { ParameterName = p.ParameterName
                                           IsOptional = p.IsOptional
                                           CanonicalTypeTextForSorting = p.CanonicalTypeTextForSorting
@@ -265,12 +269,12 @@ type internal FSharpSignatureHelpProvider
 
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as mfv when isValid mfv ->
-                let tooltip = checkFileResults.GetStructuredToolTipText(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineText, lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
+                let tooltip = checkFileResults.GetToolTip(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineText, lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
                 match tooltip with
-                | FSharpToolTipText []
-                | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
+                | ToolTipText []
+                | ToolTipText [ToolTipElement.None] -> return! None
                 | _ ->                    
-                    let possiblePipelineIdent = parseResults.TryIdentOfPipelineContainingPosAndNumArgsApplied symbolUse.RangeAlternate.Start
+                    let possiblePipelineIdent = parseResults.TryIdentOfPipelineContainingPosAndNumArgsApplied symbolUse.Range.Start
                     let numArgsAlreadyApplied =
                         match possiblePipelineIdent with
                         | None -> 0
@@ -281,7 +285,7 @@ type internal FSharpSignatureHelpProvider
                     let numDefinedArgs = definedArgs.Length
 
                     let curriedArgsInSource =
-                        parseResults.GetAllArgumentsForFunctionApplicationAtPostion symbolUse.RangeAlternate.Start
+                        parseResults.GetAllArgumentsForFunctionApplicationAtPostion symbolUse.Range.Start
                         |> Option.defaultValue []
                         |> Array.ofList
 
@@ -321,7 +325,7 @@ type internal FSharpSignatureHelpProvider
                         | None ->
                             let possibleNextIndex =
                                 curriedArgsInSource
-                                |> Array.tryFindIndex(fun argRange -> Pos.posGeq argRange.Start caretPos)
+                                |> Array.tryFindIndex(fun argRange -> Position.posGeq argRange.Start caretPos)
 
                             match possibleNextIndex with
                             | Some index -> Some index
@@ -346,23 +350,18 @@ type internal FSharpSignatureHelpProvider
                     let fsharpDocs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
                                        
                     let docs = ResizeArray()
-                    for fsharpDoc in fsharpDocs do
-                        RoslynHelpers.CollectTaggedText docs fsharpDoc
+                    fsharpDocs |> Seq.iter (RoslynHelpers.CollectTaggedText docs)
 
                     let parts = ResizeArray()
-                    for part in mainDescription do
-                        RoslynHelpers.CollectTaggedText parts part
+                    mainDescription |> Seq.iter (RoslynHelpers.CollectTaggedText parts)
 
                     let displayArgs = ResizeArray()
 
                     // Offset by 1 here until we support reverse indexes in this codebase
                     definedArgs.[.. definedArgs.Length - 1 - numArgsAlreadyApplied] |> Array.iteri (fun index argument ->
-                        let taggedText = ResizeArray()
                         let tt = ResizeArray()
-                        let layout = argument.Type.FormatLayout symbolUse.DisplayContext
-                        LayoutRender.emitL taggedText.Add layout |> ignore
-                        for part in taggedText do
-                            RoslynHelpers.CollectTaggedText tt part
+                        let taggedText = argument.Type.FormatLayout symbolUse.DisplayContext
+                        taggedText |> Seq.iter (RoslynHelpers.CollectTaggedText tt)
                             
                         let name =
                             if String.IsNullOrWhiteSpace(argument.DisplayName) then
@@ -426,7 +425,7 @@ type internal FSharpSignatureHelpProvider
                           Parameters = displayArgs.ToArray()
                           MainDescription = ResizeArray() }
 
-                    let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+                    let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
 
                     let data =
                         { SignatureHelpItems = [| sigHelpItem |]
@@ -502,7 +501,7 @@ type internal FSharpSignatureHelpProvider
                         adjustedColumnInSource,
                         filePath)
             | _ ->
-                let! paramInfoLocations = parseResults.FindNoteworthyParamInfoLocations(Pos.fromZ caretLinePos.Line caretLineColumn)
+                let! paramInfoLocations = parseResults.FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn)
                 return!
                     FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(
                         caretLinePos,

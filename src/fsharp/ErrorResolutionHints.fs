@@ -4,13 +4,16 @@
 module internal FSharp.Compiler.ErrorResolutionHints
 
 open Internal.Utilities
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open System.Collections
 open System.Collections.Generic
 
 let maxSuggestions = 5
+
 let minThresholdForSuggestions = 0.7
+
 let highConfidenceThreshold = 0.85
+
 let minStringLengthForSuggestion = 3
 
 /// We report a candidate if its edit distance is <= the threshold.

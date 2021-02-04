@@ -2,6 +2,11 @@ module FSharp.Compiler.Service.Tests.PatternMatchCompilationTests
 
 open FsUnit
 open NUnit.Framework
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.IO
+open FSharp.Compiler.Syntax
 
 
 [<Test>]
@@ -18,7 +23,6 @@ match () with
     dumpErrors checkResults |> shouldEqual [
         "(3,2--3,4): This expression was expected to have type 'unit' but here has type 'string'"
     ]
-
 
 [<Test>]
 #if !NETCOREAPP
