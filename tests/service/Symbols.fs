@@ -269,16 +269,6 @@ module SyntaxExpressions =
 """
                         |> getParseResults
 
-        let assertRange
-            expectedStartLine
-            expectedStartColumn
-            expectedEndLine
-            expectedEndColumn
-            (actualRange: FSharp.Compiler.Text.range)
-            =
-                Assert.AreEqual(Position.mkPos expectedStartLine expectedStartColumn, actualRange.Start)
-                Assert.AreEqual(Position.mkPos expectedEndLine expectedEndColumn, actualRange.End)
-
         match ast with
         | Some(ParsedInput.ImplFile(ParsedImplFileInput(modules = [
                     SynModuleOrNamespace.SynModuleOrNamespace(decls = [
@@ -397,3 +387,41 @@ let bytes = @"yo"B
         match getBindingExpressionValue parseResults with
         | Some (SynExpr.InterpolatedString(_,  kind, _)) -> kind |> should equal SynStringKind.Regular
         | _ -> failwithf "Couldn't find const"
+
+module SynModuleOrNamespace =
+    [<Test>]
+    let ``DeclaredNamespace range should start at namespace keyword`` () =
+        let parseResults = 
+            getParseResults
+                """namespace TypeEquality
+
+/// A type for witnessing type equality between 'a and 'b
+type Teq<'a, 'b>
+"""
+
+        match parseResults with
+        | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r) ]))) ->
+            assertRange 1 0 4 8 r
+        | _ -> failwith "Could not get valid AST"
+        
+    [<Test>]
+    let ``Multiple DeclaredNamespaces should have a range that starts at the namespace keyword`` () =
+        let parseResults = 
+            getParseResults
+                """namespace TypeEquality
+
+/// A type for witnessing type equality between 'a and 'b
+type Teq = class end
+
+namespace Foobar
+
+let x = 42
+"""
+
+        match parseResults with
+        | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r1)
+            SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r2) ]))) ->
+            assertRange 1 0 4 20 r1
+            assertRange 6 0 8 10 r2
+        | _ -> failwith "Could not get valid AST"        
