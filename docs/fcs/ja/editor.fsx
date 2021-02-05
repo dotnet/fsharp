@@ -28,8 +28,10 @@
 #r "FSharp.Compiler.Service.dll"
 
 open System
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 // インタラクティブチェッカーのインスタンスを作成
 let checker = FSharpChecker.Create()
@@ -140,13 +142,10 @@ let checkFileResults =
 // 最後の引数に指定する、IDENTトークンのタグを取得
 
 // 特定の位置におけるツールチップを取得
-let tip = checkFileResults.GetToolTipText(4, 7, inputLines.[1], ["foo"], FSharpTokenTag.Identifier)
+let tip = checkFileResults.GetToolTip(4, 7, inputLines.[1], ["foo"], FSharpTokenTag.Identifier)
 printfn "%A" tip
 
 (**
-
-> **注意：** `GetToolTipTextAlternate` は古い関数 `GetToolTipText` に代わるものです。
-`GetToolTipText` は0から始まる行番号を受け取るようになっていたため、非推奨になりました。
 
 この関数には位置とトークンの種類の他にも、
 (ソースコードの変更時に役立つように)特定行の現在の内容と、
@@ -216,7 +215,7 @@ let methods =
 
 // 連結された引数リストを表示
 for mi in methods.Methods do
-    [ for p in mi.Parameters -> p.Display ]
+    [ for p in mi.Parameters do for tt in p.Display do yield tt.Text ]
     |> String.concat ", " 
     |> printfn "%s(%s)" methods.MethodName
 (**

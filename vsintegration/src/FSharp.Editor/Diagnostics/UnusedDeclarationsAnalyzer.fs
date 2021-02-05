@@ -8,7 +8,7 @@ open System.Collections.Immutable
 open System.Diagnostics
 
 open Microsoft.CodeAnalysis
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.EditorServices
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 [<Export(typeof<IFSharpUnusedDeclarationsDiagnosticAnalyzer>)>]

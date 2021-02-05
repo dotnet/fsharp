@@ -4,33 +4,28 @@
 module internal FSharp.Compiler.CompilerConfig
 
 open System
-open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
-open System.Text
-
 open Internal.Utilities
 open Internal.Utilities.Filename
 open Internal.Utilities.FSharpEnvironment
-
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.Utils
+open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Lib
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.IO
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
-
-open Microsoft.DotNet.DependencyManager
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -44,10 +39,15 @@ let (++) x s = x @ [s]
 //--------------------------------------------------------------------------
 
 let FSharpSigFileSuffixes = [".mli";".fsi"]
+
 let mlCompatSuffixes = [".mli";".ml"]
+
 let FSharpImplFileSuffixes = [".ml";".fs";".fsscript";".fsx"]
+
 let FSharpScriptFileSuffixes = [".fsscript";".fsx"]
+
 let doNotRequireNamespaceOrModuleSuffixes = [".mli";".ml"] @ FSharpScriptFileSuffixes
+
 let FSharpLightSyntaxFileSuffixes: string list = [ ".fs";".fsscript";".fsx";".fsi" ]
 
 //--------------------------------------------------------------------------
@@ -228,10 +228,12 @@ type AssemblyReference =
 
     member x.SimpleAssemblyNameIs name = 
         (String.Compare(fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase) = 0) ||
-        (let text = x.Text.ToLowerInvariant()
-         not (text.Contains "/") && not (text.Contains "\\") && not (text.Contains ".dll") && not (text.Contains ".exe") &&
-           try let aname = System.Reflection.AssemblyName x.Text in aname.Name = name 
-           with _ -> false) 
+        not (x.Text.Contains "/") &&
+        not (x.Text.Contains "\\") &&
+        not (x.Text.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase)) &&
+        not (x.Text.EndsWith(".exe", StringComparison.InvariantCultureIgnoreCase)) &&
+        (try let aname = System.Reflection.AssemblyName x.Text in aname.Name = name 
+         with _ -> false)
 
     override x.ToString() = sprintf "AssemblyReference(%s)" x.Text
 

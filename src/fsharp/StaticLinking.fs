@@ -4,24 +4,23 @@
 module internal FSharp.Compiler.StaticLinking
 
 open System
-
+open Internal.Utilities
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
+open FSharp.Compiler.IO
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
-open Internal.Utilities
-open Internal.Utilities.Collections
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping

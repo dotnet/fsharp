@@ -5,12 +5,12 @@
 module internal FSharp.Compiler.CompilerImports
 
 open System
-
+open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -21,8 +21,6 @@ open FSharp.Core.CompilerServices
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif
-
-open Microsoft.DotNet.DependencyManager
 
 /// This exception is an old-style way of reporting a diagnostic
 exception AssemblyNotResolved of (*originalName*) string * range
@@ -41,6 +39,7 @@ val IsOptimizationDataResource: ILResource -> bool
 
 /// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource: ILResource -> bool
+
 val GetSignatureDataResourceName: ILResource -> string
 
 /// Write F# signature data as an IL resource

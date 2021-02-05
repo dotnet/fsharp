@@ -22,12 +22,13 @@ open System.Threading
 
 open Internal.Utilities
 open Internal.Utilities.Filename
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
@@ -37,25 +38,24 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CreateILModule
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Lib
+open FSharp.Compiler.IO
 open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.ScriptClosure
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.StaticLinking
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.XmlDocFileWriter
-open FSharp.Compiler.StaticLinking
-open Microsoft.DotNet.DependencyManager
 
 //----------------------------------------------------------------------------
 // Reporting - warnings, errors
@@ -65,7 +65,7 @@ open Microsoft.DotNet.DependencyManager
 [<AbstractClass>]
 type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameForDebugging) = 
     inherit ErrorLogger(nameForDebugging)
-
+    
     let mutable errors = 0
 
     /// Called when an error or warning occurs

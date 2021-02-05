@@ -6,17 +6,15 @@ This guide discusses the F# compiler source code and implementation from a techn
 
 There are several artifacts involved in the development of F#:
 
-* The [F# compiler library](https://github.com/dotnet/fsharp/tree/master/src/fsharp/FSharp.Compiler.Private), called `FSharp.Compiler.Private`. Contains all logic for F# compilation - including parsing, syntax tree processing, typechecking, constraint solving, optimizations, IL importing, IL writing, pretty printing of F# constructs, and F# metadata format processing - and the F# compiler APIs for tooling.
+* The [F# compiler library](https://github.com/dotnet/fsharp/tree/master/src/fsharp/FSharp.Compiler.Service), called `FSharp.Compiler.Service`. Contains all logic for F# compilation - including parsing, syntax tree processing, typechecking, constraint solving, optimizations, IL importing, IL writing, pretty printing of F# constructs, and F# metadata format processing - and the F# compiler APIs for tooling.
 
-* The [F# compiler executable](https://github.com/dotnet/fsharp/tree/master/src/fsharp/fsc), called `fsc`, which is called as a console app. It sets the .NET GC into batch mode and then invokes `FSharp.Compiler.Private` with command-line arguments.
+* The [F# compiler executable](https://github.com/dotnet/fsharp/tree/master/src/fsharp/fsc), called `fsc`, which is called as a console app. It sets the .NET GC into batch mode and then invokes `FSharp.Compiler.Service` with command-line arguments.
 
 * The [F# Core Library](https://github.com/dotnet/fsharp/tree/master/src/fsharp/FSharp.Core), called `FSharp.Core`. Contains all primitive F# types and logic for how they interact, core data structures and library functions for operating on them, structured printing logic, units of measure for scientific programming, core numeric functionality, F# quotations, F# type reflection logic, and asynchronous programming types and logic.
 
 * The [F# Interactive tool](https://github.com/dotnet/fsharp/tree/master/src/fsharp/fsi), called `fsi`. A REPL for F# that supports execution and pretty-printing of F# code and results, loading F# script files, referencing assemblies, and referencing packages from NuGet.
 
-* The [F# Compiler Service](https://github.com/dotnet/fsharp/tree/master/fcs), called `FSharp.Compiler.Service` or abbreviated to FCS. It is mostly identical to `FSharp.Compiler.Private`, but critically contains the "Expression API" that allows other environments to inspect and operate on type-checked F# expressions (such as transpiling F# code to a different runtime target).
-
-The `FSharp.Compiler.Private` is by far the largest of these components and contains nearly all logic that `fsc` and `fsi` use. It is the primary subject of this guide.
+The `FSharp.Compiler.Service` is by far the largest of these components and contains nearly all logic that `fsc` and `fsi` use. It is the primary subject of this guide.
 
 ## Resources for learning
 
@@ -72,10 +70,10 @@ The following are the key phases and high-level logical operations of the F# com
 
 * _Parsing_. Accepts a token stream and produces an AST per the grammar in the F# Language Specification.
 
-* _Resolving references_. For .NET SDK generally references are resolved explicitly by external tooling. 
+* _Resolving references_. For .NET SDK generally references are resolved explicitly by external tooling.
    There is a legacy aspect to this if references use old .NET Framework references including for
    scripting.  See [ReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/ReferenceResolver.fs) for the abstract definition of compiler reference resolution. See [LegacyMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/LegacyMSBuildReferenceResolver.fs) for reference resolution used by the .NET Framework F# compiler when running on .NET Framework. See [SimulatedMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/SimulatedMSBuildReferenceResolver.fs) when not using the .NET Framework F# compiler. 
-   See [Microsoft.DotNet.DependencyManager](https://github.com/dotnet/fsharp/tree/master/src/fsharp/Microsoft.DotNet.DependencyManager) for reference resolution and package management used in `fsi`.
+   See [FSharp.Compiler.DependencyManager](https://github.com/dotnet/fsharp/tree/master/src/fsharp/FSharp.Compiler.DependencyManager) for reference resolution and package management used in `fsi`.
 
 * _Importing referenced .NET binaries_, see [import.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/import.fsi)/[import.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/import.fs). Accepts file references and produces a Typed Tree node for each referenced assembly, including information about its type definitions (and type forwarders if any).
 
@@ -566,14 +564,14 @@ The "intended" FCS API is the parts under the namespaces
 * FSharp.Compiler.SourceCodeServices.* (analysis, compilation, tooling, lexing)
 * FSharp.Compiler.Interactive.Shell.*  (scripting support)
 * FSharp.Compiler.AbstractIL.*  (for ILAssemblyReader hook for Rider)
-* FSharp.Compiler.SyntaxTree.*  (direct access to full untyped tree)
+* FSharp.Compiler.Syntax.*  (direct access to full untyped tree)
 
 These sections are generally designed with F#/.NET design conventions (e.g. types in namespaces, not modules, no nesting of modules etc.)
 and we will continue to iterate to make this so.
 
 In contrast, the public parts of the compiler directly under `FSharp.Compiler.*` and `FSharp.AbstractIL.*` are
-"incidental" and not really designed for public use apart from the hook for Jet Brains Rider
-(Aside: In theory all these other parts could be renamed to FSharp.Compiler.Internal though there's no need to do that right now).  
+"incidental" and not really designed for public use apart from the hook for JetBrains Rider
+(Aside: In theory all these other parts could be renamed to FSharp.Compiler though there's no need to do that right now).  
 These internal parts tend to be implemented with the "module containing lots of stuff in one big file" approach for layers of the compiler.
 
 

@@ -4,7 +4,7 @@ module internal FSharp.Compiler.AbstractIL.Morphs
 
 open System.Collections.Generic
 open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open Internal.Utilities.Library 
 open FSharp.Compiler.AbstractIL.IL 
 
 let mutable morphCustomAttributeData = false

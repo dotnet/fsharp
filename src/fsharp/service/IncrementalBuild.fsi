@@ -1,26 +1,26 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler
+namespace FSharp.Compiler.CodeAnalysis
 
 open System
-
+open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CheckDeclarations
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
-
-open Microsoft.DotNet.DependencyManager
 
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 
@@ -62,7 +62,7 @@ type internal TcInfo =
 
         tcDependencyFiles: string list
 
-        sigNameOpt: (string * SyntaxTree.QualifiedNameOfFile) option
+        sigNameOpt: (string * QualifiedNameOfFile) option
     }
 
      member TcErrors: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
@@ -87,7 +87,7 @@ type internal TcInfoOptional =
       itemKeyStore: ItemKeyStore option
       
       /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-      semanticClassification: struct (range * SemanticClassificationType) []
+      semanticClassificationKeyStore: SemanticClassificationKeyStore option
     }
 
     member TcSymbolUses: TcSymbolUses list
@@ -116,7 +116,7 @@ type internal PartialCheckResults =
 
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetSemanticClassification: CompilationThreadToken -> struct(range * SemanticClassificationType) []
+    member GetSemanticClassification: CompilationThreadToken -> SemanticClassificationKeyStore option
 
     member TimeStamp: DateTime 
 

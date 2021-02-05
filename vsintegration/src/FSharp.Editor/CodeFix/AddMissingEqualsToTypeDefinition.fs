@@ -33,12 +33,10 @@ type internal FSharpAddMissingEqualsToTypeDefinitionCodeFixProvider() =
             // This won't ever actually happen, but eh why not
             do! Option.guard (pos > 0)
 
-            let mutable ch = sourceText.GetSubText(TextSpan(pos, 1)).ToString().[0]
-
+            let mutable ch = sourceText.[pos]
             while pos > 0 && Char.IsWhiteSpace(ch) do
                 pos <- pos - 1
-                let text = sourceText.GetSubText(TextSpan(pos, 1))
-                ch <- text.ToString().[0]
+                ch <- sourceText.[pos]
 
             let title = SR.AddMissingEqualsToTypeDefinition()
 

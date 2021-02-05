@@ -46,6 +46,7 @@
     <Compile Include="LanguageService\FSharpCheckerExtensions.fs" />
     <Compile Include="LanguageService\IProjectSite.fs" />
     <Compile Include="LanguageService\ProvideFSharpVersionRegistrationAttribute.fs" />
+    <Compile Include="LanguageService\MetadataAsSource.fs" />
     <Compile Include="LanguageService\FSharpCheckerProvider.fs" />
     <Compile Include="LanguageService\FSharpProjectOptionsManager.fs" />
     <Compile Include="LanguageService\SingleFileWorkspaceMap.fs" />
@@ -126,7 +127,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\FSharp.PatternMatcher\FSharp.PatternMatcher.csproj" />
     <ProjectReference Include="..\FSharp.UIResources\FSharp.UIResources.csproj" />
     <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />

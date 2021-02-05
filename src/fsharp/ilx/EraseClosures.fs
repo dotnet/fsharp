@@ -1,14 +1,13 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.AbstractIL.Extensions.ILX.EraseClosures
+module internal FSharp.Compiler.AbstractIL.ILX.EraseClosures
 
-
-open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractIL.Extensions.ILX
-open FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
+open Internal.Utilities.Library 
+open FSharp.Compiler.AbstractIL.ILX
+open FSharp.Compiler.AbstractIL.ILX.Types 
 open FSharp.Compiler.AbstractIL.Morphs 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Syntax.PrettyNaming
 
 // -------------------------------------------------------------------- 
 // Erase closures and function types

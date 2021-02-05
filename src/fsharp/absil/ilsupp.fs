@@ -1,24 +1,21 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.AbstractIL.Internal.Support
+module internal FSharp.Compiler.AbstractIL.Support
 
 open System
 open System.IO
 open System.Reflection
-
 #if !FX_NO_SYMBOLSTORE
 open System.Diagnostics.SymbolStore
 #endif
 open System.Runtime.InteropServices
 open System.Runtime.CompilerServices
-
-open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.NativeRes
-open FSharp.Compiler.AbstractIL.Internal.Utils
-open FSharp.Compiler.SourceCodeServices
+open Internal.Utilities
+open Internal.Utilities.Library
+open FSharp.Compiler.AbstractIL.NativeRes
+open FSharp.Compiler.IO
 #if FX_NO_CORHOST_SIGNER
-open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
+open FSharp.Compiler.AbstractIL.StrongNameSign
 #endif
 
 let DateTime1970Jan01 = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) (* ECMA Spec (Oct2002), Part II, 24.2.2 PE File Header. *)
@@ -884,7 +881,7 @@ let pdbInitialize (binaryName: string) (pdbName: string) =
     { symWriter = writer }
 
 
-[<assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2001: AvoidCallingProblematicMethods", Scope="member", Target="FSharp.Compiler.AbstractIL.Internal.Support.#pdbClose(FSharp.Compiler.AbstractIL.Internal.Support+PdbWriter)", MessageId="System.GC.Collect")>]
+[<assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2001: AvoidCallingProblematicMethods", Scope="member", Target="FSharp.Compiler.AbstractIL.Support.#pdbClose(FSharp.Compiler.AbstractIL.Support+PdbWriter)", MessageId="System.GC.Collect")>]
 do()
 
 let pdbCloseDocument(documentWriter: PdbDocumentWriter) =

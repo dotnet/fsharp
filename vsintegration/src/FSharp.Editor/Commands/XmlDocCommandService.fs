@@ -13,9 +13,8 @@ open Microsoft.VisualStudio.OLE.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.TextManager.Interop
-open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.EditorServices
 
 type internal XmlDocCommandFilter 
      (
@@ -60,7 +59,7 @@ type internal XmlDocCommandFilter
                     let curLine = wpfTextView.Caret.Position.BufferPosition.GetContainingLine().GetText()
                     let lineWithLastCharInserted = curLine.Insert (indexOfCaret, string lastChar)
 
-                    match XmlDocComment.isBlank lineWithLastCharInserted with
+                    match XmlDocComment.IsBlank lineWithLastCharInserted with
                     | Some i when i = indexOfCaret ->
                         asyncMaybe {
                             try
@@ -70,7 +69,7 @@ type internal XmlDocCommandFilter
                                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, CancellationToken.None, userOpName)
                                 let! sourceText = document.GetTextAsync(CancellationToken.None)
                                 let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
-                                let xmlDocables = XmlDocParser.getXmlDocables (sourceText.ToFSharpSourceText(), Some parsedInput) 
+                                let xmlDocables = XmlDocParser.GetXmlDocables (sourceText.ToFSharpSourceText(), Some parsedInput) 
                                 let xmlDocablesBelowThisLine = 
                                     // +1 because looking below current line for e.g. a 'member'
                                     xmlDocables |> List.filter (fun (XmlDocable(line,_indent,_paramNames)) -> line = curLineNum+1) 

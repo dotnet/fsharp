@@ -5,11 +5,10 @@ module internal FSharp.Compiler.Lexhelp
 open Internal.Utilities
 open Internal.Utilities.Text
 
-open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.UnicodeLexing
+open FSharp.Compiler.Parser
 open FSharp.Compiler.Text
 
 val stdinMockFilename: string
@@ -46,18 +45,23 @@ type LongUnicodeLexResult =
     | SingleChar of uint16
     | Invalid
 
-val resetLexbufPos: string -> UnicodeLexing.Lexbuf -> unit
+val resetLexbufPos: string -> Lexbuf -> unit
 
 val mkLexargs: string list * LightSyntaxStatus * LexResourceManager * LexerIfdefStack * ErrorLogger * PathMap -> LexArgs
 
-val reusingLexbufForParsing: UnicodeLexing.Lexbuf -> (unit -> 'a) -> 'a 
+val reusingLexbufForParsing: Lexbuf -> (unit -> 'a) -> 'a 
 
-val usingLexbufForParsing: UnicodeLexing.Lexbuf * string -> (UnicodeLexing.Lexbuf -> 'a) -> 'a
+val usingLexbufForParsing: Lexbuf * string -> (UnicodeLexing.Lexbuf -> 'a) -> 'a
+
+type LexerStringFinisherContext = 
+    | InterpolatedPart = 1
+    | Verbatim = 2
+    | TripleQuote = 4
 
 type LexerStringFinisher =
-    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> LexerContinuation -> token)
+    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> LexerStringFinisherContext -> LexerContinuation -> token)
     
-    member Finish: buf: ByteBuffer -> kind: LexerStringKind -> isInterpolatedStringPart: bool -> cont: LexerContinuation -> token
+    member Finish: buf: ByteBuffer -> kind: LexerStringKind -> context: LexerStringFinisherContext -> cont: LexerContinuation -> token
 
     static member Default: LexerStringFinisher
 
@@ -95,9 +99,9 @@ exception ReservedKeyword of string * range
 
 module Keywords = 
 
-    val KeywordOrIdentifierToken: LexArgs -> UnicodeLexing.Lexbuf -> string -> token
+    val KeywordOrIdentifierToken: LexArgs -> Lexbuf -> string -> token
 
-    val IdentifierToken: LexArgs -> UnicodeLexing.Lexbuf -> string -> token
+    val IdentifierToken: LexArgs -> Lexbuf -> string -> token
 
     val DoesIdentifierNeedQuotation: string -> bool
 

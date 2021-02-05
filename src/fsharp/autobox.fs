@@ -2,13 +2,13 @@
 
 module internal FSharp.Compiler.AutoBox 
 
-open FSharp.Compiler.AbstractIL.Internal
+open Internal.Utilities.Collections
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.Lib
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 

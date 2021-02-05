@@ -1,45 +1,34 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-//----------------------------------------------------------------------------
-// Open up the compiler as an incremental service for lexing.
-//--------------------------------------------------------------------------
-
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Tokenization
 
 open System
 open System.Collections.Generic
 open System.Threading
-
+open Internal.Utilities
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
-open FSharp.Compiler.Lib
-open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
-
-open Internal.Utilities
-
-type Position = int * int
-
-type Positions = Position * Position
 
 module FSharpTokenTag =
 
     let Identifier = tagOfToken (IDENT "a")
-    let String = tagOfToken (STRING ("a", LexCont.Default))
+    let String = tagOfToken (STRING ("a", SynStringKind.Regular, LexCont.Default))
 
     let IDENT = tagOfToken (IDENT "a")
     let STRING = String
-    let INTERP_STRING_BEGIN_END = tagOfToken (INTERP_STRING_BEGIN_END ("a", LexCont.Default))
-    let INTERP_STRING_BEGIN_PART = tagOfToken (INTERP_STRING_BEGIN_PART ("a", LexCont.Default))
+    let INTERP_STRING_BEGIN_END = tagOfToken (INTERP_STRING_BEGIN_END ("a", SynStringKind.Regular, LexCont.Default))
+    let INTERP_STRING_BEGIN_PART = tagOfToken (INTERP_STRING_BEGIN_PART ("a", SynStringKind.Regular, LexCont.Default))
     let INTERP_STRING_PART = tagOfToken (INTERP_STRING_PART ("a", LexCont.Default))
     let INTERP_STRING_END = tagOfToken (INTERP_STRING_END ("a", LexCont.Default))
     let LPAREN = tagOfToken LPAREN
@@ -379,14 +368,14 @@ module internal LexerStateEncoding =
       | LINE_COMMENT cont
       | STRING_TEXT cont
       | EOF cont 
-      | INTERP_STRING_BEGIN_PART (_, cont)
+      | INTERP_STRING_BEGIN_PART (_, _, cont)
       | INTERP_STRING_PART (_, cont)
-      | INTERP_STRING_BEGIN_END (_, cont)
+      | INTERP_STRING_BEGIN_END (_, _, cont)
       | INTERP_STRING_END (_, cont)
       | LBRACE cont
       | RBRACE cont
-      | BYTEARRAY (_, cont)
-      | STRING (_, cont) -> cont
+      | BYTEARRAY (_, _, cont)
+      | STRING (_, _, cont) -> cont
       | _ -> prevLexcont
 
     // Note that this will discard all lexcont state, including the ifdefStack.
@@ -1554,7 +1543,7 @@ module FSharpLexerImpl =
 [<AbstractClass;Sealed>]
 type FSharpLexer =
 
-    static member Lex(text: ISourceText, tokenCallback, ?langVersion, ?filePath: string, ?conditionalCompilationDefines, ?flags, ?pathMap, ?ct) =
+    static member Tokenize(text: ISourceText, tokenCallback, ?langVersion, ?filePath: string, ?conditionalCompilationDefines, ?flags, ?pathMap, ?ct) =
         let langVersion = defaultArg langVersion "latestmajor"
         let flags = defaultArg flags FSharpLexerFlags.Default
         ignore filePath // can be removed at later point

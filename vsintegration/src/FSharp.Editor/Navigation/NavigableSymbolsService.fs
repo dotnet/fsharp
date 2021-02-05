@@ -58,13 +58,17 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                         statusBar.Clear()
 
                         if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
-                            let navigableItem, range = gtdTask.Result.Value
+                            let result, range = gtdTask.Result.Value
 
                             let declarationTextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
                             let declarationSpan = Span(declarationTextSpan.Start, declarationTextSpan.Length)
                             let symbolSpan = SnapshotSpan(snapshot, declarationSpan)
 
-                            return FSharpNavigableSymbol(navigableItem, symbolSpan, gtd, statusBar) :> INavigableSymbol
+                            match result with
+                            | FSharpGoToDefinitionResult.NavigableItem(navItem) ->
+                                return FSharpNavigableSymbol(navItem, symbolSpan, gtd, statusBar) :> INavigableSymbol
+                            | _ ->
+                                return null
                         else 
                             statusBar.TempMessage(SR.CannotDetermineSymbol())
 

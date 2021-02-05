@@ -3,9 +3,9 @@
 /// Find unsolved, uninstantiated type variables
 module internal FSharp.Compiler.FindUnsolved
 
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps

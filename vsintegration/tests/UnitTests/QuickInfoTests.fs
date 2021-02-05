@@ -1,7 +1,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
 open System.IO
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor

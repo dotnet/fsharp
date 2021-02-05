@@ -10,7 +10,7 @@ module Tests.Service.ScriptOptions
 open NUnit.Framework
 open System.IO
 open FSharp.Compiler.Service.Tests.Common
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
 

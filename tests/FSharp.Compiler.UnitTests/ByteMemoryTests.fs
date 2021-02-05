@@ -6,9 +6,8 @@ open System.Globalization
 open Xunit
 open FSharp.Test.Utilities
 
-
 module ByteMemoryTests =
-    open FSharp.Compiler.AbstractIL.Internal
+    open Internal.Utilities
 
     [<Fact>]
     let ``ByteMemory.CreateMemoryMappedFile succeeds with byte length of zero``() =

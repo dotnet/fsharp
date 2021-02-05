@@ -13,7 +13,8 @@ open System.Collections.Generic
 open System.Text.RegularExpressions
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 
 [<TestFixture>]
 [<Category "LanguageService">] 

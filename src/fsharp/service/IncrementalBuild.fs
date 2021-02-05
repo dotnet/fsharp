@@ -1,19 +1,17 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler
-
+namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.Collections.Generic
 open System.IO
 open System.Runtime.InteropServices
 open System.Threading
-
+open Internal.Utilities.Library 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
@@ -22,18 +20,21 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CreateILModule
+open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.IO
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TypedTreeOps
-
-open Microsoft.DotNet.DependencyManager
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -90,7 +91,7 @@ module IncrementalBuilderEventTesting =
 
 module Tc = FSharp.Compiler.CheckExpressions
 
-// This module is only here to contain the SyntaxTree type as to avoid amiguity with the module FSharp.Compiler.SyntaxTree.
+// This module is only here to contain the SyntaxTree type as to avoid amiguity with the module FSharp.Compiler.Syntax.
 [<AutoOpen>]
 module IncrementalBuildSyntaxTree =
 
@@ -100,7 +101,7 @@ module IncrementalBuildSyntaxTree =
 
         let mutable weakCache: WeakReference<_> option = None
 
-        let parse(sigNameOpt: SyntaxTree.QualifiedNameOfFile option) =
+        let parse(sigNameOpt: QualifiedNameOfFile option) =
             let errorLogger = CompilationErrorLogger("Parse", tcConfig.errorSeverityOptions)
             // Return the disposable object that cleans up
             use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parse)
@@ -111,8 +112,8 @@ module IncrementalBuildSyntaxTree =
                 let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (Filename.checkSuffix lower)
                 let input = 
                     if canSkip then
-                        SyntaxTree.ParsedInput.ImplFile(
-                            SyntaxTree.ParsedImplFileInput(
+                        ParsedInput.ImplFile(
+                            ParsedImplFileInput(
                                 filename, 
                                 false, 
                                 sigNameOpt.Value,
@@ -170,7 +171,7 @@ type TcInfo =
 
         tcDependencyFiles: string list
 
-        sigNameOpt: (string * SyntaxTree.QualifiedNameOfFile) option
+        sigNameOpt: (string * QualifiedNameOfFile) option
     }
 
     member x.TcErrors = 
@@ -196,7 +197,7 @@ type TcInfoOptional =
       itemKeyStore: ItemKeyStore option
       
       /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-      semanticClassification: struct (range * SemanticClassificationType) []
+      semanticClassificationKeyStore: SemanticClassificationKeyStore option
     }
 
     member x.TcSymbolUses = 
@@ -213,21 +214,21 @@ type TcInfoState =
         | PartialState tcInfo -> tcInfo
         | FullState(tcInfo, _) -> tcInfo
 
-/// Semantic model of an underlying syntax tree.
+/// Bound model of an underlying syntax and typed tree.
 [<Sealed>]
-type SemanticModel private (tcConfig: TcConfig,
-                            tcGlobals: TcGlobals,
-                            tcImports: TcImports,
-                            keepAssemblyContents, keepAllBackgroundResolutions,
-                            maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
-                            enableBackgroundItemKeyStoreAndSemanticClassification,
-                            enablePartialTypeChecking,
-                            beforeFileChecked: Event<string>,
-                            fileChecked: Event<string>,
-                            prevTcInfo: TcInfo,
-                            prevTcInfoOptional: Eventually<TcInfoOptional option>,
-                            syntaxTreeOpt: SyntaxTree option,
-                            lazyTcInfoState: TcInfoState option ref) =
+type BoundModel private (tcConfig: TcConfig,
+                         tcGlobals: TcGlobals,
+                         tcImports: TcImports,
+                         keepAssemblyContents, keepAllBackgroundResolutions,
+                         maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
+                         enableBackgroundItemKeyStoreAndSemanticClassification,
+                         enablePartialTypeChecking,
+                         beforeFileChecked: Event<string>,
+                         fileChecked: Event<string>,
+                         prevTcInfo: TcInfo,
+                         prevTcInfoOptional: Eventually<TcInfoOptional option>,
+                         syntaxTreeOpt: SyntaxTree option,
+                         lazyTcInfoState: TcInfoState option ref) =
 
     let defaultTypeCheck () =
         eventually {
@@ -305,7 +306,7 @@ type SemanticModel private (tcConfig: TcConfig,
                     | _ -> return None
                 }
             return
-                SemanticModel(
+                BoundModel(
                     tcConfig,
                     tcGlobals,
                     tcImports,
@@ -334,7 +335,7 @@ type SemanticModel private (tcConfig: TcConfig,
                 | FullState(_, tcInfoOptional) -> FullState(finishTcInfo, tcInfoOptional)
 
             return
-                SemanticModel(
+                BoundModel(
                     tcConfig,
                     tcGlobals,
                     tcImports,
@@ -372,7 +373,7 @@ type SemanticModel private (tcConfig: TcConfig,
                         tcOpenDeclarationsRev = []
                         latestImplFile = None
                         itemKeyStore = None
-                        semanticClassification = [||]
+                        semanticClassificationKeyStore = None
                     }
         }
 
@@ -438,7 +439,7 @@ type SemanticModel private (tcConfig: TcConfig,
                                     tcDependencyFiles = filename :: prevTcDependencyFiles
                                     sigNameOpt =
                                         match input with
-                                        | SyntaxTree.ParsedInput.SigFile(SyntaxTree.ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
+                                        | ParsedInput.SigFile(ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
                                             Some(fileName, qualName)
                                         | _ ->
                                             None
@@ -457,19 +458,24 @@ type SemanticModel private (tcConfig: TcConfig,
                                             let sResolutions = sink.GetResolutions()
                                             let builder = ItemKeyStoreBuilder()
                                             let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with 
-                                                                                member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Pos.posEq s1 s2 && Pos.posEq e1 e2
+                                                                                member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Position.posEq s1 s2 && Position.posEq e1 e2
                                                                                 member _.GetHashCode o = o.GetHashCode() })
                                             sResolutions.CapturedNameResolutions
                                             |> Seq.iter (fun cnr ->
                                                 let r = cnr.Range
                                                 if preventDuplicates.Add struct(r.Start, r.End) then
                                                     builder.Write(cnr.Range, cnr.Item))
+                                            
+                                            let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
 
-                                            let res = builder.TryBuildAndReset(), sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
+                                            let sckBuilder = SemanticClassificationKeyStoreBuilder()
+                                            sckBuilder.WriteAll semanticClassification
+
+                                            let res = builder.TryBuildAndReset(), sckBuilder.TryBuildAndReset()
                                             Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
                                             res
                                         else
-                                            None, [||]
+                                            None, None
 
                                     let tcInfoOptional =
                                         {
@@ -479,7 +485,7 @@ type SemanticModel private (tcConfig: TcConfig,
                                             tcSymbolUsesRev = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: prevTcInfoOptional.tcSymbolUsesRev
                                             tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: prevTcInfoOptional.tcOpenDeclarationsRev
                                             itemKeyStore = itemKeyStore
-                                            semanticClassification = semanticClassification
+                                            semanticClassificationKeyStore = semanticClassification
                                         }
 
                                     return FullState(tcInfo, tcInfoOptional)
@@ -516,7 +522,7 @@ type SemanticModel private (tcConfig: TcConfig,
                          prevTcInfo: TcInfo,
                          prevTcInfoOptional: Eventually<TcInfoOptional option>,
                          syntaxTreeOpt: SyntaxTree option) =
-        SemanticModel(tcConfig, tcGlobals, tcImports, 
+        BoundModel(tcConfig, tcGlobals, tcImports, 
                       keepAssemblyContents, keepAllBackgroundResolutions, 
                       maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
                       enableBackgroundItemKeyStoreAndSemanticClassification,
@@ -579,33 +585,33 @@ type FrameworkImportsCache(size) =
 
 /// Represents the interim state of checking an assembly
 [<Sealed>]
-type PartialCheckResults private (semanticModel: SemanticModel, timeStamp: DateTime) = 
+type PartialCheckResults private (boundModel: BoundModel, timeStamp: DateTime) = 
 
     let eval ctok (work: Eventually<'T>) =
         match work with
         | Eventually.Done res -> res
         | _ -> Eventually.force ctok work
 
-    member _.TcImports = semanticModel.TcImports
-    member _.TcGlobals = semanticModel.TcGlobals
-    member _.TcConfig = semanticModel.TcConfig
+    member _.TcImports = boundModel.TcImports
+    member _.TcGlobals = boundModel.TcGlobals
+    member _.TcConfig = boundModel.TcConfig
 
     member _.TimeStamp = timeStamp
 
-    member _.TcInfo ctok = semanticModel.TcInfo |> eval ctok
+    member _.TcInfo ctok = boundModel.TcInfo |> eval ctok
 
-    member _.TcInfoWithOptional ctok = semanticModel.TcInfoWithOptional |> eval ctok
+    member _.TcInfoWithOptional ctok = boundModel.TcInfoWithOptional |> eval ctok
 
     member _.TryGetItemKeyStore ctok =
-        let _, info = semanticModel.TcInfoWithOptional |> eval ctok
+        let _, info = boundModel.TcInfoWithOptional |> eval ctok
         info.itemKeyStore
 
     member _.GetSemanticClassification ctok =
-        let _, info = semanticModel.TcInfoWithOptional |> eval ctok
-        info.semanticClassification
+        let _, info = boundModel.TcInfoWithOptional |> eval ctok
+        info.semanticClassificationKeyStore
 
-    static member Create (semanticModel: SemanticModel, timestamp) = 
-        PartialCheckResults(semanticModel, timestamp)
+    static member Create (boundModel: BoundModel, timestamp) = 
+        PartialCheckResults(boundModel, timestamp)
 
 [<AutoOpen>]
 module Utilities = 
@@ -718,7 +724,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         timeStamper cache ctok
                 
     // Link all the assemblies together and produce the input typecheck accumulator               
-    let CombineImportedAssembliesTask ctok : Cancellable<SemanticModel> =
+    let CombineImportedAssembliesTask ctok : Cancellable<BoundModel> =
       cancellable {
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
         // Return the disposable object that cleans up
@@ -787,10 +793,10 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 tcOpenDeclarationsRev=[]
                 latestImplFile=None
                 itemKeyStore = None
-                semanticClassification = [||] 
+                semanticClassificationKeyStore = None 
             }
         return 
-            SemanticModel.Create(
+            BoundModel.Create(
                 tcConfig,
                 tcGlobals,
                 tcImports,
@@ -803,18 +809,18 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 beforeFileChecked, fileChecked, tcInfo, Eventually.Done (Some tcInfoOptional), None) }
                 
     /// Type check all files.     
-    let TypeCheckTask ctok (prevSemanticModel: SemanticModel) syntaxTree: Eventually<SemanticModel> =
+    let TypeCheckTask ctok (prevBoundModel: BoundModel) syntaxTree: Eventually<BoundModel> =
         eventually {
             RequireCompilationThread ctok
-            let! semanticModel = prevSemanticModel.Next(syntaxTree)
+            let! boundModel = prevBoundModel.Next(syntaxTree)
             // Eagerly type check
             // We need to do this to keep the expected behavior of events (namely fileChecked) when checking a file/project.
-            let! _ = semanticModel.GetState(enablePartialTypeChecking)
-            return semanticModel
+            let! _ = boundModel.GetState(enablePartialTypeChecking)
+            return boundModel
         }
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask ctok (semanticModels: SemanticModel[]) = 
+    let FinalizeTypeCheckTask ctok (boundModels: BoundModel[]) = 
       cancellable {
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
@@ -822,22 +828,22 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
 
         // Get the state at the end of the type-checking of the last file
-        let finalSemanticModel = semanticModels.[semanticModels.Length-1]
+        let finalBoundModel = boundModels.[boundModels.Length-1]
 
-        let finalInfo = finalSemanticModel.TcInfo |> Eventually.force ctok
+        let finalInfo = finalBoundModel.TcInfo |> Eventually.force ctok
 
         // Finish the checking
         let (_tcEnvAtEndOfLastFile, topAttrs, mimpls, _), tcState = 
             let results = 
-                semanticModels 
+                boundModels 
                 |> List.ofArray 
-                |> List.map (fun semanticModel -> 
+                |> List.map (fun boundModel -> 
                     let tcInfo, latestImplFile =
                         if enablePartialTypeChecking then
-                            let tcInfo = semanticModel.TcInfo |> Eventually.force ctok
+                            let tcInfo = boundModel.TcInfo |> Eventually.force ctok
                             tcInfo, None
                         else
-                            let tcInfo, tcInfoOptional = semanticModel.TcInfoWithOptional |> Eventually.force ctok
+                            let tcInfo, tcInfoOptional = boundModel.TcInfoWithOptional |> Eventually.force ctok
                             tcInfo, tcInfoOptional.latestImplFile
                     tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile)
             TypeCheckMultipleInputsFinish (results, finalInfo.tcState)
@@ -897,8 +903,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 errorRecoveryNoRange e
                 mkSimpleAssemblyRef assemblyName, None, None
 
-        let finalSemanticModelWithErrors = finalSemanticModel.Finish((errorLogger.GetErrors() :: finalInfo.tcErrorsRev), Some topAttrs) |> Eventually.force ctok
-        return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalSemanticModelWithErrors
+        let finalBoundModelWithErrors = finalBoundModel.Finish((errorLogger.GetErrors() :: finalInfo.tcErrorsRev), Some topAttrs) |> Eventually.force ctok
+        return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalBoundModelWithErrors
       }
 
     // END OF BUILD TASK FUNCTIONS
@@ -914,7 +920,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     (*
         The data below represents a dependency graph.
         
-        ReferencedAssembliesStamps => FileStamps => SemanticModels => FinalizedSemanticModel
+        ReferencedAssembliesStamps => FileStamps => BoundModels => FinalizedBoundModel
     *)
 
     // stampedFileNames represent the real stamps of the files.
@@ -922,23 +928,23 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     let stampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue)
     let logicalStampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue)
     let stampedReferencedAssemblies = Array.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
-    let mutable initialSemanticModel = None
-    let semanticModels = Array.zeroCreate<SemanticModel option> fileNames.Length
-    let mutable finalizedSemanticModel = None
+    let mutable initialBoundModel = None
+    let boundModels = Array.zeroCreate<BoundModel option> fileNames.Length
+    let mutable finalizedBoundModel = None
 
     let computeStampedFileName (cache: TimeStampCache) (ctok: CompilationThreadToken) slot fileInfo cont =
         let currentStamp = stampedFileNames.[slot]
         let stamp = StampFileNameTask cache ctok fileInfo
 
         if currentStamp <> stamp then
-            match semanticModels.[slot] with
+            match boundModels.[slot] with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
-            | Some(semanticModel) when enablePartialTypeChecking && semanticModel.BackingSignature.IsSome ->
+            | Some(boundModel) when enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
                 stampedFileNames.[slot] <- StampFileNameTask cache ctok fileInfo
-                semanticModel.Invalidate()
+                boundModel.Invalidate()
             | _ ->
                 // Something changed, the finalized view of the project must be invalidated.
-                finalizedSemanticModel <- None
+                finalizedBoundModel <- None
 
                 // Invalidate the file and all files below it.
                 stampedFileNames.[slot..]
@@ -946,10 +952,10 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     let stamp = StampFileNameTask cache ctok fileNames.[slot + j]
                     stampedFileNames.[slot + j] <- stamp
                     logicalStampedFileNames.[slot + j] <- stamp
-                    semanticModels.[slot + j] <- None
+                    boundModels.[slot + j] <- None
                 )
 
-        if semanticModels.[slot].IsNone then
+        if boundModels.[slot].IsNone then
             cont slot fileInfo
 
     let computeStampedFileNames (cache: TimeStampCache) (ctok: CompilationThreadToken) =
@@ -972,14 +978,14 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         
         if referencesUpdated then
             // Something changed, the finalized view of the project must be invalidated.
-            // This is the only place where the initial semantic model will be invalidated.
-            initialSemanticModel <- None
-            finalizedSemanticModel <- None
+            // This is the only place where the initial bound model will be invalidated.
+            initialBoundModel <- None
+            finalizedBoundModel <- None
 
             for i = 0 to stampedFileNames.Length - 1 do
                 stampedFileNames.[i] <- DateTime.MinValue
                 logicalStampedFileNames.[i] <- DateTime.MinValue
-                semanticModels.[i] <- None
+                boundModels.[i] <- None
 
     let getStampedFileNames cache ctok =
         computeStampedFileNames cache ctok
@@ -989,61 +995,61 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         computeStampedReferencedAssemblies cache ctok
         stampedReferencedAssemblies
 
-    let computeInitialSemanticModel (ctok: CompilationThreadToken) =
+    let computeInitialBoundModel (ctok: CompilationThreadToken) =
         cancellable {
-            match initialSemanticModel with
+            match initialBoundModel with
             | None ->
                 let! result = CombineImportedAssembliesTask ctok
-                initialSemanticModel <- Some result
+                initialBoundModel <- Some result
                 return result
             | Some result ->
                 return result
         }
 
-    let computeSemanticModel (cache: TimeStampCache) (ctok: CompilationThreadToken) (slot: int) =
+    let computeBoundModel (cache: TimeStampCache) (ctok: CompilationThreadToken) (slot: int) =
         if IncrementalBuild.injectCancellationFault then Cancellable.canceled ()
         else
 
         cancellable {         
-            let! initial = computeInitialSemanticModel ctok
+            let! initial = computeInitialBoundModel ctok
 
             let fileInfo = fileNames.[slot]
 
             computeStampedFileName cache ctok slot fileInfo (fun slot fileInfo ->
-                let prevSemanticModel =
+                let prevBoundModel =
                     match slot with
                     | 0 (* first file *) -> initial
                     | _ ->
-                        match semanticModels.[slot - 1] with
-                        | Some(prevSemanticModel) -> prevSemanticModel
+                        match boundModels.[slot - 1] with
+                        | Some(prevBoundModel) -> prevBoundModel
                         | _ -> 
-                            // This shouldn't happen, but on the off-chance, just grab the initial semantic model.
+                            // This shouldn't happen, but on the off-chance, just grab the initial bound model.
                             initial
 
-                let semanticModel = TypeCheckTask ctok prevSemanticModel (ParseTask ctok fileInfo) |> Eventually.force ctok
+                let boundModel = TypeCheckTask ctok prevBoundModel (ParseTask ctok fileInfo) |> Eventually.force ctok
                     
-                semanticModels.[slot] <- Some semanticModel
+                boundModels.[slot] <- Some boundModel
             )
         }
 
-    let computeSemanticModels (cache: TimeStampCache) (ctok: CompilationThreadToken) =
+    let computeBoundModels (cache: TimeStampCache) (ctok: CompilationThreadToken) =
         cancellable {
             for slot = 0 to fileNames.Length - 1 do
-                do! computeSemanticModel cache ctok slot
+                do! computeBoundModel cache ctok slot
         }
 
-    let computeFinalizedSemanticModel (cache: TimeStampCache) (ctok: CompilationThreadToken) =
+    let computeFinalizedBoundModel (cache: TimeStampCache) (ctok: CompilationThreadToken) =
         cancellable {
-            let! _ = computeSemanticModels cache ctok
+            let! _ = computeBoundModels cache ctok
 
-            match finalizedSemanticModel with
+            match finalizedBoundModel with
             | Some result -> return result
             | _ ->
-                let semanticModels = semanticModels |> Array.choose id
+                let boundModels = boundModels |> Array.choose id
             
-                let! result = FinalizeTypeCheckTask ctok semanticModels 
+                let! result = FinalizeTypeCheckTask ctok boundModels 
                 let result = (result, DateTime.UtcNow)
-                finalizedSemanticModel <- Some result
+                finalizedBoundModel <- Some result
                 return result
         }
 
@@ -1052,9 +1058,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             computeStampedReferencedAssemblies cache ctok
             computeStampedFileNames cache ctok
 
-            match semanticModels |> Array.tryFindIndex (fun x -> x.IsNone) with
+            match boundModels |> Array.tryFindIndex (fun x -> x.IsNone) with
             | Some slot ->
-                do! computeSemanticModel cache ctok slot
+                do! computeBoundModel cache ctok slot
                 return true
             | _ ->
                 return false
@@ -1063,16 +1069,16 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     let tryGetBeforeSlot slot =
         match slot with
         | 0 (* first file *) ->
-            match initialSemanticModel with
+            match initialBoundModel with
             | Some initial ->
                 (initial, DateTime.MinValue)
                 |> Some
             | _ ->
                 None
         | _ ->
-            match semanticModels.[slot - 1] with
-            | Some semanticModel ->
-                (semanticModel, stampedFileNames.[slot - 1])
+            match boundModels.[slot - 1] with
+            | Some boundModel ->
+                (boundModel, stampedFileNames.[slot - 1])
                 |> Some
             | _ ->
                 None
@@ -1082,14 +1088,14 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             cancellable {
                 computeStampedReferencedAssemblies cache ctok
 
-                let! result = computeInitialSemanticModel ctok
+                let! result = computeInitialBoundModel ctok
                 return Some(result, DateTime.MinValue)
             }
         else         
             let evalUpTo =
                 cancellable {
                     for slot = 0 to targetSlot do
-                        do! computeSemanticModel cache ctok slot
+                        do! computeBoundModel cache ctok slot
                 }
             cancellable {
                 computeStampedReferencedAssemblies cache ctok
@@ -1097,9 +1103,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 let! _ = evalUpTo
 
                 return 
-                    semanticModels.[targetSlot]
-                    |> Option.map (fun semanticModel ->
-                        (semanticModel, stampedFileNames.[targetSlot])
+                    boundModels.[targetSlot]
+                    |> Option.map (fun boundModel ->
+                        (boundModel, stampedFileNames.[targetSlot])
                     )
             }
 
@@ -1107,7 +1113,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         cancellable {
             computeStampedReferencedAssemblies cache ctok
 
-            let! res = computeFinalizedSemanticModel cache ctok
+            let! res = computeFinalizedBoundModel cache ctok
             return Some res
         }
 
@@ -1158,7 +1164,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let result = tryGetBeforeSlot slotOfFile
         
         match result with
-        | Some (semanticModel, timestamp) -> Some (PartialCheckResults.Create (semanticModel, timestamp))
+        | Some (boundModel, timestamp) -> Some (PartialCheckResults.Create (boundModel, timestamp))
         | _ -> None
         
     
@@ -1174,7 +1180,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let! result = eval cache ctok (slotOfFile - 1)
         
         match result with
-        | Some (semanticModel, timestamp) -> return PartialCheckResults.Create (semanticModel, timestamp)
+        | Some (boundModel, timestamp) -> return PartialCheckResults.Create (boundModel, timestamp)
         | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsBeforeSlotInProject)."
       }
 
@@ -1205,8 +1211,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let cache = TimeStampCache defaultTimeStamp
 
         match! tryGetFinalized cache ctok with
-        | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, semanticModel), timestamp) -> 
-            return PartialCheckResults.Create (semanticModel, timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
+        | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp) -> 
+            return PartialCheckResults.Create (boundModel, timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
         | None -> 
             let msg = "Build was not evaluated, expected the results to be ready after 'tryGetFinalized')."
             return! failwith msg

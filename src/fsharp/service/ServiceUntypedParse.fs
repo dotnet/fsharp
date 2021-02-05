@@ -207,22 +207,22 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
             match expr with
             | SynExpr.Ident ident -> Some ident.idRange
             
-            | SynExpr.LongIdent(_, _, _, range) -> Some range
+            | SynExpr.LongIdent (_, _, _, range) -> Some range
 
-            | SynExpr.Paren(expr, _, _, range) when rangeContainsPos range pos ->
+            | SynExpr.Paren (expr, _, _, range) when rangeContainsPos range pos ->
                 getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
-            // This matches computation expressions like 'async { ... }'
-            | SynExpr.App(_, _, _, SynExpr.CompExpr (_, _, expr, range), _) when rangeContainsPos range pos ->
-                getIdentRangeForFuncExprInApp traverseSynExpr expr pos
-
-            | SynExpr.App(_, _, funcExpr, argExpr, _) ->
+            | SynExpr.App (_, _, funcExpr, argExpr, _) ->
                 match argExpr with
                 | SynExpr.App (_, _, _, _, range) when rangeContainsPos range pos ->
                     getIdentRangeForFuncExprInApp traverseSynExpr argExpr pos
 
-                | SynExpr.Paren(SynExpr.Lambda(_, _, _args, body, _, _), _, _, _) when rangeContainsPos body.Range pos -> 
-                    getIdentRangeForFuncExprInApp traverseSynExpr body pos
+                // Special case: `async { ... }` is actually a CompExpr inside of the argExpr of a SynExpr.App
+                | SynExpr.CompExpr (_, _, expr, range) when rangeContainsPos range pos ->
+                    getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+
+                | SynExpr.Paren (expr, _, _, range) when rangeContainsPos range pos ->
+                    getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
                 | _ ->
                     match funcExpr with
@@ -236,7 +236,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                         // of the identifier of the function we're after
                         getIdentRangeForFuncExprInApp traverseSynExpr funcExpr pos
 
-            | SynExpr.LetOrUse(_, _, bindings, body, range) when rangeContainsPos range pos  ->
+            | SynExpr.LetOrUse (_, _, bindings, body, range) when rangeContainsPos range pos  ->
                 let binding =
                     bindings
                     |> List.tryFind (fun x -> rangeContainsPos x.RangeOfBindingAndRhs pos)
@@ -245,6 +245,58 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                     getIdentRangeForFuncExprInApp traverseSynExpr expr pos
                 | None ->
                     getIdentRangeForFuncExprInApp traverseSynExpr body pos
+
+            | SynExpr.IfThenElse (ifExpr, thenExpr, elseExpr, _, _, _, range) when rangeContainsPos range pos ->
+                if rangeContainsPos ifExpr.Range pos then
+                    getIdentRangeForFuncExprInApp traverseSynExpr ifExpr pos
+                elif rangeContainsPos thenExpr.Range pos then
+                    getIdentRangeForFuncExprInApp traverseSynExpr thenExpr pos
+                else
+                    match elseExpr with
+                    | None -> None
+                    | Some expr ->
+                        getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+
+            | SynExpr.Match (_, expr, clauses, range) when rangeContainsPos range pos ->
+                if rangeContainsPos expr.Range pos then
+                    getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+                else
+                    let clause = clauses |> List.tryFind (fun clause -> rangeContainsPos clause.Range pos)
+                    match clause with
+                    | None -> None
+                    | Some clause ->
+                        match clause with
+                        | SynMatchClause.Clause (_, whenExpr, resultExpr, _, _) ->
+                            match whenExpr with
+                            | None ->
+                                getIdentRangeForFuncExprInApp traverseSynExpr resultExpr pos
+                            | Some whenExpr ->
+                                if rangeContainsPos whenExpr.Range pos then
+                                    getIdentRangeForFuncExprInApp traverseSynExpr whenExpr pos
+                                else
+                                    getIdentRangeForFuncExprInApp traverseSynExpr resultExpr pos
+
+
+            // Ex: C.M(x, y, ...) <--- We want to find where in the tupled application the call is being made
+            | SynExpr.Tuple(_, exprs, _, tupRange) when rangeContainsPos tupRange pos ->
+                let expr = exprs |> List.tryFind (fun expr -> rangeContainsPos expr.Range pos)
+                match expr with
+                | None -> None
+                | Some expr ->
+                    getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+
+            // Capture the body of a lambda, often nested in a call to a collection function
+            | SynExpr.Lambda(_, _, _args, body, _, _) when rangeContainsPos body.Range pos -> 
+                getIdentRangeForFuncExprInApp traverseSynExpr body pos
+
+            | SynExpr.Do(expr, range) when rangeContainsPos range pos ->
+                getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+
+            | SynExpr.Assert(expr, range) when rangeContainsPos range pos ->
+                getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+
+            | SynExpr.ArbitraryAfterError (_debugStr, range) when rangeContainsPos range pos -> 
+                Some range
 
             | expr ->
                 traverseSynExpr expr
@@ -464,7 +516,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                   | SynExpr.Paren (e, _, _, _) -> 
                       yield! walkExpr false e
 
-                  | SynExpr.InterpolatedString (parts, _) -> 
+                  | SynExpr.InterpolatedString (parts, _, _) -> 
                       yield! walkExprs [ for part in parts do 
                                             match part with 
                                             | SynInterpolatedStringPart.String _ -> ()
@@ -600,7 +652,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                           yield! walkExpr true e ]
             
             // Process a class declaration or F# type declaration
-            let rec walkTycon (TypeDefn(ComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, m)) =
+            let rec walkTycon (TypeDefn(ComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, _, m)) =
                 if not (isMatchRange m) then [] else
                 [ for memb in membDefns do yield! walkMember memb
                   match repr with
@@ -1236,7 +1288,7 @@ module UntypedParseImpl =
             | SynTypeDefnSigRepr.Simple(defn, _) -> walkTypeDefnSimple defn
             | SynTypeDefnSigRepr.Exception(_) -> None
 
-        and walkTypeDefn (TypeDefn (info, repr, members, _)) =
+        and walkTypeDefn (TypeDefn (info, repr, members, _, _)) =
             walkComponentInfo false info
             |> Option.orElse (walkTypeDefnRepr repr)
             |> Option.orElse (List.tryPick walkMember members)
@@ -1489,7 +1541,7 @@ module UntypedParseImpl =
                         let contextFromTreePath completionPath = 
                             // detect records usage in constructor
                             match path with
-                            | TS.Expr(_) :: TS.Binding(_) :: TS.MemberDefn(_) :: TS.TypeDefn(SynTypeDefn.TypeDefn(ComponentInfo(_, _, _, [id], _, _, _, _), _, _, _)) :: _ ->  
+                            | TS.Expr(_) :: TS.Binding(_) :: TS.MemberDefn(_) :: TS.TypeDefn(SynTypeDefn.TypeDefn(ComponentInfo(_, _, _, [id], _, _, _, _), _, _, _, _)) :: _ ->  
                                 RecordContext.Constructor(id.idText)
                             | _ -> RecordContext.New completionPath
                         match field with

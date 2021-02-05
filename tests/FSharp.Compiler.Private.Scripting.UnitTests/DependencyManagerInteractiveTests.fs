@@ -9,11 +9,10 @@ open System.Runtime.InteropServices
 open System.Threading
 
 open FSharp.Compiler.Interactive.Shell
-open FSharp.Compiler.Scripting
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Scripting.UnitTests
+open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
+open FSharp.Test.ScriptHelpers
 open FSharp.DependencyManager.Nuget
-open Microsoft.DotNet.DependencyManager
 
 open Internal.Utilities
 
@@ -814,7 +813,7 @@ x |> Seq.iter(fun r ->
             let report errorType code message =
                 match errorType with
                 | ErrorReportType.Error ->
-                    if code = 3401 then foundCorrectError <- true
+                    if code = 3217 then foundCorrectError <- true
                     else foundWrongError <- true
                 | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
             ResolvingErrorReport (report)
@@ -837,7 +836,7 @@ x |> Seq.iter(fun r ->
             let report errorType code message =
                 match errorType with
                 | ErrorReportType.Error ->
-                    if code = 3401 then foundCorrectError <- true
+                    if code = 3217 then foundCorrectError <- true
                     else foundWrongError <- true
                 | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
             ResolvingErrorReport (report)
