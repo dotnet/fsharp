@@ -492,6 +492,8 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         iclrSN.StrongNameSignatureVerificationEx(fileName, true, &ok) |> ignore
 #endif
 
+    let failWithContainerSigningUnsupportedOnThisPlatform() = failwith (FSComp.SR.containerSigningUnsupportedOnThisPlatform() |> snd)
+
     //---------------------------------------------------------------------
     // Strong name signing
     //---------------------------------------------------------------------
@@ -516,7 +518,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                 legacySignerCloseKeyContainer containerName
 #else
                 ignore containerName
-                failwith ("Key container signing is not supported on this platform")
+                failWithContainerSigningUnsupportedOnThisPlatform()
 #endif
         member s.IsFullySigned =
             match s with 
@@ -528,7 +530,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
 #if !FX_NO_CORHOST_SIGNER
                 true
 #else
-                failwith ("Key container signing is not supported on this platform")
+                failWithContainerSigningUnsupportedOnThisPlatform()
 #endif
 
         member s.PublicKey = 
@@ -542,7 +544,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                 legacySignerGetPublicKeyForKeyContainer containerName
 #else
                 ignore containerName
-                failwith ("Key container signing is not supported on this platform")
+                failWithContainerSigningUnsupportedOnThisPlatform()
 #endif
 
         member s.SignatureSize =
@@ -562,7 +564,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                 pkSignatureSize (legacySignerGetPublicKeyForKeyContainer containerName)
 #else
                 ignore containerName
-                failwith ("Key container signing is not supported on this platform")
+                failWithContainerSigningUnsupportedOnThisPlatform()
 #endif
 
         member s.SignFile file = 
@@ -575,5 +577,5 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                 legacySignerSignFileWithKeyContainer file containerName
 #else
                 ignore containerName
-                failwith ("Key container signing is not supported on this platform")
+                failWithContainerSigningUnsupportedOnThisPlatform()
 #endif
