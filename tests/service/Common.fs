@@ -433,10 +433,8 @@ let coreLibAssemblyName =
 #endif
 
 let assertRange
-    (expectedStartLine: int)
-    (expectedStartColumn: int)
-    (expectedEndLine: int)
-    (expectedEndColumn: int)
+    (expectedStartLine: int, expectedStartColumn: int)
+    (expectedEndLine: int, expectedEndColumn: int)
     (actualRange: range)
     : unit =
     Assert.AreEqual(Position.mkPos expectedStartLine expectedStartColumn, actualRange.Start)

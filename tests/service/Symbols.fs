@@ -277,8 +277,8 @@ module SyntaxExpressions =
                         ])
                     ])
                 ]))) ->
-            assertRange 2 4 3 14 doRange
-            assertRange 4 4 5 18 doBangRange
+            assertRange (2, 4) (3, 14) doRange
+            assertRange (4, 4) (5, 18) doBangRange
         | _ ->
             failwith "Could not find SynExpr.Do"
 
@@ -401,7 +401,7 @@ type Teq<'a, 'b>
 
         match parseResults with
         | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r) ]))) ->
-            assertRange 1 0 4 8 r
+            assertRange (1, 0) (4, 8) r
         | _ -> failwith "Could not get valid AST"
         
     [<Test>]
@@ -422,6 +422,6 @@ let x = 42
         | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = [
             SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r1)
             SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r2) ]))) ->
-            assertRange 1 0 4 20 r1
-            assertRange 6 0 8 10 r2
+            assertRange (1, 0) (4, 20) r1
+            assertRange (6, 0) (8, 10) r2
         | _ -> failwith "Could not get valid AST"        
