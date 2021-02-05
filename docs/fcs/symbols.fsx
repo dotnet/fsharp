@@ -19,6 +19,7 @@ of `FSharpChecker`:
 open System
 open System.IO
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 
 // Create an interactive checker instance 
