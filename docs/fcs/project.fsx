@@ -27,6 +27,7 @@ of `InteractiveChecker`:
 open System
 open System.Collections.Generic
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 
 // Create an interactive checker instance 
@@ -131,8 +132,8 @@ Now look at the errors and warnings:
 wholeProjectResults.Diagnostics.Length // 1
 wholeProjectResults.Diagnostics.[0].Message.Contains("Incomplete pattern matches on this expression") // yes it does
 
-wholeProjectResults.Diagnostics.[0].StartLineAlternate // 13
-wholeProjectResults.Diagnostics.[0].EndLineAlternate // 13
+wholeProjectResults.Diagnostics.[0].StartLine // 13
+wholeProjectResults.Diagnostics.[0].EndLine // 13
 wholeProjectResults.Diagnostics.[0].StartColumn // 15
 wholeProjectResults.Diagnostics.[0].EndColumn // 16
 
