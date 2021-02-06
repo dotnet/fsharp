@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="AddMissingFunKeyword">
         <source>Add missing 'fun' keyword</source>
-        <target state="new">Add missing 'fun' keyword</target>
+        <target state="translated">Fehlendes Schlüsselwort "fun" hinzufügen</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewKeyword">
@@ -94,7 +94,7 @@
       </trans-unit>
       <trans-unit id="RemoveYieldBang">
         <source>Remove 'yield!'</source>
-        <target state="new">Remove 'yield!'</target>
+        <target state="translated">"yield!" entfernen</target>
         <note />
       </trans-unit>
       <trans-unit id="RenameValueToUnderscore">
