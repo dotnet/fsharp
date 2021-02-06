@@ -180,3 +180,17 @@ val GetLongNameFromString: string -> string list
 
 val FormatAndOtherOverloadsString: int -> string
 
+val FSharpSignatureDataResourceName2: string
+
+// Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
+[<Literal>] 
+val internal suffixForVariablesThatMayNotBeEliminated : string = "$cont"
+
+[<Literal>] 
+val internal prefixForVariablesThatMayNotBeEliminated : string = "__stack_"
+
+[<Literal>] 
+val internal stackStepName : string = "__stack_step"
+
+[<Literal>] 
+val internal expansionFunctionPrefix : string = "__expand_"

@@ -2030,7 +2030,7 @@ module GeneralizationHelpers =
         
         | Expr.App (e1, _, _, [], _) -> IsGeneralizableValue g e1
         | Expr.TyChoose (_, b, _) -> IsGeneralizableValue g b
-        | Expr.Obj (_, ty, _, _, _, _, _) -> isInterfaceTy g ty || isDelegateTy g ty
+        | Expr.Obj (_, ty, _, _, _, _, _, _) -> isInterfaceTy g ty || isDelegateTy g ty
         | Expr.Link eref -> IsGeneralizableValue g !eref
 
         | _ -> false  
@@ -3078,8 +3078,9 @@ let CompilePatternForMatchClauses cenv env mExpr matchm warnOnUnused actionOnFai
     // Avoid creating a dummy in the common cases where we are about to bind a name for the expression 
     // CLEANUP: avoid code duplication with code further below, i.e.all callers should call CompilePatternForMatch 
     match tclauses with 
-    | [TClause(TPat_as (pat1, PBind (asVal, TypeScheme(generalizedTypars, _)), _), None, TTarget(vs, e, spTarget), m2)] ->
-        let expr = CompilePatternForMatch cenv env mExpr matchm warnOnUnused actionOnFailure (asVal, generalizedTypars, None) [TClause(pat1, None, TTarget(ListSet.remove valEq asVal vs, e, spTarget), m2)] inputTy resultTy
+    | [TClause(TPat_as (pat1, PBind (asVal, TypeScheme(generalizedTypars, _)), _), None, TTarget(vs, e, spTarget, _), m2)] ->
+        let vs2 = ListSet.remove valEq asVal vs
+        let expr = CompilePatternForMatch cenv env mExpr matchm warnOnUnused actionOnFailure (asVal, generalizedTypars, None) [TClause(pat1, None, TTarget(vs2, e, spTarget, None), m2)] inputTy resultTy
         asVal, expr
     | _ -> 
         let matchValueTmp, _ = mkCompGenLocal mExpr "matchValue" inputTy
@@ -3340,7 +3341,7 @@ let EliminateInitializationGraphs
             // because of type inference, which makes it reasonable to check generic bindings strictly.
             | Expr.TyLambda (_, _, b, _, _) -> CheckExpr st b
 
-            | Expr.Obj (_, ty, _, e, overrides, extraImpls, _) ->
+            | Expr.Obj (_, ty, _, e, overrides, extraImpls, _, _) ->
                 // NOTE: we can't fixup recursive references inside delegates since the closure delegee of a delegate is not accessible 
                 // from outside. Object expressions implementing interfaces can, on the other hand, be fixed up. See FSharp 1.0 bug 1469 
                 if isInterfaceTy g ty then 
@@ -3385,11 +3386,13 @@ let EliminateInitializationGraphs
             | Expr.WitnessArg (_witnessInfo, _m) -> ()
 
         and CheckBinding st (TBind(_, e, _)) = CheckExpr st e 
+
         and CheckDecisionTree st = function
             | TDSwitch(e1, csl, dflt, _) -> CheckExpr st e1; List.iter (fun (TCase(_, d)) -> CheckDecisionTree st d) csl; Option.iter (CheckDecisionTree st) dflt
             | TDSuccess (es, _) -> es |> List.iter (CheckExpr st) 
             | TDBind(bind, e) -> CheckBinding st bind; CheckDecisionTree st e
-        and CheckDecisionTreeTarget st (TTarget(_, e, _)) = CheckExpr st e
+
+        and CheckDecisionTreeTarget st (TTarget(_, e, _, _)) = CheckExpr st e
 
         and CheckExprOp st op m = 
             match op with 
@@ -3536,7 +3539,9 @@ let CheckAndRewriteObjectCtor g env (ctorLambdaExpr: Expr) =
         | Expr.Let (bind, body, m, _) -> mkLetBind m bind (checkAndRewrite body)
 
         // The constructor is a sequence "let pat = expr in <ctor-body>" 
-        | Expr.Match (spBind, a, b, targets, c, d) -> Expr.Match (spBind, a, b, (targets |> Array.map (fun (TTarget(vs, body, spTarget)) -> TTarget(vs, checkAndRewrite body, spTarget))), c, d)
+        | Expr.Match (spBind, a, b, targets, c, d) ->
+            let targets = targets |> Array.map (fun (TTarget(vs, body, spTarget, flags)) -> TTarget(vs, checkAndRewrite body, spTarget, flags))
+            Expr.Match (spBind, a, b, targets, c, d)
 
         // <ctor-body> = "let rec binds in <ctor-body>" 
         | Expr.LetRec (a, body, _, _) -> Expr.LetRec (a, checkAndRewrite body, m, Construct.NewFreeVarsCache())
@@ -7177,7 +7182,7 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
         let valsDefinedByMatching = ListSet.remove valEq elemVar vspecs
         CompilePatternForMatch 
             cenv env enumSynExpr.Range pat.Range false IgnoreWithWarning (elemVar, [], None) 
-            [TClause(pat, None, TTarget(valsDefinedByMatching, bodyExpr, DebugPointForTarget.Yes), mForLoopStart)] 
+            [TClause(pat, None, TTarget(valsDefinedByMatching, bodyExpr, DebugPointForTarget.Yes, None), mForLoopStart)] 
             enumElemTy 
             overallTy
 
@@ -7237,7 +7242,6 @@ and TcQuotationExpr cenv overallTy env tpenv (_oper, raw, ast, isFromQueryExpres
 
     // We serialize the quoted expression to bytes in IlxGen after type inference etc. is complete. 
     expr, tpenv
-
 
 /// When checking sequence of function applications, 
 /// type applications and dot-notation projections, first extract known
@@ -9162,7 +9166,7 @@ and TcMatchClause cenv inputTy resultTy env isFirst tpenv (SynMatchClause(pat, o
     let pat', optWhenExpr', vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv (pat, optWhenExpr)
     let resultEnv = if isFirst then envinner else { envinner with eContextInfo = ContextInfo.FollowingPatternMatchClause e.Range }
     let e', tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv e
-    TClause(pat', optWhenExpr', TTarget(vspecs, e', spTgt), patm), tpenv
+    TClause(pat', optWhenExpr', TTarget(vspecs, e', spTgt, None), patm), tpenv
 
 and TcStaticOptimizationConstraint cenv env tpenv c = 
     match c with 
@@ -9311,7 +9315,18 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
         let argAndRetAttribs = ArgAndRetAttribs(argAttribs, retAttribs)
 
-        if HasFSharpAttribute cenv.g cenv.g.attrib_DefaultValueAttribute valAttribs then 
+        let isZeroMethod =
+            match declKind, pat with
+            | ModuleOrMemberBinding, SynPat.Named(_, name, _, _, _) when name.idText = "Zero" -> 
+                match memberFlagsOpt with
+                | Some memberFlags ->
+                    match memberFlags.MemberKind with
+                    | SynMemberKind.Member -> true
+                    | _ -> false
+                | _ -> false 
+            | _ -> false
+
+        if HasFSharpAttribute cenv.g cenv.g.attrib_DefaultValueAttribute valAttribs && not isZeroMethod then 
             errorR(Error(FSComp.SR.tcDefaultValueAttributeRequiresVal(), mBinding))
         
         let isThreadStatic = isThreadOrContextStatic cenv.g valAttribs
@@ -9781,7 +9796,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
         // Add the compilation of the pattern to the bodyExpr we get from mkCleanup
         let mkPatBind (bodyExpr, bodyExprTy) =
             let valsDefinedByMatching = ListSet.remove valEq patternInputTmp allValsDefinedByPattern
-            let clauses = [TClause(checkedPat2, None, TTarget(valsDefinedByMatching, bodyExpr, DebugPointForTarget.No), m)]
+            let clauses = [TClause(checkedPat2, None, TTarget(valsDefinedByMatching, bodyExpr, DebugPointForTarget.No, None), m)]
             let matchx = CompilePatternForMatch cenv env m m true ThrowIncompleteMatchException (patternInputTmp, generalizedTypars, Some rhsExpr) clauses tauTy bodyExprTy
             let matchx = if (DeclKind.ConvertToLinearBindings declKind) then LinearizeTopMatch cenv.g altActualParent matchx else matchx
             matchx, bodyExprTy
