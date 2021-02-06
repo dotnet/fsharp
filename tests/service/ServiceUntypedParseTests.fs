@@ -839,7 +839,7 @@ async {
             |> shouldEqual ((4, 11), (4, 16))
 
     [<Test>]
-    let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda``() =
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda - binding``() =
         let source = """
 let add n1 n2 = n1 + n2
 let lst = [1; 2; 3]
@@ -857,6 +857,132 @@ let mapped =
             range
             |> tups
             |> shouldEqual ((6, 18), (6, 21))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda - if expression``() =
+        let source = """
+let add n1 n2 = n1 + n2
+let lst = [1; 2; 3]
+let mapped = 
+    lst |> List.map (fun n ->
+        if true then
+            add
+        else
+            match add 1 2 with
+            | 0 when 0 = 0 -> add 1 2
+            | _ -> add 1 2
+    )
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 7 15)
+        match res with
+        | None -> Assert.Fail("Expected 'add' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((7, 12), (7, 15))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda - match expression``() =
+        let source = """
+let add n1 n2 = n1 + n2
+let lst = [1; 2; 3]
+let mapped = 
+    lst |> List.map (fun n ->
+        if true then
+            add
+        else
+            match add 1 2 with
+            | 0 when 0 = 0 -> add 1 2
+            | _ -> add 1 2
+    )
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 7 15)
+        match res with
+        | None -> Assert.Fail("Expected 'add' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((7, 12), (7, 15))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda - match expr``() =
+        let source = """
+let add n1 n2 = n1 + n2
+let lst = [1; 2; 3]
+let mapped = 
+    lst |> List.map (fun n ->
+        if true then
+            add
+        else
+            match add with
+            | 0 when 0 = 0 -> add 1 2
+            | _ -> add 1 2
+    )
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 9 21)
+        match res with
+        | None -> Assert.Fail("Expected 'add' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((9, 18), (9, 21))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda - match case``() =
+        let source = """
+let add n1 n2 = n1 + n2
+let lst = [1; 2; 3]
+let mapped = 
+    lst |> List.map (fun n ->
+        if true then
+            add
+        else
+            match add 1 2 with
+            | 0 when 0 = 0 -> add 1 2
+            | _ -> add
+    )
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 11 22)
+        match res with
+        | None -> Assert.Fail("Expected 'add' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((11, 19), (11, 22))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside method call``() =
+        let source = """
+type C() = static member Yeet(x, y, z) = ()
+C.Yeet(1, 2, sqrt)
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 17)
+        match res with
+        | None -> Assert.Fail("Expected 'sqrt' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((3, 13), (3, 17))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside method call - parenthesized lambda``() =
+        let source = """
+type C() = static member Yeet(x, y, z) = ()
+C.Yeet(1, 2, (fun x -> sqrt))
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 27)
+        match res with
+        | None -> Assert.Fail("Expected 'sqrt' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((3, 23), (3, 27))
 
 module PipelinesAndArgs =
     [<Test>]
