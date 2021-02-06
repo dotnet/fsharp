@@ -17,6 +17,16 @@
         <target state="translated">Con la funzionalità '{0}' è richiesta la libreria F# per la versione {1} o successiva del linguaggio.</target>
         <note />
       </trans-unit>
+      <trans-unit id="containerDeprecated">
+        <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
+        <target state="new">The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="containerSigningUnsupportedOnThisPlatform">
+        <source>Key container signing is not supported on this platform.</source>
+        <target state="new">Key container signing is not supported on this platform.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">Overload disponibili:\n{0}</target>
