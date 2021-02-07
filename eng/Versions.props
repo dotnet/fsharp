@@ -15,7 +15,7 @@
     <!-- F# Version components -->
     <FSMajorVersion>5</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>2</FSBuildVersion>
+    <FSBuildVersion>1</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- F# Language version -->
     <FSLanguageVersion>$(FSMajorVersion).$(FSMinorVersion)</FSLanguageVersion>
