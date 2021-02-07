@@ -1554,6 +1554,8 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3390,xmlDocUnresolvedCrossReference,"This XML comment is invalid: unresolved cross-reference '%s'"
 3390,xmlDocMissingParameter,"This XML comment is incomplete: no documentation for parameter '%s'"
 3391,tcLiteralAttributeCannotUseActivePattern,"A [<Literal>] declaration cannot use an active pattern for its identifier"
+3392,containerDeprecated,"The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead."
+3393,containerSigningUnsupportedOnThisPlatform,"Key container signing is not supported on this platform."
 3401,ilxgenInvalidConstructInStateMachineDuringCodegen,"The resumable code construct '%s' may only be used in inlined code protected by 'if __useResumableStateMachines then ...' and the overall composition must form valid resumable code."
 3501,structTemplateMustImplementOneInterface,"Invalid resumable code - a template struct type used with __resumableStateMachineStruct must implement exactly one interface. Usually this interface is the type 'System.Runtime.CompilerServices.IAsyncStateMachine'. If necessary mark the struct type with [<NoEquality; NoComparison>]."
 3502,stateMachineMacroTypars,"Invalid resumable code - a macro in a state machine has type parameters"
