@@ -20,7 +20,6 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --doc:<file>                             Write the xmldoc of the assembly to
                                          the given file
 --keyfile:<file>                         Specify a strong name key file
---keycontainer:<string>                  Specify a strong name key container
 --platform:<string>                      Limit which platforms this code can
                                          run on: x86, Itanium, x64,
                                          anycpu32bitpreferred, or anycpu. The

@@ -691,11 +691,6 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
             Some (FSComp.SR.optsStrongKeyFile()))
 
         CompilerOption
-           ("keycontainer", tagString,
-            OptionString(fun s -> tcConfigB.container <- Some s), None,
-            Some(FSComp.SR.optsStrongKeyContainer()))
-
-        CompilerOption
            ("platform", tagString,
             OptionString (fun s -> 
                 tcConfigB.platform <- 
@@ -1403,6 +1398,16 @@ let deprecatedFlagsFsc tcConfigB =
        ("Ooff", tagNone,
         OptionUnit (fun () -> SetOptimizeOff tcConfigB),
         Some(DeprecatedCommandLineOptionSuggestAlternative("-Ooff", "--optimize-", rangeCmdArgs)), None)
+
+
+    CompilerOption
+       ("keycontainer", tagString,
+        OptionString(fun s ->
+            if FSharpEnvironment.isRunningOnCoreClr then error(Error(FSComp.SR.containerSigningUnsupportedOnThisPlatform(), rangeCmdArgs))
+            else tcConfigB.container <- Some s),
+            if FSharpEnvironment.isRunningOnCoreClr then None
+            else Some(DeprecatedCommandLineOptionSuggestAlternative("--keycontainer", "--keyfile", rangeCmdArgs))
+        ,None)
 
     mlKeywordsFlag 
     gnuStyleErrorsFlag tcConfigB ]
