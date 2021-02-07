@@ -52,11 +52,9 @@ The following are the most relevant parts of the F# compiler tooling, making up 
 
 * The corresponding APIs wrapping and accessing these structures in the public-facing [`FSharp.Compiler.Service` API](https://github.com/dotnet/fsharp/tree/main/src/fsharp/service) and [Symbol API](https://github.com/dotnet/fsharp/tree/main/src/fsharp/symbols).
 
-TODO: where should this link point to?
-* The [F# Compiler Service Operations Queue](fsharp-compiler-service-queue.md), the mechanism used to sequentially process requests that require semantic information.
+* The [F# Compiler Service Operations Queue](https://fsharp.github.io/FSharp.Compiler.Service/queue.html), the mechanism used to sequentially process requests that require semantic information.
 
-TODO: where should this link point to?
-* The [F# Compiler Service Caches](fsharp-compiler-service-caches.md), the various caches maintained by an instance of an `FSharpChecker`.
+* The [F# Compiler Service Caches](https://fsharp.github.io/FSharp.Compiler.Service/caches.html), the various caches maintained by an instance of an `FSharpChecker`.
 
 ## Key compiler phases
 
@@ -542,8 +540,7 @@ From a lifetime point of view: the Typed Tree nodes are tied together in a graph
 
 Some parts of the F# codebase (specifically, the type checker) are written using `eventually` computation expressions. These define resumption-like computations which can be  time-sliced, suspended or discarded at "bind" points.
 
-TODO: where should this link point?
-This is done to ensure that long-running type-checking and other computations in the F# Compiler Service can be interrupted and cancelled. The documentation of the [F# Compiler Service Operations Queue](fsharp-compiler-service-queue.md) covers some aspects of this.
+This is done to ensure that long-running type-checking and other computations in the F# Compiler Service can be interrupted and cancelled. The documentation of the [F# Compiler Service Operations Queue](https://fsharp.github.io/FSharp.Compiler.Service/queue.html) covers some aspects of this.
 
 When compiling code with `fsc` or executing code with `fsi`, these computations are not time-sliced and simply run synchronously and without interruption (unless the user requests it).
 
@@ -580,13 +577,11 @@ These internal parts tend to be implemented with the "module containing lots of 
 
 ### The F# Compiler Service Operations Queue
 
-TODO: where should this link point?
-See [F# Compiler Service Queue](fsharp-compiler-service-queue.md).
+See [F# Compiler Service Queue](https://fsharp.github.io/FSharp.Compiler.Service/queue.html).
 
 ### The F# Compiler Service Caches
 
-TODO: where should this link point?
-See [F# Compiler Service Caches](fsharp-compiler-service-caches.md).
+See [F# Compiler Service Caches](https://fsharp.github.io/FSharp.Compiler.Service/caches.html).
 
 ## Bootstrapping
 
@@ -598,5 +593,4 @@ The F# compiler is boostrapped. That is, an existing F# compiler is used to buil
 
 ### Attribution
 
-TODO: does this link need to be kept? it just points back here
-This document is based heavily on an [original document](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html) published in 2015 by the [F# Software Foundation](http://fsharp.org).
+This document is based on an original document published in 2015 by the [F# Software Foundation](http://fsharp.org). It has since been updated substantially.
