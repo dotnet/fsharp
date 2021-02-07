@@ -18,8 +18,7 @@ module Option =
     /// <remarks>
     /// <code>
     /// None |> Option.isSome = false
-    /// Some 42 |> Option.isSome = true
-    /// </code></remarks>
+    /// Some 42 |> Option.isSome = true</code></remarks>
     ///
     /// <returns>True if the option is not None.</returns>
     [<CompiledName("IsSome")>]
@@ -32,8 +31,7 @@ module Option =
     /// <remarks>
     /// <code>
     /// None |> Option.isNone = true
-    /// Some 42 |> Option.isNone = false
-    /// </code></remarks>
+    /// Some 42 |> Option.isNone = false</code></remarks>
     ///
     /// <returns>True if the option is None.</returns>
     [<CompiledName("IsNone")>]
@@ -49,8 +47,7 @@ module Option =
     /// <remarks>Identical to the built-in <see cref="defaultArg"/> operator, except with the arguments swapped.
     /// <code>
     /// None |> Option.defaultValue 99 = 99
-    /// Some 42 |> Option.defaultValue 99 = 42
-    /// </code></remarks>
+    /// Some 42 |> Option.defaultValue 99 = 42</code></remarks>
     [<CompiledName("DefaultValue")>]
     val defaultValue: value:'T -> option:'T option -> 'T
 
@@ -63,8 +60,7 @@ module Option =
     /// <remarks><paramref name="defThunk"/> is not evaluated unless <paramref name="option"/> is <c>None</c>.
     /// <code>
     /// None |> Option.defaultWith (fun () -> 99) = 99
-    /// Some 42 |> Option.defaultWith (fun () -> 99) = 42
-    /// </code></remarks>
+    /// Some 42 |> Option.defaultWith (fun () -> 99) = 42</code></remarks>
     [<CompiledName("DefaultWith")>]
     val defaultWith: defThunk:(unit -> 'T) -> option:'T option -> 'T
 
@@ -78,8 +74,7 @@ module Option =
     /// None |> Option.orElse None = None
     /// None |> Option.orElse (Some 99) = Some 99
     /// Some 42 |> Option.orElse None = Some 42
-    /// Some 42 |> Option.orElse (Some 99) = Some 42
-    /// </code></remarks>
+    /// Some 42 |> Option.orElse (Some 99) = Some 42</code></remarks>
     ///
     /// <returns>The option if the option is Some, else the alternate option.</returns>
     [<CompiledName("OrElse")>]
@@ -95,8 +90,7 @@ module Option =
     /// None |> Option.orElseWith (fun () -> None) = None
     /// None |> Option.orElseWith (fun () -> (Some 99)) = Some 99
     /// Some 42 |> Option.orElseWith (fun () -> None) = Some 42
-    /// Some 42 |> Option.orElseWith (fun () -> (Some 99)) = Some 42
-    /// </code></remarks>
+    /// Some 42 |> Option.orElseWith (fun () -> (Some 99)) = Some 42</code></remarks>
     [<CompiledName("OrElseWith")>]
     val orElseWith: ifNoneThunk:(unit -> 'T option) -> option:'T option -> 'T option
 
@@ -107,8 +101,7 @@ module Option =
     /// <remarks>
     /// <code>
     /// Some 42 |> Option.get = 42
-    /// None |> Option.get // throws exception!
-    /// </code></remarks>
+    /// None |> Option.get // throws exception!</code></remarks>
     ///
     /// <returns>The value within the option.</returns>
     /// <exception href="System.ArgumentException">Thrown when the option is None.</exception>
@@ -122,8 +115,7 @@ module Option =
     /// <remarks>
     /// <code>
     /// None |> Option.count = 0
-    /// Some 99 |> Option.count = 1
-    /// </code></remarks>
+    /// Some 99 |> Option.count = 1</code></remarks>
     ///
     /// <returns>A zero if the option is None, a one otherwise.</returns>
     [<CompiledName("Count")>]
@@ -139,8 +131,7 @@ module Option =
     /// <code>
     /// None |> Option.fold (fun accum x -> accum + x * 2) 0 = 0
     /// Some 1 |> Option.fold (fun accum x -> accum + x * 2) 0 = 2
-    /// Some 1 |> Option.fold (fun accum x -> accum + x * 2) 10 = 12
-    /// </code></remarks>
+    /// Some 1 |> Option.fold (fun accum x -> accum + x * 2) 10 = 12</code></remarks>
     ///
     /// <returns>The original state if the option is None, otherwise it returns the updated state with the folder
     /// and the option value.</returns>
@@ -157,8 +148,7 @@ module Option =
     /// <code>
     /// Option.foldBack (fun x accum -> accum + x * 2) None 0 = 0
     /// Option.foldBack (fun x accum -> accum + x * 2) (Some 1) 0 = 2
-    /// Option.foldBack (fun x accum -> accum + x * 2) (Some 1) 10 = 12
-    /// </code></remarks>
+    /// Option.foldBack (fun x accum -> accum + x * 2) (Some 1) 10 = 12</code></remarks>
     ///
     /// <returns>The original state if the option is None, otherwise it returns the updated state with the folder
     /// and the option value.</returns>
@@ -174,8 +164,7 @@ module Option =
     /// <code>
     /// None |> Option.exists (fun x -> x >= 5) = false
     /// Some 42 |> Option.exists (fun x -> x >= 5) = true
-    /// Some 4 |> Option.exists (fun x -> x >= 5) = false
-    /// </code></remarks>
+    /// Some 4 |> Option.exists (fun x -> x >= 5) = false</code></remarks>
     ///
     /// <returns>False if the option is None, otherwise it returns the result of applying the predicate
     /// to the option value.</returns>
@@ -191,8 +180,7 @@ module Option =
     /// <code>
     /// None |> Option.forall (fun x -> x >= 5) = true
     /// Some 42 |> Option.forall (fun x -> x >= 5) = true
-    /// Some 4 |> Option.forall (fun x -> x >= 5) = false
-    /// </code></remarks>
+    /// Some 4 |> Option.forall (fun x -> x >= 5) = false</code></remarks>
     ///
     /// <returns>True if the option is None, otherwise it returns the result of applying the predicate
     /// to the option value.</returns>
@@ -208,8 +196,7 @@ module Option =
     /// <code>
     /// None |> Option.contains 99 = false
     /// Some 99 |> Option.contains 99 = true
-    /// Some 100 |> Option.contains 99 = false
-    /// </code></remarks>
+    /// Some 100 |> Option.contains 99 = false</code></remarks>
     ///
     /// <returns>True if the option is <c>Some</c> and contains a value equal to <paramref name="value"/>, otherwise false.</returns>
     [<CompiledName("Contains")>]
@@ -223,8 +210,7 @@ module Option =
     /// <remarks>
     /// <code>
     /// None |> Option.iter (printfn "%s") // does nothing
-    /// Some "Hello world" |> Option.iter (printfn "%s") // prints "Hello world"
-    /// </code></remarks>
+    /// Some "Hello world" |> Option.iter (printfn "%s") // prints "Hello world"</code></remarks>
     ///
     /// <returns>Unit if the option is None, otherwise it returns the result of applying the predicate
     /// to the option value.</returns>
@@ -239,8 +225,7 @@ module Option =
     /// <remarks>
     /// <code>
     /// None |> Option.map (fun x -> x * 2) = None
-    /// Some 42 |> Option.map (fun x -> x * 2) = Some 84
-    /// </code></remarks>
+    /// Some 42 |> Option.map (fun x -> x * 2) = Some 84</code></remarks>
     ///
     /// <returns>An option of the input value after applying the mapping function, or None if the input is None.</returns>
     [<CompiledName("Map")>]
@@ -257,8 +242,7 @@ module Option =
     /// None |> Option.map2 (fun x y -> x + y) None = None
     /// None |> Option.map2 (fun x y -> x + y) (Some 5) = None
     /// Some 10 |> Option.map2 (fun x y -> x + y) None = None
-    /// Some 10 |> Option.map2 (fun x y -> x + y) (Some 5) = Some 15
-    /// </code></remarks>
+    /// Some 10 |> Option.map2 (fun x y -> x + y) (Some 5) = Some 15</code></remarks>
     ///
     /// <returns>An option of the input values after applying the mapping function, or None if either input is None.</returns>
     [<CompiledName("Map2")>]
@@ -277,8 +261,7 @@ module Option =
     /// None |> Option.map3 (fun x y z -> x + y + z) None (Some 100) = None
     /// None |> Option.map3 (fun x y z -> x + y + z) (Some 5) None = None
     /// Some 10 |> Option.map3 (fun x y z -> x + y + z) None None = None
-    /// Some 10 |> Option.map3 (fun x y z -> x + y + z) (Some 5) (Some 100) = Some 115
-    /// </code></remarks>
+    /// Some 10 |> Option.map3 (fun x y z -> x + y + z) (Some 5) (Some 100) = Some 115</code></remarks>
     ///
     /// <returns>An option of the input values after applying the mapping function, or None if any input is None.</returns>
     [<CompiledName("Map3")>]
@@ -298,8 +281,7 @@ module Option =
     ///     | false, _ -> None
     /// None |> Option.bind tryParse = None
     /// Some "42" |> Option.bind tryParse = Some 42
-    /// Some "Forty-two" |> Option.bind tryParse = None
-    /// </code></remarks>
+    /// Some "Forty-two" |> Option.bind tryParse = None</code></remarks>
     ///
     /// <returns>An option of the output type of the binder.</returns>
     [<CompiledName("Bind")>]
@@ -314,8 +296,7 @@ module Option =
     /// <code>
     /// None |> Option.flatten = None
     /// Some None |> Option.flatten = None
-    /// Some (Some 42) |> Option.flatten = Some 42
-    /// </code></remarks>
+    /// Some (Some 42) |> Option.flatten = Some 42</code></remarks>
     [<CompiledName("Flatten")>]
     val flatten: option:'T option option -> 'T option
 
@@ -328,8 +309,7 @@ module Option =
     /// <code>
     /// None |> Option.filter (fun x -> x >= 5) = None
     /// Some 42 |> Option.filter (fun x -> x >= 5) = Some 42
-    /// Some 4 |> Option.filter (fun x -> x >= 5) = None
-    /// </code></remarks>
+    /// Some 4 |> Option.filter (fun x -> x >= 5) = None</code></remarks>
     ///
     /// <returns>The input if the predicate evaluates to true; otherwise, None.</returns>
     [<CompiledName("Filter")>]
@@ -342,8 +322,7 @@ module Option =
     /// <remarks>
     /// <code>
     /// None |> Option.toArray = [||]
-    /// Some 42 |> Option.toArray = [| 42 |]
-    /// </code></remarks>
+    /// Some 42 |> Option.toArray = [| 42 |]</code></remarks>
     ///
     /// <returns>The result array.</returns>
     [<CompiledName("ToArray")>]
@@ -356,8 +335,7 @@ module Option =
     /// <remarks>
     /// <code>
     /// None |> Option.toList = []
-    /// Some 42 |> Option.toList = [ 42 ]
-    /// </code></remarks>
+    /// Some 42 |> Option.toList = [ 42 ]</code></remarks>
     ///
     /// <returns>The result list.</returns>
     [<CompiledName("ToList")>]
@@ -370,8 +348,7 @@ module Option =
     /// <remarks>
     /// <code>
     /// (None |> Option.toNullable).HasValue = false
-    /// (Some 42 |> Option.toNullable).HasValue = true
-    /// </code></remarks>
+    /// (Some 42 |> Option.toNullable).HasValue = true</code></remarks>
     ///
     /// <returns>The result value.</returns>
     [<CompiledName("ToNullable")>]
@@ -385,8 +362,7 @@ module Option =
     /// <code>
     /// let nullVariable = System.Nullable()
     /// nullVariable |> Option.ofNullable = None
-    /// System.Nullable(42) |> Option.ofNullable = Some 42
-    /// </code></remarks>
+    /// System.Nullable(42) |> Option.ofNullable = Some 42</code></remarks>
     ///
     /// <returns>The result option.</returns>
     [<CompiledName("OfNullable")>]
@@ -400,8 +376,7 @@ module Option =
     /// <code>
     /// let nullString : string = null
     /// nullString |> Option.ofObj = None
-    /// "not a null string" |> Option.ofObj = Some "not a null string"
-    /// </code></remarks>
+    /// "not a null string" |> Option.ofObj = Some "not a null string"</code></remarks>
     ///
     /// <returns>The result option.</returns>
     [<CompiledName("OfObj")>]
@@ -414,8 +389,7 @@ module Option =
     /// <remarks>
     /// <code>
     /// None |> Option.toObj = null
-    /// Some "not a null string" |> Option.toObj = "not a null string"
-    /// </code></remarks>
+    /// Some "not a null string" |> Option.toObj = "not a null string"</code></remarks>
     ///
     /// <returns>The result value, which is null if the input was None.</returns>
     [<CompiledName("ToObj")>]
