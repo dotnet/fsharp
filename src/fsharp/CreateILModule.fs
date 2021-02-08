@@ -71,7 +71,7 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig, tcGlobals, topAttrs) =
     let delaySignAttrib = AttributeHelpers.TryFindBoolAttribute tcGlobals "System.Reflection.AssemblyDelaySignAttribute" topAttrs.assemblyAttrs
     let signerAttrib = AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyKeyFileAttribute" topAttrs.assemblyAttrs
     let containerAttrib = AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyKeyNameAttribute" topAttrs.assemblyAttrs
-    
+
     // if delaySign is set via an attribute, validate that it wasn't set via an option
     let delaysign = 
         match delaySignAttrib with 
@@ -82,7 +82,7 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig, tcGlobals, topAttrs) =
           else
             delaysign
         | _ -> tcConfig.delaysign
-        
+
     // if signer is set via an attribute, validate that it wasn't set via an option
     let signer = 
         match signerAttrib with
@@ -93,20 +93,22 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig, tcGlobals, topAttrs) =
             else
                 Some signer
         | None -> tcConfig.signer
-    
+
     // if container is set via an attribute, validate that it wasn't set via an option, and that they keyfile wasn't set
     // if keyfile was set, use that instead (silently)
     // REVIEW: This is C# behavior, but it seems kind of sketchy that we fail silently
     let container = 
-        match containerAttrib with 
-        | Some container -> 
+        match containerAttrib with
+        | Some container ->
+            if not (FSharpEnvironment.isRunningOnCoreClr) then
+                warning(Error(FSComp.SR.containerDeprecated(), rangeCmdArgs))
             if tcConfig.container.IsSome && tcConfig.container <> Some container then
-              warning(Error(FSComp.SR.fscKeyNameWarning(), rangeCmdArgs)) 
+              warning(Error(FSComp.SR.fscKeyNameWarning(), rangeCmdArgs))
               tcConfig.container
             else
               Some container
         | None -> tcConfig.container
-    
+
     StrongNameSigningInfo (delaysign, tcConfig.publicsign, signer, container)
 
 /// Get the object used to perform strong-name signing
