@@ -80,8 +80,8 @@ type internal TcInfoOptional =
       /// Accumulated 'open' declarations, last file first
       tcOpenDeclarationsRev: OpenDeclaration[] list
 
-      /// Result of checking most recent file, if any
-      latestImplFile: TypedImplFile option
+      /// Result of checking most recent file, if any, last file first
+      tcImplFilesRev: TypedImplFile list
       
       /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
       itemKeyStore: ItemKeyStore option

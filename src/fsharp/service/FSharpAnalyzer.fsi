@@ -51,6 +51,8 @@ type public FSharpAnalyzer =
     
     member Context: FSharpAnalysisContext
     
+    abstract RequiresAssemblyContents: bool
+
     abstract OnCheckFile: FSharpAnalyzerCheckFileContext * cancellationToken: CancellationToken -> FSharpDiagnostic[]
 
     abstract OnCheckProject: FSharpAnalyzerCheckProjectContext * cancellationToken: CancellationToken -> FSharpDiagnostic[]
@@ -61,6 +63,7 @@ type public FSharpAnalyzer =
 
     abstract FixableDiagnosticIds: string[]
 
+    default RequiresAssemblyContents: bool
     default OnCheckFile: FSharpAnalyzerCheckFileContext * cancellationToken: CancellationToken -> FSharpDiagnostic[]
     default OnCheckProject: FSharpAnalyzerCheckProjectContext * cancellationToken: CancellationToken -> FSharpDiagnostic[]
     default TryAdditionalToolTip: FSharpAnalyzerCheckFileContext * Position * cancellationToken: CancellationToken -> TaggedText[] option

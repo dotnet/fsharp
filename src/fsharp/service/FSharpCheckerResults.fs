@@ -220,7 +220,7 @@ type internal TypeCheckInfo
            // This is a name resolution environment to use if no better match can be found.
            sFallback: NameResolutionEnv,
            loadClosure : LoadClosure option,
-           implFileOpt: TypedImplFile option,
+           implFiles: TypedImplFile list,
            openDeclarations: OpenDeclaration[]) = 
 
     // These strings are potentially large and the editor may choose to hold them for a while.
@@ -1420,7 +1420,7 @@ type internal TypeCheckInfo
     /// The assembly being analyzed
     member _.ThisCcu = thisCcu
 
-    member _.ImplementationFile = implFileOpt
+    member _.ImplementationFiles = implFiles
 
     /// All open declarations in the file, including auto open modules
     member _.OpenDeclarations = openDeclarations
@@ -1824,7 +1824,7 @@ module internal ParseAndCheckFile =
                               sink.GetSymbolUses(),
                               tcEnvAtEnd.NameEnv,
                               loadClosure,
-                              (List.tryHead implFiles |> Option.bind p23),
+                              (implFiles |> List.choose p23),
                               sink.GetOpenDeclarations())     
                      |> Result.Ok
             | None -> 
@@ -1935,28 +1935,32 @@ type FSharpCheckFileResults
         threadSafeOp 
             (fun () -> [| |]) 
             (fun scope -> 
-                // This operation is not asynchronous - GetFormatSpecifierLocationsAndArity can be run on the calling thread
                 scope.GetFormatSpecifierLocationsAndArity())
 
     member _.GetSemanticClassification(range: range option) =
         threadSafeOp 
             (fun () -> [| |]) 
             (fun scope -> 
-                // This operation is not asynchronous - GetSemanticClassification can be run on the calling thread
                 scope.GetSemanticClassification(range))
      
     member _.PartialAssemblySignature = 
         threadSafeOp 
             (fun () -> failwith "not available") 
             (fun scope -> 
-                // This operation is not asynchronous - PartialAssemblySignature can be run on the calling thread
                 scope.PartialAssemblySignatureForFile)
+
+    member _.PartialAssemblyContents = 
+        if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access PartialAssemblyContents, or an analyzer must request RequiresAssemblyContents"
+        threadSafeOp 
+            (fun () -> failwith "not available") 
+            (fun scope -> 
+                let mimpls = scope.ImplementationFiles
+                FSharpAssemblyContents(scope.TcGlobals, scope.ThisCcu, Some scope.CcuSigForFile, scope.TcImports, mimpls))
 
     member _.ProjectContext = 
         threadSafeOp 
             (fun () -> failwith "not available") 
             (fun scope -> 
-                // This operation is not asynchronous - GetReferencedAssemblies can be run on the calling thread
                 FSharpProjectContext(scope.ThisCcu, scope.GetReferencedAssemblies(), scope.AccessRights))
 
     member _.DependencyFiles = dependencyFiles
@@ -2007,7 +2011,7 @@ type FSharpCheckFileResults
         scopeOptX 
         |> Option.map (fun scope -> 
             let cenv = SymbolEnv(scope.TcGlobals, scope.ThisCcu, Some scope.CcuSigForFile, scope.TcImports)
-            scope.ImplementationFile |> Option.map (fun implFile -> FSharpImplementationFileContents(cenv, implFile)))
+            scope.ImplementationFiles |> List.tryLast |> Option.map (fun implFile -> FSharpImplementationFileContents(cenv, implFile)))
         |> Option.defaultValue None
 
     member _.OpenDeclarations =
@@ -2051,14 +2055,14 @@ type FSharpCheckFileResults
          thisCcu, tcImports, tcAccessRights, 
          sResolutions, sSymbolUses, 
          sFallback, loadClosure,
-         implFileOpt, 
+         implFiles, 
          openDeclarations) = 
 
         let tcFileInfo = 
             TypeCheckInfo(tcConfig, tcGlobals, ccuSigForFile, thisCcu, tcImports, tcAccessRights, 
                           projectFileName, mainInputFileName, sResolutions, sSymbolUses, 
                           sFallback, loadClosure,
-                          implFileOpt, openDeclarations) 
+                          implFiles, openDeclarations) 
                 
         let errors = FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
         FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, builder, keepAssemblyContents)

@@ -612,6 +612,11 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             Stamp = None
         }
 
+    let tcFileResults, implFilesRev =
+        ([], tcFileResults) ||> List.mapFold (fun implFilesRev (a,b,c) -> 
+            let implFilesRev2 = Option.toList b @ implFilesRev
+            (a, List.rev implFilesRev2, c), implFilesRev2)
+
     for (inp, implFileOpt, ccuSig) in tcFileResults do
         
         let parseResults =
@@ -670,7 +675,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     //        checkResults)
     if tcConfig.typeCheckOnly then exiter.Exit 0
     
-    let typedImplFiles = List.choose p23 tcFileResults
+    let typedImplFiles = List.rev implFilesRev
 
     Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedImplFiles, topAttrs, tcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter)
 

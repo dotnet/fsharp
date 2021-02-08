@@ -50,21 +50,19 @@ type public FSharpAnalyzer(context:FSharpAnalysisContext)  =
     abstract TryAdditionalToolTip: context: FSharpAnalyzerCheckFileContext * position: Position  * cancellationToken: CancellationToken -> TaggedText[] option
     abstract TryCodeFix: context: FSharpAnalyzerCheckFileContext * diagnostics: FSharpDiagnostic[]  * cancellationToken: CancellationToken -> FSharpAnalyzerTextChange[] option
     abstract FixableDiagnosticIds: string[]
+    abstract RequiresAssemblyContents: bool
 
     default _.OnCheckFile(_, _) = [| |]
     default _.OnCheckProject(_, _) = [| |]
     default _.TryAdditionalToolTip(_, _, _)  = None
     default _.TryCodeFix(_, _, _) = None
     default _.FixableDiagnosticIds = [| |]
+    default _.RequiresAssemblyContents = false
 
 module FSharpAnalyzers =
-    open FSharp.Compiler
     open FSharp.Compiler.IO.FileSystemAutoOpens
-    open FSharp.Compiler.AbstractIL.IL
     open FSharp.Compiler.ErrorLogger
-    open FSharp.Compiler.TcGlobals
     open FSharp.Core.CompilerServices
-    open System.IO
 
 #if !NO_EXTENSIONTYPING
     let CreateAnalyzer (analyzerType: System.Type, m) =

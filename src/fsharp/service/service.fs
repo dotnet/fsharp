@@ -750,7 +750,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 let latestCcuSigForFile = tcInfo.latestCcuSigForFile
                 let tcState = tcInfo.tcState
                 let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
-                let latestImplementationFile = tcInfoOptional.latestImplFile
+                let tcImplFiles = tcInfoOptional.tcImplFilesRev |> List.rev
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
                 let tcErrors = tcInfo.TcErrors
                 let errorOptions = builder.TcConfig.errorSeverityOptions
@@ -779,7 +779,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             List.head tcSymbolUsesRev,
                             tcEnvAtEnd.NameEnv,
                             loadClosure, 
-                            latestImplementationFile,
+                            tcImplFiles,
                             List.head tcOpenDeclarationsRev) 
                 return (parseResults, typedResults)
           }

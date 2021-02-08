@@ -160,6 +160,11 @@ type public FSharpCheckFileResults =
     /// The errors returned by parsing a source file.
     member Diagnostics: FSharpDiagnostic[]
 
+    /// Get a view of the overall contents of the assembly up to and including the file just checked.
+    /// Only available if keepAssemblyContents is true or an analyzer has requested assembly contents
+    /// be kept
+    member PartialAssemblyContents: FSharpAssemblyContents
+
     /// Get a view of the contents of the assembly up to and including the file just checked
     member PartialAssemblySignature : FSharpAssemblySignature
 
@@ -328,7 +333,7 @@ type public FSharpCheckFileResults =
         sSymbolUses: TcSymbolUses *
         sFallback: NameResolutionEnv *
         loadClosure : LoadClosure option *
-        implFileOpt: TypedImplFile option *
+        implFiles: TypedImplFile list *
         openDeclarations: OpenDeclaration[]
           -> FSharpCheckFileResults
 

@@ -191,8 +191,8 @@ type TcInfoOptional =
       /// Accumulated 'open' declarations, last file first
       tcOpenDeclarationsRev: OpenDeclaration[] list
 
-      /// Result of checking most recent file, if any
-      latestImplFile: TypedImplFile option
+      /// Contents of checking files, if any, last file first
+      tcImplFilesRev: TypedImplFile list
       
       /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
       itemKeyStore: ItemKeyStore option
@@ -374,7 +374,7 @@ type BoundModel private (tcConfig: TcConfig,
                         tcResolutionsRev = []
                         tcSymbolUsesRev = []
                         tcOpenDeclarationsRev = []
-                        latestImplFile = None
+                        tcImplFilesRev = []
                         itemKeyStore = None
                         semanticClassificationKeyStore = None
                     }
@@ -483,7 +483,7 @@ type BoundModel private (tcConfig: TcConfig,
                                     let tcInfoOptional =
                                         {
                                             /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
-                                            latestImplFile = if keepAssemblyContents then implFile else None
+                                            tcImplFilesRev = match implFile with Some f when keepAssemblyContents -> f :: prevTcInfoOptional.tcImplFilesRev | _ -> prevTcInfoOptional.tcImplFilesRev
                                             tcResolutionsRev = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty) :: prevTcInfoOptional.tcResolutionsRev
                                             tcSymbolUsesRev = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: prevTcInfoOptional.tcSymbolUsesRev
                                             tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: prevTcInfoOptional.tcOpenDeclarationsRev
@@ -799,7 +799,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
                 tcResolutionsRev=[]
                 tcSymbolUsesRev=[]
                 tcOpenDeclarationsRev=[]
-                latestImplFile=None
+                tcImplFilesRev=[]
                 itemKeyStore = None
                 semanticClassificationKeyStore = None 
             }
@@ -846,19 +846,19 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
                 boundModels 
                 |> List.ofArray 
                 |> List.map (fun boundModel -> 
-                    let tcInfo, latestImplFile =
+                    let tcInfo, tcImplFilesRev =
                         if enablePartialTypeChecking then
                             let tcInfo = boundModel.TcInfo |> Eventually.force ctok
-                            tcInfo, None
+                            tcInfo, []
                         else
                             let tcInfo, tcInfoOptional = boundModel.TcInfoWithOptional |> Eventually.force ctok
-                            tcInfo, tcInfoOptional.latestImplFile
+                            tcInfo, tcInfoOptional.tcImplFilesRev
 
                     assert tcInfo.latestCcuSigForFile.IsSome
                     assert boundModel.SyntaxTree.IsSome
                     let latestCcuSigForFile = tcInfo.latestCcuSigForFile.Value
                     let syntaxTree = boundModel.SyntaxTree.Value
-                    tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, (syntaxTree, latestImplFile, latestCcuSigForFile))
+                    tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, (syntaxTree, List.tryHead tcImplFilesRev, latestCcuSigForFile))
             TypeCheckMultipleInputsFinish (results, finalInfo.tcState)
   
         let ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt = 
@@ -1425,6 +1425,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
                     yield Choice2Of2 pr, (fun (cache: TimeStampCache) ctok -> cache.GetProjectReferenceTimeStamp (pr, ctok)) ]
             
             let analyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig, Range.rangeStartup)
+            let analyzersRequireAssemblyContents =
+                analyzers |> List.exists (fun analyzer -> analyzer.RequiresAssemblyContents)
 
             let builder = 
                 new IncrementalBuilder(tcGlobals,
@@ -1439,7 +1441,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
                     niceNameGen, 
                     analyzers,
                     resourceManager, sourceFilesNew, loadClosureOpt, 
-                    keepAssemblyContents, 
+                    (keepAssemblyContents || analyzersRequireAssemblyContents), 
                     keepAllBackgroundResolutions, 
                     maxTimeShareMilliseconds,
                     keepAllBackgroundSymbolUses,
