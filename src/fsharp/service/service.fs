@@ -21,6 +21,7 @@ open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.ScriptClosure
@@ -42,52 +43,6 @@ module EnvMisc =
     let maxMBDefault =  GetEnvInteger "FCS_MaxMB" 1000000 // a million MB = 1TB = disabled
     //let maxMBDefault = GetEnvInteger "FCS_maxMB" (if sizeof<int> = 4 then 1700 else 3400)
 
-type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
-
-// NOTE: may be better just to move to optional arguments here
-type FSharpProjectOptions =
-    { 
-      ProjectFileName: string
-      ProjectId: string option
-      SourceFiles: string[]
-      OtherOptions: string[]
-      ReferencedProjects: (string * FSharpProjectOptions)[]
-      IsIncompleteTypeCheckEnvironment : bool
-      UseScriptResolutionRules : bool      
-      LoadTime : System.DateTime
-      UnresolvedReferences : FSharpUnresolvedReferencesSet option
-      OriginalLoadReferences: (range * string * string) list
-      Stamp : int64 option
-    }
-    member x.ProjectOptions = x.OtherOptions
-    /// Whether the two parse options refer to the same project.
-    static member UseSameProject(options1,options2) =
-        match options1.ProjectId, options2.ProjectId with
-        | Some(projectId1), Some(projectId2) when not (String.IsNullOrWhiteSpace(projectId1)) && not (String.IsNullOrWhiteSpace(projectId2)) -> 
-            projectId1 = projectId2
-        | Some(_), Some(_)
-        | None, None -> options1.ProjectFileName = options2.ProjectFileName
-        | _ -> false
-
-    /// Compare two options sets with respect to the parts of the options that are important to building.
-    static member AreSameForChecking(options1,options2) =
-        match options1.Stamp, options2.Stamp with 
-        | Some x, Some y -> (x = y)
-        | _ -> 
-        FSharpProjectOptions.UseSameProject(options1, options2) &&
-        options1.SourceFiles = options2.SourceFiles &&
-        options1.OtherOptions = options2.OtherOptions &&
-        options1.UnresolvedReferences = options2.UnresolvedReferences &&
-        options1.OriginalLoadReferences = options2.OriginalLoadReferences &&
-        options1.ReferencedProjects.Length = options2.ReferencedProjects.Length &&
-        Array.forall2 (fun (n1,a) (n2,b) ->
-            n1 = n2 && 
-            FSharpProjectOptions.AreSameForChecking(a,b)) options1.ReferencedProjects options2.ReferencedProjects &&
-        options1.LoadTime = options2.LoadTime
-
-    /// Compute the project directory.
-    member po.ProjectDirectory = System.IO.Path.GetDirectoryName(po.ProjectFileName)
-    override this.ToString() = "FSharpProjectOptions(" + this.ProjectFileName + ")"
  
 //----------------------------------------------------------------------------
 // BackgroundCompiler
@@ -426,7 +381,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     static let mutable foregroundTypeCheckCount = 0
 
-    member _.RecordTypeCheckFileInProjectResults(filename,options,parsingOptions,parseResults,fileVersion,priorTimeStamp,checkAnswer,sourceText) =        
+    member _.RecordCheckFileInProjectResults(filename,options,parsingOptions,parseResults,fileVersion,priorTimeStamp,checkAnswer,sourceText) =        
         match checkAnswer with 
         | None
         | Some FSharpCheckFileAnswer.Aborted -> ()
@@ -551,7 +506,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                             reactorOps, 
                                             userOpName,
                                             options.IsIncompleteTypeCheckEnvironment, 
-                                            builder, 
+                                            box builder, 
                                             Array.ofList tcDependencyFiles, 
                                             creationDiags, 
                                             parseResults.Diagnostics, 
@@ -559,7 +514,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                             suggestNamesForErrors)
                                 let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
                                 reactor.SetPreferredUILang tcConfig.preferredUiLang
-                                bc.RecordTypeCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, timeStamp, Some checkAnswer, sourceText.GetHashCode()) 
+                                bc.RecordCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, timeStamp, Some checkAnswer, sourceText.GetHashCode()) 
                                 return checkAnswer
                             finally
                                 let dummy = ref ()
@@ -703,6 +658,76 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 bc.ImplicitlyStartCheckProjectInBackground(options, userOpName)
         }
 
+    member bc.AnalyzeFileInProject(parseResults: FSharpParseFileResults, checkResults: FSharpCheckFileResults, sourceText: ISourceText, options, userOpName) =
+        let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "AnalyzeFileInProject", parseResults.FileName, action)
+        async {
+            let! analysisDiags = execWithReactorAsync (fun ctok -> 
+                cancellable {
+                    let! builderOpt, _creationDiags  = getOrCreateBuilder (ctok, options, userOpName)
+                    match builderOpt with 
+                    | None -> return [| |]
+                    | Some builder ->
+                        let fileName = parseResults.FileName
+                        let ctxt = 
+                            FSharpAnalyzerCheckFileContext([| (fileName, sourceText) |], 
+                                fileName,
+                                options,
+                                parseResults,
+                                checkResults)
+
+                        let! ct = Cancellable.token()
+                        let diags = 
+                            let diagsCollector = ResizeArray()
+                            for analyzer in builder.Analyzers do
+                                let moreDiags = 
+                                    try analyzer.OnCheckFile(ctxt, ct)
+                                    with exn -> 
+                                        let m = Range.rangeN fileName 0
+                                        let errExn = Error(FSComp.SR.etAnalyzerException(analyzer.GetType().FullName, fileName, exn.ToString()), m)
+                                        let diag = FSharpDiagnostic.CreateFromException(PhasedDiagnostic.Create(errExn, BuildPhase.TypeCheck), false, m, false)
+                                        [| diag |]
+                                diagsCollector.AddRange(moreDiags)
+                            diagsCollector.ToArray()
+                        return diags
+                })
+            return analysisDiags
+        }
+
+    member bc.GetAdditionalAnalyzerToolTips(parseResults: FSharpParseFileResults, checkResults: FSharpCheckFileResults, sourceText: ISourceText, options, pos: Position, userOpName) =
+        let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "AnalyzeFileInProject", parseResults.FileName, action)
+        async {
+            let! analysisDiags = execWithReactorAsync (fun ctok -> 
+                cancellable {
+                    let! builderOpt, _creationDiags  = getOrCreateBuilder (ctok, options, userOpName)
+                    match builderOpt with 
+                    | None -> return [| |]
+                    | Some builder ->
+                        let fileName = parseResults.FileName
+                        let ctxt = 
+                            FSharpAnalyzerCheckFileContext([| (fileName, sourceText) |], 
+                                fileName,
+                                options,
+                                parseResults,
+                                checkResults)
+
+                        let! ct = Cancellable.token()
+                        let tooltips = 
+                            let tooltipsCollector = ResizeArray()
+                            for analyzer in builder.Analyzers do
+                                try 
+                                    match analyzer.TryAdditionalToolTip(ctxt, pos, ct) with 
+                                    | Some t -> tooltipsCollector.Add(t)
+                                    | None -> ()
+                                with exn -> 
+                                    let _, msg = FSComp.SR.etAnalyzerException(analyzer.GetType().FullName, fileName, exn.Message)
+                                    let diag = TaggedText.tagText msg
+                                    tooltipsCollector.Add([| diag |])
+                                
+                            tooltipsCollector.ToArray()
+                        return tooltips
+                })
+            return analysisDiags
+        }
     /// Fetch the check information from the background compiler (which checks w.r.t. the FileSystem API)
     member _.GetBackgroundCheckResultsForFileInProject(filename, options, userOpName) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "GetBackgroundCheckResultsForFileInProject", filename, fun ctok -> 
@@ -740,7 +765,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             tcProj.TcConfig, 
                             tcProj.TcGlobals, 
                             options.IsIncompleteTypeCheckEnvironment, 
-                            builder, 
+                            Some (box builder), 
                             Array.ofList tcDependencyFiles, 
                             creationDiags, 
                             parseResults.Diagnostics, 
@@ -1258,6 +1283,14 @@ type FSharpChecker(legacyReferenceResolver,
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
         backgroundCompiler.CheckFileInProject(parseResults,filename,fileVersion,sourceText,options,userOpName)
+
+    member ic.AnalyzeFileInProject(parseResults: FSharpParseFileResults, checkResults: FSharpCheckFileResults, sourceText: ISourceText, options, userOpName) =
+        let userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.AnalyzeFileInProject(parseResults,checkResults,sourceText,options,userOpName)
+
+    member ic.GetAdditionalAnalyzerToolTips(parseResults: FSharpParseFileResults, checkResults: FSharpCheckFileResults, sourceText: ISourceText, options, pos: Position, userOpName) =
+        let userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.GetAdditionalAnalyzerToolTips(parseResults,checkResults,sourceText,options,pos,userOpName)
 
     /// Typecheck a source code file, returning a handle to the results of the 
     /// parse including the reconstructed types in the file.

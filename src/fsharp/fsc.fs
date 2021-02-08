@@ -32,6 +32,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
@@ -39,10 +40,12 @@ open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.ScriptClosure
@@ -298,42 +301,6 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
 
     dllFiles |> List.iter (fun f->tcConfigB.AddReferencedAssemblyByPath(rangeStartup, f))
     sourceFiles
-
-let EncodeSignatureData(tcConfig: TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) = 
-    if tcConfig.GenerateSignatureData then 
-        let resource = WriteSignatureData (tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild)
-        // The resource gets written to a file for FSharp.Core
-        let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
-        if useDataFiles then 
-            let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
-            let bytes = resource.GetBytes()
-            use fileStream = File.Create(sigDataFileName, bytes.Length)
-            bytes.CopyTo fileStream
-        let resources = 
-            [ resource ]
-        let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
-        [sigAttr], resources
-      else 
-        [], []
-
-let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemapping, data, isIncrementalBuild) = 
-    if tcConfig.GenerateOptimizationData then 
-        let data = map2Of2 (Optimizer.RemapOptimizationInfo tcGlobals exportRemapping) data
-        // As with the sigdata file, the optdata gets written to a file for FSharp.Core
-        let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
-        if useDataFiles then 
-            let ccu, modulInfo = data
-            let bytes = TypedTreePickle.pickleObjWithDanglingCcus isIncrementalBuild outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
-            let optDataFileName = (Filename.chopExtension outfile)+".optdata"
-            File.WriteAllBytes(optDataFileName, bytes)
-        let (ccu, optData) = 
-            if tcConfig.onlyEssentialOptimizationData then 
-                map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data 
-            else 
-                data
-        [ WriteOptimizationData (tcGlobals, outfile, isIncrementalBuild, ccu, optData) ]
-    else
-        [ ]
 
 /// Write a .fsi file for the --sig option
 module InterfaceFileWriter =
@@ -611,13 +578,101 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     // Type check the inputs
     let inputs = inputs |> List.map fst
 
-    let tcState, topAttrs, typedAssembly, _tcEnvAtEnd = 
+    let tcState, topAttrs, tcFileResults, tcEnvAtEnd = 
         TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs, exiter)
 
     AbortOnError(errorLogger, exiter)
     ReportTime tcConfig "Typechecked"
 
-    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedAssembly, topAttrs, tcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter)
+    let analyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig, Range.rangeStartup)
+
+    let sourceTexts = 
+        [| for sourceFile in sourceFiles -> 
+            let sourceFile = FileSystem.GetFullPathShim sourceFile
+            use stream = FileSystem.FileStreamReadShim sourceFile
+            use reader = 
+                match tcConfig.inputCodePage with 
+                | None -> new StreamReader(stream, true)
+                | Some (n: int) -> new StreamReader(stream, Encoding.GetEncoding n) 
+            let source = reader.ReadToEnd()
+            sourceFile, SourceText.ofString source |]
+
+    let projectOptions = 
+        { 
+            ProjectFileName = "compile.fsproj"
+            ProjectId = None
+            SourceFiles =  Array.ofList sourceFiles
+            ReferencedProjects = [| |] //for a in tcImports.GetImportedAssemblies() -> a.FSharpViewOfMetadata.FileName |]
+            OtherOptions = argv
+            IsIncompleteTypeCheckEnvironment = true
+            UseScriptResolutionRules = false
+            LoadTime = DateTime.MaxValue
+            OriginalLoadReferences = []
+            UnresolvedReferences = None
+            Stamp = None
+        }
+
+    for (inp, implFileOpt, ccuSig) in tcFileResults do
+        
+        let parseResults =
+            FSharpParseFileResults(diagnostics = [||],
+                input = Some inp,
+                parseHadErrors = false,
+                dependencyFiles = [| |])
+
+        let checkResults = 
+            FSharpCheckFileResults.Make
+                (inp.FileName, 
+                 "compile.fsproj", 
+                 tcConfig, 
+                 tcGlobals, 
+                 false, 
+                 None, 
+                 [| |], 
+                 [| |], 
+                 [| |], 
+                 [| |],
+                 true,
+                 ccuSig,
+                 tcState.Ccu, 
+                 tcImports, 
+                 tcEnvAtEnd.AccessRights,
+                 TcResolutions.Empty, 
+                 TcSymbolUses.Empty,
+                 tcEnvAtEnd.NameEnv,
+                 None, 
+                 implFileOpt,
+                 [| |]) 
+
+        let ctxt = 
+            FSharpAnalyzerCheckFileContext(sourceTexts, 
+                inp.FileName,
+                projectOptions,
+                parseResults,
+                checkResults)
+
+        for analyzer in analyzers do
+             let diagnostics = analyzer.OnCheckFile(ctxt, CancellationToken.None)
+             for diag in diagnostics do
+                let exn = CompilerToolDiagnostic((diag.ErrorNumber, diag.Message), diag.Range)
+                match diag.Severity with 
+                | FSharpDiagnosticSeverity.Error ->  errorR(exn)
+                | FSharpDiagnosticSeverity.Warning ->  warning(exn)
+                | FSharpDiagnosticSeverity.Info -> warning(exn)
+                | FSharpDiagnosticSeverity.Hidden -> ()
+
+    // TODO: run project analysis
+    //let ctxt = 
+    //    FSharpAnalyzerCheckProjectContext(sourceTexts, 
+    //        inp.FileName,
+    //        projectOptions,
+    //        parseResults,
+    //        checkResults)
+    if tcConfig.typeCheckOnly then exiter.Exit 0
+    
+    let typedImplFiles = List.choose p23 tcFileResults
+
+    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedImplFiles, topAttrs, tcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter)
 
 /// Alternative first phase of compilation.  This is for the compile-from-AST feature of FCS.
 ///   - Import assemblies
@@ -723,20 +778,21 @@ let main1OfAst
     let tcEnv0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
     // Type check the inputs
-    let tcState, topAttrs, typedAssembly, _tcEnvAtEnd = 
+    let tcState, topAttrs, tcFileResults, _tcEnvAtEnd = 
         TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs, exiter)
 
     AbortOnError(errorLogger, exiter)
     ReportTime tcConfig "Typechecked"
 
-    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedAssembly, topAttrs, tcConfig, outfile, pdbFile, assemblyName, errorLogger, exiter)
+    if tcConfig.typeCheckOnly then exiter.Exit 0
+    let typedImplFiles = List.choose p23 tcFileResults
+    
+    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedImplFiles, topAttrs, tcConfig, outfile, pdbFile, assemblyName, errorLogger, exiter)
 
 /// Second phase of compilation.
 ///   - Write the signature file, check some attributes
 let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu: CcuThunk, typedImplFiles, topAttrs, tcConfig: TcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter: Exiter)) =
 
-    if tcConfig.typeCheckOnly then exiter.Exit 0
-    
     generatedCcu.Contents.SetAttribs(generatedCcu.Contents.Attribs @ topAttrs.assemblyAttrs)
 
     use unwindPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.CodeGen

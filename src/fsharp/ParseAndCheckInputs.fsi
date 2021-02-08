@@ -90,16 +90,16 @@ val TypeCheckOneInputEventually :
     TcState *
     ParsedInput *
     skipImplIfSigExists: bool
-      -> Eventually<(TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState>
+      -> Eventually<(TcEnv * TopAttribs * (ParsedInput * TypedImplFile option * ModuleOrNamespaceType)) * TcState>
 
 /// Finish the checking of multiple inputs 
-val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option * 'U) list * TcState -> (TcEnv * TopAttribs * 'T list * 'U list) * TcState
+val TypeCheckMultipleInputsFinish:
+    (TcEnv * TopAttribs * ('T * TypedImplFile option * ModuleOrNamespaceType)) list * 
+    TcState
+        -> (TcEnv * TopAttribs * ('T * TypedImplFile option * ModuleOrNamespaceType) list) * TcState
     
 /// Finish the checking of a closed set of inputs 
-val TypeCheckClosedInputSetFinish:
-    TypedImplFile list *
-    TcState
-      -> TcState * TypedImplFile list
+val TypeCheckClosedInputSetFinish: TcState -> TcState
 
 /// Check a closed set of inputs 
 val TypeCheckClosedInputSet:
@@ -110,7 +110,7 @@ val TypeCheckClosedInputSet:
     TcGlobals *
     LongIdent option *
     TcState * ParsedInput list
-      -> TcState * TopAttribs * TypedImplFile list * TcEnv
+      -> TcState * TopAttribs * (ParsedInput * TypedImplFile option * ModuleOrNamespaceType) list * TcEnv
 
 /// Check a single input and finish the checking
 val TypeCheckOneInputAndFinishEventually :
@@ -122,7 +122,7 @@ val TypeCheckOneInputAndFinishEventually :
     NameResolution.TcResultsSink *
     TcState *
     ParsedInput 
-      -> Eventually<(TcEnv * TopAttribs * TypedImplFile list * ModuleOrNamespaceType list) * TcState>
+      -> Eventually<(TcEnv * TopAttribs * (ParsedInput * TypedImplFile option * ModuleOrNamespaceType) list) * TcState>
 
 val GetScopedPragmasForInput: input: ParsedInput -> ScopedPragma list
 

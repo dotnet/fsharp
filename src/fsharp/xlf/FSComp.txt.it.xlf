@@ -62,6 +62,31 @@
         <target state="translated">L'argomento '{0}' non corrisponde</target>
         <note />
       </trans-unit>
+      <trans-unit id="etAnalyzerConstructionException">
+        <source>The analyzer '{0}' raised an exception during analyzer construction: '{1}'.</source>
+        <target state="new">The analyzer '{0}' raised an exception during analyzer construction: '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etAnalyzerDoesNotHaveValidConstructor">
+        <source>The analyzer '{0}' doesn't have a valid constructor.</source>
+        <target state="new">The analyzer '{0}' doesn't have a valid constructor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etAnalyzerException">
+        <source>The analyzer '{0}' raised an exception during analysis of file '{1}': '{2}'.</source>
+        <target state="new">The analyzer '{0}' raised an exception during analysis of file '{1}': '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etAnalyzerLoadFailure">
+        <source>The analyzer '{0}' failed to load: '{1}'</source>
+        <target state="new">The analyzer '{0}' failed to load: '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etAnalyzerTypeInitializationException">
+        <source>The analyzer '{0}' raised an exception during analyzer type initialization: '{1}'.</source>
+        <target state="new">The analyzer '{0}' raised an exception during analyzer type initialization: '{1}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
         <target state="translated">Non è stato possibile caricare l'assembly '{0}' della finestra di progettazione del provider di tipi dalla cartella '{1}' perché una dipendenza non è presente o non è stato possibile caricarla. Tutte le dipendenze dell'assembly della finestra di progettazione del provider di tipi devono trovarsi nella stessa cartella dell'assembly. L'eccezione restituita è {2} - {3}</target>

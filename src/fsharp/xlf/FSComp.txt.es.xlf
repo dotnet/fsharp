@@ -62,6 +62,31 @@
         <target state="translated">El argumento "{0}" no coincide.</target>
         <note />
       </trans-unit>
+      <trans-unit id="etAnalyzerConstructionException">
+        <source>The analyzer '{0}' raised an exception during analyzer construction: '{1}'.</source>
+        <target state="new">The analyzer '{0}' raised an exception during analyzer construction: '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etAnalyzerDoesNotHaveValidConstructor">
+        <source>The analyzer '{0}' doesn't have a valid constructor.</source>
+        <target state="new">The analyzer '{0}' doesn't have a valid constructor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etAnalyzerException">
+        <source>The analyzer '{0}' raised an exception during analysis of file '{1}': '{2}'.</source>
+        <target state="new">The analyzer '{0}' raised an exception during analysis of file '{1}': '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etAnalyzerLoadFailure">
+        <source>The analyzer '{0}' failed to load: '{1}'</source>
+        <target state="new">The analyzer '{0}' failed to load: '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etAnalyzerTypeInitializationException">
+        <source>The analyzer '{0}' raised an exception during analyzer type initialization: '{1}'.</source>
+        <target state="new">The analyzer '{0}' raised an exception during analyzer type initialization: '{1}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
         <target state="translated">No se pudo cargar el ensamblado del diseñador de proveedores de tipos "{0}" desde la carpeta "{1}" porque falta una dependencia o no se pudo cargar. Todas las dependencias del ensamblado del diseñador de proveedores de tipos deben encontrarse en la misma carpeta que el ensamblado. Se notificó la excepción: {2} - {3}.</target>

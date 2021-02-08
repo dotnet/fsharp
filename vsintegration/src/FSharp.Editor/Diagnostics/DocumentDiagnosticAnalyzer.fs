@@ -71,7 +71,8 @@ type internal FSharpDocumentDiagnosticAnalyzer
                             // In order to eleminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
                             let allErrors = HashSet(results.Diagnostics, errorInfoEqualityComparer)
                             allErrors.ExceptWith(parseResults.Diagnostics)
-                            return Seq.toArray allErrors
+                            let! analysisErrors = checker.AnalyzeFileInProject(parseResults, results, fsSourceText, options, userOpName=userOpName) 
+                            return Array.append (Seq.toArray allErrors) analysisErrors
                     | DiagnosticsType.Syntax ->
                         return parseResults.Diagnostics
                 }
@@ -132,3 +133,5 @@ type internal FSharpDocumentDiagnosticAnalyzer
             }
             |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
+
+

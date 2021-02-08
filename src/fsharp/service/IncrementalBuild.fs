@@ -8,6 +8,7 @@ open System.IO
 open System.Runtime.InteropServices
 open System.Threading
 open Internal.Utilities.Library 
+open Internal.Utilities.Library.Extras 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
@@ -245,6 +246,8 @@ type BoundModel private (tcConfig: TcConfig,
 
     member _.TcImports = tcImports
 
+    member _.SyntaxTree = syntaxTreeOpt
+
     member _.BackingSignature =
         match syntaxTreeOpt with
         | Some syntaxTree ->
@@ -412,7 +415,7 @@ type BoundModel private (tcConfig: TcConfig,
                             let input, moduleNamesDict = DeduplicateParsedInputModuleName prevModuleNamesDict input
 
                             Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
-                            let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState = 
+                            let! (tcEnvAtEndOfFile, topAttribs, (_inp, implFile, ccuSigForFile)), tcState = 
                                 TypeCheckOneInputEventually 
                                     ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0), 
                                         tcConfig, tcImports, 
@@ -631,7 +634,7 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState:
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
                       
     let sigData = 
-        let _sigDataAttributes, sigDataResources = Driver.EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
+        let _sigDataAttributes, sigDataResources = EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
         [ for r in sigDataResources  do
             let ccuName = GetSignatureDataResourceName r
             yield (ccuName, (fun () -> r.GetBytes())) ]
@@ -654,8 +657,15 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState:
         member _.HasMatchingFSharpSignatureDataAttribute _ilg = true
 
 /// Manages an incremental build graph for the build of a single F# project
-type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInputs, nonFrameworkResolutions, unresolvedReferences, tcConfig: TcConfig, projectDirectory, outfile, 
-        assemblyName, niceNameGen: NiceNameGenerator, lexResourceManager, 
+type IncrementalBuilder(tcGlobals, frameworkTcImports,
+        nonFrameworkAssemblyInputs,
+        nonFrameworkResolutions,
+        unresolvedReferences,
+        tcConfig: TcConfig,
+        projectDirectory, outfile, 
+        assemblyName, niceNameGen: NiceNameGenerator,
+        analyzers: FSharpAnalyzer list,
+        lexResourceManager, 
         sourceFiles, loadClosureOpt: LoadClosure option, 
         keepAssemblyContents, keepAllBackgroundResolutions,
         maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
@@ -671,7 +681,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 #if !NO_EXTENSIONTYPING
     let importsInvalidatedByTypeProvider = new Event<string>()
 #endif
-    let mutable currentTcImportsOpt = None
     let defaultPartialTypeChecking = enablePartialTypeChecking
     let mutable enablePartialTypeChecking = enablePartialTypeChecking
 
@@ -756,7 +765,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                         | true, tg -> tg.Trigger msg
                         | _ -> ()))  
 #endif
-                currentTcImportsOpt <- Some tcImports
                 return tcImports
             with e -> 
                 System.Diagnostics.Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" e)
@@ -833,7 +841,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let finalInfo = finalBoundModel.TcInfo |> Eventually.force ctok
 
         // Finish the checking
-        let (_tcEnvAtEndOfLastFile, topAttrs, mimpls, _), tcState = 
+        let (_tcEnvAtEndOfLastFile, topAttrs, tcFileResults), tcState = 
             let results = 
                 boundModels 
                 |> List.ofArray 
@@ -845,7 +853,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                         else
                             let tcInfo, tcInfoOptional = boundModel.TcInfoWithOptional |> Eventually.force ctok
                             tcInfo, tcInfoOptional.latestImplFile
-                    tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile)
+
+                    assert tcInfo.latestCcuSigForFile.IsSome
+                    assert boundModel.SyntaxTree.IsSome
+                    let latestCcuSigForFile = tcInfo.latestCcuSigForFile.Value
+                    let syntaxTree = boundModel.SyntaxTree.Value
+                    tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, (syntaxTree, latestImplFile, latestCcuSigForFile))
             TypeCheckMultipleInputsFinish (results, finalInfo.tcState)
   
         let ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt = 
@@ -854,7 +867,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 // so we make this temporary here
                 let oldContents = tcState.Ccu.Deref.Contents
                 try
-                    let tcState, tcAssemblyExpr = TypeCheckClosedInputSetFinish (mimpls, tcState)
+                    let tcState = TypeCheckClosedInputSetFinish (tcState)
 
                     // Compute the identity of the generated assembly based on attributes, options etc.
                     // Some of this is duplicated from fsc.fs
@@ -896,7 +909,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                         with e -> 
                             errorRecoveryNoRange e
                             None
-                    ilAssemRef, tcAssemblyDataOpt, Some tcAssemblyExpr
+                    let mimpls = List.choose p23 tcFileResults
+                    ilAssemRef, tcAssemblyDataOpt, Some mimpls
                 finally 
                     tcState.Ccu.Deref.Contents <- oldContents
             with e -> 
@@ -1144,8 +1158,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     member _.ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider.Publish
 #endif
 
-    member _.TryGetCurrentTcImports () = currentTcImportsOpt
-
     member _.AllDependenciesDeprecated = allDependencies
 
     member _.Step (ctok: CompilationThreadToken) =  
@@ -1252,6 +1264,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         | None -> failwith (sprintf "The file '%s' was not part of the project. Did you call InvalidateConfiguration when the list of files in the project changed?" filename)
         
     member _.GetSlotsCount () = fileNames.Length
+
+    member _.Analyzers = analyzers
 
     member this.ContainsFile(filename: string) =
         (this.TryGetSlotOfFileName filename).IsSome
@@ -1410,10 +1424,20 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                   for pr in projectReferences  do
                     yield Choice2Of2 pr, (fun (cache: TimeStampCache) ctok -> cache.GetProjectReferenceTimeStamp (pr, ctok)) ]
             
+            let analyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig, Range.rangeStartup)
+
             let builder = 
-                new IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInputs,
-                    nonFrameworkResolutions, unresolvedReferences, 
-                    tcConfig, projectDirectory, outfile, assemblyName, niceNameGen, 
+                new IncrementalBuilder(tcGlobals,
+                    frameworkTcImports,
+                    nonFrameworkAssemblyInputs,
+                    nonFrameworkResolutions,
+                    unresolvedReferences, 
+                    tcConfig,
+                    projectDirectory,
+                    outfile,
+                    assemblyName,
+                    niceNameGen, 
+                    analyzers,
                     resourceManager, sourceFilesNew, loadClosureOpt, 
                     keepAssemblyContents, 
                     keepAllBackgroundResolutions, 

@@ -57,7 +57,17 @@ namespace FSharp.Compiler.Diagnostics
         /// Gets the number for the diagnostic
         member ErrorNumber: int
 
+        /// Gets the number prefix for the diagnostic, usually "FS" but may differ for analyzers
+        member ErrorNumberPrefix: string
+
+        /// Gets the full error number text e.g "FS0031"
+        member ErrorNumberText: string
+
+        /// Creates a diagnostic, e.g. for reporting from an analyzer
+        static member Create: severity: FSharpDiagnosticSeverity * message: string * number: int * range: range * ?numberPrefix: string * ?subcategory: string -> FSharpDiagnostic
+
         static member internal CreateFromExceptionAndAdjustEof: PhasedDiagnostic * isError: bool * range * lastPosInFile: (int*int) * suggestNames: bool -> FSharpDiagnostic
+
         static member internal CreateFromException: PhasedDiagnostic * isError: bool * range * suggestNames: bool -> FSharpDiagnostic
 
         /// Newlines are recognized and replaced with (ASCII 29, the 'group separator'), 

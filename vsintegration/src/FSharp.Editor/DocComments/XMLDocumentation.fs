@@ -306,6 +306,7 @@ module internal XmlDocumentation =
     /// Build a data tip text string with xml comments injected.
     let BuildTipText(documentationProvider:IDocumentationBuilder, 
                      dataTipText: ToolTipElement list,
+                     extras: FSharp.Compiler.Text.TaggedText[][],
                      textCollector, xmlCollector,  typeParameterMapCollector, usageCollector, exnCollector,
                      showText, showExceptions, showParameters) = 
         let textCollector: ITaggedTextCollector = TextSanitizingCollector(textCollector, lineLimit = 45) :> _
@@ -376,12 +377,15 @@ module internal XmlDocumentation =
                 true
 
         List.fold Process false dataTipText |> ignore
+        for extra in extras do
+            AppendHardLine textCollector
+            extra |> Seq.iter textCollector.Add
 
-    let BuildDataTipText(documentationProvider, textCollector, xmlCollector, typeParameterMapCollector, usageCollector, exnCollector, ToolTipText(dataTipText)) = 
-        BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, typeParameterMapCollector, usageCollector, exnCollector, true, true, false) 
+    let BuildDataTipText(documentationProvider, textCollector, xmlCollector, typeParameterMapCollector, usageCollector, exnCollector, ToolTipText(dataTipText), extras: TaggedText[][]) = 
+        BuildTipText(documentationProvider, dataTipText, extras, textCollector, xmlCollector, typeParameterMapCollector, usageCollector, exnCollector, true, true, false) 
 
     let BuildMethodOverloadTipText(documentationProvider, textCollector, xmlCollector, ToolTipText(dataTipText), showParams) = 
-        BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, xmlCollector, ignore, ignore, false, false, showParams) 
+        BuildTipText(documentationProvider, dataTipText, [| |], textCollector, xmlCollector, xmlCollector, ignore, ignore, false, false, showParams) 
 
     let BuildMethodParamText(documentationProvider, xmlCollector, xml, paramName) =
         AppendXmlComment(documentationProvider, TextSanitizingCollector(xmlCollector), TextSanitizingCollector(xmlCollector), xml, false, true, Some paramName)

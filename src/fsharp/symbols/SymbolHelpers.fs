@@ -29,7 +29,7 @@ type FSharpDiagnosticSeverity =
     | Warning 
     | Error
 
-type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: string, subcategory: string, errorNum: int) =
+type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: string, subcategory: string, errorNum: int, numberPrefix: string) =
     member _.Range = m
 
     member _.Severity = severity
@@ -39,6 +39,10 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
     member _.Subcategory = subcategory
 
     member _.ErrorNumber = errorNum
+
+    member _.ErrorNumberPrefix = numberPrefix
+
+    member _.ErrorNumberText = numberPrefix + errorNum.ToString("0000")
 
     member _.Start = m.Start
 
@@ -56,11 +60,11 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
 
     member _.WithStart newStart =
         let m = mkFileIndexRange m.FileIndex newStart m.End
-        FSharpDiagnostic(m, severity, message, subcategory, errorNum)
+        FSharpDiagnostic(m, severity, message, subcategory, errorNum, numberPrefix)
 
     member _.WithEnd newEnd =
         let m = mkFileIndexRange m.FileIndex m.Start newEnd
-        FSharpDiagnostic(m, severity, message, subcategory, errorNum)
+        FSharpDiagnostic(m, severity, message, subcategory, errorNum, numberPrefix)
 
     override _.ToString() =
         let fileName = m.FileName
@@ -75,7 +79,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
         let severity = if isError then FSharpDiagnosticSeverity.Error else FSharpDiagnosticSeverity.Warning
         let msg = bufs (fun buf -> OutputPhasedDiagnostic buf exn false suggestNames)
         let errorNum = GetDiagnosticNumber exn
-        FSharpDiagnostic(m, severity, msg, exn.Subcategory(), errorNum)
+        FSharpDiagnostic(m, severity, msg, exn.Subcategory(), errorNum, "FS")
 
     /// Decompose a warning or error into parts: position, severity, message, error number
     static member CreateFromExceptionAndAdjustEof(exn, isError, fallbackRange: range, (linesCount: int, lastLength: int), suggestNames: bool) =
@@ -94,6 +98,11 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
 
     static member NormalizeErrorString(text) = ErrorLogger.NormalizeErrorString(text)
     
+    static member Create(severity: FSharpDiagnosticSeverity, message: string, number: int, range: range, ?numberPrefix: string, ?subcategory: string) =
+        let subcategory = defaultArg subcategory BuildPhaseSubcategory.Analysis
+        let numberPrefix = defaultArg numberPrefix "FS"
+        FSharpDiagnostic(range, severity, message, subcategory, number, numberPrefix)
+
 /// Use to reset error and warning handlers            
 [<Sealed>]
 type ErrorScope()  = 

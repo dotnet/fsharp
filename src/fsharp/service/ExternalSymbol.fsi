@@ -7,7 +7,7 @@ open FSharp.Compiler.AbstractIL.IL
     
 /// Represents a type in an external (non F#) assembly.
 [<RequireQualifiedAccess>]
-type FindDeclExternalType =
+type public FindDeclExternalType =
     /// Type defined in non-F# assembly.
     | Type of fullName: string * genericArgs: FindDeclExternalType list
 
@@ -22,7 +22,7 @@ type FindDeclExternalType =
 
     override ToString : unit -> string
         
-module FindDeclExternalType =
+module internal FindDeclExternalType =
     val internal tryOfILType : string array -> ILType -> FindDeclExternalType option
 
 /// Represents the type of a single method parameter
@@ -37,7 +37,7 @@ type FindDeclExternalParam =
 
     override ToString : unit -> string
 
-module FindDeclExternalParam =
+module internal FindDeclExternalParam =
 
     val internal tryOfILType : string array -> ILType -> FindDeclExternalParam option
 
@@ -45,7 +45,7 @@ module FindDeclExternalParam =
 
 /// Represents a symbol in an external (non F#) assembly
 [<RequireQualifiedAccess>]
-type FindDeclExternalSymbol =
+type public FindDeclExternalSymbol =
     | Type of fullName: string
 
     | Constructor of typeName: string * args: FindDeclExternalParam list

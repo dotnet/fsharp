@@ -15,53 +15,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
-/// <summary>Unused in this API</summary>
-type public FSharpUnresolvedReferencesSet
-
-/// <summary>A set of information describing a project or script build configuration.</summary>
-type public FSharpProjectOptions =
-    {
-      // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
-      ProjectFileName: string
-
-      /// This is the unique identifier for the project, it is case sensitive. If it's None, will key off of ProjectFileName in our caching.
-      ProjectId: string option
-
-      /// The files in the project
-      SourceFiles: string[]
-
-      /// Additional command line argument options for the project. These can include additional files and references.
-      OtherOptions: string[]
-
-      /// The command line arguments for the other projects referenced by this project, indexed by the
-      /// exact text used in the "-r:" reference in FSharpProjectOptions.
-      ReferencedProjects: (string * FSharpProjectOptions)[]
-
-      /// When true, the typechecking environment is known a priori to be incomplete, for
-      /// example when a .fs file is opened outside of a project. In this case, the number of error
-      /// messages reported is reduced.
-      IsIncompleteTypeCheckEnvironment: bool
-
-      /// When true, use the reference resolution rules for scripts rather than the rules for compiler.
-      UseScriptResolutionRules: bool
-
-      /// Timestamp of project/script load, used to differentiate between different instances of a project load.
-      /// This ensures that a complete reload of the project or script type checking
-      /// context occurs on project or script unload/reload.
-      LoadTime: DateTime
-
-      /// Unused in this API and should be 'None' when used as user-specified input
-      UnresolvedReferences: FSharpUnresolvedReferencesSet option
-
-      /// Unused in this API and should be '[]' when used as user-specified input
-      OriginalLoadReferences: (range * string * string) list
-
-      /// An optional stamp to uniquely identify this set of options
-      /// If two sets of options both have stamps, then they are considered equal
-      /// if and only if the stamps are equal
-      Stamp: int64 option
-    }
-
 [<Sealed; AutoSerializable(false)>]
 /// Used to parse and check F# source code.
 type public FSharpChecker =
@@ -169,6 +122,29 @@ type public FSharpChecker =
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member CheckFileInProject: parseResults: FSharpParseFileResults * filename: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckFileAnswer>
+
+    /// <summary>
+    ///   Run analyzers on a source code file
+    /// </summary>
+    ///
+    /// <param name="parseResults">The results of ParseFile for this file.</param>
+    /// <param name="checkResults">The results of CheckFileInProject for this file.</param>
+    /// <param name="sourceText">The full source for the file.</param>
+    /// <param name="options">The options for the project or script.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member AnalyzeFileInProject: parseResults: FSharpParseFileResults * checkResults: FSharpCheckFileResults * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpDiagnostic[]>
+
+    /// <summary>
+    ///   Get the additional tooltips provided by all analyzers at a specific location
+    /// </summary>
+    ///
+    /// <param name="parseResults">The results of ParseFile for this file.</param>
+    /// <param name="checkResults">The results of CheckFileInProject for this file.</param>
+    /// <param name="sourceText">The full source for the file.</param>
+    /// <param name="options">The options for the project or script.</param>
+    /// <param name="pos">The position where the tool tip is requested.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member GetAdditionalAnalyzerToolTips: parseResults: FSharpParseFileResults * checkResults: FSharpCheckFileResults * sourceText: ISourceText * options: FSharpProjectOptions * pos: Position * ?userOpName: string -> Async<TaggedText[][]>
 
     /// <summary>
     /// <para>

@@ -345,7 +345,8 @@ type internal FSharpSignatureHelpProvider
                         typeParameterMap.Add,
                         usage.Add,
                         exceptions.Add,
-                        tooltip)
+                        tooltip,
+                        [| |])
 
                     let fsharpDocs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
                                        

@@ -53,6 +53,52 @@ open Internal.Utilities
 open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 
+type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
+
+// NOTE: may be better just to move to optional arguments here
+type FSharpProjectOptions =
+    { 
+      ProjectFileName: string
+      ProjectId: string option
+      SourceFiles: string[]
+      OtherOptions: string[]
+      ReferencedProjects: (string * FSharpProjectOptions)[]
+      IsIncompleteTypeCheckEnvironment : bool
+      UseScriptResolutionRules : bool      
+      LoadTime : System.DateTime
+      UnresolvedReferences : FSharpUnresolvedReferencesSet option
+      OriginalLoadReferences: (range * string * string) list
+      Stamp : int64 option
+    }
+    member x.ProjectOptions = x.OtherOptions
+
+    static member UseSameProject(options1,options2) =
+        match options1.ProjectId, options2.ProjectId with
+        | Some(projectId1), Some(projectId2) when not (String.IsNullOrWhiteSpace(projectId1)) && not (String.IsNullOrWhiteSpace(projectId2)) -> 
+            projectId1 = projectId2
+        | Some(_), Some(_)
+        | None, None -> options1.ProjectFileName = options2.ProjectFileName
+        | _ -> false
+
+    static member AreSameForChecking(options1,options2) =
+        match options1.Stamp, options2.Stamp with 
+        | Some x, Some y -> (x = y)
+        | _ -> 
+        FSharpProjectOptions.UseSameProject(options1, options2) &&
+        options1.SourceFiles = options2.SourceFiles &&
+        options1.OtherOptions = options2.OtherOptions &&
+        options1.UnresolvedReferences = options2.UnresolvedReferences &&
+        options1.OriginalLoadReferences = options2.OriginalLoadReferences &&
+        options1.ReferencedProjects.Length = options2.ReferencedProjects.Length &&
+        Array.forall2 (fun (n1,a) (n2,b) ->
+            n1 = n2 && 
+            FSharpProjectOptions.AreSameForChecking(a,b)) options1.ReferencedProjects options2.ReferencedProjects &&
+        options1.LoadTime = options2.LoadTime
+
+    member po.ProjectDirectory = System.IO.Path.GetDirectoryName(po.ProjectFileName)
+
+    override this.ToString() = "FSharpProjectOptions(" + this.ProjectFileName + ")"
+
 [<AutoOpen>]
 module internal FSharpCheckerResultsSettings =
 
@@ -69,7 +115,7 @@ module internal FSharpCheckerResultsSettings =
         | s -> int64 s
 
     // Look for DLLs in the location of the service DLL first.
-    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location))).Value
+    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(Path.GetDirectoryName(typeof<FSharpDiagnostic>.Assembly.Location))).Value
 
 [<Sealed>]
 type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc, range: range) = 
@@ -1759,16 +1805,16 @@ module internal ParseAndCheckFile =
                 with e ->
                     errorR e
                     let mty = Construct.NewEmptyModuleOrNamespaceType ModuleOrNamespaceKind.Namespace
-                    return Some((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
+                    return Some((tcState.TcEnvFromSignatures, EmptyTopAttrs, [(parsedMainInput, None, mty) ]), tcState)
             }
                 
         let errors = errHandler.CollectedDiagnostics
                 
         let res = 
             match resOpt with
-            | Some ((tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState) ->
+            | Some ((tcEnvAtEnd, _, implFiles), tcState) ->
                 TypeCheckInfo(tcConfig, tcGlobals, 
-                              List.head ccuSigsForFiles, 
+                              (List.head implFiles |> p33), 
                               tcState.Ccu,
                               tcImports,
                               tcEnvAtEnd.AccessRights,
@@ -1778,7 +1824,7 @@ module internal ParseAndCheckFile =
                               sink.GetSymbolUses(),
                               tcEnvAtEnd.NameEnv,
                               loadClosure,
-                              List.tryHead implFiles,
+                              (List.tryHead implFiles |> Option.bind p23),
                               sink.GetOpenDeclarations())     
                      |> Result.Ok
             | None -> 
@@ -1799,16 +1845,17 @@ type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad
 [<Sealed>]
 /// A live object of this type keeps the background corresponding background builder (and type providers) alive (through reference-counting).
 //
-// There is an important property of all the objects returned by the methods of this type: they do not require 
-// the corresponding background builder to be alive. That is, they are simply plain-old-data through pre-formatting of all result text.
+// Note objects returned by the methods of this type do not require the corresponding background builder
+// to be alive. That is, they are simply plain-old-data through pre-formatting of all result text.
 type FSharpCheckFileResults
         (filename: string, 
          errors: FSharpDiagnostic[], 
          scopeOptX: TypeCheckInfo option, 
          dependencyFiles: string[], 
-         builderX: IncrementalBuilder option, 
+         builderX: obj option, 
          keepAssemblyContents: bool) =
 
+    // Here 'details' keeps 'builder' alive
     let details = match scopeOptX with None -> None | Some scopeX -> Some (scopeX, builderX)
 
     // Run an operation that can be called from any thread
@@ -1821,10 +1868,10 @@ type FSharpCheckFileResults
 
     member _.HasFullTypeCheckInfo = details.IsSome
     
-    member _.TryGetCurrentTcImports () =
-        match builderX with
-        | Some builder -> builder.TryGetCurrentTcImports ()
-        | _ -> None
+    member _.TryGetCurrentTcImports () = 
+        match details with
+        | None -> None
+        | Some (scope, _builderOpt) -> Some scope.TcImports
 
     /// Intellisense autocompletions
     member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities) = 
@@ -1994,7 +2041,7 @@ type FSharpCheckFileResults
          projectFileName, 
          tcConfig, tcGlobals, 
          isIncompleteTypeCheckEnvironment: bool, 
-         builder: IncrementalBuilder, 
+         builder: obj option, 
          dependencyFiles, 
          creationErrors: FSharpDiagnostic[], 
          parseErrors: FSharpDiagnostic[], 
@@ -2014,7 +2061,7 @@ type FSharpCheckFileResults
                           implFileOpt, openDeclarations) 
                 
         let errors = FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
-        FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, keepAssemblyContents)
+        FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, builder, keepAssemblyContents)
 
     static member CheckOneFile
         (parseResults: FSharpParseFileResults,
@@ -2031,7 +2078,7 @@ type FSharpCheckFileResults
          reactorOps: IReactorOperations,
          userOpName: string,
          isIncompleteTypeCheckEnvironment: bool, 
-         builder: IncrementalBuilder, 
+         builder: obj, 
          dependencyFiles: string[], 
          creationErrors: FSharpDiagnostic[], 
          parseErrors: FSharpDiagnostic[], 
@@ -2171,7 +2218,7 @@ type FSharpCheckProjectResults
     override _.ToString() = "FSharpCheckProjectResults(" + projectFileName + ")"
 
 type FsiInteractiveChecker(legacyReferenceResolver, 
-                           ops: IReactorOperations,
+                           reactorOps: IReactorOperations,
                            tcConfig: TcConfig,
                            tcGlobals: TcGlobals,
                            tcImports: TcImports,
@@ -2213,7 +2260,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                     (parseResults, sourceText, filename, "project",
                      tcConfig, tcGlobals, tcImports,  tcState, 
                      Map.empty, Some loadClosure, backgroundDiagnostics,
-                     ops, userOpName, suggestNamesForErrors)
+                     reactorOps, userOpName, suggestNamesForErrors)
 
             return
                 match tcFileInfo with 

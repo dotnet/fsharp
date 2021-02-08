@@ -62,13 +62,13 @@ let (|StopProcessing|_|) exn = match exn with StopProcessingExn _ -> Some () | _
 
 let StopProcessing<'T> = StopProcessingExn None
 
-exception NumberedError of (int * string) * range with   // int is e.g. 191 in FS0191
+exception CompilerToolDiagnostic of (int * string) * range with   // int is e.g. 191 in FS0191
     override this.Message =
         match this :> exn with
-        | NumberedError((_, msg), _) -> msg
+        | CompilerToolDiagnostic((_, msg), _) -> msg
         | _ -> "impossible"
 
-exception Error of (int * string) * range with   // int is e.g. 191 in FS0191  // eventually remove this type, it is a transitional artifact of the old unnumbered error style
+exception Error of (int * string) * range with   // int is e.g. 191 in FS0191
     override this.Message =
         match this :> exn with
         | Error((_, msg), _) -> msg
@@ -191,6 +191,8 @@ module BuildPhaseSubcategory =
     let Output = "output"        
     [<Literal>] 
     let Interactive = "interactive"        
+    [<Literal>] 
+    let Analysis = "analysis"        
     [<Literal>] 
     let Internal = "internal"          // Compiler ICE
 

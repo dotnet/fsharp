@@ -150,9 +150,6 @@ type internal IncrementalBuilder =
       member ImportsInvalidatedByTypeProvider : IEvent<string>
 #endif
 
-      /// Tries to get the current successful TcImports. This is only used in testing. Do not use it for other stuff.
-      member TryGetCurrentTcImports : unit -> TcImports option
-
       /// The list of files the build depends on
       member AllDependenciesDeprecated : string[]
 
@@ -222,6 +219,9 @@ type internal IncrementalBuilder =
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
       member GetParseResultsForFile: CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]>
 
+      /// Get the active analyzers for the project
+      member Analyzers: FSharpAnalyzer list
+      
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:
           CompilationThreadToken *

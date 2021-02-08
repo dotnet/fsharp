@@ -40,7 +40,7 @@ val ( |StopProcessing|_| ): exn:exn -> unit option
 
 val StopProcessing<'T> : exn
 
-exception NumberedError of (int * string) * range
+exception CompilerToolDiagnostic of (int * string) * range
 
 exception Error of (int * string) * range
 
@@ -108,6 +108,7 @@ module BuildPhaseSubcategory =
     [<LiteralAttribute>] val Output: string = "output"
     [<LiteralAttribute>] val Interactive: string = "interactive"
     [<LiteralAttribute>] val Internal: string = "internal"
+    [<LiteralAttribute>] val Analysis: string = "analysis"
 
 type PhasedDiagnostic =
     { Exception: exn
