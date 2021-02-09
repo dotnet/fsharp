@@ -69,7 +69,7 @@
     <!-- default package sources -->
     <RestoreSources Condition="'$(DotNetBuildOffline)' != 'true'">
       $(RestoreSources);
-      https://api.nuget.org/v3/index.json;
+      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-public/nuget/v3/index.json;
       https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk/nuget/v3/index.json;
       https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json;
       <!-- https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-buildservices/nuget/v3/index.json; --></RestoreSources>
