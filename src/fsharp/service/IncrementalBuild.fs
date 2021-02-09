@@ -728,8 +728,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         cache.GetFileTimeStamp filename
 
     /// Parse the given file and return the given input.
-    let ParseTask ctok (sourceRange: range, filename: string, isLastCompiland) =
-        DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
+    let ParseTask (sourceRange: range, filename: string, isLastCompiland) =
         SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, filename, isLastCompiland)
         
     /// Timestamps of referenced assemblies are taken from the file's timestamp.
@@ -1039,7 +1038,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                             // This shouldn't happen, but on the off-chance, just grab the initial bound model.
                             initial
 
-                let boundModel = TypeCheckTask ctok prevBoundModel (ParseTask ctok fileInfo) |> Eventually.force ctok
+                let boundModel = TypeCheckTask ctok prevBoundModel (ParseTask fileInfo) |> Eventually.force ctok
                     
                 boundModels.[slot] <- Some boundModel
             )
@@ -1269,14 +1268,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     member this.ContainsFile(filename: string) =
         (this.TryGetSlotOfFileName filename).IsSome
       
-    member builder.GetParseResultsForFile (ctok: CompilationThreadToken, filename) =
-      cancellable {
+    member builder.GetParseResultsForFile (filename) =
         let slotOfFile = builder.GetSlotOfFileName filename
         let results = fileNames.[slotOfFile]
         // re-parse on demand instead of retaining
-        let syntaxTree = ParseTask ctok results
-        return syntaxTree.Parse None
-      }
+        let syntaxTree = ParseTask results
+        syntaxTree.Parse None
 
     member _.SourceFiles  = sourceFiles  |> List.map (fun (_, f, _) -> f)
 
