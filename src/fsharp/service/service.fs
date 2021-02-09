@@ -24,6 +24,7 @@ open FSharp.Compiler.Driver
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.IO
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -667,13 +668,14 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     match builderOpt with 
                     | None -> return [| |]
                     | Some builder ->
-                        let fileName = parseResults.FileName
+                        let fileName = Path.GetFullPath parseResults.FileName
                         let ctxt = 
                             FSharpAnalyzerCheckFileContext([| (fileName, sourceText) |], 
                                 fileName,
                                 options,
                                 parseResults,
-                                checkResults)
+                                checkResults,
+                                builder.TcConfig)
 
                         let! ct = Cancellable.token()
                         let diags = 
@@ -702,13 +704,14 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     match builderOpt with 
                     | None -> return [| |]
                     | Some builder ->
-                        let fileName = parseResults.FileName
+                        let fileName = Path.GetFullPath parseResults.FileName
                         let ctxt = 
                             FSharpAnalyzerCheckFileContext([| (fileName, sourceText) |], 
                                 fileName,
                                 options,
                                 parseResults,
-                                checkResults)
+                                checkResults,
+                                builder.TcConfig)
 
                         let! ct = Cancellable.token()
                         let tooltips = 

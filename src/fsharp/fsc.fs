@@ -586,16 +586,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let analyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig, Range.rangeStartup)
 
-    let sourceTexts = 
-        [| for sourceFile in sourceFiles -> 
-            let sourceFile = FileSystem.GetFullPathShim sourceFile
-            use stream = FileSystem.FileStreamReadShim sourceFile
-            use reader = 
-                match tcConfig.inputCodePage with 
-                | None -> new StreamReader(stream, true)
-                | Some (n: int) -> new StreamReader(stream, Encoding.GetEncoding n) 
-            let source = reader.ReadToEnd()
-            sourceFile, SourceText.ofString source |]
+    let sourceTexts = [| for sourceFile in sourceFiles -> sourceFile, SourceText.readFile sourceFile tcConfig.inputCodePage |]
 
     let projectOptions = 
         { 
@@ -654,7 +645,8 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
                 inp.FileName,
                 projectOptions,
                 parseResults,
-                checkResults)
+                checkResults,
+                tcConfig)
 
         for analyzer in analyzers do
              let diagnostics = analyzer.OnCheckFile(ctxt, CancellationToken.None)

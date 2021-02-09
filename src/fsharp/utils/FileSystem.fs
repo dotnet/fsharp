@@ -5,6 +5,8 @@ namespace FSharp.Compiler.IO
 open System
 open System.IO
 open System.Reflection
+open System.Text
+open FSharp.Compiler.Text
 
 type IFileSystem = 
 
@@ -162,3 +164,13 @@ module FileSystemAutoOpens =
         static member OpenReaderAndRetry (filename, codepage, retryLocked)  =
             getReader (filename, codepage, retryLocked)
 
+module SourceText =
+    let readFile fileName inputCodePage = 
+        let fileName = FileSystem.GetFullPathShim fileName
+        use stream = FileSystem.FileStreamReadShim fileName
+        use reader = 
+            match inputCodePage with 
+            | None -> new StreamReader(stream, true)
+            | Some (n: int) -> new StreamReader(stream, Encoding.GetEncoding n) 
+        let source = reader.ReadToEnd()
+        SourceText.ofString source

@@ -11,6 +11,7 @@ open System.Threading
 open Internal.Utilities.Library  
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 
 type FSharpAnalyzerTextChange = Range * string
@@ -20,9 +21,10 @@ type public FSharpAnalyzerCheckFileContext(sourceTexts: (string * ISourceText)[]
         fileName: string,
         projectOptions: FSharpProjectOptions,
         parseResults: FSharpParseFileResults,
-        checkResults: FSharpCheckFileResults) = 
+        checkResults: FSharpCheckFileResults,
+        tcConfig: TcConfig) = 
     let sourceTextMap = Map.ofArray sourceTexts
-    member _.TryGetFileSource(fileName) = if sourceTextMap.ContainsKey fileName then Some sourceTextMap.[fileName] else None
+    member _.GetFileSource(fileName) = if sourceTextMap.ContainsKey fileName then sourceTextMap.[fileName] else SourceText.readFile fileName tcConfig.inputCodePage
     member _.FileName = fileName
     member _.ProjectOptions = projectOptions
     member _.ParseFileResults = parseResults
@@ -31,9 +33,10 @@ type public FSharpAnalyzerCheckFileContext(sourceTexts: (string * ISourceText)[]
 [<Sealed>]
 type public FSharpAnalyzerCheckProjectContext(sourceTexts: (string * ISourceText)[],
         projectOptions: FSharpProjectOptions,
-        checkResults: FSharpCheckProjectResults) = 
+        checkResults: FSharpCheckProjectResults,
+        tcConfig: TcConfig) = 
     let sourceTextMap = Map.ofArray sourceTexts
-    member _.TryGetFileSource(fileName) = if sourceTextMap.ContainsKey fileName then Some sourceTextMap.[fileName] else None
+    member _.GetFileSource(fileName) = if sourceTextMap.ContainsKey fileName then sourceTextMap.[fileName] else SourceText.readFile fileName tcConfig.inputCodePage
     member _.ProjectOptions = projectOptions
     member _.CheckProjectResults = checkResults
 

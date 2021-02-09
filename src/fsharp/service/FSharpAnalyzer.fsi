@@ -16,9 +16,11 @@ type FSharpAnalyzerTextChange = Range * string
 [<Sealed>]
 type public FSharpAnalyzerCheckFileContext = 
 
-    internal new: sourceTexts: (string * ISourceText)[] * fileName: string * projectOptions: FSharpProjectOptions * parseResults: FSharpParseFileResults * checkResults: FSharpCheckFileResults -> FSharpAnalyzerCheckFileContext
+    internal new: sourceTexts: (string * ISourceText)[] * fileName: string * projectOptions: FSharpProjectOptions * parseResults: FSharpParseFileResults * checkResults: FSharpCheckFileResults * tcConfig: TcConfig -> FSharpAnalyzerCheckFileContext
 
-    member TryGetFileSource: fileName: string -> ISourceText option
+    member FileName: string
+
+    member GetFileSource: fileName: string -> ISourceText
 
     member ProjectOptions: FSharpProjectOptions
 
@@ -30,9 +32,9 @@ type public FSharpAnalyzerCheckFileContext =
 [<Sealed>]
 type public FSharpAnalyzerCheckProjectContext = 
 
-    internal new: sourceTexts: (string * ISourceText)[] * projectOptions: FSharpProjectOptions * checkResults: FSharpCheckProjectResults -> FSharpAnalyzerCheckProjectContext
+    internal new: sourceTexts: (string * ISourceText)[] * projectOptions: FSharpProjectOptions * checkResults: FSharpCheckProjectResults * tcConfig: TcConfig -> FSharpAnalyzerCheckProjectContext
 
-    member TryGetFileSource: fileName: string -> ISourceText option
+    member GetFileSource: fileName: string -> ISourceText
 
     member ProjectOptions: FSharpProjectOptions
 

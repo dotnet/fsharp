@@ -5,6 +5,7 @@ namespace FSharp.Compiler.IO
 
 open System
 open System.IO
+open FSharp.Compiler.Text
 
 /// Represents a shim for the file system
 type public IFileSystem =
@@ -68,3 +69,5 @@ module public FileSystemAutoOpens =
         static member internal OpenReaderAndRetry: filename:string * codepage:int option * retryLocked:bool -> System.IO.StreamReader
 
 
+module internal SourceText =
+     val readFile: fileName: string -> inputCodePage: int option -> ISourceText

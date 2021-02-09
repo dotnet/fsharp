@@ -107,7 +107,7 @@ type internal FSharpDocumentDiagnosticAnalyzer
 
     interface IFSharpDocumentDiagnosticAnalyzer with
 
-        member this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+        member _.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
             asyncMaybe {
                 let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync(cancellationToken)
@@ -119,7 +119,7 @@ type internal FSharpDocumentDiagnosticAnalyzer
             |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
-        member this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+        member _.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
             asyncMaybe {
                 let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken, userOpName) 
                 let! sourceText = document.GetTextAsync(cancellationToken)
