@@ -253,8 +253,8 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
     member __.``Use Dependency Manager to restore packages with native dependencies, build and run script that depends on the results``() =
         let packagemanagerlines = [|
             "r", "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
-            "r", "Microsoft.ML,version=1.4.0-preview"
-            "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
+            "r", "Microsoft.ML,version=1.4.0"
+            "r", "Microsoft.ML.AutoML,version=0.17.4"
             "r", "Microsoft.Data.DataFrame,version=0.1.1-e191008-1"
         |]
 
@@ -350,8 +350,8 @@ printfn ""%A"" result
     member __.``Use NativeResolver to resolve native dlls.``() =
         let packagemanagerlines = [|
             "r", "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
-            "r", "Microsoft.ML,version=1.4.0-preview"
-            "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
+            "r", "Microsoft.ML,version=1.4.0"
+            "r", "Microsoft.ML.AutoML,version=0.17.4"
             "r", "Microsoft.Data.DataFrame,version=0.1.1-e191008-1"
         |]
 
@@ -433,8 +433,8 @@ printfn ""%A"" result
     member __.``Use AssemblyResolver to resolve assemblies``() =
         let packagemanagerlines = [|
             "r", "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
-            "r", "Microsoft.ML,version=1.4.0-preview"
-            "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
+            "r", "Microsoft.ML,version=1.4.0"
+            "r", "Microsoft.ML.AutoML,version=0.17.4"
             "r", "Microsoft.Data.DataFrame,version=0.1.1-e191008-1"
         |]
 

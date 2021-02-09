@@ -187,8 +187,8 @@ stacktype.Name = "Stack"
     member __.``ML - use assembly with native dependencies``() =
         let code = @"
 #r ""nuget:RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json""
-#r ""nuget:Microsoft.ML,version=1.4.0-preview""
-#r ""nuget:Microsoft.ML.AutoML,version=0.16.0-preview""
+#r ""nuget:Microsoft.ML,version=1.5.4""
+#r ""nuget:Microsoft.ML.AutoML,version=0.17.4""
 #r ""nuget:Microsoft.Data.DataFrame,version=0.1.1-e191008-1""
 
 open System
