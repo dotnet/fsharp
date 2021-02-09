@@ -1349,6 +1349,35 @@ FSharp.Compiler.AbstractIL.ILBinaryReader+Shim: IAssemblyReader get_AssemblyRead
 FSharp.Compiler.AbstractIL.ILBinaryReader+Shim: Void set_AssemblyReader(IAssemblyReader)
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim
+FSharp.Compiler.CodeAnalysis.FSharpAnalysisContext
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Boolean RequiresAssemblyContents
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Boolean get_RequiresAssemblyContents()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: FSharp.Compiler.CodeAnalysis.FSharpAnalysisContext Context
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: FSharp.Compiler.CodeAnalysis.FSharpAnalysisContext get_Context()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] OnCheckFile(FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext, System.Threading.CancellationToken)
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] OnCheckProject(FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext, System.Threading.CancellationToken)
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.TaggedText[]] TryAdditionalToolTip(FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext, FSharp.Compiler.Text.Position, System.Threading.CancellationToken)
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,System.String][]] TryCodeFix(FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext, FSharp.Compiler.Diagnostics.FSharpDiagnostic[], System.Threading.CancellationToken)
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: System.String[] FixableDiagnosticIds
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: System.String[] get_FixableDiagnosticIds()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Void .ctor(FSharp.Compiler.CodeAnalysis.FSharpAnalysisContext)
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults CheckFileResults
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults get_CheckFileResults()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext: FSharp.Compiler.CodeAnalysis.FSharpParseFileResults ParseFileResults
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext: FSharp.Compiler.CodeAnalysis.FSharpParseFileResults get_ParseFileResults()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions ProjectOptions
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions get_ProjectOptions()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext: FSharp.Compiler.Text.ISourceText GetFileSource(System.String)
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext: System.String FileName
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext: System.String get_FileName()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext: FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults CheckProjectResults
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext: FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults get_CheckProjectResults()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions ProjectOptions
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions get_ProjectOptions()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext: FSharp.Compiler.Text.ISourceText GetFileSource(System.String)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Succeeded: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults Item
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Succeeded: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults get_Item()
@@ -1385,6 +1414,8 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServi
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.MethodGroup GetMethods(Int32, Int32, System.String, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.SemanticClassificationItem[] GetSemanticClassification(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetToolTip(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Int32)
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblyContents PartialAssemblyContents
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblyContents get_PartialAssemblyContents()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblySignature PartialAssemblySignature
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblySignature get_PartialAssemblySignature()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpOpenDeclaration[] OpenDeclarations
@@ -1442,6 +1473,8 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults] GetBackgroundParseResultsForFileInProject(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults] ParseFile(System.String, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.CodeAnalysis.FSharpParsingOptions, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults] ParseFileInProject(System.String, System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.Diagnostics.FSharpDiagnostic[]] AnalyzeFileInProject(FSharp.Compiler.CodeAnalysis.FSharpParseFileResults, FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.Text.TaggedText[][]] GetAdditionalAnalyzerToolTips(FSharp.Compiler.CodeAnalysis.FSharpParseFileResults, FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, FSharp.Compiler.Text.Position, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer]] CheckFileInProjectAllowingStaleCachedResults(FSharp.Compiler.CodeAnalysis.FSharpParseFileResults, System.String, Int32, System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.SemanticClassificationView]] GetBackgroundSemanticClassificationForFile(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] NotifyProjectCleaned(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
@@ -1683,9 +1716,10 @@ FSharp.Compiler.DependencyManager.ResolvingErrorReport: Void .ctor(System.Object
 FSharp.Compiler.DependencyManager.ResolvingErrorReport: Void EndInvoke(System.IAsyncResult)
 FSharp.Compiler.DependencyManager.ResolvingErrorReport: Void Invoke(FSharp.Compiler.DependencyManager.ErrorReportType, Int32, System.String)
 FSharp.Compiler.Diagnostics.CompilerDiagnostics
-FSharp.Compiler.Diagnostics.CompilerDiagnostics: System.String GetErrorMessage(FSharp.Compiler.Diagnostics.FSharpDiagnosticKind)
 FSharp.Compiler.Diagnostics.CompilerDiagnostics: System.Collections.Generic.IEnumerable`1[System.String] GetSuggestedNames(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit], System.String)
+FSharp.Compiler.Diagnostics.CompilerDiagnostics: System.String GetErrorMessage(FSharp.Compiler.Diagnostics.FSharpDiagnosticKind)
 FSharp.Compiler.Diagnostics.FSharpDiagnostic
+FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnostic Create(FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity, System.String, Int32, FSharp.Compiler.Text.Range, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity Severity
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity get_Severity()
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Text.Position End
@@ -1704,12 +1738,16 @@ FSharp.Compiler.Diagnostics.FSharpDiagnostic: Int32 get_EndLine()
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: Int32 get_ErrorNumber()
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: Int32 get_StartColumn()
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: Int32 get_StartLine()
+FSharp.Compiler.Diagnostics.FSharpDiagnostic: System.String ErrorNumberPrefix
+FSharp.Compiler.Diagnostics.FSharpDiagnostic: System.String ErrorNumberText
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: System.String FileName
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: System.String Message
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: System.String NewlineifyErrorString(System.String)
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: System.String NormalizeErrorString(System.String)
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: System.String Subcategory
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: System.String ToString()
+FSharp.Compiler.Diagnostics.FSharpDiagnostic: System.String get_ErrorNumberPrefix()
+FSharp.Compiler.Diagnostics.FSharpDiagnostic: System.String get_ErrorNumberText()
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: System.String get_FileName()
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: System.String get_Message()
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: System.String get_Subcategory()
@@ -2161,7 +2199,6 @@ FSharp.Compiler.EditorServices.FindDeclExternalParam: Int32 CompareTo(System.Obj
 FSharp.Compiler.EditorServices.FindDeclExternalParam: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.FindDeclExternalParam: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.FindDeclExternalParam: System.String ToString()
-FSharp.Compiler.EditorServices.FindDeclExternalParamModule
 FSharp.Compiler.EditorServices.FindDeclExternalSymbol
 FSharp.Compiler.EditorServices.FindDeclExternalSymbol+Constructor: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.FindDeclExternalParam] args
 FSharp.Compiler.EditorServices.FindDeclExternalSymbol+Constructor: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.FindDeclExternalParam] get_args()
@@ -2274,7 +2311,6 @@ FSharp.Compiler.EditorServices.FindDeclExternalType: Int32 GetHashCode(System.Co
 FSharp.Compiler.EditorServices.FindDeclExternalType: Int32 Tag
 FSharp.Compiler.EditorServices.FindDeclExternalType: Int32 get_Tag()
 FSharp.Compiler.EditorServices.FindDeclExternalType: System.String ToString()
-FSharp.Compiler.EditorServices.FindDeclExternalTypeModule
 FSharp.Compiler.EditorServices.FindDeclFailureReason
 FSharp.Compiler.EditorServices.FindDeclFailureReason+ProvidedMember: System.String get_memberName()
 FSharp.Compiler.EditorServices.FindDeclFailureReason+ProvidedMember: System.String memberName
@@ -4801,7 +4837,9 @@ FSharp.Compiler.Syntax.ParsedInput: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.ParsedInput: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.ParsedInput: Int32 Tag
 FSharp.Compiler.Syntax.ParsedInput: Int32 get_Tag()
+FSharp.Compiler.Syntax.ParsedInput: System.String FileName
 FSharp.Compiler.Syntax.ParsedInput: System.String ToString()
+FSharp.Compiler.Syntax.ParsedInput: System.String get_FileName()
 FSharp.Compiler.Syntax.ParsedScriptInteraction
 FSharp.Compiler.Syntax.ParsedScriptInteraction+Definitions: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.ParsedScriptInteraction+Definitions: FSharp.Compiler.Text.Range range
