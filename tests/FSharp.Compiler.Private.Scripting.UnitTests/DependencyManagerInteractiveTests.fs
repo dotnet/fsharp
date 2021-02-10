@@ -252,10 +252,9 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
     [<Fact>]
     member __.``Use Dependency Manager to restore packages with native dependencies, build and run script that depends on the results``() =
         let packagemanagerlines = [|
-            "r", "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
-            "r", "Microsoft.ML,version=1.4.0"
-            "r", "Microsoft.ML.AutoML,version=0.17.4"
-            "r", "Microsoft.Data.DataFrame,version=0.1.1-e191008-1"
+            "r", "Microsoft.ML,version=1.4.0-preview"
+            "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
+            "r", "Microsoft.Data.Analysis,version=0.4.0"
         |]
 
         let reportError =
@@ -306,7 +305,7 @@ $(REFERENCES)
 open System
 open System.IO
 open System.Linq
-open Microsoft.Data
+open Microsoft.Data.Analysis
 
 let Shuffle (arr:int[]) =
     let rnd = Random()
@@ -318,9 +317,9 @@ let Shuffle (arr:int[]) =
     arr
 
 let housingPath = ""housing.csv""
-let housingData = DataFrame.ReadCsv(housingPath)
-let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.RowCount) - 1)).ToArray()))
-let testSize = int (float (housingData.RowCount) * 0.1)
+let housingData = DataFrame.LoadCsv(housingPath)
+let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
+let testSize = int (float (housingData.Rows.Count) * 0.1)
 let trainRows = randomIndices.[testSize..]
 let testRows = randomIndices.[..testSize]
 let housing_train = housingData.[trainRows]
@@ -349,10 +348,9 @@ printfn ""%A"" result
     [<Fact>]
     member __.``Use NativeResolver to resolve native dlls.``() =
         let packagemanagerlines = [|
-            "r", "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
-            "r", "Microsoft.ML,version=1.4.0"
-            "r", "Microsoft.ML.AutoML,version=0.17.4"
-            "r", "Microsoft.Data.DataFrame,version=0.1.1-e191008-1"
+            "r", "Microsoft.ML,version=1.4.0-preview"
+            "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
+            "r", "Microsoft.Data.Analysis,version=0.4.0"
         |]
 
         let reportError =
@@ -392,7 +390,7 @@ $(REFERENCES)
 open System
 open System.IO
 open System.Linq
-open Microsoft.Data
+open Microsoft.Data.Analysis
 
 let Shuffle (arr:int[]) =
     let rnd = Random()
@@ -404,9 +402,9 @@ let Shuffle (arr:int[]) =
     arr
 
 let housingPath = ""housing.csv""
-let housingData = DataFrame.ReadCsv(housingPath)
-let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.RowCount) - 1)).ToArray()))
-let testSize = int (float (housingData.RowCount) * 0.1)
+let housingData = DataFrame.LoadCsv(housingPath)
+let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
+let testSize = int (float (housingData.Rows.Count) * 0.1)
 let trainRows = randomIndices.[testSize..]
 let testRows = randomIndices.[..testSize]
 let housing_train = housingData.[trainRows]
@@ -432,10 +430,9 @@ printfn ""%A"" result
     [<Fact>]
     member __.``Use AssemblyResolver to resolve assemblies``() =
         let packagemanagerlines = [|
-            "r", "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
-            "r", "Microsoft.ML,version=1.4.0"
-            "r", "Microsoft.ML.AutoML,version=0.17.4"
-            "r", "Microsoft.Data.DataFrame,version=0.1.1-e191008-1"
+            "r", "Microsoft.ML,version=1.4.0-preview"
+            "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
+            "r", "Microsoft.Data.Analysis,version=0.4.0"
         |]
 
         let reportError =
