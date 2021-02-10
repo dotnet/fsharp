@@ -646,12 +646,13 @@ let main1OfAst
             rangeForErrors=range0)
 
     let primaryAssembly =
-        // temporary workaround until https://github.com/dotnet/fsharp/pull/8043 is merged:
-        // pick a primary assembly based on the current runtime.
-        // It's an ugly compromise used to avoid exposing primaryAssembly in the public api for this function.
-        let isNetCoreAppProcess = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith ".NET Core"
-        if isNetCoreAppProcess then PrimaryAssembly.System_Runtime
-        else PrimaryAssembly.Mscorlib
+        // MsCorlib is a good default for all seasons... 
+        // portable profiles and netstandard rely on System_Runtime but we need to do work to detect that scenario
+        let includesSystem_Runtime = dllReferences |> Seq.exists(fun f -> Path.GetFileName(f).Equals("system.runtime.dll",StringComparison.InvariantCultureIgnoreCase))
+        if includesSystem_Runtime then
+            PrimaryAssembly.System_Runtime
+        else
+            PrimaryAssembly.Mscorlib
 
     tcConfigB.target <- target
     tcConfigB.primaryAssembly <- primaryAssembly

@@ -437,6 +437,11 @@ try {
     $buildTool = InitializeBuildTool
     $toolsetBuildProj = InitializeToolset
     TryDownloadDotnetFrameworkSdk
+
+    $dotnetPath = InitializeDotNetCli
+    $env:DOTNET_ROOT="$dotnetPath"
+    Get-Item -Path Env:
+
     if ($bootstrap) {
         $script:BuildMessage = "Failure building bootstrap compiler"
         $bootstrapDir = Make-BootstrapBuild
