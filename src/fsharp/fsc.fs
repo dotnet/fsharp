@@ -646,8 +646,9 @@ let main1OfAst
             rangeForErrors=range0)
 
     let primaryAssembly =
-        // MsCorlib is a good default for all seasons... 
-        // portable profiles and netstandard rely on System_Runtime but we need to do work to detect that scenario
+        // temporary workaround until https://github.com/dotnet/fsharp/pull/8043 is merged:
+        // pick a primary assembly based on whether the developer included System>Runtime in the list of reference assemblies.
+        // It's an ugly compromise used to avoid exposing primaryAssembly in the public api for this function.
         let includesSystem_Runtime = dllReferences |> Seq.exists(fun f -> Path.GetFileName(f).Equals("system.runtime.dll",StringComparison.InvariantCultureIgnoreCase))
         if includesSystem_Runtime then
             PrimaryAssembly.System_Runtime
