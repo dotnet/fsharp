@@ -5,7 +5,6 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net472</TargetFramework>
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <TargetExt>.exe</TargetExt>
     <NoWarn>$(NoWarn);44;45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -16,7 +15,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DefineConstants>$(DefineConstants);FSI_SHADOW_COPY_REFERENCES;FSI_SERVER</DefineConstants>
+    <DefineConstants>$(DefineConstants);FSI_SHADOW_COPY_REFERENCES;FSI_SERVER;FSI_ANYCPU_DEPRECATED</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

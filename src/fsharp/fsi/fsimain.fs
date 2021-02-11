@@ -143,7 +143,7 @@ let StartServer (fsiSession : FsiEvaluationSession) (fsiServerName) =
 //----------------------------------------------------------------------------
 
 let evaluateSession(argv: string[]) = 
-#if DEBUG  
+#if DEBUG
     if argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause") then 
         Console.WriteLine("Press any key to continue...")
         Console.ReadKey() |> ignore

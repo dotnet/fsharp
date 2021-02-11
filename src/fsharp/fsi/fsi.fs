@@ -665,7 +665,6 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
 
     // Additional fsi options are list below.
     // In the "--help", these options can be printed either before (fsiUsagePrefix) or after (fsiUsageSuffix) the core options.
-
     let displayHelpFsi tcConfigB (blocks:CompilerOptionBlock list) =
         DisplayBannerText tcConfigB;
         fprintfn fsiConsoleOutput.Out ""
@@ -797,7 +796,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
         fsiConsoleOutput.uprintnfn "%s" (tcConfigB.productNameForBannerText)
         fsiConsoleOutput.uprintfnn "%s" (FSComp.SR.optsCopyright())
         fsiConsoleOutput.uprintfn  "%s" (FSIstrings.SR.fsiBanner3())
-     
+
     member _.ShowHelp(m) =
         let helpLine = sprintf "%s --help" executableFileNameWithoutExtension.Value
 

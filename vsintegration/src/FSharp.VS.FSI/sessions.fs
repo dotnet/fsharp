@@ -63,7 +63,6 @@ let timeoutApp descr timeoutMS (f : 'a -> 'b) (arg:'a) =
     r
 
 module SessionsProperties = 
-    let mutable useAnyCpuVersion = true // 64-bit by default
     let mutable fsiUseNetCore = false
     let mutable fsiArgs = "--optimize"
     let mutable fsiShadowCopy = true
@@ -138,8 +137,7 @@ let determineFsiPath () =
             raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe exe))
         exe, arg, false, false
     else
-        let fsiExeName () = 
-            if SessionsProperties.useAnyCpuVersion then "fsiAnyCpu.exe" else "fsi.exe"
+        let fsiExeName () = "fsi.exe"
 
         // Use the VS-extension-installed development path if available, relative to the location of this assembly
         let determineFsiRelativePath1 () =
