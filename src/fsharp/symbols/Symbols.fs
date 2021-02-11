@@ -1716,8 +1716,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsEventAddMethod = 
         if isUnresolved() then false else 
         match d with 
-        | M m when m.LogicalName.StartsWithOrdinal("add_") -> 
-            let eventName = m.LogicalName.[4..]
+        | M m ->
+            let logicalName = m.LogicalName
+            logicalName.Length > 4 && logicalName.StartsWithOrdinal("add_") &&
+
+            let eventName = logicalName.[4..]
             let entityTy = generalizedTyconRef m.DeclaringTyconRef
             not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
             let declaringTy = generalizedTyconRef m.DeclaringTyconRef
@@ -1730,8 +1733,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsEventRemoveMethod = 
         if isUnresolved() then false else 
         match d with 
-        | M m when m.LogicalName.StartsWithOrdinal("remove_") -> 
-            let eventName = m.LogicalName.[7..]
+        | M m ->
+            let logicalName = m.LogicalName
+            logicalName.Length > 4 && logicalName.StartsWithOrdinal("remove_") &&
+
+            let eventName = logicalName.[7..]
             let entityTy = generalizedTyconRef m.DeclaringTyconRef
             not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
             let declaringTy = generalizedTyconRef m.DeclaringTyconRef
@@ -1743,8 +1749,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsPropertyGetterMethod = 
         if isUnresolved() then false else 
         match d with 
-        | M m when m.LogicalName.StartsWithOrdinal("get_") -> 
-            let propName = PrettyNaming.ChopPropertyName(m.LogicalName) 
+        | M m ->
+            let logicalName = m.LogicalName
+            logicalName.Length > 4 && logicalName.StartsWithOrdinal("get_") &&
+
+            let propName = PrettyNaming.ChopPropertyName(logicalName)
             let declaringTy = generalizedTyconRef m.DeclaringTyconRef
             not (isNil (GetImmediateIntrinsicPropInfosOfType (Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy))
         | V v -> v.IsPropertyGetterMethod
@@ -1753,9 +1762,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsPropertySetterMethod = 
         if isUnresolved() then false else 
         match d with 
-        // Look for a matching property with the right name. 
-        | M m when m.LogicalName.StartsWithOrdinal("set_") -> 
-            let propName = PrettyNaming.ChopPropertyName(m.LogicalName) 
+        | M m ->
+            let logicalName = m.LogicalName
+            logicalName.Length > 4 && logicalName.StartsWithOrdinal("set_") &&
+
+            let propName = PrettyNaming.ChopPropertyName(logicalName) 
             let declaringTy = generalizedTyconRef m.DeclaringTyconRef
             not (isNil (GetImmediateIntrinsicPropInfosOfType (Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy))
         | V v -> v.IsPropertySetterMethod
