@@ -168,6 +168,6 @@ See the "Debugging The Compiler" section of this [article](https://medium.com/@w
 
 ## Addendum: configuring a proxy server
 
-If you are behind a proxy server, NuGet client tool must be configured to use it, Nuget.config documention for configuring proxy server:
+If you are behind a proxy server, NuGet client tool must be configured to use it:
 
-    [https://docs.microsoft.com/en-us/nuget/reference/nuget-config-file](https://docs.microsoft.com/en-us/nuget/reference/nuget-config-file)
+See the Nuget config file documention for use with a proxy server [https://docs.microsoft.com/en-us/nuget/reference/nuget-config-file](https://docs.microsoft.com/en-us/nuget/reference/nuget-config-file)
