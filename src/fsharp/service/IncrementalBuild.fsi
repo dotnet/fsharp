@@ -106,6 +106,8 @@ type internal PartialCheckResults =
 
     member TcInfo: CompilationThreadToken -> TcInfo
 
+    member TryTcInfo: TcInfo option
+
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
     member TcInfoWithOptional: CompilationThreadToken -> TcInfo * TcInfoOptional

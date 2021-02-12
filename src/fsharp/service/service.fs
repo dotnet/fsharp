@@ -584,40 +584,43 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     /// Type-check the result obtained by parsing, but only if the antecedent type checking context is available. 
     member bc.CheckFileInProjectAllowingStaleCachedResults(parseResults: FSharpParseFileResults, filename, fileVersion, sourceText: ISourceText, options, userOpName) =
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "CheckFileInProjectAllowingStaleCachedResults ", filename, action)
+        let getAnyBuilder options =
+            match tryGetAnyBuilder options with
+            | Some (builderOpt,creationDiags) -> 
+                Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
+                async { return builderOpt,creationDiags }
+            | _ ->
+                execWithReactorAsync (fun ctok -> getOrCreateBuilder (ctok, options, userOpName))
         async {
             try
                 if implicitlyStartBackgroundWork then 
                     reactor.CancelBackgroundOp() // cancel the background work, since we will start new work after we're done
 
                 let! cachedResults = 
-                  execWithReactorAsync <| fun ctok ->   
-                   cancellable {
-                    let! _builderOpt,_creationErrors = getOrCreateBuilder (ctok, options, userOpName)
+                    async {
+                        let! builderOpt, creationDiags = getAnyBuilder options
 
-                    match tryGetAnyBuilder options with
-                    | Some (Some builder, creationDiags) ->
-                        match bc.GetCachedCheckFileResult(builder, filename, sourceText, options) with
-                        | Some (_, checkResults) -> return Some (builder, creationDiags, Some (FSharpCheckFileAnswer.Succeeded checkResults))
-                        | _ -> return Some (builder, creationDiags, None)
-                    | _ -> return None // the builder wasn't ready
-                   }
+                        match builderOpt with
+                        | Some builder ->
+                            match bc.GetCachedCheckFileResult(builder, filename, sourceText, options) with
+                            | Some (_, checkResults) -> return Some (builder, creationDiags, Some (FSharpCheckFileAnswer.Succeeded checkResults))
+                            | _ -> return Some (builder, creationDiags, None)
+                        | _ -> return None // the builder wasn't ready
+                    }
                         
                 match cachedResults with
                 | None -> return None
                 | Some (_, _, Some x) -> return Some x
                 | Some (builder, creationDiags, None) ->
                     Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CheckFileInProjectAllowingStaleCachedResults.CacheMiss", filename)
-                    let! tcPrior = 
-                        execWithReactorAsync <| fun ctok -> 
-                          cancellable {
-                            DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
-                            let tcPrior = builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename
-                            return
-                                tcPrior
-                                |> Option.map (fun tcPrior ->
-                                    (tcPrior, tcPrior.TcInfo ctok)
-                                )
-                          }
+                    let tcPrior = 
+                        let tcPrior = builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename
+                        tcPrior
+                        |> Option.bind (fun tcPrior ->
+                            match tcPrior.TryTcInfo with
+                            | Some(tcInfo) -> Some (tcPrior, tcInfo)
+                            | _ -> None
+                        )
                             
                     match tcPrior with
                     | Some(tcPrior, tcInfo) -> 

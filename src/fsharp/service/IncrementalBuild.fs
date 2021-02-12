@@ -359,6 +359,14 @@ type BoundModel private (tcConfig: TcConfig,
             return state.Partial
         }
 
+    member this.TryTcInfo = 
+        match !lazyTcInfoState with
+        | Some(state) ->
+            match state with
+            | FullState(tcInfo, _)
+            | PartialState(tcInfo) -> Some tcInfo
+        | _ -> None
+
     member this.TcInfoWithOptional =
         eventually {
             let! state = this.GetState(false)
@@ -599,6 +607,8 @@ type PartialCheckResults private (boundModel: BoundModel, timeStamp: DateTime) =
     member _.TimeStamp = timeStamp
 
     member _.TcInfo ctok = boundModel.TcInfo |> eval ctok
+
+    member _.TryTcInfo = boundModel.TryTcInfo
 
     member _.TcInfoWithOptional ctok = boundModel.TcInfoWithOptional |> eval ctok
 
