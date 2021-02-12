@@ -154,7 +154,7 @@ let main argv = 0"""
                 let directoryBuildTargetsFileName = Path.Combine(projectDirectory, "Directory.Build.targets")
                 let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
 #if NETCOREAPP
-                File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "netcoreapp3.1").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+                File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net5.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #else
                 File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #endif
@@ -443,7 +443,7 @@ let main argv = 0"""
         let runtimeconfig = """
 {
     "runtimeOptions": {
-        "tfm": "netcoreapp3.1",
+        "tfm": "net5.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
             "version": "5.0.0"
