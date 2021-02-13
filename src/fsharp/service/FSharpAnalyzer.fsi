@@ -7,6 +7,7 @@ open System.Threading
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 
@@ -16,29 +17,25 @@ type FSharpAnalyzerTextChange = Range * string
 [<Sealed>]
 type public FSharpAnalyzerCheckFileContext = 
 
-    internal new: sourceTexts: (string * ISourceText)[] * fileName: string * projectOptions: FSharpProjectOptions * parseResults: FSharpParseFileResults * checkResults: FSharpCheckFileResults * tcConfig: TcConfig -> FSharpAnalyzerCheckFileContext
+    internal new: sourceTexts: (string * ISourceText)[] * checkResults: FSharpCheckFileResults * cancellationToken: CancellationToken * tcConfig: TcConfig -> FSharpAnalyzerCheckFileContext
 
-    member FileName: string
+    member CancellationToken: CancellationToken 
 
     member GetFileSource: fileName: string -> ISourceText
 
-    member ProjectOptions: FSharpProjectOptions
-
-    member ParseFileResults: FSharpParseFileResults
-
-    member CheckFileResults: FSharpCheckFileResults
+    member CheckerModel: FSharpCheckFileResults
 
 /// The context for an analyzer when a project is checked
 [<Sealed>]
 type public FSharpAnalyzerCheckProjectContext = 
 
-    internal new: sourceTexts: (string * ISourceText)[] * projectOptions: FSharpProjectOptions * checkResults: FSharpCheckProjectResults * tcConfig: TcConfig -> FSharpAnalyzerCheckProjectContext
+    internal new: sourceTexts: (string * ISourceText)[] * checkResults: FSharpCheckProjectResults * cancellationToken: CancellationToken * tcConfig: TcConfig -> FSharpAnalyzerCheckProjectContext
+
+    member CancellationToken: CancellationToken 
 
     member GetFileSource: fileName: string -> ISourceText
 
-    member ProjectOptions: FSharpProjectOptions
-
-    member CheckProjectResults: FSharpCheckProjectResults
+    member CheckerModel: FSharpCheckProjectResults
 
 /// The context for an analyzer. Currently empty.
 [<Sealed>]
@@ -55,21 +52,21 @@ type public FSharpAnalyzer =
     
     abstract RequiresAssemblyContents: bool
 
-    abstract OnCheckFile: FSharpAnalyzerCheckFileContext * cancellationToken: CancellationToken -> FSharpDiagnostic[]
+    abstract OnCheckFile: FSharpAnalyzerCheckFileContext -> FSharpDiagnostic[]
 
-    abstract OnCheckProject: FSharpAnalyzerCheckProjectContext * cancellationToken: CancellationToken -> FSharpDiagnostic[]
+    abstract OnCheckProject: FSharpAnalyzerCheckProjectContext -> FSharpDiagnostic[]
 
-    abstract TryAdditionalToolTip: FSharpAnalyzerCheckFileContext * Position * cancellationToken: CancellationToken  -> TaggedText[] option
+    abstract TryAdditionalToolTip: FSharpAnalyzerCheckFileContext * position: Position -> TaggedText[] option
 
-    abstract TryCodeFix: FSharpAnalyzerCheckFileContext * FSharpDiagnostic[] * cancellationToken: CancellationToken  -> FSharpAnalyzerTextChange[] option
+    abstract TryCodeFix: FSharpAnalyzerCheckFileContext * diagnostics: FSharpDiagnostic[] -> FSharpAnalyzerTextChange[] option
 
     abstract FixableDiagnosticIds: string[]
 
     default RequiresAssemblyContents: bool
-    default OnCheckFile: FSharpAnalyzerCheckFileContext * cancellationToken: CancellationToken -> FSharpDiagnostic[]
-    default OnCheckProject: FSharpAnalyzerCheckProjectContext * cancellationToken: CancellationToken -> FSharpDiagnostic[]
-    default TryAdditionalToolTip: FSharpAnalyzerCheckFileContext * Position * cancellationToken: CancellationToken -> TaggedText[] option
-    default TryCodeFix: FSharpAnalyzerCheckFileContext * FSharpDiagnostic[] * cancellationToken: CancellationToken -> FSharpAnalyzerTextChange[] option
+    default OnCheckFile: FSharpAnalyzerCheckFileContext -> FSharpDiagnostic[]
+    default OnCheckProject: FSharpAnalyzerCheckProjectContext -> FSharpDiagnostic[]
+    default TryAdditionalToolTip: FSharpAnalyzerCheckFileContext * position: Position -> TaggedText[] option
+    default TryCodeFix: FSharpAnalyzerCheckFileContext * diagnostics: FSharpDiagnostic[] -> FSharpAnalyzerTextChange[] option
     default FixableDiagnosticIds: string[]
 
 module internal FSharpAnalyzers =

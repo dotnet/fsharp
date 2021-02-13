@@ -18,27 +18,23 @@ type FSharpAnalyzerTextChange = Range * string
 
 [<Sealed>]
 type public FSharpAnalyzerCheckFileContext(sourceTexts: (string * ISourceText)[],
-        fileName: string,
-        projectOptions: FSharpProjectOptions,
-        parseResults: FSharpParseFileResults,
         checkResults: FSharpCheckFileResults,
+        cancellationToken: CancellationToken,
         tcConfig: TcConfig) = 
     let sourceTextMap = Map.ofArray sourceTexts
+    member _.CancellationToken = cancellationToken
     member _.GetFileSource(fileName) = if sourceTextMap.ContainsKey fileName then sourceTextMap.[fileName] else SourceText.readFile fileName tcConfig.inputCodePage
-    member _.FileName = fileName
-    member _.ProjectOptions = projectOptions
-    member _.ParseFileResults = parseResults
-    member _.CheckFileResults = checkResults
+    member _.CheckerModel = checkResults
 
 [<Sealed>]
 type public FSharpAnalyzerCheckProjectContext(sourceTexts: (string * ISourceText)[],
-        projectOptions: FSharpProjectOptions,
         checkResults: FSharpCheckProjectResults,
+        cancellationToken: CancellationToken,
         tcConfig: TcConfig) = 
     let sourceTextMap = Map.ofArray sourceTexts
+    member _.CancellationToken = cancellationToken
     member _.GetFileSource(fileName) = if sourceTextMap.ContainsKey fileName then sourceTextMap.[fileName] else SourceText.readFile fileName tcConfig.inputCodePage
-    member _.ProjectOptions = projectOptions
-    member _.CheckProjectResults = checkResults
+    member _.CheckerModel = checkResults
 
 [<Sealed>]
 type public FSharpAnalysisContext() =
@@ -48,17 +44,17 @@ type public FSharpAnalysisContext() =
 [<AbstractClass>]
 type public FSharpAnalyzer(context:FSharpAnalysisContext)  = 
     member _.Context = context
-    abstract OnCheckFile: context: FSharpAnalyzerCheckFileContext * cancellationToken: CancellationToken -> FSharpDiagnostic[]
-    abstract OnCheckProject: context: FSharpAnalyzerCheckProjectContext * cancellationToken: CancellationToken -> FSharpDiagnostic[]
-    abstract TryAdditionalToolTip: context: FSharpAnalyzerCheckFileContext * position: Position  * cancellationToken: CancellationToken -> TaggedText[] option
-    abstract TryCodeFix: context: FSharpAnalyzerCheckFileContext * diagnostics: FSharpDiagnostic[]  * cancellationToken: CancellationToken -> FSharpAnalyzerTextChange[] option
+    abstract OnCheckFile: context: FSharpAnalyzerCheckFileContext -> FSharpDiagnostic[]
+    abstract OnCheckProject: context: FSharpAnalyzerCheckProjectContext -> FSharpDiagnostic[]
+    abstract TryAdditionalToolTip: context: FSharpAnalyzerCheckFileContext * position: Position  -> TaggedText[] option
+    abstract TryCodeFix: context: FSharpAnalyzerCheckFileContext * diagnostics: FSharpDiagnostic[]  -> FSharpAnalyzerTextChange[] option
     abstract FixableDiagnosticIds: string[]
     abstract RequiresAssemblyContents: bool
 
-    default _.OnCheckFile(_, _) = [| |]
-    default _.OnCheckProject(_, _) = [| |]
-    default _.TryAdditionalToolTip(_, _, _)  = None
-    default _.TryCodeFix(_, _, _) = None
+    default _.OnCheckFile(_) = [| |]
+    default _.OnCheckProject(_) = [| |]
+    default _.TryAdditionalToolTip(_, _)  = None
+    default _.TryCodeFix(_, _) = None
     default _.FixableDiagnosticIds = [| |]
     default _.RequiresAssemblyContents = false
 

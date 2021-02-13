@@ -593,7 +593,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             ProjectFileName = "compile.fsproj"
             ProjectId = None
             SourceFiles =  Array.ofList sourceFiles
-            ReferencedProjects = [| |] //for a in tcImports.GetImportedAssemblies() -> a.FSharpViewOfMetadata.FileName |]
+            ReferencedProjects = [| |]
             OtherOptions = argv
             IsIncompleteTypeCheckEnvironment = true
             UseScriptResolutionRules = false
@@ -624,6 +624,8 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
                  tcGlobals, 
                  false, 
                  None, 
+                 parseResults.ParseTree,
+                 projectOptions,
                  [| |], 
                  [| |], 
                  [| |], 
@@ -640,16 +642,10 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
                  implFileOpt,
                  [| |]) 
 
-        let ctxt = 
-            FSharpAnalyzerCheckFileContext(sourceTexts, 
-                inp.FileName,
-                projectOptions,
-                parseResults,
-                checkResults,
-                tcConfig)
+        let ctxt = FSharpAnalyzerCheckFileContext(sourceTexts, checkResults, CancellationToken.None, tcConfig)
 
         for analyzer in analyzers do
-             let diagnostics = analyzer.OnCheckFile(ctxt, CancellationToken.None)
+             let diagnostics = analyzer.OnCheckFile(ctxt)
              for diag in diagnostics do
                 let exn = CompilerToolDiagnostic((diag.ErrorNumber, diag.Message), diag.Range)
                 match diag.Severity with 

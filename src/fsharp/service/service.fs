@@ -508,6 +508,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                             userOpName,
                                             options.IsIncompleteTypeCheckEnvironment, 
                                             box builder, 
+                                            options, 
                                             Array.ofList tcDependencyFiles, 
                                             creationDiags, 
                                             parseResults.Diagnostics, 
@@ -669,20 +670,18 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     | None -> return [| |]
                     | Some builder ->
                         let fileName = Path.GetFullPath parseResults.FileName
+                        let! ct = Cancellable.token()
                         let ctxt = 
                             FSharpAnalyzerCheckFileContext([| (fileName, sourceText) |], 
-                                fileName,
-                                options,
-                                parseResults,
                                 checkResults,
+                                ct,
                                 builder.TcConfig)
 
-                        let! ct = Cancellable.token()
                         let diags = 
                             let diagsCollector = ResizeArray()
                             for analyzer in builder.Analyzers do
                                 let moreDiags = 
-                                    try analyzer.OnCheckFile(ctxt, ct)
+                                    try analyzer.OnCheckFile(ctxt)
                                     with exn -> 
                                         let m = Range.rangeN fileName 0
                                         let errExn = Error(FSComp.SR.etAnalyzerException(analyzer.GetType().FullName, fileName, exn.ToString()), m)
@@ -705,20 +704,18 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     | None -> return [| |]
                     | Some builder ->
                         let fileName = Path.GetFullPath parseResults.FileName
+                        let! ct = Cancellable.token()
                         let ctxt = 
                             FSharpAnalyzerCheckFileContext([| (fileName, sourceText) |], 
-                                fileName,
-                                options,
-                                parseResults,
                                 checkResults,
+                                ct,
                                 builder.TcConfig)
 
-                        let! ct = Cancellable.token()
                         let tooltips = 
                             let tooltipsCollector = ResizeArray()
                             for analyzer in builder.Analyzers do
                                 try 
-                                    match analyzer.TryAdditionalToolTip(ctxt, pos, ct) with 
+                                    match analyzer.TryAdditionalToolTip(ctxt, pos) with 
                                     | Some t -> tooltipsCollector.Add(t)
                                     | None -> ()
                                 with exn -> 
@@ -769,6 +766,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             tcProj.TcGlobals, 
                             options.IsIncompleteTypeCheckEnvironment, 
                             Some (box builder), 
+                            parseTreeOpt,
+                            options,
                             Array.ofList tcDependencyFiles, 
                             creationDiags, 
                             parseResults.Diagnostics, 
@@ -850,8 +849,9 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
               let errors = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (errorOptions, true, fileName, tcErrors, suggestNamesForErrors) |]
               return FSharpCheckProjectResults (options.ProjectFileName, Some tcProj.TcConfig, keepAssemblyContents, errors, 
                                                     Some(tcProj.TcGlobals, tcProj.TcImports, tcState.Ccu, tcState.CcuSig, 
-                                                            tcSymbolUses, topAttribs, tcAssemblyDataOpt, ilAssemRef, 
-                                                            tcEnvAtEnd.AccessRights, tcAssemblyExprOpt, Array.ofList tcDependencyFiles))
+                                                         tcSymbolUses, topAttribs, tcAssemblyDataOpt, ilAssemRef, 
+                                                         tcEnvAtEnd.AccessRights, tcAssemblyExprOpt, Array.ofList tcDependencyFiles,
+                                                         options))
       }
 
     member _.GetAssemblyData(options, ctok, userOpName) =

@@ -215,6 +215,8 @@ type internal TypeCheckInfo
            tcAccessRights: AccessorDomain,
            projectFileName: string,
            mainInputFileName: string,
+           parseTree: ParsedInput option,
+           projectOptions: FSharpProjectOptions,
            sResolutions: TcResolutions,
            sSymbolUses: TcSymbolUses,
            // This is a name resolution environment to use if no better match can be found.
@@ -498,7 +500,7 @@ type internal TypeCheckInfo
         | _ ->
             let bestQual, textChanged = 
                 match parseResults.ParseTree with
-                | Some(input) -> 
+                | Some input -> 
                     match ParsedInput.GetRangeOfExprLeftOfDot(endOfExprPos,Some(input)) with   // TODO we say "colAtEndOfNames" everywhere, but that's not really a good name ("foo  .  $" hit Ctrl-Space at $)
                     | Some( exprRange) ->
                         // We have an up-to-date sync parse, and know the exact range of the prior expression.
@@ -993,6 +995,8 @@ type internal TypeCheckInfo
     member scope.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) : bool =
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
         
+    member _.ParseTree = parseTree
+
     /// Get the auto-complete items at a location
     member _.GetDeclarations (parseResultsOpt, line, lineStr, partialName, getAllEntities) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
@@ -1394,6 +1398,8 @@ type internal TypeCheckInfo
 
     member _.AccessRights =  tcAccessRights
 
+    member _.ProjectOptions =  projectOptions
+
     member _.GetReferencedAssemblies() = 
         [ for x in tcImports.GetImportedAssemblies() do 
                 yield FSharpAssembly(g, tcImports, x.FSharpViewOfMetadata) ]
@@ -1725,6 +1731,7 @@ module internal ParseAndCheckFile =
           (parseResults: FSharpParseFileResults,
            sourceText: ISourceText,
            mainInputFileName: string,
+           projectOptions: FSharpProjectOptions,
            projectFileName: string,
            tcConfig: TcConfig,
            tcGlobals: TcGlobals,
@@ -1819,7 +1826,9 @@ module internal ParseAndCheckFile =
                               tcImports,
                               tcEnvAtEnd.AccessRights,
                               projectFileName, 
-                              mainInputFileName, 
+                              mainInputFileName,
+                              parseResults.ParseTree,
+                              projectOptions,
                               sink.GetResolutions(), 
                               sink.GetSymbolUses(),
                               tcEnvAtEnd.NameEnv,
@@ -1834,7 +1843,9 @@ module internal ParseAndCheckFile =
 
 
 [<Sealed>] 
-type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad: AccessorDomain) =
+type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad: AccessorDomain, projectOptions: FSharpProjectOptions) =
+
+    member _.ProjectOptions = projectOptions
 
     /// Get the assemblies referenced
     member _.GetReferencedAssemblies() = assemblies
@@ -1872,6 +1883,10 @@ type FSharpCheckFileResults
         match details with
         | None -> None
         | Some (scope, _builderOpt) -> Some scope.TcImports
+
+    /// Intellisense autocompletions
+    member _.ParseTree = 
+        threadSafeOp (fun () -> None) (fun scope -> scope.ParseTree)
 
     /// Intellisense autocompletions
     member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities) = 
@@ -1961,7 +1976,7 @@ type FSharpCheckFileResults
         threadSafeOp 
             (fun () -> failwith "not available") 
             (fun scope -> 
-                FSharpProjectContext(scope.ThisCcu, scope.GetReferencedAssemblies(), scope.AccessRights))
+                FSharpProjectContext(scope.ThisCcu, scope.GetReferencedAssemblies(), scope.AccessRights, scope.ProjectOptions))
 
     member _.DependencyFiles = dependencyFiles
 
@@ -2046,6 +2061,8 @@ type FSharpCheckFileResults
          tcConfig, tcGlobals, 
          isIncompleteTypeCheckEnvironment: bool, 
          builder: obj option, 
+         parseTree,
+         projectOptions,
          dependencyFiles, 
          creationErrors: FSharpDiagnostic[], 
          parseErrors: FSharpDiagnostic[], 
@@ -2060,7 +2077,9 @@ type FSharpCheckFileResults
 
         let tcFileInfo = 
             TypeCheckInfo(tcConfig, tcGlobals, ccuSigForFile, thisCcu, tcImports, tcAccessRights, 
-                          projectFileName, mainInputFileName, sResolutions, sSymbolUses, 
+                          projectFileName, mainInputFileName,
+                          parseTree, projectOptions,
+                          sResolutions, sSymbolUses, 
                           sFallback, loadClosure,
                           implFiles, openDeclarations) 
                 
@@ -2083,6 +2102,7 @@ type FSharpCheckFileResults
          userOpName: string,
          isIncompleteTypeCheckEnvironment: bool, 
          builder: obj, 
+         projectOptions: FSharpProjectOptions,
          dependencyFiles: string[], 
          creationErrors: FSharpDiagnostic[], 
          parseErrors: FSharpDiagnostic[], 
@@ -2091,7 +2111,7 @@ type FSharpCheckFileResults
         async {
             let! tcErrors, tcFileInfo = 
                 ParseAndCheckFile.CheckOneFile
-                    (parseResults, sourceText, mainInputFileName, projectFileName, tcConfig, tcGlobals, tcImports, 
+                    (parseResults, sourceText, mainInputFileName, projectOptions, projectFileName, tcConfig, tcGlobals, tcImports, 
                      tcState, moduleNamesDict, loadClosure, backgroundDiagnostics, reactorOps, 
                      userOpName, suggestNamesForErrors)
             match tcFileInfo with 
@@ -2117,7 +2137,7 @@ type FSharpCheckProjectResults
           diagnostics: FSharpDiagnostic[], 
           details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list *
                    TopAttribs option * IRawFSharpAssemblyData option * ILAssemblyRef *
-                   AccessorDomain * TypedImplFile list option * string[]) option) =
+                   AccessorDomain * TypedImplFile list option * string[] * FSharpProjectOptions) option) =
 
     let getDetails() = 
         match details with 
@@ -2134,12 +2154,12 @@ type FSharpCheckProjectResults
     member _.HasCriticalErrors = details.IsNone
 
     member _.AssemblySignature =  
-        let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         FSharpAssemblySignature(tcGlobals, thisCcu, ccuSig, tcImports, topAttribs, ccuSig)
 
     member _.TypedImplementationFiles =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let mimpls = 
             match tcAssemblyExpr with 
             | None -> []
@@ -2148,7 +2168,7 @@ type FSharpCheckProjectResults
 
     member info.AssemblyContents = 
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let mimpls = 
             match tcAssemblyExpr with 
             | None -> []
@@ -2157,7 +2177,7 @@ type FSharpCheckProjectResults
 
     member _.GetOptimizedAssemblyContents() =  
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let mimpls = 
             match tcAssemblyExpr with 
             | None -> []
@@ -2176,7 +2196,7 @@ type FSharpCheckProjectResults
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member _.GetUsesOfSymbol(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) = 
-        let (tcGlobals, _tcImports, _thisCcu, _ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
+        let (tcGlobals, _tcImports, _thisCcu, _ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
 
         tcSymbolUses
         |> Seq.collect (fun r -> r.GetUsesOfSymbol symbol.Item)
@@ -2189,7 +2209,7 @@ type FSharpCheckProjectResults
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member _.GetAllUsesOfAllSymbols(?cancellationToken: CancellationToken) = 
-        let (tcGlobals, tcImports, thisCcu, ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let cenv = SymbolEnv(tcGlobals, thisCcu, Some ccuSig, tcImports)
 
         [| for r in tcSymbolUses do
@@ -2201,22 +2221,22 @@ type FSharpCheckProjectResults
                       yield FSharpSymbolUse(tcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |]
 
     member _.ProjectContext = 
-        let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, ad, _tcAssemblyExpr, _dependencyFiles, projectOptions) = getDetails()
         let assemblies = 
             tcImports.GetImportedAssemblies()
             |> List.map (fun x -> FSharpAssembly(tcGlobals, tcImports, x.FSharpViewOfMetadata))
-        FSharpProjectContext(thisCcu, assemblies, ad) 
+        FSharpProjectContext(thisCcu, assemblies, ad, projectOptions) 
 
     member _.RawFSharpAssemblyData = 
-        let (_tcGlobals, _tcImports, _thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
+        let (_tcGlobals, _tcImports, _thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         tcAssemblyData
 
     member _.DependencyFiles = 
-        let (_tcGlobals, _tcImports, _thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, dependencyFiles) = getDetails()
+        let (_tcGlobals, _tcImports, _thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, dependencyFiles, _projectOptions) = getDetails()
         dependencyFiles
 
     member _.AssemblyFullName = 
-        let (_tcGlobals, _tcImports, _thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
+        let (_tcGlobals, _tcImports, _thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         ilAssemRef.QualifiedName
 
     override _.ToString() = "FSharpCheckProjectResults(" + projectFileName + ")"
@@ -2259,9 +2279,23 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                     reduceMemoryUsage=reduceMemoryUsage,
                     dependencyProvider=tcImports.DependencyProvider)
 
+            let projectOptions = 
+                { 
+                  ProjectFileName="project"
+                  ProjectId=None
+                  SourceFiles=[||]
+                  OtherOptions=[||]
+                  ReferencedProjects=[||]
+                  IsIncompleteTypeCheckEnvironment=false
+                  UseScriptResolutionRules =false
+                  LoadTime=System.DateTime.Now
+                  UnresolvedReferences =None
+                  OriginalLoadReferences = []
+                  Stamp = None
+                }
             let! tcErrors, tcFileInfo =  
                 ParseAndCheckFile.CheckOneFile
-                    (parseResults, sourceText, filename, "project",
+                    (parseResults, sourceText, filename, projectOptions, "project",
                      tcConfig, tcGlobals, tcImports,  tcState, 
                      Map.empty, Some loadClosure, backgroundDiagnostics,
                      reactorOps, userOpName, suggestNamesForErrors)
@@ -2276,7 +2310,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                             keepAssemblyContents, errors, 
                             Some(tcGlobals, tcImports, tcFileInfo.ThisCcu, tcFileInfo.CcuSigForFile,
                                  [tcFileInfo.ScopeSymbolUses], None, None, mkSimpleAssemblyRef "stdin", 
-                                 tcState.TcEnvFromImpls.AccessRights, None, dependencyFiles))
+                                 tcState.TcEnvFromImpls.AccessRights, None, dependencyFiles, projectOptions))
 
                     parseResults, typeCheckResults, projectResults
 

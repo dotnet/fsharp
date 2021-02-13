@@ -137,6 +137,9 @@ type public FSharpProjectContext =
     /// Get the accessibility rights for this project context w.r.t. InternalsVisibleTo attributes granting access to other assemblies
     member AccessibilityRights : FSharpAccessibilityRights
 
+    /// Get the project options
+    member ProjectOptions: FSharpProjectOptions
+
 /// Options used to determine active --define conditionals and other options relevant to parsing files in a project
 type public FSharpParsingOptions =
     { 
@@ -157,6 +160,10 @@ type public FSharpParsingOptions =
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 type public FSharpCheckFileResults =
+
+    /// The syntax tree for the source file, if available
+    member ParseTree: ParsedInput option
+
     /// The errors returned by parsing a source file.
     member Diagnostics: FSharpDiagnostic[]
 
@@ -320,6 +327,8 @@ type public FSharpCheckFileResults =
         tcGlobals: TcGlobals *
         isIncompleteTypeCheckEnvironment: bool *
         builder: obj option * 
+        parseTree: ParsedInput option *
+        projectOptions: FSharpProjectOptions *
         dependencyFiles: string[] * 
         creationErrors: FSharpDiagnostic[] *
         parseErrors: FSharpDiagnostic[] *
@@ -354,6 +363,7 @@ type public FSharpCheckFileResults =
          userOpName: string *
          isIncompleteTypeCheckEnvironment: bool * 
          builder: obj * 
+         projectOptions: FSharpProjectOptions *
          dependencyFiles: string[] * 
          creationErrors:FSharpDiagnostic[] * 
          parseErrors:FSharpDiagnostic[] * 
@@ -410,7 +420,9 @@ type public FSharpCheckProjectResults =
         tcConfigOption: TcConfig option *
         keepAssemblyContents: bool *
         diagnostics: FSharpDiagnostic[] * 
-        details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list * TopAttribs option * IRawFSharpAssemblyData option * ILAssemblyRef * AccessorDomain * TypedImplFile list option * string[]) option 
+        details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list *
+                 TopAttribs option * IRawFSharpAssemblyData option *
+                 ILAssemblyRef * AccessorDomain * TypedImplFile list option * string[] * FSharpProjectOptions) option 
            -> FSharpCheckProjectResults
 
 module internal ParseAndCheckFile = 

@@ -227,13 +227,14 @@ type BoundModel private (tcConfig: TcConfig,
                          beforeFileChecked: Event<string>,
                          fileChecked: Event<string>,
                          prevTcInfo: TcInfo,
-                         prevTcInfoOptional: Eventually<TcInfoOptional option>,
+                         prevTcInfoOptional: (unit -> Eventually<TcInfoOptional option>),
                          syntaxTreeOpt: SyntaxTree option,
-                         lazyTcInfoState: TcInfoState option ref) =
+                         tcInfoStateOpt: TcInfoState option) =
 
+    let mutable lazyTcInfoState = tcInfoStateOpt
     let defaultTypeCheck () =
         eventually {
-            match prevTcInfoOptional with
+            match prevTcInfoOptional() with
             | Eventually.Done(Some prevTcInfoOptional) ->
                 return FullState(prevTcInfo, prevTcInfoOptional)
             | _ ->
@@ -262,13 +263,13 @@ type BoundModel private (tcConfig: TcConfig,
 
     member this.Invalidate() =
         let hasSig = this.BackingSignature.IsSome
-        match !lazyTcInfoState with
+        match lazyTcInfoState with
         // If partial checking is enabled and we have a backing sig file, then do nothing. The partial state contains the sig state.
         | Some(PartialState _) when enablePartialTypeChecking && hasSig -> ()
         // If partial checking is enabled and we have a backing sig file, then use the partial state. The partial state contains the sig state.
-        | Some(FullState(tcInfo, _)) when enablePartialTypeChecking && hasSig -> lazyTcInfoState := Some(PartialState tcInfo)
+        | Some(FullState(tcInfo, _)) when enablePartialTypeChecking && hasSig -> lazyTcInfoState <- Some(PartialState tcInfo)
         | _ ->
-            lazyTcInfoState := None
+            lazyTcInfoState <- None
 
         // Always invalidate the syntax tree cache.
         syntaxTreeOpt
@@ -281,33 +282,34 @@ type BoundModel private (tcConfig: TcConfig,
             else false
 
         let mustCheck =
-            match !lazyTcInfoState, partialCheck with
+            match lazyTcInfoState, partialCheck with
             | None, _ -> true
             | Some(PartialState _), false -> true
             | _ -> false
 
         if mustCheck then
-            lazyTcInfoState := None
+            lazyTcInfoState <- None
 
-        match !lazyTcInfoState with
+        match lazyTcInfoState with
         | Some tcInfoState -> tcInfoState |> Eventually.Done
         | _ -> 
             eventually {
                 let! tcInfoState = this.TypeCheck(partialCheck)
-                lazyTcInfoState := Some tcInfoState
+                lazyTcInfoState <- Some tcInfoState
                 return tcInfoState
             }
+
+    member this.TryOptional() =
+        eventually {
+            let! prevState = this.GetState(false)
+            match prevState with
+            | FullState(_, prevTcInfoOptional) -> return Some prevTcInfoOptional
+            | _ -> return None
+        }
 
     member this.Next(syntaxTree) =
         eventually {
             let! prevState = this.GetState(true)
-            let lazyPrevTcInfoOptional =
-                eventually {
-                    let! prevState = this.GetState(false)
-                    match prevState with
-                    | FullState(_, prevTcInfoOptional) -> return Some prevTcInfoOptional
-                    | _ -> return None
-                }
             return
                 BoundModel(
                     tcConfig,
@@ -322,9 +324,9 @@ type BoundModel private (tcConfig: TcConfig,
                     beforeFileChecked, 
                     fileChecked, 
                     prevState.Partial, 
-                    lazyPrevTcInfoOptional, 
+                    (fun () -> this.TryOptional()), 
                     Some syntaxTree,
-                    ref None)
+                    None)
         }
 
     member this.Finish(finalTcErrorsRev, finalTopAttribs) =
@@ -353,7 +355,7 @@ type BoundModel private (tcConfig: TcConfig,
                     prevTcInfo, 
                     prevTcInfoOptional, 
                     syntaxTreeOpt,
-                    ref (Some finishState))
+                    Some finishState)
         }
 
     member this.TcInfo =
@@ -381,7 +383,7 @@ type BoundModel private (tcConfig: TcConfig,
         }
 
     member private this.TypeCheck (partialCheck: bool) =  
-        match partialCheck, !lazyTcInfoState with
+        match partialCheck, lazyTcInfoState with
         | true, Some (PartialState _ as state)
         | true, Some (FullState _ as state) -> state |> Eventually.Done
         | false, Some (FullState _ as state) -> state |> Eventually.Done
@@ -451,7 +453,7 @@ type BoundModel private (tcConfig: TcConfig,
                             if partialCheck then
                                 return PartialState tcInfo
                             else
-                                match! prevTcInfoOptional with
+                                match! prevTcInfoOptional() with
                                 | None -> return PartialState tcInfo
                                 | Some prevTcInfoOptional ->
                                     // Build symbol keys
@@ -523,7 +525,7 @@ type BoundModel private (tcConfig: TcConfig,
                          beforeFileChecked: Event<string>,
                          fileChecked: Event<string>,
                          prevTcInfo: TcInfo,
-                         prevTcInfoOptional: Eventually<TcInfoOptional option>,
+                         prevTcInfoOptional: (unit -> Eventually<TcInfoOptional option>),
                          syntaxTreeOpt: SyntaxTree option) =
         BoundModel(tcConfig, tcGlobals, tcImports, 
                       keepAssemblyContents, keepAllBackgroundResolutions, 
@@ -535,7 +537,7 @@ type BoundModel private (tcConfig: TcConfig,
                       prevTcInfo,
                       prevTcInfoOptional,
                       syntaxTreeOpt,
-                      ref None)
+                      None)
       
 /// Global service state
 type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*TargetFrameworkDirectories*)string list * (*fsharpBinaries*)string * (*langVersion*)decimal
@@ -588,7 +590,7 @@ type FrameworkImportsCache(size) =
 
 /// Represents the interim state of checking an assembly
 [<Sealed>]
-type PartialCheckResults private (boundModel: BoundModel, timeStamp: DateTime) = 
+type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime) = 
 
     let eval ctok (work: Eventually<'T>) =
         match work with
@@ -596,7 +598,9 @@ type PartialCheckResults private (boundModel: BoundModel, timeStamp: DateTime) =
         | _ -> Eventually.force ctok work
 
     member _.TcImports = boundModel.TcImports
+
     member _.TcGlobals = boundModel.TcGlobals
+
     member _.TcConfig = boundModel.TcConfig
 
     member _.TimeStamp = timeStamp
@@ -612,9 +616,6 @@ type PartialCheckResults private (boundModel: BoundModel, timeStamp: DateTime) =
     member _.GetSemanticClassification ctok =
         let _, info = boundModel.TcInfoWithOptional |> eval ctok
         info.semanticClassificationKeyStore
-
-    static member Create (boundModel: BoundModel, timestamp) = 
-        PartialCheckResults(boundModel, timestamp)
 
 [<AutoOpen>]
 module Utilities = 
@@ -814,7 +815,11 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
                 keepAllBackgroundSymbolUses, 
                 enableBackgroundItemKeyStoreAndSemanticClassification,
                 defaultPartialTypeChecking,
-                beforeFileChecked, fileChecked, tcInfo, Eventually.Done (Some tcInfoOptional), None) }
+                beforeFileChecked,
+                fileChecked,
+                tcInfo,
+                (fun () -> Eventually.Done (Some tcInfoOptional)),
+                None) }
                 
     /// Type check all files.     
     let TypeCheckTask ctok (prevBoundModel: BoundModel) syntaxTree: Eventually<BoundModel> =
@@ -1176,7 +1181,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
         let result = tryGetBeforeSlot slotOfFile
         
         match result with
-        | Some (boundModel, timestamp) -> Some (PartialCheckResults.Create (boundModel, timestamp))
+        | Some (boundModel, timestamp) -> Some (PartialCheckResults (boundModel, timestamp))
         | _ -> None
         
     
@@ -1192,7 +1197,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
         let! result = eval cache ctok (slotOfFile - 1)
         
         match result with
-        | Some (boundModel, timestamp) -> return PartialCheckResults.Create (boundModel, timestamp)
+        | Some (boundModel, timestamp) -> return PartialCheckResults (boundModel, timestamp)
         | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsBeforeSlotInProject)."
       }
 
@@ -1224,7 +1229,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
 
         match! tryGetFinalized cache ctok with
         | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp) -> 
-            return PartialCheckResults.Create (boundModel, timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
+            return PartialCheckResults (boundModel, timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
         | None -> 
             let msg = "Build was not evaluated, expected the results to be ready after 'tryGetFinalized')."
             return! failwith msg
