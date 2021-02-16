@@ -87,7 +87,7 @@ let sysLib nm =
 [<AutoOpen>]
 module Helpers = 
     type DummyType = A | B
-    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<FSharpChecker>.Assembly.CodeBase).LocalPath), p)
+    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<FSharpChecker>.Assembly.Location).LocalPath), p)
 
 let fsCoreDefaultReference() = 
     PathRelativeToTestAssembly "FSharp.Core.dll"
@@ -432,3 +432,10 @@ let coreLibAssemblyName =
     "mscorlib"
 #endif
 
+let assertRange
+    (expectedStartLine: int, expectedStartColumn: int)
+    (expectedEndLine: int, expectedEndColumn: int)
+    (actualRange: range)
+    : unit =
+    Assert.AreEqual(Position.mkPos expectedStartLine expectedStartColumn, actualRange.Start)
+    Assert.AreEqual(Position.mkPos expectedEndLine expectedEndColumn, actualRange.End)

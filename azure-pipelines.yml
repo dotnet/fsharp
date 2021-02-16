@@ -56,8 +56,6 @@ variables:
     value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
-  - name: LegacyDotNetSdkVersion
-    value: 3.1.405
   - name: DotNetSdkVersion
     value: '5.0.100'
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
@@ -105,12 +103,6 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - task: UseDotNet@2
-            displayName: Add legacy .NET SDK
-            inputs:
-              packageType: sdk
-              version: $(LegacyDotNetSdkVersion)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: eng\CIBuild.cmd
                     -configuration $(_BuildConfig)
                     -prepareMachine
@@ -219,12 +211,6 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - task: UseDotNet@2
-            displayName: Add legacy .NET SDK
-            inputs:
-              packageType: sdk
-              version: $(LegacyDotNetSdkVersion)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: eng\CIBuild.cmd -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
           - task: PublishTestResults@2
@@ -275,12 +261,6 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - task: UseDotNet@2
-            displayName: Add legacy .NET SDK
-            inputs:
-              packageType: sdk
-              version: $(LegacyDotNetSdkVersion)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
             displayName: Build / Test
           - task: PublishTestResults@2
@@ -313,12 +293,6 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - task: UseDotNet@2
-            displayName: Add legacy .NET SDK
-            inputs:
-              packageType: sdk
-              version: $(LegacyDotNetSdkVersion)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
             displayName: Build / Test
           - task: PublishTestResults@2
@@ -523,7 +497,7 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: release/dev16.8
-      insertTargetBranch: master
+      componentBranchName: refs/heads/release/dev16.9
+      insertTargetBranch: rel/d16.9
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'

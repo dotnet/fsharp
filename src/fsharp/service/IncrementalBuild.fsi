@@ -217,7 +217,7 @@ type internal IncrementalBuilder =
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile: CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]>
+      member GetParseResultsForFile: filename:string -> ParsedInput option * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
       /// Get the active analyzers for the project
       member Analyzers: FSharpAnalyzer list
