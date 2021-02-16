@@ -221,6 +221,10 @@ type internal IncrementalBuilder =
 
       /// Get the active analyzers for the project
       member Analyzers: FSharpAnalyzer list
+
+      /// True if keeping assembly contents, either for entire checker of because an analyzer in this builder
+      /// requires it.
+      member KeepAssemblyContents: bool
       
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:
@@ -234,14 +238,14 @@ type internal IncrementalBuilder =
           projectReferences: IProjectReference list *
           projectDirectory:string *
           useScriptResolutionRules:bool *
-          keepAssemblyContents: bool *
+          keepAssemblyContentsRequestForChecker: bool *
           keepAllBackgroundResolutions: bool *
           maxTimeShareMilliseconds: int64 *
           tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot *
           suggestNamesForErrors: bool *
           keepAllBackgroundSymbolUses: bool *
           enableBackgroundItemKeyStoreAndSemanticClassification: bool *
-          enablePartialTypeChecking: bool *
+          enablePartialTypeCheckingRequestForChecker: bool *
           dependencyProvider: DependencyProvider option
              -> Cancellable<IncrementalBuilder option * FSharpDiagnostic[]>
 

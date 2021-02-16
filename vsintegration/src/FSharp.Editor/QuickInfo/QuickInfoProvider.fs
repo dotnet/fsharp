@@ -27,7 +27,7 @@ open FSharp.Compiler.Tokenization
 
 type internal QuickInfo =
     { StructuredText: ToolTipText
-      Extras: TaggedText[][]
+      AnalyzerExtras: TaggedText[][]
       Span: TextSpan
       Symbol: FSharpSymbol option
       SymbolKind: LexerSymbolKind }
@@ -69,9 +69,9 @@ module internal FSharpQuickInfo =
                     (declRange.StartLine, extLexerSymbol.Ident.idRange.EndColumn, extLineText, extLexerSymbol.FullIsland, FSharpTokenTag.IDENT)
 
             let fcsPos = Position.mkPos declRange.StartLine (extLexerSymbol.Ident.idRange.EndColumn-1)
-            let! extExtras = checker.GetAdditionalAnalyzerToolTips(extParseResults, extCheckFileResults, extSourceText.ToFSharpSourceText(), options=extProjectOptions, pos=fcsPos, userOpName=userOpName) |> liftAsync
-            let extExtras = extExtras |> Array.filter (fun arr -> arr.Length <> 0)
-            match extQuickInfoText, extExtras with
+            let! extAnalyzerExtras = checker.GetAdditionalAnalyzerToolTips(extParseResults, extCheckFileResults, extSourceText.ToFSharpSourceText(), options=extProjectOptions, pos=fcsPos, userOpName=userOpName) |> liftAsync
+            let extAnalyzerExtras = extAnalyzerExtras |> Array.filter (fun arr -> arr.Length <> 0)
+            match extQuickInfoText, extAnalyzerExtras with
             | ToolTipText [], [| |]
             | ToolTipText [ToolTipElement.None], [| |] -> return! None
             | _ ->
@@ -80,7 +80,7 @@ module internal FSharpQuickInfo =
                 let! span = RoslynHelpers.TryFSharpRangeToTextSpan (extSourceText, extLexerSymbol.Range)
 
                 return { StructuredText = extQuickInfoText
-                         Extras = extExtras
+                         AnalyzerExtras = extAnalyzerExtras
                          Span = span
                          Symbol = Some extSymbolUse.Symbol
                          SymbolKind = extLexerSymbol.Kind }
@@ -124,7 +124,7 @@ module internal FSharpQuickInfo =
                     | _ ->
                         let! targetTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, lexerSymbol.Range)
                         return { StructuredText = targetQuickInfo
-                                 Extras = extras
+                                 AnalyzerExtras = extras
                                  Span = targetTextSpan
                                  Symbol = symbol
                                  SymbolKind = lexerSymbol.Kind }
@@ -207,16 +207,16 @@ type internal FSharpAsyncQuickInfoSource
                 let! symbolUse = checkFileResults.GetSymbolUseAtLocation (textLineNumber, symbol.Ident.idRange.EndColumn, textLineString, symbol.FullIsland)
                 let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, symbol.Range)
                 return { StructuredText = res
-                         Extras = extras
+                         AnalyzerExtras = extras
                          Span = symbolSpan
                          Symbol = Some symbolUse.Symbol
                          SymbolKind = symbol.Kind }
         }
 
     static member BuildSingleQuickInfoItem (documentationBuilder:IDocumentationBuilder) (quickInfo:QuickInfo) =
-        let mainDescription, documentation, typeParameterMap, usage, exceptions = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
-        XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, quickInfo.StructuredText, quickInfo.Extras)
-        let docs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
+        let mainDescription, documentation, typeParameterMap, usage, exceptions, analyzerExtras = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
+        XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, analyzerExtras.Add, quickInfo.StructuredText, quickInfo.AnalyzerExtras)
+        let docs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions; analyzerExtras]
         (mainDescription, docs)
 
     interface IAsyncQuickInfoSource with
@@ -249,9 +249,9 @@ type internal FSharpAsyncQuickInfoSource
                         return QuickInfoItem(span, content)
 
                     | Some sigQuickInfo, Some targetQuickInfo ->
-                        let mainDescription, targetDocumentation, sigDocumentation, typeParameterMap, exceptions, usage = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
-                        XmlDocumentation.BuildDataTipText(documentationBuilder, ignore, sigDocumentation.Add, ignore, ignore, ignore, sigQuickInfo.StructuredText, sigQuickInfo.Extras)
-                        XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, targetDocumentation.Add, typeParameterMap.Add, exceptions.Add, usage.Add, targetQuickInfo.StructuredText, targetQuickInfo.Extras)
+                        let mainDescription, targetDocumentation, sigDocumentation, typeParameterMap, exceptions, usage, analyzerExtras = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
+                        XmlDocumentation.BuildDataTipText(documentationBuilder, ignore, sigDocumentation.Add, ignore, ignore, ignore, ignore, sigQuickInfo.StructuredText, sigQuickInfo.AnalyzerExtras)
+                        XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, targetDocumentation.Add, typeParameterMap.Add, exceptions.Add, usage.Add, analyzerExtras.Add, targetQuickInfo.StructuredText, targetQuickInfo.AnalyzerExtras)
                         // get whitespace nomalized documentation text
                         let getText (tts: seq<TaggedText>) =
                             let text =
@@ -269,9 +269,9 @@ type internal FSharpAsyncQuickInfoSource
                               | Some implText, Some sigText when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) ->
                                     yield! sigDocumentation
                               | Some _  , Some _ ->
-                                    yield! RoslynHelpers.joinWithLineBreaks [ sigDocumentation; [ TaggedText.tagText "-------------" ]; targetDocumentation ]
+                                    yield! RoslynHelpers.joinWithLineBreaks [ sigDocumentation; [ TaggedText.tagText "—————————————————"]; targetDocumentation ]
                             ] |> ResizeArray
-                        let docs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
+                        let docs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions; analyzerExtras]
                         let imageId = Tokenizer.GetImageIdForSymbol(targetQuickInfo.Symbol, targetQuickInfo.SymbolKind)
                         let navigation = QuickInfoNavigation(statusBar, checkerProvider.Checker, projectInfoManager, document, symbolUseRange)
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)

@@ -9,7 +9,9 @@ open Microsoft.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
+open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.ComponentModelHost
 
 type internal QuickInfoNavigation
     (
@@ -64,4 +66,16 @@ type internal QuickInfoNavigation
             // Adjust the target from implmentation to signature.
             | Signature, Implementation ->
                 return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, range, statusBar)
+        } |> Async.Ignore |> Async.StartImmediate
+
+    member _.NavigateToUri (uri: System.Uri) =
+        asyncMaybe {
+            let componentModel = ServiceProvider.GlobalProvider.GetService<SComponentModel, IComponentModel>()
+            let navigationService = componentModel.GetService<IVsWebBrowsingService>()
+            if navigationService <> null then
+                let _hr, _ppFrame = navigationService.Navigate(uri.ToString(), 0u)
+
+                //if not  navigationSucceeded then 
+                //    statusBar.TempMessage (SR.CannotNavigateUnknown())
+                ()
         } |> Async.Ignore |> Async.StartImmediate

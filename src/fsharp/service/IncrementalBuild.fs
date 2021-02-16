@@ -1272,6 +1272,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
 
     member _.Analyzers = analyzers
 
+    member _.KeepAssemblyContents = keepAssemblyContents
+
     member this.ContainsFile(filename: string) =
         (this.TryGetSlotOfFileName filename).IsSome
       
@@ -1295,12 +1297,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
                        sourceFiles: string list,
                        commandLineArgs: string list,
                        projectReferences, projectDirectory,
-                       useScriptResolutionRules, keepAssemblyContents,
+                       useScriptResolutionRules, keepAssemblyContentsRequestForChecker,
                        keepAllBackgroundResolutions, maxTimeShareMilliseconds,
                        tryGetMetadataSnapshot, suggestNamesForErrors,
                        keepAllBackgroundSymbolUses,
                        enableBackgroundItemKeyStoreAndSemanticClassification,
-                       enablePartialTypeChecking: bool,
+                       enablePartialTypeCheckingRequestForChecker: bool,
                        dependencyProvider) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
@@ -1393,6 +1395,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
                 dllReferences |> List.iter (fun dllReference ->
                     tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
                 tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
+                loadClosure.CompilerTools |> List.iter (fun compilerTool ->
+                    tcConfigB.AddCompilerToolsByPath(compilerTool))
             | None -> ()
 
             let tcConfig = TcConfig.Create(tcConfigB, validate=true)
@@ -1432,6 +1436,11 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
             let analyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig, Range.rangeStartup)
             let analyzersRequireAssemblyContents =
                 analyzers |> List.exists (fun analyzer -> analyzer.RequiresAssemblyContents)
+            
+            // partial type checking based on signatures alone gets disabled if any 
+            // analyzer requires assembly contents 
+            let enablePartialTypeChecking = enablePartialTypeCheckingRequestForChecker && not analyzersRequireAssemblyContents
+            let keepAssemblyContents = keepAssemblyContentsRequestForChecker || analyzersRequireAssemblyContents
 
             let builder = 
                 new IncrementalBuilder(tcGlobals,
@@ -1446,7 +1455,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
                     niceNameGen, 
                     analyzers,
                     resourceManager, sourceFilesNew, loadClosureOpt, 
-                    (keepAssemblyContents || analyzersRequireAssemblyContents), 
+                    keepAssemblyContents, 
                     keepAllBackgroundResolutions, 
                     maxTimeShareMilliseconds,
                     keepAllBackgroundSymbolUses,

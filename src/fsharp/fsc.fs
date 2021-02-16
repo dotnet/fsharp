@@ -586,73 +586,9 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let analyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig, Range.rangeStartup)
 
-    let sourceTexts = [| for sourceFile in sourceFiles -> sourceFile, SourceText.readFile sourceFile tcConfig.inputCodePage |]
+    FSharpAnalyzers.RunAnalyzers(analyzers, tcConfig, tcImports, tcGlobals, tcState.Ccu, sourceFiles, tcFileResults, tcEnvAtEnd)
 
-    let projectOptions = 
-        { 
-            ProjectFileName = "compile.fsproj"
-            ProjectId = None
-            SourceFiles =  Array.ofList sourceFiles
-            ReferencedProjects = [| |]
-            OtherOptions = argv
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
-
-    let tcFileResults, implFilesRev =
-        ([], tcFileResults) ||> List.mapFold (fun implFilesRev (a,b,c) -> 
-            let implFilesRev2 = Option.toList b @ implFilesRev
-            (a, List.rev implFilesRev2, c), implFilesRev2)
-
-    for (inp, implFileOpt, ccuSig) in tcFileResults do
-        
-        let parseResults =
-            FSharpParseFileResults(diagnostics = [||],
-                input = Some inp,
-                parseHadErrors = false,
-                dependencyFiles = [| |])
-
-        let checkResults = 
-            FSharpCheckFileResults.Make
-                (inp.FileName, 
-                 "compile.fsproj", 
-                 tcConfig, 
-                 tcGlobals, 
-                 false, 
-                 None, 
-                 parseResults.ParseTree,
-                 projectOptions,
-                 [| |], 
-                 [| |], 
-                 [| |], 
-                 [| |],
-                 true,
-                 ccuSig,
-                 tcState.Ccu, 
-                 tcImports, 
-                 tcEnvAtEnd.AccessRights,
-                 TcResolutions.Empty, 
-                 TcSymbolUses.Empty,
-                 tcEnvAtEnd.NameEnv,
-                 None, 
-                 implFileOpt,
-                 [| |]) 
-
-        let ctxt = FSharpAnalyzerCheckFileContext(sourceTexts, checkResults, CancellationToken.None, tcConfig)
-
-        for analyzer in analyzers do
-             let diagnostics = analyzer.OnCheckFile(ctxt)
-             for diag in diagnostics do
-                let exn = CompilerToolDiagnostic((diag.ErrorNumber, diag.Message), diag.Range)
-                match diag.Severity with 
-                | FSharpDiagnosticSeverity.Error ->  errorR(exn)
-                | FSharpDiagnosticSeverity.Warning ->  warning(exn)
-                | FSharpDiagnosticSeverity.Info -> warning(exn)
-                | FSharpDiagnosticSeverity.Hidden -> ()
+    let typedImplFiles = tcFileResults |> List.collect (fun (_a,b,_c) -> Option.toList b)
 
     // TODO: run project analysis
     //let ctxt = 
@@ -662,8 +598,6 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     //        parseResults,
     //        checkResults)
     if tcConfig.typeCheckOnly then exiter.Exit 0
-    
-    let typedImplFiles = List.rev implFilesRev
 
     Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedImplFiles, topAttrs, tcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter)
 

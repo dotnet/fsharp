@@ -4,11 +4,14 @@ namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.Threading
+open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
 open FSharp.Compiler.Text
 
 type FSharpAnalyzerTextChange = Range * string
@@ -70,4 +73,6 @@ type public FSharpAnalyzer =
     default FixableDiagnosticIds: string[]
 
 module internal FSharpAnalyzers =
+    val CreateAnalyzers: analyzerPath: string * m: range -> FSharpAnalyzer list
     val ImportAnalyzers: tcConfig: TcConfig * m: range -> FSharpAnalyzer list
+    val RunAnalyzers: analyzers: FSharpAnalyzer list * tcConfig: TcConfig * tcImports: TcImports * tcGlobals: TcGlobals * tcCcu: CcuThunk * sourceFiles: string list * tcFileResults: (ParsedInput * TypedImplFile option * ModuleOrNamespaceType) list * tcEnvAtEnd: TcEnv -> unit

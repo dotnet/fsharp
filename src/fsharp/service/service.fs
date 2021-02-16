@@ -206,7 +206,7 @@ type ScriptClosureCacheToken() = interface LockToken
 
 
 // There is only one instance of this type, held in FSharpChecker
-type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification, enablePartialTypeChecking) as self =
+type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContentsRequestForChecker, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification, enablePartialTypeChecking) as self =
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.reactor: The one and only Reactor
     let reactor = Reactor.Singleton
     let beforeFileChecked = Event<string * FSharpProjectOptions>()
@@ -269,7 +269,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions
                   (ctok, legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, Array.toList options.SourceFiles, 
                    Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
-                   options.UseScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, FSharpCheckerResultsSettings.maxTimeShareMilliseconds,
+                   options.UseScriptResolutionRules, keepAssemblyContentsRequestForChecker, keepAllBackgroundResolutions, FSharpCheckerResultsSettings.maxTimeShareMilliseconds,
                    tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses,
                    enableBackgroundItemKeyStoreAndSemanticClassification,
                    enablePartialTypeChecking,
@@ -512,7 +512,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                             Array.ofList tcDependencyFiles, 
                                             creationDiags, 
                                             parseResults.Diagnostics, 
-                                            keepAssemblyContents,
+                                            builder.KeepAssemblyContents,
                                             suggestNamesForErrors)
                                 let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
                                 reactor.SetPreferredUILang tcConfig.preferredUiLang
@@ -587,7 +587,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     reactor.CancelBackgroundOp() // cancel the background work, since we will start new work after we're done
                 let! builderOpt,creationDiags = execWithReactorAsync (fun ctok -> getOrCreateBuilder (ctok, options, userOpName))
                 match builderOpt with
-                | None -> return FSharpCheckFileAnswer.Succeeded (FSharpCheckFileResults.MakeEmpty(filename, creationDiags, keepAssemblyContents))
+                | None -> return FSharpCheckFileAnswer.Succeeded (FSharpCheckFileResults.MakeEmpty(filename, creationDiags, true))
                 | Some builder -> 
                     // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
                     let cachedResults = bc.GetCachedCheckFileResult(builder, filename, sourceText, options)
@@ -736,7 +736,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             match builderOpt with
             | None ->
                 let parseResults = FSharpParseFileResults(creationDiags, None, true, [| |])
-                let typedResults = FSharpCheckFileResults.MakeEmpty(filename, creationDiags, keepAssemblyContents)
+                let typedResults = FSharpCheckFileResults.MakeEmpty(filename, creationDiags, true)
                 return (parseResults, typedResults)
             | Some builder -> 
                 let! (parseTreeOpt, _, _, parseDiags) = builder.GetParseResultsForFile (ctok, filename)
@@ -772,7 +772,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             creationDiags, 
                             parseResults.Diagnostics, 
                             tcErrors,
-                            keepAssemblyContents,
+                            builder.KeepAssemblyContents,
                             Option.get latestCcuSigForFile, 
                             tcState.Ccu, 
                             tcProj.TcImports, 
@@ -832,7 +832,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
           let! builderOpt,creationDiags = getOrCreateBuilder (ctok, options, userOpName)
           match builderOpt with 
           | None -> 
-              return FSharpCheckProjectResults (options.ProjectFileName, None, keepAssemblyContents, creationDiags, None)
+              return FSharpCheckProjectResults (options.ProjectFileName, None, true, creationDiags, None)
           | Some builder -> 
               let! (tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt) = builder.GetFullCheckResultsAndImplementationsForProject(ctok)
               let errorOptions = tcProj.TcConfig.errorSeverityOptions
@@ -847,7 +847,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
               let tcErrors = tcInfo.TcErrors
               let tcDependencyFiles = tcInfo.tcDependencyFiles
               let errors = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (errorOptions, true, fileName, tcErrors, suggestNamesForErrors) |]
-              return FSharpCheckProjectResults (options.ProjectFileName, Some tcProj.TcConfig, keepAssemblyContents, errors, 
+              return FSharpCheckProjectResults (options.ProjectFileName, Some tcProj.TcConfig, builder.KeepAssemblyContents, errors, 
                                                     Some(tcProj.TcGlobals, tcProj.TcImports, tcState.Ccu, tcState.CcuSig, 
                                                          tcSymbolUses, topAttribs, tcAssemblyDataOpt, ilAssemRef, 
                                                          tcEnvAtEnd.AccessRights, tcAssemblyExprOpt, Array.ofList tcDependencyFiles,
@@ -1059,7 +1059,12 @@ type FSharpChecker(legacyReferenceResolver,
                     enableBackgroundItemKeyStoreAndSemanticClassification,
                     enablePartialTypeChecking) =
 
-    let backgroundCompiler = BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification, enablePartialTypeChecking)
+    let backgroundCompiler =
+        BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents,
+            keepAllBackgroundResolutions, tryGetMetadataSnapshot,
+            suggestNamesForErrors, keepAllBackgroundSymbolUses,
+            enableBackgroundItemKeyStoreAndSemanticClassification,
+            enablePartialTypeChecking)
 
     static let globalInstance = lazy FSharpChecker.Create()
             
@@ -1095,7 +1100,10 @@ type FSharpChecker(legacyReferenceResolver,
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
 
-        new FSharpChecker(legacyReferenceResolver, projectCacheSizeReal,keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification, enablePartialTypeChecking)
+        FSharpChecker(legacyReferenceResolver, projectCacheSizeReal, keepAssemblyContents,
+            keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors,
+            keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification,
+            enablePartialTypeChecking)
 
     member _.ReferenceResolver = legacyReferenceResolver
 

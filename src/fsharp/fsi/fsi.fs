@@ -616,6 +616,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
        not (runningOnMono && System.Environment.OSVersion.Platform = System.PlatformID.Win32NT) 
 
     let mutable gui        = not runningOnMono // override via "--gui", on by default except when on Mono
+    let mutable runAnalyzers = false
 #if DEBUG
     let mutable showILCode = false // show modul il code 
 #endif
@@ -744,6 +745,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
        PublicOptions(FSComp.SR.optsHelpBannerAdvanced(),
         [CompilerOption("exec",                 "", OptionUnit (fun () -> interact <- false), None, Some (FSIstrings.SR.fsiExec()));
          CompilerOption("gui",                  tagNone, OptionSwitch(fun flag -> gui <- (flag = OptionSwitch.On)),None,Some (FSIstrings.SR.fsiGui()));
+         CompilerOption("runanalyzers",         tagNone, OptionSwitch(fun flag -> runAnalyzers <- (flag = OptionSwitch.On)),None,Some (FSIstrings.SR.fsiRunAnalyzers()));
          CompilerOption("quiet",                "", OptionUnit (fun () -> tcConfigB.noFeedback <- true), None,Some (FSIstrings.SR.fsiQuiet()));     
          (* Renamed --readline and --no-readline to --tabcompletion:+|- *)
          CompilerOption("readline",             tagNone, OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = OptionSwitch.On)),           None, Some(FSIstrings.SR.fsiReadline()));
@@ -838,6 +840,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     member _.PeekAheadOnConsoleToPermitTyping = peekAheadOnConsoleToPermitTyping
     member _.SourceFiles = sourceFiles
     member _.Gui = gui
+    member _.RunAnalyzers = runAnalyzers
 
     member _.WriteReferencesAndExit = writeReferencesAndExit
 
@@ -983,6 +986,7 @@ type internal FsiDynamicCompilerState =
       tcGlobals : TcGlobals
       tcState   : TcState 
       tcImports   : TcImports
+      tcAnalyzers: FSharpAnalyzer list
       ilxGenerator : IlxGen.IlxAssemblyGenerator
       boundValues : NameMap<Val>
       // Why is this not in FsiOptions?
@@ -1171,8 +1175,9 @@ type internal FsiDynamicCompiler
             Microsoft.FSharp.Quotations.Expr.RegisterReflectedDefinitions (assemblyBuilder, fragName, bytes, referencedTypes);
             
 
-        ReportTime tcConfig "Run Bindings";
-        timeReporter.TimeOpIf istate.timing (fun () -> 
+        if not tcConfig.typeCheckOnly then
+         ReportTime tcConfig "Run Bindings";
+         timeReporter.TimeOpIf istate.timing (fun () -> 
           execs |> List.iter (fun exec -> 
             match exec() with 
             | Some err ->         
@@ -1191,7 +1196,7 @@ type internal FsiDynamicCompiler
         // Echo the decls (reach inside wrapping)
         // This code occurs AFTER the execution of the declarations.
         // So stored values will have been initialised, modified etc.
-        if showTypes && not tcConfig.noFeedback then  
+        if showTypes && not tcConfig.noFeedback && not tcConfig.typeCheckOnly then  
             let denv = tcState.TcEnvFromImpls.DisplayEnv
             let denv = 
                 if isIncrementalFragment then
@@ -1251,6 +1256,9 @@ type internal FsiDynamicCompiler
         // server intellisense implementation (which is currently incomplete and #if disabled)
         let (tcState:TcState), topCustomAttrs, declaredImpls, tcEnvAtEndOfLastInput =
             lock tcLockObject (fun _ -> TypeCheckClosedInputSet(ctok, errorLogger.CheckForErrors, tcConfig, tcImports, tcGlobals, Some prefixPath, tcState, inputs))
+
+        if fsiOptions.RunAnalyzers then
+            FSharpAnalyzers.RunAnalyzers(istate.tcAnalyzers, tcConfig, tcImports, tcGlobals, tcState.Ccu, [], declaredImpls, tcEnvAtEndOfLastInput)
 
         // TODO: run analyzers here
         let declaredImpls = List.map p23 declaredImpls |> List.choose id
@@ -1554,6 +1562,7 @@ type internal FsiDynamicCompiler
                         | path, _ ->
                             snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, path))
                     ),
+                    (fun st (_m,nm) -> tcConfigB.AddCompilerToolsByPath(nm); st),
                     (fun _ _ -> ()))  
                    (tcConfigB, inp, Path.GetDirectoryName sourceFile, istate))
 
@@ -1696,6 +1705,7 @@ type internal FsiDynamicCompiler
          tcGlobals = tcGlobals
          tcState   = tcState
          tcImports = tcImports
+         tcAnalyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig, Range.rangeStartup)
          ilxGenerator = ilxGenerator
          boundValues = NameMap.empty
          timing    = false
@@ -2228,6 +2238,15 @@ type internal FsiInteractionProcessor
 
             | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("reference" | "r"), [path], m), _) ->
                 packageManagerDirective Directive.Resolution path m
+
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("compilertool", [path], m), _) ->
+                let istate =
+                    if FileSystem.SafeExists(path) then
+                       { istate with tcAnalyzers = istate.tcAnalyzers @ FSharpAnalyzers.CreateAnalyzers (path, m) }
+                    else
+                        // TODO: give a warning here (or in CreateAnalyzers)
+                        istate
+                istate, Completed None
 
             | ParsedScriptInteraction.HashDirective (ParsedHashDirective("i", [path], m), _) -> 
                 packageManagerDirective Directive.Include path m

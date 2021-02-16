@@ -13,6 +13,11 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
 
 type FSharpAnalyzerTextChange = Range * string
 
@@ -108,8 +113,79 @@ module FSharpAnalyzers =
 
         [ for analyzerPath in tcConfig.compilerToolPaths do
             if FileSystem.SafeExists(analyzerPath) then
-                yield! CreateAnalyzers (analyzerPath, m) ]
+                yield! CreateAnalyzers (analyzerPath, m) 
+            // TODO: give a warning here (or in CreateAnalyzers)
+        ]
 
+    let RunAnalyzers(analyzers: FSharpAnalyzer list, tcConfig: TcConfig, tcImports: TcImports, tcGlobals: TcGlobals, tcCcu: CcuThunk, sourceFiles: string list, tcFileResults, tcEnvAtEnd: TcEnv) =
+
+        let sourceTexts = [| for sourceFile in sourceFiles -> sourceFile, SourceText.readFile sourceFile tcConfig.inputCodePage |]
+
+        let projectOptions = 
+            { 
+                ProjectFileName = "compile.fsproj"
+                ProjectId = None
+                SourceFiles = Array.ofList sourceFiles
+                ReferencedProjects = [| |]
+                OtherOptions = [| |]
+                IsIncompleteTypeCheckEnvironment = true
+                UseScriptResolutionRules = false
+                LoadTime = DateTime.MaxValue
+                OriginalLoadReferences = []
+                UnresolvedReferences = None
+                Stamp = None
+            }
+
+        let tcFileResults, _implFilesRev =
+            ([], tcFileResults) ||> List.mapFold (fun implFilesRev (a,b,c) -> 
+                let implFilesRev2 = Option.toList b @ implFilesRev
+                (a, List.rev implFilesRev2, c), implFilesRev2)
+
+        for (inp, implFileOpt, ccuSig) in tcFileResults do
+        
+            let parseResults =
+                FSharpParseFileResults(diagnostics = [||],
+                    input = Some inp,
+                    parseHadErrors = false,
+                    dependencyFiles = [| |])
+
+            let checkResults = 
+                FSharpCheckFileResults.Make
+                    (inp.FileName, 
+                     "compile.fsproj", 
+                     tcConfig, 
+                     tcGlobals, 
+                     false, 
+                     None, 
+                     parseResults.ParseTree,
+                     projectOptions,
+                     [| |], 
+                     [| |], 
+                     [| |], 
+                     [| |],
+                     true,
+                     ccuSig,
+                     tcCcu, 
+                     tcImports, 
+                     tcEnvAtEnd.AccessRights,
+                     TcResolutions.Empty, 
+                     TcSymbolUses.Empty,
+                     tcEnvAtEnd.NameEnv,
+                     None, 
+                     implFileOpt,
+                     [| |]) 
+
+            let ctxt = FSharpAnalyzerCheckFileContext(sourceTexts, checkResults, CancellationToken.None, tcConfig)
+
+            for analyzer in analyzers do
+                 let diagnostics = analyzer.OnCheckFile(ctxt)
+                 for diag in diagnostics do
+                    let exn = CompilerToolDiagnostic((diag.ErrorNumber, diag.Message), diag.Range)
+                    match diag.Severity with 
+                    | FSharpDiagnosticSeverity.Error ->  errorR(exn)
+                    | FSharpDiagnosticSeverity.Warning ->  warning(exn)
+                    | FSharpDiagnosticSeverity.Info -> warning(exn)
+                    | FSharpDiagnosticSeverity.Hidden -> ()
 
 #else
 

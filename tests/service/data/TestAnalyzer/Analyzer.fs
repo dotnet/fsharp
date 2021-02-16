@@ -12,17 +12,19 @@ do()
 type MyAnalyzer(ctxt) = 
     inherit FSharpAnalyzer(ctxt)
 
-    override this.OnCheckFile(fileCtxt, ct) =
+    override this.OnCheckFile(fileCtxt) =
         
-        let m = Range.mkRange fileCtxt.ParseFileResults.FileName (Position.mkPos 3 0) (Position.mkPos 3 80)
-        let m2 = Range.mkRange fileCtxt.ParseFileResults.FileName (Position.mkPos 6 0) (Position.mkPos 6 80)
-        let source = fileCtxt.GetFileSource(fileCtxt.ParseFileResults.FileName)
+        let fileName = fileCtxt.CheckerModel.ParseTree.Value.FileName
+        let m = Range.mkRange fileName (Position.mkPos 3 0) (Position.mkPos 3 80)
+        let m2 = Range.mkRange fileName (Position.mkPos 6 0) (Position.mkPos 6 80)
+        let source = fileCtxt.GetFileSource(fileName)
         let text = source.GetSubTextString(0,source.Length)
         [| if text.Contains("WIBBLE") |> not then 
               FSharpDiagnostic.Create(FSharpDiagnosticSeverity.Warning, "this diagnostic is always on line 6 until the magic word WIBBLE appears", 45, m2, "FA")
            if text.Contains("WAZZAM") |> not then 
                FSharpDiagnostic.Create(FSharpDiagnosticSeverity.Warning, "this diagnostic is always on line 3 until the magic word WAZZAM appears", 45, m, "FA") |]
 
-    override _.TryAdditionalToolTip(fileCtxt, pos, ct) =
-        Some [| TaggedText.tagText $"This thing is on line {pos.Line} in file {fileCtxt.ParseFileResults.FileName}" |]
+    override _.TryAdditionalToolTip(fileCtxt, pos) =
+        let fileName = fileCtxt.CheckerModel.ParseTree.Value.FileName
+        Some [| TaggedText.tagText $"This thing is on line {pos.Line} in file {fileName}" |]
 

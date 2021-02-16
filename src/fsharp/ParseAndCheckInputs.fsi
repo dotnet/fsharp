@@ -36,6 +36,7 @@ val ParseInput: (Lexbuf -> Parser.token) * ErrorLogger * Lexbuf * string option 
 val ProcessMetaCommandsFromInput : 
     (('T -> range * string -> 'T) * 
      ('T -> range * string * Directive -> 'T) *
+     ('T -> range * string -> 'T) * 
      ('T -> range * string -> unit))
       -> TcConfigBuilder * ParsedInput * string * 'T 
       -> 'T
