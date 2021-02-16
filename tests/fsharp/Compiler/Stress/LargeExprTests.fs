@@ -10,7 +10,7 @@ module LargeExprTests =
 
     [<Test>]
 #if NETCOREAPP
-    [<Ignore("SKIPPED: ")>]
+    [<Ignore("SKIPPED: https://github.com/dotnet/runtime/issues/47663")>]
 #endif
     let LargeRecordDoesNotStackOverflow() =
         CompilerAssert.CompileExe
@@ -1024,6 +1024,9 @@ let main _ = 0
             """
 
     [<Test>]
+#if NETCOREAPP
+    [<Ignore("SKIPPED: https://github.com/dotnet/runtime/issues/47663")>]
+#endif
     let LargeRecordWithStringFieldsDoesNotStackOverflow() =
         CompilerAssert.CompileExe
             """
