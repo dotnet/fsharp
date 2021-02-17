@@ -35,14 +35,14 @@ type StringText(str: string) =
     let getLines (str: string) =
         use reader = new StringReader(str)
         [|
-        let mutable line = reader.ReadLine()
-        while not (isNull line) do
-            yield line
-            line <- reader.ReadLine()
-        if str.EndsWith("\n", StringComparison.Ordinal) then
-            // last trailing space not returned
-            // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
-            yield String.Empty
+            let mutable line = reader.ReadLine()
+            while not (isNull line) do
+                yield line
+                line <- reader.ReadLine()
+            if str.EndsWith("\n", StringComparison.Ordinal) then
+                // last trailing space not returned
+                // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
+                yield String.Empty
         |]
 
     let getLines =
@@ -80,36 +80,31 @@ type StringText(str: string) =
         member _.GetSubTextString(start, length) = 
             str.Substring(start, length)
 
-        // algorithm:
-        //
-        // Loop through chars on each line
-        // Find line that matches start line
-        // Add 'startColumn' -- this is the start
-        // Continue looping until at endLine
-        // Add 'endColumn'
-        // Subtract end from start for length
         member this.GetSubTextString(startLine, startColumn, endLine, endColumn) =
             let lines = getLines.Value
             let mutable startIdx = 0
             let mutable endIdx = startIdx
             let mutable seenStartLine = false
             let mutable seenEndLine = false
+            let mutable lineIdx = 0
 
-            for x = 0 to lines.Length - 1 do
-                if x = startLine then
+            while lineIdx < lines.Length && not seenEndLine do
+                if lineIdx = startLine then
                     startIdx <- startIdx + startColumn
                     seenStartLine <- true
 
-                if x = endLine then
+                if lineIdx = endLine then
                     endIdx <- endIdx + endColumn
                     seenEndLine <- true
 
-                for _ = 0 to lines.[x].Length - 1 do
+                for _ = 0 to lines.[lineIdx].Length - 1 do
                     if not seenStartLine then
                         startIdx <- startIdx + 1
                         endIdx <- startIdx
                     elif not seenEndLine then
                         endIdx <- endIdx + 1
+
+                lineIdx <- lineIdx + 1
 
             str.Substring(startIdx, endIdx - startIdx)
 
