@@ -192,7 +192,7 @@ module internal ResizeArray =
     /// Split a ResizeArray into an array of smaller chunks.
     /// This requires `items/chunkSize` Array copies of length `chunkSize` if `items/chunkSize % 0 = 0`,
     /// otherwise `items/chunkSize + 1` Array copies.
-    val chunkBySize : chunkSize:int -> f:('t -> 'a) -> items:ResizeArray<'t> -> 'a [] []
+    val chunkArrayBySize : chunkSize:int -> f:('t -> 'a) -> items:ResizeArray<'t> -> 'a [] []
 
     /// Split a large ResizeArray into a series of array chunks that are each under the Large Object Heap limit.
     /// This is done to help prevent a stop-the-world collection of the single large array, instead allowing for a greater

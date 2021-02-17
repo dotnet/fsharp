@@ -5,6 +5,7 @@
 module internal FSharp.Compiler.NameResolution
 
 open System.Collections.Generic
+open System.Linq
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -1875,13 +1876,55 @@ type TcSymbolUseData =
 /// are allocated (one per file), but they are large because the allUsesOfAllSymbols array is large.
 type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution>, formatSpecifierLocations: (range * int)[]) =
 
+    let chunkArrayBySizeIntoDictionaries chunkSize f (items: ResizeArray<'t>) =
+        // we could use Seq.chunkBySize here, but that would involve many enumerator.MoveNext() calls that we can sidestep with a bit of math
+        let itemCount = items.Count
+        if itemCount = 0
+        then [||]
+        else
+            let chunksCount =
+                match itemCount / chunkSize with
+                | n when itemCount % chunkSize = 0 -> n
+                | n -> n + 1 // any remainder means we need an additional chunk to store it
+
+            [|
+                for index in 0..chunksCount-1 do
+                    let startIndex = index * chunkSize
+                    let takeCount = min (itemCount - startIndex) chunkSize
+
+                    let holder = Dictionary(takeCount)
+                    // we take a bounds-check hit here on each access.
+                    // other alternatives here include
+                    // * iterating across an IEnumerator (incurs MoveNext penalty)
+                    // * doing a block copy using `List.CopyTo(index, array, index, count)` (requires more copies to do the mapping)
+                    // none are significantly better.
+                    for i in 0 .. takeCount - 1 do
+                        holder.Add(f items.[i])
+                    holder
+            |]
+
+    let mapToSmallDictionaryChunks f (inp: ResizeArray<'T>) =
+        let itemSizeBytes = sizeof<'T>
+        // rounding down here is good because it ensures we don't go over
+        let maxDictionarySize = LOH_SIZE_THRESHOLD_BYTES / itemSizeBytes
+
+        /// chunk the provided input into arrays that are smaller than the LOH limit
+        /// in order to prevent long-term storage of those values
+        chunkArrayBySizeIntoDictionaries maxDictionarySize f inp
+
+
     // Make sure we only capture the information we really need to report symbol uses
     let allUsesOfSymbols =
         capturedNameResolutions
-        |> ResizeArray.mapToSmallArrayChunks (fun cnr -> { Item=cnr.Item; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range })
+        |> mapToSmallDictionaryChunks (fun cnr -> cnr.Range, { Item=cnr.Item; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range })
 
     let capturedNameResolutions = ()
     do ignore capturedNameResolutions // don't capture this!
+
+    member this.TryGetSymbolUseByRange (range: range) =
+        allUsesOfSymbols
+        |> Array.tryFind (fun d -> d.ContainsKey(range))
+        |> Option.map (fun d -> d.[range])
 
     member this.GetUsesOfSymbol item =
         // This member returns what is potentially a very large array, which may approach the size constraints of the Large Object Heap.
@@ -1889,10 +1932,10 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
         // Consequently we have a much lesser chance of ending up with an array large enough to be promoted to the LOH.
         [| for symbolUseChunk in allUsesOfSymbols do
             for symbolUse in symbolUseChunk do
-                if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.Item) then
-                    yield symbolUse |]
+                if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.Value.Item) then
+                    yield symbolUse.Value |]
 
-    member this.AllUsesOfSymbols = allUsesOfSymbols
+    member this.AllUsesOfSymbols = allUsesOfSymbols |> Array.map (fun x -> x.Values.ToArray())
 
     member this.GetFormatSpecifierLocationsAndArity() = formatSpecifierLocations
 

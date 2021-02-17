@@ -19,6 +19,8 @@ type ISourceText =
 
     abstract GetSubTextString: start: int * length: int -> string
 
+    abstract GetSubTextString: startLine: int * startColumn: int * endLine: int * endColumn: int -> string
+
     abstract SubTextEquals: target: string * startIndex: int -> bool
 
     abstract Length: int
@@ -77,6 +79,39 @@ type StringText(str: string) =
 
         member _.GetSubTextString(start, length) = 
             str.Substring(start, length)
+
+        // algorithm:
+        //
+        // Loop through chars on each line
+        // Find line that matches start line
+        // Add 'startColumn' -- this is the start
+        // Continue looping until at endLine
+        // Add 'endColumn'
+        // Subtract end from start for length
+        member this.GetSubTextString(startLine, startColumn, endLine, endColumn) =
+            let lines = getLines.Value
+            let mutable startIdx = 0
+            let mutable endIdx = startIdx
+            let mutable seenStartLine = false
+            let mutable seenEndLine = false
+
+            for x = 0 to lines.Length - 1 do
+                if x = startLine then
+                    startIdx <- startIdx + startColumn
+                    seenStartLine <- true
+
+                if x = endLine then
+                    endIdx <- endIdx + endColumn
+                    seenEndLine <- true
+
+                for _ = 0 to lines.[x].Length - 1 do
+                    if not seenStartLine then
+                        startIdx <- startIdx + 1
+                        endIdx <- startIdx
+                    elif not seenEndLine then
+                        endIdx <- endIdx + 1
+
+            str.Substring(startIdx, endIdx - startIdx)
 
         member _.SubTextEquals(target, startIndex) =
             if startIndex < 0 || startIndex >= str.Length then
