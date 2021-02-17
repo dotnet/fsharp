@@ -14,7 +14,7 @@ variables:
 jobs:
 - job: Full_Signed
   pool:
-    name: VSEng-MicroBuildVS2019
+    name: VSEngSS-MicroBuildVS2019
   timeoutInMinutes: 300
   variables:
     BuildConfiguration: 'Release'
