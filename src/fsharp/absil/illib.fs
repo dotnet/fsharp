@@ -457,7 +457,7 @@ module ResizeArray =
     /// Split a ResizeArray into an array of smaller chunks.
     /// This requires `items/chunkSize` Array copies of length `chunkSize` if `items/chunkSize % 0 = 0`,
     /// otherwise `items/chunkSize + 1` Array copies.
-    let chunkArrayBySize chunkSize f (items: ResizeArray<'t>) =
+    let chunkBySize chunkSize f (items: ResizeArray<'t>) =
         // we could use Seq.chunkBySize here, but that would involve many enumerator.MoveNext() calls that we can sidestep with a bit of math
         let itemCount = items.Count
         if itemCount = 0
@@ -482,33 +482,6 @@ module ResizeArray =
                     holder.[i] <- f items.[i]
                 yield holder |]
 
-    let private chunkArrayBySizeIntoDictionaries chunkSize f (items: ResizeArray<'t>) =
-        // we could use Seq.chunkBySize here, but that would involve many enumerator.MoveNext() calls that we can sidestep with a bit of math
-        let itemCount = items.Count
-        if itemCount = 0
-        then [||]
-        else
-            let chunksCount =
-                match itemCount / chunkSize with
-                | n when itemCount % chunkSize = 0 -> n
-                | n -> n + 1 // any remainder means we need an additional chunk to store it
-
-            [|
-                for index in 0..chunksCount-1 do
-                    let startIndex = index * chunkSize
-                    let takeCount = min (itemCount - startIndex) chunkSize
-
-                    let holder = Dictionary(takeCount)
-                    // we take a bounds-check hit here on each access.
-                    // other alternatives here include
-                    // * iterating across an IEnumerator (incurs MoveNext penalty)
-                    // * doing a block copy using `List.CopyTo(index, array, index, count)` (requires more copies to do the mapping)
-                    // none are significantly better.
-                    for i in 0 .. takeCount - 1 do
-                        holder.Add(f items.[i])
-                    holder
-            |]
-
     /// Split a large ResizeArray into a series of array chunks that are each under the Large Object Heap limit.
     /// This is done to help prevent a stop-the-world collection of the single large array, instead allowing for a greater
     /// probability of smaller collections. Stop-the-world is still possible, just less likely.
@@ -519,17 +492,7 @@ module ResizeArray =
 
         /// chunk the provided input into arrays that are smaller than the LOH limit
         /// in order to prevent long-term storage of those values
-        chunkArrayBySize maxArrayItemCount f inp
-
-    let mapToSmallDictionaryChunks f (inp: ResizeArray<'T>) =
-        let itemSizeBytes = sizeof<'T>
-        // rounding down here is good because it ensures we don't go over
-        let maxArrayItemCount = LOH_SIZE_THRESHOLD_BYTES / itemSizeBytes
-
-        /// chunk the provided input into arrays that are smaller than the LOH limit
-        /// in order to prevent long-term storage of those values
-        chunkArrayBySizeIntoDictionaries maxArrayItemCount f inp
-
+        chunkBySize maxArrayItemCount f inp
 
 module ValueOptionInternal =
 
