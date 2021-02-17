@@ -155,7 +155,7 @@ module ScriptPreprocessClosure =
                 let references, useDotNetFramework = tcConfigB.FxResolver.GetDefaultReferences (useFsiAuxLib)
                 
                 // If the user requested .NET Core scripting but something went wrong and we reverted to
-                // .NET Framework scripting then we must adjsut both the primaryAssembly and fxResolver
+                // .NET Framework scripting then we must adjust both the primaryAssembly and fxResolver
                 if useDotNetFramework <> assumeDotNetFramework then
                     tcConfigB.SetPrimaryAssembly (if useDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
 
