@@ -170,9 +170,4 @@ See the "Debugging The Compiler" section of this [article](https://medium.com/@w
 
 If you are behind a proxy server, NuGet client tool must be configured to use it:
 
-```
-.nuget\nuget.exe config -set http_proxy=proxy.domain.com:8080 -ConfigFile NuGet.Config
-.nuget\nuget.exe config -set http_proxy.user=user_name -ConfigFile NuGet.Config
-.nuget\nuget.exe config -set http_proxy.password=user_password -ConfigFile NuGet.Config
-```
-Where you should set proper proxy address, user name and password.
+See the Nuget config file documention for use with a proxy server [https://docs.microsoft.com/en-us/nuget/reference/nuget-config-file](https://docs.microsoft.com/en-us/nuget/reference/nuget-config-file)
