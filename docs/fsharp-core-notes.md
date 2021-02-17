@@ -52,7 +52,7 @@ For modern templates, this is the default. For older templates, you may need to 
 FSharp.Core.dll will normally appear in the `bin` output folder for your application. For example:
 
 ```
-    Directory of ...\ConsoleApplication3\bin\Debug\netcoreapp3.1
+    Directory of ...\ConsoleApplication3\bin\Debug\net5.0
     
     18/04/2020  13:20             5,632 ConsoleApplication3.exe
     14/10/2020  12:12         1,400,472 FSharp.Core.dll
