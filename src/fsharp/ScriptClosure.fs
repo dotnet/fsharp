@@ -39,7 +39,7 @@ type LoadClosure =
       References: (string * AssemblyResolution list) list
 
       /// The referenced compiler tools.
-      CompilerTools: string list
+      CompilerTools: (range * string) list
 
       /// The resolved pacakge references along with the ranges of the #r positions in each file.
       PackageReferences: (range * string list)[]
@@ -209,7 +209,7 @@ module ScriptPreprocessClosure =
         let mutable nowarns = [] 
         let getWarningNumber = fun () (m, s) -> nowarns <- (s, m) :: nowarns
         let addReferenceDirective = fun () (m, s, directive) -> tcConfigB.AddReferenceDirective(dependencyProvider, m, s, directive)
-        let addCompilerTool = fun () (_m, s) -> tcConfigB.AddCompilerToolsByPath(s)
+        let addCompilerTool = fun () (m, s) -> tcConfigB.AddCompilerToolsByPath(m, s)
         let addLoadedSource = fun () (m, s) -> tcConfigB.AddLoadedSource(m, s, pathOfMetaCommandSource)
         try 
             ProcessMetaCommandsFromInput (getWarningNumber, addReferenceDirective, addCompilerTool, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
@@ -253,9 +253,9 @@ module ScriptPreprocessClosure =
                         | Some oldDependencyManagerLines when oldDependencyManagerLines = packageManagerLines -> ()
                         | _ ->
                             let outputDir =  tcConfig.outputDir |> Option.defaultValue ""
-                            match dependencyProvider.TryFindDependencyManagerByKey(tcConfig.compilerToolPaths, outputDir, reportError, packageManagerKey) with
+                            match dependencyProvider.TryFindDependencyManagerByKey(List.map snd tcConfig.compilerToolPaths, outputDir, reportError, packageManagerKey) with
                             | null ->
-                                errorR(Error(dependencyProvider.CreatePackageManagerUnknownError(tcConfig.compilerToolPaths, outputDir, packageManagerKey, reportError), m))
+                                errorR(Error(dependencyProvider.CreatePackageManagerUnknownError(List.map snd tcConfig.compilerToolPaths, outputDir, packageManagerKey, reportError), m))
 
                             | dependencyManager ->
                                 let directive d =

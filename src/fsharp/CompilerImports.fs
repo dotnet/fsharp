@@ -1280,7 +1280,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                                                                       tcConfig.isInteractive,
                                                                       systemRuntimeContainsType,
                                                                       primaryAssemblyVersion,
-                                                                      tcConfig.compilerToolPaths,
+                                                                      List.map snd tcConfig.compilerToolPaths,
                                                                       m) ]
             // Note, type providers are disposable objects. The TcImports owns the provider objects - when/if it is disposed, the providers are disposed.
             // We ignore all exceptions from provider disposal.

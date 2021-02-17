@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk" >
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <OutputType>Library</OutputType>
+        <IsPackable>false</IsPackable>
+
+        <FscToolExe>fsc.exe</FscToolExe>
+        <FscToolPath>..\..\..\artifacts\bin\fsc\Debug\net472</FscToolPath>
+        <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+        <DotnetFscCompilerPath></DotnetFscCompilerPath>
+    </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="test.fs" />
+    </ItemGroup>
+    <ItemGroup>
+      <FscCompilerTools Include="..\..\..\artifacts\bin\TestAnalyzer\Debug\netstandard2.0\TestAnalyzer.dll"/>
+    </ItemGroup>
+
+</Project>

@@ -1392,8 +1392,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
                 dllReferences |> List.iter (fun dllReference ->
                     tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
                 tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
-                loadClosure.CompilerTools |> List.iter (fun compilerTool ->
-                    tcConfigB.AddCompilerToolsByPath(compilerTool))
+                loadClosure.CompilerTools |> List.iter (fun (m, compilerTool) ->
+                    tcConfigB.AddCompilerToolsByPath(m, compilerTool))
             | None -> ()
 
             let tcConfig = TcConfig.Create(tcConfigB, validate=true)
@@ -1430,7 +1430,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
                   for pr in projectReferences  do
                     yield Choice2Of2 pr, (fun (cache: TimeStampCache) ctok -> cache.GetProjectReferenceTimeStamp (pr, ctok)) ]
             
-            let analyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig, Range.rangeStartup)
+            let analyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig)
             let analyzersRequireAssemblyContents =
                 analyzers |> List.exists (fun analyzer -> analyzer.RequiresAssemblyContents)
             

@@ -542,7 +542,7 @@ let ApplyMetaCommandsFromInputToTcConfig (tcConfig: TcConfig, inp: ParsedInput, 
     let tcConfigB = tcConfig.CloneToBuilder()
     let getWarningNumber = fun () _ -> () 
     let addReferenceDirective = fun () (m, path, directive) -> tcConfigB.AddReferenceDirective(dependencyProvider, m, path, directive)
-    let addCompilerTool = fun () (_m, s) -> tcConfigB.AddCompilerToolsByPath(s)
+    let addCompilerTool = fun () (m, s) -> tcConfigB.AddCompilerToolsByPath(m, s)
     let addLoadedSource = fun () (m,s) -> tcConfigB.AddLoadedSource(m,s,pathOfMetaCommandSource)
     ProcessMetaCommandsFromInput
         (getWarningNumber, addReferenceDirective, addCompilerTool, addLoadedSource)

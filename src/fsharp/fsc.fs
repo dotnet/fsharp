@@ -583,7 +583,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     AbortOnError(errorLogger, exiter)
     ReportTime tcConfig "Typechecked"
 
-    let analyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig, Range.rangeStartup)
+    let analyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig)
 
     FSharpAnalyzers.RunAnalyzers(analyzers, tcConfig, tcImports, tcGlobals, tcState.Ccu, sourceFiles, tcFileResults, tcEnvAtEnd)
 

@@ -336,7 +336,7 @@ type TcConfigBuilder =
       mutable light: bool option
       mutable conditionalCompilationDefines: string list
       mutable loadedSources: (range * string * string) list
-      mutable compilerToolPaths: string list
+      mutable compilerToolPaths: (range * string) list
       mutable referencedDLLs: AssemblyReference list
       mutable packageManagerLines: Map<string, PackageManagerLine list>
       mutable projectReferences: IProjectReference list
@@ -501,7 +501,7 @@ type TcConfigBuilder =
     member tcConfigB.GetNativeProbingRoots () =
         seq {
             yield! tcConfigB.includes
-            yield! tcConfigB.compilerToolPaths
+            yield! List.map snd tcConfigB.compilerToolPaths
             yield! (tcConfigB.referencedDLLs |> Seq.map(fun ref -> Path.GetDirectoryName(ref.Text)))
             yield tcConfigB.implicitIncludeDir
         } 
@@ -772,11 +772,13 @@ type TcConfigBuilder =
     member tcConfigB.AddEmbeddedResource filename =
         tcConfigB.embedResources <- tcConfigB.embedResources ++ filename
 
-    member tcConfigB.AddCompilerToolsByPath (path) = 
-        if not (tcConfigB.compilerToolPaths  |> List.exists (fun text -> path = text)) then // NOTE: We keep same paths if range is different.
-            let compilerToolPath = tcConfigB.compilerToolPaths |> List.tryPick (fun text -> if text = path then Some text else None)
-            if compilerToolPath.IsNone then
-                tcConfigB.compilerToolPaths <- tcConfigB.compilerToolPaths ++ path
+    member tcConfigB.AddCompilerToolsByPath (m, path) = 
+        if FileSystem.IsInvalidPathShim path then
+            warning(Error(FSComp.SR.buildInvalidAssemblyName(path), m))
+        // TODO: check this is the right place to resolve paths
+        let rootedPath = if Path.IsPathRooted(path) then path else Path.Combine(tcConfigB.implicitIncludeDir, path)
+        if not (tcConfigB.compilerToolPaths  |> List.exists (fun (_m, text) -> rootedPath = text)) then
+            tcConfigB.compilerToolPaths <- tcConfigB.compilerToolPaths ++ (m, rootedPath)
 
     member tcConfigB.AddReferencedAssemblyByPath (m, path) = 
         if FileSystem.IsInvalidPathShim path then
@@ -798,7 +800,7 @@ type TcConfigBuilder =
                 | ErrorReportType.Warning -> warning(Error(error, m))
                 | ErrorReportType.Error -> errorR(Error(error, m)))
 
-        let dm = dependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, output , reportError, path)
+        let dm = dependencyProvider.TryFindDependencyManagerInPath(List.map snd tcConfigB.compilerToolPaths, output , reportError, path)
 
         match dm with
         | _, dependencyManager when not(isNull dependencyManager) ->

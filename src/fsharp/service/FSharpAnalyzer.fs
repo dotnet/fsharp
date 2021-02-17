@@ -68,11 +68,10 @@ module FSharpAnalyzers =
     open FSharp.Compiler.ErrorLogger
     open FSharp.Core.CompilerServices
 
-#if !NO_EXTENSIONTYPING
     let CreateAnalyzer (analyzerType: System.Type, m) =
 
         if analyzerType.GetConstructor([| typeof<FSharpAnalysisContext> |]) <> null then
-
+        
             let ctxt = FSharpAnalysisContext()
             try 
                 Activator.CreateInstance(analyzerType, [| box ctxt|]) :?> FSharpAnalyzer |> Some
@@ -109,12 +108,12 @@ module FSharpAnalyzers =
                     | None -> ()
                     | Some a -> a ]
 
-    let ImportAnalyzers(tcConfig: TcConfig, m) =
+    let ImportAnalyzers(tcConfig: TcConfig) =
 
-        [ for analyzerPath in tcConfig.compilerToolPaths do
+        [ for (m, analyzerPath) in tcConfig.compilerToolPaths do
             if FileSystem.SafeExists(analyzerPath) then
                 yield! CreateAnalyzers (analyzerPath, m) 
-            // TODO: give a warning here (or in CreateAnalyzers)
+            // TODO: give a warning here (or in CreateAnalyzer)
         ]
 
     let RunAnalyzers(analyzers: FSharpAnalyzer list, tcConfig: TcConfig, tcImports: TcImports, tcGlobals: TcGlobals, tcCcu: CcuThunk, sourceFiles: string list, tcFileResults, tcEnvAtEnd: TcEnv) =
@@ -187,10 +186,3 @@ module FSharpAnalyzers =
                     | FSharpDiagnosticSeverity.Info -> warning(exn)
                     | FSharpDiagnosticSeverity.Hidden -> ()
 
-#else
-
-    let ImportAnalyzers(tcConfig: TcConfig, g: TcGlobals, m) : FSharpAnalyzer list =
-
-        [  ]
-
-#endif

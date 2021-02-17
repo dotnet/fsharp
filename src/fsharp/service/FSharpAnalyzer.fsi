@@ -74,5 +74,5 @@ type public FSharpAnalyzer =
 
 module internal FSharpAnalyzers =
     val CreateAnalyzers: analyzerPath: string * m: range -> FSharpAnalyzer list
-    val ImportAnalyzers: tcConfig: TcConfig * m: range -> FSharpAnalyzer list
+    val ImportAnalyzers: tcConfig: TcConfig -> FSharpAnalyzer list
     val RunAnalyzers: analyzers: FSharpAnalyzer list * tcConfig: TcConfig * tcImports: TcImports * tcGlobals: TcGlobals * tcCcu: CcuThunk * sourceFiles: string list * tcFileResults: (ParsedInput * TypedImplFile option * ModuleOrNamespaceType) list * tcEnvAtEnd: TcEnv -> unit

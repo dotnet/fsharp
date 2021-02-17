@@ -41,7 +41,7 @@ type LoadClosure =
       References: (string * AssemblyResolution list) list
 
       /// The referenced compiler tools.
-      CompilerTools: string list
+      CompilerTools: (range * string) list
 
       /// The resolved pacakge references along with the ranges of the #r positions in each file.
       PackageReferences: (range * string list)[]
