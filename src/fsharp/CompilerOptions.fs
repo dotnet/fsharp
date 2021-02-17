@@ -455,7 +455,8 @@ let subSystemVersionSwitch (tcConfigB: TcConfigBuilder) (text: string) =
         | _ -> fail()
 
 let SetUseSdkSwitch (tcConfigB: TcConfigBuilder) switch =
-    tcConfigB.useSdkRefs <- (switch = OptionSwitch.On)
+    let useSdkRefs = (switch = OptionSwitch.On)
+    tcConfigB.SetUseSdkRefs useSdkRefs
 
 let (++) x s = x @ [s]
 
@@ -904,8 +905,8 @@ let cliRootFlag (_tcConfigB: TcConfigBuilder) =
          OptionString (fun _  -> ()), Some(DeprecatedCommandLineOptionFull(FSComp.SR.optsClirootDeprecatedMsg(), rangeCmdArgs)),
          Some(FSComp.SR.optsClirootDescription()))
 
-let SetTargetProfile tcConfigB v = 
-    tcConfigB.primaryAssembly <- 
+let SetTargetProfile (tcConfigB: TcConfigBuilder) v = 
+    let primaryAssembly = 
         match v with
         // Indicates we assume "mscorlib.dll", i.e .NET Framework, Mono and Profile 47
         | "mscorlib" -> PrimaryAssembly.Mscorlib
@@ -914,6 +915,7 @@ let SetTargetProfile tcConfigB v =
         // Indicates we assume "netstandard.dll", i.e .NET Standard 2.0 and above
         | "netstandard"  -> PrimaryAssembly.NetStandard
         | _ -> error(Error(FSComp.SR.optsInvalidTargetProfile v, rangeCmdArgs))
+    tcConfigB.SetPrimaryAssembly  primaryAssembly
 
 let advancedFlagsBoth tcConfigB =
     [

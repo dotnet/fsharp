@@ -254,9 +254,9 @@ type TcConfigBuilder =
       mutable copyFSharpCore: CopyFSharpCoreFlag
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
-      mutable fxResolver: FxResolver
-      mutable rangeForErrors: range
-      mutable sdkDirOverride: string option
+      mutable fxResolver: FxResolver option
+      rangeForErrors: range
+      sdkDirOverride: string option
 
       /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
       /// and from which we can read the metadata. Only used when metadataOnly=true.
@@ -272,8 +272,6 @@ type TcConfigBuilder =
 
       mutable langVersion : LanguageVersion
     }
-
-    static member Initial: TcConfigBuilder
 
     static member CreateNew:
         legacyReferenceResolver: LegacyReferenceResolver *
@@ -319,6 +317,9 @@ type TcConfigBuilder =
 
     member FxResolver: FxResolver
 
+    member SetUseSdkRefs: useSdkRefs: bool -> unit
+
+    member SetPrimaryAssembly: primaryAssembly: PrimaryAssembly -> unit
 
 /// Immutable TcConfig, modifications are made via a TcConfigBuilder
 [<Sealed>]

@@ -130,38 +130,45 @@ module ScriptPreprocessClosure =
 
         let rangeForErrors = mkFirstLineOfFile filename
         let tcConfigB =
-            let tcb =
-                TcConfigBuilder.CreateNew(legacyReferenceResolver,
-                                          defaultFSharpBinariesDir,
-                                          reduceMemoryUsage,
-                                          projectDir,
-                                          isInteractive,
-                                          isInvalidationSupported,
-                                          CopyFSharpCoreFlag.No,
-                                          tryGetMetadataSnapshot,
-                                          sdkDirOverride,
-                                          rangeForErrors)
-            tcb.useSdkRefs <- useSdkRefs
-            tcb
+            TcConfigBuilder.CreateNew(legacyReferenceResolver,
+                defaultFSharpBinariesDir,
+                reduceMemoryUsage,
+                projectDir,
+                isInteractive,
+                isInvalidationSupported,
+                CopyFSharpCoreFlag.No,
+                tryGetMetadataSnapshot,
+                sdkDirOverride,
+                rangeForErrors)
+        tcConfigB.SetPrimaryAssembly (if assumeDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
+        tcConfigB.SetUseSdkRefs useSdkRefs
 
         applyCommandLineArgs tcConfigB
 
         // Work out the references for the script in its location. This may produce diagnostics.
-        let assumeDotNetFramework, scriptDefaultReferencesDiagnostics =
+        let scriptDefaultReferencesDiagnostics =
 
             match basicReferences with 
             | None ->
                 let errorLogger = CapturingErrorLogger("ScriptDefaultReferences") 
                 use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                let references, assumeDotNetFramework = tcConfigB.FxResolver.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework)
+                let references, useDotNetFramework = tcConfigB.FxResolver.GetDefaultReferences (useFsiAuxLib)
+                
+                // If the user requested .NET Core scripting but something went wrong and we reverted to
+                // .NET Framework scripting then we must adjsut both the primaryAssembly and fxResolver
+                if useDotNetFramework <> assumeDotNetFramework then
+                    tcConfigB.SetPrimaryAssembly (if useDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
+
                 // Add script references
                 for reference in references do
                     tcConfigB.AddReferencedAssemblyByPath(range0, reference)
-                assumeDotNetFramework , errorLogger.Diagnostics
+
+                errorLogger.Diagnostics
+
             | Some (rs, diagnostics) ->
                 for m, reference in rs do
                     tcConfigB.AddReferencedAssemblyByPath(m, reference)
-                assumeDotNetFramework, diagnostics
+                diagnostics
 
         tcConfigB.resolutionEnvironment <-
             match codeContext with 
@@ -173,8 +180,7 @@ module ScriptPreprocessClosure =
         // Indicates that there are some references not in basicReferencesForScriptLoadClosure which should
         // be added conditionally once the relevant version of mscorlib.dll has been detected.
         tcConfigB.implicitlyResolveAssemblies <- false
-        tcConfigB.useSdkRefs <- useSdkRefs
-        tcConfigB.primaryAssembly <- if assumeDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime
+        tcConfigB.SetUseSdkRefs useSdkRefs
 
         TcConfig.Create(tcConfigB, validate=true), scriptDefaultReferencesDiagnostics
 
