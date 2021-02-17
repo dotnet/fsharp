@@ -2803,7 +2803,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib
 
 #if NETSTANDARD
-    do tcConfigB.useSdkRefs <- true
+    do tcConfigB.SetUseSdkRefs true
     do tcConfigB.useSimpleResolution <- true
     do if FSharpEnvironment.isRunningOnCoreClr then SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif

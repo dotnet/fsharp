@@ -239,7 +239,7 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
 
             // If there is a target framework for the script then push that as a requirement into the overall compilation and add all the framework references implied
             // by the script too.
-            tcConfigB.primaryAssembly <- (if closure.UseDesktopFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
+            tcConfigB.SetPrimaryAssembly (if closure.UseDesktopFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
             if tcConfigB.framework then
                 let references = closure.References |> List.collect snd
                 references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
@@ -416,16 +416,15 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let tcConfigB =
        TcConfigBuilder.CreateNew(legacyReferenceResolver,
-                                 defaultFSharpBinariesDir,
-                                 reduceMemoryUsage=reduceMemoryUsage,
-                                 implicitIncludeDir=directoryBuildingFrom,
-                                 isInteractive=false,
-                                 isInvalidationSupported=false,
-                                 defaultCopyFSharpCore=defaultCopyFSharpCore,
-                                 tryGetMetadataSnapshot=tryGetMetadataSnapshot,
-                                 sdkDirOverride=None,
-                                 rangeForErrors=range0
-                                 )
+            defaultFSharpBinariesDir,
+            reduceMemoryUsage=reduceMemoryUsage,
+            implicitIncludeDir=directoryBuildingFrom,
+            isInteractive=false,
+            isInvalidationSupported=false,
+            defaultCopyFSharpCore=defaultCopyFSharpCore,
+            tryGetMetadataSnapshot=tryGetMetadataSnapshot,
+            sdkDirOverride=None,
+            rangeForErrors=range0)
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
@@ -638,7 +637,7 @@ let main1OfAst
             PrimaryAssembly.Mscorlib
 
     tcConfigB.target <- target
-    tcConfigB.primaryAssembly <- primaryAssembly
+    tcConfigB.SetPrimaryAssembly primaryAssembly
     if noframework then
         tcConfigB.framework <- false
         tcConfigB.implicitlyResolveAssemblies <- false

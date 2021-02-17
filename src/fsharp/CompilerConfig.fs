@@ -466,13 +466,13 @@ type TcConfigBuilder =
       /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false (*default*)
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
-      mutable fxResolver: FxResolver
+      mutable fxResolver: FxResolver option
 
       /// specify the error range for FxResolver
-      mutable rangeForErrors: range
+      rangeForErrors: range
 
       /// Override the SDK directory used by FxResolver, used for FCS only
-      mutable sdkDirOverride: string option
+      sdkDirOverride: string option
 
       /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
       /// and from which we can read the metadata. Only used when metadataOnly=true.
@@ -487,19 +487,50 @@ type TcConfigBuilder =
       mutable langVersion: LanguageVersion
       }
 
-    static member Initial =
+
+    // Directories to start probing in
+    // Algorithm:
+    //  Search for native libraries using:
+    //  1. Include directories
+    //  2. compilerToolPath directories
+    //  3. reference dll's
+    //  4. The implicit include directory
+    //
+    // NOTE: it is important this is a delayed IEnumerable sequence. It is recomputed
+    // each time a resolution happens and additional paths may be added as a result.
+    member tcConfigB.GetNativeProbingRoots () =
+        seq {
+            yield! tcConfigB.includes
+            yield! tcConfigB.compilerToolPaths
+            yield! (tcConfigB.referencedDLLs |> Seq.map(fun ref -> Path.GetDirectoryName(ref.Text)))
+            yield tcConfigB.implicitIncludeDir
+        } 
+        |> Seq.distinct
+
+    static member CreateNew(legacyReferenceResolver,
+                            defaultFSharpBinariesDir,
+                            reduceMemoryUsage,
+                            implicitIncludeDir,
+                            isInteractive,
+                            isInvalidationSupported,
+                            defaultCopyFSharpCore,
+                            tryGetMetadataSnapshot,
+                            sdkDirOverride,
+                            rangeForErrors) =
+
+        if (String.IsNullOrEmpty defaultFSharpBinariesDir) then
+            failwith "Expected a valid defaultFSharpBinariesDir"
+
+        // These are all default values, many can be overridden using the command line switch
         {
-          primaryAssembly = PrimaryAssembly.Mscorlib // default value, can be overridden using the command line switch
+          primaryAssembly = PrimaryAssembly.Mscorlib
           light = None
           noFeedback = false
           stackReserveSize = None
           conditionalCompilationDefines = []
-          implicitIncludeDir = String.Empty
           openDebugInformationForLaterStaticLinking = false
-          defaultFSharpBinariesDir = String.Empty
           compilingFslib = false
           useIncrementalBuilder = false
-          useFsiAuxLib = false
           implicitOpens = []
           includes = []
           resolutionEnvironment = LegacyResolutionEnvironment.EditingOrCompilation false
@@ -514,7 +545,6 @@ type TcConfigBuilder =
           errorSeverityOptions = FSharpDiagnosticOptions.Default
           embedResources = []
           inputCodePage = None
-          reduceMemoryUsage = ReduceMemoryFlag.Yes // always gets set explicitly 
           subsystemVersion = 4, 0 // per spec for 357994
           useHighEntropyVA = false
           mlCompatibility = false
@@ -576,7 +606,6 @@ type TcConfigBuilder =
           win32manifest = ""
           includewin32manifest = true
           linkResources = []
-          legacyReferenceResolver = null
           showFullPaths = false
           errorStyle = ErrorStyle.DefaultErrors
 
@@ -609,86 +638,46 @@ type TcConfigBuilder =
           pause = false 
           alwaysCallVirt = true
           noDebugData = false
-          isInteractive = false
-          isInvalidationSupported = false
           emitDebugInfoInQuotations = false
           exename = None
-          copyFSharpCore = CopyFSharpCoreFlag.No
           shadowCopyReferences = false
           useSdkRefs = true
-          fxResolver = Unchecked.defaultof<FxResolver>
-          rangeForErrors = range0
-          sdkDirOverride = None
-          tryGetMetadataSnapshot = (fun _ -> None)
+          fxResolver = None
           internalTestSpanStackReferring = false
           noConditionalErasure = false
           pathMap = PathMap.empty
           langVersion = LanguageVersion("default")
+          implicitIncludeDir = implicitIncludeDir
+          defaultFSharpBinariesDir = defaultFSharpBinariesDir
+          reduceMemoryUsage = reduceMemoryUsage
+          legacyReferenceResolver = legacyReferenceResolver
+          isInteractive = isInteractive
+          isInvalidationSupported = isInvalidationSupported
+          copyFSharpCore = defaultCopyFSharpCore
+          tryGetMetadataSnapshot = tryGetMetadataSnapshot
+          useFsiAuxLib = isInteractive
+          rangeForErrors = rangeForErrors
+          sdkDirOverride = sdkDirOverride
         }
-
-    // Directories to start probing in
-    // Algorithm:
-    //  Search for native libraries using:
-    //  1. Include directories
-    //  2. compilerToolPath directories
-    //  3. reference dll's
-    //  4. The implicit include directory
-    //
-    // NOTE: it is important this is a delayed IEnumerable sequence. It is recomputed
-    // each time a resolution happens and additional paths may be added as a result.
-    member tcConfigB.GetNativeProbingRoots () =
-        seq {
-            yield! tcConfigB.includes
-            yield! tcConfigB.compilerToolPaths
-            yield! (tcConfigB.referencedDLLs |> Seq.map(fun ref -> Path.GetDirectoryName(ref.Text)))
-            yield tcConfigB.implicitIncludeDir
-        } 
-        |> Seq.distinct
-
-    static member CreateNew(legacyReferenceResolver,
-                            defaultFSharpBinariesDir,
-                            reduceMemoryUsage,
-                            implicitIncludeDir,
-                            isInteractive,
-                            isInvalidationSupported,
-                            defaultCopyFSharpCore,
-                            tryGetMetadataSnapshot,
-                            sdkDirOverride,
-                            rangeForErrors) =
-
-        Debug.Assert(FileSystem.IsPathRootedShim implicitIncludeDir, sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
-
-        if (String.IsNullOrEmpty defaultFSharpBinariesDir) then
-            failwith "Expected a valid defaultFSharpBinariesDir"
-
-        let tcConfigBuilder =
-            { TcConfigBuilder.Initial with
-                implicitIncludeDir = implicitIncludeDir
-                defaultFSharpBinariesDir = defaultFSharpBinariesDir
-                reduceMemoryUsage = reduceMemoryUsage
-                legacyReferenceResolver = legacyReferenceResolver
-                isInteractive = isInteractive
-                isInvalidationSupported = isInvalidationSupported
-                copyFSharpCore = defaultCopyFSharpCore
-                tryGetMetadataSnapshot = tryGetMetadataSnapshot
-                useFsiAuxLib = isInteractive
-                rangeForErrors = rangeForErrors
-                sdkDirOverride = sdkDirOverride
-            }
-        tcConfigBuilder
-
+        
     member tcConfigB.FxResolver =
-        let resolver =
-            lazy (let assumeDotNetFramework = Some (tcConfigB.primaryAssembly = PrimaryAssembly.Mscorlib)
-                  FxResolver(assumeDotNetFramework, tcConfigB.implicitIncludeDir, rangeForErrors=tcConfigB.rangeForErrors, useSdkRefs=tcConfigB.useSdkRefs, isInteractive=tcConfigB.isInteractive, sdkDirOverride=tcConfigB.sdkDirOverride))
+        // We compute the FxResolver on-demand.  It depends on some configuration parameters
+        // which may be later adjusted.
+        match tcConfigB.fxResolver with 
+        | None -> 
+            let useDotNetFramework = (tcConfigB.primaryAssembly = PrimaryAssembly.Mscorlib)
+            let fxResolver = FxResolver(useDotNetFramework, tcConfigB.implicitIncludeDir, rangeForErrors=tcConfigB.rangeForErrors, useSdkRefs=tcConfigB.useSdkRefs, isInteractive=tcConfigB.isInteractive, sdkDirOverride=tcConfigB.sdkDirOverride)
+            tcConfigB.fxResolver <- Some fxResolver
+            fxResolver
+        | Some fxResolver -> fxResolver
 
-        if tcConfigB.fxResolver = Unchecked.defaultof<FxResolver> then
-            lock tcConfigB (fun () ->
-                if tcConfigB.fxResolver = Unchecked.defaultof<FxResolver> then
-                    tcConfigB.fxResolver <- resolver.Force()
-            )
+    member tcConfigB.SetPrimaryAssembly primaryAssembly =
+        tcConfigB.primaryAssembly <- primaryAssembly
+        tcConfigB.fxResolver <- None // this needs to be recreated when the primary assembly changes
 
-        tcConfigB.fxResolver
+    member tcConfigB.SetUseSdkRefs useSdkRefs =
+        tcConfigB.useSdkRefs <- useSdkRefs
+        tcConfigB.fxResolver <- None // this needs to be recreated when the primary assembly changes
 
     member tcConfigB.ResolveSourceFile(m, nm, pathLoadedFrom) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter

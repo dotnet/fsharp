@@ -1370,7 +1370,17 @@ type FSharpChecker(legacyReferenceResolver,
     member _.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, ?isInteractive) =
         let isInteractive = defaultArg isInteractive false
         use errorScope = new ErrorScope()
-        let tcConfigBuilder = TcConfigBuilder.Initial
+        let tcConfigBuilder = 
+            TcConfigBuilder.CreateNew(legacyReferenceResolver,
+                defaultFSharpBinariesDir=FSharpCheckerResultsSettings.defaultFSharpBinariesDir,
+                reduceMemoryUsage=ReduceMemoryFlag.Yes,
+                implicitIncludeDir="",
+                isInteractive=isInteractive,
+                isInvalidationSupported=false,
+                defaultCopyFSharpCore=CopyFSharpCoreFlag.No,
+                tryGetMetadataSnapshot=tryGetMetadataSnapshot,
+                sdkDirOverride=None,
+                rangeForErrors=range0)
 
         // Apply command-line arguments and collect more source files if they are in the arguments
         let sourceFilesNew = ApplyCommandLineArgs(tcConfigBuilder, sourceFiles, argv)
@@ -1471,8 +1481,8 @@ type CompilerEnvironment() =
     // Legacy entry point, no longer used by FSharp.Editor
     static member DefaultReferencesForOrphanSources assumeDotNetFramework =
         let currentDirectory = Directory.GetCurrentDirectory()
-        let fxResolver = FxResolver(Some assumeDotNetFramework, currentDirectory, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
-        let references, _ = fxResolver.GetDefaultReferences (useFsiAuxLib=false, assumeDotNetFramework=assumeDotNetFramework)
+        let fxResolver = FxResolver(assumeDotNetFramework, currentDirectory, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
+        let references, _ = fxResolver.GetDefaultReferences (useFsiAuxLib=false)
         references
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.
