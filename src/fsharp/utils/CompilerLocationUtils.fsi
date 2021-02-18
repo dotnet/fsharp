@@ -29,8 +29,9 @@ module internal FSharpEnvironment =
 
     val toolingCompatiblePaths: unit -> string list
 
-    val searchToolPaths:
-      path:string option -> compilerToolPaths:seq<string> -> seq<string>
+    val searchToolPath: compilerToolPath:string -> seq<string>
+
+    val searchToolPaths: path:string option -> compilerToolPaths:seq<string> -> seq<string>
 
     val getTypeProviderAssembly:
       runTimeAssemblyFileName:string *

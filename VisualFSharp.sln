@@ -158,7 +158,7 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Service", "
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Service.Tests", "tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj", "{14F3D3D6-5C8E-43C2-98A2-17EA704D4DEA}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TestAnalyzer", "tests\service\data\TestAnalyzer\TestAnalyzer.fsproj", "{A341304E-7223-4931-88B5-690EE88C2241}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Test.Analyzer", "tests\service\data\Test.Analyzer\Test.Analyzer.fsproj", "{A341304E-7223-4931-88B5-690EE88C2241}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

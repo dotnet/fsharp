@@ -27,6 +27,11 @@
         <target state="new">Key container signing is not supported on this platform.</target>
         <note />
       </trans-unit>
+      <trans-unit id="couldNotLoadAnalyzerExtension">
+        <source>The analyzer extension {0} could not be loaded. Message: {1}</source>
+        <target state="new">The analyzer extension {0} could not be loaded. Message: {1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">Sobrecargas disponibles:\n{0}</target>

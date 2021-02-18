@@ -6,6 +6,7 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
+open System.IO
 open System.Reflection
 open System.Threading
 open Internal.Utilities.Library  
@@ -18,6 +19,10 @@ open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
+open FSharp.Compiler.IO.FileSystemAutoOpens
+open FSharp.Compiler.ErrorLogger
+open FSharp.Core.CompilerServices
+open Internal.Utilities.FSharpEnvironment
 
 type FSharpAnalyzerTextChange = Range * string
 
@@ -64,9 +69,27 @@ type public FSharpAnalyzer(context:FSharpAnalysisContext)  =
     default _.RequiresAssemblyContents = false
 
 module FSharpAnalyzers =
-    open FSharp.Compiler.IO.FileSystemAutoOpens
-    open FSharp.Compiler.ErrorLogger
-    open FSharp.Core.CompilerServices
+
+    let fsharpAnalyzerPattern = "*.Analyzer.dll"
+
+    let assemblyHasAttribute (theAssembly: Assembly) attributeName =
+        try
+            CustomAttributeExtensions.GetCustomAttributes(theAssembly)
+            |> Seq.exists (fun a -> a.GetType().Name = attributeName)
+        with | _ -> false
+
+    let stripTieWrapper (e:Exception) =
+        match e with
+        | :? TargetInvocationException as e->
+            e.InnerException
+        | _ -> e
+
+    let enumerateAnalyzerAssemblies (compilerToolPaths: (range * string) list) =
+        [ for m, compilerToolPath in compilerToolPaths do
+             for path in searchToolPath compilerToolPath do
+                if Directory.Exists(path) then
+                    for filePath in Directory.EnumerateFiles(path, fsharpAnalyzerPattern) do
+                        yield (m, filePath) ]
 
     let CreateAnalyzer (analyzerType: System.Type, m) =
 
@@ -91,14 +114,17 @@ module FSharpAnalyzers =
             errorR (Error(FSComp.SR.etAnalyzerDoesNotHaveValidConstructor(analyzerType.FullName), m))
             None
 
-    let CreateAnalyzers (analyzerPath, m:range) =
+    let CreateAnalyzers (analyzerPath: string, m:range) =
 
         let analyzerAssembly = 
             try
-                Assembly.UnsafeLoadFrom analyzerPath
+                Some (Assembly.UnsafeLoadFrom analyzerPath)
             with exn ->
-                error (Error(FSComp.SR.etAnalyzerLoadFailure(analyzerPath, exn.ToString()), m))
-
+                warning (Error(FSComp.SR.etAnalyzerLoadFailure(analyzerPath, exn.ToString()), m))
+                None
+        match analyzerAssembly with 
+        | None -> []
+        | Some analyzerAssembly -> 
         [ if analyzerAssembly.GetCustomAttribute(typeof<AnalyzerAssemblyAttribute>) <> null then
             let exportedTypes = analyzerAssembly.GetExportedTypes() 
             for t in exportedTypes do 
@@ -109,8 +135,7 @@ module FSharpAnalyzers =
                     | Some a -> a ]
 
     let ImportAnalyzers(tcConfig: TcConfig) =
-
-        [ for (m, analyzerPath) in tcConfig.compilerToolPaths do
+        [ for (m, analyzerPath) in enumerateAnalyzerAssemblies tcConfig.compilerToolPaths do
             if FileSystem.SafeExists(analyzerPath) then
                 yield! CreateAnalyzers (analyzerPath, m) 
             // TODO: give a warning here (or in CreateAnalyzer)

@@ -1,4 +1,4 @@
-﻿namespace TestAnalyzer
+﻿namespace Test.Analyzer
 
 open FSharp.Core.CompilerServices
 open FSharp.Compiler.CodeAnalysis
