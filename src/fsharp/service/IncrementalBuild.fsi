@@ -214,7 +214,7 @@ type internal IncrementalBuilder =
       member GetFullCheckResultsAndImplementationsForProject : CompilationThreadToken -> Cancellable<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
-      member GetLogicalTimeStampForProject: TimeStampCache * CompilationThreadToken -> DateTime
+      member GetLogicalTimeStampForProject: TimeStampCache -> DateTime
 
       /// Does the given file exist in the builder's pipeline?
       member ContainsFile: filename: string -> bool

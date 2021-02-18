@@ -303,8 +303,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
                             return! self.GetAssemblyData(opts, ctok, userOpName + ".CheckReferencedProject("+nm+")")
                           }
-                        member x.TryGetLogicalTimeStamp(cache, ctok) = 
-                            self.TryGetLogicalTimeStampForProject(cache, ctok, opts, userOpName + ".TimeStampReferencedProject("+nm+")")
+                        member x.TryGetLogicalTimeStamp(cache) = 
+                            self.TryGetLogicalTimeStampForProject(cache, opts)
                         member x.FileName = nm } ]
 
         let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
@@ -851,14 +851,11 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         }
 
     /// Get the timestamp that would be on the output if fully built immediately
-    member private _.TryGetLogicalTimeStampForProject(cache, ctok, options, userOpName: string) =
+    member private _.TryGetLogicalTimeStampForProject(cache, options) =
 
-        // NOTE: This creation of the background builder is currently run as uncancellable.  Creating background builders is generally
-        // cheap though the timestamp computations look suspicious for transitive project references.
-        let builderOpt,_creationErrors = getOrCreateBuilder (ctok, options, userOpName + ".TryGetLogicalTimeStampForProject") |> Cancellable.runWithoutCancellation
-        match builderOpt with 
-        | None -> None
-        | Some builder -> Some (builder.GetLogicalTimeStampForProject(cache, ctok))
+        match tryGetBuilder options with
+        | Some (Some builder, _) -> Some (builder.GetLogicalTimeStampForProject(cache))
+        | _ -> None
 
 
     /// Parse and typecheck the whole project.
