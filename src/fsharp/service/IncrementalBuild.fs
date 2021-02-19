@@ -1301,10 +1301,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         }
         
     member _.GetLogicalTimeStampForProject(cache) = 
-        let state = currentState
-
-        let t1 = MaxTimeStampInDependencies state cache getStampedReferencedAssemblies
-        let t2 = MaxTimeStampInDependencies state cache getStampedFileNames
+        let t1 = MaxTimeStampInDependencies currentState cache getStampedReferencedAssemblies
+        let t2 = MaxTimeStampInDependencies currentState cache getStampedFileNames
         max t1 t2
         
     member _.TryGetSlotOfFileName(filename: string) =

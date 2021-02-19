@@ -852,7 +852,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     /// Get the timestamp that would be on the output if fully built immediately
     member private _.TryGetLogicalTimeStampForProject(cache, options) =
-
         match tryGetBuilder options with
         | Some (Some builder, _) -> Some (builder.GetLogicalTimeStampForProject(cache))
         | _ -> None
