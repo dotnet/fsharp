@@ -676,6 +676,7 @@ type IncrementalBuilderState =
         initialBoundModel: BoundModel option
         boundModels: ImmutableArray<BoundModel option>
         finalizedBoundModel: ((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime) option
+        enablePartialTypeChecking: bool
     }
 
 /// Manages an incremental build graph for the build of a single F# project
@@ -698,7 +699,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 #endif
     let mutable currentTcImportsOpt = None
     let defaultPartialTypeChecking = enablePartialTypeChecking
-    let mutable enablePartialTypeChecking = enablePartialTypeChecking
 
     // Check for the existence of loaded sources and prepend them to the sources list if present.
     let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (sourceFiles |>List.map (fun s -> rangeStartup, s))
@@ -948,7 +948,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         if currentStamp <> stamp then
             match state.boundModels.[slot] with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
-            | Some(boundModel) when enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
+            | Some(boundModel) when state.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
                 boundModel.Invalidate()
                 { state with 
                     stampedFileNames = state.stampedFileNames.SetItem(slot, StampFileNameTask cache fileInfo) 
@@ -1182,6 +1182,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             initialBoundModel = None
             boundModels = Array.zeroCreate<BoundModel option> fileNames.Length |> ImmutableArray.CreateRange
             finalizedBoundModel = None
+            enablePartialTypeChecking = enablePartialTypeChecking
         }
 
     let getStampedFileNames state cache =
@@ -1240,16 +1241,19 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         match tryGetBeforeSlot currentState slotOfFile with
         | Some _ -> true
         | _ -> false
-        
-    member _.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile) = 
+
+    member private _.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile, enablePartialTypeChecking) = 
       cancellable {
         let cache = TimeStampCache defaultTimeStamp
-        let! state, result = eval currentState cache ctok (slotOfFile - 1)
-        currentState <- state
+        let! state, result = eval { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache ctok (slotOfFile - 1)
+        currentState <- { state with enablePartialTypeChecking = defaultPartialTypeChecking }
         match result with
         | Some (boundModel, timestamp) -> return PartialCheckResults.Create (boundModel, timestamp)
         | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsBeforeSlotInProject)."
       }
+        
+    member builder.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile) = 
+        builder.GetCheckResultsBeforeSlotInProject(ctok, slotOfFile, defaultPartialTypeChecking)
 
     member builder.GetCheckResultsBeforeFileInProject (ctok: CompilationThreadToken, filename) = 
         let slotOfFile = builder.GetSlotOfFileName filename
@@ -1260,25 +1264,22 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         builder.GetCheckResultsBeforeSlotInProject (ctok, slotOfFile)
 
     member builder.GetFullCheckResultsAfterFileInProject (ctok: CompilationThreadToken, filename) = 
-        enablePartialTypeChecking <- false
         cancellable {
-            try
-                let! result = builder.GetCheckResultsAfterFileInProject(ctok, filename)
-                result.TcInfoWithOptional ctok |> ignore // Make sure we forcefully evaluate the info
-                return result
-            finally               
-                enablePartialTypeChecking <- defaultPartialTypeChecking
+            let slotOfFile = builder.GetSlotOfFileName filename + 1
+            let! result = builder.GetCheckResultsBeforeSlotInProject(ctok, slotOfFile, false)
+            result.TcInfoWithOptional ctok |> ignore // Make sure we forcefully evaluate the info
+            return result
         }
 
     member builder.GetCheckResultsAfterLastFileInProject (ctok: CompilationThreadToken) = 
         builder.GetCheckResultsBeforeSlotInProject(ctok, builder.GetSlotsCount()) 
 
-    member _.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
+    member private _.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken, enablePartialTypeChecking) = 
       cancellable {
         let cache = TimeStampCache defaultTimeStamp
 
-        let! state, result = tryGetFinalized currentState cache ctok
-        currentState <- state
+        let! state, result = tryGetFinalized { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache ctok
+        currentState <- { state with enablePartialTypeChecking = defaultPartialTypeChecking }
         match result with
         | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp) -> 
             return PartialCheckResults.Create (boundModel, timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
@@ -1287,16 +1288,15 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             return! failwith msg
       }
 
-    member this.GetFullCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
-        enablePartialTypeChecking <- false
+    member builder.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) =
+        builder.GetCheckResultsAndImplementationsForProject(ctok, defaultPartialTypeChecking)
+
+    member builder.GetFullCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
         cancellable {
-            try
-                let! result = this.GetCheckResultsAndImplementationsForProject(ctok)
-                let results, _, _, _ = result
-                results.TcInfoWithOptional ctok |> ignore // Make sure we forcefully evaluate the info
-                return result
-            finally
-                enablePartialTypeChecking <- defaultPartialTypeChecking
+            let! result = builder.GetCheckResultsAndImplementationsForProject(ctok, false)
+            let results, _, _, _ = result
+            results.TcInfoWithOptional ctok |> ignore // Make sure we forcefully evaluate the info
+            return result
         }
         
     member _.GetLogicalTimeStampForProject(cache) = 
