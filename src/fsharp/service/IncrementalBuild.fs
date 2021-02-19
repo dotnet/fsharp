@@ -1136,7 +1136,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                         state <- newState
                 }
             cancellable {
-                let state = computeStampedReferencedAssemblies state cache
+                let newState = computeStampedReferencedAssemblies state cache
+                state <- newState
 
                 let! _ = evalUpTo
 
