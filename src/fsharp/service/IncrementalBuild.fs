@@ -833,7 +833,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 beforeFileChecked, fileChecked, tcInfo, Eventually.Done (Some tcInfoOptional), None) }
                 
     /// Type check all files.     
-    let TypeCheckTask ctok (prevBoundModel: BoundModel) syntaxTree: Eventually<BoundModel> =
+    let TypeCheckTask ctok enablePartialTypeChecking (prevBoundModel: BoundModel) syntaxTree: Eventually<BoundModel> =
         eventually {
             RequireCompilationThread ctok
             let! boundModel = prevBoundModel.Next(syntaxTree)
@@ -844,7 +844,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         }
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask ctok (boundModels: ImmutableArray<BoundModel>) = 
+    let FinalizeTypeCheckTask ctok enablePartialTypeChecking (boundModels: ImmutableArray<BoundModel>) = 
       cancellable {
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
@@ -1051,7 +1051,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                                 // This shouldn't happen, but on the off-chance, just grab the initial bound model.
                                 initial
 
-                    let boundModel = TypeCheckTask ctok prevBoundModel (ParseTask fileInfo) |> Eventually.force ctok
+                    let boundModel = TypeCheckTask ctok state.enablePartialTypeChecking prevBoundModel (ParseTask fileInfo) |> Eventually.force ctok
                 
                     { state with
                         boundModels = state.boundModels.SetItem(slot, Some boundModel)
@@ -1084,7 +1084,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             | _ ->
                 let boundModels = state.boundModels |> Seq.choose id |> ImmutableArray.CreateRange
             
-                let! result = FinalizeTypeCheckTask ctok boundModels 
+                let! result = FinalizeTypeCheckTask ctok state.enablePartialTypeChecking boundModels 
                 let result = (result, DateTime.UtcNow)
                 return { state with finalizedBoundModel = Some result }, result
         }
