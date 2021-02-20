@@ -493,7 +493,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         let cachedResults = parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.TryGet(ltok, (filename, sourceText.GetHashCode(), options)))
 
         match cachedResults with 
-//            | Some (parseResults, checkResults, _, _) when builder.AreCheckResultsBeforeFileInProjectReady(filename) -> 
         | Some (parseResults, checkResults,_,priorTimeStamp) 
                 when 
                 (match builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename with 
@@ -650,13 +649,18 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     match cachedResults with
                     | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
                     | _ ->
-                        Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CheckFileInProject.CacheMiss", filename)
+                        // In order to prevent blocking of the reactor thread of getting a prior file, we try to get the results if it is considered up-to-date.
+                        // If it's not up-to-date, then use the reactor thread to evaluate and get the results.
                         let! tcPrior, tcInfo =
-                            execWithReactorAsync <| fun ctok -> 
-                                cancellable {
-                                    let! tcPrior = builder.GetCheckResultsBeforeFileInProject (ctok, filename)
-                                    return (tcPrior, tcPrior.TcInfo ctok)
-                                }
+                            match builder.TryGetCheckResultsBeforeFileInProject filename with
+                            | Some(tcPrior) when tcPrior.TryTcInfo.IsSome -> 
+                                async { return (tcPrior, tcPrior.TryTcInfo.Value) }
+                            | _ ->
+                                execWithReactorAsync <| fun ctok -> 
+                                    cancellable {
+                                        let! tcPrior = builder.GetCheckResultsBeforeFileInProject (ctok, filename)
+                                        return (tcPrior, tcPrior.TcInfo ctok)
+                                    } 
                         let! checkAnswer = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior.TcConfig, tcPrior.TcGlobals, tcPrior.TcImports, tcInfo.tcDependencyFiles, tcPrior.TimeStamp, tcInfo.tcState, tcInfo.moduleNamesDict, tcInfo.TcErrors, creationDiags, userOpName)
                         return checkAnswer
             finally 
@@ -693,14 +697,18 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
                         return parseResults, FSharpCheckFileAnswer.Succeeded checkResults
                     | _ ->
-                        // todo this blocks the Reactor queue until all files up to the current are type checked. It's OK while editing the file,
-                        // but results with non cooperative blocking when a firts file from a project opened.
+                        // In order to prevent blocking of the reactor thread of getting a prior file, we try to get the results if it is considered up-to-date.
+                        // If it's not up-to-date, then use the reactor thread to evaluate and get the results.
                         let! tcPrior, tcInfo =
-                            execWithReactorAsync <| fun ctok -> 
-                                cancellable {
-                                    let! tcPrior = builder.GetCheckResultsBeforeFileInProject (ctok, filename)
-                                    return (tcPrior, tcPrior.TcInfo ctok)
-                                } 
+                            match builder.TryGetCheckResultsBeforeFileInProject filename with
+                            | Some(tcPrior) when tcPrior.TryTcInfo.IsSome -> 
+                                async { return (tcPrior, tcPrior.TryTcInfo.Value) }
+                            | _ ->
+                                execWithReactorAsync <| fun ctok -> 
+                                    cancellable {
+                                        let! tcPrior = builder.GetCheckResultsBeforeFileInProject (ctok, filename)
+                                        return (tcPrior, tcPrior.TcInfo ctok)
+                                    } 
                     
                         // Do the parsing.
                         let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList (builder.SourceFiles), options.UseScriptResolutionRules)

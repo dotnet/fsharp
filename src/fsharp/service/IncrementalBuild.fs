@@ -1158,8 +1158,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             return state, Some res
         }
 
-    let MaxTimeStampInDependencies state cache getStamps = 
-        let stamps = getStamps state cache
+    let MaxTimeStampInDependencies stamps = 
         if Seq.isEmpty stamps then
             DateTime.MinValue
         else
@@ -1186,15 +1185,18 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             enablePartialTypeChecking = enablePartialTypeChecking
         }
 
-    let getStampedFileNames state cache =
-        let newState = computeStampedFileNames state cache
-        currentState <- newState
-        newState.stampedFileNames
+    let gate = obj ()
 
-    let getStampedReferencedAssemblies state cache =
-        let newState = computeStampedReferencedAssemblies state cache
-        currentState <- newState
-        newState.stampedReferencedAssemblies
+    let setCurrentState (_ctok: CompilationThreadToken) state cache =
+        lock gate (fun () ->
+            let state = computeStampedFileNames state cache
+            let state = computeStampedReferencedAssemblies state cache
+            currentState <- state
+        )
+
+    let getUpToDateState cache =
+        setCurrentState (CompilationThreadToken()) currentState cache
+        currentState
 
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
 
@@ -1220,7 +1222,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
       cancellable {
         let cache = TimeStampCache defaultTimeStamp // One per step
         let! state, res = step currentState cache ctok
-        currentState <- state
+        setCurrentState ctok state cache
         if not res then
             projectChecked.Trigger()
             return false
@@ -1243,11 +1245,20 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         | Some _ -> true
         | _ -> false
 
+    member builder.TryGetCheckResultsBeforeFileInProject (filename) =
+        let cache = TimeStampCache defaultTimeStamp
+        let state = getUpToDateState cache
+
+        let slotOfFile = builder.GetSlotOfFileName filename
+        match tryGetBeforeSlot state slotOfFile with
+        | Some(boundModel, timestamp) -> PartialCheckResults.Create(boundModel, timestamp) |> Some
+        | _ -> None
+
     member private _.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile, enablePartialTypeChecking) = 
       cancellable {
         let cache = TimeStampCache defaultTimeStamp
         let! state, result = eval { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache ctok (slotOfFile - 1)
-        currentState <- { state with enablePartialTypeChecking = defaultPartialTypeChecking }
+        setCurrentState ctok { state with enablePartialTypeChecking = defaultPartialTypeChecking } cache
         match result with
         | Some (boundModel, timestamp) -> return PartialCheckResults.Create (boundModel, timestamp)
         | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsBeforeSlotInProject)."
@@ -1280,7 +1291,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let cache = TimeStampCache defaultTimeStamp
 
         let! state, result = tryGetFinalized { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache ctok
-        currentState <- { state with enablePartialTypeChecking = defaultPartialTypeChecking }
+        setCurrentState ctok { state with enablePartialTypeChecking = defaultPartialTypeChecking } cache
         match result with
         | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp) -> 
             return PartialCheckResults.Create (boundModel, timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
@@ -1301,8 +1312,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         }
         
     member _.GetLogicalTimeStampForProject(cache) = 
-        let t1 = MaxTimeStampInDependencies currentState cache getStampedReferencedAssemblies
-        let t2 = MaxTimeStampInDependencies currentState cache getStampedFileNames
+        let state = getUpToDateState cache
+        let t1 = MaxTimeStampInDependencies state.stampedReferencedAssemblies
+        let t2 = MaxTimeStampInDependencies state.stampedFileNames
         max t1 t2
         
     member _.TryGetSlotOfFileName(filename: string) =
