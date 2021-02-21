@@ -49,7 +49,7 @@ Or if you're using Paket:
 nuget FSharp.Core >= 4.7.2
 ```
 
-You'll also want to set `<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>` if you are using Paket.
+And that's it!
 
 ### Compatibility table
 
