@@ -4,6 +4,7 @@ namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.Collections.Generic
+open System.Collections.Immutable
 open System.IO
 open System.Runtime.InteropServices
 open System.Threading
@@ -230,6 +231,8 @@ type BoundModel private (tcConfig: TcConfig,
                          syntaxTreeOpt: SyntaxTree option,
                          lazyTcInfoState: TcInfoState option ref) =
 
+    let gate = obj()
+
     let defaultTypeCheck () =
         eventually {
             match prevTcInfoOptional with
@@ -258,18 +261,20 @@ type BoundModel private (tcConfig: TcConfig,
             None
 
     member this.Invalidate() =
-        let hasSig = this.BackingSignature.IsSome
-        match !lazyTcInfoState with
-        // If partial checking is enabled and we have a backing sig file, then do nothing. The partial state contains the sig state.
-        | Some(PartialState _) when enablePartialTypeChecking && hasSig -> ()
-        // If partial checking is enabled and we have a backing sig file, then use the partial state. The partial state contains the sig state.
-        | Some(FullState(tcInfo, _)) when enablePartialTypeChecking && hasSig -> lazyTcInfoState := Some(PartialState tcInfo)
-        | _ ->
-            lazyTcInfoState := None
+        lock gate (fun () ->
+            let hasSig = this.BackingSignature.IsSome
+            match !lazyTcInfoState with
+            // If partial checking is enabled and we have a backing sig file, then do nothing. The partial state contains the sig state.
+            | Some(PartialState _) when enablePartialTypeChecking && hasSig -> ()
+            // If partial checking is enabled and we have a backing sig file, then use the partial state. The partial state contains the sig state.
+            | Some(FullState(tcInfo, _)) when enablePartialTypeChecking && hasSig -> lazyTcInfoState := Some(PartialState tcInfo)
+            | _ ->
+                lazyTcInfoState := None
 
-        // Always invalidate the syntax tree cache.
-        syntaxTreeOpt
-        |> Option.iter (fun x -> x.Invalidate())
+            // Always invalidate the syntax tree cache.
+            syntaxTreeOpt
+            |> Option.iter (fun x -> x.Invalidate())
+        )
 
     member this.GetState(partialCheck: bool) =
         let partialCheck =
@@ -283,12 +288,10 @@ type BoundModel private (tcConfig: TcConfig,
             | Some(PartialState _), false -> true
             | _ -> false
 
-        if mustCheck then
-            lazyTcInfoState := None
-
         match !lazyTcInfoState with
-        | Some tcInfoState -> tcInfoState |> Eventually.Done
+        | Some tcInfoState when not mustCheck -> tcInfoState |> Eventually.Done
         | _ -> 
+            lazyTcInfoState := None
             eventually {
                 let! tcInfoState = this.TypeCheck(partialCheck)
                 lazyTcInfoState := Some tcInfoState
@@ -358,6 +361,14 @@ type BoundModel private (tcConfig: TcConfig,
             let! state = this.GetState(true)
             return state.Partial
         }
+
+    member this.TryTcInfo = 
+        match !lazyTcInfoState with
+        | Some(state) ->
+            match state with
+            | FullState(tcInfo, _)
+            | PartialState(tcInfo) -> Some tcInfo
+        | _ -> None
 
     member this.TcInfoWithOptional =
         eventually {
@@ -600,6 +611,8 @@ type PartialCheckResults private (boundModel: BoundModel, timeStamp: DateTime) =
 
     member _.TcInfo ctok = boundModel.TcInfo |> eval ctok
 
+    member _.TryTcInfo = boundModel.TryTcInfo
+
     member _.TcInfoWithOptional ctok = boundModel.TcInfoWithOptional |> eval ctok
 
     member _.TryGetItemKeyStore ctok =
@@ -653,6 +666,19 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState:
         member _.HasAnyFSharpSignatureDataAttribute =  true
         member _.HasMatchingFSharpSignatureDataAttribute _ilg = true
 
+type IncrementalBuilderState =
+    {
+        // stampedFileNames represent the real stamps of the files.
+        // logicalStampedFileNames represent the stamps of the files that are used to calculate the project's logical timestamp.
+        stampedFileNames: ImmutableArray<DateTime>
+        logicalStampedFileNames: ImmutableArray<DateTime>
+        stampedReferencedAssemblies: ImmutableArray<DateTime>
+        initialBoundModel: BoundModel option
+        boundModels: ImmutableArray<BoundModel option>
+        finalizedBoundModel: ((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime) option
+        enablePartialTypeChecking: bool
+    }
+
 /// Manages an incremental build graph for the build of a single F# project
 type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInputs, nonFrameworkResolutions, unresolvedReferences, tcConfig: TcConfig, projectDirectory, outfile, 
         assemblyName, niceNameGen: NiceNameGenerator, lexResourceManager, 
@@ -673,7 +699,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 #endif
     let mutable currentTcImportsOpt = None
     let defaultPartialTypeChecking = enablePartialTypeChecking
-    let mutable enablePartialTypeChecking = enablePartialTypeChecking
 
     // Check for the existence of loaded sources and prepend them to the sources list if present.
     let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (sourceFiles |>List.map (fun s -> rangeStartup, s))
@@ -711,7 +736,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     // START OF BUILD TASK FUNCTIONS 
                 
     /// Get the timestamp of the given file name.
-    let StampFileNameTask (cache: TimeStampCache) _ctok (_m: range, filename: string, _isLastCompiland) =
+    let StampFileNameTask (cache: TimeStampCache) (_m: range, filename: string, _isLastCompiland) =
         cache.GetFileTimeStamp filename
 
     /// Parse the given file and return the given input.
@@ -719,8 +744,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, filename, isLastCompiland)
         
     /// Timestamps of referenced assemblies are taken from the file's timestamp.
-    let StampReferencedAssemblyTask (cache: TimeStampCache) ctok (_ref, timeStamper) =
-        timeStamper cache ctok
+    let StampReferencedAssemblyTask (cache: TimeStampCache) (_ref, timeStamper) =
+        timeStamper cache
                 
     // Link all the assemblies together and produce the input typecheck accumulator               
     let CombineImportedAssembliesTask ctok : Cancellable<BoundModel> =
@@ -808,7 +833,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 beforeFileChecked, fileChecked, tcInfo, Eventually.Done (Some tcInfoOptional), None) }
                 
     /// Type check all files.     
-    let TypeCheckTask ctok (prevBoundModel: BoundModel) syntaxTree: Eventually<BoundModel> =
+    let TypeCheckTask ctok enablePartialTypeChecking (prevBoundModel: BoundModel) syntaxTree: Eventually<BoundModel> =
         eventually {
             RequireCompilationThread ctok
             let! boundModel = prevBoundModel.Next(syntaxTree)
@@ -819,7 +844,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         }
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask ctok (boundModels: BoundModel[]) = 
+    let FinalizeTypeCheckTask ctok enablePartialTypeChecking (boundModels: ImmutableArray<BoundModel>) = 
       cancellable {
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
@@ -835,7 +860,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let (_tcEnvAtEndOfLastFile, topAttrs, mimpls, _), tcState = 
             let results = 
                 boundModels 
-                |> List.ofArray 
+                |> List.ofSeq
                 |> List.map (fun boundModel -> 
                     let tcInfo, latestImplFile =
                         if enablePartialTypeChecking then
@@ -916,59 +941,60 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     let fileNames = sourceFiles |> Array.ofList // TODO: This should be an immutable array.
     let referencedAssemblies =  nonFrameworkAssemblyInputs |> Array.ofList // TODO: This should be an immutable array.
 
-    (*
-        The data below represents a dependency graph.
-        
-        ReferencedAssembliesStamps => FileStamps => BoundModels => FinalizedBoundModel
-    *)
-
-    // stampedFileNames represent the real stamps of the files.
-    // logicalStampedFileNames represent the stamps of the files that are used to calculate the project's logical timestamp.
-    let stampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue)
-    let logicalStampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue)
-    let stampedReferencedAssemblies = Array.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
-    let mutable initialBoundModel = None
-    let boundModels = Array.zeroCreate<BoundModel option> fileNames.Length
-    let mutable finalizedBoundModel = None
-
-    let computeStampedFileName (cache: TimeStampCache) (ctok: CompilationThreadToken) slot fileInfo cont =
-        let currentStamp = stampedFileNames.[slot]
-        let stamp = StampFileNameTask cache ctok fileInfo
+    let computeStampedFileName (state: IncrementalBuilderState) (cache: TimeStampCache) slot fileInfo =
+        let currentStamp = state.stampedFileNames.[slot]
+        let stamp = StampFileNameTask cache fileInfo
 
         if currentStamp <> stamp then
-            match boundModels.[slot] with
+            match state.boundModels.[slot] with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
-            | Some(boundModel) when enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
-                stampedFileNames.[slot] <- StampFileNameTask cache ctok fileInfo
+            | Some(boundModel) when state.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
                 boundModel.Invalidate()
+                { state with 
+                    stampedFileNames = state.stampedFileNames.SetItem(slot, StampFileNameTask cache fileInfo) 
+                }
             | _ ->
-                // Something changed, the finalized view of the project must be invalidated.
-                finalizedBoundModel <- None
+                
+                let stampedFileNames = state.stampedFileNames.ToBuilder()
+                let logicalStampedFileNames = state.logicalStampedFileNames.ToBuilder()
+                let boundModels = state.boundModels.ToBuilder()
 
                 // Invalidate the file and all files below it.
-                stampedFileNames.[slot..]
-                |> Array.iteri (fun j _ -> 
-                    let stamp = StampFileNameTask cache ctok fileNames.[slot + j]
+                for j = 0 to stampedFileNames.Count - slot - 1 do
+                    let stamp = StampFileNameTask cache fileNames.[slot + j]
                     stampedFileNames.[slot + j] <- stamp
                     logicalStampedFileNames.[slot + j] <- stamp
                     boundModels.[slot + j] <- None
-                )
 
-        if boundModels.[slot].IsNone then
-            cont slot fileInfo
+                { state with
+                    // Something changed, the finalized view of the project must be invalidated.
+                    finalizedBoundModel = None
 
-    let computeStampedFileNames (cache: TimeStampCache) (ctok: CompilationThreadToken) =
-        fileNames
-        |> Array.iteri (fun i fileInfo ->
-            computeStampedFileName cache ctok i fileInfo (fun _ _ -> ())
+                    stampedFileNames = stampedFileNames.ToImmutable()
+                    logicalStampedFileNames = logicalStampedFileNames.ToImmutable()
+                    boundModels = boundModels.ToImmutable()
+                }
+        else
+            state
+
+    let computeStampedFileNames state (cache: TimeStampCache) =
+        let mutable i = 0
+        (state, fileNames)
+        ||> Array.fold (fun state fileInfo ->
+            let newState = computeStampedFileName state cache i fileInfo
+            i <- i + 1
+            newState
         )
 
-    let computeStampedReferencedAssemblies (cache: TimeStampCache) (ctok: CompilationThreadToken) =
+    let computeStampedReferencedAssemblies state (cache: TimeStampCache) =
+        let stampedReferencedAssemblies = state.stampedReferencedAssemblies.ToBuilder()
+
         let mutable referencesUpdated = false
         referencedAssemblies
         |> Array.iteri (fun i asmInfo ->
-            let currentStamp = stampedReferencedAssemblies.[i]
-            let stamp = StampReferencedAssemblyTask cache ctok asmInfo
+
+            let currentStamp = state.stampedReferencedAssemblies.[i]
+            let stamp = StampReferencedAssemblyTask cache asmInfo
 
             if currentStamp <> stamp then
                 referencesUpdated <- true
@@ -978,154 +1004,189 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         if referencesUpdated then
             // Something changed, the finalized view of the project must be invalidated.
             // This is the only place where the initial bound model will be invalidated.
-            initialBoundModel <- None
-            finalizedBoundModel <- None
+            let count = state.stampedFileNames.Length
+            { state with
+                stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
+                initialBoundModel = None
+                finalizedBoundModel = None
+                stampedFileNames = Array.init count (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
+                logicalStampedFileNames = Array.init count (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
+                boundModels = Array.init count (fun _ -> None) |> ImmutableArray.CreateRange
+            }
+        else
+            { state with
+                stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
+            }
 
-            for i = 0 to stampedFileNames.Length - 1 do
-                stampedFileNames.[i] <- DateTime.MinValue
-                logicalStampedFileNames.[i] <- DateTime.MinValue
-                boundModels.[i] <- None
-
-    let getStampedFileNames cache ctok =
-        computeStampedFileNames cache ctok
-        logicalStampedFileNames
-
-    let getStampedReferencedAssemblies cache ctok =
-        computeStampedReferencedAssemblies cache ctok
-        stampedReferencedAssemblies
-
-    let computeInitialBoundModel (ctok: CompilationThreadToken) =
+    let computeInitialBoundModel (state: IncrementalBuilderState) (ctok: CompilationThreadToken) =
         cancellable {
-            match initialBoundModel with
+            match state.initialBoundModel with
             | None ->
                 let! result = CombineImportedAssembliesTask ctok
-                initialBoundModel <- Some result
-                return result
+                return { state with initialBoundModel = Some result }, result
             | Some result ->
-                return result
+                return state, result
         }
 
-    let computeBoundModel (cache: TimeStampCache) (ctok: CompilationThreadToken) (slot: int) =
+    let computeBoundModel state (cache: TimeStampCache) (ctok: CompilationThreadToken) (slot: int) =
         if IncrementalBuild.injectCancellationFault then Cancellable.canceled ()
         else
 
         cancellable {         
-            let! initial = computeInitialBoundModel ctok
+            let! (state, initial) = computeInitialBoundModel state ctok
 
             let fileInfo = fileNames.[slot]
 
-            computeStampedFileName cache ctok slot fileInfo (fun slot fileInfo ->
-                let prevBoundModel =
-                    match slot with
-                    | 0 (* first file *) -> initial
-                    | _ ->
-                        match boundModels.[slot - 1] with
-                        | Some(prevBoundModel) -> prevBoundModel
-                        | _ -> 
-                            // This shouldn't happen, but on the off-chance, just grab the initial bound model.
-                            initial
+            let state = computeStampedFileName state cache slot fileInfo
 
-                let boundModel = TypeCheckTask ctok prevBoundModel (ParseTask fileInfo) |> Eventually.force ctok
-                    
-                boundModels.[slot] <- Some boundModel
-            )
+            let state =
+                if state.boundModels.[slot].IsNone then
+                    let prevBoundModel =
+                        match slot with
+                        | 0 (* first file *) -> initial
+                        | _ ->
+                            match state.boundModels.[slot - 1] with
+                            | Some(prevBoundModel) -> prevBoundModel
+                            | _ -> 
+                                // This shouldn't happen, but on the off-chance, just grab the initial bound model.
+                                initial
+
+                    let boundModel = TypeCheckTask ctok state.enablePartialTypeChecking prevBoundModel (ParseTask fileInfo) |> Eventually.force ctok
+                
+                    { state with
+                        boundModels = state.boundModels.SetItem(slot, Some boundModel)
+                    }
+                else
+                    state
+
+            return state
         }
 
-    let computeBoundModels (cache: TimeStampCache) (ctok: CompilationThreadToken) =
+    let computeBoundModels state (cache: TimeStampCache) (ctok: CompilationThreadToken) =
+        let mutable state = state
+        let task =
+            cancellable {
+                for slot = 0 to fileNames.Length - 1 do
+                    let! newState = computeBoundModel state cache ctok slot
+                    state <- newState
+            }
         cancellable {
-            for slot = 0 to fileNames.Length - 1 do
-                do! computeBoundModel cache ctok slot
+            let! _ = task
+            return state
         }
 
-    let computeFinalizedBoundModel (cache: TimeStampCache) (ctok: CompilationThreadToken) =
+    let computeFinalizedBoundModel state (cache: TimeStampCache) (ctok: CompilationThreadToken) =
         cancellable {
-            let! _ = computeBoundModels cache ctok
+            let! state = computeBoundModels state cache ctok
 
-            match finalizedBoundModel with
-            | Some result -> return result
+            match state.finalizedBoundModel with
+            | Some result -> return state, result
             | _ ->
-                let boundModels = boundModels |> Array.choose id
+                let boundModels = state.boundModels |> Seq.choose id |> ImmutableArray.CreateRange
             
-                let! result = FinalizeTypeCheckTask ctok boundModels 
+                let! result = FinalizeTypeCheckTask ctok state.enablePartialTypeChecking boundModels 
                 let result = (result, DateTime.UtcNow)
-                finalizedBoundModel <- Some result
-                return result
+                return { state with finalizedBoundModel = Some result }, result
         }
 
-    let step (cache: TimeStampCache) (ctok: CompilationThreadToken) =
+    let step state (cache: TimeStampCache) (ctok: CompilationThreadToken) =
         cancellable {
-            computeStampedReferencedAssemblies cache ctok
-            computeStampedFileNames cache ctok
+            let state = computeStampedReferencedAssemblies state cache
+            let state = computeStampedFileNames state cache
 
-            match boundModels |> Array.tryFindIndex (fun x -> x.IsNone) with
+            match state.boundModels |> Seq.tryFindIndex (fun x -> x.IsNone) with
             | Some slot ->
-                do! computeBoundModel cache ctok slot
-                return true
+                let! state = computeBoundModel state cache ctok slot
+                return state, true
             | _ ->
-                return false
+                return state, false
         }
 
-    let tryGetBeforeSlot slot =
+    let tryGetBeforeSlot (state: IncrementalBuilderState) slot =
         match slot with
         | 0 (* first file *) ->
-            match initialBoundModel with
+            match state.initialBoundModel with
             | Some initial ->
                 (initial, DateTime.MinValue)
                 |> Some
             | _ ->
                 None
         | _ ->
-            match boundModels.[slot - 1] with
+            match state.boundModels.[slot - 1] with
             | Some boundModel ->
-                (boundModel, stampedFileNames.[slot - 1])
+                (boundModel, state.stampedFileNames.[slot - 1])
                 |> Some
             | _ ->
                 None
                 
-    let eval cache ctok targetSlot =
+    let eval state (cache: TimeStampCache) ctok targetSlot =
         if targetSlot < 0 then
             cancellable {
-                computeStampedReferencedAssemblies cache ctok
+                let state = computeStampedReferencedAssemblies state cache
 
-                let! result = computeInitialBoundModel ctok
-                return Some(result, DateTime.MinValue)
+                let! state, result = computeInitialBoundModel state ctok
+                return state, Some(result, DateTime.MinValue)
             }
         else         
+            let mutable state = state
             let evalUpTo =
                 cancellable {
                     for slot = 0 to targetSlot do
-                        do! computeBoundModel cache ctok slot
+                        let! newState = computeBoundModel state cache ctok slot
+                        state <- newState
                 }
             cancellable {
-                computeStampedReferencedAssemblies cache ctok
+                let newState = computeStampedReferencedAssemblies state cache
+                state <- newState
 
                 let! _ = evalUpTo
 
-                return 
-                    boundModels.[targetSlot]
+                let result =
+                    state.boundModels.[targetSlot]
                     |> Option.map (fun boundModel ->
-                        (boundModel, stampedFileNames.[targetSlot])
+                        (boundModel, state.stampedFileNames.[targetSlot])
                     )
+
+                return state, result
             }
 
-    let tryGetFinalized cache ctok =
+    let tryGetFinalized state cache ctok =
         cancellable {
-            computeStampedReferencedAssemblies cache ctok
+            let state = computeStampedReferencedAssemblies state cache
 
-            let! res = computeFinalizedBoundModel cache ctok
-            return Some res
+            let! state, res = computeFinalizedBoundModel state cache ctok
+            return state, Some res
         }
 
-    let MaxTimeStampInDependencies cache (ctok: CompilationThreadToken) getStamps = 
-        let stamps = getStamps cache ctok
-        if Array.isEmpty stamps then
+    let MaxTimeStampInDependencies stamps = 
+        if Seq.isEmpty stamps then
             DateTime.MinValue
         else
             stamps
-            |> Array.max
+            |> Seq.max
 
     // END OF BUILD DESCRIPTION
-    // ---------------------------------------------------------------------------------------------            
+    // ---------------------------------------------------------------------------------------------
+    
+    (*
+        The data below represents a dependency graph.
+        
+        ReferencedAssembliesStamps => FileStamps => BoundModels => FinalizedBoundModel
+    *)
+
+    let mutable currentState =
+        {
+            stampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
+            logicalStampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
+            stampedReferencedAssemblies = Array.init referencedAssemblies.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
+            initialBoundModel = None
+            boundModels = Array.zeroCreate<BoundModel option> fileNames.Length |> ImmutableArray.CreateRange
+            finalizedBoundModel = None
+            enablePartialTypeChecking = enablePartialTypeChecking
+        }
+
+    let setCurrentState (_ctok: CompilationThreadToken) state =
+        currentState <- state
 
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
 
@@ -1150,7 +1211,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     member _.Step (ctok: CompilationThreadToken) =  
       cancellable {
         let cache = TimeStampCache defaultTimeStamp // One per step
-        let! res = step cache ctok
+        let! state, res = step currentState cache ctok
+        setCurrentState ctok state
         if not res then
             projectChecked.Trigger()
             return false
@@ -1160,7 +1222,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     
     member builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename: PartialCheckResults option  = 
         let slotOfFile = builder.GetSlotOfFileName filename
-        let result = tryGetBeforeSlot slotOfFile
+        let result = tryGetBeforeSlot currentState slotOfFile
         
         match result with
         | Some (boundModel, timestamp) -> Some (PartialCheckResults.Create (boundModel, timestamp))
@@ -1169,19 +1231,33 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     
     member builder.AreCheckResultsBeforeFileInProjectReady filename = 
         let slotOfFile = builder.GetSlotOfFileName filename
-        match tryGetBeforeSlot slotOfFile with
+        match tryGetBeforeSlot currentState slotOfFile with
         | Some _ -> true
         | _ -> false
-        
-    member _.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile) = 
+
+    member builder.TryGetCheckResultsBeforeFileInProject (filename) =
+        let cache = TimeStampCache defaultTimeStamp
+        let state = currentState
+        let state = computeStampedFileNames state cache
+        let state = computeStampedReferencedAssemblies state cache
+
+        let slotOfFile = builder.GetSlotOfFileName filename
+        match tryGetBeforeSlot state slotOfFile with
+        | Some(boundModel, timestamp) -> PartialCheckResults.Create(boundModel, timestamp) |> Some
+        | _ -> None
+
+    member private _.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile, enablePartialTypeChecking) = 
       cancellable {
         let cache = TimeStampCache defaultTimeStamp
-        let! result = eval cache ctok (slotOfFile - 1)
-        
+        let! state, result = eval { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache ctok (slotOfFile - 1)
+        setCurrentState ctok { state with enablePartialTypeChecking = defaultPartialTypeChecking }
         match result with
         | Some (boundModel, timestamp) -> return PartialCheckResults.Create (boundModel, timestamp)
         | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsBeforeSlotInProject)."
       }
+        
+    member builder.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile) = 
+        builder.GetCheckResultsBeforeSlotInProject(ctok, slotOfFile, defaultPartialTypeChecking)
 
     member builder.GetCheckResultsBeforeFileInProject (ctok: CompilationThreadToken, filename) = 
         let slotOfFile = builder.GetSlotOfFileName filename
@@ -1192,24 +1268,23 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         builder.GetCheckResultsBeforeSlotInProject (ctok, slotOfFile)
 
     member builder.GetFullCheckResultsAfterFileInProject (ctok: CompilationThreadToken, filename) = 
-        enablePartialTypeChecking <- false
         cancellable {
-            try
-                let! result = builder.GetCheckResultsAfterFileInProject(ctok, filename)
-                result.TcInfoWithOptional ctok |> ignore // Make sure we forcefully evaluate the info
-                return result
-            finally               
-                enablePartialTypeChecking <- defaultPartialTypeChecking
+            let slotOfFile = builder.GetSlotOfFileName filename + 1
+            let! result = builder.GetCheckResultsBeforeSlotInProject(ctok, slotOfFile, false)
+            result.TcInfoWithOptional ctok |> ignore // Make sure we forcefully evaluate the info
+            return result
         }
 
     member builder.GetCheckResultsAfterLastFileInProject (ctok: CompilationThreadToken) = 
         builder.GetCheckResultsBeforeSlotInProject(ctok, builder.GetSlotsCount()) 
 
-    member _.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
+    member private _.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken, enablePartialTypeChecking) = 
       cancellable {
         let cache = TimeStampCache defaultTimeStamp
 
-        match! tryGetFinalized cache ctok with
+        let! state, result = tryGetFinalized { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache ctok
+        setCurrentState ctok { state with enablePartialTypeChecking = defaultPartialTypeChecking }
+        match result with
         | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp) -> 
             return PartialCheckResults.Create (boundModel, timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
         | None -> 
@@ -1217,21 +1292,23 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             return! failwith msg
       }
 
-    member this.GetFullCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
-        enablePartialTypeChecking <- false
+    member builder.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) =
+        builder.GetCheckResultsAndImplementationsForProject(ctok, defaultPartialTypeChecking)
+
+    member builder.GetFullCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
         cancellable {
-            try
-                let! result = this.GetCheckResultsAndImplementationsForProject(ctok)
-                let results, _, _, _ = result
-                results.TcInfoWithOptional ctok |> ignore // Make sure we forcefully evaluate the info
-                return result
-            finally
-                enablePartialTypeChecking <- defaultPartialTypeChecking
+            let! result = builder.GetCheckResultsAndImplementationsForProject(ctok, false)
+            let results, _, _, _ = result
+            results.TcInfoWithOptional ctok |> ignore // Make sure we forcefully evaluate the info
+            return result
         }
         
-    member _.GetLogicalTimeStampForProject(cache, ctok: CompilationThreadToken) = 
-        let t1 = MaxTimeStampInDependencies cache ctok getStampedReferencedAssemblies
-        let t2 = MaxTimeStampInDependencies cache ctok getStampedFileNames
+    member _.GetLogicalTimeStampForProject(cache) = 
+        let state = currentState
+        let state = computeStampedFileNames state cache
+        let state = computeStampedReferencedAssemblies state cache
+        let t1 = MaxTimeStampInDependencies state.stampedReferencedAssemblies
+        let t2 = MaxTimeStampInDependencies state.stampedFileNames
         max t1 t2
         
     member _.TryGetSlotOfFileName(filename: string) =
@@ -1402,10 +1479,10 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
                 [ for r in nonFrameworkResolutions do
                     let fileName = r.resolvedPath
-                    yield (Choice1Of2 fileName, (fun (cache: TimeStampCache) _ctok -> cache.GetFileTimeStamp fileName))  
+                    yield (Choice1Of2 fileName, (fun (cache: TimeStampCache) -> cache.GetFileTimeStamp fileName))  
 
                   for pr in projectReferences  do
-                    yield Choice2Of2 pr, (fun (cache: TimeStampCache) ctok -> cache.GetProjectReferenceTimeStamp (pr, ctok)) ]
+                    yield Choice2Of2 pr, (fun (cache: TimeStampCache) -> cache.GetProjectReferenceTimeStamp (pr)) ]
             
             let builder = 
                 new IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInputs,
