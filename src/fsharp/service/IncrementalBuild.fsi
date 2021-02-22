@@ -106,6 +106,8 @@ type internal PartialCheckResults =
 
     member TcInfo: CompilationThreadToken -> TcInfo
 
+    member TryTcInfo: TcInfo option
+
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
     member TcInfoWithOptional: CompilationThreadToken -> TcInfo * TcInfoOptional
@@ -173,6 +175,12 @@ type internal IncrementalBuilder =
       /// This is safe for use from non-compiler threads
       member AreCheckResultsBeforeFileInProjectReady: filename:string -> bool
 
+      /// Get the preceding typecheck state of a slot, WITH checking if it is up-to-date w.r.t. However, files will not be parsed or checked.
+      /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available or if it is not up-to-date.
+      ///
+      /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
+      member TryGetCheckResultsBeforeFileInProject: filename: string -> PartialCheckResults option
+
       /// Get the preceding typecheck state of a slot. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
@@ -212,7 +220,7 @@ type internal IncrementalBuilder =
       member GetFullCheckResultsAndImplementationsForProject : CompilationThreadToken -> Cancellable<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
-      member GetLogicalTimeStampForProject: TimeStampCache * CompilationThreadToken -> DateTime
+      member GetLogicalTimeStampForProject: TimeStampCache -> DateTime
 
       /// Does the given file exist in the builder's pipeline?
       member ContainsFile: filename: string -> bool
