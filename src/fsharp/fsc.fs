@@ -555,11 +555,15 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
                 results.[i] <-
                     let (filename: string, isLastCompiland) = sourceFiles.[i]
                     let pathOfMetaCommandSource = Path.GetDirectoryName filename
-                    match ParseOneInputFile(tcConfig, lexResourceManager, ["COMPILED"], filename, (isLastCompiland, isExe), errorLogger, (*retryLocked*)false) with
-                    | Some input -> Some (input, pathOfMetaCommandSource)
-                    | None -> None) |> ignore
+                    let delayedErrorLogger = errorLoggerProvider.CreateDelayAndForwardLogger(exiter)
+                    match ParseOneInputFile(tcConfig, lexResourceManager, ["COMPILED"], filename, (isLastCompiland, isExe), delayedErrorLogger, (*retryLocked*)false) with
+                    | Some input -> delayedErrorLogger, Some (input, pathOfMetaCommandSource)
+                    | None -> delayedErrorLogger, None) |> ignore
             results
-            |> Array.choose id
+            |> Array.choose (fun (delayedErrorLogger, result) -> 
+                delayedErrorLogger.CommitDelayedDiagnostics errorLogger
+                result
+            )
             |> List.ofArray
         with e -> 
             errorRecoveryNoRange e
