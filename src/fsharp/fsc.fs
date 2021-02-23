@@ -19,6 +19,7 @@ open System.IO
 open System.Reflection
 open System.Text
 open System.Threading
+open System.Threading.Tasks
 
 open Internal.Utilities
 open Internal.Utilities.Filename
@@ -545,18 +546,21 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let inputs =
         try
-            let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint 
+            let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
+            let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofSeq
+            let parallelOptions = ParallelOptions(MaxDegreeOfParallelism=min Environment.ProcessorCount sourceFiles.Length)
 
-            List.zip sourceFiles isLastCompiland
-            // PERF: consider making this parallel, once uses of global state relevant to parsing are cleaned up 
-            |> List.choose (fun (sourceFile, isLastCompiland) -> 
-
-                let sourceFileDirectory = Path.GetDirectoryName sourceFile
-
-                match ParseOneInputFile(tcConfig, lexResourceManager, ["COMPILED"], sourceFile, (isLastCompiland, isExe), errorLogger, (*retryLocked*)false) with
-                | Some input -> Some (input, sourceFileDirectory)
-                | None -> None) 
-
+            let results = Array.zeroCreate sourceFiles.Length
+            Parallel.For(0, sourceFiles.Length, parallelOptions, fun i ->
+                results.[i] <-
+                    let (filename: string, isLastCompiland) = sourceFiles.[i]
+                    let pathOfMetaCommandSource = Path.GetDirectoryName filename
+                    match ParseOneInputFile(tcConfig, lexResourceManager, ["COMPILED"], filename, (isLastCompiland, isExe), errorLogger, (*retryLocked*)false) with
+                    | Some input -> Some (input, pathOfMetaCommandSource)
+                    | None -> None) |> ignore
+            results
+            |> Array.choose id
+            |> List.ofArray
         with e -> 
             errorRecoveryNoRange e
             exiter.Exit 1
