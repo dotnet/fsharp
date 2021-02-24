@@ -412,6 +412,9 @@ let SetTailcallSwitch (tcConfigB: TcConfigBuilder) switch =
 let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.deterministic <- (switch = OptionSwitch.On)
 
+let SetParallelSwitch (tcConfigB: TcConfigBuilder) switch =
+    tcConfigB.concurrentBuild <- (switch = OptionSwitch.On)
+
 let AddPathMapping (tcConfigB: TcConfigBuilder) (pathPair: string) =
     match pathPair.Split([|'='|], 2) with
     | [| oldPrefix; newPrefix |] ->
@@ -806,6 +809,11 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
            ("deterministic", tagNone,
             OptionSwitch (SetDeterministicSwitch tcConfigB), None,
             Some (FSComp.SR.optsDeterministic()))
+
+          CompilerOption
+           ("parallel", tagNone,
+            OptionSwitch (SetParallelSwitch tcConfigB), None,
+            Some (FSComp.SR.optsParallel()))
 
           CompilerOption
            ("pathmap", tagPathMap,

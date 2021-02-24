@@ -548,23 +548,32 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
         try
             let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
             let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofSeq
-            let parallelOptions = ParallelOptions(MaxDegreeOfParallelism=min Environment.ProcessorCount sourceFiles.Length)
 
-            let results = Array.zeroCreate sourceFiles.Length
-            Parallel.For(0, sourceFiles.Length, parallelOptions, fun i ->
-                results.[i] <-
-                    let (filename: string, isLastCompiland) = sourceFiles.[i]
-                    let pathOfMetaCommandSource = Path.GetDirectoryName filename
+            let tryParse errorLogger (filename: string, isLastCompiland) =
+                let pathOfMetaCommandSource = Path.GetDirectoryName filename
+                match ParseOneInputFile(tcConfig, lexResourceManager, ["COMPILED"], filename, (isLastCompiland, isExe), errorLogger, (*retryLocked*)false) with
+                | Some input -> Some (input, pathOfMetaCommandSource)
+                | None -> None
+
+            if tcConfig.concurrentBuild then
+                let parallelOptions = ParallelOptions(MaxDegreeOfParallelism=min Environment.ProcessorCount sourceFiles.Length)
+
+                let results = Array.zeroCreate sourceFiles.Length
+                Parallel.For(0, sourceFiles.Length, parallelOptions, fun i ->
                     let delayedErrorLogger = errorLoggerProvider.CreateDelayAndForwardLogger(exiter)
-                    match ParseOneInputFile(tcConfig, lexResourceManager, ["COMPILED"], filename, (isLastCompiland, isExe), delayedErrorLogger, (*retryLocked*)false) with
-                    | Some input -> delayedErrorLogger, Some (input, pathOfMetaCommandSource)
-                    | None -> delayedErrorLogger, None) |> ignore
-            results
-            |> Array.choose (fun (delayedErrorLogger, result) -> 
-                delayedErrorLogger.CommitDelayedDiagnostics errorLogger
-                result
-            )
-            |> List.ofArray
+                    results.[i] <- delayedErrorLogger, tryParse delayedErrorLogger sourceFiles.[i]
+                ) |> ignore
+
+                results
+                |> Array.choose (fun (delayedErrorLogger, result) -> 
+                    delayedErrorLogger.CommitDelayedDiagnostics errorLogger
+                    result
+                )
+                |> List.ofArray
+            else
+                sourceFiles
+                |> Array.choose (tryParse errorLogger)
+                |> List.ofArray
         with e -> 
             errorRecoveryNoRange e
             exiter.Exit 1
