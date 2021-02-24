@@ -93,6 +93,18 @@
       <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
     </ProjectReference>
 
+    <ProjectReference Include="..\..\..\src\fsharp\fsiAnyCpu\fsiAnyCpu.fsproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+
+    <ProjectReference Include="..\..\..\src\fsharp\fsi\fsi.fsproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+
+    <ProjectReference Include="..\..\..\src\fsharp\fsc\fsc.fsproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Editor\FSharp.Editor.fsproj">
       <Project>{65e0e82a-eace-4787-8994-888674c2fe87}</Project>
       <Name>FSharp.Editor</Name>
