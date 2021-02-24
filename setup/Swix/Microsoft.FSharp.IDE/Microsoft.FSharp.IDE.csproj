@@ -2,15 +2,30 @@
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
+    <SetupResourcesDir>$(MSBuildThisFileDirectory)..\..\resources</SetupResourcesDir>
   </PropertyGroup>
 
   <ItemGroup>
-    <SwrProperty Include="SetupResourcesDir=$(MSBuildThisFileDirectory)..\..\resources" />
+    <SwrProperty Include="SetupResourcesDir=$(SetupResourcesDir)" />
     <SwrProperty Include="VsixVersion=$(VsixVersion)" />
   </ItemGroup>
 
   <ItemGroup>
-    <SwrFile Include="Package.swr" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Editor\FSharp.Editor.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.LanguageService\FSharp.LanguageService.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.PatternMatcher\FSharp.PatternMatcher.csproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.ProjectSystem.PropertyPages\FSharp.PropertiesPages.vbproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.UIResources\FSharp.UIResources.csproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,6 +59,132 @@
     <ItemGroup>
       <FileWrites Include="$(DependentAssemblyVersionsFile)" />
     </ItemGroup>
+  </Target>
+
+<!-- ==================================================================================== -->
+
+  <!--
+  Splits the $(XlfLanguages) property into an item group.  E.g., this:
+
+    <PropertyGroup>
+      <XlfLanguages>cs;de;...</XlfLanguages>
+    </PropertyGroup>
+
+  turns into this:
+
+    <ItemGroup>
+      <_XlfLanguages Include="cs" />
+      <_XlfLanguages Include="de" />
+      ...
+    </ItemGroup>
+
+   -->
+  <Target Name="_GenerateLanguageList">
+    <CreateItem Include="$(XlfLanguages)">
+      <Output TaskParameter="Include" ItemName="_XlfLanguages" />
+    </CreateItem>
+  </Target>
+
+  <!-- For each localization language, include the appropriate satellite assemblies. -->
+  <Target Name="_GenerateLocSwrFileContents" DependsOnTargets="_GenerateLanguageList" Outputs="%(_XlfLanguages.Identity)">
+    <PropertyGroup>
+      <_Line>
+<![CDATA[
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\%(_XlfLanguages.Identity)"
+  file source="$(ArtifactsBinDir)FSharp.Build\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Build.resources.dll"
+  file source="$(ArtifactsBinDir)FSharp.Compiler.Interactive.Settings\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Compiler.Interactive.Settings.resources.dll"
+  file source="$(ArtifactsBinDir)FSharp.Compiler.Service\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Compiler.Service.resources.dll"
+  file source="$(ArtifactsBinDir)FSharp.DependencyManager.Nuget\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.DependencyManager.Nuget.resources.dll"
+  file source="$(ArtifactsBinDir)FSharp.Core\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Core.resources.dll"
+  file source="$(ArtifactsBinDir)FSharp.Editor\$(Configuration)\net472\%(_XlfLanguages.Identity)\FSharp.Editor.resources.dll"
+  file source="$(ArtifactsBinDir)FSharp.LanguageService.Base\$(Configuration)\net472\%(_XlfLanguages.Identity)\FSharp.LanguageService.Base.resources.dll"
+  file source="$(ArtifactsBinDir)FSharp.LanguageService\$(Configuration)\net472\%(_XlfLanguages.Identity)\FSharp.LanguageService.resources.dll"
+  file source="$(ArtifactsBinDir)ProjectSystem.Base\$(Configuration)\net472\%(_XlfLanguages.Identity)\FSharp.ProjectSystem.Base.resources.dll"
+  file source="$(ArtifactsBinDir)ProjectSystem\$(Configuration)\net472\%(_XlfLanguages.Identity)\FSharp.ProjectSystem.FSharp.resources.dll"
+  file source="$(ArtifactsBinDir)FSharp.PropertiesPages\$(Configuration)\net472\%(_XlfLanguages.Identity)\FSharp.ProjectSystem.PropertyPages.resources.dll"
+  file source="$(ArtifactsBinDir)FSharp.UIResources\$(Configuration)\net472\%(_XlfLanguages.Identity)\FSharp.UIResources.resources.dll"
+  file source="$(ArtifactsBinDir)FSharp.VS.FSI\$(Configuration)\net472\%(_XlfLanguages.Identity)\FSharp.VS.FSI.resources.dll"
+]]>
+      </_Line>
+    </PropertyGroup>
+    <ItemGroup>
+      <_BuiltSwrLines Include="#$(_Line)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_SetSwrFilePath">
+    <PropertyGroup>
+      <_SwrFilePath>$(IntermediateOutputPath)Microsoft.FSharp.IDE.swr</_SwrFilePath>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="_GenerateSwrFile" AfterTargets="Build" BeforeTargets="SwixBuild" DependsOnTargets="_SetSwrFilePath;_GenerateLocSwrFileContents" Outputs="$(_SwrFilePath)">
+
+    <PropertyGroup>
+      <_Lines>
+        <![CDATA[use vs
+
+package name=Microsoft.FSharp.IDE
+        version=$(VsixVersion)
+
+vs.dependencies
+  vs.dependency id=Microsoft.FSharp.Dependencies
+                version=$(VsixVersion)
+                type=Required
+
+  vs.dependency id=Microsoft.FSharp.Compiler
+                version=$(VsixVersion)
+                type=Required
+                when=Microsoft.VisualStudio.Product.Enterprise,Microsoft.VisualStudio.Product.Professional,Microsoft.VisualStudio.Product.Community
+
+folder "InstallDir:Common7\IDE\NewScriptItems"
+  file source="$(SetupResourcesDir)\NewFileDialog\Script\NewFSharpScriptItems.vsdir"
+  file source="$(SetupResourcesDir)\NewFileDialog\Script\Script.fsx"
+
+folder "InstallDir:Common7\IDE\NewFileItems"
+  file source="$(SetupResourcesDir)\NewFileDialog\General\NewFSharpFileItems.vsdir"
+  file source="$(SetupResourcesDir)\NewFileDialog\General\File.fs"
+  file source="$(SetupResourcesDir)\NewFileDialog\General\Script.fsx"
+
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp"
+  file source="$(ArtifactsBinDir)FSharp.Build\$(Configuration)\netstandard2.0\FSharp.Build.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All   vs.file.ngenPriority=2
+  file source="$(ArtifactsBinDir)FSharp.Build\$(Configuration)\netstandard2.0\FSharp.Build.xml"
+  file source="$(ArtifactsBinDir)FSharp.Compiler.Interactive.Settings\$(Configuration)\netstandard2.0\FSharp.Compiler.Interactive.Settings.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(ArtifactsBinDir)FSharp.Compiler.Interactive.Settings\$(Configuration)\netstandard2.0\FSharp.Compiler.Interactive.Settings.xml"
+  file source="$(ArtifactsBinDir)FSharp.Compiler.Service\$(Configuration)\netstandard2.0\FSharp.Compiler.Service.dll"                           vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(ArtifactsBinDir)FSharp.Compiler.Service\$(Configuration)\netstandard2.0\FSharp.Compiler.Service.xml"
+  file source="$(ArtifactsBinDir)FSharp.DependencyManager.Nuget\$(Configuration)\netstandard2.0\FSharp.DependencyManager.Nuget.dll"             vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(ArtifactsBinDir)FSharp.Core\$(Configuration)\netstandard2.0\FSharp.Core.dll"                                                   vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(ArtifactsBinDir)FSharp.Core\$(Configuration)\netstandard2.0\FSharp.Core.xml"
+  file source="$(ArtifactsBinDir)FSharp.Editor\$(Configuration)\net472\FSharp.Editor.dll"                                                       vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(ArtifactsBinDir)FSharp.Editor\$(Configuration)\net472\FSharp.Editor.xml"
+  file source="$(ArtifactsBinDir)FSharp.LanguageService.Base\$(Configuration)\net472\FSharp.LanguageService.Base.dll"                           vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(ArtifactsBinDir)FSharp.LanguageService.Base\$(Configuration)\net472\FSharp.LanguageService.Base.xml"
+  file source="$(ArtifactsBinDir)FSharp.LanguageService\$(Configuration)\net472\FSharp.LanguageService.dll"                                     vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(ArtifactsBinDir)FSharp.LanguageService\$(Configuration)\net472\FSharp.LanguageService.xml"
+  file source="$(ArtifactsBinDir)ProjectSystem.Base\$(Configuration)\net472\FSharp.ProjectSystem.Base.dll"                                      vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(ArtifactsBinDir)ProjectSystem.Base\$(Configuration)\net472\FSharp.ProjectSystem.Base.xml"
+  file source="$(ArtifactsBinDir)ProjectSystem\$(Configuration)\net472\FSharp.ProjectSystem.FSharp.dll"  vs.file.ngen=yes                       vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(ArtifactsBinDir)ProjectSystem\$(Configuration)\net472\FSharp.ProjectSystem.FSharp.xml"
+  file source="$(ArtifactsBinDir)FSharp.PropertiesPages\$(Configuration)\net472\FSharp.ProjectSystem.PropertyPages.dll"                         vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(ArtifactsBinDir)FSharp.PropertiesPages\$(Configuration)\net472\FSharp.ProjectSystem.PropertyPages.xml"
+  file source="$(ArtifactsBinDir)FSharp.UIResources\$(Configuration)\net472\FSharp.UIResources.dll"                                             vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(ArtifactsBinDir)FSharp.VS.FSI\$(Configuration)\net472\FSharp.VS.FSI.dll"                                                       vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(ArtifactsBinDir)FSharp.VS.FSI\$(Configuration)\net472\FSharp.VS.FSI.xml"
+
+@(_BuiltSwrLines)
+-->
+]]>
+      </_Lines>
+    </PropertyGroup>
+
+    <WriteLinesToFile File="$(_SwrFilePath)" Lines="$(_Lines)" Overwrite="true" />
+
+    <ItemGroup>
+      <FileWrites Include="$(_SwrFilePath)" />
+      <SwrFile Include="$(_SwrFilePath)" />
+    </ItemGroup>
+
   </Target>
 
 </Project>
