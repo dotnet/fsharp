@@ -558,11 +558,30 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             if tcConfig.concurrentBuild then
                 let parallelOptions = ParallelOptions(MaxDegreeOfParallelism=min Environment.ProcessorCount sourceFiles.Length)
 
+                let mutable exitCode = 0
+                let delayedExiter = 
+                    { new Exiter with
+                         member this.Exit n = exitCode <- n; raise StopProcessing }
+
                 let results = Array.zeroCreate sourceFiles.Length
-                Parallel.For(0, sourceFiles.Length, parallelOptions, fun i ->
-                    let delayedErrorLogger = errorLoggerProvider.CreateDelayAndForwardLogger(exiter)
-                    results.[i] <- delayedErrorLogger, tryParse delayedErrorLogger sourceFiles.[i]
-                ) |> ignore
+
+                try
+                    Parallel.For(0, sourceFiles.Length, parallelOptions, fun i ->
+                        let delayedErrorLogger = errorLoggerProvider.CreateDelayAndForwardLogger(delayedExiter)                            
+                        results.[i] <- delayedErrorLogger, tryParse delayedErrorLogger sourceFiles.[i]
+                    ) |> ignore
+                with
+                | StopProcessing ->
+                    results
+                    |> Array.iter (fun result ->
+                        match box result with
+                        | null -> ()
+                        | _ ->
+                            match result with
+                            | delayedErrorLogger, _ ->
+                                delayedErrorLogger.CommitDelayedDiagnostics errorLogger
+                    )
+                    exiter.Exit exitCode
 
                 results
                 |> Array.choose (fun (delayedErrorLogger, result) -> 
