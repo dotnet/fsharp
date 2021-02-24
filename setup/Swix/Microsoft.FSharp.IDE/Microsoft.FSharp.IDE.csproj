@@ -17,15 +17,6 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="..\..\..\src\fsharp\fsiAnyCpu\fsiAnyCpu.fsproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\src\fsharp\fsi\fsi.fsproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\src\fsharp\fsc\fsc.fsproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Editor\FSharp.Editor.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.LanguageService\FSharp.LanguageService.fsproj" />
