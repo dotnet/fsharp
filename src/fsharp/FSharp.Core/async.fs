@@ -1698,10 +1698,16 @@ namespace Microsoft.FSharp.Control
             CreateWhenCancelledAsync compensation computation
 
         static member AwaitTask (task:Task<'T>) : Async<'T> =
-            CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWith task ctxt false)
+            if task.IsCompleted then
+                CreateProtectedAsync (fun ctxt -> taskContinueWith task ctxt false)
+            else
+                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWith task ctxt false)
 
         static member AwaitTask (task:Task) : Async<unit> =
-            CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWithUnit task ctxt false)
+            if task.IsCompleted then
+                CreateProtectedAsync (fun ctxt -> taskContinueWithUnit task ctxt false)
+            else
+                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWithUnit task ctxt false)
 
     module CommonExtensions =
 
