@@ -69,7 +69,7 @@ type internal TcInfo =
 
 /// Accumulated results of type checking. Optional data that isn't needed to type-check a file, but needed for more information for in tooling.
 [<NoEquality; NoComparison>]
-type internal TcInfoOptional =
+type internal TcInfoExtras =
     {
       /// Accumulated resolutions, last file first
       tcResolutionsRev: TcResolutions list
@@ -104,14 +104,18 @@ type internal PartialCheckResults =
 
     member TimeStamp: DateTime 
 
-    member TcInfo: CompilationThreadToken -> TcInfo
-
     member TryTcInfo: TcInfo option
 
+    /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
+    /// extras will also be available.
+    member GetTcInfo: CompilationThreadToken -> TcInfo
+
+    /// Compute both the "TcInfo" and "TcInfoExtras" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member TcInfoWithOptional: CompilationThreadToken -> TcInfo * TcInfoOptional
+    member GetTcInfoWithExtras: CompilationThreadToken -> TcInfo * TcInfoExtras
 
+    /// Compute the "ItemKeyStore" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
     member TryGetItemKeyStore: CompilationThreadToken -> ItemKeyStore option
@@ -151,9 +155,6 @@ type internal IncrementalBuilder =
       /// Raised when a type provider invalidates the build.
       member ImportsInvalidatedByTypeProvider : IEvent<string>
 #endif
-
-      /// Tries to get the current successful TcImports. This is only used in testing. Do not use it for other stuff.
-      member TryGetCurrentTcImports : unit -> TcImports option
 
       /// The list of files the build depends on
       member AllDependenciesDeprecated : string[]
@@ -228,7 +229,7 @@ type internal IncrementalBuilder =
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile: filename:string -> ParsedInput option * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
+      member GetParseResultsForFile: filename:string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:
