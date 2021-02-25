@@ -10,7 +10,7 @@
     <DependencyTargetFramework>net472</DependencyTargetFramework>
   </PropertyGroup>
 
-  <Import Project="VisualFSharpFull.Core.targets" />
+  <Import Project="VisualFSharp.Core.targets" />
 
   <Target Name="_GenerateLanguageList">
     <CreateItem Include="$(XlfLanguages)">

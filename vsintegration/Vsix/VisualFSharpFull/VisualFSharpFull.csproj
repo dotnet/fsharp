@@ -10,6 +10,6 @@
     <DependencyTargetFramework>net472</DependencyTargetFramework>
   </PropertyGroup>
 
-  <Import Project="VisualFSharpFull.Core.targets" />
+  <Import Project="VisualFSharp.Core.targets" />
 
 </Project>
