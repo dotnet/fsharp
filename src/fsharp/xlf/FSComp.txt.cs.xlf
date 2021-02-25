@@ -252,11 +252,6 @@
         <target state="translated">Zobrazte si povolené hodnoty verze jazyka a pak zadejte požadovanou verzi, například latest nebo preview.</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsParallel">
-        <source>Specifies whether to use concurrent build</source>
-        <target state="new">Specifies whether to use concurrent build</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">Podporované jazykové verze:</target>

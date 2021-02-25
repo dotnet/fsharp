@@ -252,11 +252,6 @@
         <target state="translated">Mostrar los valores permitidos para la versión de idioma, especificar la versión de idioma como "latest" "preview"</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsParallel">
-        <source>Specifies whether to use concurrent build</source>
-        <target state="new">Specifies whether to use concurrent build</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">Versiones de lenguaje admitidas:</target>

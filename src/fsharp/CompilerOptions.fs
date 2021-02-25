@@ -811,11 +811,6 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
             Some (FSComp.SR.optsDeterministic()))
 
           CompilerOption
-           ("parallel", tagNone,
-            OptionSwitch (SetParallelSwitch tcConfigB), None,
-            Some (FSComp.SR.optsParallel()))
-
-          CompilerOption
            ("pathmap", tagPathMap,
             OptionStringList (AddPathMapping tcConfigB), None,
             Some (FSComp.SR.optsPathMap()))
@@ -1044,6 +1039,7 @@ let testFlag tcConfigB =
                 | "DumpDebugInfo"    -> tcConfigB.dumpDebugInfo <- true
                 | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
                 | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
+                | "ParallelOff" -> tcConfigB.concurrentBuild <- false
 #if DEBUG
                 | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
