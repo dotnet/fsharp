@@ -368,23 +368,21 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
             
 let ValidSuffixes = FSharpSigFileSuffixes@FSharpImplFileSuffixes
 
-/// Checks to see if the file exists.
-let CheckFileExists filename =
-    let lower = String.lowercase filename
-
-    if List.exists (Filename.checkSuffix lower) ValidSuffixes then  
-
-         if not(FileSystem.SafeExists filename) then
-             error(Error(FSComp.SR.buildCouldNotFindSourceFile filename, rangeStartup))
-
-         true
-    else
-        false
-
 /// Parse an input from disk
 let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked) =
+    let isValid = 
+        let lower = String.lowercase filename
+        
+        if List.exists (Filename.checkSuffix lower) ValidSuffixes then  
+        
+                if not(FileSystem.SafeExists filename) then
+                    error(Error(FSComp.SR.buildCouldNotFindSourceFile filename, rangeStartup))
+        
+                true
+        else
+            false
     try
-       if CheckFileExists filename then  
+       if isValid then  
 
             // Get a stream reader for the file
             use reader = File.OpenReaderAndRetry (filename, tcConfig.inputCodePage, retryLocked)
