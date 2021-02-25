@@ -433,6 +433,13 @@ let parseFiles (tcConfig: TcConfig) lexResourceManager (exiter: Exiter) (errorLo
         let results = Array.zeroCreate sourceFiles.Length
 
         try
+            
+            // Check to see if the file exists before we try to parallelize them.
+            sourceFiles
+            |> Array.iter (fun (filename, _) ->
+                CheckFileExists filename |> ignore
+            )
+
             Parallel.For(0, sourceFiles.Length, parallelOptions, fun i ->
                 let delayedErrorLogger = errorLoggerProvider.CreateDelayAndForwardLogger(delayedExiter)                            
                 results.[i] <- delayedErrorLogger, tryParse delayedErrorLogger sourceFiles.[i]
