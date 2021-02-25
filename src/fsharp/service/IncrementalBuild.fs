@@ -212,7 +212,7 @@ type BoundModel private (tcConfig: TcConfig,
                          tcGlobals: TcGlobals,
                          tcImports: TcImports,
                          keepAssemblyContents, keepAllBackgroundResolutions,
-                         maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
+                         keepAllBackgroundSymbolUses,
                          enableBackgroundItemKeyStoreAndSemanticClassification,
                          enablePartialTypeChecking,
                          beforeFileChecked: Event<string>,
@@ -269,26 +269,26 @@ type BoundModel private (tcConfig: TcConfig,
         )
 
     member this.GetState(partialCheck: bool) =
-        let partialCheck =
-            // Only partial check if we have enabled it.
-            if enablePartialTypeChecking then partialCheck
-            else false
+        eventually {
+            let partialCheck =
+                // Only partial check if we have enabled it.
+                if enablePartialTypeChecking then partialCheck
+                else false
 
-        let mustCheck =
-            match lazyTcInfoState, partialCheck with
-            | None, _ -> true
-            | Some(PartialState _), false -> true
-            | _ -> false
+            let mustCheck =
+                match lazyTcInfoState, partialCheck with
+                | None, _ -> true
+                | Some(PartialState _), false -> true
+                | _ -> false
 
-        match lazyTcInfoState with
-        | Some tcInfoState when not mustCheck -> tcInfoState |> Eventually.Done
-        | _ -> 
-            lazyTcInfoState <- None
-            eventually {
+            match lazyTcInfoState with
+            | Some tcInfoState when not mustCheck -> return tcInfoState
+            | _ -> 
+                lazyTcInfoState <- None
                 let! tcInfoState = this.TypeCheck(partialCheck)
                 lazyTcInfoState <- Some tcInfoState
                 return tcInfoState
-            }
+        }
 
     member this.TryOptionalExtras() =
         eventually {
@@ -308,7 +308,6 @@ type BoundModel private (tcConfig: TcConfig,
                     tcImports,
                     keepAssemblyContents, 
                     keepAllBackgroundResolutions, 
-                    maxTimeShareMilliseconds, 
                     keepAllBackgroundSymbolUses, 
                     enableBackgroundItemKeyStoreAndSemanticClassification,
                     enablePartialTypeChecking,
@@ -337,7 +336,6 @@ type BoundModel private (tcConfig: TcConfig,
                     tcImports,
                     keepAssemblyContents, 
                     keepAllBackgroundResolutions, 
-                    maxTimeShareMilliseconds, 
                     keepAllBackgroundSymbolUses, 
                     enableBackgroundItemKeyStoreAndSemanticClassification,
                     enablePartialTypeChecking,
@@ -402,121 +400,105 @@ type BoundModel private (tcConfig: TcConfig,
                     IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked filename)
                     let capturingErrorLogger = CompilationErrorLogger("TypeCheck", tcConfig.errorSeverityOptions)
                     let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, capturingErrorLogger)
-                    let fullComputation = 
-                        eventually {
-                            beforeFileChecked.Trigger filename
-                            let prevModuleNamesDict = prevTcInfo.moduleNamesDict
-                            let prevTcState = prevTcInfo.tcState
-                            let prevTcErrorsRev = prevTcInfo.tcErrorsRev
-                            let prevTcDependencyFiles = prevTcInfo.tcDependencyFiles
 
-                            ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filename, tcImports.DependencyProvider) |> ignore
-                            let sink = TcResultsSinkImpl(tcGlobals)
-                            let hadParseErrors = not (Array.isEmpty parseErrors)
-                            let input, moduleNamesDict = DeduplicateParsedInputModuleName prevModuleNamesDict input
+                    beforeFileChecked.Trigger filename
+                    let prevModuleNamesDict = prevTcInfo.moduleNamesDict
+                    let prevTcState = prevTcInfo.tcState
+                    let prevTcErrorsRev = prevTcInfo.tcErrorsRev
+                    let prevTcDependencyFiles = prevTcInfo.tcDependencyFiles
 
-                            Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
-                            let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState = 
-                                TypeCheckOneInputEventually 
-                                    ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0), 
-                                        tcConfig, tcImports, 
-                                        tcGlobals, 
-                                        None, 
-                                        (if partialCheck then TcResultsSink.NoSink else TcResultsSink.WithSink sink), 
-                                        prevTcState, input,
-                                        partialCheck)
-                            Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
+                    ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filename, tcImports.DependencyProvider) |> ignore
+                    let sink = TcResultsSinkImpl(tcGlobals)
+                    let hadParseErrors = not (Array.isEmpty parseErrors)
+                    let input, moduleNamesDict = DeduplicateParsedInputModuleName prevModuleNamesDict input
 
-                            fileChecked.Trigger filename
-                            let newErrors = Array.append parseErrors (capturingErrorLogger.GetDiagnostics())
+                    Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
+                    let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState = 
+                        TypeCheckOneInputEventually 
+                            ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0), 
+                                tcConfig, tcImports, 
+                                tcGlobals, 
+                                None, 
+                                (if partialCheck then TcResultsSink.NoSink else TcResultsSink.WithSink sink), 
+                                prevTcState, input,
+                                partialCheck)
+                    Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
 
-                            let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls
+                    fileChecked.Trigger filename
+                    let newErrors = Array.append parseErrors (capturingErrorLogger.GetDiagnostics())
 
-                            let tcInfo =
+                    let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls
+
+                    let tcInfo =
+                        {
+                            tcState = tcState
+                            tcEnvAtEndOfFile = tcEnvAtEndOfFile
+                            moduleNamesDict = moduleNamesDict
+                            latestCcuSigForFile = Some ccuSigForFile
+                            tcErrorsRev = newErrors :: prevTcErrorsRev
+                            topAttribs = Some topAttribs
+                            tcDependencyFiles = filename :: prevTcDependencyFiles
+                            sigNameOpt =
+                                match input with
+                                | ParsedInput.SigFile(ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
+                                    Some(fileName, qualName)
+                                | _ ->
+                                    None
+                        }
+
+                    if partialCheck then
+                        return PartialState tcInfo
+                    else
+                        match! prevTcInfoExtras() with
+                        | None -> return PartialState tcInfo
+                        | Some prevTcInfoOptional ->
+                            // Build symbol keys
+                            let itemKeyStore, semanticClassification =
+                                if enableBackgroundItemKeyStoreAndSemanticClassification then
+                                    Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
+                                    let sResolutions = sink.GetResolutions()
+                                    let builder = ItemKeyStoreBuilder()
+                                    let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with 
+                                                                        member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Position.posEq s1 s2 && Position.posEq e1 e2
+                                                                        member _.GetHashCode o = o.GetHashCode() })
+                                    sResolutions.CapturedNameResolutions
+                                    |> Seq.iter (fun cnr ->
+                                        let r = cnr.Range
+                                        if preventDuplicates.Add struct(r.Start, r.End) then
+                                            builder.Write(cnr.Range, cnr.Item))
+                                            
+                                    let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
+
+                                    let sckBuilder = SemanticClassificationKeyStoreBuilder()
+                                    sckBuilder.WriteAll semanticClassification
+
+                                    let res = builder.TryBuildAndReset(), sckBuilder.TryBuildAndReset()
+                                    Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
+                                    res
+                                else
+                                    None, None
+
+                            let tcInfoExtras =
                                 {
-                                    tcState = tcState
-                                    tcEnvAtEndOfFile = tcEnvAtEndOfFile
-                                    moduleNamesDict = moduleNamesDict
-                                    latestCcuSigForFile = Some ccuSigForFile
-                                    tcErrorsRev = newErrors :: prevTcErrorsRev
-                                    topAttribs = Some topAttribs
-                                    tcDependencyFiles = filename :: prevTcDependencyFiles
-                                    sigNameOpt =
-                                        match input with
-                                        | ParsedInput.SigFile(ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
-                                            Some(fileName, qualName)
-                                        | _ ->
-                                            None
+                                    /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
+                                    latestImplFile = if keepAssemblyContents then implFile else None
+                                    tcResolutionsRev = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty) :: prevTcInfoOptional.tcResolutionsRev
+                                    tcSymbolUsesRev = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: prevTcInfoOptional.tcSymbolUsesRev
+                                    tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: prevTcInfoOptional.tcOpenDeclarationsRev
+                                    itemKeyStore = itemKeyStore
+                                    semanticClassificationKeyStore = semanticClassification
                                 }
 
-                            if partialCheck then
-                                return PartialState tcInfo
-                            else
-                                match! prevTcInfoExtras() with
-                                | None -> return PartialState tcInfo
-                                | Some prevTcInfoOptional ->
-                                    // Build symbol keys
-                                    let itemKeyStore, semanticClassification =
-                                        if enableBackgroundItemKeyStoreAndSemanticClassification then
-                                            Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
-                                            let sResolutions = sink.GetResolutions()
-                                            let builder = ItemKeyStoreBuilder()
-                                            let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with 
-                                                                                member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Position.posEq s1 s2 && Position.posEq e1 e2
-                                                                                member _.GetHashCode o = o.GetHashCode() })
-                                            sResolutions.CapturedNameResolutions
-                                            |> Seq.iter (fun cnr ->
-                                                let r = cnr.Range
-                                                if preventDuplicates.Add struct(r.Start, r.End) then
-                                                    builder.Write(cnr.Range, cnr.Item))
-                                            
-                                            let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
-
-                                            let sckBuilder = SemanticClassificationKeyStoreBuilder()
-                                            sckBuilder.WriteAll semanticClassification
-
-                                            let res = builder.TryBuildAndReset(), sckBuilder.TryBuildAndReset()
-                                            Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
-                                            res
-                                        else
-                                            None, None
-
-                                    let tcInfoExtras =
-                                        {
-                                            /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
-                                            latestImplFile = if keepAssemblyContents then implFile else None
-                                            tcResolutionsRev = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty) :: prevTcInfoOptional.tcResolutionsRev
-                                            tcSymbolUsesRev = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: prevTcInfoOptional.tcSymbolUsesRev
-                                            tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: prevTcInfoOptional.tcOpenDeclarationsRev
-                                            itemKeyStore = itemKeyStore
-                                            semanticClassificationKeyStore = semanticClassification
-                                        }
-
-                                    return FullState(tcInfo, tcInfoExtras)
-              
-                        }
+                            return FullState(tcInfo, tcInfoExtras)
                             
-                    // Run part of the Eventually<_> computation until a timeout is reached. If not complete, 
-                    // return a new Eventually<_> computation which recursively runs more of the computation.
-                    //   - When the whole thing is finished commit the error results sent through the errorLogger.
-                    //   - Each time we do real work we reinstall the CompilationGlobalsScope
-                    let timeSlicedComputation =
-                        fullComputation |> 
-                            Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled 
-                                maxTimeShareMilliseconds
-                                CancellationToken.None
-                                (fun ctok f -> 
-                                    // Reinstall the compilation globals each time we start or restart
-                                    use unwind = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) 
-                                    f ctok)
-                    return! timeSlicedComputation
+                    //use unwind = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) 
         }
 
     static member Create(tcConfig: TcConfig,
                          tcGlobals: TcGlobals,
                          tcImports: TcImports,
                          keepAssemblyContents, keepAllBackgroundResolutions,
-                         maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
+                         keepAllBackgroundSymbolUses,
                          enableBackgroundItemKeyStoreAndSemanticClassification,
                          enablePartialTypeChecking,
                          beforeFileChecked: Event<string>,
@@ -526,7 +508,7 @@ type BoundModel private (tcConfig: TcConfig,
                          syntaxTreeOpt: SyntaxTree option) =
         BoundModel(tcConfig, tcGlobals, tcImports, 
                       keepAssemblyContents, keepAllBackgroundResolutions, 
-                      maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
+                      keepAllBackgroundSymbolUses,
                       enableBackgroundItemKeyStoreAndSemanticClassification,
                       enablePartialTypeChecking,
                       beforeFileChecked,
@@ -589,11 +571,6 @@ type FrameworkImportsCache(size) =
 [<Sealed>]
 type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime) = 
 
-    let eval ctok (work: Eventually<'T>) =
-        match work with
-        | Eventually.Done res -> res
-        | _ -> Eventually.force ctok work
-
     member _.TcImports = boundModel.TcImports
 
     member _.TcGlobals = boundModel.TcGlobals
@@ -604,17 +581,21 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime) =
 
     member _.TryTcInfo = boundModel.TryTcInfo
 
-    member _.GetTcInfo ctok = boundModel.TcInfo |> eval ctok
+    member _.GetTcInfo() = boundModel.TcInfo
 
-    member _.GetTcInfoWithExtras ctok = boundModel.TcInfoWithExtras |> eval ctok
+    member _.GetTcInfoWithExtras() = boundModel.TcInfoWithExtras
 
-    member _.TryGetItemKeyStore ctok =
-        let _, info = boundModel.TcInfoWithExtras |> eval ctok
-        info.itemKeyStore
+    member _.TryGetItemKeyStore() =
+        eventually {
+            let! _, info = boundModel.TcInfoWithExtras
+            return info.itemKeyStore
+        }
 
-    member _.GetSemanticClassification ctok =
-        let _, info = boundModel.TcInfoWithExtras |> eval ctok
-        info.semanticClassificationKeyStore
+    member _.GetSemanticClassification() =
+        eventually {
+            let! _, info = boundModel.TcInfoWithExtras
+            return info.semanticClassificationKeyStore
+        }
 
 [<AutoOpen>]
 module Utilities = 
@@ -685,7 +666,6 @@ type IncrementalBuilder(tcGlobals,
         loadClosureOpt: LoadClosure option, 
         keepAssemblyContents,
         keepAllBackgroundResolutions,
-        maxTimeShareMilliseconds,
         keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
@@ -825,7 +805,6 @@ type IncrementalBuilder(tcGlobals,
                 tcImports,
                 keepAssemblyContents, 
                 keepAllBackgroundResolutions, 
-                maxTimeShareMilliseconds, 
                 keepAllBackgroundSymbolUses, 
                 enableBackgroundItemKeyStoreAndSemanticClassification,
                 defaultPartialTypeChecking,
@@ -857,22 +836,24 @@ type IncrementalBuilder(tcGlobals,
         // Get the state at the end of the type-checking of the last file
         let finalBoundModel = boundModels.[boundModels.Length-1]
 
-        let finalInfo = finalBoundModel.TcInfo |> Eventually.force ctok
+        let! finalInfo = finalBoundModel.TcInfo |> Eventually.toCancellable
+
+        let! results = 
+            boundModels |> Cancellable.each (fun boundModel -> cancellable {
+                let! tcInfo, latestImplFile =
+                  cancellable {
+                    if enablePartialTypeChecking then
+                        let! tcInfo = boundModel.TcInfo |> Eventually.toCancellable
+                        return tcInfo, None
+                    else
+                        let! tcInfo, tcInfoExtras = boundModel.TcInfoWithExtras |> Eventually.toCancellable
+                        return tcInfo, tcInfoExtras.latestImplFile
+                   }
+                return (tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile)
+            })
 
         // Finish the checking
         let (_tcEnvAtEndOfLastFile, topAttrs, mimpls, _), tcState = 
-            let results = 
-                boundModels 
-                |> List.ofSeq
-                |> List.map (fun boundModel -> 
-                    let tcInfo, latestImplFile =
-                        if enablePartialTypeChecking then
-                            let tcInfo = boundModel.TcInfo |> Eventually.force ctok
-                            tcInfo, None
-                        else
-                            let tcInfo, tcInfoExtras = boundModel.TcInfoWithExtras |> Eventually.force ctok
-                            tcInfo, tcInfoExtras.latestImplFile
-                    tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile)
             TypeCheckMultipleInputsFinish (results, finalInfo.tcState)
   
         let ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt = 
@@ -930,7 +911,7 @@ type IncrementalBuilder(tcGlobals,
                 errorRecoveryNoRange e
                 mkSimpleAssemblyRef assemblyName, None, None
 
-        let finalBoundModelWithErrors = finalBoundModel.Finish((errorLogger.GetDiagnostics() :: finalInfo.tcErrorsRev), Some topAttrs) |> Eventually.force ctok
+        let! finalBoundModelWithErrors = finalBoundModel.Finish((errorLogger.GetDiagnostics() :: finalInfo.tcErrorsRev), Some topAttrs) |> Eventually.toCancellable
         return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalBoundModelWithErrors
       }
 
@@ -1021,66 +1002,59 @@ type IncrementalBuilder(tcGlobals,
                 stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
             }
 
-    let computeInitialBoundModel (state: IncrementalBuilderState) (ctok: CompilationThreadToken) =
-        cancellable {
+    let computeInitialBoundModel (state: IncrementalBuilderState) (ctok: CompilationThreadToken) ct =
+        eventually {
             match state.initialBoundModel with
             | None ->
-                let! result = CombineImportedAssembliesTask ctok
+                // Note this can throw an OperationCanceledException, particularly
+                // for cancellation of the background operation.
+                let result = CombineImportedAssembliesTask ctok |> Cancellable.runThrowing ct
                 return { state with initialBoundModel = Some result }, result
             | Some result ->
                 return state, result
         }
 
-    let computeBoundModel state (cache: TimeStampCache) (ctok: CompilationThreadToken) (slot: int) =
-        if IncrementalBuild.injectCancellationFault then Cancellable.canceled ()
-        else
+    let computeBoundModel state (cache: TimeStampCache) (ctok: CompilationThreadToken) (ct: CancellationToken) (slot: int) =
+        eventually {         
+            if IncrementalBuild.injectCancellationFault then 
+                raise (OperationCanceledException())
 
-        cancellable {         
-            let! (state, initial) = computeInitialBoundModel state ctok
+            let! (state, initial) = computeInitialBoundModel state ctok ct
 
             let fileInfo = fileNames.[slot]
 
             let state = computeStampedFileName state cache slot fileInfo
 
-            let state =
-                if state.boundModels.[slot].IsNone then
-                    let prevBoundModel =
-                        match slot with
-                        | 0 (* first file *) -> initial
-                        | _ ->
-                            match state.boundModels.[slot - 1] with
-                            | Some(prevBoundModel) -> prevBoundModel
-                            | _ -> 
-                                // This shouldn't happen, but on the off-chance, just grab the initial bound model.
-                                initial
+            if state.boundModels.[slot].IsNone then
+                let prevBoundModel =
+                    match slot with
+                    | 0 (* first file *) -> initial
+                    | _ ->
+                        match state.boundModels.[slot - 1] with
+                        | Some(prevBoundModel) -> prevBoundModel
+                        | _ -> 
+                            // This shouldn't happen, but on the off-chance, just grab the initial bound model.
+                            initial
 
-                    let boundModel = TypeCheckTask ctok state.enablePartialTypeChecking prevBoundModel (ParseTask fileInfo) |> Eventually.force ctok
+                let! boundModel = TypeCheckTask ctok state.enablePartialTypeChecking prevBoundModel (ParseTask fileInfo)
                 
+                let state =
                     { state with
                         boundModels = state.boundModels.SetItem(slot, Some boundModel)
                     }
-                else
-                    state
+                return state
 
-            return state
+            else 
+                return state
         }
 
-    let computeBoundModels state (cache: TimeStampCache) (ctok: CompilationThreadToken) =
-        let mutable state = state
-        let task =
-            cancellable {
-                for slot = 0 to fileNames.Length - 1 do
-                    let! newState = computeBoundModel state cache ctok slot
-                    state <- newState
-            }
-        cancellable {
-            let! _ = task
-            return state
-        }
+    let computeBoundModels state (cache: TimeStampCache) (ctok: CompilationThreadToken) ct =
+        (state, [0..fileNames.Length-1]) ||> Eventually.fold (fun state slot -> computeBoundModel state cache ctok ct slot)
 
     let computeFinalizedBoundModel state (cache: TimeStampCache) (ctok: CompilationThreadToken) =
         cancellable {
-            let! state = computeBoundModels state cache ctok
+            let! ct = Cancellable.token()
+            let! state = computeBoundModels state cache ctok ct |> Eventually.toCancellable
 
             match state.finalizedBoundModel with
             | Some result -> return state, result
@@ -1092,14 +1066,14 @@ type IncrementalBuilder(tcGlobals,
                 return { state with finalizedBoundModel = Some result }, result
         }
 
-    let step state (cache: TimeStampCache) (ctok: CompilationThreadToken) =
-        cancellable {
+    let populateBoundModel state (cache: TimeStampCache) (ctok: CompilationThreadToken) ct =
+        eventually {
             let state = computeStampedReferencedAssemblies state cache
             let state = computeStampedFileNames state cache
 
             match state.boundModels |> Seq.tryFindIndex (fun x -> x.IsNone) with
             | Some slot ->
-                let! state = computeBoundModel state cache ctok slot
+                let! state = computeBoundModel state cache ctok ct slot
                 return state, true
             | _ ->
                 return state, false
@@ -1123,24 +1097,18 @@ type IncrementalBuilder(tcGlobals,
                 None
                 
     let eval state (cache: TimeStampCache) ctok targetSlot =
-        if targetSlot < 0 then
-            cancellable {
+        cancellable {
+            let! ct = Cancellable.token()
+            if targetSlot < 0 then
                 let state = computeStampedReferencedAssemblies state cache
 
-                let! state, result = computeInitialBoundModel state ctok
+                let! state, result = computeInitialBoundModel state ctok ct |> Eventually.toCancellable
                 return state, Some(result, DateTime.MinValue)
-            }
-        else         
-            let mutable state = state
-            let evalUpTo =
-                cancellable {
-                    for slot = 0 to targetSlot do
-                        let! newState = computeBoundModel state cache ctok slot
-                        state <- newState
-                }
-            cancellable {
-                let newState = computeStampedReferencedAssemblies state cache
-                state <- newState
+            else         
+                let evalUpTo = 
+                    (state, [0..targetSlot]) ||> Cancellable.fold (fun state slot -> 
+                        computeBoundModel state cache ctok ct slot  |> Eventually.toCancellable)
+                let state = computeStampedReferencedAssemblies state cache
 
                 let! _ = evalUpTo
 
@@ -1151,7 +1119,7 @@ type IncrementalBuilder(tcGlobals,
                     )
 
                 return state, result
-            }
+        }
 
     let tryGetFinalized state cache ctok =
         cancellable {
@@ -1209,16 +1177,13 @@ type IncrementalBuilder(tcGlobals,
 
     member _.AllDependenciesDeprecated = allDependencies
 
-    member _.Step (ctok: CompilationThreadToken) =  
-      cancellable {
+    member _.PopulatePartialCheckingResults (ctok: CompilationThreadToken, ct: CancellationToken) =  
+      eventually {
         let cache = TimeStampCache defaultTimeStamp // One per step
-        let! state, res = step currentState cache ctok
+        let! state, res = populateBoundModel currentState cache ctok ct
         setCurrentState ctok state
         if not res then
             projectChecked.Trigger()
-            return false
-        else
-            return true
       }
     
     member builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename: PartialCheckResults option  = 
@@ -1272,7 +1237,7 @@ type IncrementalBuilder(tcGlobals,
         cancellable {
             let slotOfFile = builder.GetSlotOfFileName filename + 1
             let! result = builder.GetCheckResultsBeforeSlotInProject(ctok, slotOfFile, false)
-            result.GetTcInfoWithExtras ctok |> ignore // Make sure we forcefully evaluate the info
+            let! _ = result.GetTcInfoWithExtras() |> Eventually.toCancellable // Make sure we forcefully evaluate the info
             return result
         }
 
@@ -1300,7 +1265,7 @@ type IncrementalBuilder(tcGlobals,
         cancellable {
             let! result = builder.GetCheckResultsAndImplementationsForProject(ctok, false)
             let results, _, _, _ = result
-            results.GetTcInfoWithExtras ctok |> ignore // Make sure we forcefully evaluate the info
+            let! _ = results.GetTcInfoWithExtras() |> Eventually.toCancellable // Make sure we forcefully evaluate the info
             return result
         }
         
@@ -1352,7 +1317,7 @@ type IncrementalBuilder(tcGlobals,
                        commandLineArgs: string list,
                        projectReferences, projectDirectory,
                        useScriptResolutionRules, keepAssemblyContents,
-                       keepAllBackgroundResolutions, maxTimeShareMilliseconds,
+                       keepAllBackgroundResolutions,
                        tryGetMetadataSnapshot, suggestNamesForErrors,
                        keepAllBackgroundSymbolUses,
                        enableBackgroundItemKeyStoreAndSemanticClassification,
@@ -1501,7 +1466,6 @@ type IncrementalBuilder(tcGlobals,
                     loadClosureOpt, 
                     keepAssemblyContents, 
                     keepAllBackgroundResolutions, 
-                    maxTimeShareMilliseconds,
                     keepAllBackgroundSymbolUses,
                     enableBackgroundItemKeyStoreAndSemanticClassification,
                     enablePartialTypeChecking,

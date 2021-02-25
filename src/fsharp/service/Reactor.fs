@@ -18,7 +18,7 @@ type internal IReactorOperations =
 [<NoEquality; NoComparison>]
 type internal ReactorCommands = 
     /// Kick off a build.
-    | SetBackgroundOp of ( (* userOpName: *) string * (* opName: *) string * (* opArg: *) string * (CompilationThreadToken -> CancellationToken -> bool)) option
+    | SetBackgroundOp of ( (* userOpName: *) string * (* opName: *) string * (* opArg: *) string * (CompilationThreadToken -> CancellationToken -> Eventually<unit>)) option
 
     /// Do some work not synchronized in the mailbox.
     | Op of userOpName: string * opName: string * opArg: string * CancellationToken * (CompilationThreadToken -> unit) * (unit -> unit)
@@ -42,6 +42,16 @@ type Reactor() =
     let mutable culture = CultureInfo(CultureInfo.CurrentUICulture.Name)
 
     let mutable bgOpCts = new CancellationTokenSource()
+
+    let sw = new System.Diagnostics.Stopwatch()
+
+    /// Maximum time share for a piece of background work before it should (cooperatively) yield
+    /// to enable other requests to be serviced. Yielding means returning a continuation function
+    /// (via an Eventually<_> value of case NotYetDone) that can be called as the next piece of work. 
+    let maxTimeShareMilliseconds = 
+        match System.Environment.GetEnvironmentVariable("FCS_MaxTimeShare") with 
+        | null | "" -> 100L
+        | s -> int64 s
 
     /// Mailbox dispatch function.
     let builder = 
@@ -72,6 +82,14 @@ type Reactor() =
                     Thread.CurrentThread.CurrentUICulture <- culture
                     match msg with
                     | Some (SetBackgroundOp bgOpOpt) -> 
+                        let bgOpOpt = 
+                            match bgOpOpt with 
+                            | None -> None
+                            | Some (bgUserOpName, bgOpName, bgOpArg, bgOp) -> 
+                                bgOpCts.Dispose()
+                                bgOpCts <- new CancellationTokenSource()
+                                Some (bgUserOpName, bgOpName, bgOpArg, bgOp ctok bgOpCts.Token)
+
                         //Trace.TraceInformation("Reactor: --> set background op, remaining {0}", inbox.CurrentQueueLength)
                         return! loop (bgOpOpt, onComplete, false)
 
@@ -88,6 +106,7 @@ type Reactor() =
                         let msg = (if taken > 10000.0 then "BAD-OP: >10s " elif taken > 3000.0 then "BAD-OP: >3s " elif taken > 1000.0 then "BAD-OP: > 1s " elif taken > 500.0 then "BAD-OP: >0.5s " else "")
                         Trace.TraceInformation("Reactor: {0:n3} {1}<-- {2}.{3}, took {4} ms", DateTime.Now.TimeOfDay.TotalSeconds, msg, userOpName, opName, span.TotalMilliseconds)
                         return! loop (bgOpOpt, onComplete, false)
+
                     | Some (WaitForBackgroundOpCompletion channel) -> 
                         match bgOpOpt with 
                         | None -> ()
@@ -95,8 +114,10 @@ type Reactor() =
                             Trace.TraceInformation("Reactor: {0:n3} --> wait for background {1}.{2} ({3}), remaining {4}", DateTime.Now.TimeOfDay.TotalSeconds, bgUserOpName, bgOpName, bgOpArg, inbox.CurrentQueueLength)
                             bgOpCts.Dispose()
                             bgOpCts <- new CancellationTokenSource()
-                            while not bgOpCts.IsCancellationRequested && bgOp ctok bgOpCts.Token do 
-                                ()
+                            
+                            try 
+                                Eventually.forceCancellable bgOpCts.Token bgOp |> ignore
+                            with :? OperationCanceledException -> ()
 
                             if bgOpCts.IsCancellationRequested then 
                                 Trace.TraceInformation("FCS: <-- wait for background was cancelled {0}.{1}", bgUserOpName, bgOpName)
@@ -111,21 +132,28 @@ type Reactor() =
                     | None -> 
                         match bgOpOpt, onComplete with 
                         | _, Some onComplete -> onComplete.Reply()
-                        | Some  (bgUserOpName, bgOpName, bgOpArg, bgOp), None -> 
+                        | Some  (bgUserOpName, bgOpName, bgOpArg, bgEv), None -> 
                             Trace.TraceInformation("Reactor: {0:n3} --> background step {1}.{2} ({3})", DateTime.Now.TimeOfDay.TotalSeconds, bgUserOpName, bgOpName, bgOpArg)
-                            let time = Stopwatch()
-                            time.Start()
-                            bgOpCts.Dispose()
-                            bgOpCts <- new CancellationTokenSource()
-                            let res = bgOp ctok bgOpCts.Token
-                            if bgOpCts.IsCancellationRequested then 
-                                Trace.TraceInformation("FCS: <-- background step {0}.{1}, was cancelled", bgUserOpName, bgOpName)
-                            time.Stop()
-                            let taken = time.Elapsed.TotalMilliseconds
+
+                            // Force for a timeslice. Cancellation will either raise
+                            // OperationCanceledException or will result in the partially computed
+                            // suspension. Either way we abandon the background work
+                            let bgOpRes = 
+                                try Eventually.forceForTimeSlice sw maxTimeShareMilliseconds bgOpCts.Token bgEv
+                                with :? OperationCanceledException -> Eventually.Done ()
+
+                            let bgOp2 = 
+                                match bgOpRes with 
+                                | _ when bgOpCts.IsCancellationRequested ->
+                                    Trace.TraceInformation("FCS: <-- background step {0}.{1}, was cancelled", bgUserOpName, bgOpName)
+                                    None
+                                | Eventually.Done () -> None
+                                | bgEv2 -> Some (bgUserOpName, bgOpName, bgOpArg, bgEv2)
+
                             //if span.TotalMilliseconds > 100.0 then 
-                            let msg = (if taken > 10000.0 then "BAD-BG-SLICE: >10s " elif taken > 3000.0 then "BAD-BG-SLICE: >3s " elif taken > 1000.0 then "BAD-BG-SLICE: > 1s " else "")
-                            Trace.TraceInformation("Reactor: {0:n3} {1}<-- background step, took {2}ms", DateTime.Now.TimeOfDay.TotalSeconds, msg, taken)
-                            return! loop ((if res then bgOpOpt else None), onComplete, true)
+                            //let msg = (if taken > 10000.0 then "BAD-BG-SLICE: >10s " elif taken > 3000.0 then "BAD-BG-SLICE: >3s " elif taken > 1000.0 then "BAD-BG-SLICE: > 1s " else "")
+                            //Trace.TraceInformation("Reactor: {0:n3} {1}<-- background step, took {2}ms", DateTime.Now.TimeOfDay.TotalSeconds, msg, taken)
+                            return! loop (bgOp2, onComplete, true)
                         | None, None -> failwith "unreachable, should have used inbox.Receive"
                     }
         async { 

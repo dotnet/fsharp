@@ -5,6 +5,7 @@ namespace Internal.Utilities.Library
 open System
 open System.Threading
 open System.Collections.Generic
+open System.Diagnostics
 open System.Runtime.CompilerServices
 
 [<AutoOpen>]
@@ -275,12 +276,14 @@ type internal ExecutionToken = interface end
 ///
 /// Like other execution tokens this should be passed via argument passing and not captured/stored beyond
 /// the lifetime of stack-based calls. This is not checked, it is a discipline within the compiler code. 
+[<Sealed>]
 type internal CompilationThreadToken =
 
     interface ExecutionToken
     new: unit -> CompilationThreadToken
   
 /// Represents a token that indicates execution on any of several potential user threads calling the F# compiler services.
+[<Sealed>]
 type internal AnyCallerThreadToken =
 
     interface ExecutionToken
@@ -354,6 +357,10 @@ module internal Cancellable =
     /// Run a cancellable computation using the given cancellation token
     val run : ct:CancellationToken -> Cancellable<'a> -> ValueOrCancelled<'a>
 
+    /// Run a cancellable computation using the given cancellation token. Raise OperationCanceledException
+    /// if cancellation occurs
+    val runThrowing : ct:CancellationToken -> Cancellable<'a> -> 'a
+
     /// Bind the result of a cancellable computation
     val bind : f:('a -> Cancellable<'b>) -> comp1:Cancellable<'a> -> Cancellable<'b>
 
@@ -387,6 +394,8 @@ module internal Cancellable =
 
     /// Implement try/with for a cancellable computation
     val tryWith : e:Cancellable<'a> -> handler:(exn -> Cancellable<'a>) -> Cancellable<'a>
+
+    val toAsync: Cancellable<'a> -> Async<'a>
 
 type internal CancellableBuilder =
 
@@ -425,35 +434,31 @@ module internal CancellableAutoOpens =
 ///      captured by the NotYetDone closure. Computations do not need to be restartable.
 ///
 ///    - The key thing is that you can take an Eventually value and run it with 
-///      Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
-///
-///    - Cancellation results in a suspended computation rather than complete abandonment
+///      Eventually.forceForTimeSlice
 type internal Eventually<'T> =
     | Done of 'T
-    | NotYetDone of (CompilationThreadToken -> Eventually<'T>)
+    | NotYetDone of (unit -> Eventually<'T>)
 
 module internal Eventually =
 
     val box: e:Eventually<'a> -> Eventually<obj>
 
-    val forceWhile : ctok:CompilationThreadToken -> check:(unit -> bool) -> e:Eventually<'a> -> 'a option
+    val toCancellable: e:Eventually<'a> -> Cancellable<'a>
 
-    val force: ctok:CompilationThreadToken -> e:Eventually<'a> -> 'a
+    val force: e:Eventually<'a> -> 'a
 
-    /// Keep running the computation bit by bit until a time limit is reached.
-    /// The runner gets called each time the computation is restarted
-    ///
-    /// If cancellation happens, the operation is left half-complete, ready to resume.
-    val repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled :
-        timeShareInMilliseconds:int64 ->
-        ct:CancellationToken ->
-        runner:(CompilationThreadToken -> (#CompilationThreadToken -> Eventually<'b>) -> Eventually<'b>) -> 
-        e:Eventually<'b> 
-            -> Eventually<'b>
+    val forceCancellable: ct: CancellationToken -> e:Eventually<'a> -> ValueOrCancelled<'a>
+
+    val forceCancellableThrowing: ct: CancellationToken -> e:Eventually<'a> -> 'a
+
+    /// Run for at most the given time slice, returning the residue computation, which may be complete.
+    /// If cancellation is requested then just return the computation at the point where cancellation
+    /// was detected.
+    val forceForTimeSlice: sw:Stopwatch -> timeShareInMilliseconds: int64 -> ct: CancellationToken -> e: Eventually<'b> -> Eventually<'b>
 
     /// Keep running the asynchronous computation bit by bit. The runner gets called each time the computation is restarted.
-    /// Can be cancelled as an Async in the normal way.
-    val forceAsync : runner:((CompilationThreadToken -> Eventually<'T>) -> Async<Eventually<'T>>) -> e:Eventually<'T> -> Async<'T option>
+    /// Can be cancelled as an Async in the normal way. If cancelled the partially computed computation is lost
+    val forceAsync: runner:((unit -> Eventually<'T>) -> Async<Eventually<'T>>) -> e:Eventually<'T> -> Async<'T>
 
     val bind: k:('a -> Eventually<'b>) -> e:Eventually<'a> -> Eventually<'b>
 
@@ -467,11 +472,10 @@ module internal Eventually =
 
     val tryWith : e:Eventually<'a> -> handler:(System.Exception -> Eventually<'a>) -> Eventually<'a>
 
-    // All eventually computations carry a CompilationThreadToken
-    val token: Eventually<CompilationThreadToken>
-
 [<Class>]
 type internal EventuallyBuilder =
+
+    member BindReturn: e:Eventually<'g> * k:('g -> 'h) -> Eventually<'h>
 
     member Bind: e:Eventually<'g> * k:('g -> Eventually<'h>) -> Eventually<'h>
 
