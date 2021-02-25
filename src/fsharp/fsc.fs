@@ -412,55 +412,6 @@ let TryFindVersionAttribute g attrib attribName attribs deterministic =
              None
     | _ -> None
 
-let parseFiles (tcConfig: TcConfig) lexResourceManager (exiter: Exiter) (errorLoggerProvider: ErrorLoggerProvider) errorLogger sourceFiles =
-    let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
-    let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofSeq
-
-    let tryParse errorLogger (filename: string, isLastCompiland) =
-        let pathOfMetaCommandSource = Path.GetDirectoryName filename
-        match ParseOneInputFile(tcConfig, lexResourceManager, ["COMPILED"], filename, (isLastCompiland, isExe), errorLogger, (*retryLocked*)false) with
-        | Some input -> Some (input, pathOfMetaCommandSource)
-        | None -> None
-
-    if tcConfig.concurrentBuild then
-        let parallelOptions = ParallelOptions(MaxDegreeOfParallelism=min Environment.ProcessorCount sourceFiles.Length)
-
-        let mutable exitCode = 0
-        let delayedExiter = 
-            { new Exiter with
-                    member this.Exit n = exitCode <- n; raise StopProcessing }
-
-        let results = Array.zeroCreate sourceFiles.Length
-
-        try
-            Parallel.For(0, sourceFiles.Length, parallelOptions, fun i ->
-                let delayedErrorLogger = errorLoggerProvider.CreateDelayAndForwardLogger(delayedExiter)                            
-                results.[i] <- delayedErrorLogger, tryParse delayedErrorLogger sourceFiles.[i]
-            ) |> ignore
-        with
-        | StopProcessing ->
-            results
-            |> Array.iter (fun result ->
-                match box result with
-                | null -> ()
-                | _ ->
-                    match result with
-                    | delayedErrorLogger, _ ->
-                        delayedErrorLogger.CommitDelayedDiagnostics errorLogger
-            )
-            exiter.Exit exitCode
-
-        results
-        |> Array.choose (fun (delayedErrorLogger, result) -> 
-            delayedErrorLogger.CommitDelayedDiagnostics errorLogger
-            result
-        )
-        |> List.ofArray
-    else
-        sourceFiles
-        |> Array.choose (tryParse errorLogger)
-        |> List.ofArray
-
 //----------------------------------------------------------------------------
 // Main phases of compilation. These are written as separate functions with explicit argument passing
 // to ensure transient objects are eligible for GC and only actual required information
@@ -593,12 +544,8 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     ReportTime tcConfig "Parse inputs"
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
-    let inputs =
-        try
-            parseFiles tcConfig lexResourceManager exiter errorLoggerProvider errorLogger sourceFiles
-        with e -> 
-            errorRecoveryNoRange e
-            exiter.Exit 1
+    let createErrorLogger = (fun exiter -> errorLoggerProvider.CreateDelayAndForwardLogger(exiter) :> CapturingErrorLogger)
+    let inputs = ParseInputFiles(tcConfig, lexResourceManager, ["COMPILED"], sourceFiles, errorLogger, exiter, createErrorLogger, (*retryLocked*)false)
     
     let inputs, _ =
         (Map.empty, inputs) ||> List.mapFold (fun state (input, x) ->

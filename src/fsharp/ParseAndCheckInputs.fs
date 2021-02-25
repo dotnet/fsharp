@@ -368,36 +368,104 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
             
 let ValidSuffixes = FSharpSigFileSuffixes@FSharpImplFileSuffixes
 
-/// Parse an input from disk
-let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked) =
-    let isValid = 
-        let lower = String.lowercase filename
-        
-        if List.exists (Filename.checkSuffix lower) ValidSuffixes then  
-        
-                if not(FileSystem.SafeExists filename) then
-                    error(Error(FSComp.SR.buildCouldNotFindSourceFile filename, rangeStartup))
-        
-                true
-        else
-            false
+let checkInputFile (tcConfig: TcConfig) filename =
+    let lower = String.lowercase filename
+
+    if List.exists (Filename.checkSuffix lower) ValidSuffixes then 
+        if not(FileSystem.SafeExists filename) then
+            error(Error(FSComp.SR.buildCouldNotFindSourceFile filename, rangeStartup))
+    else
+        error(Error(FSComp.SR.buildInvalidSourceFileExtension(SanitizeFileName filename tcConfig.implicitIncludeDir), rangeStartup))
+
+let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked) =
     try
-       if isValid then  
+        // Get a stream reader for the file
+        use reader = File.OpenReaderAndRetry (filename, tcConfig.inputCodePage, retryLocked)
 
-            // Get a stream reader for the file
-            use reader = File.OpenReaderAndRetry (filename, tcConfig.inputCodePage, retryLocked)
+        // Set up the LexBuffer for the file
+        let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(tcConfig.langVersion.SupportsFeature, reader)
 
-            // Set up the LexBuffer for the file
-            let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(tcConfig.langVersion.SupportsFeature, reader)
-
-            // Parse the file drawing tokens from the lexbuf
-            ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
-       else
-           error(Error(FSComp.SR.buildInvalidSourceFileExtension(SanitizeFileName filename tcConfig.implicitIncludeDir), rangeStartup))
-
+        // Parse the file drawing tokens from the lexbuf
+        ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
     with e -> 
         errorRecovery e rangeStartup
         None 
+
+/// Parse an input from disk
+let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked) =
+    try 
+       checkInputFile tcConfig filename
+       parseInputFileAux(tcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked)
+    with e -> 
+        errorRecovery e rangeStartup
+        None 
+
+let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, sourceFiles, errorLogger: ErrorLogger, exiter: Exiter, createErrorLogger: (Exiter -> CapturingErrorLogger), retryLocked) =
+    try
+        let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
+        let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofSeq
+
+        if tcConfig.concurrentBuild then
+            let mutable exitCode = 0
+            let delayedExiter = 
+                { new Exiter with
+                        member this.Exit n = exitCode <- n; raise StopProcessing }
+
+            // Check input files and create delayed error loggers before we try to parallel parse.
+            let delayedErrorLoggers =
+                sourceFiles
+                |> Array.map (fun (filename, _) ->
+                    checkInputFile tcConfig filename
+                    createErrorLogger(delayedExiter)
+                )
+
+            let commitDelayedErrorLoggers () =
+                delayedErrorLoggers
+                |> Array.iter (fun delayedErrorLogger ->
+                    delayedErrorLogger.CommitDelayedDiagnostics errorLogger
+                )
+
+            let results =
+                try
+                    sourceFiles 
+                    |> ArrayParallel.mapi (fun i (filename, isLastCompiland) ->
+                        let delayedErrorLogger = delayedErrorLoggers.[i]
+                
+                        let result =
+                            let directoryName = Path.GetDirectoryName filename
+                            match parseInputFileAux(tcConfig, lexResourceManager, conditionalCompilationDefines, filename, (isLastCompiland, isExe), errorLogger, retryLocked) with
+                            | Some input -> Some (input, directoryName)
+                            | None -> None
+
+                        delayedErrorLogger, result
+                    )
+                with
+                | StopProcessing ->
+                    commitDelayedErrorLoggers ()
+                    exiter.Exit exitCode
+
+                | _ ->
+                    commitDelayedErrorLoggers ()
+                    reraise()
+
+            results
+            |> Array.choose (fun (delayedErrorLogger, result) -> 
+                delayedErrorLogger.CommitDelayedDiagnostics errorLogger
+                result
+            )
+            |> List.ofArray
+        else
+            sourceFiles
+            |> Array.choose (fun (filename, isLastCompiland) ->
+                let directoryName = Path.GetDirectoryName filename
+                match ParseOneInputFile(tcConfig, lexResourceManager, conditionalCompilationDefines, filename, (isLastCompiland, isExe), errorLogger, retryLocked) with
+                | Some input -> Some (input, directoryName)
+                | None -> None)
+            |> List.ofArray
+
+    with e ->
+        errorRecoveryNoRange e
+        exiter.Exit 1
 
 let ProcessMetaCommandsFromInput
      (nowarnF: 'state -> range * string -> 'state,
