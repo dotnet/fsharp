@@ -334,7 +334,7 @@ module Option =
     ///
     /// <param name="option">The input option.</param>
     ///
-    /// <returns>An option of the output type of the binder.</returns>
+    /// <returns>The input value if the value is Some; otherwise, None.</returns>
     /// <remarks><c>flatten</c> is equivalent to <c>bind id</c>.</remarks>
     ///
     /// <example>
@@ -635,7 +635,7 @@ module ValueOption =
     ///
     /// <param name="voption">The input value option.</param>
     ///
-    /// <returns>A value option of the output type of the binder.</returns>
+    /// <returns>The input value if the value is Some; otherwise, ValueNone.</returns>
     /// <remarks><c>flatten</c> is equivalent to <c>bind id</c>.</remarks>
     [<CompiledName("Flatten")>]
     val flatten: voption: 'T voption voption -> 'T voption
