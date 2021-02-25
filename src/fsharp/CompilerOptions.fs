@@ -412,9 +412,6 @@ let SetTailcallSwitch (tcConfigB: TcConfigBuilder) switch =
 let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.deterministic <- (switch = OptionSwitch.On)
 
-let SetParallelSwitch (tcConfigB: TcConfigBuilder) switch =
-    tcConfigB.concurrentBuild <- (switch = OptionSwitch.On)
-
 let AddPathMapping (tcConfigB: TcConfigBuilder) (pathPair: string) =
     match pathPair.Split([|'='|], 2) with
     | [| oldPrefix; newPrefix |] ->
