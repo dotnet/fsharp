@@ -161,8 +161,11 @@ type public FSharpParsingOptions =
 [<Sealed>]
 type public FSharpCheckFileResults =
 
-    /// The syntax tree for the source file, if available
-    member ParseTree: ParsedInput option
+    /// The syntax tree for the source file
+    member ParseTree: ParsedInput
+
+    /// The source (if the file wasn't read from disk)
+    member SourceText: ISourceText option
 
     /// The errors returned by parsing a source file.
     member Diagnostics: FSharpDiagnostic[]
@@ -327,7 +330,8 @@ type public FSharpCheckFileResults =
         tcGlobals: TcGlobals *
         isIncompleteTypeCheckEnvironment: bool *
         builder: obj option * 
-        parseTree: ParsedInput option *
+        parseTree: ParsedInput *
+        sourceText: ISourceText option *
         projectOptions: FSharpProjectOptions *
         dependencyFiles: string[] * 
         creationErrors: FSharpDiagnostic[] *
@@ -356,6 +360,7 @@ type public FSharpCheckFileResults =
          tcGlobals: TcGlobals *
          tcImports: TcImports *
          tcState: TcState *
+         tcPriorImplFiles: TypedImplFile list *
          moduleNamesDict: ModuleNamesDict *
          loadClosure: LoadClosure option *
          backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] *    
@@ -433,7 +438,7 @@ module internal ParseAndCheckFile =
         options: FSharpParsingOptions * 
         userOpName: string *
         suggestNamesForErrors: bool
-          -> FSharpDiagnostic[] * ParsedInput option * bool
+          -> FSharpDiagnostic[] * ParsedInput * bool
 
     val matchBraces: 
         sourceText: ISourceText *

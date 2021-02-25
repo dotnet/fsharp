@@ -129,10 +129,9 @@ type public FSharpChecker =
     ///
     /// <param name="parseResults">The results of ParseFile for this file.</param>
     /// <param name="checkResults">The results of CheckFileInProject for this file.</param>
-    /// <param name="sourceText">The full source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member AnalyzeFileInProject: parseResults: FSharpParseFileResults * checkResults: FSharpCheckFileResults * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpDiagnostic[]>
+    member AnalyzeFileInProject: parseResults: FSharpParseFileResults * checkResults: FSharpCheckFileResults * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpDiagnostic[]>
 
     /// <summary>
     ///   Get the additional tooltips provided by all analyzers at a specific location
@@ -140,11 +139,10 @@ type public FSharpChecker =
     ///
     /// <param name="parseResults">The results of ParseFile for this file.</param>
     /// <param name="checkResults">The results of CheckFileInProject for this file.</param>
-    /// <param name="sourceText">The full source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
     /// <param name="pos">The position where the tool tip is requested.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetAdditionalAnalyzerToolTips: parseResults: FSharpParseFileResults * checkResults: FSharpCheckFileResults * sourceText: ISourceText * options: FSharpProjectOptions * pos: Position * ?userOpName: string -> Async<TaggedText[][]>
+    member GetAdditionalAnalyzerToolTips: parseResults: FSharpParseFileResults * checkResults: FSharpCheckFileResults * options: FSharpProjectOptions * pos: Position * ?userOpName: string -> Async<TaggedText[][]>
 
     /// <summary>
     /// <para>

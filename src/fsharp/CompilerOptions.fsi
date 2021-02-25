@@ -5,6 +5,7 @@ module internal FSharp.Compiler.CompilerOptions
 
 open System
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.Diagnostics
 
 // For command-line options that can be suffixed with +/-
 [<RequireQualifiedAccess>]
@@ -76,7 +77,7 @@ val mutable enableConsoleColoring : bool
 
 val DoWithColor : ConsoleColor -> (unit -> 'a) -> 'a
 
-val DoWithErrorColor : bool -> (unit -> 'a) -> 'a
+val DoWithDiagnosticColor : FSharpDiagnosticSeverity -> (unit -> 'a) -> 'a
 
 val ReportTime : TcConfig -> string -> unit
 

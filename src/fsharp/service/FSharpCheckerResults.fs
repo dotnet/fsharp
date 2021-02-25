@@ -215,7 +215,8 @@ type internal TypeCheckInfo
            tcAccessRights: AccessorDomain,
            projectFileName: string,
            mainInputFileName: string,
-           parseTree: ParsedInput option,
+           parseTree: ParsedInput,
+           sourceText: ISourceText option,
            projectOptions: FSharpProjectOptions,
            sResolutions: TcResolutions,
            sSymbolUses: TcSymbolUses,
@@ -499,9 +500,8 @@ type internal TypeCheckInfo
                 GetPreciseCompletionListFromExprTypingsResult.None
         | _ ->
             let bestQual, textChanged = 
-                match parseResults.ParseTree with
-                | Some input -> 
-                    match ParsedInput.GetRangeOfExprLeftOfDot(endOfExprPos,Some(input)) with   // TODO we say "colAtEndOfNames" everywhere, but that's not really a good name ("foo  .  $" hit Ctrl-Space at $)
+                    let input = parseResults.ParseTree
+                    match ParsedInput.GetRangeOfExprLeftOfDot(endOfExprPos,input) with   // TODO we say "colAtEndOfNames" everywhere, but that's not really a good name ("foo  .  $" hit Ctrl-Space at $)
                     | Some( exprRange) ->
                         // We have an up-to-date sync parse, and know the exact range of the prior expression.
                         // The quals all already have the same ending position, so find one with a matching starting position, if it exists.
@@ -517,7 +517,6 @@ type internal TypeCheckInfo
                         // In practice, we do get here in some weird cases like "2.0 .. 3.0" and hitting Ctrl-Space in between the two dots of the range operator.
                         // I wasn't able to track down what was happening in those weird cases, not worth worrying about, it doesn't manifest as a product bug or anything.
                         None, false
-                | _ -> None, false
 
             match bestQual with
             | Some bestQual ->
@@ -838,7 +837,7 @@ type internal TypeCheckInfo
         // Look for a "special" completion context
         let completionContext = 
             parseResultsOpt 
-            |> Option.bind (fun x -> x.ParseTree)
+            |> Option.map (fun x -> x.ParseTree)
             |> Option.bind (fun parseTree -> ParsedInput.TryGetCompletionContext(mkPos line colAtEndOfNamesAndResidue, parseTree, lineStr))
         
         let res =
@@ -997,6 +996,8 @@ type internal TypeCheckInfo
         
     member _.ParseTree = parseTree
 
+    member _.SourceText = sourceText
+
     /// Get the auto-complete items at a location
     member _.GetDeclarations (parseResultsOpt, line, lineStr, partialName, getAllEntities) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
@@ -1016,7 +1017,7 @@ type internal TypeCheckInfo
                     let getAccessibility item = FSharpSymbol.Create(cenv, item).Accessibility
                     let currentNamespaceOrModule =
                         parseResultsOpt
-                        |> Option.bind (fun x -> x.ParseTree)
+                        |> Option.map (fun x -> x.ParseTree)
                         |> Option.map (fun parsedInput -> ParsedInput.GetFullNameOfSmallestModuleOrNamespaceAtPoint(mkPos line 0, parsedInput))
                     let isAttributeApplication = ctx = Some CompletionContext.AttributeApplication
                     DeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,currentNamespaceOrModule,isAttributeApplication))
@@ -1500,7 +1501,7 @@ module internal ParseAndCheckFile =
                 else exn
             if reportErrors then
                 let report exn =
-                    for ei in DiagnosticHelpers.ReportError (options, false, mainInputFileName, fileInfo, (exn, sev), suggestNamesForErrors) do
+                    for ei in DiagnosticHelpers.ReportDiagnostic (options, false, mainInputFileName, fileInfo, (exn, sev), suggestNamesForErrors) do
                         errorsAndWarningsCollector.Add ei
                         if sev = FSharpDiagnosticSeverity.Error then
                             errorCount <- errorCount + 1
@@ -1513,7 +1514,7 @@ module internal ParseAndCheckFile =
 
         let errorLogger =
             { new ErrorLogger("ErrorHandler") with
-                member x.DiagnosticSink (exn, isError) = diagnosticSink (if isError then FSharpDiagnosticSeverity.Error else FSharpDiagnosticSeverity.Warning) exn
+                member x.DiagnosticSink (exn, severity) = diagnosticSink severity exn
                 member x.ErrorCount = errorCount }
 
         // Public members
@@ -1657,10 +1658,10 @@ module internal ParseAndCheckFile =
                 let isExe = options.IsExe
 
                 try 
-                    Some (ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe)))
+                    ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe))
                 with e ->
                     errHandler.ErrorLogger.StopProcessingRecovery e Range.range0 // don't re-raise any exceptions, we must return None.
-                    None)
+                    EmptyParsedInput(fileName, (isLastCompiland, isExe)))
 
         errHandler.CollectedDiagnostics, parseResult, errHandler.AnyErrors
 
@@ -1737,6 +1738,7 @@ module internal ParseAndCheckFile =
            tcGlobals: TcGlobals,
            tcImports: TcImports,
            tcState: TcState,
+           tcPriorImplFiles: TypedImplFile list,
            moduleNamesDict: ModuleNamesDict,
            loadClosure: LoadClosure option,
            // These are the errors and warnings seen by the background compiler for the entire antecedent 
@@ -1747,12 +1749,7 @@ module internal ParseAndCheckFile =
 
         use _logBlock = Logger.LogBlock LogCompilerFunctionId.Service_CheckOneFile
 
-        match parseResults.ParseTree with 
-        // When processing the following cases, we don't need to type-check
-        | None -> return [||], Result.Error()
-                   
-        // Run the type checker...
-        | Some parsedMainInput ->
+        let parsedMainInput = parseResults.ParseTree
 
         // Initialize the error handler 
         let errHandler = new ErrorHandler(true, mainInputFileName, tcConfig.errorSeverityOptions, sourceText, suggestNamesForErrors)
@@ -1767,8 +1764,8 @@ module internal ParseAndCheckFile =
         errHandler.ErrorSeverityOptions <- tcConfig.errorSeverityOptions
             
         // Play background errors and warnings for this file.
-        for err, sev in backgroundDiagnostics do
-            diagnosticSink (err, (sev = FSharpDiagnosticSeverity.Error))
+        for err, severity in backgroundDiagnostics do
+            diagnosticSink (err, severity)
             
         // If additional references were brought in by the preprocessor then we need to process them
         ApplyLoadClosure(tcConfig, parsedMainInput, mainInputFileName, loadClosure, tcImports, backgroundDiagnostics)
@@ -1828,12 +1825,13 @@ module internal ParseAndCheckFile =
                               projectFileName, 
                               mainInputFileName,
                               parseResults.ParseTree,
+                              parseResults.SourceText,
                               projectOptions,
                               sink.GetResolutions(), 
                               sink.GetSymbolUses(),
                               tcEnvAtEnd.NameEnv,
                               loadClosure,
-                              (implFiles |> List.choose p23),
+                              (tcPriorImplFiles @ (implFiles |> List.choose p23)),
                               sink.GetOpenDeclarations())     
                      |> Result.Ok
             | None -> 
@@ -1886,7 +1884,11 @@ type FSharpCheckFileResults
 
     /// Intellisense autocompletions
     member _.ParseTree = 
-        threadSafeOp (fun () -> None) (fun scope -> scope.ParseTree)
+        threadSafeOp (fun () -> EmptyParsedInput(filename, (false, false))) (fun scope -> scope.ParseTree)
+
+    /// Intellisense autocompletions
+    member _.SourceText = 
+        threadSafeOp (fun () -> None) (fun scope -> scope.SourceText)
 
     /// Intellisense autocompletions
     member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities) = 
@@ -2062,6 +2064,7 @@ type FSharpCheckFileResults
          isIncompleteTypeCheckEnvironment: bool, 
          builder: obj option, 
          parseTree,
+         sourceText,
          projectOptions,
          dependencyFiles, 
          creationErrors: FSharpDiagnostic[], 
@@ -2078,7 +2081,7 @@ type FSharpCheckFileResults
         let tcFileInfo = 
             TypeCheckInfo(tcConfig, tcGlobals, ccuSigForFile, thisCcu, tcImports, tcAccessRights, 
                           projectFileName, mainInputFileName,
-                          parseTree, projectOptions,
+                          parseTree, sourceText, projectOptions,
                           sResolutions, sSymbolUses, 
                           sFallback, loadClosure,
                           implFiles, openDeclarations) 
@@ -2095,6 +2098,7 @@ type FSharpCheckFileResults
          tcGlobals: TcGlobals,
          tcImports: TcImports,
          tcState: TcState,
+         tcPriorImplFiles: TypedImplFile list,
          moduleNamesDict: ModuleNamesDict,
          loadClosure: LoadClosure option,
          backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[],    
@@ -2112,7 +2116,7 @@ type FSharpCheckFileResults
             let! tcErrors, tcFileInfo = 
                 ParseAndCheckFile.CheckOneFile
                     (parseResults, sourceText, mainInputFileName, projectOptions, projectFileName, tcConfig, tcGlobals, tcImports, 
-                     tcState, moduleNamesDict, loadClosure, backgroundDiagnostics, reactorOps, 
+                     tcState, tcPriorImplFiles, moduleNamesDict, loadClosure, backgroundDiagnostics, reactorOps, 
                      userOpName, suggestNamesForErrors)
             match tcFileInfo with 
             | Result.Error ()  ->  
@@ -2257,9 +2261,9 @@ type FsiInteractiveChecker(legacyReferenceResolver,
             let suggestNamesForErrors = true // Will always be true, this is just for readability
             // Note: projectSourceFiles is only used to compute isLastCompiland, and is ignored if Build.IsScript(mainInputFileName) is true (which it is in this case).
             let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, [| filename |], true)
-            let parseErrors, parseTreeOpt, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName, suggestNamesForErrors)
+            let parseErrors, parsedInput, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName, suggestNamesForErrors)
             let dependencyFiles = [| |] // interactions have no dependencies
-            let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
+            let parseResults = FSharpParseFileResults(parseErrors, parsedInput, Some sourceText, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
             
             let backgroundDiagnostics = [| |]
             let reduceMemoryUsage = ReduceMemoryFlag.Yes
@@ -2293,10 +2297,11 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                   OriginalLoadReferences = []
                   Stamp = None
                 }
+            let tcPriorImplFiles = []
             let! tcErrors, tcFileInfo =  
                 ParseAndCheckFile.CheckOneFile
                     (parseResults, sourceText, filename, projectOptions, "project",
-                     tcConfig, tcGlobals, tcImports,  tcState, 
+                     tcConfig, tcGlobals, tcImports,  tcState, tcPriorImplFiles,
                      Map.empty, Some loadClosure, backgroundDiagnostics,
                      reactorOps, userOpName, suggestNamesForErrors)
 

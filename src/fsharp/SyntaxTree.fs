@@ -1875,3 +1875,4 @@ type ParsedInput =
         | ParsedInput.SigFile (ParsedSigFileInput (modules=SynModuleOrNamespaceSig(range=m) :: _)) -> m
         | ParsedInput.ImplFile (ParsedImplFileInput (fileName=filename))
         | ParsedInput.SigFile (ParsedSigFileInput (fileName=filename)) -> rangeN filename 0
+

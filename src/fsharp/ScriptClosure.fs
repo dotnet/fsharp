@@ -15,6 +15,7 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
@@ -27,8 +28,8 @@ open FSharp.Compiler.Text.Range
 type LoadClosureInput = 
     { FileName: string
       SyntaxTree: ParsedInput option
-      ParseDiagnostics: (PhasedDiagnostic * bool) list 
-      MetaCommandDiagnostics: (PhasedDiagnostic * bool) list }
+      ParseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list 
+      MetaCommandDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list }
 
 [<RequireQualifiedAccess>]
 type LoadClosure = 
@@ -63,15 +64,14 @@ type LoadClosure =
       NoWarns: (string * range list) list
 
       /// Diagnostics seen while processing resolutions
-      ResolutionDiagnostics: (PhasedDiagnostic * bool) list
+      ResolutionDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
       /// Diagnostics seen while parsing root of closure
-      AllRootFileDiagnostics: (PhasedDiagnostic * bool) list
+      AllRootFileDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
       /// Diagnostics seen while processing the compiler options implied root of closure
-      LoadClosureRootFileDiagnostics: (PhasedDiagnostic * bool) list
+      LoadClosureRootFileDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
     }   
-
 
 [<RequireQualifiedAccess>]
 type CodeContext =
@@ -85,7 +85,7 @@ module ScriptPreprocessClosure =
     type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: ISourceText * parseRequired: bool 
         
     /// Represents an output of the closure finding process
-    type ClosureFile = ClosureFile of string * range * ParsedInput option * (PhasedDiagnostic * bool) list * (PhasedDiagnostic * bool) list * (string * range) list // filename, range, errors, warnings, nowarns
+    type ClosureFile = ClosureFile of string * range * ParsedInput option * (PhasedDiagnostic * FSharpDiagnosticSeverity) list * (PhasedDiagnostic * FSharpDiagnosticSeverity) list * (string * range) list // filename, range, errors, warnings, nowarns
 
     type Observed() =
         let seen = System.Collections.Generic.Dictionary<_, bool>()
@@ -317,7 +317,7 @@ module ScriptPreprocessClosure =
                             result, errorLogger.Diagnostics
 
                         match parseResult with 
-                        | Some parsedScriptAst ->
+                        | parsedScriptAst ->
                             let errorLogger = CapturingErrorLogger("FindClosureMetaCommands")
                             use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
                             let pathOfMetaCommandSource = Path.GetDirectoryName filename
@@ -339,10 +339,6 @@ module ScriptPreprocessClosure =
                                 else
                                     yield ClosureFile(subFile, m, None, [], [], []) 
                             yield ClosureFile(filename, m, Some parsedScriptAst, parseDiagnostics, errorLogger.Diagnostics, noWarns)
-
-                        | None -> 
-                            printfn "yielding source %s (failed parse)" filename
-                            yield ClosureFile(filename, m, None, parseDiagnostics, [], [])
                     else 
                         // Don't traverse into .fs leafs.
                         printfn "yielding non-script source %s" filename

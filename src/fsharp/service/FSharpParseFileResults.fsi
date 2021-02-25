@@ -12,7 +12,10 @@ open FSharp.Compiler.Text
 type public FSharpParseFileResults = 
 
     /// The syntax tree resulting from the parse
-    member ParseTree: ParsedInput option
+    member ParseTree: ParsedInput
+
+    /// The source text from which the parse originated, if it wasn't read from disk
+    member SourceText: ISourceText option
 
     /// Attempts to find the range of the name of the nearest outer binding that contains a given position.
     member TryRangeOfNameOfNearestOuterBindingContainingPos: pos: pos -> range option
@@ -70,5 +73,5 @@ type public FSharpParseFileResults =
     /// Indicates if any errors occurred during the parse
     member ParseHadErrors: bool
 
-    internal new: diagnostics: FSharpDiagnostic[] * input: ParsedInput option * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
+    internal new: diagnostics: FSharpDiagnostic[] * input: ParsedInput * sourceText: ISourceText option * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
 

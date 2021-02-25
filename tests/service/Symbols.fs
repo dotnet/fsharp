@@ -270,23 +270,21 @@ module SyntaxExpressions =
                         |> getParseResults
 
         match ast with
-        | Some(ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
                     SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                         SynModuleDecl.Let(bindings = [
                             SynBinding(expr = SynExpr.Sequential(expr1 = SynExpr.Do(_, doRange) ; expr2 = SynExpr.DoBang(_, doBangRange)))
                         ])
                     ])
-                ]))) ->
+                ])) ->
             assertRange (2, 4) (3, 14) doRange
             assertRange (4, 4) (5, 18) doBangRange
         | _ ->
             failwith "Could not find SynExpr.Do"
 
 module Strings =
-    let getBindingExpressionValue (parseResults: ParsedInput option) =
-        parseResults
-        |> Option.bind (fun tree ->
-            match tree with
+    let getBindingExpressionValue (parseResults: ParsedInput) =
+            match parseResults with
             | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) ->
                 modules |> List.tryPick (fun (SynModuleOrNamespace (decls = decls)) ->
                     decls |> List.tryPick (fun decl ->
@@ -297,7 +295,7 @@ module Strings =
                                 | SynBinding.SynBinding (_,_,_,_,_,_,_,SynPat.Named _,_,e,_,_) -> Some e
                                 | _ -> None)
                         | _ -> None))
-            | _ -> None)
+            | _ -> None
 
     let getBindingConstValue parseResults =
         match getBindingExpressionValue parseResults with
@@ -400,7 +398,7 @@ type Teq<'a, 'b>
 """
 
         match parseResults with
-        | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r) ]))) ->
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r) ])) ->
             assertRange (1, 0) (4, 8) r
         | _ -> failwith "Could not get valid AST"
         
@@ -419,9 +417,9 @@ let x = 42
 """
 
         match parseResults with
-        | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = [
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [
             SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r1)
-            SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r2) ]))) ->
+            SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r2) ])) ->
             assertRange (1, 0) (4, 20) r1
             assertRange (6, 0) (8, 10) r2
         | _ -> failwith "Could not get valid AST"        

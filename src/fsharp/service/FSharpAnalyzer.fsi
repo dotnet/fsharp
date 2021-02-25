@@ -16,34 +16,44 @@ open FSharp.Compiler.Text
 
 type FSharpAnalyzerTextChange = Range * string
 
-/// The context for an analyzer when a file is checked
+/// The context for an analyzer when one or more files are checked
 [<Sealed>]
-type public FSharpAnalyzerCheckFileContext = 
+type public FSharpAnalyzerCheckFilesContext = 
 
-    internal new: sourceTexts: (string * ISourceText)[] * checkResults: FSharpCheckFileResults * cancellationToken: CancellationToken * tcConfig: TcConfig -> FSharpAnalyzerCheckFileContext
+    internal new: checkResults: FSharpCheckFileResults[] * cancellationToken: CancellationToken -> FSharpAnalyzerCheckFilesContext
 
     member CancellationToken: CancellationToken 
 
-    member GetFileSource: fileName: string -> ISourceText
+    //member GetFileSource: fileName: string -> ISourceText
+    // Currently this is the file source of the actual last file checked, which is the last in
+    // the PartialAssemblyContents
+    // member FileSource: ISourceText
 
-    member CheckerModel: FSharpCheckFileResults
+    /// This contains handles to models resulting from checking each of the files.
+    /// There is always at least one file, and in an incremental editing environment
+    /// there will only be one file.  
+    member CheckerModel: FSharpCheckFileResults[]
 
 /// The context for an analyzer when a project is checked
 [<Sealed>]
 type public FSharpAnalyzerCheckProjectContext = 
 
-    internal new: sourceTexts: (string * ISourceText)[] * checkResults: FSharpCheckProjectResults * cancellationToken: CancellationToken * tcConfig: TcConfig -> FSharpAnalyzerCheckProjectContext
+    internal new: checkResults: FSharpCheckProjectResults * cancellationToken: CancellationToken -> FSharpAnalyzerCheckProjectContext
 
     member CancellationToken: CancellationToken 
 
-    member GetFileSource: fileName: string -> ISourceText
+    //member FileSource: ISourceText
+    //member GetFileSource: fileName: string -> ISourceText
 
     member CheckerModel: FSharpCheckProjectResults
 
 /// The context for an analyzer. Currently empty.
 [<Sealed>]
 type public FSharpAnalysisContext =
-    class end
+    
+    /// Indicates the analyzer is running in a context where tooltips and other editor services may be requested
+    member EditorServicesRequested: bool
+
 
 /// Represents an analyzer. Inherit from this class to create an analyzer.
 [<AbstractClass>]
@@ -55,24 +65,24 @@ type public FSharpAnalyzer =
     
     abstract RequiresAssemblyContents: bool
 
-    abstract OnCheckFile: FSharpAnalyzerCheckFileContext -> FSharpDiagnostic[]
+    /// Called when one or more files are checked incrementally
+    abstract OnCheckFiles: FSharpAnalyzerCheckFilesContext -> FSharpDiagnostic[]
 
     abstract OnCheckProject: FSharpAnalyzerCheckProjectContext -> FSharpDiagnostic[]
 
-    abstract TryAdditionalToolTip: FSharpAnalyzerCheckFileContext * position: Position -> TaggedText[] option
+    abstract TryAdditionalToolTip: FSharpAnalyzerCheckFilesContext * position: Position -> TaggedText[] option
 
-    abstract TryCodeFix: FSharpAnalyzerCheckFileContext * diagnostics: FSharpDiagnostic[] -> FSharpAnalyzerTextChange[] option
+    abstract TryCodeFix: FSharpAnalyzerCheckFilesContext * diagnostics: FSharpDiagnostic[] -> FSharpAnalyzerTextChange[] option
 
     abstract FixableDiagnosticIds: string[]
 
     default RequiresAssemblyContents: bool
-    default OnCheckFile: FSharpAnalyzerCheckFileContext -> FSharpDiagnostic[]
+    default OnCheckFiles: FSharpAnalyzerCheckFilesContext -> FSharpDiagnostic[]
     default OnCheckProject: FSharpAnalyzerCheckProjectContext -> FSharpDiagnostic[]
-    default TryAdditionalToolTip: FSharpAnalyzerCheckFileContext * position: Position -> TaggedText[] option
-    default TryCodeFix: FSharpAnalyzerCheckFileContext * diagnostics: FSharpDiagnostic[] -> FSharpAnalyzerTextChange[] option
+    default TryAdditionalToolTip: FSharpAnalyzerCheckFilesContext * position: Position -> TaggedText[] option
+    default TryCodeFix: FSharpAnalyzerCheckFilesContext * diagnostics: FSharpDiagnostic[] -> FSharpAnalyzerTextChange[] option
     default FixableDiagnosticIds: string[]
 
 module internal FSharpAnalyzers =
-    val CreateAnalyzers: analyzerPath: string * m: range -> FSharpAnalyzer list
-    val ImportAnalyzers: tcConfig: TcConfig -> FSharpAnalyzer list
+    val ImportAnalyzers: tcConfig: TcConfig * compilerToolPaths: (range * string) list -> FSharpAnalyzer list
     val RunAnalyzers: analyzers: FSharpAnalyzer list * tcConfig: TcConfig * tcImports: TcImports * tcGlobals: TcGlobals * tcCcu: CcuThunk * sourceFiles: string list * tcFileResults: (ParsedInput * TypedImplFile option * ModuleOrNamespaceType) list * tcEnvAtEnd: TcEnv -> unit

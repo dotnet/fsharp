@@ -145,7 +145,12 @@ module internal RoslynHelpers =
         let id = error.ErrorNumberText
         let emptyString = LocalizableString.op_Implicit("")
         let description = LocalizableString.op_Implicit(normalizedMessage)
-        let severity = if error.Severity = FSharpDiagnosticSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
+        let severity = 
+           match error.Severity with
+           | FSharpDiagnosticSeverity.Error -> DiagnosticSeverity.Error 
+           | FSharpDiagnosticSeverity.Warning -> DiagnosticSeverity.Warning
+           | FSharpDiagnosticSeverity.Info -> DiagnosticSeverity.Info
+           | FSharpDiagnosticSeverity.Hidden -> DiagnosticSeverity.Hidden
         let customTags = 
             match error.ErrorNumber with
             | 1182 -> FSharpDiagnosticCustomTags.Unnecessary

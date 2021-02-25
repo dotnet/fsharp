@@ -774,11 +774,14 @@ type TcConfigBuilder =
 
     member tcConfigB.AddCompilerToolsByPath (m, path) = 
         if FileSystem.IsInvalidPathShim path then
-            warning(Error(FSComp.SR.buildInvalidAssemblyName(path), m))
+            warning(Error(FSComp.SR.etCompilerToolPathDidntExist(path), m))
         // TODO: check this is the right place to resolve paths
-        let rootedPath = if Path.IsPathRooted(path) then path else Path.Combine(tcConfigB.implicitIncludeDir, path)
-        if not (tcConfigB.compilerToolPaths  |> List.exists (fun (_m, text) -> rootedPath = text)) then
-            tcConfigB.compilerToolPaths <- tcConfigB.compilerToolPaths ++ (m, rootedPath)
+        else
+         let rootedPath = if Path.IsPathRooted(path) then path else Path.Combine(tcConfigB.implicitIncludeDir, path)
+         if not (Directory.Exists rootedPath) then
+           warning(Error(FSComp.SR.etCompilerToolPathDidntExist(rootedPath), m))
+         elif not (tcConfigB.compilerToolPaths  |> List.exists (fun (_m, text) -> rootedPath = text)) then
+             tcConfigB.compilerToolPaths <- tcConfigB.compilerToolPaths ++ (m, rootedPath)
 
     member tcConfigB.AddReferencedAssemblyByPath (m, path) = 
         if FileSystem.IsInvalidPathShim path then

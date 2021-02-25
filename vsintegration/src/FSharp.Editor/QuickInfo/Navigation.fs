@@ -70,8 +70,7 @@ type internal QuickInfoNavigation
 
     member _.NavigateToUri (uri: System.Uri) =
         asyncMaybe {
-            let componentModel = ServiceProvider.GlobalProvider.GetService<SComponentModel, IComponentModel>()
-            let navigationService = componentModel.GetService<IVsWebBrowsingService>()
+            let navigationService = ServiceProvider.GlobalProvider.GetService<SVsWebBrowsingService, IVsWebBrowsingService>()
             if navigationService <> null then
                 let _hr, _ppFrame = navigationService.Navigate(uri.ToString(), 0u)
 

@@ -1355,19 +1355,19 @@ FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Boolean RequiresAssemblyContents
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Boolean get_RequiresAssemblyContents()
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: FSharp.Compiler.CodeAnalysis.FSharpAnalysisContext Context
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: FSharp.Compiler.CodeAnalysis.FSharpAnalysisContext get_Context()
-FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] OnCheckFile(FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext)
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] OnCheckFiles(FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext)
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] OnCheckProject(FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext)
-FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.TaggedText[]] TryAdditionalToolTip(FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext, FSharp.Compiler.Text.Position)
-FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,System.String][]] TryCodeFix(FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext, FSharp.Compiler.Diagnostics.FSharpDiagnostic[])
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.TaggedText[]] TryAdditionalToolTip(FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext, FSharp.Compiler.Text.Position)
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,System.String][]] TryCodeFix(FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext, FSharp.Compiler.Diagnostics.FSharpDiagnostic[])
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: System.String[] FixableDiagnosticIds
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: System.String[] get_FixableDiagnosticIds()
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Void .ctor(FSharp.Compiler.CodeAnalysis.FSharpAnalysisContext)
-FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext
-FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults CheckerModel
-FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults get_CheckerModel()
-FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext: FSharp.Compiler.Text.ISourceText GetFileSource(System.String)
-FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext: System.Threading.CancellationToken CancellationToken
-FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFileContext: System.Threading.CancellationToken get_CancellationToken()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults CheckerModel
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults get_CheckerModel()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext: FSharp.Compiler.Text.ISourceText GetFileSource(System.String)
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext: System.Threading.CancellationToken CancellationToken
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext: System.Threading.CancellationToken get_CancellationToken()
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext: FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults CheckerModel
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext: FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults get_CheckerModel()

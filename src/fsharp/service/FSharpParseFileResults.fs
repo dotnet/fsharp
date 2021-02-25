@@ -75,13 +75,15 @@ type CompletionContext =
 //----------------------------------------------------------------------------
 
 [<Sealed>]
-type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput option, parseHadErrors: bool, dependencyFiles: string[]) = 
+type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput, sourceText: ISourceText option, parseHadErrors: bool, dependencyFiles: string[]) = 
 
     member _.Diagnostics = diagnostics
 
     member _.ParseHadErrors = parseHadErrors
 
     member _.ParseTree = input
+
+    member _.SourceText = sourceText
 
     member scope.TryRangeOfNameOfNearestOuterBindingContainingPos pos =
         let tryGetIdentRangeFromBinding binding =
@@ -121,24 +123,21 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
             | _ ->
                 Some workingRange
 
-        match scope.ParseTree with
-        | Some input ->
-            SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
-                member _.VisitExpr(_, _, defaultTraverse, expr) =                        
-                    defaultTraverse expr
+        let input = scope.ParseTree
+        SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
+            member _.VisitExpr(_, _, defaultTraverse, expr) =                        
+                defaultTraverse expr
 
-                override _.VisitBinding(_path, defaultTraverse, binding) =
-                    match binding with
-                    | SynBinding(_, _, _, _, _, _, _, _, _, expr, _range, _) as b when rangeContainsPos b.RangeOfBindingWithRhs pos ->
-                        match tryGetIdentRangeFromBinding b with
-                        | Some range -> walkBinding expr range
-                        | None -> None
-                    | _ -> defaultTraverse binding })
-        | None -> None
+            override _.VisitBinding(_path, defaultTraverse, binding) =
+                match binding with
+                | SynBinding(_, _, _, _, _, _, _, _, _, expr, _range, _) as b when rangeContainsPos b.RangeOfBindingWithRhs pos ->
+                    match tryGetIdentRangeFromBinding b with
+                    | Some range -> walkBinding expr range
+                    | None -> None
+                | _ -> defaultTraverse binding })
     
     member scope.TryIdentOfPipelineContainingPosAndNumArgsApplied pos =
-        match scope.ParseTree with
-        | Some input ->
+            let input = scope.ParseTree
             SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(_, _, defaultTraverse, expr) =
                     match expr with
@@ -157,11 +156,9 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
                                 None
                     | _ -> defaultTraverse expr
             })
-        | None -> None
     
     member scope.IsPosContainedInApplication pos =
-        match scope.ParseTree with
-        | Some input ->
+            let input = scope.ParseTree
             let result =
                 SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
                     member _.VisitExpr(_, traverseSynExpr, defaultTraverse, expr) =
@@ -173,7 +170,6 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
                         | _ -> defaultTraverse expr
                 })
             result.IsSome
-        | None -> false
 
     member scope.TryRangeOfFunctionOrMethodBeingApplied pos =
         let rec getIdentRangeForFuncExprInApp traverseSynExpr expr pos =
@@ -275,22 +271,19 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
                 traverseSynExpr expr
                 |> Option.map (fun expr -> expr)
 
-        match scope.ParseTree with
-        | Some input ->
-            SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
-                member _.VisitExpr(_, traverseSynExpr, defaultTraverse, expr) =
-                    match expr with
-                    | SynExpr.App (_, _, _funcExpr, _, range) as app when rangeContainsPos range pos ->
-                        getIdentRangeForFuncExprInApp traverseSynExpr app pos
-                    | _ -> defaultTraverse expr
-            })
-        | None -> None
+        let input = scope.ParseTree
+        SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
+            member _.VisitExpr(_, traverseSynExpr, defaultTraverse, expr) =
+                match expr with
+                | SynExpr.App (_, _, _funcExpr, _, range) as app when rangeContainsPos range pos ->
+                    getIdentRangeForFuncExprInApp traverseSynExpr app pos
+                | _ -> defaultTraverse expr
+        })
 
 
     member scope.GetAllArgumentsForFunctionApplicationAtPostion pos =
-        match input with
-        | Some input -> SynExprAppLocationsImpl.getAllCurriedArgsAtPosition pos input
-        | None -> None
+        let input = scope.ParseTree
+        SynExprAppLocationsImpl.getAllCurriedArgsAtPosition pos input
 
     member scope.TryRangeOfParenEnclosingOpEqualsGreaterUsage opGreaterEqualPos =
         let (|Ident|_|) ofName =
@@ -301,102 +294,87 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
                         Some (actualParamListExpr, actualLambdaBodyExpr)
                    | _ -> None
 
-        match scope.ParseTree with
-        | Some parseTree ->
-            SyntaxTraversal.Traverse(opGreaterEqualPos, parseTree, { new SyntaxVisitorBase<_>() with
-                member _.VisitExpr(_, _, defaultTraverse, expr) =
-                    match expr with
-                    | SynExpr.Paren((InfixAppOfOpEqualsGreater(lambdaArgs, lambdaBody) as app), _, _, _) ->
-                        Some (app.Range, lambdaArgs.Range, lambdaBody.Range)
-                    | _ -> defaultTraverse expr
+        let parseTree = scope.ParseTree
+        SyntaxTraversal.Traverse(opGreaterEqualPos, parseTree, { new SyntaxVisitorBase<_>() with
+            member _.VisitExpr(_, _, defaultTraverse, expr) =
+                match expr with
+                | SynExpr.Paren((InfixAppOfOpEqualsGreater(lambdaArgs, lambdaBody) as app), _, _, _) ->
+                    Some (app.Range, lambdaArgs.Range, lambdaBody.Range)
+                | _ -> defaultTraverse expr
 
-                member _.VisitBinding(_path, defaultTraverse, binding) =
-                    match binding with
-                    | SynBinding(_, SynBindingKind.Normal, _, _, _, _, _, _, _, (InfixAppOfOpEqualsGreater(lambdaArgs, lambdaBody) as app), _, _) ->
-                        Some(app.Range, lambdaArgs.Range, lambdaBody.Range)
-                    | _ -> defaultTraverse binding })
-        | None -> None
+            member _.VisitBinding(_path, defaultTraverse, binding) =
+                match binding with
+                | SynBinding(_, SynBindingKind.Normal, _, _, _, _, _, _, _, (InfixAppOfOpEqualsGreater(lambdaArgs, lambdaBody) as app), _, _) ->
+                    Some(app.Range, lambdaArgs.Range, lambdaBody.Range)
+                | _ -> defaultTraverse binding })
     
     member scope.TryRangeOfExprInYieldOrReturn pos =
-        match scope.ParseTree with
-        | Some parseTree ->
-            SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxVisitorBase<_>() with 
-                member _.VisitExpr(_path, _, defaultTraverse, expr) =
-                    match expr with
-                    | SynExpr.YieldOrReturn(_, expr, range)
-                    | SynExpr.YieldOrReturnFrom(_, expr, range) when rangeContainsPos range pos ->
-                        Some expr.Range
-                    | _ -> defaultTraverse expr })
-        | None -> None
+        let parseTree = scope.ParseTree
+        SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxVisitorBase<_>() with 
+            member _.VisitExpr(_path, _, defaultTraverse, expr) =
+                match expr with
+                | SynExpr.YieldOrReturn(_, expr, range)
+                | SynExpr.YieldOrReturnFrom(_, expr, range) when rangeContainsPos range pos ->
+                    Some expr.Range
+                | _ -> defaultTraverse expr })
 
     member scope.TryRangeOfRecordExpressionContainingPos pos =
-        match input with
-        | Some input ->
+        let input = scope.ParseTree
+        SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with 
+            member _.VisitExpr(_, _, defaultTraverse, expr) =
+                match expr with
+                | SynExpr.Record(_, _, _, range) when rangeContainsPos range pos ->
+                    Some range
+                | _ -> defaultTraverse expr })
+
+    member scope.TryRangeOfRefCellDereferenceContainingPos expressionPos =
+        let input = scope.ParseTree
+        SyntaxTraversal.Traverse(expressionPos, input, { new SyntaxVisitorBase<_>() with 
+            member _.VisitExpr(_, _, defaultTraverse, expr) =
+                match expr with
+                | SynExpr.App(_, false, SynExpr.Ident funcIdent, expr, _) ->
+                    if funcIdent.idText = "op_Dereference" && rangeContainsPos expr.Range expressionPos then
+                        Some funcIdent.idRange
+                    else
+                        None
+                | _ -> defaultTraverse expr })
+
+    member scope.FindParameterLocations pos = 
+        let input = scope.ParseTree
+        ParameterLocations.Find(pos, input)
+        
+    member scope.IsPositionContainedInACurriedParameter pos =
+        let input = scope.ParseTree
+        let result =
             SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with 
-                member _.VisitExpr(_, _, defaultTraverse, expr) =
-                    match expr with
-                    | SynExpr.Record(_, _, _, range) when rangeContainsPos range pos ->
-                        Some range
-                    | _ -> defaultTraverse expr })
-        | None ->
-            None
+                member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+                    defaultTraverse(expr)
 
-    member _.TryRangeOfRefCellDereferenceContainingPos expressionPos =
-        match input with
-        | Some input ->
-            SyntaxTraversal.Traverse(expressionPos, input, { new SyntaxVisitorBase<_>() with 
-                member _.VisitExpr(_, _, defaultTraverse, expr) =
-                    match expr with
-                    | SynExpr.App(_, false, SynExpr.Ident funcIdent, expr, _) ->
-                        if funcIdent.idText = "op_Dereference" && rangeContainsPos expr.Range expressionPos then
-                            Some funcIdent.idRange
-                        else
-                            None
-                    | _ -> defaultTraverse expr })
-        | None ->
-            None
-
-    member _.FindParameterLocations pos = 
-        match input with
-        | Some input -> ParameterLocations.Find(pos, input)
-        | _ -> None
-
-    member _.IsPositionContainedInACurriedParameter pos =
-        match input with
-        | Some input ->
-            let result =
-                SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with 
-                    member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
-                        defaultTraverse(expr)
-
-                    override _.VisitBinding (_path, _, binding) =
-                        match binding with
-                        | SynBinding(_, _, _, _, _, _, valData, _, _, _, range, _) when rangeContainsPos range pos ->
-                            let info = valData.SynValInfo.CurriedArgInfos
-                            let mutable found = false
-                            for group in info do
-                                for arg in group do
-                                    match arg.Ident with
-                                    | Some ident when rangeContainsPos ident.idRange pos ->
-                                        found <- true
-                                    | _ -> ()
-                            if found then Some range else None
-                        | _ ->
-                            None
-                })
-            result.IsSome
-        | _ -> false
+                override _.VisitBinding (_path, _, binding) =
+                    match binding with
+                    | SynBinding(_, _, _, _, _, _, valData, _, _, _, range, _) when rangeContainsPos range pos ->
+                        let info = valData.SynValInfo.CurriedArgInfos
+                        let mutable found = false
+                        for group in info do
+                            for arg in group do
+                                match arg.Ident with
+                                | Some ident when rangeContainsPos ident.idRange pos ->
+                                    found <- true
+                                | _ -> ()
+                        if found then Some range else None
+                    | _ ->
+                        None
+            })
+        result.IsSome
     
     /// Get declared items and the selected item at the specified location
     member _.GetNavigationItemsImpl() =
        ErrorScope.Protect range0 
             (fun () -> 
                 match input with
-                | Some (ParsedInput.ImplFile _ as p) ->
+                | ParsedInput.ImplFile _ as p ->
                     Navigation.getNavigation p
-                | Some (ParsedInput.SigFile _) ->
-                    Navigation.empty
-                | _ -> 
+                | ParsedInput.SigFile _ ->
                     Navigation.empty)
             (fun err -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetNavigationItemsImpl: '%s'" err)
@@ -685,7 +663,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
             let walkImplFile (modules: SynModuleOrNamespace list) = List.collect walkModule modules
                      
             match input with
-            | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = modules))) -> walkImplFile modules 
+            | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) -> walkImplFile modules 
             | _ -> []
  
         ErrorScope.Protect range0 
@@ -719,9 +697,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput 
 
     member _.FileName =
       match input with
-      | Some (ParsedInput.ImplFile (ParsedImplFileInput (fileName = modname))) 
-      | Some (ParsedInput.SigFile (ParsedSigFileInput (fileName = modname))) -> modname
-      | _ -> ""
+      | ParsedInput.ImplFile (ParsedImplFileInput (fileName = modname))
+      | ParsedInput.SigFile (ParsedSigFileInput (fileName = modname)) -> modname
     
     // Get items for the navigation drop down bar       
     member scope.GetNavigationItems() =

@@ -25,6 +25,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
+open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -405,13 +406,13 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             | Some res -> return res
             | None ->
                 foregroundParseCount <- foregroundParseCount + 1
-                let parseDiags, parseTreeOpt, anyErrors = ParseAndCheckFile.parseFile(sourceText, filename, options, userOpName, suggestNamesForErrors)
-                let res = FSharpParseFileResults(parseDiags, parseTreeOpt, anyErrors, options.SourceFiles)
+                let parseDiags, parseTree, anyErrors = ParseAndCheckFile.parseFile(sourceText, filename, options, userOpName, suggestNamesForErrors)
+                let res = FSharpParseFileResults(parseDiags, parseTree, Some sourceText, anyErrors, options.SourceFiles)
                 parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (filename, hash, options), res))
                 return res
           else
-            let parseDiags, parseTreeOpt, anyErrors = ParseAndCheckFile.parseFile(sourceText, filename, options, userOpName, false)
-            return FSharpParseFileResults(parseDiags, parseTreeOpt, anyErrors, options.SourceFiles)
+            let parseDiags, parseTree, anyErrors = ParseAndCheckFile.parseFile(sourceText, filename, options, userOpName, false)
+            return FSharpParseFileResults(parseDiags, parseTree, Some sourceText, anyErrors, options.SourceFiles)
         }
 
     /// Fetch the parse information from the background compiler (which checks w.r.t. the FileSystem API)
@@ -428,11 +429,11 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         async {
             let! builderOpt, creationDiags = getBuilder options
             match builderOpt with
-            | None -> return FSharpParseFileResults(creationDiags, None, true, [| |])
+            | None -> return FSharpParseFileResults(creationDiags, EmptyParsedInput(filename, (false, false)), None, true, [| |])
             | Some builder -> 
-                let parseTreeOpt,_,_,parseDiags = builder.GetParseResultsForFile (filename)
+                let parseTree,_,_,parseDiags = builder.GetParseResultsForFile (filename)
                 let diagnostics = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (builder.TcConfig.errorSeverityOptions, false, filename, parseDiags, suggestNamesForErrors) |]
-                return FSharpParseFileResults(diagnostics = diagnostics, input = parseTreeOpt, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
+                return FSharpParseFileResults(diagnostics = diagnostics, input = parseTree, sourceText=None, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
         }
 
     member _.GetCachedCheckFileResult(builder: IncrementalBuilder, filename, sourceText: ISourceText, options) =
@@ -471,14 +472,9 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
          options: FSharpProjectOptions,
          fileVersion: int,
          builder: IncrementalBuilder,
-         tcConfig,
-         tcGlobals,
-         tcImports,
-         tcDependencyFiles,
-         timeStamp,
-         prevTcState,
-         prevModuleNamesDict,
-         prevTcErrors,
+         tcPrior: PartialCheckResults,
+         tcInfo: TcInfo,
+         tcInfoOptionalExtras: TcInfoExtras option,
          creationDiags: FSharpDiagnostic[],
          userOpName: string) = 
     
@@ -498,6 +494,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                 // Get additional script #load closure information if applicable.
                                 // For scripts, this will have been recorded by GetProjectOptionsFromScript.
                                 let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
+                                let tcConfig = tcPrior.TcConfig
+                                let tcPriorImplFiles = (tcInfoOptionalExtras |> Option.map (fun i -> i.TcImplFiles) |> Option.defaultValue [])
                                 let! checkAnswer = 
                                     FSharpCheckFileResults.CheckOneFile
                                         (parseResults,
@@ -505,25 +503,26 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                             fileName,
                                             options.ProjectFileName, 
                                             tcConfig,
-                                            tcGlobals,
-                                            tcImports, 
-                                            prevTcState,
-                                            prevModuleNamesDict,
+                                            tcPrior.TcGlobals,
+                                            tcPrior.TcImports, 
+                                            tcInfo.tcState,
+                                            tcPriorImplFiles,
+                                            tcInfo.moduleNamesDict,
                                             loadClosure,
-                                            prevTcErrors,
+                                            tcInfo.TcErrors,
                                             reactorOps, 
                                             userOpName,
                                             options.IsIncompleteTypeCheckEnvironment, 
                                             box builder, 
                                             options, 
-                                            Array.ofList tcDependencyFiles, 
+                                            Array.ofList tcInfo.tcDependencyFiles, 
                                             creationDiags, 
                                             parseResults.Diagnostics, 
                                             builder.KeepAssemblyContents,
                                             suggestNamesForErrors)
                                 let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
                                 reactor.SetPreferredUILang tcConfig.preferredUiLang
-                                bc.RecordCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, timeStamp, Some checkAnswer, sourceText.GetHashCode()) 
+                                bc.RecordCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, sourceText.GetHashCode()) 
                                 return checkAnswer
                             finally
                                 let dummy = ref ()
@@ -572,13 +571,13 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             return
                                 tcPrior
                                 |> Option.map (fun tcPrior ->
-                                    (tcPrior, tcPrior.TcInfo ctok)
+                                    (tcPrior, tcPrior.ComputeTcInfoWithOptionalExtras ctok)
                                 )
                           }
                             
                     match tcPrior with
-                    | Some(tcPrior, tcInfo) -> 
-                        let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior.TcConfig, tcPrior.TcGlobals, tcPrior.TcImports, tcInfo.tcDependencyFiles, tcPrior.TimeStamp, tcInfo.tcState, tcInfo.moduleNamesDict, tcInfo.TcErrors, creationDiags, userOpName)
+                    | Some(tcPrior, (tcInfo, tcInfoOptionalExtras)) -> 
+                        let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, tcInfoOptionalExtras, creationDiags, userOpName)
                         return Some checkResults
                     | None -> return None  // the incremental builder was not up to date
             finally 
@@ -611,13 +610,13 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
                     | _ ->
                         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CheckFileInProject.CacheMiss", filename)
-                        let! tcPrior, tcInfo =
+                        let! tcPrior, (tcInfo, tcInfoOptionalExtras) =
                             execWithReactorAsync <| fun ctok -> 
                                 cancellable {
                                     let! tcPrior = builder.GetCheckResultsBeforeFileInProject (ctok, filename)
-                                    return (tcPrior, tcPrior.TcInfo ctok)
+                                    return (tcPrior, tcPrior.ComputeTcInfoWithOptionalExtras ctok)
                                 }
-                        let! checkAnswer = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior.TcConfig, tcPrior.TcGlobals, tcPrior.TcImports, tcInfo.tcDependencyFiles, tcPrior.TimeStamp, tcInfo.tcState, tcInfo.moduleNamesDict, tcInfo.TcErrors, creationDiags, userOpName)
+                        let! checkAnswer = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, tcInfoOptionalExtras, creationDiags, userOpName)
                         return checkAnswer
             finally 
                 bc.ImplicitlyStartCheckProjectInBackground(options, userOpName)
@@ -647,7 +646,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 | None -> 
                     Logger.LogBlockMessageStop (filename + strGuid + "-Failed_Aborted") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
 
-                    let parseResults = FSharpParseFileResults(creationDiags, None, true, [| |])
+                    let parseTree = EmptyParsedInput(filename, (false, false))
+                    let parseResults = FSharpParseFileResults(creationDiags, parseTree, Some sourceText , true, [| |])
                     return (parseResults, FSharpCheckFileAnswer.Aborted)
 
                 | Some builder -> 
@@ -661,19 +661,19 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     | _ ->
                         // todo this blocks the Reactor queue until all files up to the current are type checked. It's OK while editing the file,
                         // but results with non cooperative blocking when a firts file from a project opened.
-                        let! tcPrior, tcInfo =
+                        let! tcPrior, (tcInfo, tcInfoOptionalExtras) =
                             execWithReactorAsync <| fun ctok -> 
                                 cancellable {
                                     let! tcPrior = builder.GetCheckResultsBeforeFileInProject (ctok, filename)
-                                    return (tcPrior, tcPrior.TcInfo ctok)
+                                    return (tcPrior, tcPrior.ComputeTcInfoWithOptionalExtras ctok)
                                 } 
                     
                         // Do the parsing.
                         let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList (builder.SourceFiles), options.UseScriptResolutionRules)
                         reactor.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
-                        let parseDiags, parseTreeOpt, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName, suggestNamesForErrors)
-                        let parseResults = FSharpParseFileResults(parseDiags, parseTreeOpt, anyErrors, builder.AllDependenciesDeprecated)
-                        let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior.TcConfig, tcPrior.TcGlobals, tcPrior.TcImports, tcInfo.tcDependencyFiles, tcPrior.TimeStamp, tcInfo.tcState, tcInfo.moduleNamesDict, tcInfo.TcErrors, creationDiags, userOpName)
+                        let parseDiags, parseTree, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName, suggestNamesForErrors)
+                        let parseResults = FSharpParseFileResults(parseDiags, parseTree, Some sourceText, anyErrors, builder.AllDependenciesDeprecated)
+                        let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, tcInfoOptionalExtras, creationDiags, userOpName)
 
                         Logger.LogBlockMessageStop (filename + strGuid + "-Successful") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
 
@@ -682,7 +682,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 bc.ImplicitlyStartCheckProjectInBackground(options, userOpName)
         }
 
-    member bc.AnalyzeFileInProject(parseResults: FSharpParseFileResults, checkResults: FSharpCheckFileResults, sourceText: ISourceText, options, userOpName) =
+    member bc.AnalyzeFileInProject(parseResults: FSharpParseFileResults, checkResults: FSharpCheckFileResults, options, userOpName) =
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "AnalyzeFileInProject", parseResults.FileName, action)
         async {
             let! analysisDiags = execWithReactorAsync (fun ctok -> 
@@ -693,21 +693,17 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     | Some builder ->
                         let fileName = Path.GetFullPath parseResults.FileName
                         let! ct = Cancellable.token()
-                        let ctxt = 
-                            FSharpAnalyzerCheckFileContext([| (fileName, sourceText) |], 
-                                checkResults,
-                                ct,
-                                builder.TcConfig)
+                        let ctxt = FSharpAnalyzerCheckFilesContext([| checkResults |], ct)
 
                         let diags = 
                             let diagsCollector = ResizeArray()
                             for analyzer in builder.Analyzers do
                                 let moreDiags = 
-                                    try analyzer.OnCheckFile(ctxt)
+                                    try analyzer.OnCheckFiles(ctxt)
                                     with exn -> 
                                         let m = Range.rangeN fileName 0
                                         let errExn = Error(FSComp.SR.etAnalyzerException(analyzer.GetType().FullName, fileName, exn.ToString()), m)
-                                        let diag = FSharpDiagnostic.CreateFromException(PhasedDiagnostic.Create(errExn, BuildPhase.TypeCheck), false, m, false)
+                                        let diag = FSharpDiagnostic.CreateFromException(PhasedDiagnostic.Create(errExn, BuildPhase.TypeCheck), FSharpDiagnosticSeverity.Warning, m, false)
                                         [| diag |]
                                 diagsCollector.AddRange(moreDiags)
                             diagsCollector.ToArray()
@@ -716,8 +712,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             return analysisDiags
         }
 
-    member bc.GetAdditionalAnalyzerToolTips(parseResults: FSharpParseFileResults, checkResults: FSharpCheckFileResults, sourceText: ISourceText, options, pos: Position, userOpName) =
-        let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "AnalyzeFileInProject", parseResults.FileName, action)
+    member bc.GetAdditionalAnalyzerToolTips(parseResults: FSharpParseFileResults, checkResults: FSharpCheckFileResults, options, pos: Position, userOpName) =
+        let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "GetAdditionalAnalyzerToolTips", parseResults.FileName, action)
         async {
             let! analysisDiags = execWithReactorAsync (fun ctok -> 
                 cancellable {
@@ -727,11 +723,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     | Some builder ->
                         let fileName = Path.GetFullPath parseResults.FileName
                         let! ct = Cancellable.token()
-                        let ctxt = 
-                            FSharpAnalyzerCheckFileContext([| (fileName, sourceText) |], 
-                                checkResults,
-                                ct,
-                                builder.TcConfig)
+                        let ctxt = FSharpAnalyzerCheckFilesContext([| checkResults |], ct)
 
                         let tooltips = 
                             let tooltipsCollector = ResizeArray()
@@ -757,28 +749,29 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             let! builderOpt, creationDiags = getOrCreateBuilder (ctok, options, userOpName)
             match builderOpt with
             | None ->
-                let parseResults = FSharpParseFileResults(creationDiags, None, true, [| |])
+                let parseTree = EmptyParsedInput(filename, (false, false))
+                let parseResults = FSharpParseFileResults(creationDiags, parseTree, None, true, [| |])
                 let typedResults = FSharpCheckFileResults.MakeEmpty(filename, creationDiags, true)
                 return (parseResults, typedResults)
             | Some builder -> 
-                let (parseTreeOpt, _, _, parseDiags) = builder.GetParseResultsForFile (filename)
+                let (parseTree, _, _, parseDiags) = builder.GetParseResultsForFile (filename)
                 let! tcProj = builder.GetFullCheckResultsAfterFileInProject (ctok, filename)
 
-                let tcInfo, tcInfoOptional = tcProj.TcInfoWithOptional ctok
+                let tcInfo, tcInfoExtras = tcProj.ComputeTcInfoWithExtras ctok
 
-                let tcResolutionsRev = tcInfoOptional.tcResolutionsRev
-                let tcSymbolUsesRev = tcInfoOptional.tcSymbolUsesRev
-                let tcOpenDeclarationsRev = tcInfoOptional.tcOpenDeclarationsRev
+                let tcResolutionsRev = tcInfoExtras.tcResolutionsRev
+                let tcSymbolUsesRev = tcInfoExtras.tcSymbolUsesRev
+                let tcOpenDeclarationsRev = tcInfoExtras.tcOpenDeclarationsRev
                 let latestCcuSigForFile = tcInfo.latestCcuSigForFile
                 let tcState = tcInfo.tcState
                 let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
-                let tcImplFiles = tcInfoOptional.tcImplFilesRev |> List.rev
+                let tcImplFiles = tcInfoExtras.tcImplFilesRev |> List.rev
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
                 let tcErrors = tcInfo.TcErrors
                 let errorOptions = builder.TcConfig.errorSeverityOptions
                 let parseDiags = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (errorOptions, false, filename, parseDiags, suggestNamesForErrors) |]
                 let tcErrors = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (errorOptions, false, filename, tcErrors, suggestNamesForErrors) |]
-                let parseResults = FSharpParseFileResults(diagnostics = parseDiags, input = parseTreeOpt, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
+                let parseResults = FSharpParseFileResults(diagnostics=parseDiags, input=parseTree, sourceText=None, parseHadErrors=false, dependencyFiles=builder.AllDependenciesDeprecated)
                 let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
                 let typedResults = 
                     FSharpCheckFileResults.Make
@@ -788,7 +781,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             tcProj.TcGlobals, 
                             options.IsIncompleteTypeCheckEnvironment, 
                             Some (box builder), 
-                            parseTreeOpt,
+                            parseTree,
+                            None,
                             options,
                             Array.ofList tcDependencyFiles, 
                             creationDiags, 
@@ -860,9 +854,9 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
               let errorOptions = tcProj.TcConfig.errorSeverityOptions
               let fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation
 
-              let tcInfo, tcInfoOptional = tcProj.TcInfoWithOptional ctok
+              let tcInfo, tcInfoExtras = tcProj.ComputeTcInfoWithExtras ctok
 
-              let tcSymbolUses = tcInfoOptional.TcSymbolUses
+              let tcSymbolUses = tcInfoExtras.TcSymbolUses
               let topAttribs = tcInfo.topAttribs
               let tcState = tcInfo.tcState
               let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
@@ -1317,13 +1311,13 @@ type FSharpChecker(legacyReferenceResolver,
         ic.CheckMaxMemoryReached()
         backgroundCompiler.CheckFileInProject(parseResults,filename,fileVersion,sourceText,options,userOpName)
 
-    member ic.AnalyzeFileInProject(parseResults: FSharpParseFileResults, checkResults: FSharpCheckFileResults, sourceText: ISourceText, options, userOpName) =
+    member ic.AnalyzeFileInProject(parseResults: FSharpParseFileResults, checkResults: FSharpCheckFileResults, options, userOpName) =
         let userOpName = defaultArg userOpName "Unknown"
-        backgroundCompiler.AnalyzeFileInProject(parseResults,checkResults,sourceText,options,userOpName)
+        backgroundCompiler.AnalyzeFileInProject(parseResults, checkResults, options, userOpName)
 
-    member ic.GetAdditionalAnalyzerToolTips(parseResults: FSharpParseFileResults, checkResults: FSharpCheckFileResults, sourceText: ISourceText, options, pos: Position, userOpName) =
+    member ic.GetAdditionalAnalyzerToolTips(parseResults: FSharpParseFileResults, checkResults: FSharpCheckFileResults, options, pos: Position, userOpName) =
         let userOpName = defaultArg userOpName "Unknown"
-        backgroundCompiler.GetAdditionalAnalyzerToolTips(parseResults,checkResults,sourceText,options,pos,userOpName)
+        backgroundCompiler.GetAdditionalAnalyzerToolTips(parseResults, checkResults, options, pos, userOpName)
 
     /// Typecheck a source code file, returning a handle to the results of the 
     /// parse including the reconstructed types in the file.

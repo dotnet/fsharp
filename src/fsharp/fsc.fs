@@ -72,20 +72,20 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
     let mutable errors = 0
 
     /// Called when an error or warning occurs
-    abstract HandleIssue: tcConfigB: TcConfigBuilder * error: PhasedDiagnostic * isError: bool -> unit
+    abstract HandleIssue: tcConfigB: TcConfigBuilder * error: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
     /// Called when 'too many errors' has occurred
     abstract HandleTooManyErrors: text: string -> unit
 
     override x.ErrorCount = errors
 
-    override x.DiagnosticSink(err, isError) = 
-      if isError || ReportWarningAsError tcConfigB.errorSeverityOptions err then 
+    override x.DiagnosticSink(err, severity) = 
+      if severity = FSharpDiagnosticSeverity.Error || ReportWarningAsError tcConfigB.errorSeverityOptions err then 
         if errors >= tcConfigB.maxErrors then 
             x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors())
             exiter.Exit 1
 
-        x.HandleIssue(tcConfigB, err, true)
+        x.HandleIssue(tcConfigB, err, severity)
 
         errors <- errors + 1
 
@@ -96,7 +96,7 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
         | _ ->  ()
 
       elif ReportWarning tcConfigB.errorSeverityOptions err then
-          x.HandleIssue(tcConfigB, err, isError)
+          x.HandleIssue(tcConfigB, err, severity)
     
 
 /// Create an error logger that counts and prints errors 
@@ -104,11 +104,11 @@ let ConsoleErrorLoggerUpToMaxErrors (tcConfigB: TcConfigBuilder, exiter : Exiter
     { new ErrorLoggerUpToMaxErrors(tcConfigB, exiter, "ConsoleErrorLoggerUpToMaxErrors") with
             
             member _.HandleTooManyErrors(text : string) = 
-                DoWithErrorColor false (fun () -> Printf.eprintfn "%s" text)
+                DoWithDiagnosticColor FSharpDiagnosticSeverity.Warning (fun () -> Printf.eprintfn "%s" text)
 
-            member _.HandleIssue(tcConfigB, err, isError) =
-                DoWithErrorColor isError (fun () -> 
-                    let diag = OutputDiagnostic (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths, tcConfigB.flatErrors, tcConfigB.errorStyle, isError)
+            member _.HandleIssue(tcConfigB, err, severity) =
+                DoWithDiagnosticColor severity (fun () -> 
+                    let diag = OutputDiagnostic (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths, tcConfigB.flatErrors, tcConfigB.errorStyle, severity)
                     writeViaBuffer stderr diag err
                     stderr.WriteLine())
     } :> ErrorLogger
@@ -144,16 +144,21 @@ type InProcErrorLoggerProvider() =
 
                 { new ErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter, "InProcCompilerErrorLoggerUpToMaxErrors") with
 
-                    member this.HandleTooManyErrors text = warnings.Add(Diagnostic.Short(false, text))
+                    member this.HandleTooManyErrors text =
+                        warnings.Add(Diagnostic.Short(FSharpDiagnosticSeverity.Warning, text))
 
-                    member this.HandleIssue(tcConfigBuilder, err, isError) =
+                    member this.HandleIssue(tcConfigBuilder, err, severity) =
                         // 'true' is passed for "suggestNames", since we want to suggest names with fsc.exe runs and this doesn't affect IDE perf
-                        let errs =
+                        let diagnostics =
                             CollectDiagnostic
                                 (tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths,
-                                 tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, isError, err, true)
-                        let container = if isError then errors else warnings
-                        container.AddRange(errs) }
+                                 tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, severity, err, true)
+                        match severity with 
+                        | FSharpDiagnosticSeverity.Error -> 
+                           errors.AddRange(diagnostics) 
+                        | FSharpDiagnosticSeverity.Warning -> 
+                            warnings.AddRange(diagnostics) 
+                        | _ -> ()}
                 :> ErrorLogger }
 
     member _.CapturedErrors = errors.ToArray()
@@ -516,13 +521,12 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
             List.zip sourceFiles isLastCompiland
             // PERF: consider making this parallel, once uses of global state relevant to parsing are cleaned up 
-            |> List.choose (fun (sourceFile, isLastCompiland) -> 
+            |> List.map (fun (sourceFile, isLastCompiland) -> 
 
                 let sourceFileDirectory = Path.GetDirectoryName sourceFile
 
-                match ParseOneInputFile(tcConfig, lexResourceManager, ["COMPILED"], sourceFile, (isLastCompiland, isExe), errorLogger, (*retryLocked*)false) with
-                | Some input -> Some (input, sourceFileDirectory)
-                | None -> None) 
+                let input = ParseOneInputFile(tcConfig, lexResourceManager, ["COMPILED"], sourceFile, (isLastCompiland, isExe), errorLogger, (*retryLocked*)false)
+                (input, sourceFileDirectory))
 
         with e -> 
             errorRecoveryNoRange e
@@ -580,12 +584,14 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     let tcState, topAttrs, tcFileResults, tcEnvAtEnd = 
         TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs, exiter)
 
+    ReportTime tcConfig "Run Analyzers"
     AbortOnError(errorLogger, exiter)
-    ReportTime tcConfig "Typechecked"
 
-    let analyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig)
+    let analyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig, tcConfig.compilerToolPaths)
 
     FSharpAnalyzers.RunAnalyzers(analyzers, tcConfig, tcImports, tcGlobals, tcState.Ccu, sourceFiles, tcFileResults, tcEnvAtEnd)
+
+    AbortOnError(errorLogger, exiter)
 
     let typedImplFiles = tcFileResults |> List.collect (fun (_a,b,_c) -> Option.toList b)
 

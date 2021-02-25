@@ -1712,11 +1712,11 @@ type DiagnosticDetailedInfo =
 
 [<RequireQualifiedAccess>]
 type Diagnostic = 
-    | Short of bool * string
-    | Long of bool * DiagnosticDetailedInfo
+    | Short of FSharpDiagnosticSeverity * string
+    | Long of FSharpDiagnosticSeverity * DiagnosticDetailedInfo
 
 /// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
-let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err: PhasedDiagnostic, suggestNames: bool) =
+let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, severity: FSharpDiagnosticSeverity, err: PhasedDiagnostic, suggestNames: bool) =
     let outputWhere (showFullPaths, errorStyle) m: DiagnosticLocation =
         if Range.equals m rangeStartup || Range.equals m rangeCmdArgs then
             { Range = m; TextRepresentation = ""; IsEmpty = true; File = "" }
@@ -1777,11 +1777,17 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                 | None -> None
 
             let OutputCanonicalInformation(subcategory, errorNumber) : DiagnosticCanonicalInformation = 
+                let message = 
+                    match severity with
+                    | FSharpDiagnosticSeverity.Error -> "error"
+                    | FSharpDiagnosticSeverity.Warning -> "warning"
+                    | FSharpDiagnosticSeverity.Info
+                    | FSharpDiagnosticSeverity.Hidden -> "info"
                 let text = 
                     match errorStyle with
                     // Show the subcategory for --vserrors so that we can fish it out in Visual Studio and use it to determine error stickiness.
-                    | ErrorStyle.VSErrors -> sprintf "%s %s FS%04d: " subcategory (if isError then "error" else "warning") errorNumber
-                    | _ -> sprintf "%s FS%04d: " (if isError then "error" else "warning") errorNumber
+                    | ErrorStyle.VSErrors -> sprintf "%s %s FS%04d: " subcategory message errorNumber
+                    | _ -> sprintf "%s FS%04d: " message errorNumber
                 { ErrorNumber = errorNumber; Subcategory = subcategory; TextRepresentation = text}
         
             let mainError, relatedErrors = SplitRelatedDiagnostics err
@@ -1794,7 +1800,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
             
             let entry: DiagnosticDetailedInfo = { Location = where; Canonical = canonical; Message = message }
             
-            errors.Add ( Diagnostic.Long(isError, entry ) )
+            errors.Add ( Diagnostic.Long(severity, entry ) )
 
             let OutputRelatedError(err: PhasedDiagnostic) =
                 match errorStyle with
@@ -1808,12 +1814,12 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                         os.ToString()
 
                     let entry: DiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
-                    errors.Add( Diagnostic.Long (isError, entry) )
+                    errors.Add( Diagnostic.Long (severity, entry) )
 
                 | _ -> 
                     let os = System.Text.StringBuilder()
                     OutputPhasedDiagnostic os err flattenErrors suggestNames
-                    errors.Add( Diagnostic.Short(isError, os.ToString()) )
+                    errors.Add( Diagnostic.Short(severity, os.ToString()) )
 
             relatedErrors |> List.iter OutputRelatedError
 
@@ -1831,10 +1837,10 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
 
 /// used by fsc.exe and fsi.exe, but not by VS
 /// prints error and related errors to the specified StringBuilder
-let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError) os (err: PhasedDiagnostic) = 
+let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, severity) os (err: PhasedDiagnostic) = 
     
     // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
-    let errors = CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err, true)
+    let errors = CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, severity, err, true)
     for e in errors do
         Printf.bprintf os "\n"
         match e with
@@ -1886,9 +1892,9 @@ let ReportWarningAsError options err =
 type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger: ErrorLogger) =
     inherit ErrorLogger("ErrorLoggerFilteringByScopedPragmas")
 
-    override x.DiagnosticSink (phasedError, isError) = 
-        if isError then 
-            errorLogger.DiagnosticSink (phasedError, isError)
+    override x.DiagnosticSink (phasedError, severity) = 
+        if severity = FSharpDiagnosticSeverity.Error then 
+            errorLogger.DiagnosticSink (phasedError, severity)
         else 
           let report = 
             let warningNum = GetDiagnosticNumber phasedError
@@ -1901,7 +1907,7 @@ type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger:
                         (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
                         Position.posGeq m.Start pragmaRange.Start))  
             | None -> true
-          if report then errorLogger.DiagnosticSink(phasedError, false)
+          if report then errorLogger.DiagnosticSink(phasedError, severity)
 
     override x.ErrorCount = errorLogger.ErrorCount
 

@@ -320,6 +320,32 @@ let ReportParsingStatistics res =
     | ParsedInput.ImplFile (ParsedImplFileInput (modules = impls)) -> 
         printfn "parsing yielded %d definitions" (List.collect flattenModImpl impls).Length
 
+let EmptyParsedInput(filename, isLastCompiland) =
+    let lower = String.lowercase filename
+    if FSharpSigFileSuffixes |> List.exists (Filename.checkSuffix lower) then  
+        ParsedInput.SigFile(
+            ParsedSigFileInput(
+                filename, 
+                QualFileNameOfImpls filename [],
+                [],
+                [],
+                []
+            )
+        ) 
+    else
+        ParsedInput.ImplFile(
+            ParsedImplFileInput(
+                filename, 
+                false, 
+                QualFileNameOfImpls filename [],
+                [],
+                [],
+                [],
+                isLastCompiland
+            )
+        ) 
+
+
 /// Parse an input, drawing tokens from the LexBuffer
 let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger) =
     use unwindbuildphase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
@@ -360,11 +386,11 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
 
                 res
             )
-        Some input 
+        input 
 
     with e -> 
         errorRecovery e rangeStartup
-        None 
+        EmptyParsedInput(filename, isLastCompiland)
             
 let ValidSuffixes = FSharpSigFileSuffixes@FSharpImplFileSuffixes
 
@@ -391,7 +417,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompil
 
     with e -> 
         errorRecovery e rangeStartup
-        None 
+        EmptyParsedInput(filename, isLastCompiland)
 
 let ProcessMetaCommandsFromInput
      (nowarnF: 'state -> range * string -> 'state,

@@ -102,6 +102,11 @@
         <target state="new">The analyzer '{0}' raised an exception during analyzer type initialization: '{1}'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="etCompilerToolPathDidntExist">
+        <source>The compiler tool path '{0}' did not exist.</source>
+        <target state="new">The compiler tool path '{0}' did not exist.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
         <target state="translated">No se pudo cargar el ensamblado del diseñador de proveedores de tipos "{0}" desde la carpeta "{1}" porque falta una dependencia o no se pudo cargar. Todas las dependencias del ensamblado del diseñador de proveedores de tipos deben encontrarse en la misma carpeta que el ensamblado. Se notificó la excepción: {2} - {3}.</target>

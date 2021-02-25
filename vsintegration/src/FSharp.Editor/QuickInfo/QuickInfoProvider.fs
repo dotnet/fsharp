@@ -69,7 +69,7 @@ module internal FSharpQuickInfo =
                     (declRange.StartLine, extLexerSymbol.Ident.idRange.EndColumn, extLineText, extLexerSymbol.FullIsland, FSharpTokenTag.IDENT)
 
             let fcsPos = Position.mkPos declRange.StartLine (extLexerSymbol.Ident.idRange.EndColumn-1)
-            let! extAnalyzerExtras = checker.GetAdditionalAnalyzerToolTips(extParseResults, extCheckFileResults, extSourceText.ToFSharpSourceText(), options=extProjectOptions, pos=fcsPos, userOpName=userOpName) |> liftAsync
+            let! extAnalyzerExtras = checker.GetAdditionalAnalyzerToolTips(extParseResults, extCheckFileResults, options=extProjectOptions, pos=fcsPos, userOpName=userOpName) |> liftAsync
             let extAnalyzerExtras = extAnalyzerExtras |> Array.filter (fun arr -> arr.Length <> 0)
             match extQuickInfoText, extAnalyzerExtras with
             | ToolTipText [], [| |]
@@ -116,7 +116,7 @@ module internal FSharpQuickInfo =
                             (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland,tag)
 
                     let fcsPos = Position.mkPos fcsTextLineNumber textLinePos.Character
-                    let! extras = checker.GetAdditionalAnalyzerToolTips(parseResults, checkFileResults, sourceText.ToFSharpSourceText(), options=projectOptions, pos=fcsPos, userOpName=userOpName) |> liftAsync
+                    let! extras = checker.GetAdditionalAnalyzerToolTips(parseResults, checkFileResults, options=projectOptions, pos=fcsPos, userOpName=userOpName) |> liftAsync
                     let extras = extras |> Array.filter (fun arr -> arr.Length <> 0)
                     match targetQuickInfo, extras with
                     | ToolTipText [], [| |]
@@ -198,7 +198,7 @@ type internal FSharpAsyncQuickInfoSource
             let! symbol = Tokenizer.getSymbolAtPosition (documentId, sourceText, position, filePath, defines, SymbolLookupKind.Precise, true, true)
             let res = checkFileResults.GetToolTip (textLineNumber, symbol.Ident.idRange.EndColumn, textLineString, symbol.FullIsland, FSharpTokenTag.IDENT)
             let fcsPos = Position.mkPos textLineNumber textPos.Character
-            let! extras = checker.GetAdditionalAnalyzerToolTips(parseResults, checkFileResults, sourceText.ToFSharpSourceText(), options=options, pos=fcsPos, userOpName=FSharpQuickInfo.userOpName) |> liftAsync
+            let! extras = checker.GetAdditionalAnalyzerToolTips(parseResults, checkFileResults, options=options, pos=fcsPos, userOpName=FSharpQuickInfo.userOpName) |> liftAsync
             let extras = extras |> Array.filter (fun arr -> arr.Length <> 0)
             match res, extras with
             | ToolTipText [], [| |]

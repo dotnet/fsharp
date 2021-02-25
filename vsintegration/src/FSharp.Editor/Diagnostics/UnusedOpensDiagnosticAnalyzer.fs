@@ -26,13 +26,13 @@ type internal UnusedOpensDiagnosticAnalyzer
 
     static let userOpName = "UnusedOpensAnalyzer"
 
-    static member GetUnusedOpenRanges(document: Document, options, checker: FSharpChecker) : Async<Option<range list>> =
+    static member GetUnusedOpenRanges(document: Document, options, checker: FSharpChecker) : Async<Option<_ * _ * range list>> =
         asyncMaybe {
             do! Option.guard document.FSharpOptions.CodeFixes.UnusedOpens
             let! sourceText = document.GetTextAsync()
-            let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, userOpName = userOpName)
+            let! parseResults, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, userOpName = userOpName)
             let! unusedOpens = UnusedOpens.getUnusedOpens(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
-            return unusedOpens
+            return parseResults, checkResults, unusedOpens
         } 
 
     interface IFSharpUnusedOpensDiagnosticAnalyzer with
@@ -44,8 +44,11 @@ type internal UnusedOpensDiagnosticAnalyzer
                 let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync()
                 let checker = checkerProvider.Checker
-                let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document, projectOptions, checker)
+                let! parseResults, checkResults, unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document, projectOptions, checker)
             
+                // We run analyzers as part of unused opens to give lower priority
+                let! analyzerDiagnostics = checker.AnalyzeFileInProject(parseResults, checkResults, projectOptions, userOpName=userOpName) |> liftAsync
+                let analyzerDiagnostics = FSharpDocumentDiagnosticAnalyzer.CleanDiagnostics(document.FilePath, analyzerDiagnostics, sourceText)
                 return 
                     unusedOpens
                     |> List.map (fun range ->
@@ -53,6 +56,7 @@ type internal UnusedOpensDiagnosticAnalyzer
                              descriptor,
                              RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)))
                     |> Seq.toImmutableArray
+                    |> fun a -> a.AddRange(analyzerDiagnostics)
             } 
             |> Async.map (Option.defaultValue ImmutableArray.Empty)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken

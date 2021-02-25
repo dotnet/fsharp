@@ -4,6 +4,7 @@
         <OutputType>Library</OutputType>
         <IsPackable>false</IsPackable>
 
+        <!-- use the freshly built compiler to make sure we have analyzer support -->
         <FscToolExe>fsc.exe</FscToolExe>
         <FscToolPath>..\..\..\artifacts\bin\fsc\Debug\net472</FscToolPath>
         <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>

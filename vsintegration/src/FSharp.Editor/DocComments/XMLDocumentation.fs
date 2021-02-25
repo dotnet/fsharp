@@ -64,9 +64,15 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
                 addTaggedTextEntry TaggedText.lineBreak
                 addTaggedTextEntry TaggedText.lineBreak)
 
+    // TODO: bail out early if line limit is already hit
     interface ITaggedTextCollector with
         member this.Add taggedText = 
-            // TODO: bail out early if line limit is already hit
+            // Don't apply this cleanup code to navigation elements
+            match taggedText with
+            | :? NavigableTaggedText 
+            | :? WebLinkTaggedText -> addTaggedTextEntry taggedText
+            |  _ -> 
+            // Don't apply this cleanup code to non-text elements
             match taggedText.Tag with
             | TextTag.Text -> reportTextLines taggedText.Text
             | _ -> addTaggedTextEntry taggedText

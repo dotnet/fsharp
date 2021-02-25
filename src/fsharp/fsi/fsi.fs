@@ -526,11 +526,11 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
     /// Display the given error.
     member syphon.PrintError (tcConfig:TcConfigBuilder, err) = 
         Utilities.ignoreAllErrors (fun () -> 
-            let isError = true
-            DoWithErrorColor isError (fun () ->
+            let severity = FSharpDiagnosticSeverity.Error
+            DoWithDiagnosticColor severity (fun () ->
                 errorWriter.WriteLine();
                 writeViaBuffer errorWriter (OutputDiagnosticContext "  " syphon.GetLine) err; 
-                writeViaBuffer errorWriter (OutputDiagnostic (tcConfig.implicitIncludeDir,tcConfig.showFullPaths,tcConfig.flatErrors,tcConfig.errorStyle,isError))  err;
+                writeViaBuffer errorWriter (OutputDiagnostic (tcConfig.implicitIncludeDir,tcConfig.showFullPaths,tcConfig.flatErrors,tcConfig.errorStyle,severity))  err;
                 errorWriter.WriteLine()
                 errorWriter.WriteLine()
                 errorWriter.Flush()))
@@ -564,19 +564,19 @@ type internal ErrorLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, fsiStd
 
     member x.ResetErrorCount() = (errorCount <- 0)
     
-    override x.DiagnosticSink(err, isError) = 
-        if isError || ReportWarningAsError tcConfigB.errorSeverityOptions err  then 
+    override x.DiagnosticSink(err, severity) = 
+        if (severity = FSharpDiagnosticSeverity.Error) || ReportWarningAsError tcConfigB.errorSeverityOptions err  then 
             fsiStdinSyphon.PrintError(tcConfigB,err)
             errorCount <- errorCount + 1
             if tcConfigB.abortOnError then exit 1 (* non-zero exit code *)
             // STOP ON FIRST ERROR (AVOIDS PARSER ERROR RECOVERY)
             raise StopProcessing
         else 
-          DoWithErrorColor isError (fun () -> 
+          DoWithDiagnosticColor severity (fun () -> 
             if ReportWarning tcConfigB.errorSeverityOptions err then 
                 fsiConsoleOutput.Error.WriteLine()
                 writeViaBuffer fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
-                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,isError)) err
+                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,severity)) err
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
@@ -1603,13 +1603,11 @@ type internal FsiDynamicCompiler
                     let parsedInput = 
                         match input.SyntaxTree with 
                         | None -> ParseOneInputFile(tcConfig,lexResourceManager,["INTERACTIVE"],input.FileName,(true,false),errorLogger,(*retryLocked*)false)
-                        | _-> input.SyntaxTree
+                        | Some parseTree -> parseTree
                     input.FileName, parsedInput)
               |> List.unzip
 
           errorLogger.AbortOnError(fsiConsoleOutput);
-          if inputs |> List.exists Option.isNone then failwith "parse error"
-          let inputs = List.map Option.get inputs 
           let istate = (istate, sourceFiles, inputs) |||> List.fold2 (fun istate sourceFile input -> fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, input))
           fsiDynamicCompiler.EvalParsedSourceFiles (ctok, errorLogger, istate, inputs)
 
@@ -1705,7 +1703,7 @@ type internal FsiDynamicCompiler
          tcGlobals = tcGlobals
          tcState   = tcState
          tcImports = tcImports
-         tcAnalyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig)
+         tcAnalyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig, tcConfig.compilerToolPaths)
          ilxGenerator = ilxGenerator
          boundValues = NameMap.empty
          timing    = false
@@ -2240,13 +2238,18 @@ type internal FsiInteractionProcessor
                 packageManagerDirective Directive.Resolution path m
 
             | ParsedScriptInteraction.HashDirective (ParsedHashDirective("compilertool", [path], m), _) ->
-                let istate =
-                    if FileSystem.SafeExists(path) then
-                       { istate with tcAnalyzers = istate.tcAnalyzers @ FSharpAnalyzers.CreateAnalyzers (path, m) }
+                if FileSystem.IsInvalidPathShim path then
+                    warning(Error(FSComp.SR.etCompilerToolPathDidntExist(path), m))
+                    istate, Completed None
+                // TODO: check this is the right place to resolve paths
+                else
+                    let rootedPath = if Path.IsPathRooted(path) then path else Path.Combine(tcConfigB.implicitIncludeDir, path)
+                    if not (Directory.Exists rootedPath) then
+                        warning(Error(FSComp.SR.etCompilerToolPathDidntExist(rootedPath), m))
+                        istate, Completed None
                     else
-                        // TODO: give a warning here (or in CreateAnalyzer)
-                        istate
-                istate, Completed None
+                        let istate = { istate with tcAnalyzers = istate.tcAnalyzers @ FSharpAnalyzers.ImportAnalyzers(tcConfig, [(m, rootedPath)]) }
+                        istate, Completed None
 
             | ParsedScriptInteraction.HashDirective (ParsedHashDirective("i", [path], m), _) -> 
                 packageManagerDirective Directive.Include path m
@@ -2936,7 +2939,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | Choice2Of2 (Some userExn) -> raise (makeNestedException userExn)
 
     let commitResultNonThrowing errorOptions scriptFile (errorLogger: CompilationErrorLogger) res =
-        let errs = errorLogger.GetErrors()
+        let errs = errorLogger.GetDiagnostics()
         let errorInfos = DiagnosticHelpers.CreateDiagnostics (errorOptions, true, scriptFile, errs, true)
         let userRes =
             match res with

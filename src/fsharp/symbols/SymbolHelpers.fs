@@ -22,13 +22,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
-[<RequireQualifiedAccess>]
-type FSharpDiagnosticSeverity = 
-    | Hidden
-    | Info
-    | Warning 
-    | Error
-
 type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: string, subcategory: string, errorNum: int, numberPrefix: string) =
     member _.Range = m
 
@@ -74,16 +67,15 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
         sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
 
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromException(exn, isError, fallbackRange: range, suggestNames: bool) =
+    static member CreateFromException(exn, severity, fallbackRange: range, suggestNames: bool) =
         let m = match GetRangeOfDiagnostic exn with Some m -> m | None -> fallbackRange 
-        let severity = if isError then FSharpDiagnosticSeverity.Error else FSharpDiagnosticSeverity.Warning
         let msg = bufs (fun buf -> OutputPhasedDiagnostic buf exn false suggestNames)
         let errorNum = GetDiagnosticNumber exn
         FSharpDiagnostic(m, severity, msg, exn.Subcategory(), errorNum, "FS")
 
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromExceptionAndAdjustEof(exn, isError, fallbackRange: range, (linesCount: int, lastLength: int), suggestNames: bool) =
-        let r = FSharpDiagnostic.CreateFromException(exn, isError, fallbackRange, suggestNames)
+    static member CreateFromExceptionAndAdjustEof(exn, severity, fallbackRange: range, (linesCount: int, lastLength: int), suggestNames: bool) =
+        let r = FSharpDiagnostic.CreateFromException(exn, severity, fallbackRange, suggestNames)
 
         // Adjust to make sure that errors reported at Eof are shown at the linesCount
         let startline, schange = min (Line.toZ r.Range.StartLine, false) (linesCount, true)
@@ -112,10 +104,10 @@ type ErrorScope()  =
     let unwindEL =        
         PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> 
             { new ErrorLogger("ErrorScope") with 
-                member x.DiagnosticSink(exn, isError) = 
-                      let err = FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false)
+                member x.DiagnosticSink(exn, severity) = 
+                      let err = FSharpDiagnostic.CreateFromException(exn, severity, range.Zero, false)
                       errors <- err :: errors
-                      if isError && firstError.IsNone then 
+                      if severity = FSharpDiagnosticSeverity.Error && firstError.IsNone then 
                           firstError <- Some err.Message
                 member x.ErrorCount = errors.Length })
         
@@ -171,8 +163,8 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpDiagnost
     let mutable errorCount = 0
     let diagnostics = new ResizeArray<_>()
 
-    override x.DiagnosticSink(exn, isError) = 
-        if isError || ReportWarningAsError options exn then
+    override x.DiagnosticSink(exn, severity) = 
+        if severity = FSharpDiagnosticSeverity.Error || ReportWarningAsError options exn then
             diagnostics.Add(exn, FSharpDiagnosticSeverity.Error)
             errorCount <- errorCount + 1
         elif ReportWarning options exn then
@@ -180,7 +172,7 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpDiagnost
 
     override x.ErrorCount = errorCount
 
-    member x.GetErrors() = diagnostics.ToArray()
+    member x.GetDiagnostics() = diagnostics.ToArray()
 
 
 /// This represents the global state established as each task function runs as part of the build.
@@ -197,14 +189,17 @@ type CompilationGlobalsScope(errorLogger: ErrorLogger, phase: BuildPhase) =
 
 module DiagnosticHelpers =                            
 
-    let ReportError (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, fileInfo, (exn, sev), suggestNames) = 
-        [ let isError = (sev = FSharpDiagnosticSeverity.Error) || ReportWarningAsError options exn                
-          if (isError || ReportWarning options exn) then 
+    let ReportDiagnostic (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, fileInfo, (exn, severity), suggestNames) = 
+        [ let severity = 
+               if (severity = FSharpDiagnosticSeverity.Error) then severity 
+               elif ReportWarningAsError options exn then FSharpDiagnosticSeverity.Error
+               else severity
+          if (severity = FSharpDiagnosticSeverity.Error || ReportWarning options exn) then 
             let oneError exn =
                 [ // We use the first line of the file as a fallbackRange for reporting unexpected errors.
                   // Not ideal, but it's hard to see what else to do.
                   let fallbackRange = rangeN mainInputFileName 1
-                  let ei = FSharpDiagnostic.CreateFromExceptionAndAdjustEof (exn, isError, fallbackRange, fileInfo, suggestNames)
+                  let ei = FSharpDiagnostic.CreateFromExceptionAndAdjustEof (exn, severity, fallbackRange, fileInfo, suggestNames)
                   let fileName = ei.Range.FileName
                   if allErrors || fileName = mainInputFileName || fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation then
                       yield ei ]
@@ -216,8 +211,8 @@ module DiagnosticHelpers =
 
     let CreateDiagnostics (options, allErrors, mainInputFileName, errors, suggestNames) = 
         let fileInfo = (Int32.MaxValue, Int32.MaxValue)
-        [| for (exn, isError) in errors do 
-              yield! ReportError (options, allErrors, mainInputFileName, fileInfo, (exn, isError), suggestNames) |]
+        [| for (exn, severity) in errors do 
+              yield! ReportDiagnostic (options, allErrors, mainInputFileName, fileInfo, (exn, severity), suggestNames) |]
                             
 
 namespace FSharp.Compiler.Symbols

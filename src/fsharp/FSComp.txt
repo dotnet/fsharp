@@ -1533,6 +1533,7 @@ featureInterfacesWithMultipleGenericInstantiation,"interfaces with multiple gene
 3367,etAnalyzerConstructionException,"The analyzer '%s' raised an exception during analyzer construction: '%s'."
 3368,etAnalyzerTypeInitializationException,"The analyzer '%s' raised an exception during analyzer type initialization: '%s'."
 3369,etAnalyzerException,"The analyzer '%s' raised an exception during analysis of file '%s': '%s'."
+3370,etCompilerToolPathDidntExist,"The compiler tool path '%s' did not exist."
 forFormatInvalidForInterpolated,"Interpolated strings may not use '%%' format specifiers unless each is given an expression, e.g. '%%d{{1+1}}'."
 forFormatInvalidForInterpolated2,".NET-style format specifiers such as '{{x,3}}' or '{{x:N5}}' may not be mixed with '%%' format specifiers."
 forFormatInvalidForInterpolated3,"The '%%P' specifier may not be used explicitly."

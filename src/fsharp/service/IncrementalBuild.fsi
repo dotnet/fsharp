@@ -69,7 +69,7 @@ type internal TcInfo =
 
 /// Accumulated results of type checking. Optional data that isn't needed to type-check a file, but needed for more information for in tooling.
 [<NoEquality; NoComparison>]
-type internal TcInfoOptional =
+type internal TcInfoExtras =
     {
       /// Accumulated resolutions, last file first
       tcResolutionsRev: TcResolutions list
@@ -80,7 +80,7 @@ type internal TcInfoOptional =
       /// Accumulated 'open' declarations, last file first
       tcOpenDeclarationsRev: OpenDeclaration[] list
 
-      /// Result of checking most recent file, if any, last file first
+      /// Contents of checking files, if any, last file first
       tcImplFilesRev: TypedImplFile list
       
       /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
@@ -91,6 +91,8 @@ type internal TcInfoOptional =
     }
 
     member TcSymbolUses: TcSymbolUses list
+
+    member TcImplFiles: TypedImplFile list
 
 /// Represents the state in the incremental graph associated with checking a file
 [<Sealed>]
@@ -104,11 +106,14 @@ type internal PartialCheckResults =
 
     member TimeStamp: DateTime 
 
-    member TcInfo: CompilationThreadToken -> TcInfo
+    member ComputeTcInfo: CompilationThreadToken -> TcInfo
+
+    /// If `enablePartialTypeChecking` is false then extras will be available
+    member ComputeTcInfoWithOptionalExtras: CompilationThreadToken -> TcInfo * TcInfoExtras option
 
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member TcInfoWithOptional: CompilationThreadToken -> TcInfo * TcInfoOptional
+    member ComputeTcInfoWithExtras: CompilationThreadToken -> TcInfo * TcInfoExtras
 
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
@@ -217,7 +222,7 @@ type internal IncrementalBuilder =
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile: filename:string -> ParsedInput option * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
+      member GetParseResultsForFile: filename:string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
       /// Get the active analyzers for the project
       member Analyzers: FSharpAnalyzer list
