@@ -58,7 +58,7 @@ type IRawFSharpAssemblyData =
 type TimeStampCache = 
     new: defaultTimeStamp: DateTime -> TimeStampCache
     member GetFileTimeStamp: string -> DateTime
-    member GetProjectReferenceTimeStamp: IProjectReference * CompilationThreadToken -> DateTime
+    member GetProjectReferenceTimeStamp: IProjectReference -> DateTime
 
 and IProjectReference = 
 
@@ -76,7 +76,7 @@ and IProjectReference =
     ///
     /// The operation returns None only if it is not possible to create an IncrementalBuilder for the project at all, e.g. if there
     /// are fatal errors in the options for the project.
-    abstract TryGetLogicalTimeStamp: TimeStampCache * CompilationThreadToken -> System.DateTime option
+    abstract TryGetLogicalTimeStamp: TimeStampCache -> System.DateTime option
 
 type AssemblyReference = 
     | AssemblyReference of range * string  * IProjectReference option

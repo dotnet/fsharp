@@ -193,10 +193,10 @@ type TimeStampCache(defaultTimeStamp: DateTime) =
         files.[fileName] <- v
         v
 
-    member cache.GetProjectReferenceTimeStamp (pr: IProjectReference, ctok) = 
+    member cache.GetProjectReferenceTimeStamp (pr: IProjectReference) = 
         let ok, v = projects.TryGetValue pr
         if ok then v else 
-        let v = defaultArg (pr.TryGetLogicalTimeStamp (cache, ctok)) defaultTimeStamp
+        let v = defaultArg (pr.TryGetLogicalTimeStamp (cache)) defaultTimeStamp
         projects.[pr] <- v
         v
 
@@ -215,7 +215,7 @@ and IProjectReference =
     ///
     /// The operation returns None only if it is not possible to create an IncrementalBuilder for the project at all, e.g. if there
     /// are fatal errors in the options for the project.
-    abstract TryGetLogicalTimeStamp: TimeStampCache * CompilationThreadToken -> System.DateTime option
+    abstract TryGetLogicalTimeStamp: TimeStampCache -> System.DateTime option
 
 type AssemblyReference = 
     | AssemblyReference of range * string * IProjectReference option
