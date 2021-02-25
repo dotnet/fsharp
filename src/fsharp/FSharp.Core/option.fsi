@@ -32,8 +32,8 @@ module Option =
     ///
     /// <example>
     /// <code>
-    ///     (99, None) ||> Option.defaultValue // evaluates to 99
-    ///     (99, Some 42) ||> Option.defaultValue // evaluates to 42
+    ///     None |> Option.isNone // evaluates to true
+    ///     Some 42 |> Option.isNone // evaluates to false
     /// </code>
     /// </example>
     ///
