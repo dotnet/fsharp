@@ -12,6 +12,12 @@ FSharp.Core is binary compatible across versions of the F# language. For example
 
 **Binary compatibility means that a component built for X can bind to Y at runtime. It doesn't mean that Y behaves 100% the same as X, though.** For example, an older compiler that doesn't know how to understand `inref<'T>` referencing a newer FSharp.Core that has `inref<'T>` defined may not behave correctly if `inref<'T>` is used in source.
 
+### Note on legacy FSharp.Core binaries - 2.0.0 and below
+
+FSharp.Core 4.0.0.0 and upwards is not binary compatible with apps built with F# 2.0 and FSharp.Core 2.0.0.0. Some types such as `Tuple` and `Bigint` moved to be supported in .NET. At the time (.NET Framework 2.0-3.5) had less support for things and F#, like most of .NET, had to make a breaking change to support .NET Framework 4.0 and higher.
+
+This information is only applicable if you need to author something for F# running in extremely old environments. FSharp.Core is binary compatible otherwise.
+
 ## FSharp.Core and F# scripts
 
 F# scripts, executed by F# interactive, execute against the FSharp.Core deployed with the .NET SDK you are using. If you're expecting to use a more modern library feature and find that it's missing, it's likely because you have an older .NET SDK and thus an older F# Interactive. Upgrade your .NET SDK.
@@ -93,7 +99,7 @@ Lastly, if you are using legacy F# projects (non-SDK) and/or have an older tools
 
 ### Consider upgrading
 
-Yes, really. The old project system that manages legacy projects is not that good, the compiler is older and unoptimized, tooling is not as responsive, etc. You will really have a much better life if you upgrade. Try out the `try-convert` tool to do that: https://github.com/dotnet/try-convert
+Yes, really. The old project system that manages legacy projects is not that good, the compiler is older and unoptimized for supporting larger codebases, tooling is not as responsive, etc. You will really have a much better life if you upgrade. Try out the `try-convert` tool to do that: https://github.com/dotnet/try-convert
 
 If you cannot upgrade for some reason, the rest of the guidance applies.
 
