@@ -871,11 +871,9 @@ namespace Microsoft.FSharp.Control
 
         [<DebuggerHidden>]
         let RunSynchronously cancellationToken (computation: Async<'T>) timeout =
-            // Reuse the current ThreadPool thread if possible. Unfortunately
-            // Thread.IsThreadPoolThread isn't available on all profiles so
-            // we approximate it by testing synchronization context for null.
-            match SynchronizationContext.Current, timeout with
-            | null, None -> RunSynchronouslyInCurrentThread (cancellationToken, computation)
+            // Reuse the current ThreadPool thread if possible.
+            match Thread.CurrentThread.IsThreadPoolThread, timeout with
+            | true, None -> RunSynchronouslyInCurrentThread (cancellationToken, computation)
             // When the timeout is given we need a dedicated thread
             // which cancels the computation.
             // Performing the cancellation in the ThreadPool eg. by using
