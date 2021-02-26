@@ -83,7 +83,7 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
             x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors())
             exiter.Exit 1
 
-        x.HandleIssue(tcConfigB, err, severity)
+        x.HandleIssue(tcConfigB, err, FSharpDiagnosticSeverity.Error)
 
         errors <- errors + 1
 
