@@ -919,33 +919,39 @@ let TypeCheckClosedInputSetFinish (declaredImpls: TypedImplFile list, tcState) =
 
     tcState, declaredImpls
     
-let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
+let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions 
-    let results, tcState = (tcState, inputs) ||> List.mapFold (TypeCheckOneInputSkipImpl (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
+    let results, tcState =
+        if tcConfig.concurrentBuild then
+            let results, tcState = (tcState, inputs) ||> List.mapFold (TypeCheckOneInputSkipImpl (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
 
-    let inputs = Array.ofList inputs
-    let newResults = Array.ofList results
-    let results = Array.ofList results
+            let inputs = Array.ofList inputs
+            let newResults = Array.ofList results
+            let results = Array.ofList results
 
-    (inputs, results) 
-    ||> Array.zip
-    |> Array.mapi (fun i (input, (_, _, implOpt, _)) ->
-        match implOpt with
-        | None -> None
-        | Some impl ->
-            match impl with
-            | TypedImplFile.TImplFile(qualifiedNameOfFile=qualifiedNameOfFile;implementationExpressionWithSignature=ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(contents=ModuleOrNamespaceExpr.TMDefs [])) ->
-                Some(i, input, qualifiedNameOfFile)
-            | _ ->
-                None
-    )
-    |> Array.choose id
-    |> ArrayParallel.iter (fun (i, input, qualifiedNameOfFile) ->
-        let tcState = tcState.RemoveImpl(qualifiedNameOfFile)
-        let result, _ = TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState input
-        newResults.[i] <- result
-    )
+            (inputs, results) 
+            ||> Array.zip
+            |> Array.mapi (fun i (input, (_, _, implOpt, _)) ->
+                match implOpt with
+                | None -> None
+                | Some impl ->
+                    match impl with
+                    | TypedImplFile.TImplFile(qualifiedNameOfFile=qualifiedNameOfFile;implementationExpressionWithSignature=ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(contents=ModuleOrNamespaceExpr.TMDefs [])) ->
+                        Some(i, input, qualifiedNameOfFile)
+                    | _ ->
+                        None
+            )
+            |> Array.choose id
+            |> ArrayParallel.iter (fun (i, input, qualifiedNameOfFile) ->
+                let tcState = tcState.RemoveImpl(qualifiedNameOfFile)
+                let result, _ = TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState input
+                newResults.[i] <- result
+            )
 
-    let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState = TypeCheckMultipleInputsFinish(newResults |> List.ofArray, tcState)
+            newResults |> List.ofArray, tcState
+        else
+            (tcState, inputs) ||> List.mapFold (TypeCheckOneInputSkipImpl (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
+
+    let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState = TypeCheckMultipleInputsFinish(results, tcState)
     let tcState, declaredImpls = TypeCheckClosedInputSetFinish (implFiles, tcState)
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
