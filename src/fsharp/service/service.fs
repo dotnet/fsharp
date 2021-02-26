@@ -934,16 +934,17 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             })
 
     member _.CheckProjectInBackground (options, userOpName) =
-        reactor.SetBackgroundOp (Some (userOpName, "CheckProjectInBackground", options.ProjectFileName, (fun ctok ct -> 
-            eventually { 
-                // Builder creation is not yet time-sliced.
-                // Note the background op is allowed to throw OperationCanceledException.
-                let builderOpt,_ = getOrCreateBuilder (ctok, options, userOpName) |> Cancellable.runThrowing ct
-                match builderOpt with 
-                | None -> return ()
-                | Some builder -> 
-                    return! builder.PopulatePartialCheckingResults (ctok, ct)
-            })))
+        reactor.SetBackgroundOp 
+           (Some(userOpName, "CheckProjectInBackground", options.ProjectFileName, 
+                 (fun ctok -> 
+                      eventually { 
+                           // Builder creation is not yet time-sliced.
+                           let! builderOpt,_ = getOrCreateBuilder (ctok, options, userOpName) |> Eventually.ofCancellable
+                           match builderOpt with 
+                           | None -> return ()
+                           | Some builder -> 
+                               return! builder.PopulatePartialCheckingResults (ctok)
+                       })))
 
     member _.StopBackgroundCompile   () =
         reactor.SetBackgroundOp(None)

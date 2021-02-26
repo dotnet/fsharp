@@ -1002,24 +1002,22 @@ type IncrementalBuilder(tcGlobals,
                 stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
             }
 
-    let computeInitialBoundModel (state: IncrementalBuilderState) (ctok: CompilationThreadToken) ct =
+    let computeInitialBoundModel (state: IncrementalBuilderState) (ctok: CompilationThreadToken) =
         eventually {
             match state.initialBoundModel with
             | None ->
-                // Note this can throw an OperationCanceledException, particularly
-                // for cancellation of the background operation.
-                let result = CombineImportedAssembliesTask ctok |> Cancellable.runThrowing ct
+                // Note this is not time-sliced
+                let! result = CombineImportedAssembliesTask ctok |> Eventually.ofCancellable
                 return { state with initialBoundModel = Some result }, result
             | Some result ->
                 return state, result
         }
 
-    let computeBoundModel state (cache: TimeStampCache) (ctok: CompilationThreadToken) (ct: CancellationToken) (slot: int) =
+    let computeBoundModel state (cache: TimeStampCache) (ctok: CompilationThreadToken) (slot: int) =
+        if IncrementalBuild.injectCancellationFault then Eventually.canceled() else
         eventually {         
-            if IncrementalBuild.injectCancellationFault then 
-                raise (OperationCanceledException())
 
-            let! (state, initial) = computeInitialBoundModel state ctok ct
+            let! (state, initial) = computeInitialBoundModel state ctok
 
             let fileInfo = fileNames.[slot]
 
@@ -1048,13 +1046,12 @@ type IncrementalBuilder(tcGlobals,
                 return state
         }
 
-    let computeBoundModels state (cache: TimeStampCache) (ctok: CompilationThreadToken) ct =
-        (state, [0..fileNames.Length-1]) ||> Eventually.fold (fun state slot -> computeBoundModel state cache ctok ct slot)
+    let computeBoundModels state (cache: TimeStampCache) (ctok: CompilationThreadToken) =
+        (state, [0..fileNames.Length-1]) ||> Eventually.fold (fun state slot -> computeBoundModel state cache ctok slot)
 
     let computeFinalizedBoundModel state (cache: TimeStampCache) (ctok: CompilationThreadToken) =
         cancellable {
-            let! ct = Cancellable.token()
-            let! state = computeBoundModels state cache ctok ct |> Eventually.toCancellable
+            let! state = computeBoundModels state cache ctok |> Eventually.toCancellable
 
             match state.finalizedBoundModel with
             | Some result -> return state, result
@@ -1066,14 +1063,14 @@ type IncrementalBuilder(tcGlobals,
                 return { state with finalizedBoundModel = Some result }, result
         }
 
-    let populateBoundModel state (cache: TimeStampCache) (ctok: CompilationThreadToken) ct =
+    let populateBoundModel state (cache: TimeStampCache) (ctok: CompilationThreadToken) =
         eventually {
             let state = computeStampedReferencedAssemblies state cache
             let state = computeStampedFileNames state cache
 
             match state.boundModels |> Seq.tryFindIndex (fun x -> x.IsNone) with
             | Some slot ->
-                let! state = computeBoundModel state cache ctok ct slot
+                let! state = computeBoundModel state cache ctok slot
                 return state, true
             | _ ->
                 return state, false
@@ -1098,16 +1095,15 @@ type IncrementalBuilder(tcGlobals,
                 
     let eval state (cache: TimeStampCache) ctok targetSlot =
         cancellable {
-            let! ct = Cancellable.token()
             if targetSlot < 0 then
                 let state = computeStampedReferencedAssemblies state cache
 
-                let! state, result = computeInitialBoundModel state ctok ct |> Eventually.toCancellable
+                let! state, result = computeInitialBoundModel state ctok |> Eventually.toCancellable
                 return state, Some(result, DateTime.MinValue)
             else         
                 let evalUpTo = 
                     (state, [0..targetSlot]) ||> Cancellable.fold (fun state slot -> 
-                        computeBoundModel state cache ctok ct slot  |> Eventually.toCancellable)
+                        computeBoundModel state cache ctok slot  |> Eventually.toCancellable)
                 let state = computeStampedReferencedAssemblies state cache
 
                 let! _ = evalUpTo
@@ -1177,10 +1173,10 @@ type IncrementalBuilder(tcGlobals,
 
     member _.AllDependenciesDeprecated = allDependencies
 
-    member _.PopulatePartialCheckingResults (ctok: CompilationThreadToken, ct: CancellationToken) =  
+    member _.PopulatePartialCheckingResults (ctok: CompilationThreadToken) =  
       eventually {
         let cache = TimeStampCache defaultTimeStamp // One per step
-        let! state, res = populateBoundModel currentState cache ctok ct
+        let! state, res = populateBoundModel currentState cache ctok
         setCurrentState ctok state
         if not res then
             projectChecked.Trigger()

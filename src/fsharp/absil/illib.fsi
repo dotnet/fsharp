@@ -323,9 +323,10 @@ module internal Map =
     val tryFindMulti :
         k:'a -> map:Map<'a,'b list> -> 'b list when 'a: comparison
 
+[<Struct>]
 type internal ResultOrException<'TResult> =
-    | Result of 'TResult
-    | Exception of Exception
+    | Result of result: 'TResult
+    | Exception of ``exception``: Exception
 
 module internal ResultOrException =
 
@@ -339,10 +340,10 @@ module internal ResultOrException =
 
     val otherwise : f:(unit -> ResultOrException<'a>) -> x:ResultOrException<'a> -> ResultOrException<'a>
 
-[<RequireQualifiedAccessAttribute>]
+[<RequireQualifiedAccessAttribute; Struct>]
 type internal ValueOrCancelled<'TResult> =
-    | Value of 'TResult
-    | Cancelled of OperationCanceledException
+    | Value of result: 'TResult
+    | Cancelled of ``exception``: OperationCanceledException
 
 /// Represents a synchronous cancellable computation with explicit representation of a cancelled result.
 ///
@@ -356,10 +357,6 @@ module internal Cancellable =
 
     /// Run a cancellable computation using the given cancellation token
     val run : ct:CancellationToken -> Cancellable<'a> -> ValueOrCancelled<'a>
-
-    /// Run a cancellable computation using the given cancellation token. Raise OperationCanceledException
-    /// if cancellation occurs
-    val runThrowing : ct:CancellationToken -> Cancellable<'a> -> 'a
 
     /// Bind the result of a cancellable computation
     val bind : f:('a -> Cancellable<'b>) -> comp1:Cancellable<'a> -> Cancellable<'b>
@@ -425,7 +422,7 @@ type internal CancellableBuilder =
 module internal CancellableAutoOpens =
     val cancellable: CancellableBuilder
 
-/// Computations that can cooperatively yield by returning a continuation
+/// Cancellable computations that can cooperatively yield by returning a continuation
 ///
 ///    - Any yield of a NotYetDone should typically be "abandonable" without adverse consequences. No resource release
 ///      will be called when the computation is abandoned.
@@ -437,28 +434,23 @@ module internal CancellableAutoOpens =
 ///      Eventually.forceForTimeSlice
 type internal Eventually<'T> =
     | Done of 'T
-    | NotYetDone of (unit -> Eventually<'T>)
+    | NotYetDone of (CancellationToken -> ValueOrCancelled<Eventually<'T>>)
 
 module internal Eventually =
 
     val box: e:Eventually<'a> -> Eventually<obj>
 
+    // Throws away time-slicing but retains cancellation
     val toCancellable: e:Eventually<'a> -> Cancellable<'a>
 
-    val force: e:Eventually<'a> -> 'a
+    val ofCancellable: Cancellable<'T> -> Eventually<'T>
 
-    val forceCancellable: ct: CancellationToken -> e:Eventually<'a> -> ValueOrCancelled<'a>
-
-    val forceCancellableThrowing: ct: CancellationToken -> e:Eventually<'a> -> 'a
+    val force: ct: CancellationToken -> e:Eventually<'a> -> ValueOrCancelled<'a>
 
     /// Run for at most the given time slice, returning the residue computation, which may be complete.
     /// If cancellation is requested then just return the computation at the point where cancellation
     /// was detected.
-    val forceForTimeSlice: sw:Stopwatch -> timeShareInMilliseconds: int64 -> ct: CancellationToken -> e: Eventually<'b> -> Eventually<'b>
-
-    /// Keep running the asynchronous computation bit by bit. The runner gets called each time the computation is restarted.
-    /// Can be cancelled as an Async in the normal way. If cancelled the partially computed computation is lost
-    val forceAsync: runner:((unit -> Eventually<'T>) -> Async<Eventually<'T>>) -> e:Eventually<'T> -> Async<'T>
+    val forceForTimeSlice: sw:Stopwatch -> timeShareInMilliseconds: int64 -> ct: CancellationToken -> e: Eventually<'a> -> ValueOrCancelled<Eventually<'a>>
 
     val bind: k:('a -> Eventually<'b>) -> e:Eventually<'a> -> Eventually<'b>
 
@@ -471,6 +463,12 @@ module internal Eventually =
     val tryFinally : e:Eventually<'a> -> compensation:(unit -> unit) -> Eventually<'a>
 
     val tryWith : e:Eventually<'a> -> handler:(System.Exception -> Eventually<'a>) -> Eventually<'a>
+
+    /// Bind the cancellation token associated with the computation
+    val token: unit -> Eventually<CancellationToken>
+
+    /// Represents a canceled computation
+    val canceled: unit -> Eventually<'a>
 
 [<Class>]
 type internal EventuallyBuilder =

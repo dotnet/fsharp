@@ -3512,7 +3512,6 @@ FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: FsiEvaluationSessionHost
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: FsiEvaluationSessionHostConfig GetDefaultConfiguration(System.Object)
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: FsiEvaluationSessionHostConfig GetDefaultConfiguration(System.Object, Boolean)
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Interactive.Shell+FsiBoundValue] GetBoundValues()
-FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`3[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults]] ParseAndCheckInteraction(System.String)
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit] PartialAssemblySignatureUpdated
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit] get_PartialAssemblySignatureUpdated()
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[System.Tuple`3[System.Object,System.Type,System.String]],System.Tuple`3[System.Object,System.Type,System.String]] ValueBound
@@ -3528,6 +3527,7 @@ FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.String FormatValu
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Tuple`2[Microsoft.FSharp.Core.FSharpChoice`2[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Interactive.Shell+FsiValue],System.Exception],FSharp.Compiler.Diagnostics.FSharpDiagnostic[]] EvalExpressionNonThrowing(System.String)
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Tuple`2[Microsoft.FSharp.Core.FSharpChoice`2[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Interactive.Shell+FsiValue],System.Exception],FSharp.Compiler.Diagnostics.FSharpDiagnostic[]] EvalInteractionNonThrowing(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Tuple`2[Microsoft.FSharp.Core.FSharpChoice`2[Microsoft.FSharp.Core.Unit,System.Exception],FSharp.Compiler.Diagnostics.FSharpDiagnostic[]] EvalScriptNonThrowing(System.String)
+FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Tuple`3[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults] ParseAndCheckInteraction(System.String)
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: Void AddBoundValue(System.String, System.Object)
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: Void EvalInteraction(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: Void EvalScript(System.String)

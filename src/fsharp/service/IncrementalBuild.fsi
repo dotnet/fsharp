@@ -161,7 +161,7 @@ type internal IncrementalBuilder =
       member AllDependenciesDeprecated : string[]
 
       /// The project build. Return true if the background work is finished.
-      member PopulatePartialCheckingResults: CompilationThreadToken * CancellationToken -> Eventually<unit>
+      member PopulatePartialCheckingResults: CompilationThreadToken -> Eventually<unit>
 
       /// Get the preceding typecheck state of a slot, without checking if it is up-to-date w.r.t.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.

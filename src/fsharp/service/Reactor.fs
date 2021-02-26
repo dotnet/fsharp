@@ -18,7 +18,7 @@ type internal IReactorOperations =
 [<NoEquality; NoComparison>]
 type internal ReactorCommands = 
     /// Kick off a build.
-    | SetBackgroundOp of ( (* userOpName: *) string * (* opName: *) string * (* opArg: *) string * (CompilationThreadToken -> CancellationToken -> Eventually<unit>)) option
+    | SetBackgroundOp of ( (* userOpName: *) string * (* opName: *) string * (* opArg: *) string * (CompilationThreadToken -> Eventually<unit>)) option
 
     /// Do some work not synchronized in the mailbox.
     | Op of userOpName: string * opName: string * opArg: string * CancellationToken * (CompilationThreadToken -> unit) * (unit -> unit)
@@ -88,7 +88,7 @@ type Reactor() =
                             | Some (bgUserOpName, bgOpName, bgOpArg, bgOp) -> 
                                 bgOpCts.Dispose()
                                 bgOpCts <- new CancellationTokenSource()
-                                Some (bgUserOpName, bgOpName, bgOpArg, bgOp ctok bgOpCts.Token)
+                                Some (bgUserOpName, bgOpName, bgOpArg, bgOp ctok)
 
                         //Trace.TraceInformation("Reactor: --> set background op, remaining {0}", inbox.CurrentQueueLength)
                         return! loop (bgOpOpt, onComplete, false)
@@ -116,7 +116,7 @@ type Reactor() =
                             bgOpCts <- new CancellationTokenSource()
                             
                             try 
-                                Eventually.forceCancellable bgOpCts.Token bgOp |> ignore
+                                Eventually.force bgOpCts.Token bgOp |> ignore
                             with :? OperationCanceledException -> ()
 
                             if bgOpCts.IsCancellationRequested then 
@@ -135,12 +135,11 @@ type Reactor() =
                         | Some  (bgUserOpName, bgOpName, bgOpArg, bgEv), None -> 
                             Trace.TraceInformation("Reactor: {0:n3} --> background step {1}.{2} ({3})", DateTime.Now.TimeOfDay.TotalSeconds, bgUserOpName, bgOpName, bgOpArg)
 
-                            // Force for a timeslice. Cancellation will either raise
-                            // OperationCanceledException or will result in the partially computed
-                            // suspension. Either way we abandon the background work
+                            // Force for a timeslice. If cancellation occurs we abandon the background work.
                             let bgOpRes = 
-                                try Eventually.forceForTimeSlice sw maxTimeShareMilliseconds bgOpCts.Token bgEv
-                                with :? OperationCanceledException -> Eventually.Done ()
+                                match Eventually.forceForTimeSlice sw maxTimeShareMilliseconds bgOpCts.Token bgEv with
+                                | ValueOrCancelled.Value cont -> cont
+                                | ValueOrCancelled.Cancelled _ -> Eventually.Done ()
 
                             let bgOp2 = 
                                 match bgOpRes with 

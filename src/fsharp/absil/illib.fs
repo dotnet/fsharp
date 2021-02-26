@@ -676,9 +676,10 @@ type Lock<'LockTokenType when 'LockTokenType :> LockToken>() =
 module Map = 
     let tryFindMulti k map = match Map.tryFind k map with Some res -> res | None -> []
 
+[<Struct>]
 type ResultOrException<'TResult> =
-    | Result of 'TResult
-    | Exception of Exception
+    | Result of result: 'TResult
+    | Exception of ``exception``: Exception
                      
 module ResultOrException = 
 
@@ -702,10 +703,10 @@ module ResultOrException =
         | Result x -> success x
         | Exception _err -> f()
 
-[<RequireQualifiedAccess>] 
+[<RequireQualifiedAccess; Struct>] 
 type ValueOrCancelled<'TResult> =
-    | Value of 'TResult
-    | Cancelled of OperationCanceledException
+    | Value of result: 'TResult
+    | Cancelled of ``exception``: OperationCanceledException
 
 /// Represents a cancellable computation with explicit representation of a cancelled result.
 ///
@@ -721,19 +722,7 @@ module Cancellable =
         if ct.IsCancellationRequested then 
             ValueOrCancelled.Cancelled (OperationCanceledException ct) 
         else
-            try oper ct 
-            with 
-            | :? OperationCanceledException as e -> 
-                ValueOrCancelled.Cancelled e
-            | _ -> reraise()
-
-    let runThrowing (ct: CancellationToken) (Cancellable oper) = 
-        if ct.IsCancellationRequested then 
-            raise (OperationCanceledException ct) 
-        else
-            match oper ct with 
-            | ValueOrCancelled.Cancelled ce -> raise ce
-            | ValueOrCancelled.Value v -> v
+            oper ct 
 
     /// Bind the result of a cancellable computation
     let bind f comp1 = 
@@ -864,14 +853,18 @@ module CancellableAutoOpens =
 ///    - Cancellation results in a suspended computation rather than complete abandonment
 type Eventually<'T> = 
     | Done of 'T 
-    | NotYetDone of (unit -> Eventually<'T>)
+    | NotYetDone of (CancellationToken -> ValueOrCancelled<Eventually<'T>>)
 
 module Eventually = 
 
     let rec map f e = 
         match e with 
         | Done x -> Done (f x) 
-        | NotYetDone work -> NotYetDone (fun ct -> map f (work ct))
+        | NotYetDone work ->
+            NotYetDone (fun ct ->
+                match work ct with
+                | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
+                | ValueOrCancelled.Value e2 -> ValueOrCancelled.Value (map f e2))
 
     let box e = map Operators.box e
 
@@ -884,49 +877,51 @@ module Eventually =
                    if ct.IsCancellationRequested then 
                       ValueOrCancelled.Cancelled (OperationCanceledException ct)
                    else 
-                      loop (work())
+                       match work ct with
+                       | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
+                       | ValueOrCancelled.Value e2 -> loop e2
            loop e) 
 
-    let forceCancellable ct e = Cancellable.run ct (toCancellable e)
+    let ofCancellable (Cancellable f) =
+        NotYetDone (fun ct -> 
+            match f ct with
+            | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
+            | ValueOrCancelled.Value v -> ValueOrCancelled.Value (Done v)
+        )
 
-    let forceCancellableThrowing ct e = Cancellable.runThrowing ct (toCancellable e)
+    let token () = NotYetDone (fun ct -> ValueOrCancelled.Value (Done ct))
 
-    let rec force e =
-        match e with
-        | Done x -> x
-        | NotYetDone work -> force (work())
+    let canceled () = NotYetDone (fun ct -> ValueOrCancelled.Cancelled (OperationCanceledException ct))
+
+    let force ct e = Cancellable.run ct (toCancellable e)
 
     let forceForTimeSlice (sw: Stopwatch) timeShareInMilliseconds (ct: CancellationToken) e = 
         sw.Reset()
         sw.Start()
-        let rec loop ev2 = 
-            match ev2 with 
-            | Done _ -> ev2
+        let rec loop e = 
+            match e with 
+            | Done _ -> ValueOrCancelled.Value e
             | NotYetDone work ->
-                if ct.IsCancellationRequested || sw.ElapsedMilliseconds > timeShareInMilliseconds then 
+                if ct.IsCancellationRequested then
                     sw.Stop()
-                    ev2
+                    ValueOrCancelled.Cancelled (OperationCanceledException(ct))
+                elif sw.ElapsedMilliseconds > timeShareInMilliseconds then 
+                    sw.Stop()
+                    ValueOrCancelled.Value e
                 else 
-                    loop (work())
-        loop e
-
-    /// Keep running the asynchronous computation bit by bit. The runner gets called each time the computation is restarted.
-    /// Can be cancelled as an Async in the normal way.
-    let forceAsync (runner: (unit -> Eventually<'T>) -> Async<Eventually<'T>>) (e: Eventually<'T>) : Async<'T> =
-        let rec loop (e: Eventually<'T>) =
-            async {
-                match e with 
-                | Done x -> return x
-                | NotYetDone work ->
-                    let! r = runner work
-                    return! loop r
-            }
+                    match work ct with
+                    | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
+                    | ValueOrCancelled.Value e2 -> loop e2
         loop e
 
     let rec bind k e = 
         match e with 
         | Done x -> k x 
-        | NotYetDone work -> NotYetDone (fun ct -> bind k (work ct))
+        | NotYetDone work ->
+            NotYetDone (fun ct -> 
+                match work ct with
+                | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
+                | ValueOrCancelled.Value e2 -> ValueOrCancelled.Value (bind k e2))
 
     let fold f acc seq = 
         (Done acc, seq) ||> Seq.fold (fun acc x -> acc |> bind (fun acc -> f acc x))
@@ -938,10 +933,11 @@ module Eventually =
             NotYetDone (fun ct -> 
                 let res = try Result(work ct) with | e -> Exception e 
                 match res with 
-                | Result cont -> catch cont
-                | Exception e -> Done(Exception e))
+                | Result (ValueOrCancelled.Value cont) -> ValueOrCancelled.Value (catch cont)
+                | Result (ValueOrCancelled.Cancelled ce) -> ValueOrCancelled.Cancelled ce
+                | Exception e -> ValueOrCancelled.Value (Done(Exception e)))
     
-    let delay (f: unit -> Eventually<'T>) = NotYetDone (fun _ctok -> f())
+    let delay f = NotYetDone (fun _ct -> ValueOrCancelled.Value (f ()))
 
     let tryFinally e compensation =
         catch e 

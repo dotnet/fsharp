@@ -827,7 +827,10 @@ let TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, pre
 
     RequireCompilationThread ctok
     TypeCheckOneInputEventually (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp, false) 
-        |> Eventually.force
+        |> Eventually.force CancellationToken.None
+        |> function 
+           | ValueOrCancelled.Value v -> v
+           | ValueOrCancelled.Cancelled ce ->  raise ce // this condition is unexpected, since CancellationToken.None was passed
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
 let TypeCheckMultipleInputsFinish(results, tcState: TcState) =
