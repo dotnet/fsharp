@@ -40,6 +40,7 @@ open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
@@ -70,20 +71,20 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
     let mutable errors = 0
 
     /// Called when an error or warning occurs
-    abstract HandleIssue: tcConfigB: TcConfigBuilder * error: PhasedDiagnostic * isError: bool -> unit
+    abstract HandleIssue: tcConfigB: TcConfigBuilder * error: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
     /// Called when 'too many errors' has occurred
     abstract HandleTooManyErrors: text: string -> unit
 
     override x.ErrorCount = errors
 
-    override x.DiagnosticSink(err, isError) = 
-      if isError || ReportWarningAsError tcConfigB.errorSeverityOptions err then 
+    override x.DiagnosticSink(err, severity) = 
+      if severity = FSharpDiagnosticSeverity.Error || ReportWarningAsError tcConfigB.errorSeverityOptions err then 
         if errors >= tcConfigB.maxErrors then 
             x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors())
             exiter.Exit 1
 
-        x.HandleIssue(tcConfigB, err, true)
+        x.HandleIssue(tcConfigB, err, FSharpDiagnosticSeverity.Error)
 
         errors <- errors + 1
 
@@ -94,7 +95,7 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
         | _ ->  ()
 
       elif ReportWarning tcConfigB.errorSeverityOptions err then
-          x.HandleIssue(tcConfigB, err, isError)
+          x.HandleIssue(tcConfigB, err, severity)
     
 
 /// Create an error logger that counts and prints errors 
@@ -102,11 +103,11 @@ let ConsoleErrorLoggerUpToMaxErrors (tcConfigB: TcConfigBuilder, exiter : Exiter
     { new ErrorLoggerUpToMaxErrors(tcConfigB, exiter, "ConsoleErrorLoggerUpToMaxErrors") with
             
             member _.HandleTooManyErrors(text : string) = 
-                DoWithErrorColor false (fun () -> Printf.eprintfn "%s" text)
+                DoWithDiagnosticColor FSharpDiagnosticSeverity.Warning (fun () -> Printf.eprintfn "%s" text)
 
-            member _.HandleIssue(tcConfigB, err, isError) =
-                DoWithErrorColor isError (fun () -> 
-                    let diag = OutputDiagnostic (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths, tcConfigB.flatErrors, tcConfigB.errorStyle, isError)
+            member _.HandleIssue(tcConfigB, err, severity) =
+                DoWithDiagnosticColor severity (fun () -> 
+                    let diag = OutputDiagnostic (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths, tcConfigB.flatErrors, tcConfigB.errorStyle, severity)
                     writeViaBuffer stderr diag err
                     stderr.WriteLine())
     } :> ErrorLogger
@@ -142,16 +143,21 @@ type InProcErrorLoggerProvider() =
 
                 { new ErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter, "InProcCompilerErrorLoggerUpToMaxErrors") with
 
-                    member this.HandleTooManyErrors text = warnings.Add(Diagnostic.Short(false, text))
+                    member this.HandleTooManyErrors text =
+                        warnings.Add(Diagnostic.Short(FSharpDiagnosticSeverity.Warning, text))
 
-                    member this.HandleIssue(tcConfigBuilder, err, isError) =
+                    member this.HandleIssue(tcConfigBuilder, err, severity) =
                         // 'true' is passed for "suggestNames", since we want to suggest names with fsc.exe runs and this doesn't affect IDE perf
-                        let errs =
+                        let diagnostics =
                             CollectDiagnostic
                                 (tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths,
-                                 tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, isError, err, true)
-                        let container = if isError then errors else warnings
-                        container.AddRange(errs) }
+                                 tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, severity, err, true)
+                        match severity with 
+                        | FSharpDiagnosticSeverity.Error -> 
+                           errors.AddRange(diagnostics) 
+                        | FSharpDiagnosticSeverity.Warning -> 
+                            warnings.AddRange(diagnostics) 
+                        | _ -> ()}
                 :> ErrorLogger }
 
     member _.CapturedErrors = errors.ToArray()
@@ -299,42 +305,6 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
 
     dllFiles |> List.iter (fun f->tcConfigB.AddReferencedAssemblyByPath(rangeStartup, f))
     sourceFiles
-
-let EncodeSignatureData(tcConfig: TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) = 
-    if tcConfig.GenerateSignatureData then 
-        let resource = WriteSignatureData (tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild)
-        // The resource gets written to a file for FSharp.Core
-        let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
-        if useDataFiles then 
-            let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
-            let bytes = resource.GetBytes()
-            use fileStream = File.Create(sigDataFileName, bytes.Length)
-            bytes.CopyTo fileStream
-        let resources = 
-            [ resource ]
-        let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
-        [sigAttr], resources
-      else 
-        [], []
-
-let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemapping, data, isIncrementalBuild) = 
-    if tcConfig.GenerateOptimizationData then 
-        let data = map2Of2 (Optimizer.RemapOptimizationInfo tcGlobals exportRemapping) data
-        // As with the sigdata file, the optdata gets written to a file for FSharp.Core
-        let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
-        if useDataFiles then 
-            let ccu, modulInfo = data
-            let bytes = TypedTreePickle.pickleObjWithDanglingCcus isIncrementalBuild outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
-            let optDataFileName = (Filename.chopExtension outfile)+".optdata"
-            File.WriteAllBytes(optDataFileName, bytes)
-        let (ccu, optData) = 
-            if tcConfig.onlyEssentialOptimizationData then 
-                map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data 
-            else 
-                data
-        [ WriteOptimizationData (tcGlobals, outfile, isIncrementalBuild, ccu, optData) ]
-    else
-        [ ]
 
 /// Write a .fsi file for the --sig option
 module InterfaceFileWriter =
