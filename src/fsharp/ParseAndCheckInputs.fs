@@ -929,17 +929,21 @@ let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobal
 
     (inputs, results) 
     ||> Array.zip
-    |> ArrayParallel.iteri (fun i (input, (_, _, implOpt, _)) ->
+    |> Array.mapi (fun i (input, (_, _, implOpt, _)) ->
         match implOpt with
-        | None -> ()
+        | None -> None
         | Some impl ->
             match impl with
             | TypedImplFile.TImplFile(qualifiedNameOfFile=qualifiedNameOfFile;implementationExpressionWithSignature=ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(contents=ModuleOrNamespaceExpr.TMDefs [])) ->
-                let tcState = tcState.RemoveImpl(qualifiedNameOfFile)
-                let result, _ = TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState input
-                newResults.[i] <- result
+                Some(i, input, qualifiedNameOfFile)
             | _ ->
-                ()
+                None
+    )
+    |> Array.choose id
+    |> ArrayParallel.iter (fun (i, input, qualifiedNameOfFile) ->
+        let tcState = tcState.RemoveImpl(qualifiedNameOfFile)
+        let result, _ = TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState input
+        newResults.[i] <- result
     )
 
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState = TypeCheckMultipleInputsFinish(newResults |> List.ofArray, tcState)
