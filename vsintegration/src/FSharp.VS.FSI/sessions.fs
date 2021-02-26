@@ -151,7 +151,7 @@ let determineFsiPath () =
             let thisAssembly : System.Reflection.Assembly = typeof<FSharp.Compiler.Server.Shared.FSharpInteractiveServer>.Assembly
             let thisAssemblyDirectory = thisAssembly.Location |> Path.GetDirectoryName
             // Use the quick-development path if available    
-            Path.Combine(thisAssemblyDirectory, "Tools", fsiExeName() )
+            Path.Combine(thisAssemblyDirectory,fsiExeName() )
 
         let fsiExe =
             // Choose VS extension path, if it exists (for developers)
@@ -164,7 +164,7 @@ let determineFsiPath () =
 
             // Try the registry key
             let fsbin = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with Some(s) -> s | None -> ""
-            let fsiRegistryPath = Path.Combine(fsbin, "Tools", fsiExeName() )
+            let fsiRegistryPath = Path.Combine(fsbin, fsiExeName() )
             if File.Exists(fsiRegistryPath) then fsiRegistryPath else
 
             // Otherwise give up

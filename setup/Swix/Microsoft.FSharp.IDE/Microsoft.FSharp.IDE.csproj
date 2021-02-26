@@ -31,7 +31,8 @@
     <_Dependency Include="FSharp.VS.FSI" Version="$(VSAssemblyVersion)" />
   </ItemGroup>
 
-  <Target Name="GenerateDependentAssemblyVersions" AfterTargets="Build">
+  <Target Name="GenerateDependentAssemblyVersions"
+          AfterTargets="Build">
     <PropertyGroup>
       <DevDivPackagesDir>$(InsertionDir)\DevDivPackages</DevDivPackagesDir>
       <DependentAssemblyVersionsFile>$(DevDivPackagesDir)\DependentAssemblyVersions.csv</DependentAssemblyVersionsFile>
