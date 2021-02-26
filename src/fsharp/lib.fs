@@ -602,7 +602,7 @@ type DisposablesTracker() =
 module ArrayParallel =
 
     let inline iteri f (arr: 'T []) =
-        let parallelOptions = ParallelOptions(MaxDegreeOfParallelism=min Environment.ProcessorCount arr.Length)
+        let parallelOptions = ParallelOptions(MaxDegreeOfParallelism = max (min Environment.ProcessorCount arr.Length) 1)
         Parallel.For(0, arr.Length, parallelOptions, fun i ->
             f i arr.[i]
         ) |> ignore
