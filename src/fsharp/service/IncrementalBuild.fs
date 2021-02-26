@@ -1101,12 +1101,10 @@ type IncrementalBuilder(tcGlobals,
                 let! state, result = computeInitialBoundModel state ctok |> Eventually.toCancellable
                 return state, Some(result, DateTime.MinValue)
             else         
-                let evalUpTo = 
+                let! state = 
                     (state, [0..targetSlot]) ||> Cancellable.fold (fun state slot -> 
                         computeBoundModel state cache ctok slot  |> Eventually.toCancellable)
                 let state = computeStampedReferencedAssemblies state cache
-
-                let! _ = evalUpTo
 
                 let result =
                     state.boundModels.[targetSlot]
