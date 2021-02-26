@@ -950,7 +950,7 @@ let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports
 
             newResults |> List.ofArray, tcState
         else
-            (tcState, inputs) ||> List.mapFold (TypeCheckOneInputSkipImpl (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
+            (tcState, inputs) ||> List.mapFold (TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
 
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState = TypeCheckMultipleInputsFinish(results, tcState)
     let tcState, declaredImpls = TypeCheckClosedInputSetFinish (implFiles, tcState)
