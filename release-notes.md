@@ -17,8 +17,9 @@ These release notes track our current efforts to document changes to the F# proj
 ### F# 5 / Visual Studio 16.9
 
 ### FSharp.Core 5.0.1
-
 TBD
+* [Performance improvement](https://github.com/dotnet/fsharp/pull/10188) to core collections Map by [Victor Baybekov](https://github.com/buybackoff)
+
 
 ### FSharp tools 11.0.1
 
@@ -423,7 +424,7 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 
 ### FSharp Core 5.0.0
 
-* [Performance improvement](https://github.com/dotnet/fsharp/pull/10188) to core collections Set and Map by [Victor Baybekov](https://github.com/buybackoff) 
+
 * Consistent behavior for empty/non-existent slices for lists, strings, arrays, 2D arrays, 3D arrays, and 4D arrays
 * Support for fixed-index slices in 3D and 4D arrays
 * Support for negative indexes (in preview)
