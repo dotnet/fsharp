@@ -15,6 +15,7 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
@@ -27,8 +28,8 @@ open FSharp.Compiler.Text.Range
 type LoadClosureInput = 
     { FileName: string
       SyntaxTree: ParsedInput option
-      ParseDiagnostics: (PhasedDiagnostic * bool) list 
-      MetaCommandDiagnostics: (PhasedDiagnostic * bool) list }
+      ParseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list 
+      MetaCommandDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list }
 
 [<RequireQualifiedAccess>]
 type LoadClosure = 
@@ -60,13 +61,13 @@ type LoadClosure =
       NoWarns: (string * range list) list
 
       /// Diagnostics seen while processing resolutions
-      ResolutionDiagnostics: (PhasedDiagnostic * bool) list
+      ResolutionDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
       /// Diagnostics seen while parsing root of closure
-      AllRootFileDiagnostics: (PhasedDiagnostic * bool) list
+      AllRootFileDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
       /// Diagnostics seen while processing the compiler options implied root of closure
-      LoadClosureRootFileDiagnostics: (PhasedDiagnostic * bool) list
+      LoadClosureRootFileDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
     }   
 
 
@@ -82,7 +83,7 @@ module ScriptPreprocessClosure =
     type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: ISourceText * parseRequired: bool 
         
     /// Represents an output of the closure finding process
-    type ClosureFile = ClosureFile of string * range * ParsedInput option * (PhasedDiagnostic * bool) list * (PhasedDiagnostic * bool) list * (string * range) list // filename, range, errors, warnings, nowarns
+    type ClosureFile = ClosureFile of string * range * ParsedInput option * (PhasedDiagnostic * FSharpDiagnosticSeverity) list * (PhasedDiagnostic * FSharpDiagnosticSeverity) list * (string * range) list // filename, range, errors, warnings, nowarns
 
     type Observed() =
         let seen = System.Collections.Generic.Dictionary<_, bool>()
@@ -312,33 +313,28 @@ module ScriptPreprocessClosure =
                             let result = ParseScriptText (filename, sourceText, tcConfig, codeContext, lexResourceManager, errorLogger) 
                             result, errorLogger.Diagnostics
 
-                        match parseResult with 
-                        | Some parsedScriptAst ->
-                            let errorLogger = CapturingErrorLogger("FindClosureMetaCommands")
-                            use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                            let pathOfMetaCommandSource = Path.GetDirectoryName filename
-                            let preSources = tcConfig.GetAvailableLoadedSources()
+                        let errorLogger = CapturingErrorLogger("FindClosureMetaCommands")
+                        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+                        let pathOfMetaCommandSource = Path.GetDirectoryName filename
+                        let preSources = tcConfig.GetAvailableLoadedSources()
 
-                            let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn (tcConfig, parsedScriptAst, pathOfMetaCommandSource, dependencyProvider)
-                            tcConfig <- tcConfigResult // We accumulate the tcConfig in order to collect assembly references
+                        let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn (tcConfig, parseResult, pathOfMetaCommandSource, dependencyProvider)
+                        tcConfig <- tcConfigResult // We accumulate the tcConfig in order to collect assembly references
 
-                            yield! resolveDependencyManagerSources filename
+                        yield! resolveDependencyManagerSources filename
 
-                            let postSources = tcConfig.GetAvailableLoadedSources()
-                            let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
+                        let postSources = tcConfig.GetAvailableLoadedSources()
+                        let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
 
-                            yield! resolveDependencyManagerSources filename
-                            for (m, subFile) in sources do
-                                if IsScript subFile then 
-                                    for subSource in ClosureSourceOfFilename(subFile, m, tcConfigResult.inputCodePage, false) do
-                                        yield! loop subSource
-                                else
-                                    yield ClosureFile(subFile, m, None, [], [], []) 
-                            yield ClosureFile(filename, m, Some parsedScriptAst, parseDiagnostics, errorLogger.Diagnostics, noWarns)
+                        yield! resolveDependencyManagerSources filename
+                        for (m, subFile) in sources do
+                            if IsScript subFile then 
+                                for subSource in ClosureSourceOfFilename(subFile, m, tcConfigResult.inputCodePage, false) do
+                                    yield! loop subSource
+                            else
+                                yield ClosureFile(subFile, m, None, [], [], []) 
+                        yield ClosureFile(filename, m, Some parseResult, parseDiagnostics, errorLogger.Diagnostics, noWarns)
 
-                        | None -> 
-                            printfn "yielding source %s (failed parse)" filename
-                            yield ClosureFile(filename, m, None, parseDiagnostics, [], [])
                     else 
                         // Don't traverse into .fs leafs.
                         printfn "yielding non-script source %s" filename
