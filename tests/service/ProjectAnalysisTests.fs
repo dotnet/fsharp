@@ -120,6 +120,7 @@ let ``Test project1 and make sure TcImports gets cleaned up`` () =
             Assert.True weakTcImports.IsAlive
             weakTcImports
      
+    // Here we are only keeping a handle to weakTcImports and nothing else
     let weakTcImports = test ()
     checker.InvalidateConfiguration (Project1.options)
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
