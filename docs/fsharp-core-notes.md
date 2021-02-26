@@ -12,12 +12,6 @@ FSharp.Core is binary compatible across versions of the F# language. For example
 
 **Binary compatibility means that a component built for X can bind to Y at runtime. It doesn't mean that Y behaves 100% the same as X, though.** For example, an older compiler that doesn't know how to understand `inref<'T>` referencing a newer FSharp.Core that has `inref<'T>` defined may not behave correctly if `inref<'T>` is used in source.
 
-### Note on legacy FSharp.Core binaries - 2.0.0 and below
-
-FSharp.Core 4.0.0.0 and upwards is not binary compatible with apps built with F# 2.0 and FSharp.Core 2.0.0.0. Some types such as `Tuple` and `Bigint` moved to be supported in .NET. At the time (.NET Framework 2.0-3.5) had less support for things and F#, like most of .NET, had to make a breaking change to support .NET Framework 4.0 and higher.
-
-This information is only applicable if you need to author something for F# running in extremely old environments. FSharp.Core is binary compatible otherwise.
-
 ## FSharp.Core and F# scripts
 
 F# scripts, executed by F# interactive, execute against the FSharp.Core deployed with the .NET SDK you are using. If you're expecting to use a more modern library feature and find that it's missing, it's likely because you have an older .NET SDK and thus an older F# Interactive. Upgrade your .NET SDK.
@@ -89,13 +83,15 @@ In general, applications can always just use the latest FSharp.Core bundled in t
 
 ### C# projects referencing F# projects may need to pin FSharp.Core
 
-You can reference an F# project just fine without needing to be explicit about an FSharp.Core reference when using non-legacy projects. References flow transitively, so even if you need to use types directly from FSharp.Core (which you probably shouldn't do anyways) it will pick up the right types from the right assembly.
+You can reference an F# project just fine without needing to be explicit about an FSharp.Core reference when using C# projects based on the .NET SDK. References flow transitively for SDK-style projects, so even if you need to use types directly from FSharp.Core (which you probably shouldn't do anyways) it will pick up the right types from the right assembly.
 
 If you do have an explicit FSharp.Core reference in your C# project that you **need**, you should pin your FSharp.Core reference across your entire codebase. Being in a mixed pinned/non-pinned world is difficult to keep straight over a long period of time.
 
-## Guidance for legacy projects, compilers, and tools
+## Guidance for older projects, compilers, and tools
 
-Lastly, if you are using legacy F# projects (non-SDK) and/or have an older toolset, the following guidance applies.
+Modern .NET development, including F#, uses SDK-style projects. You can read about that here: https://docs.microsoft.com/dotnet/core/project-sdk/overview
+
+If you are not using SDK-style projects F# projects and/or have an older toolset, the following guidance applies.
 
 ### Consider upgrading
 
