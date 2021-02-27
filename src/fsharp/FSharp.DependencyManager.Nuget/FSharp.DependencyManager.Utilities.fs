@@ -238,5 +238,5 @@ module internal Utilities =
                     // E https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
                     // So strip off the flags
                     let pos = source.IndexOf(" ")
-                    if pos >= 0 then yield ("i", source.Substring(pos).Trim(' '))
+                    if pos >= 0 then yield ("i", source.Substring(pos).Trim())
         }
