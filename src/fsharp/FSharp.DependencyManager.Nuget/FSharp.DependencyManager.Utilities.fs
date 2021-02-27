@@ -103,7 +103,7 @@ module internal Utilities =
         let probePathForDotnetHost () =
             let paths =
                 let p = Environment.GetEnvironmentVariable("PATH")
-                if not(isNull p) then p.Split(';') 
+                if not(isNull p) then p.Split(Path.PathSeparator) 
                 else [||]
             paths |> Array.tryFind (fun f -> fileExists (Path.Combine(f, dotnet)))
 
