@@ -115,7 +115,7 @@ module internal Utilities =
                 // Probe for netsdk install, dotnet. and dotnet.exe is a constant offset from the location of System.Int32
                 let candidate =
                     let assemblyLocation = Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
-                    Path.GetFullPath(Path.Combine(assemblyLocation, "../../..", dotnet))
+                    Path.GetFullPath(Path.Combine(assemblyLocation, "..", "..", "..", dotnet))
                 if fileExists candidate then
                     Some candidate
                 else
