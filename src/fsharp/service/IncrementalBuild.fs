@@ -298,6 +298,14 @@ type BoundModel private (tcConfig: TcConfig,
             | _ -> return None
         }
 
+    member this.TryOptionalExtras() =
+        eventually {
+            let! prevState = this.GetState(false)
+            match prevState with
+            | FullState(_, prevTcInfoExtras) -> return Some prevTcInfoExtras
+            | _ -> return None
+        }
+
     member this.Next(syntaxTree) =
         eventually {
             let! prevState = this.GetState(true)
