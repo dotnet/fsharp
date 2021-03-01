@@ -114,6 +114,10 @@ type internal PartialCheckResults =
     /// extras will also be available.
     member GetTcInfoWithOptionalExtras: CompilationThreadToken -> TcInfo * TcInfoExtras option
 
+    /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
+    /// extras will also be available.
+    member GetTcInfo: CompilationThreadToken -> TcInfo
+
     /// Compute both the "TcInfo" and "TcInfoExtras" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.

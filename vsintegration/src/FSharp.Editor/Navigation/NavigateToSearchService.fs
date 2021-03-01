@@ -185,15 +185,16 @@ type internal FSharpNavigateToSearchService
                 |> Array.filter (fun i -> kinds.Contains(navigateToItemKindToRoslynKind i.Kind))
 
             let items = parseResults.ParseTree |> navItems
-            return 
-                    [| for item in items do
-                         match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with 
-                         | None -> ()
-                         | Some sourceSpan ->
-                             let glyph = navigateToItemKindToGlyph item.Kind
-                             let kind = navigateToItemKindToRoslynKind item.Kind
-                             let additionalInfo = containerToString item.Container document.Project
-                             yield NavigableItem(document, sourceSpan, glyph, item.Name, kind, additionalInfo) |]
+            let navigableItems =
+                [| for item in items do
+                        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with 
+                        | None -> ()
+                        | Some sourceSpan ->
+                            let glyph = navigateToItemKindToGlyph item.Kind
+                            let kind = navigateToItemKindToRoslynKind item.Kind
+                            let additionalInfo = containerToString item.Container document.Project
+                            yield NavigableItem(document, sourceSpan, glyph, item.Name, kind, additionalInfo) |]
+            return navigableItems
         }
 
     let getCachedIndexedNavigableItems(document: Document, parsingOptions: FSharpParsingOptions, kinds: IImmutableSet<string>) =

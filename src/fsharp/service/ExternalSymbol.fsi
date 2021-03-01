@@ -27,7 +27,7 @@ module internal FindDeclExternalType =
 
 /// Represents the type of a single method parameter
 [<Sealed>]
-type FindDeclExternalParam =
+type public FindDeclExternalParam =
 
     member IsByRef: bool
 

@@ -273,9 +273,9 @@ module internal FSharpEnvironment =
             for toolPath in toolingCompatiblePaths() do
                 yield Path.Combine (compilerToolPath, toolPath)
         }
+
     let rec searchToolPaths path compilerToolPaths =
         seq {
-
             for toolPath in compilerToolPaths do
                 yield! searchToolPath toolPath
 

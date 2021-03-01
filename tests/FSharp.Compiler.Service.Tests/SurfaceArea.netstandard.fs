@@ -1519,9 +1519,9 @@ FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean get_ParseHadErrors(
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] Diagnostics
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] get_Diagnostics()
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: FSharp.Compiler.EditorServices.NavigationItems GetNavigationItems()
+FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: FSharp.Compiler.Syntax.ParsedInput ParseTree
+FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: FSharp.Compiler.Syntax.ParsedInput get_ParseTree()
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.ParameterLocations] FindParameterLocations(FSharp.Compiler.Text.Position)
-FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.ParsedInput] ParseTree
-FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.ParsedInput] get_ParseTree()
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] TryRangeOfExprInYieldOrReturn(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] TryRangeOfFunctionOrMethodBeingApplied(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] TryRangeOfNameOfNearestOuterBindingContainingPos(FSharp.Compiler.Text.Position)
@@ -2894,10 +2894,10 @@ FSharp.Compiler.EditorServices.ParsedInput: FSharp.Compiler.Text.Position Adjust
 FSharp.Compiler.EditorServices.ParsedInput: Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`4[Microsoft.FSharp.Core.FSharpOption`1[System.String[]],Microsoft.FSharp.Core.FSharpOption`1[System.String[]],Microsoft.FSharp.Core.FSharpOption`1[System.String[]],System.String[]],System.Tuple`2[FSharp.Compiler.EditorServices.InsertionContextEntity,FSharp.Compiler.EditorServices.InsertionContext][]] TryFindInsertionContext(Int32, FSharp.Compiler.Syntax.ParsedInput, FSharp.Compiler.EditorServices.MaybeUnresolvedIdent[], FSharp.Compiler.EditorServices.OpenStatementInsertionPoint)
 FSharp.Compiler.EditorServices.ParsedInput: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.CompletionContext] TryGetCompletionContext(FSharp.Compiler.Text.Position, FSharp.Compiler.Syntax.ParsedInput, System.String)
 FSharp.Compiler.EditorServices.ParsedInput: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.EntityKind] GetEntityKind(FSharp.Compiler.Text.Position, FSharp.Compiler.Syntax.ParsedInput)
-FSharp.Compiler.EditorServices.ParsedInput: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] GetRangeOfExprLeftOfDot(FSharp.Compiler.Text.Position, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.ParsedInput])
+FSharp.Compiler.EditorServices.ParsedInput: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] GetRangeOfExprLeftOfDot(FSharp.Compiler.Text.Position, FSharp.Compiler.Syntax.ParsedInput)
 FSharp.Compiler.EditorServices.ParsedInput: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident]] GetLongIdentAt(FSharp.Compiler.Syntax.ParsedInput, FSharp.Compiler.Text.Position)
-FSharp.Compiler.EditorServices.ParsedInput: Microsoft.FSharp.Core.FSharpOption`1[System.String] TryFindExpressionIslandInPosition(FSharp.Compiler.Text.Position, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.ParsedInput])
-FSharp.Compiler.EditorServices.ParsedInput: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Position,System.Boolean]] TryFindExpressionASTLeftOfDotLeftOfCursor(FSharp.Compiler.Text.Position, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.ParsedInput])
+FSharp.Compiler.EditorServices.ParsedInput: Microsoft.FSharp.Core.FSharpOption`1[System.String] TryFindExpressionIslandInPosition(FSharp.Compiler.Text.Position, FSharp.Compiler.Syntax.ParsedInput)
+FSharp.Compiler.EditorServices.ParsedInput: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Position,System.Boolean]] TryFindExpressionASTLeftOfDotLeftOfCursor(FSharp.Compiler.Text.Position, FSharp.Compiler.Syntax.ParsedInput)
 FSharp.Compiler.EditorServices.ParsedInput: System.String[] GetFullNameOfSmallestModuleOrNamespaceAtPoint(FSharp.Compiler.Text.Position, FSharp.Compiler.Syntax.ParsedInput)
 FSharp.Compiler.EditorServices.PartialLongName
 FSharp.Compiler.EditorServices.PartialLongName: Boolean Equals(FSharp.Compiler.EditorServices.PartialLongName)
@@ -3437,7 +3437,7 @@ FSharp.Compiler.EditorServices.UnusedOpens: Microsoft.FSharp.Control.FSharpAsync
 FSharp.Compiler.EditorServices.XmlDocComment
 FSharp.Compiler.EditorServices.XmlDocComment: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] IsBlank(System.String)
 FSharp.Compiler.EditorServices.XmlDocParser
-FSharp.Compiler.EditorServices.XmlDocParser: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.XmlDocable] GetXmlDocables(FSharp.Compiler.Text.ISourceText, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.ParsedInput])
+FSharp.Compiler.EditorServices.XmlDocParser: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.XmlDocable] GetXmlDocables(FSharp.Compiler.Text.ISourceText, FSharp.Compiler.Syntax.ParsedInput)
 FSharp.Compiler.EditorServices.XmlDocable
 FSharp.Compiler.EditorServices.XmlDocable: Boolean Equals(FSharp.Compiler.EditorServices.XmlDocable)
 FSharp.Compiler.EditorServices.XmlDocable: Boolean Equals(System.Object)

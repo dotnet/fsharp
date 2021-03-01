@@ -167,7 +167,9 @@ let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemappi
         [ ]
 
 exception AssemblyNotResolved of (*originalName*) string * range
+
 exception MSBuildReferenceResolutionWarning of (*MSBuild warning code*)string * (*Message*)string * range
+
 exception MSBuildReferenceResolutionError of (*MSBuild warning code*)string * (*Message*)string * range
 
 let OpenILBinary(filename, reduceMemoryUsage, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot) =

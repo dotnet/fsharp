@@ -345,7 +345,6 @@ let EmptyParsedInput(filename, isLastCompiland) =
             )
         ) 
 
-
 /// Parse an input, drawing tokens from the LexBuffer
 let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger) =
     use unwindbuildphase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
@@ -390,7 +389,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
 
     with e -> 
         errorRecovery e rangeStartup
-        EmptyParsedInput(filename, isLastCompiland)
+        EmptyParsedInput(filename, isLastCompiland) 
             
 let ValidSuffixes = FSharpSigFileSuffixes@FSharpImplFileSuffixes
 
@@ -417,7 +416,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompil
 
     with e -> 
         errorRecovery e rangeStartup
-        EmptyParsedInput(filename, isLastCompiland)
+        EmptyParsedInput(filename, isLastCompiland) 
 
 let ProcessMetaCommandsFromInput
      (nowarnF: 'state -> range * string -> 'state,
@@ -457,16 +456,16 @@ let ProcessMetaCommandsFromInput
         try 
             match hash with 
             | ParsedHashDirective("I", args, m) ->
-               if not canHaveScriptMetaCommands then 
-                   errorR(HashIncludeNotAllowedInNonScript m)
-               match args with 
-               | [path] -> 
-                   matchedm <- m
-                   tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
-                   state
-               | _ -> 
-                   errorR(Error(FSComp.SR.buildInvalidHashIDirective(), m))
-                   state
+                if not canHaveScriptMetaCommands then 
+                    errorR(HashIncludeNotAllowedInNonScript m)
+                match args with 
+                | [path] -> 
+                    matchedm <- m
+                    tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
+                    state
+                | _ -> 
+                    errorR(Error(FSComp.SR.buildInvalidHashIDirective(), m))
+                    state
             | ParsedHashDirective("nowarn",numbers,m) ->
                 List.fold (fun state d -> nowarnF state (m,d)) state numbers
 
@@ -482,31 +481,31 @@ let ProcessMetaCommandsFromInput
                 ProcessDependencyManagerDirective Directive.Include args m state
 
             | ParsedHashDirective("load", args, m) -> 
-               if not canHaveScriptMetaCommands then 
-                   errorR(HashDirectiveNotAllowedInNonScript m)
-               match args with 
-               | _ :: _ -> 
-                  matchedm<-m
-                  args |> List.iter (fun path -> loadSourceF state (m, path))
-               | _ -> 
-                  errorR(Error(FSComp.SR.buildInvalidHashloadDirective(), m))
-               state
+                if not canHaveScriptMetaCommands then 
+                    errorR(HashDirectiveNotAllowedInNonScript m)
+                match args with 
+                | _ :: _ -> 
+                   matchedm<-m
+                   args |> List.iter (fun path -> loadSourceF state (m, path))
+                | _ -> 
+                   errorR(Error(FSComp.SR.buildInvalidHashloadDirective(), m))
+                state
             | ParsedHashDirective("time", args, m) -> 
-               if not canHaveScriptMetaCommands then 
-                   errorR(HashDirectiveNotAllowedInNonScript m)
-               match args with 
-               | [] -> 
-                   ()
-               | ["on" | "off"] -> 
-                   ()
-               | _ -> 
-                   errorR(Error(FSComp.SR.buildInvalidHashtimeDirective(), m))
-               state
+                if not canHaveScriptMetaCommands then 
+                    errorR(HashDirectiveNotAllowedInNonScript m)
+                match args with 
+                | [] -> 
+                     ()
+                | ["on" | "off"] -> 
+                    ()
+                | _ -> 
+                    errorR(Error(FSComp.SR.buildInvalidHashtimeDirective(), m))
+                state
                
             | _ -> 
                
-            (* warning(Error("This meta-command has been ignored", m)) *) 
-               state
+                (* warning(Error("This meta-command has been ignored", m)) *) 
+                state
         with e -> errorRecovery e matchedm; state
 
     let rec WarnOnIgnoredSpecDecls decls = 

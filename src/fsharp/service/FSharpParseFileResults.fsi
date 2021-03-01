@@ -13,9 +13,12 @@ type public FSharpParseFileResults =
 
     /// The syntax tree resulting from the parse
     member ParseTree: ParsedInput
+<<<<<<< HEAD
 
     /// The source text from which the parse originated, if it wasn't read from disk
     member SourceText: ISourceText option
+=======
+>>>>>>> 89ad3715a2a3502090218916b698dcf0fcbd59c9
 
     /// Attempts to find the range of the name of the nearest outer binding that contains a given position.
     member TryRangeOfNameOfNearestOuterBindingContainingPos: pos: pos -> range option
@@ -73,5 +76,9 @@ type public FSharpParseFileResults =
     /// Indicates if any errors occurred during the parse
     member ParseHadErrors: bool
 
+<<<<<<< HEAD
     internal new: diagnostics: FSharpDiagnostic[] * input: ParsedInput * sourceText: ISourceText option * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
+=======
+    internal new: diagnostics: FSharpDiagnostic[] * input: ParsedInput * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
+>>>>>>> 89ad3715a2a3502090218916b698dcf0fcbd59c9
 

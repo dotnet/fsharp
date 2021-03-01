@@ -70,7 +70,6 @@ type FSharpProjectOptions =
       OriginalLoadReferences: (range * string * string) list
       Stamp : int64 option
     }
-    member x.ProjectOptions = x.OtherOptions
 
     static member UseSameProject(options1,options2) =
         match options1.ProjectId, options2.ProjectId with
@@ -500,23 +499,23 @@ type internal TypeCheckInfo
                 GetPreciseCompletionListFromExprTypingsResult.None
         | _ ->
             let bestQual, textChanged = 
-                    let input = parseResults.ParseTree
-                    match ParsedInput.GetRangeOfExprLeftOfDot(endOfExprPos,input) with   // TODO we say "colAtEndOfNames" everywhere, but that's not really a good name ("foo  .  $" hit Ctrl-Space at $)
-                    | Some( exprRange) ->
-                        // We have an up-to-date sync parse, and know the exact range of the prior expression.
-                        // The quals all already have the same ending position, so find one with a matching starting position, if it exists.
-                        // If not, then the stale typecheck info does not have a capturedExpressionTyping for this exact expression, and the
-                        // user can wait for typechecking to catch up and second-chance intellisense to give the right result.
-                        let qual = 
-                            quals |> Array.tryFind (fun (_,_,_,r) -> 
-                                                        ignore(r)  // for breakpoint
-                                                        posEq exprRange.Start r.Start)
-                        qual, false
-                    | None -> 
-                        // TODO In theory I think we should never get to this code path; it would be nice to add an assert.
-                        // In practice, we do get here in some weird cases like "2.0 .. 3.0" and hitting Ctrl-Space in between the two dots of the range operator.
-                        // I wasn't able to track down what was happening in those weird cases, not worth worrying about, it doesn't manifest as a product bug or anything.
-                        None, false
+                let input = parseResults.ParseTree
+                match ParsedInput.GetRangeOfExprLeftOfDot(endOfExprPos,input) with   // TODO we say "colAtEndOfNames" everywhere, but that's not really a good name ("foo  .  $" hit Ctrl-Space at $)
+                | Some( exprRange) ->
+                    // We have an up-to-date sync parse, and know the exact range of the prior expression.
+                    // The quals all already have the same ending position, so find one with a matching starting position, if it exists.
+                    // If not, then the stale typecheck info does not have a capturedExpressionTyping for this exact expression, and the
+                    // user can wait for typechecking to catch up and second-chance intellisense to give the right result.
+                    let qual = 
+                        quals |> Array.tryFind (fun (_,_,_,r) -> 
+                                                    ignore(r)  // for breakpoint
+                                                    posEq exprRange.Start r.Start)
+                    qual, false
+                | None -> 
+                    // TODO In theory I think we should never get to this code path; it would be nice to add an assert.
+                    // In practice, we do get here in some weird cases like "2.0 .. 3.0" and hitting Ctrl-Space in between the two dots of the range operator.
+                    // I wasn't able to track down what was happening in those weird cases, not worth worrying about, it doesn't manifest as a product bug or anything.
+                    None, false
 
             match bestQual with
             | Some bestQual ->
@@ -1845,7 +1844,6 @@ type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad
 
     member _.ProjectOptions = projectOptions
 
-    /// Get the assemblies referenced
     member _.GetReferencedAssemblies() = assemblies
 
     member _.AccessibilityRights = FSharpAccessibilityRights(thisCcu, ad)
@@ -1854,8 +1852,7 @@ type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad
 [<Sealed>]
 /// A live object of this type keeps the background corresponding background builder (and type providers) alive (through reference-counting).
 //
-// Note objects returned by the methods of this type do not require the corresponding background builder
-// to be alive. That is, they are simply plain-old-data through pre-formatting of all result text.
+// Note: objects returned by the methods of this type do not require the corresponding background builder to be alive. 
 type FSharpCheckFileResults
         (filename: string, 
          errors: FSharpDiagnostic[], 
@@ -2105,8 +2102,8 @@ type FSharpCheckFileResults
          reactorOps: IReactorOperations,
          userOpName: string,
          isIncompleteTypeCheckEnvironment: bool, 
-         builder: obj, 
          projectOptions: FSharpProjectOptions,
+         builder: IncrementalBuilder, 
          dependencyFiles: string[], 
          creationErrors: FSharpDiagnostic[], 
          parseErrors: FSharpDiagnostic[], 
@@ -2115,7 +2112,8 @@ type FSharpCheckFileResults
         async {
             let! tcErrors, tcFileInfo = 
                 ParseAndCheckFile.CheckOneFile
-                    (parseResults, sourceText, mainInputFileName, projectOptions, projectFileName, tcConfig, tcGlobals, tcImports, 
+                    (parseResults, sourceText, mainInputFileName, projectOptions,
+                     projectFileName, tcConfig, tcGlobals, tcImports, 
                      tcState, tcPriorImplFiles, moduleNamesDict, loadClosure, backgroundDiagnostics, reactorOps, 
                      userOpName, suggestNamesForErrors)
             match tcFileInfo with 
@@ -2285,7 +2283,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
 
             let projectOptions = 
                 { 
-                  ProjectFileName="project"
+                  ProjectFileName="script.fsproj"
                   ProjectId=None
                   SourceFiles=[||]
                   OtherOptions=[||]
@@ -2300,8 +2298,8 @@ type FsiInteractiveChecker(legacyReferenceResolver,
             let tcPriorImplFiles = []
             let! tcErrors, tcFileInfo =  
                 ParseAndCheckFile.CheckOneFile
-                    (parseResults, sourceText, filename, projectOptions, "project",
-                     tcConfig, tcGlobals, tcImports,  tcState, tcPriorImplFiles,
+                    (parseResults, sourceText, filename, projectOptions, projectOptions.ProjectFileName,
+                     tcConfig, tcGlobals, tcImports, tcState, tcPriorImplFiles,
                      Map.empty, Some loadClosure, backgroundDiagnostics,
                      reactorOps, userOpName, suggestNamesForErrors)
 
@@ -2315,7 +2313,8 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                             keepAssemblyContents, errors, 
                             Some(tcGlobals, tcImports, tcFileInfo.ThisCcu, tcFileInfo.CcuSigForFile,
                                  [tcFileInfo.ScopeSymbolUses], None, None, mkSimpleAssemblyRef "stdin", 
-                                 tcState.TcEnvFromImpls.AccessRights, None, dependencyFiles, projectOptions))
+                                 tcState.TcEnvFromImpls.AccessRights, None, dependencyFiles,
+                                 projectOptions))
 
                     parseResults, typeCheckResults, projectResults
 

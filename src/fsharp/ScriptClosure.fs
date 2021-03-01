@@ -316,29 +316,28 @@ module ScriptPreprocessClosure =
                             let result = ParseScriptText (filename, sourceText, tcConfig, codeContext, lexResourceManager, errorLogger) 
                             result, errorLogger.Diagnostics
 
-                        match parseResult with 
-                        | parsedScriptAst ->
-                            let errorLogger = CapturingErrorLogger("FindClosureMetaCommands")
-                            use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                            let pathOfMetaCommandSource = Path.GetDirectoryName filename
-                            let preSources = tcConfig.GetAvailableLoadedSources()
+                        let errorLogger = CapturingErrorLogger("FindClosureMetaCommands")
+                        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+                        let pathOfMetaCommandSource = Path.GetDirectoryName filename
+                        let preSources = tcConfig.GetAvailableLoadedSources()
 
-                            let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn (tcConfig, parsedScriptAst, pathOfMetaCommandSource, dependencyProvider)
-                            tcConfig <- tcConfigResult // We accumulate the tcConfig in order to collect assembly references
+                        let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn (tcConfig, parseResult, pathOfMetaCommandSource, dependencyProvider)
+                        tcConfig <- tcConfigResult // We accumulate the tcConfig in order to collect assembly references
 
-                            yield! resolveDependencyManagerSources filename
+                        yield! resolveDependencyManagerSources filename
 
-                            let postSources = tcConfig.GetAvailableLoadedSources()
-                            let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
+                        let postSources = tcConfig.GetAvailableLoadedSources()
+                        let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
 
-                            yield! resolveDependencyManagerSources filename
-                            for (m, subFile) in sources do
-                                if IsScript subFile then 
-                                    for subSource in ClosureSourceOfFilename(subFile, m, tcConfigResult.inputCodePage, false) do
-                                        yield! loop subSource
-                                else
-                                    yield ClosureFile(subFile, m, None, [], [], []) 
-                            yield ClosureFile(filename, m, Some parsedScriptAst, parseDiagnostics, errorLogger.Diagnostics, noWarns)
+                        yield! resolveDependencyManagerSources filename
+                        for (m, subFile) in sources do
+                            if IsScript subFile then 
+                                for subSource in ClosureSourceOfFilename(subFile, m, tcConfigResult.inputCodePage, false) do
+                                    yield! loop subSource
+                            else
+                                yield ClosureFile(subFile, m, None, [], [], []) 
+                        yield ClosureFile(filename, m, Some parseResult, parseDiagnostics, errorLogger.Diagnostics, noWarns)
+
                     else 
                         // Don't traverse into .fs leafs.
                         printfn "yielding non-script source %s" filename

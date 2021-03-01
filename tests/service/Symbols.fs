@@ -284,18 +284,18 @@ module SyntaxExpressions =
 
 module Strings =
     let getBindingExpressionValue (parseResults: ParsedInput) =
-            match parseResults with
-            | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) ->
-                modules |> List.tryPick (fun (SynModuleOrNamespace (decls = decls)) ->
-                    decls |> List.tryPick (fun decl ->
-                        match decl with
-                        | SynModuleDecl.Let (bindings = bindings) ->
-                            bindings |> List.tryPick (fun binding ->
-                                match binding with
-                                | SynBinding.SynBinding (_,_,_,_,_,_,_,SynPat.Named _,_,e,_,_) -> Some e
-                                | _ -> None)
-                        | _ -> None))
-            | _ -> None
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) ->
+            modules |> List.tryPick (fun (SynModuleOrNamespace (decls = decls)) ->
+                decls |> List.tryPick (fun decl ->
+                    match decl with
+                    | SynModuleDecl.Let (bindings = bindings) ->
+                        bindings |> List.tryPick (fun binding ->
+                            match binding with
+                            | SynBinding.SynBinding (_,_,_,_,_,_,_,SynPat.Named _,_,e,_,_) -> Some e
+                            | _ -> None)
+                    | _ -> None))
+        | _ -> None
 
     let getBindingConstValue parseResults =
         match getBindingExpressionValue parseResults with

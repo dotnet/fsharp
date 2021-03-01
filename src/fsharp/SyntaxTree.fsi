@@ -2106,7 +2106,7 @@ type ParsedInput =
     /// A parsed signature file
     | SigFile of ParsedSigFileInput
 
-    /// Gets the file name of this construct
+    /// Gets the file name for the parsed input
     member FileName: string
 
     /// Gets the syntax range of this construct

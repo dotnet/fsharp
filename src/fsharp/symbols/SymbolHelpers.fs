@@ -112,8 +112,11 @@ type ErrorScope()  =
                 member x.ErrorCount = errors.Length })
         
     member x.Errors = errors |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Error)
+
     member x.Warnings = errors |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Warning)
+
     member x.Diagnostics = errors
+
     member x.TryGetFirstErrorText() =
         match x.Errors with 
         | error :: _ -> Some error.Message

@@ -43,12 +43,12 @@ let private (=>) (source: string) (expected: CompletionContext option) =
     match markerPos with
     | None -> failwithf "Marker '%s' was not found in the source code" Marker
     | Some markerPos ->
-            let parseTree = parseSourceCode("C:\\test.fs", source)
-            let actual = ParsedInput.TryGetCompletionContext(markerPos, parseTree, lines.[Line.toZ markerPos.Line])
-            try Assert.AreEqual(expected, actual)
-            with e ->
-                printfn "ParseTree: %A" parseTree
-                reraise()
+        let parseTree = parseSourceCode("C:\\test.fs", source)
+        let actual = ParsedInput.TryGetCompletionContext(markerPos, parseTree, lines.[Line.toZ markerPos.Line])
+        try Assert.AreEqual(expected, actual)
+        with e ->
+            printfn "ParseTree: %A" parseTree
+            reraise()
 
 module AttributeCompletion =
     [<Test>]

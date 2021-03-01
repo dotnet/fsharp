@@ -75,7 +75,6 @@ exception Error of (int * string) * range with   // int is e.g. 191 in FS0191
         | Error((_, msg), _) -> msg
         | _ -> "impossible"
 
-
 exception InternalError of msg: string * range with 
     override this.Message = 
         match this :> exn with 
@@ -318,7 +317,8 @@ type internal CompileThreadStatic =
     [<ThreadStatic;DefaultValue>]
     static val mutable private errorLogger : ErrorLogger
 
-    static member BuildPhaseUnchecked with get() = CompileThreadStatic.buildPhase (* This can be a null value *)
+    static member BuildPhaseUnchecked = CompileThreadStatic.buildPhase (* This can be a null value *)
+
     static member BuildPhase
         with get() = 
             match box CompileThreadStatic.buildPhase with
@@ -397,7 +397,7 @@ module ErrorLoggerExtensions =
             x.EmitDiagnostic (exn, FSharpDiagnosticSeverity.Error)
             raise (ReportedError (Some exn))
 
-        member x.SimulateError  (ph: PhasedDiagnostic) = 
+        member x.SimulateError (ph: PhasedDiagnostic) = 
             x.DiagnosticSink (ph, FSharpDiagnosticSeverity.Error)
             raise (ReportedError (Some ph.Exception))
 

@@ -114,17 +114,7 @@ module IncrementalBuildSyntaxTree =
                 let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (Filename.checkSuffix lower)
                 let input = 
                     if canSkip then
-                        ParsedInput.ImplFile(
-                            ParsedImplFileInput(
-                                filename, 
-                                false, 
-                                sigNameOpt.Value,
-                                [],
-                                [],
-                                [],
-                                isLastCompiland
-                            )
-                        ) 
+                        EmptyParsedInput(filename, isLastCompiland)
                     else
                         ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
 
@@ -282,9 +272,10 @@ type BoundModel private (tcConfig: TcConfig,
             | Some(FullState(tcInfo, _)) when enablePartialTypeChecking && hasSig -> lazyTcInfoState <- Some(PartialState tcInfo)
             | _ ->
                 lazyTcInfoState <- None
-                // Always invalidate the syntax tree cache.
-                syntaxTreeOpt
-                |> Option.iter (fun x -> x.Invalidate())
+
+            // Always invalidate the syntax tree cache.
+            syntaxTreeOpt
+            |> Option.iter (fun x -> x.Invalidate())
         )
 
     member this.GetState(partialCheck: bool) =
@@ -309,7 +300,7 @@ type BoundModel private (tcConfig: TcConfig,
                 return tcInfoState
             }
 
-    member this.TryOptional() =
+    member this.TryOptionalExtras() =
         eventually {
             let! prevState = this.GetState(false)
             match prevState with
@@ -334,7 +325,7 @@ type BoundModel private (tcConfig: TcConfig,
                     beforeFileChecked, 
                     fileChecked, 
                     prevState.TcInfo, 
-                    (fun () -> this.TryOptional()), 
+                    (fun () -> this.TryOptionalExtras()), 
                     Some syntaxTree,
                     None)
         }
@@ -631,7 +622,7 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime) =
 
     member _.GetTcInfoWithExtras ctok = boundModel.TcInfoWithExtras |> eval ctok
 
-    member _.TcInfo ctok = boundModel.TcInfo |> eval ctok
+    member _.GetTcInfo ctok = boundModel.TcInfo |> eval ctok
 
     member _.TryTcInfoWithOptionalExtras = boundModel.TryTcInfoWithOptionalExtras
 
@@ -697,18 +688,24 @@ type IncrementalBuilderState =
     }
 
 /// Manages an incremental build graph for the build of a single F# project
-type IncrementalBuilder(tcGlobals, frameworkTcImports,
+type IncrementalBuilder(tcGlobals,
+        frameworkTcImports,
         nonFrameworkAssemblyInputs,
         nonFrameworkResolutions,
         unresolvedReferences,
         tcConfig: TcConfig,
-        projectDirectory, outfile, 
-        assemblyName, niceNameGen: NiceNameGenerator,
+        projectDirectory,
+        outfile, 
+        assemblyName,
+        niceNameGen: NiceNameGenerator,
         analyzers: FSharpAnalyzer list,
         lexResourceManager, 
-        sourceFiles, loadClosureOpt: LoadClosure option, 
-        keepAssemblyContents, keepAllBackgroundResolutions,
-        maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
+        sourceFiles,
+        loadClosureOpt: LoadClosure option, 
+        keepAssemblyContents,
+        keepAllBackgroundResolutions,
+        maxTimeShareMilliseconds,
+        keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
         dependencyProviderOpt: DependencyProvider option) =
@@ -1281,7 +1278,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
         let! state, result = eval { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache ctok (slotOfFile - 1)
         setCurrentState ctok { state with enablePartialTypeChecking = defaultPartialTypeChecking }
         match result with
-        | Some (boundModel, timestamp) -> return PartialCheckResults (boundModel, timestamp)
+        | Some (boundModel, timestamp) -> return PartialCheckResults(boundModel, timestamp)
         | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsBeforeSlotInProject)."
       }
         
@@ -1540,7 +1537,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports,
                     assemblyName,
                     niceNameGen, 
                     analyzers,
-                    resourceManager, sourceFilesNew, loadClosureOpt, 
+                    resourceManager,
+                    sourceFilesNew,
+                    loadClosureOpt, 
                     keepAssemblyContents, 
                     keepAllBackgroundResolutions, 
                     maxTimeShareMilliseconds,

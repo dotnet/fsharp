@@ -72,7 +72,6 @@ type public FSharpProjectOptions =
       /// if and only if the stamps are equal
       Stamp: int64 option
     }
-    member internal ProjectOptions: string[]
 
     /// Whether the two parse options refer to the same project.
     static member internal UseSameProject: options1: FSharpProjectOptions * options2: FSharpProjectOptions -> bool
@@ -367,8 +366,8 @@ type public FSharpCheckFileResults =
          reactorOps: IReactorOperations *
          userOpName: string *
          isIncompleteTypeCheckEnvironment: bool * 
-         builder: obj * 
          projectOptions: FSharpProjectOptions *
+         builder: IncrementalBuilder * 
          dependencyFiles: string[] * 
          creationErrors:FSharpDiagnostic[] * 
          parseErrors:FSharpDiagnostic[] * 
@@ -425,9 +424,18 @@ type public FSharpCheckProjectResults =
         tcConfigOption: TcConfig option *
         keepAssemblyContents: bool *
         diagnostics: FSharpDiagnostic[] * 
-        details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list *
-                 TopAttribs option * IRawFSharpAssemblyData option *
-                 ILAssemblyRef * AccessorDomain * TypedImplFile list option * string[] * FSharpProjectOptions) option 
+        details:(TcGlobals *
+                 TcImports *
+                 CcuThunk *
+                 ModuleOrNamespaceType *
+                 TcSymbolUses list *
+                 TopAttribs option *
+                 IRawFSharpAssemblyData option *
+                 ILAssemblyRef *
+                 AccessorDomain *
+                 TypedImplFile list option *
+                 string[] *
+                 FSharpProjectOptions) option 
            -> FSharpCheckProjectResults
 
 module internal ParseAndCheckFile = 
