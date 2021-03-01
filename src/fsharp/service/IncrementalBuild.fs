@@ -397,100 +397,106 @@ type BoundModel private (tcConfig: TcConfig,
                         None
                 match syntaxTree.Parse sigNameOpt with
                 | input, _sourceRange, filename, parseErrors ->
+
                     IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked filename)
                     let capturingErrorLogger = CompilationErrorLogger("TypeCheck", tcConfig.errorSeverityOptions)
                     let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, capturingErrorLogger)
 
-                    beforeFileChecked.Trigger filename
-                    let prevModuleNamesDict = prevTcInfo.moduleNamesDict
-                    let prevTcState = prevTcInfo.tcState
-                    let prevTcErrorsRev = prevTcInfo.tcErrorsRev
-                    let prevTcDependencyFiles = prevTcInfo.tcDependencyFiles
+                    // This reinstalls the CompilationGlobalsScope each time the Eventually is restarted, potentially
+                    // on a new thread. This is needed because CompilationGlobalsScope installs thread local variables.
+                    return! Eventually.reusing (fun () -> new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) :> IDisposable)  <| eventually {
 
-                    ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filename, tcImports.DependencyProvider) |> ignore
-                    let sink = TcResultsSinkImpl(tcGlobals)
-                    let hadParseErrors = not (Array.isEmpty parseErrors)
-                    let input, moduleNamesDict = DeduplicateParsedInputModuleName prevModuleNamesDict input
+                        beforeFileChecked.Trigger filename
+                        let prevModuleNamesDict = prevTcInfo.moduleNamesDict
+                        let prevTcState = prevTcInfo.tcState
+                        let prevTcErrorsRev = prevTcInfo.tcErrorsRev
+                        let prevTcDependencyFiles = prevTcInfo.tcDependencyFiles
 
-                    Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
-                    let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState = 
-                        TypeCheckOneInputEventually 
-                            ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0), 
-                                tcConfig, tcImports, 
-                                tcGlobals, 
-                                None, 
-                                (if partialCheck then TcResultsSink.NoSink else TcResultsSink.WithSink sink), 
-                                prevTcState, input,
-                                partialCheck)
-                    Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
+                        ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filename, tcImports.DependencyProvider) |> ignore
+                        let sink = TcResultsSinkImpl(tcGlobals)
+                        let hadParseErrors = not (Array.isEmpty parseErrors)
+                        let input, moduleNamesDict = DeduplicateParsedInputModuleName prevModuleNamesDict input
 
-                    fileChecked.Trigger filename
-                    let newErrors = Array.append parseErrors (capturingErrorLogger.GetDiagnostics())
+                        Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
+                        let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState = 
+                            TypeCheckOneInputEventually 
+                                ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0), 
+                                    tcConfig, tcImports, 
+                                    tcGlobals, 
+                                    None, 
+                                    (if partialCheck then TcResultsSink.NoSink else TcResultsSink.WithSink sink), 
+                                    prevTcState, input,
+                                    partialCheck)
+                        Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
 
-                    let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls
+                        fileChecked.Trigger filename
+                        let newErrors = Array.append parseErrors (capturingErrorLogger.GetDiagnostics())
 
-                    let tcInfo =
-                        {
-                            tcState = tcState
-                            tcEnvAtEndOfFile = tcEnvAtEndOfFile
-                            moduleNamesDict = moduleNamesDict
-                            latestCcuSigForFile = Some ccuSigForFile
-                            tcErrorsRev = newErrors :: prevTcErrorsRev
-                            topAttribs = Some topAttribs
-                            tcDependencyFiles = filename :: prevTcDependencyFiles
-                            sigNameOpt =
-                                match input with
-                                | ParsedInput.SigFile(ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
-                                    Some(fileName, qualName)
-                                | _ ->
-                                    None
-                        }
+                        let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls
 
-                    if partialCheck then
-                        return PartialState tcInfo
-                    else
-                        match! prevTcInfoExtras() with
-                        | None -> return PartialState tcInfo
-                        | Some prevTcInfoOptional ->
-                            // Build symbol keys
-                            let itemKeyStore, semanticClassification =
-                                if enableBackgroundItemKeyStoreAndSemanticClassification then
-                                    Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
-                                    let sResolutions = sink.GetResolutions()
-                                    let builder = ItemKeyStoreBuilder()
-                                    let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with 
-                                                                        member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Position.posEq s1 s2 && Position.posEq e1 e2
-                                                                        member _.GetHashCode o = o.GetHashCode() })
-                                    sResolutions.CapturedNameResolutions
-                                    |> Seq.iter (fun cnr ->
-                                        let r = cnr.Range
-                                        if preventDuplicates.Add struct(r.Start, r.End) then
-                                            builder.Write(cnr.Range, cnr.Item))
+                        let tcInfo =
+                            {
+                                tcState = tcState
+                                tcEnvAtEndOfFile = tcEnvAtEndOfFile
+                                moduleNamesDict = moduleNamesDict
+                                latestCcuSigForFile = Some ccuSigForFile
+                                tcErrorsRev = newErrors :: prevTcErrorsRev
+                                topAttribs = Some topAttribs
+                                tcDependencyFiles = filename :: prevTcDependencyFiles
+                                sigNameOpt =
+                                    match input with
+                                    | ParsedInput.SigFile(ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
+                                        Some(fileName, qualName)
+                                    | _ ->
+                                        None
+                            }
+
+                        if partialCheck then
+                            return PartialState tcInfo
+                        else
+                            match! prevTcInfoExtras() with
+                            | None -> return PartialState tcInfo
+                            | Some prevTcInfoOptional ->
+                                // Build symbol keys
+                                let itemKeyStore, semanticClassification =
+                                    if enableBackgroundItemKeyStoreAndSemanticClassification then
+                                        Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
+                                        let sResolutions = sink.GetResolutions()
+                                        let builder = ItemKeyStoreBuilder()
+                                        let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with 
+                                                                            member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Position.posEq s1 s2 && Position.posEq e1 e2
+                                                                            member _.GetHashCode o = o.GetHashCode() })
+                                        sResolutions.CapturedNameResolutions
+                                        |> Seq.iter (fun cnr ->
+                                            let r = cnr.Range
+                                            if preventDuplicates.Add struct(r.Start, r.End) then
+                                                builder.Write(cnr.Range, cnr.Item))
                                             
-                                    let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
+                                        let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
 
-                                    let sckBuilder = SemanticClassificationKeyStoreBuilder()
-                                    sckBuilder.WriteAll semanticClassification
+                                        let sckBuilder = SemanticClassificationKeyStoreBuilder()
+                                        sckBuilder.WriteAll semanticClassification
 
-                                    let res = builder.TryBuildAndReset(), sckBuilder.TryBuildAndReset()
-                                    Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
-                                    res
-                                else
-                                    None, None
+                                        let res = builder.TryBuildAndReset(), sckBuilder.TryBuildAndReset()
+                                        Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
+                                        res
+                                    else
+                                        None, None
 
-                            let tcInfoExtras =
-                                {
-                                    /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
-                                    latestImplFile = if keepAssemblyContents then implFile else None
-                                    tcResolutionsRev = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty) :: prevTcInfoOptional.tcResolutionsRev
-                                    tcSymbolUsesRev = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: prevTcInfoOptional.tcSymbolUsesRev
-                                    tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: prevTcInfoOptional.tcOpenDeclarationsRev
-                                    itemKeyStore = itemKeyStore
-                                    semanticClassificationKeyStore = semanticClassification
-                                }
+                                let tcInfoExtras =
+                                    {
+                                        /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
+                                        latestImplFile = if keepAssemblyContents then implFile else None
+                                        tcResolutionsRev = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty) :: prevTcInfoOptional.tcResolutionsRev
+                                        tcSymbolUsesRev = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: prevTcInfoOptional.tcSymbolUsesRev
+                                        tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: prevTcInfoOptional.tcOpenDeclarationsRev
+                                        itemKeyStore = itemKeyStore
+                                        semanticClassificationKeyStore = semanticClassification
+                                    }
 
-                            return FullState(tcInfo, tcInfoExtras)
-        }
+                                return FullState(tcInfo, tcInfoExtras)
+                    }
+            }
 
     static member Create(tcConfig: TcConfig,
                          tcGlobals: TcGlobals,

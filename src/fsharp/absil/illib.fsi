@@ -359,13 +359,13 @@ module internal Cancellable =
     val run : ct:CancellationToken -> Cancellable<'a> -> ValueOrCancelled<'a>
 
     /// Bind the result of a cancellable computation
-    val bind : f:('a -> Cancellable<'b>) -> comp1:Cancellable<'a> -> Cancellable<'b>
+    val inline bind : f:('a -> Cancellable<'b>) -> comp1:Cancellable<'a> -> Cancellable<'b>
 
     /// Map the result of a cancellable computation
-    val map: f:('a -> 'b) -> oper:Cancellable<'a> -> Cancellable<'b>
+    val inline map: f:('a -> 'b) -> oper:Cancellable<'a> -> Cancellable<'b>
 
     /// Return a simple value as the result of a cancellable computation
-    val ret: x:'a -> Cancellable<'a>
+    val inline ret: x:'a -> Cancellable<'a>
 
     /// Fold a cancellable computation along a sequence of inputs
     val fold : f:('a -> 'b -> Cancellable<'a>) -> acc:'a -> seq:seq<'b> -> Cancellable<'a>
@@ -374,7 +374,7 @@ module internal Cancellable =
     val each : f:('a -> Cancellable<'b>) -> seq:seq<'a> -> Cancellable<'b list>
 
     /// Delay a cancellable computation
-    val delay: f:(unit -> Cancellable<'T>) -> Cancellable<'T>
+    val inline delay: f:(unit -> Cancellable<'T>) -> Cancellable<'T>
 
     /// Run the computation in a mode where it may not be cancelled. The computation never results in a 
     /// ValueOrCancelled.Cancelled.
@@ -387,10 +387,13 @@ module internal Cancellable =
     val canceled: unit -> Cancellable<'a>
 
     /// Implement try/finally for a cancellable computation
-    val tryFinally : e:Cancellable<'a> -> compensation:(unit -> unit) -> Cancellable<'a>
+    val inline catch : e:Cancellable<'a> -> Cancellable<Choice<'a, Exception>>
+
+    /// Implement try/finally for a cancellable computation
+    val inline tryFinally : e:Cancellable<'a> -> compensation:(unit -> unit) -> Cancellable<'a>
 
     /// Implement try/with for a cancellable computation
-    val tryWith : e:Cancellable<'a> -> handler:(exn -> Cancellable<'a>) -> Cancellable<'a>
+    val inline tryWith : e:Cancellable<'a> -> handler:(exn -> Cancellable<'a>) -> Cancellable<'a>
 
     val toAsync: Cancellable<'a> -> Async<'a>
 
@@ -398,25 +401,27 @@ type internal CancellableBuilder =
 
     new: unit -> CancellableBuilder
 
-    member Bind: e:Cancellable<'k> * k:('k -> Cancellable<'l>) -> Cancellable<'l>
+    member inline BindReturn: e:Cancellable<'T> * k:('T -> 'U) -> Cancellable<'U>
 
-    member Combine: e1:Cancellable<unit> * e2:Cancellable<'h> -> Cancellable<'h>
+    member inline Bind: e:Cancellable<'T> * k:('T -> Cancellable<'U>) -> Cancellable<'U>
 
-    member Delay: f:(unit -> Cancellable<'a>) -> Cancellable<'a>
+    member inline Combine: e1:Cancellable<unit> * e2:Cancellable<'T> -> Cancellable<'T>
 
-    member For: es:seq<'f> * f:('f -> Cancellable<'g>) -> Cancellable<'g list>
+    member inline Delay: f:(unit -> Cancellable<'T>) -> Cancellable<'T>
 
-    member Return: v:'j -> Cancellable<'j>
+    member inline For: es:seq<'T> * f:('T -> Cancellable<'U>) -> Cancellable<'U list>
 
-    member ReturnFrom: v:'i -> 'i
+    member inline Return: v:'T -> Cancellable<'T>
 
-    member TryFinally: e:Cancellable<'b> * compensation:(unit -> unit) -> Cancellable<'b>
+    member inline ReturnFrom: v:Cancellable<'T> -> Cancellable<'T>
 
-    member TryWith: e:Cancellable<'e> * handler:(exn -> Cancellable<'e>) -> Cancellable<'e>
+    member inline TryFinally: e:Cancellable<'T> * compensation:(unit -> unit) -> Cancellable<'T>
 
-    member Using: resource:'c * e:('c -> Cancellable<'d>) -> Cancellable<'d> when 'c :> System.IDisposable
+    member inline TryWith: e:Cancellable<'T> * handler:(exn -> Cancellable<'T>) -> Cancellable<'T>
 
-    member Zero: unit -> Cancellable<unit>
+    member inline Using: resource:'c * e:('c -> Cancellable<'T>) -> Cancellable<'T> when 'c :> System.IDisposable
+
+    member inline Zero: unit -> Cancellable<unit>
   
 [<AutoOpen>]
 module internal CancellableAutoOpens =
@@ -435,15 +440,16 @@ module internal CancellableAutoOpens =
 type internal Eventually<'T> =
     | Done of 'T
     | NotYetDone of (CancellationToken -> ValueOrCancelled<Eventually<'T>>)
+    | Delimited of (unit -> IDisposable) * Eventually<'T>
 
 module internal Eventually =
 
     val box: e:Eventually<'a> -> Eventually<obj>
 
     // Throws away time-slicing but retains cancellation
-    val toCancellable: e:Eventually<'a> -> Cancellable<'a>
+    val inline toCancellable: e:Eventually<'T> -> Cancellable<'T>
 
-    val ofCancellable: Cancellable<'T> -> Eventually<'T>
+    val inline ofCancellable: Cancellable<'T> -> Eventually<'T>
 
     val force: ct: CancellationToken -> e:Eventually<'a> -> ValueOrCancelled<'a>
 
@@ -452,17 +458,19 @@ module internal Eventually =
     /// was detected.
     val forceForTimeSlice: sw:Stopwatch -> timeShareInMilliseconds: int64 -> ct: CancellationToken -> e: Eventually<'a> -> ValueOrCancelled<Eventually<'a>>
 
-    val bind: k:('a -> Eventually<'b>) -> e:Eventually<'a> -> Eventually<'b>
+    val inline map: f:('a -> 'b) -> e:Eventually<'a> -> Eventually<'b>
 
-    val fold : f:('a -> 'b -> Eventually<'a>) -> acc:'a -> seq:seq<'b> -> Eventually<'a>
+    val inline bind: k:('a -> Eventually<'b>) -> e:Eventually<'a> -> Eventually<'b>
 
-    val catch: e:Eventually<'a> -> Eventually<ResultOrException<'a>>
+    val inline fold : f:('a -> 'b -> Eventually<'a>) -> acc:'a -> seq:seq<'b> -> Eventually<'a>
 
-    val delay: f:(unit -> Eventually<'T>) -> Eventually<'T>
+    val inline catch: e:Eventually<'a> -> Eventually<ResultOrException<'a>>
 
-    val tryFinally : e:Eventually<'a> -> compensation:(unit -> unit) -> Eventually<'a>
+    val inline delay: f:(unit -> Eventually<'T>) -> Eventually<'T>
 
-    val tryWith : e:Eventually<'a> -> handler:(System.Exception -> Eventually<'a>) -> Eventually<'a>
+    val inline tryFinally : e:Eventually<'a> -> compensation:(unit -> unit) -> Eventually<'a>
+
+    val inline tryWith : e:Eventually<'a> -> handler:(System.Exception -> Eventually<'a>) -> Eventually<'a>
 
     /// Bind the cancellation token associated with the computation
     val token: unit -> Eventually<CancellationToken>
@@ -470,26 +478,29 @@ module internal Eventually =
     /// Represents a canceled computation
     val canceled: unit -> Eventually<'a>
 
+    /// Create the resource and install it on the stack each time the Eventually is restarted
+    val reusing: resourcef: (unit -> IDisposable) -> e:Eventually<'T> -> Eventually<'T>
+
 [<Class>]
 type internal EventuallyBuilder =
 
-    member BindReturn: e:Eventually<'g> * k:('g -> 'h) -> Eventually<'h>
+    member inline BindReturn: e:Eventually<'g> * k:('g -> 'h) -> Eventually<'h>
 
-    member Bind: e:Eventually<'g> * k:('g -> Eventually<'h>) -> Eventually<'h>
+    member inline Bind: e:Eventually<'g> * k:('g -> Eventually<'h>) -> Eventually<'h>
 
-    member Combine: e1:Eventually<unit> * e2:Eventually<'d> -> Eventually<'d>
+    member inline Combine: e1:Eventually<unit> * e2:Eventually<'d> -> Eventually<'d>
 
-    member Delay: f:(unit -> Eventually<'a>) -> Eventually<'a>
+    member inline Delay: f:(unit -> Eventually<'a>) -> Eventually<'a>
 
-    member Return: v:'f -> Eventually<'f>
+    member inline Return: v:'f -> Eventually<'f>
 
-    member ReturnFrom: v:'e -> 'e
+    member inline ReturnFrom: v:'e -> 'e
 
-    member TryFinally: e:Eventually<'b> * compensation:(unit -> unit) -> Eventually<'b>
+    member inline TryFinally: e:Eventually<'b> * compensation:(unit -> unit) -> Eventually<'b>
 
-    member TryWith: e:Eventually<'c> * handler:(System.Exception -> Eventually<'c>) -> Eventually<'c>
+    member inline TryWith: e:Eventually<'c> * handler:(System.Exception -> Eventually<'c>) -> Eventually<'c>
 
-    member Zero: unit -> Eventually<unit>
+    member inline Zero: unit -> Eventually<unit>
   
 [<AutoOpen>]
 module internal EventuallyAutoOpens =

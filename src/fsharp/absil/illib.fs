@@ -725,21 +725,21 @@ module Cancellable =
             oper ct 
 
     /// Bind the result of a cancellable computation
-    let bind f comp1 = 
+    let inline bind f comp1 = 
        Cancellable (fun ct -> 
             match run ct comp1 with 
             | ValueOrCancelled.Value v1 -> run ct (f v1) 
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
     /// Map the result of a cancellable computation
-    let map f oper = 
+    let inline map f oper = 
        Cancellable (fun ct -> 
            match run ct oper with 
            | ValueOrCancelled.Value res -> ValueOrCancelled.Value (f res)
            | ValueOrCancelled.Cancelled err -> ValueOrCancelled.Cancelled err)
                     
     /// Return a simple value as the result of a cancellable computation
-    let ret x = Cancellable (fun _ -> ValueOrCancelled.Value x)
+    let inline ret x = Cancellable (fun _ -> ValueOrCancelled.Value x)
 
     /// Fold a cancellable computation along a sequence of inputs
     let fold f acc seq = 
@@ -766,7 +766,7 @@ module Cancellable =
                | canc -> canc)
     
     /// Delay a cancellable computation
-    let delay (f: unit -> Cancellable<'T>) = Cancellable (fun ct -> let (Cancellable g) = f() in g ct)
+    let inline delay (f: unit -> Cancellable<'T>) = Cancellable (fun ct -> let (Cancellable g) = f() in g ct)
 
     /// Run the computation in a mode where it may not be cancelled. The computation never results in a 
     /// ValueOrCancelled.Cancelled.
@@ -793,47 +793,50 @@ module Cancellable =
     let canceled() = Cancellable (fun ct -> ValueOrCancelled.Cancelled (OperationCanceledException ct))
 
     /// Catch exceptions in a computation
-    let private catch (Cancellable e) = 
+    let inline catch e = 
+        let (Cancellable f) = e
         Cancellable (fun ct -> 
             try 
-                match e ct with 
+                match f ct with 
                 | ValueOrCancelled.Value r -> ValueOrCancelled.Value (Choice1Of2 r) 
                 | ValueOrCancelled.Cancelled e -> ValueOrCancelled.Cancelled e 
             with err -> 
                 ValueOrCancelled.Value (Choice2Of2 err))
 
     /// Implement try/finally for a cancellable computation
-    let tryFinally e compensation =
+    let inline tryFinally e compensation =
         catch e |> bind (fun res ->
             compensation()
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> raise err)
 
     /// Implement try/with for a cancellable computation
-    let tryWith e handler = 
+    let inline tryWith e handler = 
         catch e |> bind (fun res ->
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> handler err)
     
 type CancellableBuilder() = 
 
-    member x.Bind(e, k) = Cancellable.bind k e
+    member inline _.BindReturn(e, k) = Cancellable.map k e
 
-    member x.Return v = Cancellable.ret v
+    member inline _.Bind(e, k) = Cancellable.bind k e
 
-    member x.ReturnFrom v = v
+    member inline _.Return v = Cancellable.ret v
 
-    member x.Combine(e1, e2) = e1 |> Cancellable.bind (fun () -> e2)
+    member inline _.ReturnFrom (v: Cancellable<'T>) = v
 
-    member x.For(es, f) = es |> Cancellable.each f 
+    member inline _.Combine(e1, e2) = e1 |> Cancellable.bind (fun () -> e2)
 
-    member x.TryWith(e, handler) = Cancellable.tryWith e handler
+    member inline _.For(es, f) = es |> Cancellable.each f 
 
-    member x.Using(resource, e) = Cancellable.tryFinally (e resource) (fun () -> (resource :> IDisposable).Dispose())
+    member inline _.TryWith(e, handler) = Cancellable.tryWith e handler
 
-    member x.TryFinally(e, compensation) =  Cancellable.tryFinally e compensation
+    member inline _.Using(resource, e) = Cancellable.tryFinally (e resource) (fun () -> (resource :> IDisposable).Dispose())
 
-    member x.Delay f = Cancellable.delay f
+    member inline _.TryFinally(e, compensation) =  Cancellable.tryFinally e compensation
 
-    member x.Zero() = Cancellable.ret ()
+    member inline _.Delay f = Cancellable.delay f
+
+    member inline _.Zero() = Cancellable.ret ()
 
 [<AutoOpen>]
 module CancellableAutoOpens =
@@ -854,25 +857,33 @@ module CancellableAutoOpens =
 type Eventually<'T> = 
     | Done of 'T 
     | NotYetDone of (CancellationToken -> ValueOrCancelled<Eventually<'T>>)
+    | Delimited of (unit -> IDisposable) * Eventually<'T>
 
 module Eventually = 
 
-    let rec map f e = 
-        match e with 
-        | Done x -> Done (f x) 
-        | NotYetDone work ->
-            NotYetDone (fun ct ->
-                match work ct with
-                | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
-                | ValueOrCancelled.Value e2 -> ValueOrCancelled.Value (map f e2))
+    let inline map f e = 
+        let rec loop e =
+            match e with 
+            | Done x -> Done (f x) 
+            | Delimited (resourcef, ev2) -> 
+                Delimited (resourcef, loop ev2)
+            | NotYetDone work ->
+                NotYetDone (fun ct ->
+                    match work ct with
+                    | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
+                    | ValueOrCancelled.Value e2 -> ValueOrCancelled.Value (loop e2))
+        loop e
 
     let box e = map Operators.box e
 
-    let toCancellable e =
+    let inline toCancellable e =
         Cancellable (fun ct -> 
            let rec loop e = 
                match e with
                | Done x -> ValueOrCancelled.Value x
+               | Delimited (resourcef, ev2) ->
+                   use _resource = resourcef()
+                   loop ev2
                | NotYetDone work -> 
                    if ct.IsCancellationRequested then 
                       ValueOrCancelled.Cancelled (OperationCanceledException ct)
@@ -882,7 +893,7 @@ module Eventually =
                        | ValueOrCancelled.Value e2 -> loop e2
            loop e) 
 
-    let ofCancellable (Cancellable f) =
+    let inline ofCancellable (Cancellable f) =
         NotYetDone (fun ct -> 
             match f ct with
             | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
@@ -896,11 +907,13 @@ module Eventually =
     let force ct e = Cancellable.run ct (toCancellable e)
 
     let forceForTimeSlice (sw: Stopwatch) timeShareInMilliseconds (ct: CancellationToken) e = 
-        sw.Reset()
-        sw.Start()
+        sw.Restart()
         let rec loop e = 
             match e with 
             | Done _ -> ValueOrCancelled.Value e
+            | Delimited (resourcef, ev2) ->
+                use _resource = resourcef()
+                loop ev2
             | NotYetDone work ->
                 if ct.IsCancellationRequested then
                     sw.Stop()
@@ -914,32 +927,42 @@ module Eventually =
                     | ValueOrCancelled.Value e2 -> loop e2
         loop e
 
-    let rec bind k e = 
-        match e with 
-        | Done x -> k x 
-        | NotYetDone work ->
-            NotYetDone (fun ct -> 
-                match work ct with
-                | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
-                | ValueOrCancelled.Value e2 -> ValueOrCancelled.Value (bind k e2))
+    let inline bind k e = 
+        let rec loop e =
+            match e with 
+            | Done x -> k x 
+            | Delimited (resourcef, ev2) ->
+                use _resource = resourcef()
+                loop ev2
+            | NotYetDone work ->
+                NotYetDone (fun ct -> 
+                    match work ct with
+                    | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
+                    | ValueOrCancelled.Value e2 -> ValueOrCancelled.Value (loop e2))
+        loop e
 
-    let fold f acc seq = 
+    let inline fold f acc seq = 
         (Done acc, seq) ||> Seq.fold (fun acc x -> acc |> bind (fun acc -> f acc x))
         
-    let rec catch e = 
-        match e with 
-        | Done x -> Done(Result x)
-        | NotYetDone work -> 
-            NotYetDone (fun ct -> 
-                let res = try Result(work ct) with | e -> Exception e 
-                match res with 
-                | Result (ValueOrCancelled.Value cont) -> ValueOrCancelled.Value (catch cont)
-                | Result (ValueOrCancelled.Cancelled ce) -> ValueOrCancelled.Cancelled ce
-                | Exception e -> ValueOrCancelled.Value (Done(Exception e)))
+    let inline catch e = 
+        let rec loop e =
+            match e with 
+            | Done x -> Done(Result x)
+            | Delimited (resourcef, ev2) ->
+                use _resource = resourcef()
+                loop ev2
+            | NotYetDone work -> 
+                NotYetDone (fun ct -> 
+                    let res = try Result(work ct) with | e -> Exception e 
+                    match res with 
+                    | Result (ValueOrCancelled.Value cont) -> ValueOrCancelled.Value (loop cont)
+                    | Result (ValueOrCancelled.Cancelled ce) -> ValueOrCancelled.Cancelled ce
+                    | Exception e -> ValueOrCancelled.Value (Done(Exception e)))
+        loop e
     
-    let delay f = NotYetDone (fun _ct -> ValueOrCancelled.Value (f ()))
+    let inline delay f = NotYetDone (fun _ct -> ValueOrCancelled.Value (f ()))
 
-    let tryFinally e compensation =
+    let inline tryFinally e compensation =
         catch e 
         |> bind (fun res -> 
             compensation()
@@ -947,30 +970,32 @@ module Eventually =
             | Result v -> Eventually.Done v
             | Exception e -> raise e)
 
-    let tryWith e handler =
+    let inline tryWith e handler =
         catch e 
         |> bind (function Result v -> Done v | Exception e -> handler e)
     
+    let reusing resourcef e = Eventually.Delimited(resourcef, e)
+
    
 type EventuallyBuilder() = 
 
-    member x.BindReturn(e, k) = Eventually.map k e
+    member inline _.BindReturn(e, k) = Eventually.map k e
 
-    member x.Bind(e, k) = Eventually.bind k e
+    member inline _.Bind(e, k) = Eventually.bind k e
 
-    member x.Return v = Eventually.Done v
+    member inline _.Return v = Eventually.Done v
 
-    member x.ReturnFrom v = v
+    member inline _.ReturnFrom v = v
 
-    member x.Combine(e1, e2) = e1 |> Eventually.bind (fun () -> e2)
+    member inline _.Combine(e1, e2) = e1 |> Eventually.bind (fun () -> e2)
 
-    member x.TryWith(e, handler) = Eventually.tryWith e handler
+    member inline _.TryWith(e, handler) = Eventually.tryWith e handler
 
-    member x.TryFinally(e, compensation) = Eventually.tryFinally e compensation
+    member inline _.TryFinally(e, compensation) = Eventually.tryFinally e compensation
 
-    member x.Delay f = Eventually.delay f
+    member inline _.Delay f = Eventually.delay f
 
-    member x.Zero() = Eventually.Done ()
+    member inline _.Zero() = Eventually.Done ()
 
 [<AutoOpen>]
 module internal EventuallyAutoOpens =
@@ -1030,7 +1055,7 @@ type LazyWithContextFailure(exn: exn) =
 
     static let undefined = new LazyWithContextFailure(UndefinedException)
 
-    member x.Exception = exn
+    member _.Exception = exn
 
     static member Undefined = undefined
         
