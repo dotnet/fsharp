@@ -440,7 +440,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             match builderOpt with
             | None ->
                 let parseTree = EmptyParsedInput(filename, (false, false))
-                return FSharpParseFileResults(creationDiags, parseTree, true, [| |])
+                return FSharpParseFileResults(creationDiags, parseTree, None, true, [| |])
             | Some builder -> 
                 let parseTree,_,_,parseDiags = builder.GetParseResultsForFile (filename)
                 let diagnostics = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (builder.TcConfig.errorSeverityOptions, false, filename, parseDiags, suggestNamesForErrors) |]
@@ -503,7 +503,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             try
                                 // Get additional script #load closure information if applicable.
                                 // For scripts, this will have been recorded by GetProjectOptionsFromScript.
-                                let tcConfig = tcPrior.TcConfig
                                 let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
                                 let tcConfig = tcPrior.TcConfig
                                 let tcPriorImplFiles = (tcInfoOptionalExtras |> Option.map (fun i -> i.TcImplFiles) |> Option.defaultValue [])

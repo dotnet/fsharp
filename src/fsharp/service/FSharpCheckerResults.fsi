@@ -367,7 +367,7 @@ type public FSharpCheckFileResults =
          userOpName: string *
          isIncompleteTypeCheckEnvironment: bool * 
          projectOptions: FSharpProjectOptions *
-         builder: IncrementalBuilder * 
+         builder: obj * 
          dependencyFiles: string[] * 
          creationErrors:FSharpDiagnostic[] * 
          parseErrors:FSharpDiagnostic[] * 
