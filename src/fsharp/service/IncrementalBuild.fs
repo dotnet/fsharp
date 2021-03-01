@@ -490,8 +490,6 @@ type BoundModel private (tcConfig: TcConfig,
                                 }
 
                             return FullState(tcInfo, tcInfoExtras)
-                            
-                    //use unwind = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) 
         }
 
     static member Create(tcConfig: TcConfig,
