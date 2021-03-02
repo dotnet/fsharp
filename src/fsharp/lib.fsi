@@ -291,6 +291,7 @@ type DisposablesTracker =
 
 /// Specialized parallel functions for an array.
 /// Different from Array.Parallel as it will try to minimize the max degree of parallelism.
+/// Will flatten aggregate exceptions that contain one exception.
 [<RequireQualifiedAccess>]
 module ArrayParallel =
 
