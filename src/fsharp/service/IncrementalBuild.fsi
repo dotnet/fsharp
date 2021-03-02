@@ -1,26 +1,26 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler
+namespace FSharp.Compiler.CodeAnalysis
 
 open System
-
+open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CheckDeclarations
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
-
-open Microsoft.DotNet.DependencyManager
 
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 
@@ -62,14 +62,14 @@ type internal TcInfo =
 
         tcDependencyFiles: string list
 
-        sigNameOpt: (string * SyntaxTree.QualifiedNameOfFile) option
+        sigNameOpt: (string * QualifiedNameOfFile) option
     }
 
      member TcErrors: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
 /// Accumulated results of type checking. Optional data that isn't needed to type-check a file, but needed for more information for in tooling.
 [<NoEquality; NoComparison>]
-type internal TcInfoOptional =
+type internal TcInfoExtras =
     {
       /// Accumulated resolutions, last file first
       tcResolutionsRev: TcResolutions list
@@ -87,7 +87,7 @@ type internal TcInfoOptional =
       itemKeyStore: ItemKeyStore option
       
       /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-      semanticClassification: struct (range * SemanticClassificationType) []
+      semanticClassificationKeyStore: SemanticClassificationKeyStore option
     }
 
     member TcSymbolUses: TcSymbolUses list
@@ -104,19 +104,25 @@ type internal PartialCheckResults =
 
     member TimeStamp: DateTime 
 
-    member TcInfo: CompilationThreadToken -> TcInfo
+    member TryTcInfo: TcInfo option
 
+    /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
+    /// extras will also be available.
+    member GetTcInfo: CompilationThreadToken -> TcInfo
+
+    /// Compute both the "TcInfo" and "TcInfoExtras" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member TcInfoWithOptional: CompilationThreadToken -> TcInfo * TcInfoOptional
+    member GetTcInfoWithExtras: CompilationThreadToken -> TcInfo * TcInfoExtras
 
+    /// Compute the "ItemKeyStore" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
     member TryGetItemKeyStore: CompilationThreadToken -> ItemKeyStore option
 
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetSemanticClassification: CompilationThreadToken -> struct(range * SemanticClassificationType) []
+    member GetSemanticClassification: CompilationThreadToken -> SemanticClassificationKeyStore option
 
     member TimeStamp: DateTime 
 
@@ -150,9 +156,6 @@ type internal IncrementalBuilder =
       member ImportsInvalidatedByTypeProvider : IEvent<string>
 #endif
 
-      /// Tries to get the current successful TcImports. This is only used in testing. Do not use it for other stuff.
-      member TryGetCurrentTcImports : unit -> TcImports option
-
       /// The list of files the build depends on
       member AllDependenciesDeprecated : string[]
 
@@ -172,6 +175,12 @@ type internal IncrementalBuilder =
       ///
       /// This is safe for use from non-compiler threads
       member AreCheckResultsBeforeFileInProjectReady: filename:string -> bool
+
+      /// Get the preceding typecheck state of a slot, WITH checking if it is up-to-date w.r.t. However, files will not be parsed or checked.
+      /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available or if it is not up-to-date.
+      ///
+      /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
+      member TryGetCheckResultsBeforeFileInProject: filename: string -> PartialCheckResults option
 
       /// Get the preceding typecheck state of a slot. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
@@ -212,7 +221,7 @@ type internal IncrementalBuilder =
       member GetFullCheckResultsAndImplementationsForProject : CompilationThreadToken -> Cancellable<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
-      member GetLogicalTimeStampForProject: TimeStampCache * CompilationThreadToken -> DateTime
+      member GetLogicalTimeStampForProject: TimeStampCache -> DateTime
 
       /// Does the given file exist in the builder's pipeline?
       member ContainsFile: filename: string -> bool
@@ -220,7 +229,7 @@ type internal IncrementalBuilder =
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile: CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]>
+      member GetParseResultsForFile: filename:string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:

@@ -4,21 +4,19 @@
 module internal FSharp.Compiler.CompilerConfig
 
 open System
-
 open Internal.Utilities
-
+open Internal.Utilities.Library
 open FSharp.Compiler
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
-
-open Microsoft.DotNet.DependencyManager
 
 exception FileNameNotResolved of (*filename*) string * (*description of searched locations*) string * range
 exception LoadedSourceNotFoundIgnoring of (*filename*) string * range
@@ -60,7 +58,7 @@ type IRawFSharpAssemblyData =
 type TimeStampCache = 
     new: defaultTimeStamp: DateTime -> TimeStampCache
     member GetFileTimeStamp: string -> DateTime
-    member GetProjectReferenceTimeStamp: IProjectReference * CompilationThreadToken -> DateTime
+    member GetProjectReferenceTimeStamp: IProjectReference -> DateTime
 
 and IProjectReference = 
 
@@ -78,7 +76,7 @@ and IProjectReference =
     ///
     /// The operation returns None only if it is not possible to create an IncrementalBuilder for the project at all, e.g. if there
     /// are fatal errors in the options for the project.
-    abstract TryGetLogicalTimeStamp: TimeStampCache * CompilationThreadToken -> System.DateTime option
+    abstract TryGetLogicalTimeStamp: TimeStampCache -> System.DateTime option
 
 type AssemblyReference = 
     | AssemblyReference of range * string  * IProjectReference option
@@ -256,9 +254,9 @@ type TcConfigBuilder =
       mutable copyFSharpCore: CopyFSharpCoreFlag
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
-      mutable fxResolver: FxResolver
-      mutable rangeForErrors: range
-      mutable sdkDirOverride: string option
+      mutable fxResolver: FxResolver option
+      rangeForErrors: range
+      sdkDirOverride: string option
 
       /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
       /// and from which we can read the metadata. Only used when metadataOnly=true.
@@ -274,8 +272,6 @@ type TcConfigBuilder =
 
       mutable langVersion : LanguageVersion
     }
-
-    static member Initial: TcConfigBuilder
 
     static member CreateNew:
         legacyReferenceResolver: LegacyReferenceResolver *
@@ -321,6 +317,9 @@ type TcConfigBuilder =
 
     member FxResolver: FxResolver
 
+    member SetUseSdkRefs: useSdkRefs: bool -> unit
+
+    member SetPrimaryAssembly: primaryAssembly: PrimaryAssembly -> unit
 
 /// Immutable TcConfig, modifications are made via a TcConfigBuilder
 [<Sealed>]

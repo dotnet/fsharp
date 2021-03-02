@@ -13,34 +13,32 @@ open System.IO
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.FSharpEnvironment
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Extensions.ILX
+open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Import
-open FSharp.Compiler.Lib
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.IO
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.XmlDoc
-
-open Microsoft.DotNet.DependencyManager
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -132,8 +130,46 @@ let WriteOptimizationData (tcGlobals, filename, inMem, ccu: CcuThunk, modulInfo)
     let rName = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
     PickleToResource inMem filename tcGlobals ccu (rName+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
 
+let EncodeSignatureData(tcConfig: TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) = 
+    if tcConfig.GenerateSignatureData then 
+        let resource = WriteSignatureData (tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild)
+        // The resource gets written to a file for FSharp.Core
+        let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
+        if useDataFiles then 
+            let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
+            let bytes = resource.GetBytes()
+            use fileStream = File.Create(sigDataFileName, bytes.Length)
+            bytes.CopyTo fileStream
+        let resources = 
+            [ resource ]
+        let sigAttr = mkSignatureDataVersionAttr tcGlobals (parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
+        [sigAttr], resources
+      else 
+        [], []
+
+let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemapping, data, isIncrementalBuild) = 
+    if tcConfig.GenerateOptimizationData then 
+        let data = map2Of2 (Optimizer.RemapOptimizationInfo tcGlobals exportRemapping) data
+        // As with the sigdata file, the optdata gets written to a file for FSharp.Core
+        let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
+        if useDataFiles then 
+            let ccu, modulInfo = data
+            let bytes = TypedTreePickle.pickleObjWithDanglingCcus isIncrementalBuild outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
+            let optDataFileName = (Filename.chopExtension outfile)+".optdata"
+            File.WriteAllBytes(optDataFileName, bytes)
+        let (ccu, optData) = 
+            if tcConfig.onlyEssentialOptimizationData then 
+                map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data 
+            else 
+                data
+        [ WriteOptimizationData (tcGlobals, outfile, isIncrementalBuild, ccu, optData) ]
+    else
+        [ ]
+
 exception AssemblyNotResolved of (*originalName*) string * range
+
 exception MSBuildReferenceResolutionWarning of (*MSBuild warning code*)string * (*Message*)string * range
+
 exception MSBuildReferenceResolutionError of (*MSBuild warning code*)string * (*Message*)string * range
 
 let OpenILBinary(filename, reduceMemoryUsage, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot) =
@@ -384,7 +420,7 @@ type TcConfig with
                 tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)
                 logMessage showMessages, logDiagnostic showMessages)
         with 
-            LegacyResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(), errorAndWarningRange))
+            | LegacyResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(), errorAndWarningRange))
 
 
     // NOTE!! if mode=Speculative then this method must not report ANY warnings or errors through 'warning' or 'error'. Instead
@@ -555,7 +591,7 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                     if found then yield asm
 
             if tcConfig.framework then
-                let references, _useDotNetFramework = tcConfig.FxResolver.GetDefaultReferences(tcConfig.useFsiAuxLib, assumeDotNetFramework)
+                let references, _useDotNetFramework = tcConfig.FxResolver.GetDefaultReferences(tcConfig.useFsiAuxLib)
                 for s in references do
                     yield AssemblyReference(rangeStartup, (if s.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then s else s+".dll"), None)
 
@@ -687,7 +723,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
 
          member _.HasMatchingFSharpSignatureDataAttribute ilg = 
             let attrs = GetCustomAttributesOfILModule ilModule
-            List.exists (IsMatchingSignatureDataVersionAttr ilg (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
+            List.exists (IsMatchingSignatureDataVersionAttr ilg (parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
 
 //----------------------------------------------------------------------------
 // TcImports
@@ -1331,7 +1367,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
     /// Query information about types available in target system runtime library
     member tcImports.SystemRuntimeContainsType (typeName: string) : bool = 
-        let ns, typeName = IL.splitILTypeName typeName
+        let ns, typeName = splitILTypeName typeName
         let tcGlobals = tcImports.GetTcGlobals()
         tcGlobals.TryFindSysTyconRef ns typeName |> Option.isSome
 

@@ -26,8 +26,10 @@ of `InteractiveChecker`:
 #r "FSharp.Compiler.Service.dll"
 
 open System
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 // Create an interactive checker instance 
 let checker = FSharpChecker.Create()
@@ -118,7 +120,7 @@ this is the type that lets you implement most of the interesting F# source code 
 
 ### Getting a tool tip
 
-To get a tool tip, you can use `GetToolTipTextAlternate` method. The method takes a line number and character
+To get a tool tip, you can use `GetToolTip` method. The method takes a line number and character
 offset. Both of the numbers are zero-based. In the sample code, we want to get tooltip for the `foo`
 function that is defined on line 3 (line 0 is blank) and the letter `f` starts at index 7 (the tooltip
 would work anywhere inside the identifier).
@@ -131,13 +133,11 @@ identifier (the other option lets you get tooltip with full assembly location wh
 let identToken = FSharpTokenTag.Identifier
 
 // Get tool tip at the specified location
-let tip = checkFileResults.GetToolTipText(4, 7, inputLines.[1], ["foo"], identToken)
+let tip = checkFileResults.GetToolTip(4, 7, inputLines.[1], ["foo"], identToken)
 printfn "%A" tip
 
 (**
 
-> **NOTE:** `GetToolTipTextAlternate` is an alternative name for the old `GetToolTipText`. The old `GetToolTipText` was
-deprecated because it accepted zero-based line numbers.  At some point it will be removed, and  `GetToolTipTextAlternate` will be renamed back to `GetToolTipText`.
 *)
 
 (**
@@ -200,7 +200,7 @@ let methods =
 
 // Print concatenated parameter lists
 for mi in methods.Methods do
-    [ for p in mi.Parameters -> p.Display ]
+    [ for p in mi.Parameters do for tt in p.Display do yield tt.Text ]
     |> String.concat ", " 
     |> printfn "%s(%s)" methods.MethodName
 (**

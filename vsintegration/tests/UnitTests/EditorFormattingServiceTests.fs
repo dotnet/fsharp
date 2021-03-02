@@ -8,7 +8,7 @@ open NUnit.Framework
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis.Formatting
 
 [<TestFixture>]
@@ -26,7 +26,6 @@ type EditorFormattingServiceTests()  =
         LoadTime = DateTime.MaxValue
         OriginalLoadReferences = []
         UnresolvedReferences = None
-        ExtraProjectInfo = None
         Stamp = None
     }
 

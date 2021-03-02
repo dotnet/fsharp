@@ -177,11 +177,11 @@ function Process-Arguments() {
 
 function Update-Arguments() {
     if ($script:noVisualStudio) {
-        $script:bootstrapTfm = "netcoreapp3.1"
+        $script:bootstrapTfm = "net5.0"
         $script:msbuildEngine = "dotnet"
     }
 
-    if ($bootstrapTfm -eq "netcoreapp3.1") {
+    if ($bootstrapTfm -eq "net5.0") {
         if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
             $script:bootstrap = $True
         }
@@ -192,19 +192,16 @@ function Update-Arguments() {
     }
 }
 
-function BuildSolution() {
-    # VisualFSharp.sln can't be built with dotnet due to WPF, WinForms and VSIX build task dependencies
-    $solution = "VisualFSharp.sln"
-
-    Write-Host "$($solution):"
+function BuildSolution([string] $solutionName) {
+    Write-Host "${solutionName}:"
 
     $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.binlog") } else { "" }
 
-    $projects = Join-Path $RepoRoot $solution
+    $projects = Join-Path $RepoRoot  $solutionName
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset
     $quietRestore = !$ci
-    $testTargetFrameworks = if ($testCoreClr) { "netcoreapp3.1" } else { "" }
+    $testTargetFrameworks = if ($testCoreClr) { "net5.0" } else { "" }
 
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
@@ -297,32 +294,6 @@ function TestUsingXUnit([string] $testProject, [string] $targetFramework, [strin
 
 function TestUsingNUnit([string] $testProject, [string] $targetFramework, [string]$testadapterpath) {
     TestUsingMsBuild -testProject $testProject -targetFramework $targetFramework -testadapterpath $testadapterpath -noTestFilter $false
-}
-
-function BuildCompiler() {
-    if ($bootstrapTfm -eq "netcoreapp3.1") {
-        $dotnetPath = InitializeDotNetCli
-        $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
-        $fscProject = "`"$RepoRoot\src\fsharp\fsc\fsc.fsproj`""
-        $fsiProject = "`"$RepoRoot\src\fsharp\fsi\fsi.fsproj`""
-
-        $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
-        $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
-
-        if ($binaryLog) {
-            $logFilePath = Join-Path $LogDir "fscBootstrapLog.binlog"
-            $args += " /bl:$logFilePath"
-        }
-        $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp3.1" + $argNoRestore + $argNoIncremental
-        Exec-Console $dotnetExe $args
-
-        if ($binaryLog) {
-            $logFilePath = Join-Path $LogDir "fsiBootstrapLog.binlog"
-            $args += " /bl:$logFilePath"
-        }
-        $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp3.1" + $argNoRestore + $argNoIncremental
-        Exec-Console $dotnetExe $args
-    }
 }
 
 function Prepare-TempDir() {
@@ -466,6 +437,11 @@ try {
     $buildTool = InitializeBuildTool
     $toolsetBuildProj = InitializeToolset
     TryDownloadDotnetFrameworkSdk
+
+    $dotnetPath = InitializeDotNetCli
+    $env:DOTNET_ROOT="$dotnetPath"
+    Get-Item -Path Env:
+
     if ($bootstrap) {
         $script:BuildMessage = "Failure building bootstrap compiler"
         $bootstrapDir = Make-BootstrapBuild
@@ -474,9 +450,9 @@ try {
     $script:BuildMessage = "Failure building product"
     if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish) {
         if ($noVisualStudio) {
-            BuildCompiler
+            BuildSolution "FSharp.sln"
         } else {
-            BuildSolution
+            BuildSolution "VisualFSharp.sln"
         }
     }
 
@@ -487,7 +463,7 @@ try {
     $script:BuildCategory = "Test"
     $script:BuildMessage = "Failure running tests"
     $desktopTargetFramework = "net472"
-    $coreclrTargetFramework = "netcoreapp3.1"
+    $coreclrTargetFramework = "net5.0"
 
     if ($testDesktop) {
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true

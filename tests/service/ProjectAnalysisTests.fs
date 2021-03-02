@@ -13,10 +13,13 @@ open NUnit.Framework
 open FsUnit
 open System
 open System.IO
-
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Symbols.FSharpExprPatterns
 
 module internal Project1 = 
 
@@ -94,14 +97,14 @@ let mmmm2 : M.CAbbrev = new M.CAbbrev() // note, these don't count as uses of C
 let ``Test project1 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
-    wholeProjectResults .Errors.Length |> shouldEqual 2
-    wholeProjectResults.Errors.[1].Message.Contains("Incomplete pattern matches on this expression") |> shouldEqual true // yes it does
-    wholeProjectResults.Errors.[1].ErrorNumber |> shouldEqual 25
+    wholeProjectResults .Diagnostics.Length |> shouldEqual 2
+    wholeProjectResults.Diagnostics.[1].Message.Contains("Incomplete pattern matches on this expression") |> shouldEqual true // yes it does
+    wholeProjectResults.Diagnostics.[1].ErrorNumber |> shouldEqual 25
 
-    wholeProjectResults.Errors.[0].Range.StartLine |> shouldEqual 10
-    wholeProjectResults.Errors.[0].Range.EndLine |> shouldEqual 10
-    wholeProjectResults.Errors.[0].Range.StartColumn |> shouldEqual 43
-    wholeProjectResults.Errors.[0].Range.EndColumn |> shouldEqual 44
+    wholeProjectResults.Diagnostics.[0].Range.StartLine |> shouldEqual 10
+    wholeProjectResults.Diagnostics.[0].Range.EndLine |> shouldEqual 10
+    wholeProjectResults.Diagnostics.[0].Range.StartColumn |> shouldEqual 43
+    wholeProjectResults.Diagnostics.[0].Range.EndColumn |> shouldEqual 44
 
 [<Test;NonParallelizable>]
 let ``Test project1 and make sure TcImports gets cleaned up`` () = 
@@ -117,6 +120,7 @@ let ``Test project1 and make sure TcImports gets cleaned up`` () =
             Assert.True weakTcImports.IsAlive
             weakTcImports
      
+    // Here we are only keeping a handle to weakTcImports and nothing else
     let weakTcImports = test ()
     checker.InvalidateConfiguration (Project1.options)
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
@@ -330,7 +334,7 @@ let ``Test project1 xxx symbols`` () =
 
     let usesOfXSymbol = 
         [ for su in wholeProjectResults.GetUsesOfSymbol(xSymbol) do
-              yield Project1.cleanFileName su.FileName , tups su.RangeAlternate, attribsOfSymbol su.Symbol ]
+              yield Project1.cleanFileName su.FileName , tups su.Range, attribsOfSymbol su.Symbol ]
 
     usesOfXSymbol |> shouldEqual
        [("file1", ((7, 4), (7, 7)), ["val"]);
@@ -348,7 +352,7 @@ let ``Test project1 all uses of all signature symbols`` () =
         [ for s in allSymbols do 
              yield s.ToString(), 
                   [ for s in wholeProjectResults.GetUsesOfSymbol(s) -> 
-                         (Project1.cleanFileName s.FileName, tupsZ s.RangeAlternate) ] ]
+                         (Project1.cleanFileName s.FileName, tupsZ s.Range) ] ]
     let expected =      
         [("N", [("file2", ((1, 7), (1, 8)))]);
          ("val y2", [("file2", ((12, 4), (12, 6)))]);
@@ -413,7 +417,7 @@ let ``Test project1 all uses of all symbols`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
     let allUsesOfAllSymbols = 
         [ for s in wholeProjectResults.GetAllUsesOfAllSymbols() -> 
-              s.Symbol.DisplayName, s.Symbol.FullName, Project1.cleanFileName s.FileName, tupsZ s.RangeAlternate, attribsOfSymbol s.Symbol ]
+              s.Symbol.DisplayName, s.Symbol.FullName, Project1.cleanFileName s.FileName, tupsZ s.Range, attribsOfSymbol s.Symbol ]
     let expected =      
               [("C", "M.C", "file1", ((3, 5), (3, 6)), ["class"]);
                ("( .ctor )", "M.C.( .ctor )", "file1", ((3, 5), (3, 6)),
@@ -566,13 +570,13 @@ let ``Test file explicit parse symbols`` () =
     let xSymbolUse2Opt = checkResults1.GetSymbolUseAtLocation(9,9,"",["xxx"])
     let xSymbol2 = xSymbolUse2Opt.Value.Symbol
     let usesOfXSymbol2 = 
-        [| for s in wholeProjectResults.GetUsesOfSymbol(xSymbol2) -> (Project1.cleanFileName s.FileName, tupsZ s.RangeAlternate) |] 
+        [| for s in wholeProjectResults.GetUsesOfSymbol(xSymbol2) -> (Project1.cleanFileName s.FileName, tupsZ s.Range) |] 
 
     let usesOfXSymbol21 = 
-        [| for s in checkResults1.GetUsesOfSymbolInFile(xSymbol2) -> (Project1.cleanFileName s.FileName, tupsZ s.RangeAlternate) |] 
+        [| for s in checkResults1.GetUsesOfSymbolInFile(xSymbol2) -> (Project1.cleanFileName s.FileName, tupsZ s.Range) |] 
 
     let usesOfXSymbol22 = 
-        [| for s in checkResults2.GetUsesOfSymbolInFile(xSymbol2) -> (Project1.cleanFileName s.FileName, tupsZ s.RangeAlternate) |] 
+        [| for s in checkResults2.GetUsesOfSymbolInFile(xSymbol2) -> (Project1.cleanFileName s.FileName, tupsZ s.Range) |] 
 
     usesOfXSymbol2
          |> shouldEqual [|("file1", ((6, 4), (6, 7)));
@@ -611,7 +615,7 @@ let ``Test file explicit parse all symbols`` () =
 
     let usesOfSymbols = checkResults1.GetAllUsesOfAllSymbolsInFile()
     let cleanedUsesOfSymbols = 
-         [ for s in usesOfSymbols -> s.Symbol.DisplayName, Project1.cleanFileName s.FileName, tupsZ s.RangeAlternate, attribsOfSymbol s.Symbol ]
+         [ for s in usesOfSymbols -> s.Symbol.DisplayName, Project1.cleanFileName s.FileName, tupsZ s.Range, attribsOfSymbol s.Symbol ]
 
     cleanedUsesOfSymbols 
        |> shouldEqual 
@@ -680,7 +684,7 @@ let _ = GenericFunction(3, 4)
 let ``Test project2 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project2.options) |> Async.RunSynchronously
-    wholeProjectResults .Errors.Length |> shouldEqual 0
+    wholeProjectResults .Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -716,7 +720,7 @@ let ``Test project2 all uses of all signature symbols`` () =
     let allSymbols = allSymbolsInEntities true wholeProjectResults.AssemblySignature.Entities
     let allUsesOfAllSymbols = 
         [ for s in allSymbols do 
-             let uses = [ for s in wholeProjectResults.GetUsesOfSymbol(s) -> (if s.FileName = Project2.fileName1 then "file1" else "??"), tupsZ s.RangeAlternate ]
+             let uses = [ for s in wholeProjectResults.GetUsesOfSymbol(s) -> (if s.FileName = Project2.fileName1 then "file1" else "??"), tupsZ s.Range ]
              yield s.ToString(), uses ]
     let expected =      
               [("M", [("file1", ((1, 7), (1, 8)))]);
@@ -755,7 +759,7 @@ let ``Test project2 all uses of all symbols`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project2.options) |> Async.RunSynchronously
     let allUsesOfAllSymbols = 
         [ for s in wholeProjectResults.GetAllUsesOfAllSymbols() -> 
-            s.Symbol.DisplayName, (if s.FileName = Project2.fileName1 then "file1" else "???"), tupsZ s.RangeAlternate, attribsOfSymbol s.Symbol ]
+            s.Symbol.DisplayName, (if s.FileName = Project2.fileName1 then "file1" else "???"), tupsZ s.Range, attribsOfSymbol s.Symbol ]
     let expected =      
           [("int", "file1", ((4, 13), (4, 16)), ["abbrev"]);
            ("int", "file1", ((4, 19), (4, 22)), ["abbrev"]);
@@ -922,7 +926,7 @@ let getM (foo: IFoo) = foo.InterfaceMethod("d")
 let ``Test project3 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project3.options) |> Async.RunSynchronously
-    wholeProjectResults .Errors.Length |> shouldEqual 0
+    wholeProjectResults .Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -1033,7 +1037,7 @@ let ``Test project3 all uses of all signature symbols`` () =
         [ for s in allSymbols do 
              let uses = [ for s in wholeProjectResults.GetUsesOfSymbol(s) -> 
                             ((if s.FileName = Project3.fileName1 then "file1" else "??"), 
-                             tupsZ s.RangeAlternate, attribsOfSymbolUse s, attribsOfSymbol s.Symbol) ]
+                             tupsZ s.Range, attribsOfSymbolUse s, attribsOfSymbol s.Symbol) ]
              yield s.ToString(), uses ]
     let expected =      
         [("M", [("file1", ((1, 7), (1, 8)), ["defn"], ["module"])]);
@@ -1290,7 +1294,7 @@ let inline twice(x : ^U, y : ^U) = x + y
 [<Test>]
 let ``Test project4 whole project errors`` () = 
     let wholeProjectResults = checker.ParseAndCheckProject(Project4.options) |> Async.RunSynchronously
-    wholeProjectResults .Errors.Length |> shouldEqual 0
+    wholeProjectResults .Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -1322,7 +1326,7 @@ let ``Test project4 all uses of all signature symbols`` () =
     let allSymbols = allSymbolsInEntities false wholeProjectResults.AssemblySignature.Entities
     let allUsesOfAllSymbols = 
         [ for s in allSymbols do 
-             let uses = [ for s in wholeProjectResults.GetUsesOfSymbol(s) -> (if s.FileName = Project4.fileName1 then "file1" else "??"), tupsZ s.RangeAlternate ]
+             let uses = [ for s in wholeProjectResults.GetUsesOfSymbol(s) -> (if s.FileName = Project4.fileName1 then "file1" else "??"), tupsZ s.Range ]
              yield s.ToString(), uses ]
     let expected =      
       [("M", [("file1", ((1, 7), (1, 8)))]);
@@ -1357,7 +1361,7 @@ let ``Test project4 T symbols`` () =
 
     let uses = backgroundTypedParse1.GetAllUsesOfAllSymbolsInFile()
     let allUsesOfAllSymbols = 
-        [ for s in uses -> s.Symbol.ToString(), (if s.FileName = Project4.fileName1 then "file1" else "??"), tupsZ s.RangeAlternate ]
+        [ for s in uses -> s.Symbol.ToString(), (if s.FileName = Project4.fileName1 then "file1" else "??"), tupsZ s.Range ]
     allUsesOfAllSymbols |> shouldEqual
           [("generic parameter T", "file1", ((3, 9), (3, 11)));
            ("Foo`1", "file1", ((3, 5), (3, 8)));
@@ -1386,7 +1390,7 @@ let ``Test project4 T symbols`` () =
 
     let usesOfTSymbol2 = 
         wholeProjectResults.GetUsesOfSymbol(tSymbol2)
-        |> Array.map (fun su -> su.FileName , tupsZ su.RangeAlternate)
+        |> Array.map (fun su -> su.FileName , tupsZ su.Range)
         |> Array.map (fun (a,b) -> (if a = Project4.fileName1 then "file1" else "??"), b)
 
     usesOfTSymbol2 |> shouldEqual 
@@ -1396,7 +1400,7 @@ let ``Test project4 T symbols`` () =
     let usesOfTSymbol3 = 
         wholeProjectResults.GetUsesOfSymbol(tSymbol3) 
        
-        |> Array.map (fun su -> su.FileName , tupsZ su.RangeAlternate)
+        |> Array.map (fun su -> su.FileName , tupsZ su.Range)
         |> Array.map (fun (a,b) -> (if a = Project4.fileName1 then "file1" else "??"), b)
 
     usesOfTSymbol3 |> shouldEqual usesOfTSymbol2
@@ -1411,7 +1415,7 @@ let ``Test project4 T symbols`` () =
     let usesOfUSymbol2 = 
         wholeProjectResults.GetUsesOfSymbol(uSymbol2) 
        
-        |> Array.map (fun su -> su.FileName , tupsZ su.RangeAlternate)
+        |> Array.map (fun su -> su.FileName , tupsZ su.Range)
         |> Array.map (fun (a,b) -> (if a = Project4.fileName1 then "file1" else "??"), b)
 
     usesOfUSymbol2 |> shouldEqual  [|("file1", ((5, 21), (5, 23))); ("file1", ((5, 29), (5, 31)))|]
@@ -1463,9 +1467,9 @@ let parseNumeric str =
 let ``Test project5 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project5.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project5 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -1476,7 +1480,7 @@ let ``Test project 5 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.FullName, Project5.cleanFileName su.FileName, tupsZ su.RangeAlternate, attribsOfSymbolUse su)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.FullName, Project5.cleanFileName su.FileName, tupsZ su.Range, attribsOfSymbolUse su)
 
     allUsesOfAllSymbols |> shouldEqual
           [|("symbol ", "Even", "file1", ((4, 6), (4, 10)), ["defn"]);
@@ -1549,8 +1553,12 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
     oddSymbol.ToString() |> shouldEqual "symbol Odd"
 
     let oddActivePatternCase = oddSymbol :?> FSharpActivePatternCase
-    oddActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual ["Total active pattern for even/odd integers"]
-    oddActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Total active pattern for even/odd integers"; "</summary>"]
+    match oddActivePatternCase.XmlDoc with 
+    | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines |> shouldEqual [| "Total active pattern for even/odd integers" |]
+    | _ -> failwith "wrong kind"
+    match oddActivePatternCase.XmlDoc with 
+    | FSharpXmlDoc.FromXmlText t -> t.GetElaboratedXmlLines() |> shouldEqual [|"<summary>"; "Total active pattern for even/odd integers"; "</summary>" |]
+    | _ -> failwith "wrong kind"
     oddActivePatternCase.XmlDocSig |> shouldEqual ""
     let oddGroup = oddActivePatternCase.Group
     oddGroup.IsTotal |> shouldEqual true
@@ -1564,8 +1572,11 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
     let evenSymbol = evenSymbolUse.Value.Symbol
     evenSymbol.ToString() |> shouldEqual "symbol Even"
     let evenActivePatternCase = evenSymbol :?> FSharpActivePatternCase
-    evenActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual ["Total active pattern for even/odd integers"]
-    evenActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Total active pattern for even/odd integers"; "</summary>"]
+    match evenActivePatternCase.XmlDoc with 
+    | FSharpXmlDoc.FromXmlText t ->
+        t.UnprocessedLines |> shouldEqual [| "Total active pattern for even/odd integers" |]
+        t.GetElaboratedXmlLines() |> shouldEqual [| "<summary>"; "Total active pattern for even/odd integers"; "</summary>" |]
+    | _ -> failwith "wrong kind"
     evenActivePatternCase.XmlDocSig |> shouldEqual ""
     let evenGroup = evenActivePatternCase.Group
     evenGroup.IsTotal |> shouldEqual true
@@ -1577,12 +1588,12 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
     let usesOfEvenSymbol = 
         wholeProjectResults.GetUsesOfSymbol(evenSymbol) 
        
-        |> Array.map (fun su -> su.Symbol.ToString(), Project5.cleanFileName su.FileName, tupsZ su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), Project5.cleanFileName su.FileName, tupsZ su.Range)
 
     let usesOfOddSymbol = 
         wholeProjectResults.GetUsesOfSymbol(oddSymbol) 
        
-        |> Array.map (fun su -> su.Symbol.ToString(), Project5.cleanFileName su.FileName, tupsZ su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), Project5.cleanFileName su.FileName, tupsZ su.Range)
 
     usesOfEvenSymbol |> shouldEqual 
           [|("symbol Even", "file1", ((4, 6), (4, 10)));
@@ -1609,8 +1620,11 @@ let ``Test partial active patterns' exact ranges from uses of symbols`` () =
     floatSymbol.ToString() |> shouldEqual "symbol Float"
 
     let floatActivePatternCase = floatSymbol :?> FSharpActivePatternCase
-    floatActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual ["Partial active pattern for floats"]
-    floatActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Partial active pattern for floats"; "</summary>"]
+    match floatActivePatternCase.XmlDoc with 
+    | FSharpXmlDoc.FromXmlText t ->
+        t.UnprocessedLines |> shouldEqual [| "Partial active pattern for floats" |]
+        t.GetElaboratedXmlLines() |> shouldEqual [| "<summary>"; "Partial active pattern for floats"; "</summary>" |]
+    | _ -> failwith "wrong kind"
     floatActivePatternCase.XmlDocSig |> shouldEqual ""
     let floatGroup = floatActivePatternCase.Group
     floatGroup.IsTotal |> shouldEqual false
@@ -1622,7 +1636,7 @@ let ``Test partial active patterns' exact ranges from uses of symbols`` () =
     let usesOfFloatSymbol = 
         wholeProjectResults.GetUsesOfSymbol(floatSymbol) 
        
-        |> Array.map (fun su -> su.Symbol.ToString(), Project5.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), Project5.cleanFileName su.FileName, tups su.Range)
 
     usesOfFloatSymbol |> shouldEqual 
           [|("symbol Float", "file1", ((14, 6), (14, 11)));
@@ -1664,9 +1678,9 @@ let f () =
 let ``Test project6 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project6.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project6 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -1677,7 +1691,7 @@ let ``Test project 6 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), Project6.cleanFileName su.FileName, tupsZ su.RangeAlternate, attribsOfSymbol su.Symbol)
+        |> Array.map (fun su -> su.Symbol.ToString(), Project6.cleanFileName su.FileName, tupsZ su.Range, attribsOfSymbol su.Symbol)
 
     allUsesOfAllSymbols |> shouldEqual
           [|("string", "file1", ((3, 18), (3, 24)), ["abbrev"]);
@@ -1720,9 +1734,9 @@ let x2 = C.M(arg1 = 3, arg2 = 4, ?arg3 = Some 5)
 let ``Test project7 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project7.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project7 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -1733,7 +1747,7 @@ let ``Test project 7 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project7.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project7.cleanFileName su.FileName, tups su.Range)
 
     let arg1symbol = 
         wholeProjectResults.GetAllUsesOfAllSymbols() 
@@ -1742,7 +1756,7 @@ let ``Test project 7 all symbols`` () =
     let arg1uses = 
         wholeProjectResults.GetUsesOfSymbol(arg1symbol) 
        
-        |> Array.map (fun su -> su.Symbol.ToString(), Option.map tups su.Symbol.DeclarationLocation, Project7.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbol su.Symbol)
+        |> Array.map (fun su -> su.Symbol.ToString(), Option.map tups su.Symbol.DeclarationLocation, Project7.cleanFileName su.FileName, tups su.Range, attribsOfSymbol su.Symbol)
     arg1uses |> shouldEqual
           [|("val arg1", Some ((5, 20), (5, 24)), "file1", ((5, 20), (5, 24)), []);
             ("val arg1", Some ((5, 20), (5, 24)), "file1", ((5, 57), (5, 61)), []);
@@ -1781,9 +1795,9 @@ let x =
 let ``Test project8 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project8.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project8 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -1794,7 +1808,7 @@ let ``Test project 8 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project8.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project8.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
 
     allUsesOfAllSymbols 
       |> shouldEqual
@@ -1827,7 +1841,7 @@ let ``Test project 8 all symbols`` () =
     let arg1uses = 
         wholeProjectResults.GetUsesOfSymbol(arg1symbol) 
        
-        |> Array.map (fun su -> Option.map tups su.Symbol.DeclarationLocation, Project8.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> Option.map tups su.Symbol.DeclarationLocation, Project8.cleanFileName su.FileName, tups su.Range)
 
     arg1uses |> shouldEqual
      [|(Some ((4, 14), (4, 17)), "file1", ((4, 14), (4, 17)));
@@ -1861,9 +1875,9 @@ let inline check< ^T when ^T : (static member IsInfinity : ^T -> bool)> (num: ^T
 let ``Test project9 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project9.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project9 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -1874,7 +1888,7 @@ let ``Test project 9 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project9.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbol su.Symbol)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project9.cleanFileName su.FileName, tups su.Range, attribsOfSymbol su.Symbol)
 
     allUsesOfAllSymbols |> shouldEqual
           [|("generic parameter T", "T", "file1", ((4, 18), (4, 20)), []);
@@ -1904,7 +1918,7 @@ let ``Test project 9 all symbols`` () =
     let arg1uses = 
         wholeProjectResults.GetUsesOfSymbol(arg1symbol) 
        
-        |> Array.map (fun su -> Option.map tups su.Symbol.DeclarationLocation, Project9.cleanFileName su.FileName, tups su.RangeAlternate)
+        |> Array.map (fun su -> Option.map tups su.Symbol.DeclarationLocation, Project9.cleanFileName su.FileName, tups su.Range)
 
     arg1uses |> shouldEqual
      [|(Some ((4, 46), (4, 56)), "file1", ((4, 46), (4, 56)))|]
@@ -1940,9 +1954,9 @@ C.M("http://goo", query = 1)
 let ``Test Project10 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project10.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project10 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -1953,7 +1967,7 @@ let ``Test Project10 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project10.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbol su.Symbol)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project10.cleanFileName su.FileName, tups su.Range, attribsOfSymbol su.Symbol)
 
     allUsesOfAllSymbols |> shouldEqual
           [|("C", "C", "file1", ((4, 5), (4, 6)), ["class"]);
@@ -2020,9 +2034,9 @@ let fff (x:System.Collections.Generic.Dictionary<int,int>.Enumerator) = ()
 let ``Test Project11 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project11.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project11 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -2033,7 +2047,7 @@ let ``Test Project11 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project11.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project11.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
 
     allUsesOfAllSymbols |> shouldEqual
           [|("System", "System", "file1", ((4, 15), (4, 21)), [], ["namespace"]);
@@ -2089,9 +2103,9 @@ let x2 = query { for i in 0 .. 100 do
 let ``Test Project12 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project12.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project12 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -2102,7 +2116,7 @@ let ``Test Project12 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project12.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project12.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
 
     allUsesOfAllSymbols |> shouldEqual
           [|("val seq", "seq", "file1", ((4, 9), (4, 12)), ["compexpr"], ["val"]);
@@ -2156,9 +2170,9 @@ let x3 = new System.DateTime()
 let ``Test Project13 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project13.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project13 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -2169,7 +2183,7 @@ let ``Test Project13 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project13.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project13.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
 
     allUsesOfAllSymbols |> shouldEqual
           [|("System", "System", "file1", ((4, 14), (4, 20)), [], ["namespace"]);
@@ -2307,9 +2321,9 @@ let x2  = S(3)
 let ``Test Project14 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project14.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project14 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -2320,7 +2334,7 @@ let ``Test Project14 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project14.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbolUse su)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project14.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su)
 
     allUsesOfAllSymbols |> shouldEqual
           [|("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)),
@@ -2375,9 +2389,9 @@ let f x =
 let ``Test Project15 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project15.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project15 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -2388,7 +2402,7 @@ let ``Test Project15 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project15.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbolUse su)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project15.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su)
 
     allUsesOfAllSymbols |> shouldEqual
           [|("val x", "x", "file1", ((4, 6), (4, 7)), ["defn"]);
@@ -2462,9 +2476,9 @@ and G = Case1 | Case2 of int
 let ``Test Project16 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project16.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project16 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -2475,7 +2489,7 @@ let ``Test Project16 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project16.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project16.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
 
     allUsesOfAllSymbols |> shouldEqual
           [|("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)),
@@ -2732,9 +2746,9 @@ let f3 (x: System.Exception) = x.HelpLink <- "" // check use of .NET setter prop
 let ``Test Project17 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project17.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project17 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -2745,7 +2759,7 @@ let ``Test Project17 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project17.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project17.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
 
     allUsesOfAllSymbols 
       |> shouldEqual
@@ -2818,9 +2832,9 @@ let _ = list<_>.Empty
 let ``Test Project18 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project18.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project18 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -2831,7 +2845,7 @@ let ``Test Project18 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project18.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbolUse su, 
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project18.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, 
                                 (match su.Symbol with :? FSharpEntity as e -> e.IsNamespace | _ -> false))
 
     allUsesOfAllSymbols |> shouldEqual
@@ -2874,9 +2888,9 @@ let s = System.DayOfWeek.Monday
 let ``Test Project19 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project19.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project19 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -2887,7 +2901,7 @@ let ``Test Project19 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project19.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project19.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
 
     allUsesOfAllSymbols |> shouldEqual
           [|("field EnumCase1", "EnumCase1", "file1", ((4, 14), (4, 23)), ["defn"],
@@ -2948,9 +2962,9 @@ type A<'T>() =
 let ``Test Project20 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project20.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project20 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -2958,7 +2972,7 @@ let ``Test Project20 all symbols`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project20.options) |> Async.RunSynchronously
 
-    let tSymbolUse = wholeProjectResults.GetAllUsesOfAllSymbols() |> Array.find (fun su -> su.RangeAlternate.StartLine = 5 && su.Symbol.ToString() = "generic parameter T")
+    let tSymbolUse = wholeProjectResults.GetAllUsesOfAllSymbols() |> Array.find (fun su -> su.Range.StartLine = 5 && su.Symbol.ToString() = "generic parameter T")
     let tSymbol = tSymbolUse.Symbol
 
 
@@ -2966,7 +2980,7 @@ let ``Test Project20 all symbols`` () =
     let allUsesOfTSymbol = 
         wholeProjectResults.GetUsesOfSymbol(tSymbol)
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project20.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project20.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
 
     allUsesOfTSymbol |> shouldEqual
           [|("generic parameter T", "T", "file1", ((4, 7), (4, 9)), ["type"], []);
@@ -3009,9 +3023,9 @@ let _ = { new IMyInterface<int> with
 let ``Test Project21 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project21.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project21 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 2
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 2
 
 
 [<Test>]
@@ -3022,7 +3036,7 @@ let ``Test Project21 all symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
        
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project21.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project21.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
 
     allUsesOfAllSymbols |> shouldEqual
           [|("generic parameter a", "a", "file1", ((4, 18), (4, 20)), ["type"], []);
@@ -3084,9 +3098,9 @@ let f5 (x: int[,,]) = () // test a multi-dimensional array
 let ``Test Project22 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project22.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project22 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -3229,9 +3243,9 @@ module Setter =
 let ``Test Project23 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project23.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project23 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 [<Test>]
 let ``Test Project23 property`` () =
@@ -3400,9 +3414,9 @@ TypeWithProperties.StaticAutoPropGetSet  <- 3
 [<Test>]
 let ``Test Project24 whole project errors`` () = 
     let wholeProjectResults = checker.ParseAndCheckProject(Project24.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project24 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 [<Test>]
 let ``Test Project24 all symbols`` () = 
@@ -3414,7 +3428,7 @@ let ``Test Project24 all symbols`` () =
     let allUses  = 
         backgroundTypedParse1.GetAllUsesOfAllSymbolsInFile() 
         |> Array.ofSeq
-        |> Array.map (fun s -> (s.Symbol.DisplayName, Project24.cleanFileName s.FileName, tups s.RangeAlternate, attribsOfSymbolUse s, attribsOfSymbol s.Symbol))
+        |> Array.map (fun s -> (s.Symbol.DisplayName, Project24.cleanFileName s.FileName, tups s.Range, attribsOfSymbolUse s, attribsOfSymbol s.Symbol))
 
     allUses |> shouldEqual 
           [|("TypeWithProperties", "file1", ((4, 5), (4, 23)), ["defn"], ["class"]);
@@ -3521,7 +3535,7 @@ let ``Test symbol uses of properties with both getters and setters`` () =
     let getAllSymbolUses = 
         backgroundTypedParse1.GetAllUsesOfAllSymbolsInFile() 
         |> Array.ofSeq
-        |> Array.map (fun s -> (s.Symbol.DisplayName, Project24.cleanFileName s.FileName, tups s.RangeAlternate, attribsOfSymbol s.Symbol))
+        |> Array.map (fun s -> (s.Symbol.DisplayName, Project24.cleanFileName s.FileName, tups s.Range, attribsOfSymbol s.Symbol))
 
     getAllSymbolUses |> shouldEqual
           [|("TypeWithProperties", "file1", ((4, 5), (4, 23)), ["class"]);
@@ -3612,7 +3626,7 @@ let ``Test symbol uses of properties with both getters and setters`` () =
     let usesOfGetSampleSymbol = 
         backgroundTypedParse1.GetUsesOfSymbolInFile(getSampleSymbol) 
         
-        |> Array.map (fun s -> (Project24.cleanFileName s.FileName, tups s.RangeAlternate))
+        |> Array.map (fun s -> (Project24.cleanFileName s.FileName, tups s.Range))
 
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((9, 13), (9, 20))); ("file1", ((36, 9), (36, 37)))|]
 
@@ -3652,9 +3666,9 @@ let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
 #endif
 let ``Test Project25 whole project errors`` () = 
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project25 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 [<Test>]
 #if NETCOREAPP
@@ -3669,7 +3683,7 @@ let ``Test Project25 symbol uses of type-provided members`` () =
     let allUses  = 
         backgroundTypedParse1.GetAllUsesOfAllSymbolsInFile() 
         |> Array.ofSeq
-        |> Array.map (fun s -> (s.Symbol.FullName, Project25.cleanFileName s.FileName, tups s.RangeAlternate, attribsOfSymbol s.Symbol))
+        |> Array.map (fun s -> (s.Symbol.FullName, Project25.cleanFileName s.FileName, tups s.Range, attribsOfSymbol s.Symbol))
 
     allUses |> shouldEqual 
 
@@ -3711,7 +3725,7 @@ let ``Test Project25 symbol uses of type-provided members`` () =
     let usesOfGetSampleSymbol = 
         backgroundTypedParse1.GetUsesOfSymbolInFile(getSampleSymbol) 
         
-        |> Array.map (fun s -> (Project25.cleanFileName s.FileName, tups s.RangeAlternate))
+        |> Array.map (fun s -> (Project25.cleanFileName s.FileName, tups s.Range))
 
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((5, 8), (5, 25))); ("file1", ((10, 8), (10, 78)))|]
 
@@ -3734,7 +3748,7 @@ let ``Test symbol uses of type-provided types`` () =
     let usesOfGetSampleSymbol = 
         backgroundTypedParse1.GetUsesOfSymbolInFile(getSampleSymbol) 
         
-        |> Array.map (fun s -> (Project25.cleanFileName s.FileName, tups s.RangeAlternate))
+        |> Array.map (fun s -> (Project25.cleanFileName s.FileName, tups s.Range))
 
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((4, 15), (4, 26))); ("file1", ((10, 8), (10, 19)))|]
 
@@ -3754,7 +3768,7 @@ let ``Test symbol uses of fully-qualified records`` () =
     let usesOfGetSampleSymbol = 
         backgroundTypedParse1.GetUsesOfSymbolInFile(getSampleSymbol) 
         
-        |> Array.map (fun s -> (Project25.cleanFileName s.FileName, tups s.RangeAlternate))
+        |> Array.map (fun s -> (Project25.cleanFileName s.FileName, tups s.Range))
 
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((7, 5), (7, 11))); ("file1", ((8, 10), (8, 16)))|]
 
@@ -3788,9 +3802,9 @@ type Class() =
 let ``Test Project26 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project26.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project26 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 
 [<Test>]
@@ -3800,7 +3814,7 @@ let ``Test Project26 parameter symbols`` () =
     let allUsesOfAllSymbols = 
         wholeProjectResults.GetAllUsesOfAllSymbols()
         
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project13.cleanFileName su.FileName, tups su.RangeAlternate, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
+        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project13.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
 
 
     let objSymbol = wholeProjectResults.GetAllUsesOfAllSymbols()  |> Array.find (fun su -> su.Symbol.DisplayName = "Class")
@@ -3877,7 +3891,7 @@ type CFooImpl() =
 let ``Test project27 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project27.options) |> Async.RunSynchronously
-    wholeProjectResults .Errors.Length |> shouldEqual 0
+    wholeProjectResults .Diagnostics.Length |> shouldEqual 0
 
 [<Test>]
 let ``Test project27 all symbols in signature`` () = 
@@ -4021,9 +4035,9 @@ let f (x: INotifyPropertyChanged) = failwith ""
 let ``Test project29 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project29.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project29 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 [<Test>]
 let ``Test project29 event symbols`` () = 
@@ -4078,9 +4092,9 @@ type T() =
 let ``Test project30 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project30.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project30 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 [<Test>]
 let ``Test project30 Format attributes`` () = 
@@ -4138,9 +4152,9 @@ let g = Console.ReadKey()
 
 let ``Test project31 whole project errors`` () = 
     let wholeProjectResults = checker.ParseAndCheckProject(Project31.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project31 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 [<Test>]
 #if NETCOREAPP
@@ -4262,9 +4276,9 @@ val func : int -> int
 let ``Test Project32 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project32.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project32 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 [<Test>]
 let ``Test Project32 should be able to find sig symbols`` () =
@@ -4279,7 +4293,7 @@ let ``Test Project32 should be able to find sig symbols`` () =
     
     let usesOfSigSymbol = 
         [ for su in wholeProjectResults.GetUsesOfSymbol(sigSymbol)  do
-              yield Project32.cleanFileName su.FileName , tups su.RangeAlternate, attribsOfSymbol su.Symbol ]
+              yield Project32.cleanFileName su.FileName , tups su.Range, attribsOfSymbol su.Symbol ]
 
     usesOfSigSymbol |> shouldEqual
        [("sig1", ((4, 4), (4, 8)), ["val"]); 
@@ -4298,7 +4312,7 @@ let ``Test Project32 should be able to find impl symbols`` () =
     
     let usesOfImplSymbol = 
         [ for su in wholeProjectResults.GetUsesOfSymbol(implSymbol)  do
-              yield Project32.cleanFileName su.FileName , tups su.RangeAlternate, attribsOfSymbol su.Symbol ]
+              yield Project32.cleanFileName su.FileName , tups su.Range, attribsOfSymbol su.Symbol ]
 
     usesOfImplSymbol |> shouldEqual
        [("sig1", ((4, 4), (4, 8)), ["val"]); 
@@ -4329,9 +4343,9 @@ type System.Int32 with
 let ``Test Project33 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project33.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project33 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 [<Test>]
 let ``Test Project33 extension methods`` () =
@@ -4374,9 +4388,9 @@ module Dummy
 [<Test>]
 let ``Test Project34 whole project errors`` () = 
     let wholeProjectResults = checker.ParseAndCheckProject(Project34.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "Project34 error: <<<%s>>>" e.Message
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 [<Test>]
 #if NETCOREAPP
@@ -4611,22 +4625,22 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMe
         | _ -> failwith "unexpected declaration"
     // Instead of checking the symbol uses directly, walk the typed tree to check
     // the correct values are also visible from there. Also note you cannot use
-    // BasicPatterns.ThisValue in these cases, this is only used when the symbol
+    // ThisValue in these cases, this is only used when the symbol
     // is implicit in the constructor
     match Project36.getExpr 4 with
-    | BasicPatterns.Let((b,_),_) ->
+    | Let((b,_),_) ->
         b.IsConstructorThisValue && not b.IsMemberThisValue
     | _ -> failwith "unexpected expression"
     |> shouldEqual true
 
     match Project36.getExpr 5 with
-    | BasicPatterns.FSharpFieldGet(Some(BasicPatterns.Value x),_,_) ->
+    | FSharpFieldGet(Some(Value x),_,_) ->
         x.IsMemberThisValue && not x.IsConstructorThisValue
     | _ -> failwith "unexpected expression"
     |> shouldEqual true
 
     match Project36.getExpr 6 with
-    | BasicPatterns.Call(_,_,_,_,[BasicPatterns.Value s;_]) ->
+    | Call(_,_,_,_,[Value s;_]) ->
         not s.IsMemberThisValue && not s.IsConstructorThisValue
     | _ -> failwith "unexpected expression"
     |> shouldEqual true
@@ -4936,7 +4950,7 @@ let ``Test project39 all symbols`` () =
             match s.Symbol with 
             | :? FSharpMemberOrFunctionOrValue as mem -> 
               if s.Symbol.DisplayName.Contains "Incomplete" then
-                yield s.Symbol.DisplayName, tups s.RangeAlternate, 
+                yield s.Symbol.DisplayName, tups s.Range, 
                       ("full", mem.FullType |> FSharpType.Prettify |> fun p -> p.Format(s.DisplayContext)),
                       ("params", mem.CurriedParameterGroups |> FSharpType.Prettify |> Seq.toList |> List.map (Seq.toList >> List.map (fun p -> p.Type.Format(s.DisplayContext)))),
                       ("return", mem.ReturnParameter |> FSharpType.Prettify |> fun p -> p.Type.Format(s.DisplayContext)) 
@@ -5006,7 +5020,7 @@ let ``Test Project40 all symbols`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project40.options) |> Async.RunSynchronously
     let allSymbolUses = wholeProjectResults.GetAllUsesOfAllSymbols() 
-    let allSymbolUsesInfo =  [ for s in allSymbolUses -> s.Symbol.DisplayName, tups s.RangeAlternate, attribsOfSymbol s.Symbol ]
+    let allSymbolUsesInfo =  [ for s in allSymbolUses -> s.Symbol.DisplayName, tups s.Range, attribsOfSymbol s.Symbol ]
     allSymbolUsesInfo |> shouldEqual
           [("option", ((4, 10), (4, 16)), ["abbrev"]); ("x", ((4, 7), (4, 8)), []);
            ("x", ((4, 23), (4, 24)), []);
@@ -5082,7 +5096,7 @@ let ``Test project41 all symbols`` () =
                   match s.Symbol.DeclarationLocation with 
                   | Some r when r.FileName = Project41.fileName1 -> r.StartLine, r.StartColumn
                   | _ -> (0,0)
-              yield (s.Symbol.DisplayName, tups s.RangeAlternate, attribsOfSymbol s.Symbol, pos) ]
+              yield (s.Symbol.DisplayName, tups s.Range, attribsOfSymbol s.Symbol, pos) ]
     allSymbolUsesInfo |> shouldEqual
           [("X", ((4, 19), (4, 20)),
             ["field"; "anon(0, [//<>f__AnonymousType1416859829`1]X)"], (4, 19));
@@ -5159,7 +5173,7 @@ let ``add files with same name from different folders`` () =
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
     let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
     let errors =
-        wholeProjectResults.Errors
+        wholeProjectResults.Diagnostics
         |> Array.filter (fun x -> x.Severity = FSharpDiagnosticSeverity.Error)
     if errors.Length > 0 then
         printfn "add files with same name from different folders"
@@ -5207,8 +5221,8 @@ let ``Test typed AST for struct unions`` () = // See https://github.com/fsharp/F
         | FSharpImplementationFileDeclaration.InitAction e -> e
         | _ -> failwith "unexpected declaration"
     match getExpr (declarations.Length - 1) with
-    | BasicPatterns.IfThenElse(BasicPatterns.UnionCaseTest(BasicPatterns.AddressOf(BasicPatterns.UnionCaseGet _),_,uci),
-                                BasicPatterns.Const(trueValue, _), BasicPatterns.Const(falseValue, _))
+    | IfThenElse(UnionCaseTest(AddressOf(UnionCaseGet _),_,uci),
+                                Const(trueValue, _), Const(falseValue, _))
         when uci.Name = "Ok" && obj.Equals(trueValue, true) && obj.Equals(falseValue, false) -> true
     | _ -> failwith "unexpected expression"
     |> shouldEqual true
@@ -5236,10 +5250,10 @@ let ``Test line directives in foreground analysis`` () = // see https://github.c
 
     // In background analysis and normal compiler checking, the errors are reported w.r.t. the line directives
     let wholeProjectResults = checker.ParseAndCheckProject(ProjectLineDirectives.options) |> Async.RunSynchronously
-    for e in wholeProjectResults.Errors do 
+    for e in wholeProjectResults.Diagnostics do 
         printfn "ProjectLineDirectives wholeProjectResults error file: <<<%s>>>" e.Range.FileName
 
-    [ for e in wholeProjectResults.Errors -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [(10, 10, "Test.fsy")]
+    [ for e in wholeProjectResults.Diagnostics -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [(10, 10, "Test.fsy")]
 
     // In foreground analysis routines, used by visual editing tools, the errors are reported w.r.t. the source
     // file, which is assumed to be in the editor, not the other files referred to by line directives.
@@ -5248,10 +5262,10 @@ let ``Test line directives in foreground analysis`` () = // see https://github.c
         |> Async.RunSynchronously
         |> function (_,FSharpCheckFileAnswer.Succeeded x) ->  x | _ -> failwith "unexpected aborted"
 
-    for e in checkResults1.Errors do 
+    for e in checkResults1.Diagnostics do 
         printfn "ProjectLineDirectives checkResults1 error file: <<<%s>>>" e.Range.FileName
 
-    [ for e in checkResults1.Errors -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
+    [ for e in checkResults1.Diagnostics -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
 
 //------------------------------------------------------
 
@@ -5308,7 +5322,7 @@ let ``#4030, Incremental builder creation warnings`` (args, errorSeverities) =
     let fileName, options = mkTestFileAndOptions source args
 
     let _, checkResults = parseAndCheckFile fileName source options
-    checkResults.Errors |> Array.map (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual errorSeverities 
+    checkResults.Diagnostics |> Array.map (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual errorSeverities 
 
 
 //------------------------------------------------------

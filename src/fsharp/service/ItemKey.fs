@@ -1,19 +1,17 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.IO
 open System.IO.MemoryMappedFiles
 open System.Reflection.Metadata
-
 open FSharp.NativeInterop
-
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics

@@ -4,7 +4,14 @@
 // FSharp.Compiler.Service API but which are also used throughout the
 // F# compiler.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Diagnostics
+
+[<RequireQualifiedAccess>]
+type FSharpDiagnosticSeverity = 
+    | Hidden
+    | Info
+    | Warning 
+    | Error
 
 type FSharpDiagnosticOptions =
     { WarnLevel: int

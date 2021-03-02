@@ -10,14 +10,14 @@ open System
 open System.IO
 open System.Collections.Generic
 open System.Reflection
+open Internal.Utilities.Library
+open Internal.Utilities.FSharpEnvironment  
 open FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open Internal.Utilities.FSharpEnvironment  
 
 module internal ExtensionTyping =
 
@@ -171,7 +171,7 @@ module internal ExtensionTyping =
                           () ]
 
                 with :? TypeProviderError as tpe ->
-                    tpe.Iter(fun e -> errorR(NumberedError((e.Number, e.ContextualErrorMessage), m)) )
+                    tpe.Iter(fun e -> errorR(Error((e.Number, e.ContextualErrorMessage), m)) )
                     []
 
         let providers = Tainted<_>.CreateAll(providerSpecs)

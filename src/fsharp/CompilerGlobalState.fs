@@ -5,7 +5,7 @@
 module FSharp.Compiler.CompilerGlobalState
 
 open System.Collections.Generic
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 
 /// Generates compiler-generated names. Each name generated also includes the StartLine number of the range passed in

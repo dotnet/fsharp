@@ -9,8 +9,8 @@ module Tests.Service.StructureTests
 
 open System.IO
 open NUnit.Framework
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Structure
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.EditorServices.Structure
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Text
 open System.Text
@@ -42,18 +42,15 @@ let (=>) (source: string) (expectedRanges: (Range * Range) list) =
 
     let ast = parseSourceCode(fileName, source)
     try
-        match ast with
-        | Some tree ->
-            let actual =
-                Structure.getOutliningRanges lines tree
-                |> Seq.filter (fun sr -> sr.Range.StartLine <> sr.Range.EndLine)
-                |> Seq.map (fun sr -> getRange sr.Range, getRange sr.CollapseRange)
-                |> Seq.sort
-                |> List.ofSeq
-            let expected = List.sort expectedRanges
-            if actual <> expected then
-                failwithf "Expected %s, but was %s" (formatList expected) (formatList actual)
-        | None -> failwithf "Expected there to be a parse tree for source:\n%s" source
+        let actual =
+            Structure.getOutliningRanges lines ast
+            |> Seq.filter (fun sr -> sr.Range.StartLine <> sr.Range.EndLine)
+            |> Seq.map (fun sr -> getRange sr.Range, getRange sr.CollapseRange)
+            |> Seq.sort
+            |> List.ofSeq
+        let expected = List.sort expectedRanges
+        if actual <> expected then
+            failwithf "Expected %s, but was %s" (formatList expected) (formatList actual)
     with _ ->
         printfn "AST:\n%+A" ast
         reraise()

@@ -5,20 +5,19 @@ module internal FSharp.Compiler.Import
 
 open System.Collections.Concurrent
 open System.Collections.Generic
-
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.XmlDoc
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -362,7 +361,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                 |   None -> 
                         let methodName = minfo.PUntaint((fun minfo -> minfo.Name), m)
                         let typeName = declaringGenericTypeDefn.PUntaint((fun declaringGenericTypeDefn -> declaringGenericTypeDefn.FullName), m)
-                        error(NumberedError(FSComp.SR.etIncorrectProvidedMethod(ExtensionTyping.DisplayNameOfTypeProvider(minfo.TypeProvider, m), methodName, metadataToken, typeName), m))
+                        error(Error(FSComp.SR.etIncorrectProvidedMethod(ExtensionTyping.DisplayNameOfTypeProvider(minfo.TypeProvider, m), methodName, metadataToken, typeName), m))
          | _ -> 
          match mbase.OfType<ProvidedConstructorInfo>() with 
          | Some cinfo when cinfo.PUntaint((fun x -> x.DeclaringType.IsGenericType), m) -> 
@@ -388,7 +387,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                 |   Some found -> found.Coerce(m)
                 |   None -> 
                     let typeName = declaringGenericTypeDefn.PUntaint((fun x -> x.FullName), m)
-                    error(NumberedError(FSComp.SR.etIncorrectProvidedConstructor(ExtensionTyping.DisplayNameOfTypeProvider(cinfo.TypeProvider, m), typeName), m))
+                    error(Error(FSComp.SR.etIncorrectProvidedConstructor(ExtensionTyping.DisplayNameOfTypeProvider(cinfo.TypeProvider, m), typeName), m))
          | _ -> mbase
 
      let rty = 

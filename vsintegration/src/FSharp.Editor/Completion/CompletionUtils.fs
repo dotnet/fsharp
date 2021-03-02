@@ -7,11 +7,10 @@ open System.Threading
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 open System.Globalization
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax.PrettyNaming
 
 module internal CompletionUtils =
 
@@ -106,14 +105,14 @@ module internal CompletionUtils =
 
     let inline getKindPriority kind =
         match kind with
-        | FSharpCompletionItemKind.CustomOperation -> 0
-        | FSharpCompletionItemKind.Property -> 1
-        | FSharpCompletionItemKind.Field -> 2
-        | FSharpCompletionItemKind.Method (isExtension = false) -> 3
-        | FSharpCompletionItemKind.Event -> 4
-        | FSharpCompletionItemKind.Argument -> 5
-        | FSharpCompletionItemKind.Other -> 6
-        | FSharpCompletionItemKind.Method (isExtension = true) -> 7
+        | CompletionItemKind.CustomOperation -> 0
+        | CompletionItemKind.Property -> 1
+        | CompletionItemKind.Field -> 2
+        | CompletionItemKind.Method (isExtension = false) -> 3
+        | CompletionItemKind.Event -> 4
+        | CompletionItemKind.Argument -> 5
+        | CompletionItemKind.Other -> 6
+        | CompletionItemKind.Method (isExtension = true) -> 7
 
     /// Indicates the text span to be replaced by a committed completion list item.
     let getDefaultCompletionListSpan(sourceText: SourceText, caretIndex, documentId, filePath, defines) =

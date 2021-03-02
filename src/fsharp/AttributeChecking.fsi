@@ -14,6 +14,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
 exception ObsoleteWarning of string * range
+
 exception ObsoleteError of string * range
 
 type AttribInfo =

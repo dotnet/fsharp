@@ -5,8 +5,13 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Collections.Generic
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open System.Collections.Immutable
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Symbols.FSharpExprPatterns
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 open FsUnit
 open NUnit.Framework
@@ -82,7 +87,7 @@ let sysLib nm =
 [<AutoOpen>]
 module Helpers = 
     type DummyType = A | B
-    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<FSharp.Compiler.SourceCodeServices.FSharpChecker>.Assembly.CodeBase).LocalPath), p)
+    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<FSharpChecker>.Assembly.Location).LocalPath), p)
 
 let fsCoreDefaultReference() = 
     PathRelativeToTestAssembly "FSharp.Core.dll"
@@ -228,14 +233,13 @@ let matchBraces (name: string, code: string) =
     braces
 
 
-let getSingleModuleLikeDecl (input: ParsedInput option) =
+let getSingleModuleLikeDecl (input: ParsedInput) =
     match input with
-    | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = [ decl ]))) -> decl
+    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ decl ])) -> decl
     | _ -> failwith "Could not get module decls"
     
 let parseSourceCodeAndGetModule (source: string) =
     parseSourceCode ("test", source) |> getSingleModuleLikeDecl
-
 
 /// Extract range info 
 let tups (m: range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
@@ -328,7 +332,7 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
                yield (gp :> FSharpSymbol)
           for x in e.UnionCases do
              yield (x :> FSharpSymbol)
-             for f in x.UnionCaseFields do
+             for f in x.Fields do
                  if compGen || not f.IsCompilerGenerated then 
                      yield (f :> FSharpSymbol)
           for x in e.FSharpFields do
@@ -343,9 +347,8 @@ let getParseResults (source: string) =
 let getParseAndCheckResults (source: string) =
     parseAndCheckScript("/home/user/Test.fsx", source)
 
-
 let inline dumpErrors results =
-    (^TResults: (member Errors: FSharpDiagnostic[]) results)
+    (^TResults: (member Diagnostics: FSharpDiagnostic[]) results)
     |> Array.map (fun e ->
         let message =
             e.Message.Split('\n')
@@ -353,7 +356,6 @@ let inline dumpErrors results =
             |> String.concat " "
         sprintf "%s: %s" (e.Range.ToShortString()) message)
     |> List.ofArray
-
 
 let getSymbolUses (results: FSharpCheckFileResults) =
     results.GetAllUsesOfAllSymbolsInFile()
@@ -416,6 +418,8 @@ let findSymbolByName (name: string) (results: FSharpCheckFileResults) =
     let symbolUse = findSymbolUseByName name results
     symbolUse.Symbol
 
+let taggedTextToString (tts: TaggedText[]) =
+    tts |> Array.map (fun tt -> tt.Text) |> String.concat ""
 
 let getRangeCoords (r: range) =
     (r.StartLine, r.StartColumn), (r.EndLine, r.EndColumn)
@@ -427,3 +431,10 @@ let coreLibAssemblyName =
     "mscorlib"
 #endif
 
+let assertRange
+    (expectedStartLine: int, expectedStartColumn: int)
+    (expectedEndLine: int, expectedEndColumn: int)
+    (actualRange: range)
+    : unit =
+    Assert.AreEqual(Position.mkPos expectedStartLine expectedStartColumn, actualRange.Start)
+    Assert.AreEqual(Position.mkPos expectedEndLine expectedEndColumn, actualRange.End)

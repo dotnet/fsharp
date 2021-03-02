@@ -7,36 +7,35 @@ open System
 open System.IO
 
 open Internal.Utilities
+open Internal.Utilities.Collections
 open Internal.Utilities.Filename
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.IO
 open FSharp.Compiler.Lexhelp
-open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.XmlDoc
-
 
 let CanonicalizeFilename filename = 
     let basic = fileNameOfPath filename
@@ -122,13 +121,13 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) 
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), trimRangeToLine m))
 
         let modname = ComputeAnonModuleName (not (isNil defs)) defaultNamespace filename (trimRangeToLine m)
-        SynModuleOrNamespace(modname, false, AnonModule, defs, PreXmlDoc.Empty, [], None, m)
+        SynModuleOrNamespace(modname, false, SynModuleOrNamespaceKind.AnonModule, defs, PreXmlDoc.Empty, [], None, m)
 
     | ParsedImplFileFragment.NamespaceFragment (lid, a, kind, c, d, e, m)-> 
         let lid, kind = 
             match lid with 
             | id :: rest when id.idText = MangledGlobalName ->
-                rest, if List.isEmpty rest then GlobalNamespace else kind
+                rest, if List.isEmpty rest then SynModuleOrNamespaceKind.GlobalNamespace else kind
             | _ -> lid, kind
         SynModuleOrNamespace(lid, a, kind, c, d, e, None, m)
 
@@ -141,7 +140,7 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) 
                 error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
             | id :: rest when id.idText = MangledGlobalName -> rest
             | _ -> lid
-        SynModuleOrNamespaceSig(lid, isRec, NamedModule, decls, xmlDoc, attribs, access, m)
+        SynModuleOrNamespaceSig(lid, isRec, SynModuleOrNamespaceKind.NamedModule, decls, xmlDoc, attribs, access, m)
 
     | ParsedSigFileFragment.AnonModule (defs, m) -> 
         let isLast, isExe = isLastCompiland
@@ -152,13 +151,13 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) 
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), m))
 
         let modname = ComputeAnonModuleName (not (isNil defs)) defaultNamespace filename (trimRangeToLine m)
-        SynModuleOrNamespaceSig(modname, false, AnonModule, defs, PreXmlDoc.Empty, [], None, m)
+        SynModuleOrNamespaceSig(modname, false, SynModuleOrNamespaceKind.AnonModule, defs, PreXmlDoc.Empty, [], None, m)
 
     | ParsedSigFileFragment.NamespaceFragment (lid, a, kind, c, d, e, m)-> 
         let lid, kind = 
             match lid with 
             | id :: rest when id.idText = MangledGlobalName ->
-                rest, if List.isEmpty rest then GlobalNamespace else kind
+                rest, if List.isEmpty rest then SynModuleOrNamespaceKind.GlobalNamespace else kind
             | _ -> lid, kind
         SynModuleOrNamespaceSig(lid, a, kind, c, d, e, None, m)
 
@@ -302,8 +301,8 @@ let ShowAllTokensAndExit (shortFilename, tokenizer: LexFilter.LexFilter, lexbuf:
 let TestInteractionParserAndExit (tokenizer: LexFilter.LexFilter, lexbuf: LexBuffer<char>) =
     while true do 
         match (Parser.interaction (fun _ -> tokenizer.GetToken()) lexbuf) with
-        | IDefns(l, m) -> printfn "Parsed OK, got %d defs @ %a" l.Length outputRange m
-        | IHash (_, m) -> printfn "Parsed OK, got hash @ %a" outputRange m
+        | ParsedScriptInteraction.Definitions(l, m) -> printfn "Parsed OK, got %d defs @ %a" l.Length outputRange m
+        | ParsedScriptInteraction.HashDirective (_, m) -> printfn "Parsed OK, got hash @ %a" outputRange m
     exit 0
 
 // Report the statistics for testing purposes
@@ -320,6 +319,31 @@ let ReportParsingStatistics res =
         printfn "parsing yielded %d specs" (List.collect flattenModSpec specs).Length
     | ParsedInput.ImplFile (ParsedImplFileInput (modules = impls)) -> 
         printfn "parsing yielded %d definitions" (List.collect flattenModImpl impls).Length
+
+let EmptyParsedInput(filename, isLastCompiland) =
+    let lower = String.lowercase filename
+    if FSharpSigFileSuffixes |> List.exists (Filename.checkSuffix lower) then  
+        ParsedInput.SigFile(
+            ParsedSigFileInput(
+                filename, 
+                QualFileNameOfImpls filename [],
+                [],
+                [],
+                []
+            )
+        ) 
+    else
+        ParsedInput.ImplFile(
+            ParsedImplFileInput(
+                filename, 
+                false, 
+                QualFileNameOfImpls filename [],
+                [],
+                [],
+                [],
+                isLastCompiland
+            )
+        ) 
 
 /// Parse an input, drawing tokens from the LexBuffer
 let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger) =
@@ -361,11 +385,11 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
 
                 res
             )
-        Some input 
+        input 
 
     with e -> 
         errorRecovery e rangeStartup
-        None 
+        EmptyParsedInput(filename, isLastCompiland) 
             
 let ValidSuffixes = FSharpSigFileSuffixes@FSharpImplFileSuffixes
 
@@ -392,7 +416,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompil
 
     with e -> 
         errorRecovery e rangeStartup
-        None 
+        EmptyParsedInput(filename, isLastCompiland) 
 
 let ProcessMetaCommandsFromInput
      (nowarnF: 'state -> range * string -> 'state,
@@ -431,18 +455,18 @@ let ProcessMetaCommandsFromInput
         try 
             match hash with 
             | ParsedHashDirective("I", args, m) ->
-               if not canHaveScriptMetaCommands then 
-                   errorR(HashIncludeNotAllowedInNonScript m)
-               match args with 
-               | [path] -> 
-                   matchedm <- m
-                   tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
-                   state
-               | _ -> 
-                   errorR(Error(FSComp.SR.buildInvalidHashIDirective(), m))
-                   state
+                if not canHaveScriptMetaCommands then 
+                    errorR(HashIncludeNotAllowedInNonScript m)
+                match args with 
+                | [path] -> 
+                    matchedm <- m
+                    tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
+                    state
+                | _ -> 
+                    errorR(Error(FSComp.SR.buildInvalidHashIDirective(), m))
+                    state
             | ParsedHashDirective("nowarn",numbers,m) ->
-               List.fold (fun state d -> nowarnF state (m,d)) state numbers
+                List.fold (fun state d -> nowarnF state (m,d)) state numbers
 
             | ParsedHashDirective(("reference" | "r"), args, m) -> 
                 matchedm<-m
@@ -453,31 +477,31 @@ let ProcessMetaCommandsFromInput
                 ProcessDependencyManagerDirective Directive.Include args m state
 
             | ParsedHashDirective("load", args, m) -> 
-               if not canHaveScriptMetaCommands then 
-                   errorR(HashDirectiveNotAllowedInNonScript m)
-               match args with 
-               | _ :: _ -> 
-                  matchedm<-m
-                  args |> List.iter (fun path -> loadSourceF state (m, path))
-               | _ -> 
-                  errorR(Error(FSComp.SR.buildInvalidHashloadDirective(), m))
-               state
+                if not canHaveScriptMetaCommands then 
+                    errorR(HashDirectiveNotAllowedInNonScript m)
+                match args with 
+                | _ :: _ -> 
+                   matchedm<-m
+                   args |> List.iter (fun path -> loadSourceF state (m, path))
+                | _ -> 
+                   errorR(Error(FSComp.SR.buildInvalidHashloadDirective(), m))
+                state
             | ParsedHashDirective("time", args, m) -> 
-               if not canHaveScriptMetaCommands then 
-                   errorR(HashDirectiveNotAllowedInNonScript m)
-               match args with 
-               | [] -> 
-                   ()
-               | ["on" | "off"] -> 
-                   ()
-               | _ -> 
-                   errorR(Error(FSComp.SR.buildInvalidHashtimeDirective(), m))
-               state
+                if not canHaveScriptMetaCommands then 
+                    errorR(HashDirectiveNotAllowedInNonScript m)
+                match args with 
+                | [] -> 
+                     ()
+                | ["on" | "off"] -> 
+                    ()
+                | _ -> 
+                    errorR(Error(FSComp.SR.buildInvalidHashtimeDirective(), m))
+                state
                
             | _ -> 
                
-            (* warning(Error("This meta-command has been ignored", m)) *) 
-               state
+                (* warning(Error("This meta-command has been ignored", m)) *) 
+                state
         with e -> errorRecovery e matchedm; state
 
     let rec WarnOnIgnoredSpecDecls decls = 

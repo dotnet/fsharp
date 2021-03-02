@@ -3,7 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Collections.Generic
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.VisualStudio.Core.Imaging
 open Microsoft.VisualStudio.Language.StandardClassification
@@ -11,42 +11,42 @@ open Microsoft.VisualStudio.Text.Adornments
 
 module internal QuickInfoViewProvider =
 
-    let layoutTagToClassificationTag (layoutTag:LayoutTag) =
+    let layoutTagToClassificationTag (layoutTag:TextTag) =
         match layoutTag with
-        | LayoutTag.ActivePatternCase
-        | LayoutTag.ActivePatternResult
-        | LayoutTag.UnionCase
-        | LayoutTag.Enum -> ClassificationTypeNames.EnumName
-        | LayoutTag.Struct -> ClassificationTypeNames.StructName
-        | LayoutTag.TypeParameter -> ClassificationTypeNames.TypeParameterName
-        | LayoutTag.Alias
-        | LayoutTag.Class
-        | LayoutTag.Record
-        | LayoutTag.Union
-        | LayoutTag.UnknownType // Default to class until/unless we use classification data
-        | LayoutTag.Module -> ClassificationTypeNames.ClassName
-        | LayoutTag.Interface -> ClassificationTypeNames.InterfaceName
-        | LayoutTag.Keyword -> ClassificationTypeNames.Keyword
-        | LayoutTag.Member
-        | LayoutTag.Function
-        | LayoutTag.Method -> ClassificationTypeNames.MethodName
-        | LayoutTag.Property
-        | LayoutTag.RecordField -> ClassificationTypeNames.PropertyName
-        | LayoutTag.Parameter
-        | LayoutTag.Local -> ClassificationTypeNames.LocalName
-        | LayoutTag.ModuleBinding -> ClassificationTypeNames.Identifier
-        | LayoutTag.Namespace -> ClassificationTypeNames.NamespaceName
-        | LayoutTag.Delegate -> ClassificationTypeNames.DelegateName
-        | LayoutTag.Event -> ClassificationTypeNames.EventName
-        | LayoutTag.Field -> ClassificationTypeNames.FieldName
-        | LayoutTag.LineBreak
-        | LayoutTag.Space -> ClassificationTypeNames.WhiteSpace
-        | LayoutTag.NumericLiteral -> ClassificationTypeNames.NumericLiteral
-        | LayoutTag.Operator -> ClassificationTypeNames.Operator
-        | LayoutTag.StringLiteral -> ClassificationTypeNames.StringLiteral
-        | LayoutTag.Punctuation -> ClassificationTypeNames.Punctuation
-        | LayoutTag.UnknownEntity
-        | LayoutTag.Text -> ClassificationTypeNames.Text
+        | TextTag.ActivePatternCase
+        | TextTag.ActivePatternResult
+        | TextTag.UnionCase
+        | TextTag.Enum -> ClassificationTypeNames.EnumName
+        | TextTag.Struct -> ClassificationTypeNames.StructName
+        | TextTag.TypeParameter -> ClassificationTypeNames.TypeParameterName
+        | TextTag.Alias
+        | TextTag.Class
+        | TextTag.Record
+        | TextTag.Union
+        | TextTag.UnknownType // Default to class until/unless we use classification data
+        | TextTag.Module -> ClassificationTypeNames.ClassName
+        | TextTag.Interface -> ClassificationTypeNames.InterfaceName
+        | TextTag.Keyword -> ClassificationTypeNames.Keyword
+        | TextTag.Member
+        | TextTag.Function
+        | TextTag.Method -> ClassificationTypeNames.MethodName
+        | TextTag.Property
+        | TextTag.RecordField -> ClassificationTypeNames.PropertyName
+        | TextTag.Parameter
+        | TextTag.Local -> ClassificationTypeNames.LocalName
+        | TextTag.ModuleBinding -> ClassificationTypeNames.Identifier
+        | TextTag.Namespace -> ClassificationTypeNames.NamespaceName
+        | TextTag.Delegate -> ClassificationTypeNames.DelegateName
+        | TextTag.Event -> ClassificationTypeNames.EventName
+        | TextTag.Field -> ClassificationTypeNames.FieldName
+        | TextTag.LineBreak
+        | TextTag.Space -> ClassificationTypeNames.WhiteSpace
+        | TextTag.NumericLiteral -> ClassificationTypeNames.NumericLiteral
+        | TextTag.Operator -> ClassificationTypeNames.Operator
+        | TextTag.StringLiteral -> ClassificationTypeNames.StringLiteral
+        | TextTag.Punctuation -> ClassificationTypeNames.Punctuation
+        | TextTag.UnknownEntity
+        | TextTag.Text -> ClassificationTypeNames.Text
 
     let provideContent
         (
@@ -77,7 +77,7 @@ module internal QuickInfoViewProvider =
                     flushRuns()
                     let navigableTextRun = NavigableTextRun(classificationTag, item.Text, fun () -> navigation.NavigateTo nav.Range)
                     currentContainerItems.Add(navigableTextRun :> obj)
-                | _ when item.Tag = LayoutTag.LineBreak ->
+                | _ when item.Tag = TextTag.LineBreak ->
                     flushRuns()
                     // preserve succesive linebreaks
                     if currentContainerItems.Count = 0 then

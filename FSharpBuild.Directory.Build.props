@@ -15,7 +15,8 @@
     <ProtoOutputPath>$(ArtifactsDir)\Bootstrap</ProtoOutputPath>
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
     <WarningsAsErrors>1182;0025;$(WarningsAsErrors)</WarningsAsErrors>
-  </PropertyGroup>
+    <OtherFlags>$(OtherFlags) --nowarn:3384</OtherFlags>
+</PropertyGroup>
 
   <!-- nuget -->
   <PropertyGroup>

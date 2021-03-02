@@ -2,7 +2,7 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Diagnostics
 open NUnit.Framework
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Utilities

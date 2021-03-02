@@ -5,6 +5,7 @@ module TestFramework
 open Microsoft.Win32
 open System
 open System.IO
+open System.Reflection
 open System.Text.RegularExpressions
 open System.Diagnostics
 open Scripting
@@ -55,8 +56,17 @@ module Commands =
                 else
                     p.WaitForExit()
     #if DEBUG
-            File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), outputList)
-            File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), errorsList)
+            let workingDir' =
+                if workingDir = ""
+                then
+                    // Assign working dir to prevent default to C:\Windows\System32
+                    let executionLocation = Assembly.GetExecutingAssembly().Location
+                    Path.GetDirectoryName executionLocation
+                else
+                    workingDir
+
+            File.WriteAllLines(Path.Combine(workingDir', "StandardOutput.txt"), outputList)
+            File.WriteAllLines(Path.Combine(workingDir', "StandardError.txt"), errorsList)
     #endif
             p.ExitCode, outputList.ToArray(), errorsList.ToArray()
         | None -> -1, Array.empty, Array.empty
@@ -194,6 +204,8 @@ type TestConfig =
       PEVERIFY : string
       Directory: string
       DotNetExe: string
+      DotNetMultiLevelLookup: string
+      DotNetRoot: string
       DefaultPlatform: string}
 
 #if NETCOREAPP
@@ -256,9 +268,9 @@ let config configurationName envVars =
     let fsiArchitecture = "net472"
     let peverifyArchitecture = "net472"
 #else
-    let fscArchitecture = "netcoreapp3.1"
-    let fsiArchitecture = "netcoreapp3.1"
-    let peverifyArchitecture = "netcoreapp3.1"
+    let fscArchitecture = "net5.0"
+    let fsiArchitecture = "net5.0"
+    let peverifyArchitecture = "net5.0"
 #endif
     let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
     let artifactsPath = repoRoot ++ "artifacts"
@@ -337,28 +349,33 @@ let config configurationName envVars =
       vbc_flags = vbc_flags
       Directory=""
       DotNetExe = dotNetExe
+      DotNetMultiLevelLookup = System.Environment.GetEnvironmentVariable "DOTNET_MULTILEVEL_LOOKUP"
+      DotNetRoot = System.Environment.GetEnvironmentVariable "DOTNET_ROOT"
       DefaultPlatform = defaultPlatform }
 
 let logConfig (cfg: TestConfig) =
     log "---------------------------------------------------------------"
     log "Executables"
     log ""
-    log "CSC                 =%s" cfg.CSC
-    log "BUILD_CONFIG        =%s" cfg.BUILD_CONFIG
-    log "csc_flags           =%s" cfg.csc_flags
-    log "FSC                 =%s" cfg.FSC
-    log "fsc_flags           =%s" cfg.fsc_flags
-    log "FSCOREDLLPATH       =%s" cfg.FSCOREDLLPATH
-    log "FSI                 =%s" cfg.FSI
-#if !NETCOREAPP
-    log "FSIANYCPU           =%s" cfg.FSIANYCPU
+    log "CSC                      = %s" cfg.CSC
+    log "BUILD_CONFIG             = %s" cfg.BUILD_CONFIG
+    log "csc_flags                = %s" cfg.csc_flags
+    log "FSC                      = %s" cfg.FSC
+    log "fsc_flags                = %s" cfg.fsc_flags
+    log "FSCOREDLLPATH            = %s" cfg.FSCOREDLLPATH
+    log "FSI                      = %s" cfg.FSI
+#if NETCOREAPP
+    log "DotNetExe                =%s" cfg.DotNetExe
+    log "DOTNET_MULTILEVEL_LOOKUP = %s" cfg.DotNetMultiLevelLookup
+    log "DOTNET_ROOT              = %s" cfg.DotNetRoot
+#else
+    log "FSIANYCPU                = %s" cfg.FSIANYCPU
 #endif
-    log "FSI_FOR_SCRIPTS     =%s" cfg.FSI_FOR_SCRIPTS
-    log "fsi_flags           =%s" cfg.fsi_flags
-    log "ILDASM              =%s" cfg.ILDASM
-    log "PEVERIFY            =%s" cfg.PEVERIFY
+    log "FSI_FOR_SCRIPTS          = %s" cfg.FSI_FOR_SCRIPTS
+    log "fsi_flags                = %s" cfg.fsi_flags
+    log "ILDASM                   = %s" cfg.ILDASM
+    log "PEVERIFY                 = %s" cfg.PEVERIFY
     log "---------------------------------------------------------------"
-
 
 let checkResult result =
     match result with
@@ -411,11 +428,6 @@ type public InitializeSuiteAttribute () =
         ()
 
     override x.Targets = ActionTargets.Test ||| ActionTargets.Suite
-
-
-[<assembly:ParallelizableAttribute(ParallelScope.Fixtures)>]
-[<assembly:InitializeSuite()>]
-()
 
 let fsharpSuiteDirectory = __SOURCE_DIRECTORY__
 

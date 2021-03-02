@@ -6,11 +6,11 @@
 
 module internal FSharp.Compiler.TypedTreeBasics
 
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Text
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TypedTree
 
 #if DEBUG

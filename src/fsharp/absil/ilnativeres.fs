@@ -3,7 +3,7 @@
 // And  https://github.com/dotnet/roslyn/blob/d36121da4b527ee0617e4b0940b9d0b17b584470/src/Compilers/Core/Portable/CvtRes.cs
 // And their dependencies (some classes)
 
-module internal FSharp.Compiler.AbstractIL.Internal.NativeRes
+module internal FSharp.Compiler.AbstractIL.NativeRes
 
 open System
 open System.Collections.Generic

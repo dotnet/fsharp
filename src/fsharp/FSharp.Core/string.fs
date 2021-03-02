@@ -14,7 +14,7 @@ namespace Microsoft.FSharp.Core
     [<RequireQualifiedAccess>]
     module String =
         [<Literal>]
-        /// LOH threshold is calculated from FSharp.Compiler.AbstractIL.Internal.Library.LOH_SIZE_THRESHOLD_BYTES,
+        /// LOH threshold is calculated from Internal.Utilities.Library.LOH_SIZE_THRESHOLD_BYTES,
         /// and is equal to 80_000 / sizeof<char>
         let LOH_CHAR_THRESHOLD = 40_000
 

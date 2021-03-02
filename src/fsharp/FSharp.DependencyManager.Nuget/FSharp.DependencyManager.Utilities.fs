@@ -68,7 +68,7 @@ module internal Utilities =
         |> List.map (fun option -> split option)
 
     // Path to the directory containing the fsharp compilers
-    let fsharpCompilerPath = Path.GetDirectoryName(typeof<DependencyManagerAttribute>.GetTypeInfo().Assembly.Location)
+    let fsharpCompilerPath = Path.Combine(Path.GetDirectoryName(typeof<DependencyManagerAttribute>.GetTypeInfo().Assembly.Location), "Tools")
 
     // We are running on dotnet core if the executing mscorlib is System.Private.CoreLib
     let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
@@ -98,7 +98,7 @@ module internal Utilities =
                 null
 
         let roots = [|
-            Path.GetFullPath(Path.Combine(fsharpCompilerPath, "../../../../.."))
+            Path.GetFullPath(Path.Combine(fsharpCompilerPath, "../../../../../.."))
             vsRootFromVSAPPIDDIR
             Environment.GetEnvironmentVariable("VSINSTALLDIR")
             |]
@@ -127,7 +127,7 @@ module internal Utilities =
         //    In an sdk install we are always installed in:   sdk\3.0.100-rc2-014234\FSharp
         //    dotnet or dotnet.exe will be found in the directory that contains the sdk directory
         // 3. We are loaded in-process to some other application ... Eg. try .net
-        //    See if the host is dotnet.exe ... from netcoreapp3.1 on this is fairly unlikely
+        //    See if the host is dotnet.exe ... from net5.0 on this is fairly unlikely
         // 4. If it's none of the above we are going to have to rely on the path containing the way to find dotnet.exe
         //
         if isRunningOnCoreClr then
