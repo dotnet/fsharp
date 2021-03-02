@@ -347,7 +347,7 @@ type BoundModel private (tcConfig: TcConfig,
                     Some finishState)
         }
 
-    member this.TcInfo =
+    member this.GetTcInfo() =
         eventually {
             let! state = this.GetState(true)
             return state.TcInfo
@@ -361,7 +361,7 @@ type BoundModel private (tcConfig: TcConfig,
             | PartialState(tcInfo) -> Some tcInfo
         | _ -> None
 
-    member this.TcInfoWithExtras =
+    member this.GetTcInfoWithExtras() =
         eventually {
             let! state = this.GetState(false)
             match state with
@@ -585,19 +585,19 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime) =
 
     member _.TryTcInfo = boundModel.TryTcInfo
 
-    member _.GetTcInfo() = boundModel.TcInfo
+    member _.GetTcInfo() = boundModel.GetTcInfo()
 
-    member _.GetTcInfoWithExtras() = boundModel.TcInfoWithExtras
+    member _.GetTcInfoWithExtras() = boundModel.GetTcInfoWithExtras()
 
     member _.TryGetItemKeyStore() =
         eventually {
-            let! _, info = boundModel.TcInfoWithExtras
+            let! _, info = boundModel.GetTcInfoWithExtras()
             return info.itemKeyStore
         }
 
     member _.GetSemanticClassification() =
         eventually {
-            let! _, info = boundModel.TcInfoWithExtras
+            let! _, info = boundModel.GetTcInfoWithExtras()
             return info.semanticClassificationKeyStore
         }
 
@@ -831,30 +831,32 @@ type IncrementalBuilder(tcGlobals,
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
     let FinalizeTypeCheckTask ctok enablePartialTypeChecking (boundModels: ImmutableArray<BoundModel>) = 
-      cancellable {
+      eventually {
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
-        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
-
-        // Get the state at the end of the type-checking of the last file
-        let finalBoundModel = boundModels.[boundModels.Length-1]
-
-        let! finalInfo = finalBoundModel.TcInfo |> Eventually.toCancellable
+        // This reinstalls the CompilationGlobalsScope each time the Eventually is restarted, potentially
+        // on a new thread. This is needed because CompilationGlobalsScope installs thread local variables.
+        return! Eventually.reusing (fun () -> new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) :> IDisposable)  <| eventually {
 
         let! results = 
-            boundModels |> Cancellable.each (fun boundModel -> cancellable {
+            boundModels |> Eventually.each (fun boundModel -> eventually {
                 let! tcInfo, latestImplFile =
-                  cancellable {
+                  eventually {
                     if enablePartialTypeChecking then
-                        let! tcInfo = boundModel.TcInfo |> Eventually.toCancellable
+                        let! tcInfo = boundModel.GetTcInfo()
                         return tcInfo, None
                     else
-                        let! tcInfo, tcInfoExtras = boundModel.TcInfoWithExtras |> Eventually.toCancellable
+                        let! tcInfo, tcInfoExtras = boundModel.GetTcInfoWithExtras()
                         return tcInfo, tcInfoExtras.latestImplFile
                    }
                 return (tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile)
             })
+
+        // Get the state at the end of the type-checking of the last file
+        let finalBoundModel = boundModels.[boundModels.Length-1]
+
+        let! finalInfo = finalBoundModel.GetTcInfo()
 
         // Finish the checking
         let (_tcEnvAtEndOfLastFile, topAttrs, mimpls, _), tcState = 
@@ -915,9 +917,11 @@ type IncrementalBuilder(tcGlobals,
                 errorRecoveryNoRange e
                 mkSimpleAssemblyRef assemblyName, None, None
 
-        let! finalBoundModelWithErrors = finalBoundModel.Finish((errorLogger.GetDiagnostics() :: finalInfo.tcErrorsRev), Some topAttrs) |> Eventually.toCancellable
+        let diagnostics = errorLogger.GetDiagnostics() :: finalInfo.tcErrorsRev
+        let! finalBoundModelWithErrors = finalBoundModel.Finish(diagnostics, Some topAttrs)
         return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalBoundModelWithErrors
       }
+    }
 
     // END OF BUILD TASK FUNCTIONS
     // ---------------------------------------------------------------------------------------------            
@@ -1002,9 +1006,7 @@ type IncrementalBuilder(tcGlobals,
                 boundModels = Array.init count (fun _ -> None) |> ImmutableArray.CreateRange
             }
         else
-            { state with
-                stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
-            }
+            state
 
     let computeInitialBoundModel (state: IncrementalBuilderState) (ctok: CompilationThreadToken) =
         eventually {
@@ -1021,13 +1023,13 @@ type IncrementalBuilder(tcGlobals,
         if IncrementalBuild.injectCancellationFault then Eventually.canceled() else
         eventually {         
 
-            let! (state, initial) = computeInitialBoundModel state ctok
-
             let fileInfo = fileNames.[slot]
 
             let state = computeStampedFileName state cache slot fileInfo
 
             if state.boundModels.[slot].IsNone then
+                let! (state, initial) = computeInitialBoundModel state ctok
+
                 let prevBoundModel =
                     match slot with
                     | 0 (* first file *) -> initial
@@ -1054,30 +1056,17 @@ type IncrementalBuilder(tcGlobals,
         (state, [0..fileNames.Length-1]) ||> Eventually.fold (fun state slot -> computeBoundModel state cache ctok slot)
 
     let computeFinalizedBoundModel state (cache: TimeStampCache) (ctok: CompilationThreadToken) =
-        cancellable {
-            let! state = computeBoundModels state cache ctok |> Eventually.toCancellable
+        eventually {
+            let! state = computeBoundModels state cache ctok
 
             match state.finalizedBoundModel with
             | Some result -> return state, result
             | _ ->
                 let boundModels = state.boundModels |> Seq.choose id |> ImmutableArray.CreateRange
             
-                let! result = FinalizeTypeCheckTask ctok state.enablePartialTypeChecking boundModels 
+                let! result = FinalizeTypeCheckTask ctok state.enablePartialTypeChecking boundModels
                 let result = (result, DateTime.UtcNow)
                 return { state with finalizedBoundModel = Some result }, result
-        }
-
-    let populateBoundModel state (cache: TimeStampCache) (ctok: CompilationThreadToken) =
-        eventually {
-            let state = computeStampedReferencedAssemblies state cache
-            let state = computeStampedFileNames state cache
-
-            match state.boundModels |> Seq.tryFindIndex (fun x -> x.IsNone) with
-            | Some slot ->
-                let! state = computeBoundModel state cache ctok slot
-                return state, true
-            | _ ->
-                return state, false
         }
 
     let tryGetBeforeSlot (state: IncrementalBuilderState) slot =
@@ -1097,18 +1086,14 @@ type IncrementalBuilder(tcGlobals,
             | _ ->
                 None
                 
-    let eval state (cache: TimeStampCache) ctok targetSlot =
+    let evalUpToTargetSlot state (cache: TimeStampCache) ctok targetSlot =
         cancellable {
+            let state = computeStampedReferencedAssemblies state cache
             if targetSlot < 0 then
-                let state = computeStampedReferencedAssemblies state cache
-
                 let! state, result = computeInitialBoundModel state ctok |> Eventually.toCancellable
                 return state, Some(result, DateTime.MinValue)
             else         
-                let state = computeStampedReferencedAssemblies state cache
-                let! state = 
-                    (state, [0..targetSlot]) ||> Cancellable.fold (fun state slot -> 
-                        computeBoundModel state cache ctok slot  |> Eventually.toCancellable)
+                let! state = (state, [0..targetSlot]) ||> Eventually.fold (fun state slot -> computeBoundModel state cache ctok slot) |> Eventually.toCancellable
 
                 let result =
                     state.boundModels.[targetSlot]
@@ -1123,7 +1108,7 @@ type IncrementalBuilder(tcGlobals,
         cancellable {
             let state = computeStampedReferencedAssemblies state cache
 
-            let! state, res = computeFinalizedBoundModel state cache ctok
+            let! state, res = computeFinalizedBoundModel state cache ctok |> Eventually.toCancellable
             return state, Some res
         }
 
@@ -1178,10 +1163,16 @@ type IncrementalBuilder(tcGlobals,
     member _.PopulatePartialCheckingResults (ctok: CompilationThreadToken) =  
       eventually {
         let cache = TimeStampCache defaultTimeStamp // One per step
-        let! state, res = populateBoundModel currentState cache ctok
+        let state = currentState
+        let state = computeStampedFileNames state cache
         setCurrentState ctok state
-        if not res then
-            projectChecked.Trigger()
+        do! Eventually.ret () // allow cancellation
+        let state = computeStampedReferencedAssemblies state cache
+        setCurrentState ctok state
+        do! Eventually.ret () // allow cancellation
+        let! state, _res = computeFinalizedBoundModel state cache ctok
+        setCurrentState ctok state
+        projectChecked.Trigger()
       }
     
     member builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename: PartialCheckResults option  = 
@@ -1213,7 +1204,7 @@ type IncrementalBuilder(tcGlobals,
     member private _.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile, enablePartialTypeChecking) = 
       cancellable {
         let cache = TimeStampCache defaultTimeStamp
-        let! state, result = eval { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache ctok (slotOfFile - 1)
+        let! state, result = evalUpToTargetSlot { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache ctok (slotOfFile - 1)
         setCurrentState ctok { state with enablePartialTypeChecking = defaultPartialTypeChecking }
         match result with
         | Some (boundModel, timestamp) -> return PartialCheckResults(boundModel, timestamp)

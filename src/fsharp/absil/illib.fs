@@ -751,19 +751,8 @@ module Cancellable =
                | res -> res))
     
     /// Iterate a cancellable computation over a collection
-    let each f seq = 
-        Cancellable (fun ct -> 
-           (ValueOrCancelled.Value [], seq) 
-           ||> Seq.fold (fun acc x -> 
-               match acc with 
-               | ValueOrCancelled.Value acc -> 
-                   match run ct (f x) with 
-                   | ValueOrCancelled.Value x2 -> ValueOrCancelled.Value (x2 :: acc)
-                   | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1
-               | canc -> canc)
-           |> function 
-               | ValueOrCancelled.Value acc -> ValueOrCancelled.Value (List.rev acc)
-               | canc -> canc)
+    let inline each f seq =
+        fold (fun acc x -> f x |> map (fun y -> (y :: acc))) [] seq |> map List.rev
     
     /// Delay a cancellable computation
     let inline delay (f: unit -> Cancellable<'T>) = Cancellable (fun ct -> let (Cancellable g) = f() in g ct)
@@ -842,40 +831,24 @@ type CancellableBuilder() =
 module CancellableAutoOpens =
     let cancellable = CancellableBuilder()
 
-/// Computations that can cooperatively yield by returning a continuation
+/// Computations that can cooperatively yield
 ///
-///    - Any yield of a NotYetDone should typically be "abandonable" without adverse consequences. No resource release
-///      will be called when the computation is abandoned.
-///
-///    - Computations suspend via a NotYetDone may use local state (mutables), where these are
-///      captured by the NotYetDone closure. Computations do not need to be restartable.
-///
-///    - The key thing is that you can take an Eventually value and run it with 
-///      Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
-///
-///    - Cancellation results in a suspended computation rather than complete abandonment
+///    - You can take an Eventually value and run it with Eventually.forceForTimeSlice
 type Eventually<'T> = 
     | Done of 'T 
-    | NotYetDone of (CancellationToken -> ValueOrCancelled<Eventually<'T>>)
+    | NotYetDone of (CancellationToken -> (Stopwatch * int64) option -> ValueOrCancelled<Eventually<'T>>)
+    // Indicates an IDisposable should be created and disposed on each step(s)
     | Delimited of (unit -> IDisposable) * Eventually<'T>
 
 module Eventually = 
 
-    let inline map f e = 
-        let rec loop e =
-            match e with 
-            | Done x -> Done (f x) 
-            | Delimited (resourcef, ev2) -> 
-                Delimited (resourcef, loop ev2)
-            | NotYetDone work ->
-                NotYetDone (fun ct ->
-                    match work ct with
-                    | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
-                    | ValueOrCancelled.Value e2 -> ValueOrCancelled.Value (loop e2))
-        loop e
+    let inline ret x = Done x
 
-    let box e = map Operators.box e
-
+    // Convert to a Cancellable which, when run, takes all steps in the computation,
+    // installing Delimited resource handlers if needed.
+    //
+    // Inlined for better stack traces, because inlining erases library ranges and replaces them
+    // with ranges in user code.
     let inline toCancellable e =
         Cancellable (fun ct -> 
            let rec loop e = 
@@ -888,79 +861,107 @@ module Eventually =
                    if ct.IsCancellationRequested then 
                       ValueOrCancelled.Cancelled (OperationCanceledException ct)
                    else 
-                       match work ct with
+                       match work ct None with
                        | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
                        | ValueOrCancelled.Value e2 -> loop e2
            loop e) 
 
+    // Inlined for better stack traces, because inlining replaces ranges of the "runtime" code in the lambda
+    // with ranges in user code.
     let inline ofCancellable (Cancellable f) =
-        NotYetDone (fun ct -> 
+        NotYetDone (fun ct _ -> 
             match f ct with
             | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
             | ValueOrCancelled.Value v -> ValueOrCancelled.Value (Done v)
         )
 
-    let token () = NotYetDone (fun ct -> ValueOrCancelled.Value (Done ct))
+    let token () = NotYetDone (fun ct _ -> ValueOrCancelled.Value (Done ct))
 
-    let canceled () = NotYetDone (fun ct -> ValueOrCancelled.Cancelled (OperationCanceledException ct))
+    let canceled () = NotYetDone (fun ct _ -> ValueOrCancelled.Cancelled (OperationCanceledException ct))
 
+    // Take all steps in the computation, installing Delimited resource handlers if needed
     let force ct e = Cancellable.run ct (toCancellable e)
 
+    let stepCheck (ct: CancellationToken) (swinfo: (Stopwatch * int64) option) e = 
+        if ct.IsCancellationRequested then
+            match swinfo with Some (sw, _) -> sw.Stop() | _ -> ()
+            ValueSome (ValueOrCancelled.Cancelled (OperationCanceledException(ct)))
+        else
+            match swinfo with
+            | Some (sw, timeShareInMilliseconds) when sw.ElapsedMilliseconds > timeShareInMilliseconds ->
+                sw.Stop()
+                ValueSome (ValueOrCancelled.Value e)
+            | _ -> 
+                ValueNone
+
+    // Take multiple steps in the computation, installing Delimited resource handlers if needed,
+    // until the stopwatch times out if present.
+    [<System.Diagnostics.DebuggerHidden>]
+    let rec steps (ct: CancellationToken) (swinfo: (Stopwatch * int64) option) e = 
+        match stepCheck ct swinfo e with
+        | ValueSome res -> res
+        | ValueNone ->
+            match e with 
+            | Done _ -> ValueOrCancelled.Value e 
+            | Delimited (resourcef, inner) ->
+                use _resource = resourcef()
+                match steps ct swinfo inner with
+                | ValueOrCancelled.Value (Done _ as res) -> ValueOrCancelled.Value res
+                | ValueOrCancelled.Value inner2 -> ValueOrCancelled.Value (Delimited (resourcef, inner2)) // maintain the Delimited until Done
+                | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
+            | NotYetDone work ->
+                match work ct swinfo with
+                | ValueOrCancelled.Value e2 -> steps ct swinfo e2
+                | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
+
+    // Take multiple steps in the computation, installing Delimited resource handlers if needed
     let forceForTimeSlice (sw: Stopwatch) timeShareInMilliseconds (ct: CancellationToken) e = 
         sw.Restart()
-        let rec loop e = 
-            match e with 
-            | Done _ -> ValueOrCancelled.Value e
-            | Delimited (resourcef, ev2) ->
-                use _resource = resourcef()
-                loop ev2
-            | NotYetDone work ->
-                if ct.IsCancellationRequested then
-                    sw.Stop()
-                    ValueOrCancelled.Cancelled (OperationCanceledException(ct))
-                elif sw.ElapsedMilliseconds > timeShareInMilliseconds then 
-                    sw.Stop()
-                    ValueOrCancelled.Value e
-                else 
-                    match work ct with
-                    | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
-                    | ValueOrCancelled.Value e2 -> loop e2
-        loop e
+        let swinfo = Some (sw, timeShareInMilliseconds)
+        steps ct swinfo e
 
+    // Inlined for better stack traces, because inlining replaces ranges of the "runtime" code in the lambda
+    // with ranges in user code.
     let inline bind k e = 
         let rec loop e =
-            match e with 
-            | Done x -> k x 
-            | Delimited (resourcef, ev2) ->
-                use _resource = resourcef()
-                loop ev2
-            | NotYetDone work ->
-                NotYetDone (fun ct -> 
-                    match work ct with
-                    | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
-                    | ValueOrCancelled.Value e2 -> ValueOrCancelled.Value (loop e2))
+            NotYetDone (fun ct swinfo -> 
+                let v = steps ct swinfo e
+                match v with 
+                | ValueOrCancelled.Value (Done v) -> ValueOrCancelled.Value (k v)
+                | ValueOrCancelled.Value e2 -> ValueOrCancelled.Value (loop e2)
+                | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce)
         loop e
 
+    // Inlined for better stack traces, because inlining replaces ranges of the "runtime" code in the lambda
+    // with ranges in user code.
+    let inline map f e = bind (f >> ret) e
+    
+    // Inlined for better stack traces, because inlining replaces ranges of the "runtime" code in the lambda
+    // with ranges in user code.
     let inline fold f acc seq = 
         (Done acc, seq) ||> Seq.fold (fun acc x -> acc |> bind (fun acc -> f acc x))
         
+    // Inlined for better stack traces, because inlining replaces ranges of the "runtime" code in the lambda
+    // with ranges in user code.
+    let inline each f seq =
+        fold (fun acc x -> f x |> map (fun y -> y :: acc)) [] seq |> map List.rev
+        
+    // Catch by pushing exception handlers around all the work
     let inline catch e = 
         let rec loop e =
             match e with 
             | Done x -> Done(Result x)
-            | Delimited (resourcef, ev2) ->
-                use _resource = resourcef()
-                loop ev2
+            | Delimited (resourcef, ev2) ->  Delimited (resourcef, loop ev2)
             | NotYetDone work -> 
-                NotYetDone (fun ct -> 
-                    let res = try Result(work ct) with | e -> Exception e 
+                NotYetDone (fun ct swinfo -> 
+                    let res = try Result(work ct swinfo) with exn -> Exception exn 
                     match res with 
                     | Result (ValueOrCancelled.Value cont) -> ValueOrCancelled.Value (loop cont)
                     | Result (ValueOrCancelled.Cancelled ce) -> ValueOrCancelled.Cancelled ce
-                    | Exception e -> ValueOrCancelled.Value (Done(Exception e)))
+                    | Exception exn -> ValueOrCancelled.Value (Done(Exception exn)))
         loop e
     
-    let inline delay f = NotYetDone (fun _ct -> ValueOrCancelled.Value (f ()))
+    let inline delay f = NotYetDone (fun _ct _swinfo -> ValueOrCancelled.Value (f ()))
 
     let inline tryFinally e compensation =
         catch e 
@@ -974,6 +975,8 @@ module Eventually =
         catch e 
         |> bind (function Result v -> Done v | Exception e -> handler e)
     
+    let box e = map Operators.box e
+
     let reusing resourcef e = Eventually.Delimited(resourcef, e)
 
    

@@ -394,15 +394,15 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 hash
                 (fun (f1, o1, v1) (f2, o2, v2) -> f1 = f2 && v1 = v2 && FSharpProjectOptions.AreSameForChecking(o1, o2)))
 
-    static let mutable foregroundParseCount = 0
+    static let mutable actualParseFileCount = 0
 
-    static let mutable foregroundTypeCheckCount = 0
+    static let mutable actualCheckFileCount = 0
 
     member _.RecordCheckFileInProjectResults(filename,options,parsingOptions,parseResults,fileVersion,priorTimeStamp,checkAnswer,sourceText) =        
         match checkAnswer with 
         | None -> ()
         | Some typedResults -> 
-            foregroundTypeCheckCount <- foregroundTypeCheckCount + 1
+            actualCheckFileCount <- actualCheckFileCount + 1
             parseCacheLock.AcquireLock (fun ltok -> 
                 checkFileInProjectCachePossiblyStale.Set(ltok, (filename,options),(parseResults,typedResults,fileVersion))  
                 checkFileInProjectCache.Set(ltok, (filename, sourceText, options),(parseResults,typedResults,fileVersion,priorTimeStamp))
@@ -419,7 +419,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             match parseCacheLock.AcquireLock(fun ltok -> parseFileCache.TryGet(ltok, (filename, hash, options))) with
             | Some res -> return res
             | None ->
-                foregroundParseCount <- foregroundParseCount + 1
+                actualParseFileCount <- actualParseFileCount + 1
                 let parseDiags, parseTree, anyErrors = ParseAndCheckFile.parseFile(sourceText, filename, options, userOpName, suggestNamesForErrors)
                 let res = FSharpParseFileResults(parseDiags, parseTree, anyErrors, options.SourceFiles)
                 parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (filename, hash, options), res))
@@ -995,9 +995,9 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     member _.ImplicitlyStartBackgroundWork with get() = implicitlyStartBackgroundWork and set v = implicitlyStartBackgroundWork <- v
 
-    static member GlobalForegroundParseCountStatistic = foregroundParseCount
+    static member ActualParseFileCount = actualParseFileCount
 
-    static member GlobalForegroundTypeCheckCountStatistic = foregroundTypeCheckCount
+    static member ActualCheckFileCount = actualCheckFileCount
 
 
 [<Sealed; AutoSerializable(false)>]
@@ -1285,8 +1285,15 @@ type FSharpChecker(legacyReferenceResolver,
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.GetProjectOptionsFromScript(filename, source, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, sdkDirOverride, assumeDotNetFramework, optionsStamp, userOpName)
 
-    member _.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp) = 
+    member _.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp, ?isInteractive, ?isEditing) = 
+        let isEditing = defaultArg isEditing false
+        let isInteractive = defaultArg isInteractive false
         let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
+        let argv = 
+            let define = if isInteractive then "--define:INTERACTIVE" else "--define:COMPILED"
+            Array.append argv [| define |]
+        let argv = 
+            if isEditing then Array.append argv [| "--define:EDITING" |] else argv
         { ProjectFileName = projectFileName
           ProjectId = None
           SourceFiles = [| |] // the project file names will be inferred from the ProjectOptions
@@ -1299,10 +1306,11 @@ type FSharpChecker(legacyReferenceResolver,
           OriginalLoadReferences=[]
           Stamp = None }
 
-    member _.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, ?isInteractive) =
+    member _.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, ?isInteractive, ?isEditing) =
+        let isEditing = defaultArg isEditing false
         let isInteractive = defaultArg isInteractive false
         use errorScope = new ErrorScope()
-        let tcConfigBuilder = 
+        let tcConfigB = 
             TcConfigBuilder.CreateNew(legacyReferenceResolver,
                 defaultFSharpBinariesDir=FSharpCheckerResultsSettings.defaultFSharpBinariesDir,
                 reduceMemoryUsage=ReduceMemoryFlag.Yes,
@@ -1314,12 +1322,19 @@ type FSharpChecker(legacyReferenceResolver,
                 sdkDirOverride=None,
                 rangeForErrors=range0)
 
-        // Apply command-line arguments and collect more source files if they are in the arguments
-        let sourceFilesNew = ApplyCommandLineArgs(tcConfigBuilder, sourceFiles, argv)
-        FSharpParsingOptions.FromTcConfigBuilder(tcConfigBuilder, Array.ofList sourceFilesNew, isInteractive), errorScope.Diagnostics
+        // These defines are implied by the F# compiler
+        tcConfigB.conditionalCompilationDefines <- 
+            let define = if isInteractive then "INTERACTIVE" else "COMPILED"
+            define :: tcConfigB.conditionalCompilationDefines
+        if isEditing then 
+            tcConfigB.conditionalCompilationDefines <- "EDITING":: tcConfigB.conditionalCompilationDefines
 
-    member ic.GetParsingOptionsFromCommandLineArgs(argv, ?isInteractive: bool) =
-        ic.GetParsingOptionsFromCommandLineArgs([], argv, ?isInteractive=isInteractive)
+        // Apply command-line arguments and collect more source files if they are in the arguments
+        let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, argv)
+        FSharpParsingOptions.FromTcConfigBuilder(tcConfigB, Array.ofList sourceFilesNew, isInteractive), errorScope.Diagnostics
+
+    member ic.GetParsingOptionsFromCommandLineArgs(argv, ?isInteractive: bool, ?isEditing) =
+        ic.GetParsingOptionsFromCommandLineArgs([], argv, ?isInteractive=isInteractive, ?isEditing=isEditing)
 
     /// Begin background parsing the given project.
     member _.StartBackgroundCompile(options, ?userOpName) = 
@@ -1356,9 +1371,9 @@ type FSharpChecker(legacyReferenceResolver,
 
     member _.PauseBeforeBackgroundWork with get() = Reactor.Singleton.PauseBeforeBackgroundWork and set v = Reactor.Singleton.PauseBeforeBackgroundWork <- v
 
-    static member GlobalForegroundParseCountStatistic = BackgroundCompiler.GlobalForegroundParseCountStatistic
+    static member ActualParseFileCount = BackgroundCompiler.ActualParseFileCount
 
-    static member GlobalForegroundTypeCheckCountStatistic = BackgroundCompiler.GlobalForegroundTypeCheckCountStatistic
+    static member ActualCheckFileCount = BackgroundCompiler.ActualCheckFileCount
           
     member _.MaxMemoryReached = maxMemEvent.Publish
 

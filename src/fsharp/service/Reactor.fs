@@ -197,12 +197,12 @@ type Reactor() =
 
     // This is for testing only
     member r.WaitForBackgroundOpCompletion() =
-        Trace.TraceInformation("Reactor: {0:n3} enqueue wait for background, length {0}", DateTime.Now.TimeOfDay.TotalSeconds, builder.CurrentQueueLength)
+        Trace.TraceInformation("Reactor: {0:n3} enqueue wait for background, length {1}", DateTime.Now.TimeOfDay.TotalSeconds, builder.CurrentQueueLength)
         builder.PostAndReply WaitForBackgroundOpCompletion 
 
     // This is for testing only
     member r.CompleteAllQueuedOps() =
-        Trace.TraceInformation("Reactor: {0:n3} enqueue wait for all ops, length {0}", DateTime.Now.TimeOfDay.TotalSeconds, builder.CurrentQueueLength)
+        Trace.TraceInformation("Reactor: {0:n3} enqueue wait for all ops, length {1}", DateTime.Now.TimeOfDay.TotalSeconds, builder.CurrentQueueLength)
         builder.PostAndReply CompleteAllQueuedOps
 
     member r.EnqueueAndAwaitOpAsync (userOpName, opName, opArg, f) = 
