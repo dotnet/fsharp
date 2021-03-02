@@ -441,32 +441,25 @@ let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, conditionalCompilat
                     createErrorLogger(delayedExiter)
                 )
 
-            let commitDelayedErrorLoggers () =
-                delayedErrorLoggers
-                |> Array.iter (fun delayedErrorLogger ->
-                    delayedErrorLogger.CommitDelayedDiagnostics errorLogger
-                )
-
             let results =
                 try
-                    sourceFiles 
-                    |> ArrayParallel.mapi (fun i (filename, isLastCompiland) ->
-                        let delayedErrorLogger = delayedErrorLoggers.[i]
+                    try
+                        sourceFiles 
+                        |> ArrayParallel.mapi (fun i (filename, isLastCompiland) ->
+                            let delayedErrorLogger = delayedErrorLoggers.[i]
                 
-                        let directoryName = Path.GetDirectoryName filename
-                        let input = parseInputFileAux(tcConfig, lexResourceManager, conditionalCompilationDefines, filename, (isLastCompiland, isExe), delayedErrorLogger, retryLocked)
-                        (input, directoryName)
-                    )
+                            let directoryName = Path.GetDirectoryName filename
+                            let input = parseInputFileAux(tcConfig, lexResourceManager, conditionalCompilationDefines, filename, (isLastCompiland, isExe), delayedErrorLogger, retryLocked)
+                            (input, directoryName)
+                        )
+                    finally
+                        delayedErrorLoggers
+                        |> Array.iter (fun delayedErrorLogger ->
+                            delayedErrorLogger.CommitDelayedDiagnostics errorLogger
+                        )
                 with
                 | StopProcessing ->
-                    commitDelayedErrorLoggers ()
                     exiter.Exit exitCode
-
-                | _ ->
-                    commitDelayedErrorLoggers ()
-                    reraise()
-
-            commitDelayedErrorLoggers ()
 
             results
             |> List.ofArray

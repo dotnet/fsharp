@@ -598,14 +598,19 @@ type DisposablesTracker() =
 
 /// Specialized parallel functions for an array.
 /// Different from Array.Parallel as it will try to minimize the max degree of parallelism.
+/// Will flatten aggregate exceptions that contain one exception.
 [<RequireQualifiedAccess>]
 module ArrayParallel =
 
     let inline iteri f (arr: 'T []) =
         let parallelOptions = ParallelOptions(MaxDegreeOfParallelism = max (min Environment.ProcessorCount arr.Length) 1)
-        Parallel.For(0, arr.Length, parallelOptions, fun i ->
-            f i arr.[i]
-        ) |> ignore
+        try
+            Parallel.For(0, arr.Length, parallelOptions, fun i ->
+                f i arr.[i]
+            ) |> ignore
+        with
+        | :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
+            raise(ex.InnerExceptions.[0])
 
     let inline iter f (arr: 'T []) =
         arr |> iteri (fun _ item -> f item)
