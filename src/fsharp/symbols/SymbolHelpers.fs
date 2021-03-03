@@ -178,7 +178,7 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpDiagnost
     member x.GetDiagnostics() = diagnostics.ToArray()
 
 
-/// This represents the global state established as each task function runs as part of the build.
+/// This represents the thread-local state established as each task function runs as part of the build.
 ///
 /// Use to reset error and warning handlers.
 type CompilationGlobalsScope(errorLogger: ErrorLogger, phase: BuildPhase) = 
