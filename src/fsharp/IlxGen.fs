@@ -894,6 +894,8 @@ and IlxGenEnv =
 
       /// Are we inside of a recursive let binding, while loop, or a for loop?
       isInLoop: bool
+
+      delayCodeGen: bool
     }
 
     override _.ToString() = "<IlxGenEnv>"
@@ -2249,7 +2251,7 @@ let rec GenExpr cenv cgbuf eenv sp (expr: Expr) sequel =
 
     cenv.exprRecursionDepth <- cenv.exprRecursionDepth - 1
 
-    if cenv.exprRecursionDepth = 0 then
+    if cenv.exprRecursionDepth = 0 && not eenv.delayCodeGen then
         ProcessDelayedGenMethods cenv
 
 and ProcessDelayedGenMethods cenv =
@@ -6185,14 +6187,14 @@ and GenMethodForBinding
                 else
                     body
             
-            let ilCodeLazy = lazy CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
+            let ilCodeLazy = lazy CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, { eenvForMeth with delayCodeGen = false }, 0, bodyExpr, sequel)
 
             // This is the main code generation for most methods
             false, MethodBody.IL(ilCodeLazy), false
 
     match ilMethodBody with
     | MethodBody.IL(ilCodeLazy) ->
-        if cenv.exprRecursionDepth > 0 then
+        if cenv.exprRecursionDepth > 0 || eenvForMeth.delayCodeGen then
             cenv.delayedGenMethods.Enqueue(fun _ -> ilCodeLazy.Force() |> ignore)
         else
             // Eagerly codegen if we are not in an expression depth.
@@ -7994,6 +7996,8 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
             //printfn "#_emptyTopInstrs = %d" _emptyTopInstrs.Length
             ()
 
+        ProcessDelayedGenMethods cenv
+
         mgbuf.AddInitializeScriptsInOrderToEntryPoint()
 
 //-------------------------------------------------------------------------
@@ -8015,7 +8019,8 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
       innerVals = []
       sigToImplRemapInfo = [] (* "module remap info" *)
       withinSEH = false
-      isInLoop = false }
+      isInLoop = false
+      delayCodeGen = true }
 
 type IlxGenResults =
     { ilTypeDefs: ILTypeDef list
