@@ -5,6 +5,7 @@ module internal FSharp.Compiler.ParseAndCheckInputs
 
 open System
 open System.IO
+open System.Threading
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -757,9 +758,6 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
 
     eventually {
         try 
-          let! ctok = Eventually.token
-          RequireCompilationThread ctok // Everything here requires the compilation thread since it works on the TAST
-
           CheckSimulateException tcConfig
 
           let m = inp.Range
@@ -883,8 +881,13 @@ let TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, pre
     // 'use' ensures that the warning handler is restored at the end
     use unwindEL = PushErrorLoggerPhaseUntilUnwind(fun oldLogger -> GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput inp, oldLogger) )
     use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
+
+    RequireCompilationThread ctok
     TypeCheckOneInputEventually (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp, false) 
-        |> Eventually.force ctok
+        |> Eventually.force CancellationToken.None
+        |> function 
+           | ValueOrCancelled.Value v -> v
+           | ValueOrCancelled.Cancelled ce ->  raise ce // this condition is unexpected, since CancellationToken.None was passed
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
 let TypeCheckMultipleInputsFinish(results, tcState: TcState) =
