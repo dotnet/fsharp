@@ -177,33 +177,33 @@ type Reactor() =
         | None -> ()
 
     // [Foreground Mailbox Accessors] -----------------------------------------------------------                
-    member r.SetBackgroundOp(bgOpOpt) = 
+    member _.SetBackgroundOp(bgOpOpt) = 
         Trace.TraceInformation("Reactor: {0:n3} enqueue start background, length {1}", DateTime.Now.TimeOfDay.TotalSeconds, builder.CurrentQueueLength)
         bgOpCts.Cancel()
         builder.Post(SetBackgroundOp bgOpOpt)
 
-    member r.CancelBackgroundOp() = 
+    member _.CancelBackgroundOp() = 
         Trace.TraceInformation("FCS: trying to cancel any active background work")
         bgOpCts.Cancel()
 
-    member r.EnqueueOp(userOpName, opName, opArg, op) =
+    member _.EnqueueOp(userOpName, opName, opArg, op) =
         Trace.TraceInformation("Reactor: {0:n3} enqueue {1}.{2} ({3}), length {4}", DateTime.Now.TimeOfDay.TotalSeconds, userOpName, opName, opArg, builder.CurrentQueueLength)
         builder.Post(Op(userOpName, opName, opArg, CancellationToken.None, op, (fun () -> ()))) 
 
-    member r.EnqueueOpPrim(userOpName, opName, opArg, ct, op, ccont) =
+    member _.EnqueueOpPrim(userOpName, opName, opArg, ct, op, ccont) =
         Trace.TraceInformation("Reactor: {0:n3} enqueue {1}.{2} ({3}), length {4}", DateTime.Now.TimeOfDay.TotalSeconds, userOpName, opName, opArg, builder.CurrentQueueLength)
         builder.Post(Op(userOpName, opName, opArg, ct, op, ccont)) 
 
-    member r.CurrentQueueLength =
+    member _.CurrentQueueLength =
         builder.CurrentQueueLength
 
     // This is for testing only
-    member r.WaitForBackgroundOpCompletion() =
+    member _.WaitForBackgroundOpCompletion() =
         Trace.TraceInformation("Reactor: {0:n3} enqueue wait for background, length {1}", DateTime.Now.TimeOfDay.TotalSeconds, builder.CurrentQueueLength)
         builder.PostAndReply WaitForBackgroundOpCompletion 
 
     // This is for testing only
-    member r.CompleteAllQueuedOps() =
+    member _.CompleteAllQueuedOps() =
         Trace.TraceInformation("Reactor: {0:n3} enqueue wait for all ops, length {1}", DateTime.Now.TimeOfDay.TotalSeconds, builder.CurrentQueueLength)
         builder.PostAndReply CompleteAllQueuedOps
 

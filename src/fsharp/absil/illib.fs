@@ -851,20 +851,20 @@ module Eventually =
     // with ranges in user code.
     let inline toCancellable e =
         Cancellable (fun ct -> 
-           let rec loop e = 
+           let rec toCancellableAux e = 
                match e with
                | Done x -> ValueOrCancelled.Value x
                | Delimited (resourcef, ev2) ->
                    use _resource = resourcef()
-                   loop ev2
+                   toCancellableAux ev2
                | NotYetDone work -> 
                    if ct.IsCancellationRequested then 
                       ValueOrCancelled.Cancelled (OperationCanceledException ct)
                    else 
                        match work ct None with
                        | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
-                       | ValueOrCancelled.Value e2 -> loop e2
-           loop e) 
+                       | ValueOrCancelled.Value e2 -> toCancellableAux e2
+           toCancellableAux e) 
 
     // Inlined for better stack traces, because inlining replaces ranges of the "runtime" code in the lambda
     // with ranges in user code.
@@ -923,14 +923,14 @@ module Eventually =
     // Inlined for better stack traces, because inlining replaces ranges of the "runtime" code in the lambda
     // with ranges in user code.
     let inline bind k e = 
-        let rec loop e =
+        let rec bindAux e =
             NotYetDone (fun ct swinfo -> 
                 let v = steps ct swinfo e
                 match v with 
                 | ValueOrCancelled.Value (Done v) -> ValueOrCancelled.Value (k v)
-                | ValueOrCancelled.Value e2 -> ValueOrCancelled.Value (loop e2)
+                | ValueOrCancelled.Value e2 -> ValueOrCancelled.Value (bindAux e2)
                 | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce)
-        loop e
+        bindAux e
 
     // Inlined for better stack traces, because inlining replaces ranges of the "runtime" code in the lambda
     // with ranges in user code.
@@ -948,18 +948,18 @@ module Eventually =
         
     // Catch by pushing exception handlers around all the work
     let inline catch e = 
-        let rec loop e =
+        let rec catchAux e =
             match e with 
             | Done x -> Done(Result x)
-            | Delimited (resourcef, ev2) ->  Delimited (resourcef, loop ev2)
+            | Delimited (resourcef, ev2) ->  Delimited (resourcef, catchAux ev2)
             | NotYetDone work -> 
                 NotYetDone (fun ct swinfo -> 
                     let res = try Result(work ct swinfo) with exn -> Exception exn 
                     match res with 
-                    | Result (ValueOrCancelled.Value cont) -> ValueOrCancelled.Value (loop cont)
+                    | Result (ValueOrCancelled.Value cont) -> ValueOrCancelled.Value (catchAux cont)
                     | Result (ValueOrCancelled.Cancelled ce) -> ValueOrCancelled.Cancelled ce
                     | Exception exn -> ValueOrCancelled.Value (Done(Exception exn)))
-        loop e
+        catchAux e
     
     let inline delay f = NotYetDone (fun _ct _swinfo -> ValueOrCancelled.Value (f ()))
 
