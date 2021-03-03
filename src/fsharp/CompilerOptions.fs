@@ -1036,6 +1036,7 @@ let testFlag tcConfigB =
                 | "DumpDebugInfo"    -> tcConfigB.dumpDebugInfo <- true
                 | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
                 | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
+                | "ParallelOff" -> tcConfigB.concurrentBuild <- false
 #if DEBUG
                 | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif

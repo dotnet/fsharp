@@ -232,6 +232,7 @@ type TcConfigBuilder =
       mutable optSettings  : Optimizer.OptimizationSettings 
       mutable emitTailcalls: bool
       mutable deterministic: bool
+      mutable concurrentBuild: bool
       mutable preferredUiLang: string option
       mutable lcid        : int option
       mutable productNameForBannerText: string
@@ -417,6 +418,7 @@ type TcConfig =
     member optSettings  : Optimizer.OptimizationSettings 
     member emitTailcalls: bool
     member deterministic: bool
+    member concurrentBuild: bool
     member pathMap: PathMap
     member preferredUiLang: string option
     member optsOn       : bool 

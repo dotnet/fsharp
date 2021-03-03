@@ -19,6 +19,7 @@ open System.IO
 open System.Reflection
 open System.Text
 open System.Threading
+open System.Threading.Tasks
 
 open Internal.Utilities
 open Internal.Utilities.Filename
@@ -515,22 +516,8 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     ReportTime tcConfig "Parse inputs"
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
-    let inputs =
-        try
-            let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint 
-
-            List.zip sourceFiles isLastCompiland
-            // PERF: consider making this parallel, once uses of global state relevant to parsing are cleaned up 
-            |> List.map (fun (sourceFile, isLastCompiland) -> 
-
-                let sourceFileDirectory = Path.GetDirectoryName sourceFile
-
-                let input = ParseOneInputFile(tcConfig, lexResourceManager, ["COMPILED"], sourceFile, (isLastCompiland, isExe), errorLogger, (*retryLocked*)false)
-                (input, sourceFileDirectory))
-
-        with e -> 
-            errorRecoveryNoRange e
-            exiter.Exit 1
+    let createErrorLogger = (fun exiter -> errorLoggerProvider.CreateDelayAndForwardLogger(exiter) :> CapturingErrorLogger)
+    let inputs = ParseInputFiles(tcConfig, lexResourceManager, ["COMPILED"], sourceFiles, errorLogger, exiter, createErrorLogger, (*retryLocked*)false)
     
     let inputs, _ =
         (Map.empty, inputs) ||> List.mapFold (fun state (input, x) ->
