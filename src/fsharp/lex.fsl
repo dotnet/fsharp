@@ -981,7 +981,7 @@ rule token args skip = parse
  | anywhite* "#else" ident_char+
  | anywhite* "#endif" ident_char+
  | anywhite* "#light" ident_char+
-   { let n = Array.IndexOf(lexbuf.Lexeme, '#')
+   { let n = (lexeme lexbuf).IndexOf('#')
      lexbuf.StartPos <- lexbuf.StartPos.ShiftColumnBy(n)
      HASH_IDENT(lexemeTrimLeft lexbuf (n+1)) }
 
