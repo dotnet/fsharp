@@ -34,7 +34,3 @@ neg46.fs(56,17,56,20): typecheck error FS0696: This is not a valid object constr
 neg46.fs(60,8,60,19): typecheck error FS0912: This declaration element is not permitted in an augmentation
 
 neg46.fs(64,8,64,26): typecheck error FS0912: This declaration element is not permitted in an augmentation
-
-neg46.fs(68,18,68,36): typecheck error FS0909: All implemented interfaces should be declared on the initial declaration of the type	
-
-neg46.fs(73,18,73,36): typecheck error FS0909: All implemented interfaces should be declared on the initial declaration of the type
