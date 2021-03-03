@@ -114,7 +114,17 @@ module IncrementalBuildSyntaxTree =
                 let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (Filename.checkSuffix lower)
                 let input = 
                     if canSkip then
-                        EmptyParsedInput(filename, isLastCompiland)
+                        ParsedInput.ImplFile(
+                            ParsedImplFileInput(
+                                filename, 
+                                false, 
+                                sigNameOpt.Value,
+                                [],
+                                [],
+                                [],
+                                isLastCompiland
+                            )
+                        )
                     else
                         ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
 
