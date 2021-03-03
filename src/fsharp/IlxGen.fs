@@ -6187,6 +6187,7 @@ and GenMethodForBinding
                 else
                     body
             
+            let cenv = { cenv with exprRecursionDepth = 0; delayedGenMethods = Queue() }
             let ilCodeLazy = lazy CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, { eenvForMeth with delayCodeGen = false }, 0, bodyExpr, sequel)
 
             // This is the main code generation for most methods
@@ -7980,6 +7981,9 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv a
         let eenv = GenImplFile cenv mgbuf cenv.opts.mainMethodInfo eenv b
 
+        cenv.exprRecursionDepth <- 0
+        ProcessDelayedGenMethods cenv
+
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
         let extraBindings = mgbuf.GrabExtraBindingsToGenerate()
@@ -7995,8 +7999,6 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
                     GenModuleDef cenv cgbuf qname lazyInitInfo eenv mexpr)), range0)
             //printfn "#_emptyTopInstrs = %d" _emptyTopInstrs.Length
             ()
-
-        ProcessDelayedGenMethods cenv
 
         mgbuf.AddInitializeScriptsInOrderToEntryPoint()
 
