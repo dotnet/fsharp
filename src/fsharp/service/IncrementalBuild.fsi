@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
+open System.Threading
 open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
@@ -108,21 +109,21 @@ type internal PartialCheckResults =
 
     /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
     /// extras will also be available.
-    member GetTcInfo: CompilationThreadToken -> TcInfo
+    member GetTcInfo: unit -> Eventually<TcInfo>
 
     /// Compute both the "TcInfo" and "TcInfoExtras" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetTcInfoWithExtras: CompilationThreadToken -> TcInfo * TcInfoExtras
+    member GetTcInfoWithExtras: unit -> Eventually<TcInfo * TcInfoExtras>
 
     /// Compute the "ItemKeyStore" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member TryGetItemKeyStore: CompilationThreadToken -> ItemKeyStore option
+    member TryGetItemKeyStore: unit -> Eventually<ItemKeyStore option>
 
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetSemanticClassification: CompilationThreadToken -> SemanticClassificationKeyStore option
+    member GetSemanticClassification: unit -> Eventually<SemanticClassificationKeyStore option>
 
     member TimeStamp: DateTime 
 
@@ -159,8 +160,8 @@ type internal IncrementalBuilder =
       /// The list of files the build depends on
       member AllDependenciesDeprecated : string[]
 
-      /// Perform one step in the F# build. Return true if the background work is finished.
-      member Step : CompilationThreadToken -> Cancellable<bool>
+      /// The project build. Return true if the background work is finished.
+      member PopulatePartialCheckingResults: CompilationThreadToken -> Eventually<unit>
 
       /// Get the preceding typecheck state of a slot, without checking if it is up-to-date w.r.t.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
@@ -245,7 +246,6 @@ type internal IncrementalBuilder =
           useScriptResolutionRules:bool *
           keepAssemblyContents: bool *
           keepAllBackgroundResolutions: bool *
-          maxTimeShareMilliseconds: int64 *
           tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot *
           suggestNamesForErrors: bool *
           keepAllBackgroundSymbolUses: bool *
