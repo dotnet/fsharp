@@ -1036,6 +1036,7 @@ let testFlag tcConfigB =
                 | "DumpDebugInfo"    -> tcConfigB.dumpDebugInfo <- true
                 | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
                 | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
+                | "ParallelOff" -> tcConfigB.concurrentBuild <- false
 #if DEBUG
                 | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
@@ -1717,11 +1718,16 @@ let DoWithColor newColor f =
         finally
             ignoreFailureOnMono1_1_16 (fun () -> Console.ForegroundColor <- c)
 
-let DoWithErrorColor isError f =
+let DoWithDiagnosticColor severity f =
     match foreBackColor() with
     | None -> f()
     | Some (_, backColor) ->
+        let infoColor = if backColor = ConsoleColor.White then ConsoleColor.Blue else ConsoleColor.Green
         let warnColor = if backColor = ConsoleColor.White then ConsoleColor.DarkBlue else ConsoleColor.Cyan
         let errorColor = ConsoleColor.Red
-        let color = if isError then errorColor else warnColor 
+        let color = 
+            match severity with 
+            | FSharpDiagnosticSeverity.Error -> errorColor
+            | FSharpDiagnosticSeverity.Warning -> warnColor
+            | _ -> infoColor
         DoWithColor color f
