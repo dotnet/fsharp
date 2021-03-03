@@ -6,6 +6,7 @@ module internal FSharp.Compiler.IlxGen
 open System.IO
 open System.Reflection
 open System.Collections.Generic
+open System.Collections.Immutable
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -896,6 +897,8 @@ and IlxGenEnv =
       isInLoop: bool
 
       delayCodeGen: bool
+
+      delayedFileGen: ImmutableArray<(cenv -> unit) []>
     }
 
     override _.ToString() = "<IlxGenEnv>"
@@ -7101,7 +7104,9 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
         let allocVal = ComputeAndAddStorageForLocalTopVal (cenv.amap, g, cenv.intraAssemblyInfo, cenv.opts.isInteractive, NoShadowLocal)
         AddBindingsForLocalModuleType allocVal clocCcu eenv mexpr.Type
 
-    eenvafter
+    let eenvfinal = { eenvafter with delayedFileGen = eenvafter.delayedFileGen.Add(cenv.delayedGenMethods |> Array.ofSeq) }
+    cenv.delayedGenMethods.Clear()
+    eenvfinal
 
 and GenForceWholeFileInitializationAsPartOfCCtor cenv (mgbuf: AssemblyBuilder) (lazyInitInfo: ResizeArray<_>) tref m =
     // Authoring a .cctor with effects forces the cctor for the 'initialization' module by doing a dummy store & load of a field
@@ -7981,11 +7986,13 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv a
         let eenv = GenImplFile cenv mgbuf cenv.opts.mainMethodInfo eenv b
 
-        let genMeths = cenv.delayedGenMethods |> Array.ofSeq
-        cenv.delayedGenMethods.Clear()
+        let genMeths = eenv.delayedFileGen |> Array.ofSeq
 
         genMeths
-        |> ArrayParallel.iter (fun gen -> gen cenv)
+        |> Array.iter (fun genMeths ->
+            genMeths
+            |> Array.iter (fun gen -> gen cenv) 
+        )
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
@@ -8025,7 +8032,8 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
       sigToImplRemapInfo = [] (* "module remap info" *)
       withinSEH = false
       isInLoop = false
-      delayCodeGen = true }
+      delayCodeGen = true
+      delayedFileGen = ImmutableArray.Empty }
 
 type IlxGenResults =
     { ilTypeDefs: ILTypeDef list
