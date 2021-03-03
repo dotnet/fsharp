@@ -7981,8 +7981,11 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv a
         let eenv = GenImplFile cenv mgbuf cenv.opts.mainMethodInfo eenv b
 
-        cenv.exprRecursionDepth <- 0
-        ProcessDelayedGenMethods cenv
+        let genMeths = cenv.delayedGenMethods |> Array.ofSeq
+        cenv.delayedGenMethods.Clear()
+
+        genMeths
+        |> ArrayParallel.iter (fun gen -> gen cenv)
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
