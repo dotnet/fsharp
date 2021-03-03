@@ -7989,7 +7989,7 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         let genMeths = eenv.delayedFileGen |> Array.ofSeq
 
         genMeths
-        |> Array.iter (fun genMeths ->
+        |> ArrayParallel.iter (fun genMeths ->
             genMeths
             |> Array.iter (fun gen -> gen cenv) 
         )
