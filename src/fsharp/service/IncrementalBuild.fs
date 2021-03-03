@@ -123,7 +123,7 @@ module IncrementalBuildSyntaxTree =
                                 [],
                                 isLastCompiland
                             )
-                        ) |> Some
+                        )
                     else
                         ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
 
