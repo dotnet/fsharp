@@ -244,6 +244,7 @@ function InstallDotNet([string] $dotnetRoot,
   $installParameters = @{
     Version = $version
     InstallDir = $dotnetRoot
+    NoCdn = $true
   }
 
   if ($architecture) { $installParameters.Architecture = $architecture }
