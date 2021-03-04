@@ -5,6 +5,7 @@ module internal FSharp.Compiler.ParseAndCheckInputs
 
 open System
 open System.IO
+open System.Threading
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -393,30 +394,87 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
             
 let ValidSuffixes = FSharpSigFileSuffixes@FSharpImplFileSuffixes
 
+let checkInputFile (tcConfig: TcConfig) filename =
+    let lower = String.lowercase filename
+
+    if List.exists (Filename.checkSuffix lower) ValidSuffixes then 
+        if not(FileSystem.SafeExists filename) then
+            error(Error(FSComp.SR.buildCouldNotFindSourceFile filename, rangeStartup))
+    else
+        error(Error(FSComp.SR.buildInvalidSourceFileExtension(SanitizeFileName filename tcConfig.implicitIncludeDir), rangeStartup))
+
+let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked) =
+    // Get a stream reader for the file
+    use reader = File.OpenReaderAndRetry (filename, tcConfig.inputCodePage, retryLocked)
+
+    // Set up the LexBuffer for the file
+    let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(tcConfig.langVersion.SupportsFeature, reader)
+
+    // Parse the file drawing tokens from the lexbuf
+    ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
+
 /// Parse an input from disk
 let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked) =
     try 
-       let lower = String.lowercase filename
-
-       if List.exists (Filename.checkSuffix lower) ValidSuffixes then  
-
-            if not(FileSystem.SafeExists filename) then
-                error(Error(FSComp.SR.buildCouldNotFindSourceFile filename, rangeStartup))
-
-            // Get a stream reader for the file
-            use reader = File.OpenReaderAndRetry (filename, tcConfig.inputCodePage, retryLocked)
-
-            // Set up the LexBuffer for the file
-            let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(tcConfig.langVersion.SupportsFeature, reader)
-
-            // Parse the file drawing tokens from the lexbuf
-            ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
-       else
-           error(Error(FSComp.SR.buildInvalidSourceFileExtension(SanitizeFileName filename tcConfig.implicitIncludeDir), rangeStartup))
-
+       checkInputFile tcConfig filename
+       parseInputFileAux(tcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked)
     with e -> 
         errorRecovery e rangeStartup
         EmptyParsedInput(filename, isLastCompiland) 
+
+/// Parse multiple input files from disk
+let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, sourceFiles, errorLogger: ErrorLogger, exiter: Exiter, createErrorLogger: (Exiter -> CapturingErrorLogger), retryLocked) =
+    try
+        let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
+        let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofSeq
+
+        if tcConfig.concurrentBuild then
+            let mutable exitCode = 0
+            let delayedExiter = 
+                { new Exiter with
+                        member this.Exit n = exitCode <- n; raise StopProcessing }
+
+            // Check input files and create delayed error loggers before we try to parallel parse.
+            let delayedErrorLoggers =
+                sourceFiles
+                |> Array.map (fun (filename, _) ->
+                    checkInputFile tcConfig filename
+                    createErrorLogger(delayedExiter)
+                )
+
+            let results =
+                try
+                    try
+                        sourceFiles 
+                        |> ArrayParallel.mapi (fun i (filename, isLastCompiland) ->
+                            let delayedErrorLogger = delayedErrorLoggers.[i]
+                
+                            let directoryName = Path.GetDirectoryName filename
+                            let input = parseInputFileAux(tcConfig, lexResourceManager, conditionalCompilationDefines, filename, (isLastCompiland, isExe), delayedErrorLogger, retryLocked)
+                            (input, directoryName)
+                        )
+                    finally
+                        delayedErrorLoggers
+                        |> Array.iter (fun delayedErrorLogger ->
+                            delayedErrorLogger.CommitDelayedDiagnostics errorLogger
+                        )
+                with
+                | StopProcessing ->
+                    exiter.Exit exitCode
+
+            results
+            |> List.ofArray
+        else
+            sourceFiles
+            |> Array.map (fun (filename, isLastCompiland) ->
+                let directoryName = Path.GetDirectoryName filename
+                let input = ParseOneInputFile(tcConfig, lexResourceManager, conditionalCompilationDefines, filename, (isLastCompiland, isExe), errorLogger, retryLocked)
+                (input, directoryName))
+            |> List.ofArray
+
+    with e ->
+        errorRecoveryNoRange e
+        exiter.Exit 1
 
 let ProcessMetaCommandsFromInput
      (nowarnF: 'state -> range * string -> 'state,
@@ -700,9 +758,6 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
 
     eventually {
         try 
-          let! ctok = Eventually.token
-          RequireCompilationThread ctok // Everything here requires the compilation thread since it works on the TAST
-
           CheckSimulateException tcConfig
 
           let m = inp.Range
@@ -826,8 +881,13 @@ let TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, pre
     // 'use' ensures that the warning handler is restored at the end
     use unwindEL = PushErrorLoggerPhaseUntilUnwind(fun oldLogger -> GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput inp, oldLogger) )
     use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
+
+    RequireCompilationThread ctok
     TypeCheckOneInputEventually (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp, false) 
-        |> Eventually.force ctok
+        |> Eventually.force CancellationToken.None
+        |> function 
+           | ValueOrCancelled.Value v -> v
+           | ValueOrCancelled.Cancelled ce ->  raise ce // this condition is unexpected, since CancellationToken.None was passed
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
 let TypeCheckMultipleInputsFinish(results, tcState: TcState) =
