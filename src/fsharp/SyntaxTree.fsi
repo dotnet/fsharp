@@ -11,9 +11,11 @@ type Ident =
      new: text: string * range: range -> Ident
      member idText: string
      member idRange: range
+       
 
 /// Represents a long identifier e.g. 'A.B.C'
 type LongIdent = Ident list
+
 
 /// Represents a long identifier with possible '.' at end.
 ///
