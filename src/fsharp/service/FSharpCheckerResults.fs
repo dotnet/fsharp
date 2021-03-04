@@ -105,14 +105,6 @@ module internal FSharpCheckerResultsSettings =
 
     let maxTypeCheckErrorsOutOfProjectContext = GetEnvInteger "FCS_MaxErrorsOutOfProjectContext" 3
 
-    /// Maximum time share for a piece of background work before it should (cooperatively) yield
-    /// to enable other requests to be serviced. Yielding means returning a continuation function
-    /// (via an Eventually<_> value of case NotYetDone) that can be called as the next piece of work. 
-    let maxTimeShareMilliseconds = 
-        match System.Environment.GetEnvironmentVariable("FCS_MaxTimeShare") with 
-        | null | "" -> 100L
-        | s -> int64 s
-
     // Look for DLLs in the location of the service DLL first.
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location))).Value
 
@@ -1735,10 +1727,9 @@ module internal ParseAndCheckFile =
            loadClosure: LoadClosure option,
            // These are the errors and warnings seen by the background compiler for the entire antecedent 
            backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[],    
-           reactorOps: IReactorOperations,
-           userOpName: string,
-           suggestNamesForErrors: bool) = async {
+           suggestNamesForErrors: bool) =
 
+      cancellable {
         use _logBlock = Logger.LogBlock LogCompilerFunctionId.Service_CheckOneFile
 
         let parsedMainInput = parseResults.ParseTree
@@ -1756,7 +1747,7 @@ module internal ParseAndCheckFile =
         errHandler.ErrorSeverityOptions <- tcConfig.errorSeverityOptions
             
         // Play background errors and warnings for this file.
-        for err, severity in backgroundDiagnostics do
+        do for err, severity in backgroundDiagnostics do
             diagnosticSink (err, severity)
             
         // If additional references were brought in by the preprocessor then we need to process them
@@ -1770,10 +1761,8 @@ module internal ParseAndCheckFile =
         // Typecheck the real input.  
         let sink = TcResultsSinkImpl(tcGlobals, sourceText = sourceText)
 
-        let! ct = Async.CancellationToken
-            
         let! resOpt =
-            async {
+           cancellable {
                 try
                     let checkForErrors() = (parseResults.ParseHadErrors || errHandler.ErrorCount > 0)
 
@@ -1782,33 +1771,23 @@ module internal ParseAndCheckFile =
                     // Typecheck is potentially a long running operation. We chop it up here with an Eventually continuation and, at each slice, give a chance
                     // for the client to claim the result as obsolete and have the typecheck abort.
                             
+                    use _unwind = new CompilationGlobalsScope (errHandler.ErrorLogger, BuildPhase.TypeCheck)
                     let! result = 
                         TypeCheckOneInputAndFinishEventually(checkForErrors, tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
-                        |> Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled maxTimeShareMilliseconds ct (fun ctok f -> f ctok)
-                        |> Eventually.forceAsync  
-                            (fun work ->
-                                reactorOps.EnqueueAndAwaitOpAsync(userOpName, "CheckOneFile.Fragment", mainInputFileName, 
-                                    fun ctok -> 
-                                        // This work is not cancellable
-                                        let res = 
-                                            // Reinstall the compilation globals each time we start or restart
-                                            use unwind = new CompilationGlobalsScope (errHandler.ErrorLogger, BuildPhase.TypeCheck)
-                                            work ctok
-                                        cancellable.Return(res)
-                                        ))
+                        |> Eventually.toCancellable
                              
                     return result
                 with e ->
                     errorR e
                     let mty = Construct.NewEmptyModuleOrNamespaceType ModuleOrNamespaceKind.Namespace
-                    return Some((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
-            }
+                    return ((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
+           }
                 
         let errors = errHandler.CollectedDiagnostics
                 
         let res = 
             match resOpt with
-            | Some ((tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState) ->
+            | ((tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState) ->
                 TypeCheckInfo(tcConfig, tcGlobals, 
                               List.head ccuSigsForFiles, 
                               tcState.Ccu,
@@ -1823,12 +1802,8 @@ module internal ParseAndCheckFile =
                               loadClosure,
                               List.tryHead implFiles,
                               sink.GetOpenDeclarations())     
-                     |> Result.Ok
-            | None -> 
-                Result.Error()
         return errors, res
-        }
-
+      }
 
 [<Sealed>] 
 type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad: AccessorDomain, projectOptions: FSharpProjectOptions) =
@@ -2071,8 +2046,6 @@ type FSharpCheckFileResults
          moduleNamesDict: ModuleNamesDict,
          loadClosure: LoadClosure option,
          backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[],    
-         reactorOps: IReactorOperations,
-         userOpName: string,
          isIncompleteTypeCheckEnvironment: bool, 
          projectOptions: FSharpProjectOptions,
          builder: IncrementalBuilder, 
@@ -2081,26 +2054,16 @@ type FSharpCheckFileResults
          parseErrors: FSharpDiagnostic[], 
          keepAssemblyContents: bool,
          suggestNamesForErrors: bool) = 
-        async {
+        cancellable {
             let! tcErrors, tcFileInfo = 
                 ParseAndCheckFile.CheckOneFile
                     (parseResults, sourceText, mainInputFileName, projectOptions,
                      projectFileName, tcConfig, tcGlobals, tcImports, 
-                     tcState, moduleNamesDict, loadClosure, backgroundDiagnostics, reactorOps, 
-                     userOpName, suggestNamesForErrors)
-            match tcFileInfo with 
-            | Result.Error ()  ->  
-                return FSharpCheckFileAnswer.Aborted                
-            | Result.Ok tcFileInfo -> 
-                let errors = FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
-                let results = FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, keepAssemblyContents)
-                return FSharpCheckFileAnswer.Succeeded(results)
+                     tcState, moduleNamesDict, loadClosure, backgroundDiagnostics, suggestNamesForErrors)
+            let errors = FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
+            let results = FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, keepAssemblyContents)
+            return results
         }
-
-and [<NoComparison>] FSharpCheckFileAnswer =
-    | Aborted
-    | Succeeded of FSharpCheckFileResults   
-        
 
 [<Sealed>]
 // 'details' is an option because the creation of the tcGlobals etc. for the project may have failed.
@@ -2216,7 +2179,6 @@ type FSharpCheckProjectResults
     override _.ToString() = "FSharpCheckProjectResults(" + projectFileName + ")"
 
 type FsiInteractiveChecker(legacyReferenceResolver, 
-                           reactorOps: IReactorOperations,
                            tcConfig: TcConfig,
                            tcGlobals: TcGlobals,
                            tcImports: TcImports,
@@ -2225,7 +2187,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
     let keepAssemblyContents = false
 
     member _.ParseAndCheckInteraction (ctok, sourceText: ISourceText, ?userOpName: string) =
-        async {
+        cancellable {
             let userOpName = defaultArg userOpName "Unknown"
             let filename = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
             let suggestNamesForErrors = true // Will always be true, this is just for readability
@@ -2273,24 +2235,26 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                     (parseResults, sourceText, filename, projectOptions, projectOptions.ProjectFileName,
                      tcConfig, tcGlobals, tcImports,  tcState, 
                      Map.empty, Some loadClosure, backgroundDiagnostics,
-                     reactorOps, userOpName, suggestNamesForErrors)
+                     suggestNamesForErrors)
 
-            return
-                match tcFileInfo with 
-                | Result.Ok tcFileInfo ->
-                    let errors = Array.append parseErrors tcErrors
-                    let typeCheckResults = FSharpCheckFileResults (filename, errors, Some tcFileInfo, dependencyFiles, None, false)   
-                    let projectResults = 
-                        FSharpCheckProjectResults (filename, Some tcConfig,
-                            keepAssemblyContents, errors, 
-                            Some(tcGlobals, tcImports, tcFileInfo.ThisCcu, tcFileInfo.CcuSigForFile,
-                                 [tcFileInfo.ScopeSymbolUses], None, None, mkSimpleAssemblyRef "stdin", 
-                                 tcState.TcEnvFromImpls.AccessRights, None, dependencyFiles,
-                                 projectOptions))
+            let errors = Array.append parseErrors tcErrors
+            let typeCheckResults = FSharpCheckFileResults (filename, errors, Some tcFileInfo, dependencyFiles, None, false)   
+            let projectResults = 
+                FSharpCheckProjectResults (filename, Some tcConfig,
+                    keepAssemblyContents, errors, 
+                    Some(tcGlobals, tcImports, tcFileInfo.ThisCcu, tcFileInfo.CcuSigForFile,
+                            [tcFileInfo.ScopeSymbolUses], None, None, mkSimpleAssemblyRef "stdin", 
+                            tcState.TcEnvFromImpls.AccessRights, None, dependencyFiles,
+                            projectOptions))
 
-                    parseResults, typeCheckResults, projectResults
-
-                | Result.Error () ->
-                    failwith "unexpected aborted"
+            return parseResults, typeCheckResults, projectResults
         }
+
+/// The result of calling TypeCheckResult including the possibility of abort and background compiler not caught up.
+type [<RequireQualifiedAccess>] public FSharpCheckFileAnswer =
+    /// Aborted because cancellation caused an abandonment of the operation
+    | Aborted 
+    
+    /// Success 
+    | Succeeded of FSharpCheckFileResults    
 
