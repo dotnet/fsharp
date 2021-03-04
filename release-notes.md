@@ -17,13 +17,19 @@ These release notes track our current efforts to document changes to the F# proj
 ### F# 5 / Visual Studio 16.9
 
 ### FSharp.Core 5.0.1
-TBD
-* [Performance improvement](https://github.com/dotnet/fsharp/pull/10188) to core collections Map by [Victor Baybekov](https://github.com/buybackoff)
 
+* [Performance improvement](https://github.com/dotnet/fsharp/pull/10188) to core collections Map by [Victor Baybekov](https://github.com/buybackoff)
 
 ### FSharp tools 11.0.1
 
-* Add ConvertToAnonymousRecord quick fixeroony [#10493](https://github.com/dotnet/fsharp/pull/10493)
+* Significant improvements to the performance of code making heavy use of closures at runtime
+* Warnings for mismatched parameter names between signature and implementation files
+* Warnings for incorrect XML documentation files are turned on by default
+* Big performance gains in tools for codebases with F# signature files
+* Improved responsiveness for most IDE features
+* Signature Help for F# function calls
+* .NET 5 scripting for Visual Studio
+* Add ConvertToAnonymousRecord quick fix [#10493](https://github.com/dotnet/fsharp/pull/10493)
 * Add UseMutationWhenValueIsMutable code fix [#10488](https://github.com/dotnet/fsharp/pull/10488)
 * Add MakeDeclarationMutable code fix [#10480](https://github.com/dotnet/fsharp/pull/10480)
 * Add ChangeToUpcast code fix [#10463](https://github.com/dotnet/fsharp/pull/10463)

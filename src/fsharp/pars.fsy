@@ -20,6 +20,7 @@ open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
@@ -202,6 +203,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 
 %token <string> KEYWORD_STRING // Like __SOURCE_DIRECTORY__
 %token <string> IDENT 
+%token <string> HASH_IDENT 
 %token <string> INFIX_STAR_STAR_OP 
 %token <string> INFIX_COMPARE_OP 
 %token <string> INFIX_AT_HAT_OP 
