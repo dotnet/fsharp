@@ -113,7 +113,7 @@ type internal PartialCheckResults =
 
     /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
     /// extras will also be available.
-    member GetTcInfoWithOptionalExtras: CompilationThreadToken -> Eventually<TcInfo * TcInfoExtras option>
+    member GetTcInfoWithOptionalExtras: unit -> Eventually<TcInfo * TcInfoExtras option>
 
     /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
     /// extras will also be available.

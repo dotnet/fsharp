@@ -482,7 +482,7 @@ type BoundModel private (tcConfig: TcConfig,
                         else
                             match! prevTcInfoExtras() with
                             | None -> return PartialState tcInfo
-                            | Some prevTcInfoOptional ->
+                            | Some prevTcInfoExtras ->
                                 // Build symbol keys
                                 let itemKeyStore, semanticClassification =
                                     if enableBackgroundItemKeyStoreAndSemanticClassification then
@@ -609,15 +609,13 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime) =
 
     member _.TimeStamp = timeStamp
 
-    member _.GetTcInfoWithOptionalExtras ctok = boundModel.TcInfoWithOptionalExtras |> eval ctok
+    member _.GetTcInfoWithOptionalExtras() = boundModel.TcInfoWithOptionalExtras
 
-    member _.GetTcInfoWithExtras ctok = boundModel.TcInfoWithExtras |> eval ctok
+    member _.GetTcInfoWithExtras() = boundModel.GetTcInfoWithExtras()
 
     member _.GetTcInfo() = boundModel.GetTcInfo()
 
     member _.TryTcInfoWithOptionalExtras = boundModel.TryTcInfoWithOptionalExtras
-
-    member _.GetTcInfoWithExtras() = boundModel.GetTcInfoWithExtras()
 
     member _.TryGetItemKeyStore() =
         eventually {
