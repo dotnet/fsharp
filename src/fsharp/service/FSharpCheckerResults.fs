@@ -1787,14 +1787,14 @@ module internal ParseAndCheckFile =
                 with e ->
                     errorR e
                     let mty = Construct.NewEmptyModuleOrNamespaceType ModuleOrNamespaceKind.Namespace
-                    return ((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [(parsedMainInput, None, mty) ]), tcState)
+                    return ((tcState.TcEnvFromSignatures, EmptyTopAttrs, [(parsedMainInput, None, mty) ]), tcState)
            }
                 
         let errors = errHandler.CollectedDiagnostics
                 
         let res = 
             match resOpt with
-            | Some ((tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState) ->
+            | ((tcEnvAtEnd, _, implFiles), tcState) ->
                 TypeCheckInfo(tcConfig, tcGlobals, 
                               (List.head implFiles |> p33), 
                               tcState.Ccu,

@@ -573,7 +573,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                         |> Option.map (fun tcPrior -> (tcPrior, tcPrior.TryTcInfoWithOptionalExtras))
                             
                     match tcPrior with
-                    | Some(tcPrior, (tcInfo, tcInfoOptionalExtras)) -> 
+                    | Some(tcPrior, Some (tcInfo, tcInfoOptionalExtras)) -> 
                         let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, tcInfoOptionalExtras, creationDiags)
                         return Some checkResults
                     | _ -> return None  // the incremental builder was not up to date
@@ -609,7 +609,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                 execWithReactorAsync <| fun ctok -> 
                                     cancellable {
                                         let! tcPrior = builder.GetCheckResultsBeforeFileInProject (ctok, filename)
-                                        let! tcInfo = tcPrior.GetTcInfo() |> Eventually.toCancellable
+                                        let! tcInfo = tcPrior.GetTcInfoWithOptionalExtras() |> Eventually.toCancellable
                                         return (tcPrior, tcInfo)
                                     } 
                         let! checkAnswer = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, tcInfoOptionalExtras, creationDiags)
@@ -659,7 +659,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                 execWithReactorAsync <| fun ctok -> 
                                     cancellable {
                                         let! tcPrior = builder.GetCheckResultsBeforeFileInProject (ctok, filename)
-                                        let! tcInfo = tcPrior.GetTcInfoWithOptionalExtras(ctok) |> Eventually.toCancellable
+                                        let! tcInfo = tcPrior.GetTcInfoWithOptionalExtras() |> Eventually.toCancellable
                                         return (tcPrior, tcInfo)
                                     } 
                     
