@@ -2448,7 +2448,20 @@ and CodeGenMethodForExpr cenv mgbuf (spReq, entryPointInfo, methodName, eenv, al
         CodeGenMethod cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs,
                                    (fun cgbuf eenv -> GenExpr cenv cgbuf eenv spReq expr0 sequel0),
                                    expr0.Range)
-    code      
+    code
+    
+and DelayCodeGenMethodForExpr cenv mgbuf (spReq, entryPointInfo, methodName, eenv, alreadyUsedArgs, expr0, sequel0) =
+    let ilLazyCode =
+        lazy
+            CodeGenMethodForExpr { cenv with exprRecursionDepth = 0; delayedGenMethods = Queue() } mgbuf (spReq, entryPointInfo, methodName, { eenv with delayCodeGen = false }, alreadyUsedArgs, expr0, sequel0)
+            
+    if cenv.exprRecursionDepth > 0 || eenv.delayCodeGen then
+        cenv.delayedGenMethods.Enqueue(fun _ -> ilLazyCode.Force() |> ignore)
+    else
+        // Eagerly codegen if we are not in an expression depth.
+        ilLazyCode.Force() |> ignore
+
+    ilLazyCode
 
 //--------------------------------------------------------------------------
 // Generate sequels
@@ -5646,8 +5659,14 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) star
         cgbuf.mgbuf.AddOrMergePropertyDef(ilGetterMethSpec.MethodRef.DeclaringTypeRef, ilPropDef, m)
 
         let ilMethodDef =
-            let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], ilGetterMethSpec.Name, eenv, 0, rhsExpr, Return)
-            let ilMethodBody = MethodBody.IL(lazy ilCode)
+            let ilLazyCode =
+                if eenv.delayCodeGen then
+                    DelayCodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], ilGetterMethSpec.Name, eenv, 0, rhsExpr, Return)
+                else
+                    let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], ilGetterMethSpec.Name, eenv, 0, rhsExpr, Return)
+                    lazy ilCode
+
+            let ilMethodBody = MethodBody.IL(ilLazyCode)
             (mkILStaticMethod ([], ilGetterMethSpec.Name, access, [], mkILReturn ilTy, ilMethodBody)).WithSpecialName
             |> AddNonUserCompilerGeneratedAttribs g
 
@@ -6099,9 +6118,6 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let hasAggressiveInliningImplFlag = (implflags &&& 0x0100) <> 0x0
     hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningImplFlag, hasAggressiveInliningImplFlag, attrs
 
-and DelayGenMethodForBinding cenv mgbuf eenv ilxMethInfoArgs =
-    cenv.delayedGenMethods.Enqueue (fun cenv -> GenMethodForBinding cenv mgbuf eenv ilxMethInfoArgs)
-
 and GenMethodForBinding
         cenv mgbuf eenv
         (v: Val, mspec, hasWitnessEntry, generateWitnessArgs, access, ctps, mtps, witnessInfos, curriedArgInfos, paramInfos, argTys, retInfo, topValInfo,
@@ -6190,21 +6206,10 @@ and GenMethodForBinding
                 else
                     body
             
-            let cenv = { cenv with exprRecursionDepth = 0; delayedGenMethods = Queue() }
-            let ilCodeLazy = lazy CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, { eenvForMeth with delayCodeGen = false }, 0, bodyExpr, sequel)
+            let ilLazyCode = DelayCodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
 
             // This is the main code generation for most methods
-            false, MethodBody.IL(ilCodeLazy), false
-
-    match ilMethodBody with
-    | MethodBody.IL(ilCodeLazy) ->
-        if cenv.exprRecursionDepth > 0 || eenvForMeth.delayCodeGen then
-            cenv.delayedGenMethods.Enqueue(fun _ -> ilCodeLazy.Force() |> ignore)
-        else
-            // Eagerly codegen if we are not in an expression depth.
-            ilCodeLazy.Force() |> ignore
-    | _ ->
-        ()
+            false, MethodBody.IL(ilLazyCode), false
 
     // Do not generate DllImport attributes into the code - they are implicit from the P/Invoke
     let attrs =
