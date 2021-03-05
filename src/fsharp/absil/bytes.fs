@@ -5,6 +5,7 @@ namespace Internal.Utilities
 
 open System
 open System.IO
+open System.Buffers
 open System.IO.MemoryMappedFiles
 open System.Runtime.InteropServices
 open FSharp.NativeInterop
@@ -432,10 +433,16 @@ type internal ByteBuffer =
         let oldBufSize = buf.bbArray.Length 
         if newSize > oldBufSize then 
             let old = buf.bbArray 
-            buf.bbArray <- Bytes.zeroCreate (max newSize (oldBufSize * 2))
+            buf.bbArray <- ArrayPool.Shared.Rent(max newSize (oldBufSize * 2))
             Bytes.blit old 0 buf.bbArray 0 buf.bbCurrent
+            ArrayPool.Shared.Return(old)
 
-    member buf.Close () = Bytes.sub buf.bbArray 0 buf.bbCurrent
+    member buf.Close () = 
+        let result = Bytes.sub buf.bbArray 0 buf.bbCurrent
+        ArrayPool.Shared.Return(buf.bbArray)
+        buf.bbArray <- [||]
+        buf.bbCurrent <- 0
+        result
 
     member buf.EmitIntAsByte (i:int) = 
         let newSize = buf.bbCurrent + 1 
@@ -499,7 +506,7 @@ type internal ByteBuffer =
     member buf.Position = buf.bbCurrent
 
     static member Create sz = 
-        { bbArray=Bytes.zeroCreate sz 
+        { bbArray = ArrayPool.Shared.Rent(sz) 
           bbCurrent = 0 }
 
 [<Sealed>]
