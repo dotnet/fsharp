@@ -885,7 +885,7 @@ let TypeCheckOneInputAux (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, 
     use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
 
     RequireCompilationThread ctok
-    TypeCheckOneInputEventually (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp, false) 
+    TypeCheckOneInputEventually (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp, skipImplIfSigExists) 
         |> Eventually.force CancellationToken.None
         |> function 
            | ValueOrCancelled.Value v -> v
