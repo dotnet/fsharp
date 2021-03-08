@@ -4933,7 +4933,7 @@ let InferArityOfExpr g allowTypeDirectedDetupling ty partialArgAttribsL retAttri
     assert (List.length vsl = List.length dtys)
         
     let curriedArgInfos =
-        (List.zip vsl dtys) |> List.mapi (fun i (vs, ty) -> 
+        (vsl, dtys) ||> List.mapi2 (fun i vs ty ->
             let partialAttribs = if i < partialArgAttribsL.Length then partialArgAttribsL.[i] else []
             let tys = 
                 match allowTypeDirectedDetupling with
