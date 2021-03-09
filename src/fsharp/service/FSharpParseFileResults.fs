@@ -127,7 +127,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
             override _.VisitBinding(_path, defaultTraverse, binding) =
                 match binding with
-                | SynBinding(_, _, _, _, _, _, _, _, _, expr, _range, _) as b when rangeContainsPos b.RangeOfBindingWithRhs pos ->
+                | SynBinding(_, _, _, _, _, _, SynValData (None, _, _), _, _, expr, _range, _) as b when rangeContainsPos b.RangeOfBindingWithRhs pos ->
                     match tryGetIdentRangeFromBinding b with
                     | Some range -> walkBinding expr range
                     | None -> None
