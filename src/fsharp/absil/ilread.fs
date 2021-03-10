@@ -3405,6 +3405,7 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
       codedBigness 2 TableNames.Assembly
     
     let mrpBigness = 
+      codedBigness 3 TableNames.TypeDef ||
       codedBigness 3 TableNames.TypeRef ||
       codedBigness 3 TableNames.ModuleRef ||
       codedBigness 3 TableNames.Method ||
