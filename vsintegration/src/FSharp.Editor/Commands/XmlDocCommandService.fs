@@ -14,6 +14,7 @@ open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
+open Microsoft.VisualStudio.Utilities
 open FSharp.Compiler.EditorServices
 
 type internal XmlDocCommandFilter 
@@ -67,7 +68,8 @@ type internal XmlDocCommandFilter
                                 let curLineNum = wpfTextView.Caret.Position.BufferPosition.GetContainingLine().LineNumber + 1
                                 let! document = document.Value
                                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, CancellationToken.None, userOpName)
-                                let! sourceText = document.GetTextAsync(CancellationToken.None)
+                                let! cancellationToken = Async.CancellationToken |> liftAsync
+                                let! sourceText = document.GetTextAsync(cancellationToken)
                                 let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
                                 let xmlDocables = XmlDocParser.GetXmlDocables (sourceText.ToFSharpSourceText(), parsedInput) 
                                 let xmlDocablesBelowThisLine = 
@@ -111,13 +113,9 @@ type internal XmlDocCommandFilter
             else
                 VSConstants.E_FAIL
 
-// Disabled:
-// - https://github.com/Microsoft/visualfsharp/issues/6076
-// - The feature does not work; it should probably use an exposed Roslyn API of some sort
-// - Despite not working, it is a source of UI delays
-//[<Export(typeof<IWpfTextViewCreationListener>)>]
-//[<ContentType(FSharpConstants.FSharpContentTypeName)>]
-//[<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
+[<Export(typeof<IWpfTextViewCreationListener>)>]
+[<ContentType(FSharpConstants.FSharpContentTypeName)>]
+[<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
 type internal XmlDocCommandFilterProvider 
     [<ImportingConstructor>] 
     (checkerProvider: FSharpCheckerProvider,
