@@ -683,7 +683,7 @@ async {
         Assert.False(parseFileResults.IsPosContainedInApplication (mkPos 2 5), "Pos should not be in application")
 
     [<Test>]
-    let ``TryRangeOfFunctionOrMethodBeingApplied - inside CE return - no``() =
+    let ``IsPosContainedInApplication - inside CE return - no``() =
         let source = """
 async {
     return sqrt
@@ -693,7 +693,7 @@ async {
         Assert.False(parseFileResults.IsPosContainedInApplication (mkPos 2 5), "Pos should not be in application")
 
     [<Test>]
-    let ``TryRangeOfFunctionOrMethodBeingApplied - inside CE - yes``() =
+    let ``IsPosContainedInApplication - inside CE - yes``() =
         let source = """
 let myAdd x y = x + y
 async {
@@ -702,6 +702,15 @@ async {
     """
         let parseFileResults, _ = getParseAndCheckResults source
         Assert.False(parseFileResults.IsPosContainedInApplication (mkPos 3 18), "Pos should not be in application")
+
+    [<Test>]
+    let ``IsPosContainedInApplication - inside type application``() =
+        let source = """
+let f<'x> x = ()
+f<int>
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.True(parseFileResults.IsPosContainedInApplication (mkPos 3 6), "A type application is an application, expected True.")
 
     [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - no application``() =
@@ -981,6 +990,21 @@ C.Yeet(1, 2, (fun x -> sqrt))
             range
             |> tups
             |> shouldEqual ((3, 23), (3, 27))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - generic-typed app``() =
+        let source = """
+let f<'x> x = ()
+f<int>
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 6)
+        match res with
+        | None -> Assert.Fail("Expected 'f' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((3, 0), (3, 1))
 
 module PipelinesAndArgs =
     [<Test>]

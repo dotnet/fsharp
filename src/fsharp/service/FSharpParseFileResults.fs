@@ -158,6 +158,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(_, traverseSynExpr, defaultTraverse, expr) =
                     match expr with
+                    | SynExpr.TypeApp (_, _, _, _, _, _, range) when rangeContainsPos range pos ->
+                        Some range
                     | SynExpr.App(_, _, _, SynExpr.CompExpr (_, _, expr, _), range) when rangeContainsPos range pos ->
                         traverseSynExpr expr
                     | SynExpr.App (_, _, _, _, range) when rangeContainsPos range pos ->
@@ -174,6 +176,9 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             | SynExpr.LongIdent (_, _, _, range) -> Some range
 
             | SynExpr.Paren (expr, _, _, range) when rangeContainsPos range pos ->
+                getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+
+            | SynExpr.TypeApp (expr, _, _, _, _, _, _) ->
                 getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
             | SynExpr.App (_, _, funcExpr, argExpr, _) ->
@@ -269,6 +274,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
             member _.VisitExpr(_, traverseSynExpr, defaultTraverse, expr) =
                 match expr with
+                | SynExpr.TypeApp (expr, _, _, _, _, _, range) when rangeContainsPos range pos ->
+                    getIdentRangeForFuncExprInApp traverseSynExpr expr pos
                 | SynExpr.App (_, _, _funcExpr, _, range) as app when rangeContainsPos range pos ->
                     getIdentRangeForFuncExprInApp traverseSynExpr app pos
                 | _ -> defaultTraverse expr
