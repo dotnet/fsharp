@@ -1452,13 +1452,15 @@ module private TastDefinitionPrinting =
 
         let nameL = eventTag |> wordL
         let typL = layoutType denv (e.GetDelegateType(amap, m))
-        staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL
-       
+        let overallL = staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL
+        layoutXmlDoc denv e.XmlDoc overallL
+
     let private layoutPropInfo denv amap m (p: PropInfo) =
         match p.ArbitraryValRef with
         | Some v ->
             PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv v.Deref
         | None ->
+
             let modifierAndMember =
                 if p.IsStatic then
                     WordL.keywordStatic ^^ WordL.keywordMember
@@ -1473,8 +1475,8 @@ module private TastDefinitionPrinting =
             let nameL = propTag |> wordL
             
             let typL = layoutType denv (p.GetPropertyType(amap, m)) // shouldn't happen
-
-            modifierAndMember ^^ nameL ^^ WordL.colon ^^ typL
+            let overallL = modifierAndMember ^^ nameL ^^ WordL.colon ^^ typL
+            layoutXmlDoc denv p.XmlDoc overallL
 
     let layoutTycon (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified typewordL (tycon: Tycon) =
         let g = denv.g
@@ -1799,7 +1801,8 @@ module private TastDefinitionPrinting =
                 | [] -> emptyL
                 | r -> WordL.keywordOf --- layoutUnionCaseFields denv false r
 
-        exnL ^^ reprL
+        let overallL = exnL ^^ reprL
+        layoutXmlDoc denv exnc.XmlDoc overallL
 
     // Layout: module spec 
 
