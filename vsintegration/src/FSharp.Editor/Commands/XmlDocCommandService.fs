@@ -13,7 +13,7 @@ open Microsoft.VisualStudio.OLE.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.TextManager.Interop
-open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
+open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Utilities
 open FSharp.Compiler.EditorServices
 
@@ -23,7 +23,7 @@ type internal XmlDocCommandFilter
         filePath: string, 
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager,
-        workspace: VisualStudioWorkspaceImpl
+        workspace: VisualStudioWorkspace
      ) =
 
     static let userOpName = "XmlDocCommand"
@@ -120,7 +120,7 @@ type internal XmlDocCommandFilterProvider
     [<ImportingConstructor>] 
     (checkerProvider: FSharpCheckerProvider,
      projectInfoManager: FSharpProjectOptionsManager,
-     workspace: VisualStudioWorkspaceImpl,
+     workspace: VisualStudioWorkspace,
      textDocumentFactoryService: ITextDocumentFactoryService,
      editorFactory: IVsEditorAdaptersFactoryService) =
     interface IWpfTextViewCreationListener with
