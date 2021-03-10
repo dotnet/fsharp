@@ -6,7 +6,6 @@
 *.fsx    text diff=fsharp
 *.cs     text diff=csharp
 *.csx    text diff=csharp
-*.cshtml text diff=html
 *.sln    text eol=crlf merge=union
 *.csproj text merge=union
 *.vbproj text merge=union
