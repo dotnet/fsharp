@@ -27,7 +27,7 @@ open FSharp.Compiler.TypedTreeOps
 
 open FSharp.Core.Printf
 
-let debug = true
+let debug = false
 [<AutoOpen>]
 module internal PrintUtilities = 
     let bracketIfL x lyt = if x then bracketL lyt else lyt
