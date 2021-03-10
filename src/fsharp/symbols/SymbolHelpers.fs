@@ -680,17 +680,17 @@ module internal SymbolHelpers =
               | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref1, n1))), Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref2, n2))) -> 
                   (tyconRefEq g tcref1 tcref2) && (n1 = n2) // there is no direct function as in the previous case
               | Item.Property(_, pi1s), Item.Property(_, pi2s) -> 
-                  List.zip pi1s pi2s |> List.forall(fun (pi1, pi2) -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
+                  (pi1s, pi2s) ||> List.forall2 (fun pi1 pi2 -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
               | Item.Event evt1, Item.Event evt2 -> 
                   EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2
               | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) ->
                  anonInfoEquiv anon1 anon2 && i1 = i2
               | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) -> 
-                  List.zip meths1 meths2 
-                  |> List.forall (fun (minfo1, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
+                  (meths1, meths2)
+                  ||> List.forall2 (fun minfo1 minfo2 -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
               | Item.UnqualifiedType tcRefs1, Item.UnqualifiedType tcRefs2 ->
-                  List.zip tcRefs1 tcRefs2
-                  |> List.forall (fun (tcRef1, tcRef2) -> tyconRefEq g tcRef1 tcRef2)
+                  (tcRefs1, tcRefs2)
+                  ||> List.forall2 (fun tcRef1 tcRef2 -> tyconRefEq g tcRef1 tcRef2)
               | Item.Types(_, [TType.TType_app(tcRef1, _)]), Item.UnqualifiedType([tcRef2]) -> tyconRefEq g tcRef1 tcRef2
               | Item.UnqualifiedType([tcRef1]), Item.Types(_, [TType.TType_app(tcRef2, _)]) -> tyconRefEq g tcRef1 tcRef2
               | _ -> false)
