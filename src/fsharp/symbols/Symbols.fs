@@ -2361,10 +2361,12 @@ type FSharpType(cenv, ty:TType) =
     member _.FormatLayout(context: FSharpDisplayContext) =
        protect <| fun () -> 
             NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
+            |> LayoutRender.toArray
 
     member _.FormatLayoutWithConstraints(context: FSharpDisplayContext) =
         protect <| fun () -> 
             NicePrint.prettyLayoutOfType (context.Contents cenv.g) ty
+            |> LayoutRender.toArray
 
     override _.ToString() = 
        protect <| fun () -> 
