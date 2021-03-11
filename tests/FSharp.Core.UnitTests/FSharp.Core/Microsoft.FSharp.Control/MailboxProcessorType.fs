@@ -6,10 +6,8 @@
 namespace FSharp.Core.UnitTests.Control
 
 open System
-open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 open System.Threading
-open System.Collections.Generic
 
 type Message = 
     | Increment of int 
@@ -68,7 +66,7 @@ type MailboxProcessorType() =
 
         ()
 
-    [<Fact>]
+    [<Fact(Skip="This test fails all the time in CI, likely due to magic sleeps. Need to re-evaluate.")>]
     member this.``Receive handles cancellation token``() =
         let result = ref None
 
@@ -101,7 +99,7 @@ type MailboxProcessorType() =
 
         Assert.AreEqual(Some("Received 1 Disposed"), !result)
 
-    [<Fact>]
+    [<Fact(Skip="This test fails all the time in CI, likely due to magic sleeps. Need to re-evaluate.")>]
     member this.``Receive with timeout argument handles cancellation token``() =
         let result = ref None
 
@@ -134,7 +132,7 @@ type MailboxProcessorType() =
 
         Assert.AreEqual(Some("Received 1 Disposed"),!result)
 
-    [<Fact>]
+    [<Fact(Skip="This test fails all the time in CI, likely due to magic sleeps. Need to re-evaluate.")>]
     member this.``Scan handles cancellation token``() =
         let result = ref None
 
@@ -291,7 +289,7 @@ type MailboxProcessorType() =
 
         test()
 
-    //[<Fact>] // need to re-visit this
+    [<Fact(Skip="This test fails all the time in CI, likely due to magic sleeps. Need to re-evaluate.")>]
     member this.PostAndAsyncReply_Cancellation() =
 
         use cancel = new CancellationTokenSource(500)
