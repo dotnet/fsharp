@@ -6,8 +6,11 @@ open System
 open System.Composition
 open System.Threading
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
+open FSharp.Compiler.Syntax
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
@@ -42,11 +45,11 @@ type internal FSharpAddExplicitTypeToParameterRefactoring
             let isValidParameterWithoutTypeAnnotation (funcOrValue: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
                 let isLambdaIfFunction =
                     funcOrValue.IsFunction &&
-                    parseFileResults.IsBindingALambdaAtPosition symbolUse.RangeAlternate.Start
+                    parseFileResults.IsBindingALambdaAtPosition symbolUse.Range.Start
 
                 (funcOrValue.IsValue || isLambdaIfFunction) &&
-                parseFileResults.IsPositionContainedInACurriedParameter symbolUse.RangeAlternate.Start &&
-                not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.RangeAlternate.Start) &&
+                parseFileResults.IsPositionContainedInACurriedParameter symbolUse.Range.Start &&
+                not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.Range.Start) &&
                 not funcOrValue.IsMember &&
                 not funcOrValue.IsMemberThisValue &&
                 not funcOrValue.IsConstructorThisValue &&
@@ -57,7 +60,7 @@ type internal FSharpAddExplicitTypeToParameterRefactoring
                 let typeString = v.FullType.FormatWithConstraints symbolUse.DisplayContext
                 let title = SR.AddTypeAnnotation()
 
-                let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+                let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
 
                 let alreadyWrappedInParens =
                     let rec leftLoop ch pos =
