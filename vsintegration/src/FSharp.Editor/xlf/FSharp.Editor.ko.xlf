@@ -22,6 +22,11 @@
         <target state="translated">익명 레코드로 변환</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToNotEqualsEqualityExpression">
+        <source>Use '&lt;&gt;' for inequality check</source>
+        <target state="new">Use '&lt;&gt;' for inequality check</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
         <source>Use '=' for equality check</source>
         <target state="translated">같음 검사에 '=' 사용</target>

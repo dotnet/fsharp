@@ -100,6 +100,7 @@
     <Compile Include="CodeFix\MakeDeclarationMutable.fs" />
     <Compile Include="CodeFix\ChangeToUpcast.fs" />
     <Compile Include="CodeFix\AddMissingEqualsToTypeDefinition.fs" />
+    <Compile Include="CodeFix\ConvertToNotEqualsEqualityExpression.fs" />
     <Compile Include="CodeFix\ConvertToSingleEqualsEqualityExpression.fs" />
     <Compile Include="CodeFix\ChangeRefCellDerefToNotExpression.fs" />
     <Compile Include="CodeFix\WrapExpressionInParentheses.fs" />

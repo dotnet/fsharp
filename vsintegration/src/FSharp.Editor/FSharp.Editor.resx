@@ -270,4 +270,7 @@
   <data name="MakeOuterBindingRecursive" xml:space="preserve">
     <value>Make '{0}' recursive</value>
   </data>
+  <data name="ConvertToNotEqualsEqualityExpression" xml:space="preserve">
+    <value>Use '&lt;&gt;' for inequality check</value>
+  </data>
 </root>
