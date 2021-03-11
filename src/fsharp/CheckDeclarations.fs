@@ -454,7 +454,7 @@ module TcRecdUnionAndEnumDeclarations =
 
     let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) = 
         let seen = Dictionary()
-        for (sf, f) in List.zip synFields tastFields do
+        (synFields, tastFields) ||> List.iter2 (fun sf f ->
             match seen.TryGetValue f.Name with
             | true, synField ->
                 match sf, synField with
@@ -465,7 +465,7 @@ module TcRecdUnionAndEnumDeclarations =
                     error(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(id.idText), id.idRange))
                 | _ -> assert false
             | _ ->
-                seen.Add(f.Name, sf)
+                seen.Add(f.Name, sf))
                 
     let TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv (SynUnionCase(Attributes synAttrs, id, args, xmldoc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method

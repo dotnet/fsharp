@@ -426,7 +426,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompil
 let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, sourceFiles, errorLogger: ErrorLogger, exiter: Exiter, createErrorLogger: (Exiter -> CapturingErrorLogger), retryLocked) =
     try
         let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
-        let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofSeq
+        let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofList
 
         if tcConfig.concurrentBuild then
             let mutable exitCode = 0

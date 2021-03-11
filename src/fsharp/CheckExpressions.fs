@@ -4023,10 +4023,10 @@ and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv 
                     if SynInfo.HasOptionalArgs valSynInfo then 
                         let curriedArgTys, returnTy = GetTopTauTypeInFSharpForm cenv.g argsData ty' m
                         let curriedArgTys = 
-                            (List.zip (List.mapSquared fst curriedArgTys) valSynInfo.CurriedArgInfos) 
-                            |> List.map (fun (argTys, argInfos) ->
-                                 (List.zip argTys argInfos)
-                                 |> List.map (fun (argty, argInfo) ->
+                            ((List.mapSquared fst curriedArgTys), valSynInfo.CurriedArgInfos)
+                            ||> List.map2 (fun argTys argInfos ->
+                                 (argTys, argInfos)
+                                 ||> List.map2 (fun argty argInfo ->
                                      if SynInfo.IsOptionalArg argInfo then mkOptionTy cenv.g argty
                                      else argty))
                         mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) curriedArgTys) returnTy
