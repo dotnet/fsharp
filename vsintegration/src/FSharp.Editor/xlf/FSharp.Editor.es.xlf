@@ -258,8 +258,8 @@
         <note />
       </trans-unit>
       <trans-unit id="UseValueInsteadOfDeref">
-        <source>Use '.Value' to dereference</source>
-        <target state="new">Use '.Value' to dereference</target>
+        <source>Use '.Value' to dereference expression</source>
+        <target state="new">Use '.Value' to dereference expression</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">

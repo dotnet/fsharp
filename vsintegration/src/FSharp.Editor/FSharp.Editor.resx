@@ -274,6 +274,6 @@
     <value>Use '&lt;&gt;' for inequality check</value>
   </data>
   <data name="UseValueInsteadOfDeref" xml:space="preserve">
-    <value>Use '.Value' to dereference</value>
+    <value>Use '.Value' to dereference expression</value>
   </data>
 </root>

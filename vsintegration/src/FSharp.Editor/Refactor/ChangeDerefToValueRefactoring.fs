@@ -41,7 +41,7 @@ type internal FSharpAddExplicitTypeToParameterRefactoring
             let combinedRange = Range.unionRanges derefRange exprRange
             let! combinedSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, combinedRange)
             let replacementString =
-                // Trim off the `!
+                // Trim off the `!`
                 sourceText.GetSubText(combinedSpan).ToString().[1..] + ".Value"
 
             let title = SR.UseValueInsteadOfDeref()
