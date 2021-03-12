@@ -1195,13 +1195,6 @@ type IncrementalBuilder(tcGlobals,
         match result with
         | Some (boundModel, timestamp) -> Some (PartialCheckResults (boundModel, timestamp))
         | _ -> None
-        
-    
-    member builder.AreCheckResultsBeforeFileInProjectReady filename = 
-        let slotOfFile = builder.GetSlotOfFileName filename
-        match tryGetBeforeSlot currentState slotOfFile with
-        | Some _ -> true
-        | _ -> false
 
     member builder.TryGetCheckResultsBeforeFileInProject (filename) =
         let cache = TimeStampCache defaultTimeStamp

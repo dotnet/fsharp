@@ -170,13 +170,6 @@ type internal IncrementalBuilder =
       /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
       member GetCheckResultsBeforeFileInProjectEvenIfStale: filename:string -> PartialCheckResults option
 
-      /// Get the preceding typecheck state of a slot, but only if it is up-to-date w.r.t.
-      /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
-      /// This is a relatively quick operation.
-      ///
-      /// This is safe for use from non-compiler threads
-      member AreCheckResultsBeforeFileInProjectReady: filename:string -> bool
-
       /// Get the preceding typecheck state of a slot, WITH checking if it is up-to-date w.r.t. However, files will not be parsed or checked.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available or if it is not up-to-date.
       ///

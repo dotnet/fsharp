@@ -444,6 +444,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         }
 
     member _.GetCachedCheckFileResult(builder: IncrementalBuilder, filename, sourceText: ISourceText, options) =
+        // This is to check if the check results are still valid by their timestamp.
+        // A return of None means the file needs to be re-evaluated as a dependent has changed; therefore, do not get the cached result.
         match builder.TryGetCheckResultsForFileInProject filename with
         | None -> None
         | _ ->
@@ -452,14 +454,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         let cachedResults = parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.TryGet(ltok, (filename, sourceText.GetHashCode(), options)))
 
         match cachedResults with 
-        | Some (parseResults, checkResults,_,priorTimeStamp) 
-                when 
-                (match builder.TryGetCheckResultsBeforeFileInProject filename with 
-                | None -> false
-                | Some(tcPrior) -> 
-                    tcPrior.TimeStamp = priorTimeStamp &&
-                    builder.AreCheckResultsBeforeFileInProjectReady(filename)) -> 
-            Some (parseResults,checkResults)
+        | Some (parseResults, checkResults, _, _) -> Some (parseResults, checkResults)
         | _ -> None
 
     /// 1. Repeatedly try to get cached file check results or get file "lock". 
