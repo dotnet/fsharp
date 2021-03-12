@@ -901,7 +901,7 @@ type FSharpMemberOrFunctionOrValue =
     /// Indicated if this is a value compiled to a method
     member IsValCompiledAsMethod: bool
 
-    /// Indicates if this is a value
+    /// Indicates if this is a function
     member IsFunction: bool
     
     /// Indicated if this is a value
@@ -1147,4 +1147,3 @@ type FSharpOpenDeclaration =
       
     /// If it's `namespace Xxx.Yyy` declaration.
     member IsOwnNamespace: bool
-
