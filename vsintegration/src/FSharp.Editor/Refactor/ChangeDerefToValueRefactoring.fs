@@ -16,8 +16,8 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
 
-[<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "AddExplicitTypeToParameter"); Shared>]
-type internal FSharpAddExplicitTypeToParameterRefactoring
+[<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "ChangeDerefToValue"); Shared>]
+type internal FSharpChangeDerefToValueRefactoring
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider, 
@@ -25,7 +25,7 @@ type internal FSharpAddExplicitTypeToParameterRefactoring
     ) =
     inherit CodeRefactoringProvider()
 
-    static let userOpName = "AddExplicitTypeToParameter"
+    static let userOpName = "ChangeDerefToValue"
 
     override _.ComputeRefactoringsAsync context =
         asyncMaybe {
