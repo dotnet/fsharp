@@ -73,7 +73,7 @@ type internal FSharpAddExplicitTypeToParameterRefactoring
                         if not (Char.IsWhiteSpace(ch)) then
                             ch = ')'
                         else
-                            leftLoop sourceText.[pos + 1] (pos + 1)
+                            rightLoop sourceText.[pos + 1] (pos + 1)
 
                     let hasLeftParen = leftLoop sourceText.[symbolSpan.Start - 1] (symbolSpan.Start - 1)
                     let hasRightParen = rightLoop sourceText.[symbolSpan.End] symbolSpan.End
