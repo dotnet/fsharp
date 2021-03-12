@@ -21,7 +21,6 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 type internal FSharpCheckerProvider 
     [<ImportingConstructor>]
     (
-        _analyzerService: IFSharpDiagnosticAnalyzerService,
         [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace,
         settings: EditorOptions
     ) =
@@ -53,20 +52,16 @@ type internal FSharpCheckerProvider
 
     let checker = 
         lazy
-            let checker = 
-                FSharpChecker.Create(
-                    projectCacheSize = settings.LanguageServicePerformance.ProjectCheckCacheSize, 
-                    keepAllBackgroundResolutions = false,
-                    // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
-                    (* , MaxMemory = 2300 *)
-                    legacyReferenceResolver=LegacyMSBuildReferenceResolver.getResolver(),
-                    tryGetMetadataSnapshot = tryGetMetadataSnapshot,
-                    keepAllBackgroundSymbolUses = false,
-                    enableBackgroundItemKeyStoreAndSemanticClassification = true,
-                    enablePartialTypeChecking = true)
-
-
-            checker
+            FSharpChecker.Create(
+                projectCacheSize = settings.LanguageServicePerformance.ProjectCheckCacheSize, 
+                keepAllBackgroundResolutions = false,
+                // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
+                (* , MaxMemory = 2300 *)
+                legacyReferenceResolver=LegacyMSBuildReferenceResolver.getResolver(),
+                tryGetMetadataSnapshot = tryGetMetadataSnapshot,
+                keepAllBackgroundSymbolUses = false,
+                enableBackgroundItemKeyStoreAndSemanticClassification = true,
+                enablePartialTypeChecking = true)
 
     member this.Checker = checker.Value
 
