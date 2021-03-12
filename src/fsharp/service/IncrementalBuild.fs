@@ -1079,6 +1079,14 @@ type IncrementalBuilder(tcGlobals,
                 return { state with finalizedBoundModel = Some result }, result
         }
 
+    let tryGetSlot (state: IncrementalBuilderState) slot =
+        match state.boundModels.[slot] with
+        | Some boundModel ->
+            (boundModel, state.stampedFileNames.[slot])
+            |> Some
+        | _ ->
+            None
+
     let tryGetBeforeSlot (state: IncrementalBuilderState) slot =
         match slot with
         | 0 (* first file *) ->
@@ -1089,12 +1097,7 @@ type IncrementalBuilder(tcGlobals,
             | _ ->
                 None
         | _ ->
-            match state.boundModels.[slot - 1] with
-            | Some boundModel ->
-                (boundModel, state.stampedFileNames.[slot - 1])
-                |> Some
-            | _ ->
-                None
+            tryGetSlot state (slot - 1)
                 
     let evalUpToTargetSlot state (cache: TimeStampCache) ctok targetSlot =
         cancellable {
@@ -1208,6 +1211,17 @@ type IncrementalBuilder(tcGlobals,
 
         let slotOfFile = builder.GetSlotOfFileName filename
         match tryGetBeforeSlot state slotOfFile with
+        | Some(boundModel, timestamp) -> PartialCheckResults(boundModel, timestamp) |> Some
+        | _ -> None
+
+    member builder.TryGetCheckResultsForFileInProject (filename) =
+        let cache = TimeStampCache defaultTimeStamp
+        let state = currentState
+        let state = computeStampedFileNames state cache
+        let state = computeStampedReferencedAssemblies state cache
+
+        let slotOfFile = builder.GetSlotOfFileName filename
+        match tryGetSlot state slotOfFile with
         | Some(boundModel, timestamp) -> PartialCheckResults(boundModel, timestamp) |> Some
         | _ -> None
 

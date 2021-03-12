@@ -444,13 +444,17 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         }
 
     member _.GetCachedCheckFileResult(builder: IncrementalBuilder, filename, sourceText: ISourceText, options) =
+        match builder.TryGetCheckResultsForFileInProject filename with
+        | None -> None
+        | _ ->
+
         // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
         let cachedResults = parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.TryGet(ltok, (filename, sourceText.GetHashCode(), options)))
 
         match cachedResults with 
         | Some (parseResults, checkResults,_,priorTimeStamp) 
                 when 
-                (match builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename with 
+                (match builder.TryGetCheckResultsBeforeFileInProject filename with 
                 | None -> false
                 | Some(tcPrior) -> 
                     tcPrior.TimeStamp = priorTimeStamp &&

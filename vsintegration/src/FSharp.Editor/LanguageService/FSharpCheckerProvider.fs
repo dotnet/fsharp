@@ -21,7 +21,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 type internal FSharpCheckerProvider 
     [<ImportingConstructor>]
     (
-        analyzerService: IFSharpDiagnosticAnalyzerService,
+        _analyzerService: IFSharpDiagnosticAnalyzerService,
         [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace,
         settings: EditorOptions
     ) =
@@ -65,24 +65,7 @@ type internal FSharpCheckerProvider
                     enableBackgroundItemKeyStoreAndSemanticClassification = true,
                     enablePartialTypeChecking = true)
 
-            // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
-            // When the F# background builder refreshes the background semantic build context for a file,
-            // we request Roslyn to reanalyze that individual file.
-            checker.BeforeBackgroundFileCheck.Add(fun (fileName, _extraProjectInfo) ->  
-                async {
-                    try 
-                        let solution = workspace.CurrentSolution
-                        let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
-                        if not documentIds.IsEmpty then 
-                            let documentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
-                            for documentId in documentIdsFiltered do
-                                Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
-                            if documentIdsFiltered.Length > 0 then 
-                                analyzerService.Reanalyze(workspace,documentIds=documentIdsFiltered)
-                    with ex -> 
-                        Assert.Exception(ex)
-                } |> Async.StartImmediate
-            )
+
             checker
 
     member this.Checker = checker.Value
