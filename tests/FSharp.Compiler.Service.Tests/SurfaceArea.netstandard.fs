@@ -1500,6 +1500,8 @@ FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FShar
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range]] GetAllArgumentsForFunctionApplicationAtPostion(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.Ident,System.Int32]] TryIdentOfPipelineContainingPosAndNumArgsApplied(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[FSharp.Compiler.Text.Range,FSharp.Compiler.Text.Range,FSharp.Compiler.Text.Range]] TryRangeOfParenEnclosingOpEqualsGreaterUsage(FSharp.Compiler.Text.Position)
+FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsBindingALambdaAtPosition(FSharp.Compiler.Text.Position)
+FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsTypeAnnotationGivenAtPosition(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String FileName
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String get_FileName()
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String[] DependencyFiles
@@ -4165,6 +4167,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsTypeFunction
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsUnresolved
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsValCompiledAsMethod
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsValue
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsFunction
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_EventIsStandard()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_HasGetterMethod()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_HasSetterMethod()
@@ -4194,6 +4197,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsTypeFunctio
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsUnresolved()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsValCompiledAsMethod()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsValue()
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsFunction()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: FSharp.Compiler.Symbols.FSharpAccessibility Accessibility
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: FSharp.Compiler.Symbols.FSharpAccessibility get_Accessibility()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: FSharp.Compiler.Symbols.FSharpEntity ApparentEnclosingEntity
@@ -4405,6 +4409,7 @@ FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType Prettify(
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType StripAbbreviations()
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType get_AbbreviatedType()
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Text.TaggedText[] FormatLayout(FSharp.Compiler.Symbols.FSharpDisplayContext)
+FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Text.TaggedText[] FormatLayoutWithConstraints(FSharp.Compiler.Symbols.FSharpDisplayContext)
 FSharp.Compiler.Symbols.FSharpType: Int32 GetHashCode()
 FSharp.Compiler.Symbols.FSharpType: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpType] BaseType
 FSharp.Compiler.Symbols.FSharpType: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpType] get_BaseType()
@@ -4416,6 +4421,7 @@ FSharp.Compiler.Symbols.FSharpType: System.Collections.Generic.IList`1[FSharp.Co
 FSharp.Compiler.Symbols.FSharpType: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpType] get_GenericArguments()
 FSharp.Compiler.Symbols.FSharpType: System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpParameter]] Prettify(System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpParameter]])
 FSharp.Compiler.Symbols.FSharpType: System.String Format(FSharp.Compiler.Symbols.FSharpDisplayContext)
+FSharp.Compiler.Symbols.FSharpType: System.String FormatWithConstraints(FSharp.Compiler.Symbols.FSharpDisplayContext)
 FSharp.Compiler.Symbols.FSharpType: System.String ToString()
 FSharp.Compiler.Symbols.FSharpType: System.Tuple`2[System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpParameter]],FSharp.Compiler.Symbols.FSharpParameter] Prettify(System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpParameter]], FSharp.Compiler.Symbols.FSharpParameter)
 FSharp.Compiler.Symbols.FSharpUnionCase
