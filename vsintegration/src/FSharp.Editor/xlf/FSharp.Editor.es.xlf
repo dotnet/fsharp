@@ -17,6 +17,11 @@
         <target state="translated">Agregar "nueva" palabra clave</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddTypeAnnotation">
+        <source>Add type annotation</source>
+        <target state="new">Add type annotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
         <target state="translated">Convertir en registro anónimo</target>
