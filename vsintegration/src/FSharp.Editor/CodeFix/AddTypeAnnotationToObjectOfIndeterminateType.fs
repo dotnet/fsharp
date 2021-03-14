@@ -47,23 +47,22 @@ type internal FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
-            let lineText = textLine.ToString()
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! _, _, checkFileResults = checker.ParseAndCheckDocument (document, projectOptions, sourceText=sourceText, userOpName=userOpName)
             let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
-            let decl = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.StartColumn, lineText, lexerSymbol.FullIsland, false)
+            let decl = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
 
             match decl with
-            // Only do this for symbols in the same file. That covers almost all cases anyways.
-            // We really shouldn't encourage making values mutable outside of local scopes anyways.
             | FindDeclResult.DeclFound declRange when declRange.FileName = document.FilePath ->
-                let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.StartColumn, lineText, lexerSymbol.FullIsland)
-                let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, declRange)
+                let! declSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, declRange)
+                let declTextLine = sourceText.Lines.GetLineFromPosition declSpan.Start
+                let! declLexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
+                let! symbolUse = checkFileResults.GetSymbolUseAtLocation(declRange.StartLine, declRange.EndColumn, declTextLine.ToString(), declLexerSymbol.FullIsland)
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as mfv ->
                     let typeString = mfv.FullType.FormatWithConstraints symbolUse.DisplayContext
-                    if not mfv.FullType.IsGenericParameter then
 
+                    if not mfv.FullType.IsGenericParameter then
                         let alreadyWrappedInParens =
                             let rec leftLoop ch pos =
                                 if not (Char.IsWhiteSpace(ch)) then
@@ -77,16 +76,16 @@ type internal FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider
                                 else
                                     rightLoop sourceText.[pos + 1] (pos + 1)
 
-                            let hasLeftParen = leftLoop sourceText.[symbolSpan.Start - 1] (symbolSpan.Start - 1)
-                            let hasRightParen = rightLoop sourceText.[symbolSpan.End] symbolSpan.End
+                            let hasLeftParen = leftLoop sourceText.[declSpan.Start - 1] (declSpan.Start - 1)
+                            let hasRightParen = rightLoop sourceText.[declSpan.End] declSpan.End
                             hasLeftParen && hasRightParen
                             
                         let getChangedText (sourceText: SourceText) =
                             if alreadyWrappedInParens then
-                                sourceText.WithChanges(TextChange(TextSpan(symbolSpan.End, 0), ": " + typeString))
+                                sourceText.WithChanges(TextChange(TextSpan(declSpan.End, 0), ": " + typeString))
                             else
-                                sourceText.WithChanges(TextChange(TextSpan(symbolSpan.Start, 0), "("))
-                                            .WithChanges(TextChange(TextSpan(symbolSpan.End + 1, 0), ": " + typeString + ")"))
+                                sourceText.WithChanges(TextChange(TextSpan(declSpan.Start, 0), "("))
+                                            .WithChanges(TextChange(TextSpan(declSpan.End + 1, 0), ": " + typeString + ")"))
 
                         let title = SR.AddTypeAnnotation()
                         let codeAction =
