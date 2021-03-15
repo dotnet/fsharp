@@ -422,4 +422,21 @@ let x = 42
             SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r2) ])) ->
             assertRange (1, 0) (4, 20) r1
             assertRange (6, 0) (8, 10) r2
-        | _ -> failwith "Could not get valid AST"        
+        | _ -> failwith "Could not get valid AST"
+
+    [<Test>]
+    let ``GlobalNamespace should start at namespace keyword`` () =
+        let parseResults = 
+            getParseResults
+                """// foo
+// bar
+namespace  global
+
+type X = int
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.GlobalNamespace; range = r) ])) ->
+            assertRange (3, 0) (5, 12) r
+        | _ -> failwith "Could not get valid AST"
