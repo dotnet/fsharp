@@ -61,45 +61,44 @@ type internal FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider
                 | :? FSharpMemberOrFunctionOrValue as mfv ->
                     let typeString = mfv.FullType.FormatWithConstraints symbolUse.DisplayContext
 
-                    if not mfv.FullType.IsGenericParameter then
-                        let alreadyWrappedInParens =
-                            let rec leftLoop ch pos =
-                                if not (Char.IsWhiteSpace(ch)) then
-                                    ch = '('
-                                else
-                                    leftLoop sourceText.[pos - 1] (pos - 1)
-
-                            let rec rightLoop ch pos =
-                                if not (Char.IsWhiteSpace(ch)) then
-                                    ch = ')'
-                                else
-                                    rightLoop sourceText.[pos + 1] (pos + 1)
-
-                            let hasLeftParen = leftLoop sourceText.[declSpan.Start - 1] (declSpan.Start - 1)
-                            let hasRightParen = rightLoop sourceText.[declSpan.End] declSpan.End
-                            hasLeftParen && hasRightParen
-                            
-                        let getChangedText (sourceText: SourceText) =
-                            if alreadyWrappedInParens then
-                                sourceText.WithChanges(TextChange(TextSpan(declSpan.End, 0), ": " + typeString))
+                    let alreadyWrappedInParens =
+                        let rec leftLoop ch pos =
+                            if not (Char.IsWhiteSpace(ch)) then
+                                ch = '('
                             else
-                                sourceText.WithChanges(TextChange(TextSpan(declSpan.Start, 0), "("))
-                                            .WithChanges(TextChange(TextSpan(declSpan.End + 1, 0), ": " + typeString + ")"))
+                                leftLoop sourceText.[pos - 1] (pos - 1)
 
-                        let title = SR.AddTypeAnnotation()
-                        let codeAction =
-                            CodeAction.Create(
-                                title,
-                                (fun (cancellationToken: CancellationToken) ->
-                                    async {
-                                        let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                                        return context.Document.WithText(getChangedText sourceText)
-                                    } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-                                title)
+                        let rec rightLoop ch pos =
+                            if not (Char.IsWhiteSpace(ch)) then
+                                ch = ')'
+                            else
+                                rightLoop sourceText.[pos + 1] (pos + 1)
 
-                        context.RegisterCodeFix(codeAction, diagnostics)
+                        let hasLeftParen = leftLoop sourceText.[declSpan.Start - 1] (declSpan.Start - 1)
+                        let hasRightParen = rightLoop sourceText.[declSpan.End] declSpan.End
+                        hasLeftParen && hasRightParen
+                            
+                    let getChangedText (sourceText: SourceText) =
+                        if alreadyWrappedInParens then
+                            sourceText.WithChanges(TextChange(TextSpan(declSpan.End, 0), ": " + typeString))
+                        else
+                            sourceText.WithChanges(TextChange(TextSpan(declSpan.Start, 0), "("))
+                                        .WithChanges(TextChange(TextSpan(declSpan.End + 1, 0), ": " + typeString + ")"))
+
+                    let title = SR.AddTypeAnnotation()
+                    let codeAction =
+                        CodeAction.Create(
+                            title,
+                            (fun (cancellationToken: CancellationToken) ->
+                                async {
+                                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                                    return context.Document.WithText(getChangedText sourceText)
+                                } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                            title)
+
+                    context.RegisterCodeFix(codeAction, diagnostics)
                 |_ -> ()
             | _ -> ()
         }
         |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken) 
+        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
