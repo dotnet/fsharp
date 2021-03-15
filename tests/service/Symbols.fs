@@ -78,7 +78,7 @@ extern int private c()
         |> List.iter (fun (actual, expected) ->
             match actual with
             | SynModuleDecl.Let (_, [SynBinding (accessibility = access)], _) -> access |> should equal expected
-            | decl -> failwithf "unexpected decl: %O" decl)
+            | decl -> Assert.Fail (sprintf "unexpected decl: %O" decl))
 
         [ "a", (true, false, false, false)
           "b", (true, false, false, false)
@@ -89,7 +89,7 @@ extern int private c()
                 let access = mfv.Accessibility
                 (access.IsPublic, access.IsProtected, access.IsInternal, access.IsPrivate)
                 |> should equal expected
-            | _ -> failwithf "Couldn't get mfv: %s" name)
+            | _ -> Assert.Fail (sprintf "Couldn't get mfv: %s" name))
 
 
 module XmlDocSig =
@@ -194,7 +194,7 @@ type E = Ns1.Ns2.T
                 entity.AbbreviatedType.Format(symbolUse.DisplayContext)
                 |> should equal expectedPrintedType
 
-            | _ -> failwithf "Couldn't get entity: %s" symbolName)
+            | _ -> Assert.Fail (sprintf "Couldn't get entity: %s" symbolName))
 
     [<Test>]
     let ``FSharpType.Format can use prefix representations`` () =
@@ -212,7 +212,7 @@ let tester: int folks = Cons(1, Nil)
             | :? FSharpMemberOrFunctionOrValue as v ->
                     v.FullType.Format (symbolUse.DisplayContext.WithPrefixGenericParameters())
                     |> should equal prefixForm
-            | _ -> failwithf "Couldn't get member: %s" entity
+            | _ -> Assert.Fail (sprintf "Couldn't get member: %s" entity)
 
     [<Test>]
     let ``FSharpType.Format can use suffix representations`` () =
@@ -230,7 +230,7 @@ let tester: Folks<int> = Cons(1, Nil)
             | :? FSharpMemberOrFunctionOrValue as v ->
                     v.FullType.Format (symbolUse.DisplayContext.WithSuffixGenericParameters())
                     |> should equal suffixForm
-            | _ -> failwithf "Couldn't get member: %s" entity
+            | _ -> Assert.Fail (sprintf "Couldn't get member: %s" entity)
 
     [<Test>]
     let ``FSharpType.Format defaults to derived suffix representations`` () =
@@ -255,7 +255,7 @@ let tester2: int Group = []
                 | :? FSharpMemberOrFunctionOrValue as v ->
                         v.FullType.Format (symbolUse.DisplayContext)
                         |> should equal expectedTypeFormat
-                | _ -> failwithf "Couldn't get member: %s" entityName
+                | _ -> Assert.Fail (sprintf "Couldn't get member: %s" entityName)
             )
 
 module SyntaxExpressions =
@@ -280,7 +280,7 @@ module SyntaxExpressions =
             assertRange (2, 4) (3, 14) doRange
             assertRange (4, 4) (5, 18) doBangRange
         | _ ->
-            failwith "Could not find SynExpr.Do"
+            Assert.Fail "Could not find SynExpr.Do"
 
 module Strings =
     let getBindingExpressionValue (parseResults: ParsedInput) =
@@ -312,7 +312,7 @@ module Strings =
 
         match getBindingConstValue parseResults with
         | Some (SynConst.String (_,  kind, _)) -> kind |> should equal SynStringKind.Regular
-        | _ -> failwithf "Couldn't find const"
+        | _ -> Assert.Fail "Couldn't find const"
 
     [<Test>]
     let ``SynConst.String with SynStringKind.Verbatim`` () =
@@ -324,7 +324,7 @@ module Strings =
 
         match getBindingConstValue parseResults with
         | Some (SynConst.String (_,  kind, _)) -> kind |> should equal SynStringKind.Verbatim
-        | _ -> failwithf "Couldn't find const"
+        | _ -> Assert.Fail "Couldn't find const"
 
     [<Test>]
     let ``SynConst.String with SynStringKind.TripleQuote`` () =
@@ -336,7 +336,7 @@ module Strings =
 
         match getBindingConstValue parseResults with
         | Some (SynConst.String (_,  kind, _)) -> kind |> should equal SynStringKind.TripleQuote
-        | _ -> failwithf "Couldn't find const"
+        | _ -> Assert.Fail "Couldn't find const"
 
     [<Test>]
     let ``SynConst.Bytes with SynByteStringKind.Regular`` () =
@@ -348,7 +348,7 @@ let bytes = "yo"B
 
         match getBindingConstValue parseResults with
         | Some (SynConst.Bytes (_,  kind, _)) -> kind |> should equal SynByteStringKind.Regular
-        | _ -> failwithf "Couldn't find const"
+        | _ -> Assert.Fail "Couldn't find const"
 
     [<Test>]
     let ``SynConst.Bytes with SynByteStringKind.Verbatim`` () =
@@ -360,7 +360,7 @@ let bytes = @"yo"B
 
         match getBindingConstValue parseResults with
         | Some (SynConst.Bytes (_,  kind, _)) -> kind |> should equal SynByteStringKind.Verbatim
-        | _ -> failwithf "Couldn't find const"
+        | _ -> Assert.Fail "Couldn't find const"
 
     [<Test>]
     let ``SynExpr.InterpolatedString with SynStringKind.TripleQuote`` () =
@@ -372,7 +372,7 @@ let bytes = @"yo"B
 
         match getBindingExpressionValue parseResults with
         | Some (SynExpr.InterpolatedString(_,  kind, _)) -> kind |> should equal SynStringKind.TripleQuote
-        | _ -> failwithf "Couldn't find const"
+        | _ -> Assert.Fail "Couldn't find const"
 
     [<Test>]
     let ``SynExpr.InterpolatedString with SynStringKind.Regular`` () =
@@ -384,7 +384,7 @@ let bytes = @"yo"B
 
         match getBindingExpressionValue parseResults with
         | Some (SynExpr.InterpolatedString(_,  kind, _)) -> kind |> should equal SynStringKind.Regular
-        | _ -> failwithf "Couldn't find const"
+        | _ -> Assert.Fail "Couldn't find const"
 
 module SynModuleOrNamespace =
     [<Test>]
@@ -400,7 +400,7 @@ type Teq<'a, 'b>
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r) ])) ->
             assertRange (1, 0) (4, 8) r
-        | _ -> failwith "Could not get valid AST"
+        | _ -> Assert.Fail "Could not get valid AST"
         
     [<Test>]
     let ``Multiple DeclaredNamespaces should have a range that starts at the namespace keyword`` () =
@@ -422,4 +422,21 @@ let x = 42
             SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r2) ])) ->
             assertRange (1, 0) (4, 20) r1
             assertRange (6, 0) (8, 10) r2
-        | _ -> failwith "Could not get valid AST"        
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``GlobalNamespace should start at namespace keyword`` () =
+        let parseResults = 
+            getParseResults
+                """// foo
+// bar
+namespace  global
+
+type X = int
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.GlobalNamespace; range = r) ])) ->
+            assertRange (3, 0) (5, 12) r
+        | _ -> Assert.Fail "Could not get valid AST"
