@@ -1297,6 +1297,7 @@ type SynEnumCase =
         attributes: SynAttributes *
         ident: Ident * 
         value: SynConst *
+        valueRange: range *
         xmlDoc: PreXmlDoc *
         range: range
 

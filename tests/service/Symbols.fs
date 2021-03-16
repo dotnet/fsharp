@@ -258,6 +258,44 @@ let tester2: int Group = []
                 | _ -> Assert.Fail (sprintf "Couldn't get member: %s" entityName)
             )
 
+    [<Test>]
+    let ``Single SynEnumCase contains range of constant`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo = One = 0x00000001
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [
+                SynTypeDefn.SynTypeDefn(typeRepr =
+                    SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Enum(cases = [ SynEnumCase.SynEnumCase(valueRange = r) ])))])
+        ]) ])) ->
+            assertRange (2, 17) (2, 27) r
+        | _ -> Assert.Fail "Could not get valid AST"
+        
+    [<Test>]
+    let ``Multiple SynEnumCase contains range of constant`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo =
+    | One =  0x00000001
+    | Two = 2
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [
+                SynTypeDefn.SynTypeDefn(typeRepr =
+                    SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Enum(cases = [ SynEnumCase.SynEnumCase(valueRange = r1)
+                                                                                             SynEnumCase.SynEnumCase(valueRange = r2) ])))])
+        ]) ])) ->
+            assertRange (3, 13) (3, 23) r1
+            assertRange (4, 12) (4, 13) r2
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SyntaxExpressions =
     [<Test>]
     let ``SynExpr.Do contains the range of the do keyword`` () =
