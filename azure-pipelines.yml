@@ -506,3 +506,4 @@ stages:
       insertTargetBranch: rel/d16.9
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
+      completeInsertion: 'auto'
