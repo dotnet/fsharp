@@ -169,7 +169,7 @@ type internal FSharpSignatureHelpProvider
                     | n -> n
 
                 // Compute the current argument name if it is named.
-                let argumentName = 
+                let namedArgumentName = 
                     if argumentIndex < paramLocations.NamedParamNames.Length then 
                         paramLocations.NamedParamNames.[argumentIndex] 
                     else 
@@ -222,7 +222,7 @@ type internal FSharpSignatureHelpProvider
                       ApplicableSpan = applicableSpan
                       ArgumentIndex = argumentIndex
                       ArgumentCount = argumentCount
-                      ArgumentName = argumentName
+                      ArgumentName = namedArgumentName
                       CurrentSignatureHelpSessionKind = MethodCall }
 
                 return! Some data
@@ -569,7 +569,7 @@ type internal FSharpSignatureHelpProvider
                         checkFileResults,
                         documentationBuilder,
                         sourceText,
-                        adjustedColumnInSource,
+                        caretPosition,
                         triggerTypedChar)
         }
 
