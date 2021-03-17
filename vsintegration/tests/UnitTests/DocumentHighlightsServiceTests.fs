@@ -52,8 +52,8 @@ let internal projectOptions = {
 }
 
 let private getSpans (sourceText: SourceText) (caretPosition: int) =
-    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-    FSharpDocumentHighlightsService.GetDocumentHighlights(checker, documentId, sourceText, filePath, caretPosition, [], projectOptions, 0, LanguageServicePerformanceOptions.Default)
+    let document = RoslynTestHelpers.CreateDocument(sourceText)
+    FSharpDocumentHighlightsService.GetDocumentHighlights(checker, document, caretPosition, [], projectOptions, LanguageServicePerformanceOptions.Default)
     |> Async.RunSynchronously
     |> Option.defaultValue [||]
 

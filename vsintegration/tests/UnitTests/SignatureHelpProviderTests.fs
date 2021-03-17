@@ -54,11 +54,11 @@ let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:in
         let caretLinePos = textLines.GetLinePosition(caretPosition)
         let caretLineColumn = caretLinePos.Character
         let perfOptions = LanguageServicePerformanceOptions.Default
-        let textVersionHash = 1
         
+        let document = RoslynTestHelpers.CreateDocument(sourceText)
         let parseResults, _, checkFileResults =
             let x =
-                checker.ParseAndCheckDocument(fileName, textVersionHash, sourceText, project.Options, perfOptions, "TestSignatureHelpProvider")
+                checker.ParseAndCheckDocument(document, project.Options, perfOptions, "TestSignatureHelpProvider")
                 |> Async.RunSynchronously
             x.Value
 
@@ -104,11 +104,11 @@ let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (e
     let caretLinePos = textLines.GetLinePosition(caretPosition)
     let caretLineColumn = caretLinePos.Character
     let perfOptions = LanguageServicePerformanceOptions.Default
-    let textVersionHash = 0
                
+    let document = RoslynTestHelpers.CreateDocument(sourceText)
     let parseResults, _, checkFileResults =
         let x =
-            checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, projectOptions, perfOptions, "TestSignatureHelpProvider")
+            checker.ParseAndCheckDocument(document, projectOptions, perfOptions, "TestSignatureHelpProvider")
             |> Async.RunSynchronously
 
         if x.IsNone then
@@ -141,14 +141,12 @@ let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (e
 
 let assertSignatureHelpForFunctionApplication (fileContents: string) (marker: string) expectedArgumentCount expectedArgumentIndex =
     let caretPosition = fileContents.LastIndexOf(marker) + marker.Length
-    let sourceText = SourceText.From(fileContents)
+    let document, sourceText = RoslynTestHelpers.CreateDocument(fileContents)
     let perfOptions = LanguageServicePerformanceOptions.Default
-    let textVersionHash = 0
-    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     
     let parseResults, _, checkFileResults =
         let x =
-            checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, projectOptions, perfOptions, "TestSignatureHelpProvider")
+            checker.ParseAndCheckDocument(document, projectOptions, perfOptions, "TestSignatureHelpProvider")
             |> Async.RunSynchronously
 
         if x.IsNone then
@@ -167,7 +165,7 @@ let assertSignatureHelpForFunctionApplication (fileContents: string) (marker: st
         FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
             parseResults,
             checkFileResults,
-            documentId,
+            document.Id,
             [],
             DefaultDocumentationProvider,
             sourceText,
@@ -429,14 +427,13 @@ M.f
     """
         let marker = "id "
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
-        let sourceText = SourceText.From(fileContents)
+
+        let document, sourceText = RoslynTestHelpers.CreateDocument(fileContents)
         let perfOptions = LanguageServicePerformanceOptions.Default
-        let textVersionHash = 0
-        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     
         let parseResults, _, checkFileResults =
             let x =
-                checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, projectOptions, perfOptions, "TestSignatureHelpProvider")
+                checker.ParseAndCheckDocument(document, projectOptions, perfOptions, "TestSignatureHelpProvider")
                 |> Async.RunSynchronously
 
             if x.IsNone then
@@ -455,7 +452,7 @@ M.f
             FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
                 parseResults,
                 checkFileResults,
-                documentId,
+                document.Id,
                 [],
                 DefaultDocumentationProvider,
                 sourceText,

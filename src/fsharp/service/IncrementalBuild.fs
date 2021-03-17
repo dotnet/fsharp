@@ -1207,16 +1207,8 @@ type IncrementalBuilder(tcGlobals,
         | Some(boundModel, timestamp) -> PartialCheckResults(boundModel, timestamp) |> Some
         | _ -> None
 
-    member builder.TryGetCheckResultsForFileInProject (filename) =
-        let cache = TimeStampCache defaultTimeStamp
-        let state = currentState
-        let state = computeStampedFileNames state cache
-        let state = computeStampedReferencedAssemblies state cache
-
-        let slotOfFile = builder.GetSlotOfFileName filename
-        match tryGetSlot state slotOfFile with
-        | Some(boundModel, timestamp) -> PartialCheckResults(boundModel, timestamp) |> Some
-        | _ -> None
+    member builder.AreCheckResultsBeforeFileInProjectReady filename = 
+        (builder.TryGetCheckResultsBeforeFileInProject filename).IsSome
 
     member private _.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile, enablePartialTypeChecking) = 
       cancellable {

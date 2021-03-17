@@ -53,7 +53,6 @@ type internal FSharpCheckerProvider
 
     let checker = 
         lazy
-            lazy
             let checker = 
                 FSharpChecker.Create(
                     projectCacheSize = settings.LanguageServicePerformance.ProjectCheckCacheSize, 
