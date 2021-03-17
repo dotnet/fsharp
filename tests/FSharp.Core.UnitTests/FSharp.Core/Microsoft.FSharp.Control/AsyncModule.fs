@@ -320,7 +320,6 @@ type AsyncModule() =
             let cts = new System.Threading.CancellationTokenSource()
             let go e (flag : bool ref) = async {
                 let! _ = Async.AwaitWaitHandle e
-                sleep 500
                 use! _holder = Async.OnCancel(fun () -> flag := true)
                 while true do
                     do! Async.Sleep 100
@@ -330,7 +329,6 @@ type AsyncModule() =
             let finish = new System.Threading.ManualResetEvent(false)
             let cancelledWasCalled = ref false
             Async.StartWithContinuations(go evt cancelledWasCalled, ignore, ignore, (fun _ -> finish.Set() |> ignore),  cancellationToken = cts.Token)
-            sleep 500
             evt.Set() |> ignore
             cts.Cancel()
 
