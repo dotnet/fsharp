@@ -319,13 +319,13 @@ open Printf
 
     static let mutable swallowResourceText = false
 
-    static let GetStringFunc((messageID : string),(fmt : Printf.StringFormat<'T>)) : 'T =
-        if swallowResourceText then
-            sprintf fmt
-        else
-            let mutable messageString = GetString(messageID)
-            messageString <- postProcessString messageString
-            createMessageString messageString fmt
+    // static let GetStringFunc((messageID : string),(fmt : Printf.StringFormat<'T>)) : 'T =
+    //     if swallowResourceText then
+    //         sprintf fmt
+    //     else
+    //         let mutable messageString = GetString(messageID)
+    //         messageString <- postProcessString messageString
+    //         createMessageString messageString fmt
 
     /// If set to true, then all error messages will just return the filled 'holes' delimited by ',,,'s - this is for language-neutral testing (e.g. localization-invariant baselines).
     static member SwallowResourceText with get () = swallowResourceText
