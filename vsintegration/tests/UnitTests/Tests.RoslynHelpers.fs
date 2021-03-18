@@ -19,15 +19,7 @@ type RoslynTestHelpers private () =
                 "test",
                 LanguageNames.CSharp
             )
-        let docId = DocumentId.CreateNewId(projId)
-        let loader = TextLoader.From(text.Container, VersionStamp.Create())
-        let docInfo = DocumentInfo.Create(docId, "test.fs", sourceCodeKind=SourceCodeKind.Regular, loader=loader, isGenerated=true)
-
-        let projInfo = projInfo.WithDocuments([docInfo])
-
-        let sol = sol.AddProject(projInfo)
-
-        sol.GetProject(projId).Documents |> Seq.find (fun x -> x.Id.Equals(docId))
+        workspace.AddDocument(projId, "test.fs", text)
 
     static member CreateDocument (code: string) =
         let text = SourceText.From(code)
