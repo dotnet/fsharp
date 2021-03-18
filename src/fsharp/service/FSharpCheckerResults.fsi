@@ -46,7 +46,7 @@ type public FSharpProjectOptions =
 
       /// The command line arguments for the other projects referenced by this project, indexed by the
       /// exact text used in the "-r:" reference in FSharpProjectOptions.
-      ReferencedProjects: (string * FSharpProjectOptions)[]
+      ReferencedProjects: FSharpReferencedProject[]
 
       /// When true, the typechecking environment is known a priori to be incomplete, for
       /// example when a .fs file is opened outside of a project. In this case, the number of error
@@ -81,6 +81,15 @@ type public FSharpProjectOptions =
 
     /// Compute the project directory.
     member internal ProjectDirectory: string
+
+and [<NoComparison>] public FSharpReferencedProject =
+    internal
+    | FSharp of projectFileName: string * options: FSharpProjectOptions
+    | IL of projectFileName: string * stamp: DateTime * lazyData: Lazy<byte []>
+
+    static member CreateFSharp : projectFileName: string * options: FSharpProjectOptions -> FSharpReferencedProject
+
+    static member CreateIL : projectFileName: string * stamp: DateTime * lazyData: Lazy<byte []> -> FSharpReferencedProject
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]

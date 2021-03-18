@@ -64,7 +64,16 @@ module private FSharpProjectOptionsHelpers =
             let doesProjectIdDiffer = p1.ProjectId <> p2.ProjectId
             let p1 = oldProject.Solution.GetProject(p1.ProjectId)
             let p2 = newProject.Solution.GetProject(p2.ProjectId)
-            doesProjectIdDiffer || p1.Version <> p2.Version
+            doesProjectIdDiffer || 
+            (
+                // For F# projects, just check the version until we have a better in-memory model for them.
+                if p1.Language = LanguageNames.FSharp then
+                    p1.Version <> p2.Version
+                else
+                    let v1 = p1.GetDependentVersionAsync(ct).Result
+                    let v2 = p2.GetDependentVersionAsync(ct).Result
+                    v1 <> v2
+            )
         )
 
     let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) =
@@ -169,7 +178,19 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                         if referencedProject.Language = FSharpConstants.FSharpLanguageName then
                             match! tryComputeOptions referencedProject with
                             | None -> canBail <- true
-                            | Some(_, projectOptions) -> referencedProjects.Add(referencedProject.OutputFilePath, projectOptions)
+                            | Some(_, projectOptions) -> referencedProjects.Add(FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions))
+                        else
+                            let! ilComp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
+                            referencedProjects.Add(
+                                FSharpReferencedProject.CreateIL(
+                                    referencedProject.OutputFilePath, 
+                                    DateTime.UtcNow,
+                                      lazy
+                                        let ms = new MemoryStream()
+                                        let emitOptions = Emit.EmitOptions(metadataOnly = true)
+                                        ilComp.Emit(ms, options = emitOptions) |> ignore
+                                        ms.ToArray() // REVIEW: Not performant but works until we figure a better way to get the data.
+                            ))
 
                 if canBail then
                     return None

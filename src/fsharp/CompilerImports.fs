@@ -725,6 +725,36 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
             let attrs = GetCustomAttributesOfILModule ilModule
             List.exists (IsMatchingSignatureDataVersionAttr ilg (parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
 
+[<Sealed>]
+type RawILAssemblyData (ilModule: ILModuleDef, ilAssemblyRefs) = 
+
+    interface IRawFSharpAssemblyData with 
+
+         member _.GetAutoOpenAttributes _ = List.empty
+
+         member _.GetInternalsVisibleToAttributes ilg = GetInternalsVisibleToAttributes ilg ilModule 
+
+         member _.TryGetILModuleDef() = Some ilModule 
+
+         member _.GetRawFSharpSignatureData(_, _, _) = List.empty
+
+         member _.GetRawFSharpOptimizationData(_, _, _) = List.empty         
+
+         member _.GetRawTypeForwarders() =
+            match ilModule.Manifest with 
+            | Some manifest -> manifest.ExportedTypes
+            | None -> mkILExportedTypes []
+
+         member _.ShortAssemblyName = GetNameOfILModule ilModule 
+
+         member _.ILScopeRef = MakeScopeRefForILModule ilModule
+
+         member _.ILAssemblyRefs = ilAssemblyRefs
+
+         member _.HasAnyFSharpSignatureDataAttribute = false
+
+         member _.HasMatchingFSharpSignatureDataAttribute _ = false
+
 //----------------------------------------------------------------------------
 // TcImports
 //--------------------------------------------------------------------------
