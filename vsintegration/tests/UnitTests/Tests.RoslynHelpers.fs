@@ -8,6 +8,7 @@ type RoslynTestHelpers private () =
 
     static member CreateDocument (text: SourceText) =
         let workspace = new AdhocWorkspace()
+        workspace.
         let sol = workspace.CurrentSolution
 
         let projId = ProjectId.CreateNewId()
@@ -17,7 +18,7 @@ type RoslynTestHelpers private () =
                 VersionStamp.Create(),
                 "test",
                 "test",
-                "F#"
+                LanguageNames.CSharp
             )
         let docId = DocumentId.CreateNewId(projId)
         let loader = TextLoader.From(text.Container, VersionStamp.Create())
