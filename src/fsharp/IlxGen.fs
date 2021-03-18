@@ -6928,7 +6928,7 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
 
     let eenvinner =
         if mspec.IsNamespace then eenv else
-        { eenv with cloc = CompLocForFixedModule cenv.opts.fragName qname.Text mspec; initLocals = HasFSharpAttribute cenv.g cenv.g.attrib_SkipLocalsInitAttribute mspec.Attribs |> not }
+        { eenv with cloc = CompLocForFixedModule cenv.opts.fragName qname.Text mspec; initLocals = eenv.initLocals && not (HasFSharpAttribute cenv.g cenv.g.attrib_SkipLocalsInitAttribute mspec.Attribs) }
 
     // Create the class to hold the contents of this module. No class needed if
     // we're compiling it as a namespace.
@@ -7278,7 +7278,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
     | TNoRepr -> ()
     | TAsmRepr _ | TILObjectRepr _ | TMeasureableRepr _ -> ()
     | TFSharpObjectRepr _ | TRecdRepr _ | TUnionRepr _ ->
-        let eenvinner = ReplaceTyenv (TypeReprEnv.ForTycon tycon) eenv
+        let eenvinner =
+            let eenvinner = ReplaceTyenv (TypeReprEnv.ForTycon tycon) eenv
+            let eenvinner = if eenvinner.initLocals && HasFSharpAttribute g g.attrib_SkipLocalsInitAttribute tycon.Attribs then { eenvinner with initLocals = false } else eenvinner
+            eenvinner
         let thisTy = generalizedTyconRef tcref
 
         let ilThisTy = GenType cenv.amap m eenvinner.tyenv thisTy
