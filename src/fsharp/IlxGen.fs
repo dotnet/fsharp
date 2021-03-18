@@ -894,6 +894,9 @@ and IlxGenEnv =
 
       /// Are we inside of a recursive let binding, while loop, or a for loop?
       isInLoop: bool
+
+      /// Indicates that the .locals init flag should be set on a method and all its nested methods and lambdas
+      initLocals: bool
     }
 
     override _.ToString() = "<IlxGenEnv>"
@@ -2032,7 +2035,7 @@ let CodeGenMethod cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs,
     let maxStack = maxStack + 2
 
     // Build an Abstract IL method 
-    instrs, mkILMethodBody (true, locals, maxStack, code, sourceRange)
+    instrs, mkILMethodBody (eenv.initLocals, locals, maxStack, code, sourceRange)
 
 let StartDelayedLocalScope nm cgbuf =
     let startScope = CG.GenerateDelayMark cgbuf ("start_" + nm)
@@ -6149,6 +6152,7 @@ and GenMethodForBinding
         let eenvForMeth = eenvForMeth |> AddStorageForLocalWitnesses (methLambdaWitnessInfos |> List.mapi (fun i w -> (w, Arg (numArgsUsed+i))))
         let numArgsUsed = numArgsUsed + methLambdaWitnessInfos.Length
         let eenvForMeth = eenvForMeth |> AddStorageForLocalVals cenv.g (List.mapi (fun i v -> (v, Arg (numArgsUsed+i))) nonUnitNonSelfMethodVars)
+        let eenvForMeth = if eenvForMeth.initLocals && HasFSharpAttribute g g.attrib_SkipLocalsInitAttribute v.Attribs then { eenvForMeth with initLocals = false } else eenvForMeth
         eenvForMeth
 
     let tailCallInfo =
@@ -6184,7 +6188,7 @@ and GenMethodForBinding
                     mkThrow m returnTy exnExpr
                 else
                     body
-            
+
             let ilCodeLazy = lazy CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
 
             // This is the main code generation for most methods
@@ -6924,7 +6928,7 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
 
     let eenvinner =
         if mspec.IsNamespace then eenv else
-        {eenv with cloc = CompLocForFixedModule cenv.opts.fragName qname.Text mspec }
+        { eenv with cloc = CompLocForFixedModule cenv.opts.fragName qname.Text mspec; initLocals = HasFSharpAttribute cenv.g cenv.g.attrib_SkipLocalsInitAttribute mspec.Attribs |> not }
 
     // Create the class to hold the contents of this module. No class needed if
     // we're compiling it as a namespace.
@@ -8015,7 +8019,8 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
       innerVals = []
       sigToImplRemapInfo = [] (* "module remap info" *)
       withinSEH = false
-      isInLoop = false }
+      isInLoop = false
+      initLocals = true }
 
 type IlxGenResults =
     { ilTypeDefs: ILTypeDef list
