@@ -114,7 +114,7 @@ type SynConst =
 
     | UInt16s of uint16[]
 
-    | Measure of constant: SynConst * SynMeasure
+    | Measure of constant: SynConst * constantRange: Range * SynMeasure
 
     member c.Range dflt =
         match c with

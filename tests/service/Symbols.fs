@@ -478,3 +478,22 @@ type X = int
             SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.GlobalNamespace; range = r) ])) ->
             assertRange (3, 0) (5, 12) r
         | _ -> Assert.Fail "Could not get valid AST"
+
+module SynConsts =
+    [<Test>]
+    let ``Measure contains the range of the constant`` () =
+        let parseResults = 
+            getParseResults
+                """
+let n = 1.0m<cm>
+let m = 7.000<cm>
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Measure(constantRange = r1), _)) ])
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Measure(constantRange = r2), _)) ])
+        ]) ])) ->
+            assertRange (2, 8) (2, 12) r1
+            assertRange (3, 8) (3, 13) r2
+        | _ -> Assert.Fail "Could not get valid AST"

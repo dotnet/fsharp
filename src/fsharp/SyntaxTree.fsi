@@ -150,7 +150,7 @@ type SynConst =
     | UInt16s of uint16[]
 
     /// Old comment: "we never iterate, so the const here is not another SynConst.Measure"
-    | Measure of constant: SynConst * SynMeasure
+    | Measure of constant: SynConst * constantRange: range * SynMeasure
 
     /// Gets the syntax range of this construct
     member Range: dflt: range -> range
