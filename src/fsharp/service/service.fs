@@ -447,10 +447,11 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     member _.GetCachedCheckFileResult(builder: IncrementalBuilder, filename, sourceText: ISourceText, options, cacheStamp: int64 option) =
         // If a cache stamp is not provided, we need to do a full-up-to-date check on the timestamps for the dependencies.
         let recheckDeps = cacheStamp.IsNone
-        if recheckDeps && not (builder.AreCheckResultsBeforeFileInProjectReady filename) then None
+        let cacheStamp = defaultArg cacheStamp (sourceText.GetHashCode() |> int64)
+        if recheckDeps && not (builder.AreCheckResultsBeforeFileInProjectReady filename) then 
+            parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.RemoveAnySimilar(ltok, (filename, cacheStamp, options)))
+            None
         else
-            let cacheStamp = defaultArg cacheStamp (sourceText.GetHashCode() |> int64)
-
             // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
             let cachedResults = parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.TryGet(ltok, (filename, cacheStamp, options)))
 
