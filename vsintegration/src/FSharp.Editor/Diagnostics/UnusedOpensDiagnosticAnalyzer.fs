@@ -37,10 +37,9 @@ type internal UnusedOpensDiagnosticAnalyzer
 
     interface IFSharpUnusedOpensDiagnosticAnalyzer with
 
-        member this.AnalyzeSemanticsAsync(descriptor, document: Document, cancellationToken: CancellationToken) =
+        member _.AnalyzeSemanticsAsync(descriptor, document: Document, cancellationToken: CancellationToken) =
             asyncMaybe {
                 do Trace.TraceInformation("{0:n3} (start) UnusedOpensAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
-                do! Async.Sleep DefaultTuning.UnusedOpensAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
                 let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync()
                 let checker = checkerProvider.Checker

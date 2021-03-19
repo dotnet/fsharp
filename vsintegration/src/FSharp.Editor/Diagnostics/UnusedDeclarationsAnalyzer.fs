@@ -28,7 +28,6 @@ type internal UnusedDeclarationsAnalyzer
                 do! Option.guard document.FSharpOptions.CodeFixes.UnusedDeclarations
 
                 do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
-                do! Async.Sleep DefaultTuning.UnusedDeclarationsAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
                 match! projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName) with
                 | (_parsingOptions, projectOptions) ->
                     let! sourceText = document.GetTextAsync()

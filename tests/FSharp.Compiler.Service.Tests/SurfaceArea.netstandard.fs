@@ -1498,6 +1498,7 @@ FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FShar
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] TryRangeOfNameOfNearestOuterBindingContainingPos(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] TryRangeOfRecordExpressionContainingPos(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] TryRangeOfRefCellDereferenceContainingPos(FSharp.Compiler.Text.Position)
+FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] TryRangeOfExpressionBeingDereferencedContainingPos(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] ValidateBreakpointLocation(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range]] GetAllArgumentsForFunctionApplicationAtPostion(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.Ident,System.Int32]] TryIdentOfPipelineContainingPosAndNumArgsApplied(FSharp.Compiler.Text.Position)
