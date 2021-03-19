@@ -144,8 +144,8 @@ module internal ProjectOptionsBuilder =
     let SingleFileProject(code:string) =
         code
         |> sprintf @"
-<Project Name=""testProject.fsproj"">
-  <File Name=""testFile.fs"">
+<Project Name=""test.fsproj"">
+  <File Name=""test.fs"">
     <![CDATA[%s]]>
   </File>
 </Project>
