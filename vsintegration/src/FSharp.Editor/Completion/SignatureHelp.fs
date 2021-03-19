@@ -396,7 +396,6 @@ type internal FSharpSignatureHelpProvider
                                   DisplayParts = display }
 
                             displayArgs.Add(info)
-
                         else
                             let display = ResizeArray()
                             display.Add(RoslynTaggedText(TextTags.Punctuation, "("))
