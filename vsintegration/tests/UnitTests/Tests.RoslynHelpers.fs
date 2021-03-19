@@ -8,18 +8,8 @@ type RoslynTestHelpers private () =
 
     static member CreateDocument (text: SourceText) =
         let workspace = new AdhocWorkspace()
-        let sol = workspace.CurrentSolution
-
-        let projId = ProjectId.CreateNewId()
-        let projInfo = 
-            ProjectInfo.Create(
-                projId,
-                VersionStamp.Create(),
-                "test",
-                "test",
-                LanguageNames.CSharp
-            )
-        workspace.AddDocument(projId, "test.fs", text)
+        let proj = workspace.AddProject("test", LanguageNames.CSharp)
+        workspace.AddDocument(proj.Id, "test.fs", text)
 
     static member CreateDocument (code: string) =
         let text = SourceText.From(code)
