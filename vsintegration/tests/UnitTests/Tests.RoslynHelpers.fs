@@ -14,7 +14,8 @@ type RoslynTestHelpers private () =
             let docId = DocumentId.CreateNewId(proj.Id)
             DocumentInfo.Create(docId,
                 "test.fs",
-                loader=TextLoader.From(text.Container, VersionStamp.Create(), "C:\test.fs"))
+                loader=TextLoader.From(text.Container, VersionStamp.Create()),
+                filePath="C:\test.fs")
 
         workspace.AddDocument(docInfo)
 
