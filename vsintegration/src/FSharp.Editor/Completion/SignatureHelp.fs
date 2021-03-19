@@ -390,7 +390,6 @@ type internal FSharpSignatureHelpProvider
                             let info =
                                 { ParameterName = name
                                   IsOptional = false
-                                  // No need to do anything different here, as this field is only relevant for overloaded parameter names in methods.
                                   CanonicalTypeTextForSorting = name
                                   Documentation = ResizeArray()
                                   DisplayParts = display }
@@ -444,9 +443,8 @@ type internal FSharpSignatureHelpProvider
                             display.Add(RoslynTaggedText(TextTags.Punctuation, ")"))
                             
                             let info =
-                                { ParameterName = "" // No name here, since it's a tuple of arguments
+                                { ParameterName = "" // No name here, since it's a tuple of arguments has no name in the F# symbol info
                                   IsOptional = false
-                                  // No need to do anything here as this field is only relevant for overloaded parameter names in methods.
                                   CanonicalTypeTextForSorting = ""
                                   Documentation = ResizeArray()
                                   DisplayParts = display }
