@@ -9,7 +9,14 @@ type RoslynTestHelpers private () =
     static member CreateDocument (text: SourceText) =
         let workspace = new AdhocWorkspace()
         let proj = workspace.AddProject("test", LanguageNames.CSharp)
-        workspace.AddDocument(proj.Id, "test.fs", text)
+
+        let docInfo =
+            let docId = DocumentId.CreateNewId(proj.Id)
+            DocumentInfo.Create(docId,
+                "test.fs",
+                loader=TextLoader.From(text.Container, VersionStamp.Create(), "C:\test.fs"))
+
+        workspace.AddDocument(docInfo)
 
     static member CreateDocument (code: string) =
         let text = SourceText.From(code)
