@@ -334,6 +334,17 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         None
                 | _ -> defaultTraverse expr })
 
+    member _.TryRangeOfExpressionBeingDereferencedContainingPos expressionPos =
+        SyntaxTraversal.Traverse(expressionPos, input, { new SyntaxVisitorBase<_>() with 
+            member _.VisitExpr(_, _, defaultTraverse, expr) =
+                match expr with
+                | SynExpr.App(_, false, SynExpr.Ident funcIdent, expr, _) ->
+                    if funcIdent.idText = "op_Dereference" && rangeContainsPos expr.Range expressionPos then
+                        Some expr.Range
+                    else
+                        None
+                | _ -> defaultTraverse expr })
+
     member _.FindParameterLocations pos = 
         ParameterLocations.Find(pos, input)
 
