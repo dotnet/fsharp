@@ -55,7 +55,7 @@ let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:in
         let caretLineColumn = caretLinePos.Character
         let perfOptions = LanguageServicePerformanceOptions.Default
         
-        let document = RoslynTestHelpers.CreateDocument(sourceText)
+        let document = RoslynTestHelpers.CreateDocument(filePath, sourceText)
         let parseResults, _, checkFileResults =
             let x =
                 checker.ParseAndCheckDocument(document, project.Options, perfOptions, "TestSignatureHelpProvider")
@@ -105,7 +105,7 @@ let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (e
     let caretLineColumn = caretLinePos.Character
     let perfOptions = LanguageServicePerformanceOptions.Default
                
-    let document = RoslynTestHelpers.CreateDocument(sourceText)
+    let document = RoslynTestHelpers.CreateDocument(filePath, sourceText)
     let parseResults, _, checkFileResults =
         let x =
             checker.ParseAndCheckDocument(document, projectOptions, perfOptions, "TestSignatureHelpProvider")
@@ -141,7 +141,7 @@ let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (e
 
 let assertSignatureHelpForFunctionApplication (fileContents: string) (marker: string) expectedArgumentCount expectedArgumentIndex =
     let caretPosition = fileContents.LastIndexOf(marker) + marker.Length
-    let document, sourceText = RoslynTestHelpers.CreateDocument(fileContents)
+    let document, sourceText = RoslynTestHelpers.CreateDocument(filePath, fileContents)
     let perfOptions = LanguageServicePerformanceOptions.Default
     
     let parseResults, _, checkFileResults =
@@ -428,7 +428,7 @@ M.f
         let marker = "id "
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
-        let document, sourceText = RoslynTestHelpers.CreateDocument(fileContents)
+        let document, sourceText = RoslynTestHelpers.CreateDocument(filePath, fileContents)
         let perfOptions = LanguageServicePerformanceOptions.Default
     
         let parseResults, _, checkFileResults =

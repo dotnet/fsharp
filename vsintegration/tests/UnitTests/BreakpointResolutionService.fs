@@ -72,7 +72,7 @@ let main argv =
         let searchPosition = code.IndexOf(searchToken)
         Assert.IsTrue(searchPosition >= 0, "SearchToken '{0}' is not found in code", searchToken)
         
-        let document, sourceText = RoslynTestHelpers.CreateDocument code
+        let document, sourceText = RoslynTestHelpers.CreateDocument(fileName, code)
         let searchSpan = TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
 
        // let document = Microsoft.CodeAnalysis.DocumentInfo.Create(Microsoft.CodeAnalysis.DocumentId()

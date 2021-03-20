@@ -6,20 +6,20 @@ open Microsoft.CodeAnalysis.Text
 [<AbstractClass;Sealed>]
 type RoslynTestHelpers private () =
 
-    static member CreateDocument (text: SourceText) =
+    static member CreateDocument (filePath, text: SourceText) =
         let workspace = new AdhocWorkspace()
-        let proj = workspace.AddProject("test", LanguageNames.CSharp)
+        let proj = workspace.AddProject("test.fsproj", LanguageNames.CSharp)
 
         let docInfo =
             let docId = DocumentId.CreateNewId(proj.Id)
             DocumentInfo.Create(docId,
-                "test.fs",
+                filePath,
                 loader=TextLoader.From(text.Container, VersionStamp.Create()),
-                filePath="""C:\test.fs""")
+                filePath=filePath)
 
         workspace.AddDocument(docInfo)
 
-    static member CreateDocument (code: string) =
+    static member CreateDocument (filePath, code: string) =
         let text = SourceText.From(code)
-        RoslynTestHelpers.CreateDocument(text), text
+        RoslynTestHelpers.CreateDocument(filePath, text), text
 

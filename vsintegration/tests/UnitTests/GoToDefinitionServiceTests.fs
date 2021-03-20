@@ -84,7 +84,7 @@ module GoToDefinitionServiceTests =
         File.WriteAllText(filePath, fileContents)
 
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
-        let document, sourceText = RoslynTestHelpers.CreateDocument(fileContents)
+        let document, sourceText = RoslynTestHelpers.CreateDocument(filePath, fileContents)
         let actual = 
            findDefinition(checker, document, sourceText, caretPosition, [], options) 
            |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))

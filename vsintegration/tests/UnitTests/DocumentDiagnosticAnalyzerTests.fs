@@ -40,7 +40,7 @@ type DocumentDiagnosticAnalyzerTests()  =
 
     let getDiagnostics (fileContents: string) = 
         async {
-            let document, _ = RoslynTestHelpers.CreateDocument fileContents
+            let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
             let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
             let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checker, document, parsingOptions, projectOptions, DiagnosticsType.Syntax) 
             let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checker, document, parsingOptions, projectOptions, DiagnosticsType.Semantic) 
