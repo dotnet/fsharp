@@ -1552,8 +1552,8 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             tycon.entity_tycon_repr <-
                 TRecdRepr
                   (Construct.MakeRecdFieldsTable
-                    [ for (tp, (propName, _fldName, _fldTy)) in (List.zip tps flds) ->
-                            Construct.NewRecdField false None (mkSynId m propName) false (mkTyparTy tp) true false [] [] XmlDoc.Empty taccessPublic false ])
+                    ((tps, flds) ||> List.map2 (fun tp (propName, _fldName, _fldTy) ->
+                            Construct.NewRecdField false None (mkSynId m propName) false (mkTyparTy tp) true false [] [] XmlDoc.Empty taccessPublic false)))
 
             let tcref = mkLocalTyconRef tycon
             let _, typ = generalizeTyconRef tcref

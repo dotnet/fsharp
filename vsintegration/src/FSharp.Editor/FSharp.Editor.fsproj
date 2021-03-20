@@ -89,7 +89,10 @@
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
     <Compile Include="Commands\XmlDocCommandService.fs" />
+    <Compile Include="Refactor\AddExplicitTypeToParameter.fs" />
+    <Compile Include="Refactor\ChangeDerefToValueRefactoring.fs" />
     <Compile Include="CodeFix\CodeFixHelpers.fs" />
+    <Compile Include="CodeFix\AddTypeAnnotationToObjectOfIndeterminateType.fs" />
     <Compile Include="CodeFix\AddMissingRecToMutuallyRecFunctions.fs" />
     <Compile Include="CodeFix\ConvertCSharpLambdaToFSharpLambda.fs" />
     <Compile Include="CodeFix\MakeOuterBindingRecursive.fs" />
@@ -100,6 +103,7 @@
     <Compile Include="CodeFix\MakeDeclarationMutable.fs" />
     <Compile Include="CodeFix\ChangeToUpcast.fs" />
     <Compile Include="CodeFix\AddMissingEqualsToTypeDefinition.fs" />
+    <Compile Include="CodeFix\ConvertToNotEqualsEqualityExpression.fs" />
     <Compile Include="CodeFix\ConvertToSingleEqualsEqualityExpression.fs" />
     <Compile Include="CodeFix\ChangeRefCellDerefToNotExpression.fs" />
     <Compile Include="CodeFix\WrapExpressionInParentheses.fs" />

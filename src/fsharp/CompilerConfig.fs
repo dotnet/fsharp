@@ -425,6 +425,7 @@ type TcConfigBuilder =
       mutable optSettings: Optimizer.OptimizationSettings 
       mutable emitTailcalls: bool
       mutable deterministic: bool
+      mutable concurrentBuild: bool
       mutable preferredUiLang: string option
       mutable lcid: int option
       mutable productNameForBannerText: string
@@ -625,6 +626,7 @@ type TcConfigBuilder =
           optSettings = Optimizer.OptimizationSettings.Defaults
           emitTailcalls = true
           deterministic = false
+          concurrentBuild = true
           preferredUiLang = None
           lcid = None
           productNameForBannerText = FSharpProductName
@@ -1001,6 +1003,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.optSettings = data.optSettings
     member x.emitTailcalls = data.emitTailcalls
     member x.deterministic = data.deterministic
+    member x.concurrentBuild = data.concurrentBuild
     member x.pathMap = data.pathMap
     member x.langVersion = data.langVersion
     member x.preferredUiLang = data.preferredUiLang

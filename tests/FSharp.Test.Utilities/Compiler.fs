@@ -605,8 +605,8 @@ module rec Compiler =
             // TODO: Check all "categories", collect all results and print alltogether.
             checkEqual "Errors count"  expected.Length errors.Length
 
-            List.zip errors expected
-            |> List.iter (fun (actualError, expectedError) ->
+            (errors, expected)
+            ||> List.iter2 (fun actualError expectedError ->
                            let { Error = actualError; Range = actualRange; Message = actualMessage } = actualError
                            let { Error = expectedError; Range = expectedRange; Message = expectedMessage } = expectedError
                            checkEqual "Error" expectedError actualError

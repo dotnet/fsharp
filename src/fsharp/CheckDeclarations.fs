@@ -454,7 +454,7 @@ module TcRecdUnionAndEnumDeclarations =
 
     let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) = 
         let seen = Dictionary()
-        for (sf, f) in List.zip synFields tastFields do
+        (synFields, tastFields) ||> List.iter2 (fun sf f ->
             match seen.TryGetValue f.Name with
             | true, synField ->
                 match sf, synField with
@@ -465,7 +465,7 @@ module TcRecdUnionAndEnumDeclarations =
                     error(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(id.idText), id.idRange))
                 | _ -> assert false
             | _ ->
-                seen.Add(f.Name, sf)
+                seen.Add(f.Name, sf))
                 
     let TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv (SynUnionCase(Attributes synAttrs, id, args, xmldoc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
@@ -2365,8 +2365,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
                   let ity' = 
                       let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTyconTypars envForTycon
                       TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType envinner emptyUnscopedTyparEnv ity |> fst
-                  if not (isInterfaceTy g ity') then errorR(Error(FSComp.SR.tcTypeIsNotInterfaceType0(), ity.Range))
-                  
+
                   if not (tcref.HasInterface g ity') then 
                       error(Error(FSComp.SR.tcAllImplementedInterfacesShouldBeDeclared(), ity.Range))
                    
