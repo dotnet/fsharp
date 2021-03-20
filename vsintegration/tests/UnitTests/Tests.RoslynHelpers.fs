@@ -15,7 +15,7 @@ type RoslynTestHelpers private () =
             DocumentInfo.Create(docId,
                 "test.fs",
                 loader=TextLoader.From(text.Container, VersionStamp.Create()),
-                filePath="test.fs")
+                filePath="""C:\test.fs""")
 
         workspace.AddDocument(docInfo)
 
