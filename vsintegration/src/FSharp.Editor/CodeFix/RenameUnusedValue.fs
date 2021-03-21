@@ -35,7 +35,7 @@ type internal FSharpRenameUnusedValueCodeFixProvider
             do! Option.guard context.Document.FSharpOptions.CodeFixes.UnusedDeclarations
 
             let document = context.Document
-            let! sourceText = document.GetTextAsync()
+            let! sourceText = document.GetTextAsync(context.CancellationToken)
             let ident = sourceText.ToString(context.Span)
             // Prefixing operators and backticked identifiers does not make sense.
             // We have to use the additional check for backtickes because `IsOperatorOrBacktickedName` operates on display names
