@@ -119,6 +119,8 @@ type RawMemoryFile(fileName: string, obj: obj, addr: nativeint, length: int) =
     do stats.rawMemoryFileCount <- stats.rawMemoryFileCount + 1
     let view = ByteMemory.FromUnsafePointer(addr, length, obj).AsReadOnly()
     member _.HoldObj() = obj // make sure we capture 'obj'
+    /// Note: this property is here only for debugging purposes. It's not safe to use for anything,
+    /// because you can't know in advance what filesystem the name is expressed relative to.
     member _.FileName = fileName
     interface BinaryFile with
         override _.GetView() = view
@@ -3866,7 +3868,7 @@ let createByteFileChunk opts fileName chunk =
 
 let createMemoryMapFile fileName = 
     let mmf, accessor, length = 
-        let fileStream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)
+        let fileStream = FileSystem.OpenReadShim(fileName)
         let length = fileStream.Length
         let mmf = MemoryMappedFile.CreateFromFile(fileStream, null, length, MemoryMappedFileAccess.Read, HandleInheritability.None, leaveOpen=false)
         mmf, mmf.CreateViewAccessor(0L, fileStream.Length, MemoryMappedFileAccess.Read), length

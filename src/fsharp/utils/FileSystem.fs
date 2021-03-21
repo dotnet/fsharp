@@ -14,6 +14,9 @@ type IFileSystem =
     /// A shim over FileStream with FileMode.Open, FileAccess.Read, FileShare.ReadWrite
     abstract FileStreamReadShim: fileName: string -> Stream
 
+    /// A shim over FileStream with FileMode.Open, FileAccess.Read, FileShare.Read
+    abstract FileStreamReadLockShim: fileName: string -> Stream
+
     /// A shim over FileStream with FileMode.Create, FileAccess.Write, FileShare.Read
     abstract FileStreamCreateShim: fileName: string -> Stream
 
@@ -63,6 +66,8 @@ type DefaultFileSystem() =
             Assembly.Load assemblyName
 
         member _.ReadAllBytesShim (fileName: string) = File.ReadAllBytes fileName
+
+        member _.FileStreamReadLockShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)  :> Stream
 
         member _.FileStreamReadShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)  :> Stream
 
