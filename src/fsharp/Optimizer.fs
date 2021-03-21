@@ -1480,7 +1480,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
              | None -> None
 
          | Expr.Const (Const.Unit, _, _) ->
-             Some e2
+             Some e1
 
          | _ ->  
             None
