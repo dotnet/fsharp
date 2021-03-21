@@ -3868,7 +3868,7 @@ let createByteFileChunk opts fileName chunk =
 
 let createMemoryMapFile fileName = 
     let mmf, accessor, length = 
-        let fileStream = FileSystem.OpenReadShim(fileName)
+        let fileStream = FileSystem.FileStreamReadLockShim(fileName)
         let length = fileStream.Length
         let mmf = MemoryMappedFile.CreateFromFile(fileStream, null, length, MemoryMappedFileAccess.Read, HandleInheritability.None, leaveOpen=false)
         mmf, mmf.CreateViewAccessor(0L, fileStream.Length, MemoryMappedFileAccess.Read), length
