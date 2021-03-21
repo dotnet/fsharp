@@ -1479,6 +1479,9 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
              | Some(largs, rargs) -> Some (Expr.Op (c, tyargs, (largs @ (e1 :: rargs)), m))
              | None -> None
 
+         | Expr.Const (Const.Unit, _, _) ->
+             Some e2
+
          | _ ->  
             None
 
