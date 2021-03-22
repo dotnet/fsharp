@@ -521,7 +521,7 @@ module Structure =
         and parseSimpleRepr simple =
             match simple with
             | SynTypeDefnSimpleRepr.Enum (cases, _er) ->
-                for SynEnumCase (attrs, _, _, _, cr) in cases do
+                for SynEnumCase (attrs, _, _, _, _, cr) in cases do
                     rcheck Scope.EnumCase Collapse.Below cr cr
                     parseAttributes attrs
             | SynTypeDefnSimpleRepr.Record (_, fields, rr) ->
