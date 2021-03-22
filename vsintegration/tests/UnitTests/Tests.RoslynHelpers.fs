@@ -1,5 +1,6 @@
 ﻿namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
+open System
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 
@@ -8,13 +9,23 @@ type RoslynTestHelpers private () =
 
     static member CreateDocument (filePath, text: SourceText) =
         let workspace = new AdhocWorkspace()
-        let proj = workspace.AddProject("test.fsproj", LanguageNames.CSharp)
+        let projInfo =
+            let projId = ProjectId.CreateNewId()
+            ProjectInfo.Create(
+                projId,
+                VersionStamp.Create(DateTime.UtcNow),
+                "test.fsproj", 
+                "test.dll", 
+                LanguageNames.CSharp
+            )
+        let proj = workspace.AddProject(projInfo)
 
         let docInfo =
             let docId = DocumentId.CreateNewId(proj.Id)
-            DocumentInfo.Create(docId,
+            DocumentInfo.Create(
+                docId,
                 filePath,
-                loader=TextLoader.From(text.Container, VersionStamp.Create()),
+                loader=TextLoader.From(text.Container, VersionStamp.Create(DateTime.UtcNow)),
                 filePath=filePath,
                 sourceCodeKind=SourceCodeKind.Regular)
 
