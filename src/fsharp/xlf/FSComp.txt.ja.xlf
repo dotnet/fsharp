@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
-        <target state="new">The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</target>
+        <target state="translated">'AssemblyKeyNameAttribute' は非推奨になりました。代わりに 'AssemblyKeyFileAttribute' を使用してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="containerSigningUnsupportedOnThisPlatform">
         <source>Key container signing is not supported on this platform.</source>
-        <target state="new">Key container signing is not supported on this platform.</target>
+        <target state="translated">キー コンテナーの署名は、このプラットフォームではサポートされていません。</target>
         <note />
       </trans-unit>
       <trans-unit id="csAvailableOverloads">
@@ -329,7 +329,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
-        <target state="new">The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</target>
+        <target state="translated">このスクリプトの .NET SDK を特定できませんでした。このスクリプトが、'global.json' が使用されているディレクトリにある場合は、関連する .NET SDK がインストールされていることを確認してください。予期しないエラー '{0}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -2774,7 +2774,7 @@
       </trans-unit>
       <trans-unit id="tcMemberKindPropertyGetSetNotExpected">
         <source>SynMemberKind.PropertyGetSet only expected in parse trees</source>
-        <target state="needs-review-translation">解析ツリーに使用できるのは MemberKind.PropertyGetSet のみです</target>
+        <target state="translated">解析ツリーに使用できるのは SynMemberKind.PropertyGetSet のみです</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainValues">

@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
         <source>Add type annotation</source>
-        <target state="new">Add type annotation</target>
+        <target state="translated">新增型別註解</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -29,7 +29,7 @@
       </trans-unit>
       <trans-unit id="ConvertToNotEqualsEqualityExpression">
         <source>Use '&lt;&gt;' for inequality check</source>
-        <target state="new">Use '&lt;&gt;' for inequality check</target>
+        <target state="translated">使用 '&lt;&gt;' 進行不等式檢查</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
