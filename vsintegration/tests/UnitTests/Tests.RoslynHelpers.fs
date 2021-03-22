@@ -1,6 +1,7 @@
 ﻿namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
 open System
+open System.IO
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 
@@ -8,6 +9,7 @@ open Microsoft.CodeAnalysis.Text
 type RoslynTestHelpers private () =
 
     static member CreateDocument (filePath, text: SourceText) =
+        let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
         let workspace = new AdhocWorkspace()
         let projInfo =
             let projId = ProjectId.CreateNewId()
@@ -27,7 +29,7 @@ type RoslynTestHelpers private () =
                 filePath,
                 loader=TextLoader.From(text.Container, VersionStamp.Create(DateTime.UtcNow)),
                 filePath=filePath,
-                sourceCodeKind=SourceCodeKind.Regular)
+                sourceCodeKind= if isScript then SourceCodeKind.Script else SourceCodeKind.Regular)
 
         workspace.AddDocument(docInfo)
 
