@@ -22,8 +22,8 @@ type public IFileSystem =
     /// A shim over FileStream with FileMode.Open, FileAccess.Read, FileShare.ReadWrite
     abstract member FileStreamReadShim: fileName:string -> Stream
 
-    /// A shim over FileStream with FileMode.Open, FileAccess.Read, FileShare.Read
-    abstract FileStreamReadLockShim: fileName: string -> Stream
+    /// A shim over File.Open with FileMode.Open, FileAccess.Read, FileShare.Read
+    abstract FileStreamReadLockShim: fileName: string -> FileStream
 
     /// A shim over FileStream with FileMode.Open, FileAccess.Write, FileShare.Read
     abstract member FileStreamWriteExistingShim: fileName:string -> Stream
