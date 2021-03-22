@@ -54,7 +54,8 @@ type DocumentDiagnosticAnalyzerTests()  =
                                 | Some(flags) -> {projectOptions with OtherOptions = Array.append projectOptions.OtherOptions flags}
 
         let errors = getDiagnostics fileContents
-        Assert.AreEqual(0, errors.Length, "There should be no errors generated")
+        if not errors.IsEmpty then
+            Assert.Fail("There should be no errors generated", errors)
 
     member private this.VerifyErrorAtMarker(fileContents: string, expectedMarker: string, ?expectedMessage: string) =
         let errors = getDiagnostics fileContents |> Seq.filter(fun e -> e.Severity = DiagnosticSeverity.Error) |> Seq.toArray
