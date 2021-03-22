@@ -55,7 +55,7 @@ let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:in
         let caretLineColumn = caretLinePos.Character
         let perfOptions = LanguageServicePerformanceOptions.Default
         
-        let document = RoslynTestHelpers.CreateDocument(filePath, sourceText)
+        let document = RoslynTestHelpers.CreateDocument(fileName, sourceText)
         let parseResults, _, checkFileResults =
             let x =
                 checker.ParseAndCheckDocument(document, project.Options, perfOptions, "TestSignatureHelpProvider")
