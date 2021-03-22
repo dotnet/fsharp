@@ -670,7 +670,7 @@ module ParsedInput =
                 |> Option.orElse (walkExpr e)
             | _ -> None
 
-        and walkEnumCase (SynEnumCase(Attributes attrs, _, _, _, _)) = List.tryPick walkAttribute attrs
+        and walkEnumCase (SynEnumCase(Attributes attrs, _, _, _, _, _)) = List.tryPick walkAttribute attrs
 
         and walkUnionCaseType = function
             | SynUnionCaseKind.Fields fields -> List.tryPick walkField fields
@@ -1359,7 +1359,7 @@ module ParsedInput =
                 List.iter walkTypar ts
                 walkMemberSig sign
                 walkExpr e
-            | SynExpr.Const (SynConst.Measure(_, m), _) -> walkMeasure m
+            | SynExpr.Const (SynConst.Measure(_, _, m), _) -> walkMeasure m
             | _ -> ()
     
         and walkMeasure = function
@@ -1429,7 +1429,7 @@ module ParsedInput =
                 walkExpr e
             | _ -> ()
     
-        and walkEnumCase (SynEnumCase(Attributes attrs, _, _, _, _)) = List.iter walkAttribute attrs
+        and walkEnumCase (SynEnumCase(Attributes attrs, _, _, _, _, _)) = List.iter walkAttribute attrs
     
         and walkUnionCaseType = function
             | SynUnionCaseKind.Fields fields -> List.iter walkField fields
