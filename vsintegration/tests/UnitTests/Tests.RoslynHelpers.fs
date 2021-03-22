@@ -15,7 +15,8 @@ type RoslynTestHelpers private () =
             DocumentInfo.Create(docId,
                 filePath,
                 loader=TextLoader.From(text.Container, VersionStamp.Create()),
-                filePath=filePath)
+                filePath=filePath,
+                sourceCodeKind=SourceCodeKind.Regular)
 
         workspace.AddDocument(docInfo)
 
