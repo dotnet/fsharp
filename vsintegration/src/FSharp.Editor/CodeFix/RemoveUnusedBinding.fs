@@ -9,14 +9,12 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 [<AutoOpen>]
-module Yeet =
+module FSharpParseFileResultsExtensions =
     type FSharpParseFileResults with
         member this.TryRangeOfBindingWithHeadPatternWithPos pos =
             let input = this.ParseTree
@@ -26,26 +24,19 @@ module Yeet =
 
                 override _.VisitBinding(_path, defaultTraverse, binding) =
                     match binding with
-                    | SynBinding(_, SynBindingKind.Normal, _, _, _, _, _, _, _, _, _, _) as binding ->
+                    | SynBinding(_, SynBindingKind.Normal, _, _, _, _, _, pat, _, _, _, _) as binding ->
                         if Position.posEq binding.RangeOfHeadPattern.Start pos then
                             Some binding.RangeOfBindingWithRhs
                         else
-                            defaultTraverse binding
-                    | _ -> defaultTraverse binding })
+                            // Check if it's an operator
+                            match pat with
+                            | SynPat.LongIdent(LongIdentWithDots([id], _), _, _, _, _, _) when id.idText.StartsWith("op_") ->
+                                if Position.posEq id.idRange.Start pos then
+                                    Some binding.RangeOfBindingWithRhs
+                                else
+                                    defaultTraverse binding
+                            | _ -> defaultTraverse binding
 
-        member this.TryRangeOfBindingStartingAtPos pos =
-            let input = this.ParseTree
-            SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with 
-                member _.VisitExpr(_, _, defaultTraverse, expr) =
-                    defaultTraverse expr
-
-                override _.VisitBinding(_path, defaultTraverse, binding) =
-                    match binding with
-                    | SynBinding(_, SynBindingKind.Normal, _, _, _, _, _, _, _, _, range, _) as binding ->
-                        if Position.posEq range.Start pos then
-                            Some binding.RangeOfBindingWithRhs
-                        else
-                            defaultTraverse binding
                     | _ -> defaultTraverse binding })
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveUnusedBinding"); Shared>]
@@ -70,54 +61,38 @@ type internal FSharpRemoveUnusedBindingCodeFixProvider
 
             let document = context.Document
             let! sourceText = document.GetTextAsync(context.CancellationToken)
-            let ident = sourceText.ToString(context.Span)
-            // Prefixing operators and backticked identifiers does not make sense.
-            // We have to use the additional check for backtickes because `IsOperatorOrBacktickedName` operates on display names
-            // where backtickes are replaced with parens.
-            if not (PrettyNaming.IsOperatorOrBacktickedName ident) && not (ident.StartsWith "``") then
-                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
-                let! parseResults, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName=userOpName)
-                let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
-                let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
-                let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, context.Span.Start, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
-                let lineText = (sourceText.Lines.GetLineFromPosition context.Span.Start).ToString()  
-                let! symbolUse = checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, lexerSymbol.FullIsland)
 
-                let diagnostics =
-                    context.Diagnostics
-                    |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                    |> Seq.toImmutableArray
+            let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
+            let! parseResults = checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName = userOpName) |> liftAsync
 
-                match symbolUse.Symbol with
-                | :? FSharpMemberOrFunctionOrValue as mfv ->
-                    let! rangeOfBinding =
-                        if mfv.IsValue then
-                            parseResults.TryRangeOfBindingWithHeadPatternWithPos(symbolUse.Range.Start)
-                        else
-                            parseResults.TryRangeOfBindingWithHeadPatternWithPos(symbolUse.Range.Start)
+            let diagnostics =
+                context.Diagnostics
+                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
+                |> Seq.toImmutableArray
 
-                    let! spanOfBinding = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, rangeOfBinding)
+            let symbolRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
+            let! rangeOfBinding = parseResults.TryRangeOfBindingWithHeadPatternWithPos(symbolRange.Start)
+            let! spanOfBinding = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, rangeOfBinding)
 
-                    let keywordEndColumn =
-                        let rec loop ch pos =
-                            if not (Char.IsWhiteSpace(ch)) then
-                                pos
-                            else
-                                loop sourceText.[pos - 1] (pos - 1)
-                        loop sourceText.[spanOfBinding.Start - 1] (spanOfBinding.Start - 1)
+            let keywordEndColumn =
+                let rec loop ch pos =
+                    if not (Char.IsWhiteSpace(ch)) then
+                        pos
+                    else
+                        loop sourceText.[pos - 1] (pos - 1)
+                loop sourceText.[spanOfBinding.Start - 1] (spanOfBinding.Start - 1)
 
-                    // This is safe, since we could never have gotten here unless there was a `let` or `use`
-                    let keywordStartColumn = keywordEndColumn - 2
-                    let fullSpan = TextSpan(keywordStartColumn, spanOfBinding.End - keywordStartColumn)
+            // This is safe, since we could never have gotten here unless there was a `let` or `use`
+            let keywordStartColumn = keywordEndColumn - 2
+            let fullSpan = TextSpan(keywordStartColumn, spanOfBinding.End - keywordStartColumn)
 
-                    let prefixTitle = SR.RemoveUnusedBinding()
-                    let removalCodeFix =
-                        CodeFixHelpers.createTextChangeCodeFix(
-                            prefixTitle,
-                            context,
-                            (fun () -> asyncMaybe.Return [| TextChange(fullSpan, "") |]))
-                    context.RegisterCodeFix(removalCodeFix, diagnostics)
-                | _ -> ()
+            let prefixTitle = SR.RemoveUnusedBinding()
+            let removalCodeFix =
+                CodeFixHelpers.createTextChangeCodeFix(
+                    prefixTitle,
+                    context,
+                    (fun () -> asyncMaybe.Return [| TextChange(fullSpan, "") |]))
+            context.RegisterCodeFix(removalCodeFix, diagnostics)
         } 
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
