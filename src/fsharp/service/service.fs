@@ -445,19 +445,36 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         }
 
     member _.GetCachedCheckFileResult(builder: IncrementalBuilder, filename, sourceText: ISourceText, options, cacheStamp: int64 option) =
-        // If a cache stamp is not provided, we need to do a full-up-to-date check on the timestamps for the dependencies.
-        let recheckDeps = cacheStamp.IsNone
-        let cacheStamp = defaultArg cacheStamp (sourceText.GetHashCode() |> int64)
-        if recheckDeps && not (builder.AreCheckResultsBeforeFileInProjectReady filename) then 
-            parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.RemoveAnySimilar(ltok, (filename, cacheStamp, options)))
-            None
-        else
-            // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
-            let cachedResults = parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.TryGet(ltok, (filename, cacheStamp, options)))
+        let stamp =
+            match cacheStamp with
+            | None -> sourceText.GetHashCode() |> int64
+            | Some cacheStamp -> cacheStamp
 
-            match cachedResults with 
-            | Some (parseResults, checkResults, _, _) -> Some (parseResults, checkResults)
-            | _ -> None
+        // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
+        let cachedResults = parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.TryGet(ltok, (filename, stamp, options)))
+
+        let result =
+            if cacheStamp.IsSome then
+                match cachedResults with 
+                | Some (parseResults, checkResults, _, _) -> Some (parseResults, checkResults)
+                | _ -> None
+            else
+                match cachedResults with 
+                | Some (parseResults, checkResults,_,priorTimeStamp) 
+                        when 
+                        (match builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename with 
+                        | None -> false
+                        | Some(tcPrior) -> 
+                            tcPrior.TimeStamp = priorTimeStamp &&
+                            builder.AreCheckResultsBeforeFileInProjectReady(filename)) -> 
+                    Some (parseResults,checkResults)
+                | _ ->
+                    None
+
+        if result.IsNone then
+            parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.RemoveAnySimilar(ltok, (filename, stamp, options)))
+
+        result
 
     /// 1. Repeatedly try to get cached file check results or get file "lock". 
     /// 
