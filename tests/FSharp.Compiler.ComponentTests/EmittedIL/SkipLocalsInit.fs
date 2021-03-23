@@ -22,7 +22,8 @@ let x () =
          |> verifyIL ["""
 .method public static int32  x() cil managed
 {
-  
+  .custom instance void [runtime]System.Runtime.CompilerServices.SkipLocalsInitAttribute::.ctor() = ( 01 00 00 00 )
+
   .maxstack  4
   .locals (int32 V_0)
   IL_0000:  ldstr      "ssa"
