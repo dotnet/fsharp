@@ -41,6 +41,7 @@ type Reactor() =
     // so that when the reactor picks up a thread from the thread pool we can set the culture
     let mutable culture = CultureInfo(CultureInfo.CurrentUICulture.Name)
 
+    let gate = obj()
     let mutable bgOpCts = new CancellationTokenSource()
 
     let sw = new System.Diagnostics.Stopwatch()
@@ -87,7 +88,7 @@ type Reactor() =
                             | None -> None
                             | Some (bgUserOpName, bgOpName, bgOpArg, bgOp) -> 
                                 let oldBgOpCts = bgOpCts
-                                bgOpCts <- new CancellationTokenSource()
+                                lock gate (fun () -> bgOpCts <- new CancellationTokenSource())
                                 oldBgOpCts.Dispose()
                                 Some (bgUserOpName, bgOpName, bgOpArg, bgOp ctok)
 
@@ -114,7 +115,7 @@ type Reactor() =
                         | Some (bgUserOpName, bgOpName, bgOpArg, bgOp) -> 
                             Trace.TraceInformation("Reactor: {0:n3} --> wait for background {1}.{2} ({3}), remaining {4}", DateTime.Now.TimeOfDay.TotalSeconds, bgUserOpName, bgOpName, bgOpArg, inbox.CurrentQueueLength)
                             let oldBgOpCts = bgOpCts
-                            bgOpCts <- new CancellationTokenSource()
+                            lock gate (fun () -> bgOpCts <- new CancellationTokenSource())
                             oldBgOpCts.Dispose()
                             
                             try 
@@ -179,12 +180,12 @@ type Reactor() =
     // [Foreground Mailbox Accessors] -----------------------------------------------------------                
     member _.SetBackgroundOp(bgOpOpt) = 
         Trace.TraceInformation("Reactor: {0:n3} enqueue start background, length {1}", DateTime.Now.TimeOfDay.TotalSeconds, builder.CurrentQueueLength)
-        bgOpCts.Cancel()
+        lock gate (fun () -> bgOpCts.Cancel())
         builder.Post(SetBackgroundOp bgOpOpt)
 
     member _.CancelBackgroundOp() = 
         Trace.TraceInformation("FCS: trying to cancel any active background work")
-        bgOpCts.Cancel()
+        lock gate (fun () -> bgOpCts.Cancel())
 
     member _.EnqueueOp(userOpName, opName, opArg, op) =
         Trace.TraceInformation("Reactor: {0:n3} enqueue {1}.{2} ({3}), length {4}", DateTime.Now.TimeOfDay.TotalSeconds, userOpName, opName, opArg, builder.CurrentQueueLength)
