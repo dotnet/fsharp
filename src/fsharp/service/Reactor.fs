@@ -87,9 +87,11 @@ type Reactor() =
                             match bgOpOpt with 
                             | None -> None
                             | Some (bgUserOpName, bgOpName, bgOpArg, bgOp) -> 
-                                let oldBgOpCts = bgOpCts
-                                lock gate (fun () -> bgOpCts <- new CancellationTokenSource())
-                                oldBgOpCts.Dispose()
+                                lock gate (fun () -> 
+                                    let oldBgOpCts = bgOpCts
+                                    bgOpCts <- new CancellationTokenSource()
+                                    oldBgOpCts.Dispose()
+                                )
                                 Some (bgUserOpName, bgOpName, bgOpArg, bgOp ctok)
 
                         //Trace.TraceInformation("Reactor: --> set background op, remaining {0}", inbox.CurrentQueueLength)
@@ -114,9 +116,11 @@ type Reactor() =
                         | None -> ()
                         | Some (bgUserOpName, bgOpName, bgOpArg, bgOp) -> 
                             Trace.TraceInformation("Reactor: {0:n3} --> wait for background {1}.{2} ({3}), remaining {4}", DateTime.Now.TimeOfDay.TotalSeconds, bgUserOpName, bgOpName, bgOpArg, inbox.CurrentQueueLength)
-                            let oldBgOpCts = bgOpCts
-                            lock gate (fun () -> bgOpCts <- new CancellationTokenSource())
-                            oldBgOpCts.Dispose()
+                            lock gate (fun () -> 
+                                let oldBgOpCts = bgOpCts
+                                bgOpCts <- new CancellationTokenSource()
+                                oldBgOpCts.Dispose()
+                            )
                             
                             try 
                                 Eventually.force bgOpCts.Token bgOp |> ignore
