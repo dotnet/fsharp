@@ -33,6 +33,21 @@ namespace ANamespaceForSignature
         Assert.shouldBeEquivalentTo expected (text.ToString())
 
     [<Test>]
+    let ``Generate signature with correct namespace 2``() =
+        let text =
+            FSharp """
+namespace Test.ANamespaceForSignature
+            """
+            |> withLangVersion50
+            |> typecheckResults
+            |> sigText
+
+        let expected =
+            """namespace rec Test.ANamespaceForSignature"""
+        
+        Assert.shouldBeEquivalentTo expected (text.ToString())
+
+    [<Test>]
     let ``Generate signature with correct module``() =
         let text =
             FSharp """

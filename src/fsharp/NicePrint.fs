@@ -2086,17 +2086,29 @@ let minimalStringOfType denv ty =
     showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 2 ty)
 
 let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (mty: ModuleOrNamespaceType) =
+
+    let rec fullPath (mspec: ModuleOrNamespace) acc =
+        if mspec.IsNamespace then
+            match mspec.ModuleOrNamespaceType.ModuleAndNamespaceDefinitions |> List.tryHead with
+            | Some next when next.IsModuleOrNamespace ->
+                fullPath next (acc @ [next.DemangledModuleOrNamespaceName])
+            | _ ->
+                acc
+        else
+            acc
+
     ((denv, Layout.emptyL), mty.ModuleAndNamespaceDefinitions)
     ||> List.fold (fun (denv, currentL) (mspec: ModuleOrNamespace) ->
-        let nm = mspec.DemangledModuleOrNamespaceName
-        let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath
         let outerPath = mspec.CompilationPath.AccessPath
+
+        let path = fullPath mspec [mspec.DemangledModuleOrNamespaceName]
+        let nm = path |> List.last
         
-        let denv = denv.AddOpenPath (List.map fst innerPath)
+        let denv = denv.AddOpenPath path
         let nextL =
             if mspec.IsNamespace then
                 // This is a container namespace. We print the header when we get to the first concrete module.
-                wordL (tagKeyword "namespace") ^^ wordL (tagKeyword "rec") ^^ sepListL SepL.dot (List.map (fst >> tagNamespace >> wordL) innerPath)
+                wordL (tagKeyword "namespace") ^^ wordL (tagKeyword "rec") ^^ sepListL SepL.dot (List.map (tagNamespace >> wordL) path)
             else
                 // This is a module 
                 let nmL = wordL (tagModule nm)
