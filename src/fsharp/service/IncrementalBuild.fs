@@ -1079,6 +1079,14 @@ type IncrementalBuilder(tcGlobals,
                 return { state with finalizedBoundModel = Some result }, result
         }
 
+    let tryGetSlot (state: IncrementalBuilderState) slot =
+        match state.boundModels.[slot] with
+        | Some boundModel ->
+            (boundModel, state.stampedFileNames.[slot])
+            |> Some
+        | _ ->
+            None
+
     let tryGetBeforeSlot (state: IncrementalBuilderState) slot =
         match slot with
         | 0 (* first file *) ->
@@ -1089,12 +1097,7 @@ type IncrementalBuilder(tcGlobals,
             | _ ->
                 None
         | _ ->
-            match state.boundModels.[slot - 1] with
-            | Some boundModel ->
-                (boundModel, state.stampedFileNames.[slot - 1])
-                |> Some
-            | _ ->
-                None
+            tryGetSlot state (slot - 1)
                 
     let evalUpToTargetSlot state (cache: TimeStampCache) ctok targetSlot =
         cancellable {
@@ -1192,13 +1195,6 @@ type IncrementalBuilder(tcGlobals,
         match result with
         | Some (boundModel, timestamp) -> Some (PartialCheckResults (boundModel, timestamp))
         | _ -> None
-        
-    
-    member builder.AreCheckResultsBeforeFileInProjectReady filename = 
-        let slotOfFile = builder.GetSlotOfFileName filename
-        match tryGetBeforeSlot currentState slotOfFile with
-        | Some _ -> true
-        | _ -> false
 
     member builder.TryGetCheckResultsBeforeFileInProject (filename) =
         let cache = TimeStampCache defaultTimeStamp
@@ -1210,6 +1206,9 @@ type IncrementalBuilder(tcGlobals,
         match tryGetBeforeSlot state slotOfFile with
         | Some(boundModel, timestamp) -> PartialCheckResults(boundModel, timestamp) |> Some
         | _ -> None
+
+    member builder.AreCheckResultsBeforeFileInProjectReady filename = 
+        (builder.TryGetCheckResultsBeforeFileInProject filename).IsSome
 
     member private _.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile, enablePartialTypeChecking) = 
       cancellable {

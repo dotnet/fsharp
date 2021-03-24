@@ -179,7 +179,7 @@ type internal FSharpClassificationService
                         do! semanticClassificationCache.SetAsync(document, classificationDataLookup) |> liftAsync
                         addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
                 else
-                    let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = false, userOpName=userOpName) 
+                    let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = false, userOpName=userOpName) 
                     let targetRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
                     let classificationData = checkResults.GetSemanticClassification (Some targetRange)
                     addSemanticClassification sourceText textSpan classificationData result
