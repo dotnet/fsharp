@@ -348,8 +348,6 @@ type public FSharpCheckFileResults =
          moduleNamesDict: ModuleNamesDict *
          loadClosure: LoadClosure option *
          backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] *    
-         reactorOps: IReactorOperations *
-         userOpName: string *
          isIncompleteTypeCheckEnvironment: bool * 
          projectOptions: FSharpProjectOptions *
          builder: IncrementalBuilder * 
@@ -358,7 +356,7 @@ type public FSharpCheckFileResults =
          parseErrors:FSharpDiagnostic[] * 
          keepAssemblyContents: bool *
          suggestNamesForErrors: bool
-          ->  Async<FSharpCheckFileAnswer>
+          -> Cancellable<FSharpCheckFileResults>
 
 /// The result of calling TypeCheckResult including the possibility of abort and background compiler not caught up.
 and [<RequireQualifiedAccess>] public FSharpCheckFileAnswer =
@@ -446,7 +444,6 @@ module internal ParseAndCheckFile =
 type internal FsiInteractiveChecker =
     internal new: 
         LegacyReferenceResolver *
-        reactorOps: IReactorOperations *
         tcConfig: TcConfig * 
         tcGlobals: TcGlobals * 
         tcImports: TcImports * 
@@ -457,9 +454,8 @@ type internal FsiInteractiveChecker =
         ctok: CompilationThreadToken * 
         sourceText:ISourceText * 
         ?userOpName: string 
-          -> Async<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
+          -> Cancellable<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
 
 module internal FSharpCheckerResultsSettings =
     val defaultFSharpBinariesDir: string
 
-    val maxTimeShareMilliseconds : int64

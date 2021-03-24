@@ -121,7 +121,8 @@ type public FSharpChecker =
     /// <param name="sourceText">The full source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member CheckFileInProject: parseResults: FSharpParseFileResults * filename: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckFileAnswer>
+    /// <param name="cacheStamp">Used to determine if we should use cached results. If None, it will use ISourceText.GetHashCode.</param>
+    member CheckFileInProject: parseResults: FSharpParseFileResults * filename: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string * ?cacheStamp: int64 -> Async<FSharpCheckFileAnswer>
 
     /// <summary>
     /// <para>
@@ -140,7 +141,8 @@ type public FSharpChecker =
     /// <param name="sourceText">The source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member ParseAndCheckFileInProject: filename: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpParseFileResults * FSharpCheckFileAnswer>
+    /// <param name="cacheStamp">Used to determine if we should use cached results. If None, it will use ISourceText.GetHashCode.</param>
+    member ParseAndCheckFileInProject: filename: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string * ?cacheStamp: int64 -> Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     /// <summary>
     /// <para>Parse and typecheck all files in a project.</para>
@@ -171,9 +173,17 @@ type public FSharpChecker =
     /// <param name="optionsStamp">An optional unique stamp for the options.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member GetProjectOptionsFromScript:
-        filename: string * source: ISourceText * ?previewEnabled:bool * ?loadedTimeStamp: DateTime *
-        ?otherFlags: string[] * ?useFsiAuxLib: bool * ?useSdkRefs: bool * ?assumeDotNetFramework: bool * ?sdkDirOverride: string *
-        ?optionsStamp: int64 * ?userOpName: string
+        filename: string *
+        source: ISourceText *
+        ?previewEnabled:bool *
+        ?loadedTimeStamp: DateTime *
+        ?otherFlags: string[] *
+        ?useFsiAuxLib: bool *
+        ?useSdkRefs: bool *
+        ?assumeDotNetFramework: bool *
+        ?sdkDirOverride: string *
+        ?optionsStamp: int64 *
+        ?userOpName: string
             -> Async<FSharpProjectOptions * FSharpDiagnostic list>
 
     /// <summary>Get the FSharpProjectOptions implied by a set of command line arguments.</summary>
@@ -181,12 +191,16 @@ type public FSharpChecker =
     /// <param name="projectFileName">Used to differentiate between projects and for the base directory of the project.</param>
     /// <param name="argv">The command line arguments for the project build.</param>
     /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
+    /// <param name="isEditing">Indicates that compilation should assume the EDITING define and related settings</param>
+    /// <param name="isInteractive">Indicates that compilation should assume the INTERACTIVE define and related settings</param>
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
     member GetProjectOptionsFromCommandLineArgs:
         projectFileName: string *
         argv: string[] *
-        ?loadedTimeStamp: DateTime
+        ?loadedTimeStamp: DateTime *
+        ?isInteractive: bool *
+        ?isEditing: bool
             -> FSharpProjectOptions
 
     /// <summary>
@@ -196,10 +210,12 @@ type public FSharpChecker =
     /// <param name="sourceFiles">Initial source files list. Additional files may be added during argv evaluation.</param>
     /// <param name="argv">The command line arguments for the project build.</param>
     /// <param name="isInteractive">Indicates that parsing should assume the INTERACTIVE define and related settings</param>
+    /// <param name="isEditing">Indicates that compilation should assume the EDITING define and related settings</param>
     member GetParsingOptionsFromCommandLineArgs:
         sourceFiles: string list *
         argv: string list *
-        ?isInteractive: bool
+        ?isInteractive: bool *
+        ?isEditing: bool
             -> FSharpParsingOptions * FSharpDiagnostic list
 
     /// <summary>
@@ -208,14 +224,21 @@ type public FSharpChecker =
     ///
     /// <param name="argv">The command line arguments for the project build.</param>
     /// <param name="isInteractive">Indicates that parsing should assume the INTERACTIVE define and related settings</param>
-    member GetParsingOptionsFromCommandLineArgs: argv: string list * ?isInteractive: bool -> FSharpParsingOptions * FSharpDiagnostic list
+    /// <param name="isEditing">Indicates that compilation should assume the EDITING define and related settings</param>
+    member GetParsingOptionsFromCommandLineArgs:
+        argv: string list *
+        ?isInteractive: bool *
+        ?isEditing: bool
+            -> FSharpParsingOptions * FSharpDiagnostic list
 
     /// <summary>
     /// <para>Get the FSharpParsingOptions implied by a FSharpProjectOptions.</para>
     /// </summary>
     ///
     /// <param name="options">The overall options.</param>
-    member GetParsingOptionsFromProjectOptions: options: FSharpProjectOptions -> FSharpParsingOptions * FSharpDiagnostic list
+    member GetParsingOptionsFromProjectOptions:
+        options: FSharpProjectOptions
+            -> FSharpParsingOptions * FSharpDiagnostic list
 
     /// <summary>
     /// <para>Like ParseFile, but uses results from the background builder.</para>
@@ -328,7 +351,8 @@ type public FSharpChecker =
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="sourceText">Optionally, specify source that must match the previous parse precisely.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member TryGetRecentCheckResultsForFile: filename: string * options:FSharpProjectOptions * ?sourceText: ISourceText * ?userOpName: string -> (FSharpParseFileResults * FSharpCheckFileResults * (*version*)int) option
+    /// <param name="cacheStamp">Used to determine if we should use cached results. If None, it will use ISourceText.GetHashCode.</param>
+    member TryGetRecentCheckResultsForFile: filename: string * options:FSharpProjectOptions * ?sourceText: ISourceText * ?userOpName: string * ?cacheStamp: int64 -> (FSharpParseFileResults * FSharpCheckFileResults * (*version*)int) option
 
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.
     member InvalidateAll: unit -> unit
@@ -359,10 +383,10 @@ type public FSharpChecker =
     member WaitForBackgroundCompile: unit -> unit
 
     /// Report a statistic for testability
-    static member GlobalForegroundParseCountStatistic: int
+    static member ActualParseFileCount: int
 
     /// Report a statistic for testability
-    static member GlobalForegroundTypeCheckCountStatistic: int
+    static member ActualCheckFileCount: int
 
     /// Flush all caches and garbage collect
     member ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients: unit -> unit

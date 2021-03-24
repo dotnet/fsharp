@@ -127,7 +127,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
             override _.VisitBinding(_path, defaultTraverse, binding) =
                 match binding with
-                | SynBinding(_, _, _, _, _, _, _, _, _, expr, _range, _) as b when rangeContainsPos b.RangeOfBindingWithRhs pos ->
+                | SynBinding(_, _, _, _, _, _, SynValData (None, _, _), _, _, expr, _range, _) as b when rangeContainsPos b.RangeOfBindingWithRhs pos ->
                     match tryGetIdentRangeFromBinding b with
                     | Some range -> walkBinding expr range
                     | None -> None
@@ -158,6 +158,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(_, traverseSynExpr, defaultTraverse, expr) =
                     match expr with
+                    | SynExpr.TypeApp (_, _, _, _, _, _, range) when rangeContainsPos range pos ->
+                        Some range
                     | SynExpr.App(_, _, _, SynExpr.CompExpr (_, _, expr, _), range) when rangeContainsPos range pos ->
                         traverseSynExpr expr
                     | SynExpr.App (_, _, _, _, range) when rangeContainsPos range pos ->
@@ -174,6 +176,9 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             | SynExpr.LongIdent (_, _, _, range) -> Some range
 
             | SynExpr.Paren (expr, _, _, range) when rangeContainsPos range pos ->
+                getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+
+            | SynExpr.TypeApp (expr, _, _, _, _, _, _) ->
                 getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
             | SynExpr.App (_, _, funcExpr, argExpr, _) ->
@@ -269,6 +274,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
             member _.VisitExpr(_, traverseSynExpr, defaultTraverse, expr) =
                 match expr with
+                | SynExpr.TypeApp (expr, _, _, _, _, _, range) when rangeContainsPos range pos ->
+                    getIdentRangeForFuncExprInApp traverseSynExpr expr pos
                 | SynExpr.App (_, _, _funcExpr, _, range) as app when rangeContainsPos range pos ->
                     getIdentRangeForFuncExprInApp traverseSynExpr app pos
                 | _ -> defaultTraverse expr
@@ -327,6 +334,17 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         None
                 | _ -> defaultTraverse expr })
 
+    member _.TryRangeOfExpressionBeingDereferencedContainingPos expressionPos =
+        SyntaxTraversal.Traverse(expressionPos, input, { new SyntaxVisitorBase<_>() with 
+            member _.VisitExpr(_, _, defaultTraverse, expr) =
+                match expr with
+                | SynExpr.App(_, false, SynExpr.Ident funcIdent, expr, _) ->
+                    if funcIdent.idText = "op_Dereference" && rangeContainsPos expr.Range expressionPos then
+                        Some expr.Range
+                    else
+                        None
+                | _ -> defaultTraverse expr })
+
     member _.FindParameterLocations pos = 
         ParameterLocations.Find(pos, input)
 
@@ -352,6 +370,50 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         None
             })
         result.IsSome
+
+    member _.IsTypeAnnotationGivenAtPosition pos =
+        let result =
+            SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with 
+                member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
+                    match expr with
+                    | SynExpr.Typed (_expr, _typeExpr, range) when Position.posEq range.Start pos ->
+                        Some range
+                    | _ -> defaultTraverse expr
+
+                override _.VisitSimplePats(_path, pats) =
+                    match pats with
+                    | [] -> None
+                    | _ ->
+                        let exprFunc pat =
+                            match pat with
+                            | SynSimplePat.Typed (_pat, _targetExpr, range) when Position.posEq range.Start pos ->
+                                Some range
+                            | _ ->
+                                None
+
+                        pats |> List.tryPick exprFunc
+
+                override _.VisitPat(_path, defaultTraverse, pat) =
+                    match pat with
+                    | SynPat.Typed (_pat, _targetType, range) when Position.posEq range.Start pos ->
+                        Some range
+                    | _ -> defaultTraverse pat })
+        result.IsSome
+
+        member _.IsBindingALambdaAtPosition pos =
+            let result =
+                SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with 
+                    member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
+                        defaultTraverse expr
+
+                    override _.VisitBinding(_path, defaultTraverse, binding) =
+                        match binding with
+                        | SynBinding.SynBinding(_, _, _, _, _, _, _, _, _, expr, range, _) when Position.posEq range.Start pos ->
+                            match expr with
+                            | SynExpr.Lambda _ -> Some range
+                            | _ -> None
+                        | _ -> defaultTraverse binding })
+            result.IsSome
     
     /// Get declared items and the selected item at the specified location
     member _.GetNavigationItemsImpl() =

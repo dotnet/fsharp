@@ -217,12 +217,19 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
     override _.ReadInt32 pos =
         check pos
         check (pos + 3)
-        Marshal.ReadInt32(NativePtr.toNativeInt addr + nativeint pos)
+        let finalAddr = NativePtr.toNativeInt addr + nativeint pos
+        uint32(Marshal.ReadByte(finalAddr, 0)) |||
+        (uint32(Marshal.ReadByte(finalAddr, 1)) <<< 8) |||
+        (uint32(Marshal.ReadByte(finalAddr, 2)) <<< 16) |||
+        (uint32(Marshal.ReadByte(finalAddr, 3)) <<< 24)
+        |> int
 
     override _.ReadUInt16 pos =
         check pos
         check (pos + 1)
-        uint16(Marshal.ReadInt16(NativePtr.toNativeInt addr + nativeint pos))
+        let finalAddr = NativePtr.toNativeInt addr + nativeint pos
+        uint16(Marshal.ReadByte(finalAddr, 0)) |||
+        (uint16(Marshal.ReadByte(finalAddr, 1)) <<< 8)
 
     override _.Slice(pos, count) =
         checkCount count
