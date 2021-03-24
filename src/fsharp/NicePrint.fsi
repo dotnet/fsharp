@@ -113,3 +113,5 @@ val minimalStringsOfTwoTypes: denv:DisplayEnv -> t1:TType -> t2:TType -> string 
 val minimalStringsOfTwoValues: denv:DisplayEnv -> v1:Val -> v2:Val -> string * string
 
 val minimalStringOfType: denv:DisplayEnv -> ty:TType -> string
+
+val layoutOfModuleOrNamespaceType: _denv:DisplayEnv -> mty:ModuleOrNamespaceType -> Layout

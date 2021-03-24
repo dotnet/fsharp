@@ -2085,3 +2085,11 @@ let minimalStringOfType denv ty =
     let denvMin = { denv with showImperativeTyparAnnotations=false; showConstraintTyparAnnotations=false }
     showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 2 ty)
 
+let layoutOfModuleOrNamespaceType (_denv: DisplayEnv) (mty: ModuleOrNamespaceType) =
+    let top =
+        if mty.ModuleOrNamespaceKind = ModuleOrNamespaceKind.Namespace then
+            wordL (tagKeyword "namespace")
+        else
+            wordL (tagKeyword "module")
+
+    top
