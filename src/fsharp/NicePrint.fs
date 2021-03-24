@@ -2085,11 +2085,11 @@ let minimalStringOfType denv ty =
     let denvMin = { denv with showImperativeTyparAnnotations=false; showConstraintTyparAnnotations=false }
     showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 2 ty)
 
-let layoutOfModuleOrNamespaceType (_denv: DisplayEnv) (mty: ModuleOrNamespaceType) =
+let layoutOfModuleOrNamespaceType (_denv: DisplayEnv) (mty: ModuleOrNamespaceType, mtyQualifiedName: string list) =
     let top =
         if mty.ModuleOrNamespaceKind = ModuleOrNamespaceKind.Namespace then
-            wordL (tagKeyword "namespace")
+            wordL (tagKeyword "namespace") ^^ wordL (tagKeyword "rec") ^^ sepListL SepL.dot (List.map (tagNamespace >> wordL) mtyQualifiedName)
         else
-            wordL (tagKeyword "module")
+            wordL (tagKeyword "module") ^^ wordL (tagKeyword "rec") ^^ sepListL SepL.dot (List.map (tagNamespace >> wordL) mtyQualifiedName)
 
     top

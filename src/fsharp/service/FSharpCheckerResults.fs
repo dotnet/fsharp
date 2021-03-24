@@ -1969,6 +1969,52 @@ type FSharpCheckFileResults
         threadSafeOp (fun () -> None) (fun scope -> 
             let (nenv, _), _ = scope.GetBestDisplayEnvForPos cursorPos
             Some(FSharpDisplayContext(fun _ -> nenv.DisplayEnv)))
+
+    member _.GenerateSignatureText() =
+        threadSafeOp (fun () -> None) (fun scope ->
+            match scope.ThisCcu.QualifiedName with
+            | None -> None
+            | Some qualifiedName ->
+
+            let tcGlobals = scope.TcGlobals
+
+            let denv = DisplayEnv.Empty tcGlobals
+            let denv = 
+                { denv with 
+                   showImperativeTyparAnnotations=true
+                   showHiddenMembers=true
+                   showObsoleteMembers=true
+                   showAttributes=true }
+
+            let rec pathForSynTy (_synTy: SynType) =
+                List.empty
+
+            let extraOpenPaths =
+                scope.OpenDeclarations
+                |> Seq.map (fun x ->
+                    match x.Target with
+                    | SynOpenDeclTarget.ModuleOrNamespace(lid, _) -> lid |> List.map (fun x -> x.idText)
+                    | SynOpenDeclTarget.Type(synTy, _) -> pathForSynTy synTy
+                )
+                |> List.ofSeq
+
+            let denv =
+                denv.SetOpenPaths 
+                    ([ FSharpLib.RootPath 
+                       FSharpLib.CorePath 
+                       FSharpLib.CollectionsPath 
+                       FSharpLib.ControlPath 
+                       (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName) 
+                     ] @ extraOpenPaths)
+
+            let mtyQualifiedName =
+                qualifiedName 
+                |> String.split StringSplitOptions.RemoveEmptyEntries [|"."|]
+                |> List.ofArray
+            NicePrint.layoutOfModuleOrNamespaceType denv (scope.CcuSigForFile, mtyQualifiedName) |> LayoutRender.showL
+            |> SourceText.ofString
+            |> Some
+        )
             
     member _.ImplementationFile =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
