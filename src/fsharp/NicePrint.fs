@@ -2102,19 +2102,18 @@ let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (mty: ModuleOrNamespaceType
                 let nmL = wordL (tagModule nm)
                 // Check if its an outer module or a nested module
                 if (outerPath |> List.forall (fun (_, istype) -> istype = Namespace)) then 
-                    // OK, we're not in F# Interactive
                     // Check if this is an outer module with no namespace
                     if isNil outerPath then 
                         // If so print a "module" declaration
-                        (wordL (tagKeyword "module") ^^ nmL)
+                        (wordL (tagKeyword "module") ^^ wordL (tagKeyword "rec") ^^ nmL)
                     else 
                         // Otherwise this is an outer module contained immediately in a namespace
                         // We already printed the namespace declaration earlier. So just print the 
                         // module now.
-                        (wordL (tagKeyword"module") ^^ nmL ^^ WordL.equals)
+                        (wordL (tagKeyword"module") ^^ wordL (tagKeyword "rec") ^^ nmL ^^ WordL.equals)
                 else
                     // OK, this is a nested module
-                    (wordL (tagKeyword "module") ^^ nmL ^^ WordL.equals)
+                    (wordL (tagKeyword "module") ^^ wordL (tagKeyword "rec") ^^ nmL ^^ WordL.equals)
         (denv, currentL ^^ nextL)
     )
     |> snd
