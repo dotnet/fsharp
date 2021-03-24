@@ -60,7 +60,7 @@ module internal FSharpQuickInfo =
             let! extParsingOptions, extProjectOptions = projectInfoManager.TryGetOptionsByProject(extDocument.Project, cancellationToken)
             let extDefines = CompilerEnvironment.GetCompilationDefinesForEditing extParsingOptions
             let! extLexerSymbol = Tokenizer.getSymbolAtPosition(extDocId, extSourceText, extSpan.Start, declRange.FileName, extDefines, SymbolLookupKind.Greedy, true, true)
-            let! _, _, extCheckFileResults = checker.ParseAndCheckDocument(extDocument, extProjectOptions, allowStaleResults=true, sourceText=extSourceText, userOpName = userOpName)
+            let! _, _, extCheckFileResults = checker.ParseAndCheckDocument(extDocument, extProjectOptions, allowStaleResults=true, userOpName = userOpName)
 
             let extQuickInfoText = 
                 extCheckFileResults.GetToolTip
@@ -97,7 +97,7 @@ module internal FSharpQuickInfo =
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, true, true)
             let idRange = lexerSymbol.Ident.idRange  
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, sourceText=sourceText, userOpName = userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, userOpName = userOpName)
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
@@ -177,14 +177,16 @@ type internal FSharpAsyncQuickInfoSource
     ) =
 
     // test helper
-    static member ProvideQuickInfo(checker:FSharpChecker, documentId:DocumentId, sourceText:SourceText, filePath:string, position:int, parsingOptions:FSharpParsingOptions, options:FSharpProjectOptions, textVersionHash:int, languageServicePerformanceOptions: LanguageServicePerformanceOptions) =
+    static member ProvideQuickInfo(checker:FSharpChecker, document: Document, position:int, parsingOptions:FSharpParsingOptions, options:FSharpProjectOptions, languageServicePerformanceOptions: LanguageServicePerformanceOptions) =
         asyncMaybe {
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, languageServicePerformanceOptions, userOpName=FSharpQuickInfo.userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, languageServicePerformanceOptions, userOpName=FSharpQuickInfo.userOpName)
+            let! sourceText = document.GetTextAsync()
+            let filePath = document.FilePath
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
             let textLineString = textLine.ToString()
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
-            let! symbol = Tokenizer.getSymbolAtPosition (documentId, sourceText, position, filePath, defines, SymbolLookupKind.Precise, true, true)
+            let! symbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, position, filePath, defines, SymbolLookupKind.Precise, true, true)
             let res = checkFileResults.GetToolTip (textLineNumber, symbol.Ident.idRange.EndColumn, textLineString, symbol.FullIsland, FSharpTokenTag.IDENT)
             match res with
             | ToolTipText []

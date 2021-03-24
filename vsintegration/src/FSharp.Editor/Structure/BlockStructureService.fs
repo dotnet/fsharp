@@ -151,8 +151,8 @@ type internal FSharpBlockStructureService [<ImportingConstructor>] (checkerProvi
             asyncMaybe {
                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! parsedInput = checkerProvider.Checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
-                return createBlockSpans document.FSharpOptions.Advanced.IsBlockStructureEnabled sourceText parsedInput |> Seq.toImmutableArray
+                let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions, userOpName)
+                return createBlockSpans document.FSharpOptions.Advanced.IsBlockStructureEnabled sourceText parseResults.ParseTree |> Seq.toImmutableArray
             } 
             |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)
             |> Async.map FSharpBlockStructure
