@@ -2097,13 +2097,12 @@ let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (mty: ModuleOrNamespaceType
         else
             acc, mspec.IsNamespace
 
-    ((denv, Layout.emptyL), mty.ModuleAndNamespaceDefinitions)
-    ||> List.fold (fun (denv, currentL) (mspec: ModuleOrNamespace) ->
+    let moduleOrNamespaceL (denv: DisplayEnv) (mspec: ModuleOrNamespace) =
         let outerPath = mspec.CompilationPath.AccessPath
 
         let path, isNamespace = fullPath mspec [mspec.DemangledModuleOrNamespaceName]
         
-        let denv = denv.AddOpenPath path
+        let _denv = denv.AddOpenPath path
         let nextL =
             if isNamespace then
                 // This is a container namespace. We print the header when we get to the first concrete module.
@@ -2127,10 +2126,16 @@ let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (mty: ModuleOrNamespaceType
                         // Otherwise this is an outer module contained immediately in a namespace
                         // We already printed the namespace declaration earlier. So just print the 
                         // module now.
-                        (wordL (tagKeyword"module") ^^ wordL (tagKeyword "rec") ^^ nmL ^^ WordL.equals)
+                        (wordL (tagKeyword "module") ^^ wordL (tagKeyword "rec") ^^ nmL ^^ WordL.equals)
                 else
                     // OK, this is a nested module
                     (wordL (tagKeyword "module") ^^ wordL (tagKeyword "rec") ^^ nmL ^^ WordL.equals)
-        (denv, currentL ^^ nextL)
-    )
-    |> snd
+        nextL
+
+    let moduleOrNamespaces =
+        mty.ModuleAndNamespaceDefinitions
+        |> List.map (fun mspec ->
+            moduleOrNamespaceL denv mspec
+        )
+
+    sepListL (sepL lineBreak ^^ sepL lineBreak) moduleOrNamespaces

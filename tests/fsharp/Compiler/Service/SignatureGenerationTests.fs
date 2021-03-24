@@ -17,62 +17,52 @@ module SignatureGenerationTests =
         | None -> failwith "Unable to generate signature text."
         | Some text -> text
 
-    [<Test>]
-    let ``Generate signature with correct namespace``() =
+    let sigShouldBe (expected: string) src =
         let text =
-            FSharp """
-namespace ANamespaceForSignature
-            """
+            FSharp src
             |> withLangVersion50
             |> typecheckResults
             |> sigText
 
-        let expected =
-            """namespace rec ANamespaceForSignature"""
-        
-        Assert.shouldBeEquivalentTo expected (text.ToString())
+        let textString = text.ToString()
+        let expected = expected.Replace("\r\n", "\n")
+        Assert.shouldBeEquivalentTo expected textString
+
+    [<Test>]
+    let ``Generate signature with correct namespace``() =
+        """
+namespace ANamespaceForSignature
+        """
+        |> sigShouldBe """namespace rec ANamespaceForSignature"""
 
     [<Test>]
     let ``Generate signature with correct namespace 2``() =
-        let text =
-            FSharp """
+        """
 namespace Test.ANamespaceForSignature
-            """
-            |> withLangVersion50
-            |> typecheckResults
-            |> sigText
+        """
+        |> sigShouldBe """namespace rec Test.ANamespaceForSignature"""
 
-        let expected =
-            """namespace rec Test.ANamespaceForSignature"""
-        
-        Assert.shouldBeEquivalentTo expected (text.ToString())
+    [<Test>]
+    let ``Generate signature with correct namespace 3``() =
+        """
+namespace Test.ANamespaceForSignature
+
+namespace Test2.ANamespaceForSignature2
+        """
+        |> sigShouldBe """namespace rec Test.ANamespaceForSignature
+
+namespace rec Test2.ANamespaceForSignature2"""
 
     [<Test>]
     let ``Generate signature with correct module``() =
-        let text =
-            FSharp """
+        """
 module AModuleForSignature
-            """
-            |> withLangVersion50
-            |> typecheckResults
-            |> sigText
-
-        let expected =
-            """module rec AModuleForSignature"""
-        
-        Assert.shouldBeEquivalentTo expected (text.ToString())
+        """
+        |> sigShouldBe """module rec AModuleForSignature"""
 
     [<Test>]
     let ``Generate signature with correct module 2``() =
-        let text =
-            FSharp """
+        """
 module Test.AModuleForSignature
-            """
-            |> withLangVersion50
-            |> typecheckResults
-            |> sigText
-
-        let expected =
-            """module rec Test.AModuleForSignature"""
-        
-        Assert.shouldBeEquivalentTo expected (text.ToString())
+        """
+        |> sigShouldBe """module rec Test.AModuleForSignature"""
