@@ -61,3 +61,18 @@ module AModuleForSignature
             """module rec AModuleForSignature"""
         
         Assert.shouldBeEquivalentTo expected (text.ToString())
+
+    [<Test>]
+    let ``Generate signature with correct module 2``() =
+        let text =
+            FSharp """
+module Test.AModuleForSignature
+            """
+            |> withLangVersion50
+            |> typecheckResults
+            |> sigText
+
+        let expected =
+            """module rec Test.AModuleForSignature"""
+        
+        Assert.shouldBeEquivalentTo expected (text.ToString())

@@ -2093,25 +2093,30 @@ let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (mty: ModuleOrNamespaceType
             | Some next when next.IsModuleOrNamespace ->
                 fullPath next (acc @ [next.DemangledModuleOrNamespaceName])
             | _ ->
-                acc
+                acc, mspec.IsNamespace
         else
-            acc
+            acc, mspec.IsNamespace
 
     ((denv, Layout.emptyL), mty.ModuleAndNamespaceDefinitions)
     ||> List.fold (fun (denv, currentL) (mspec: ModuleOrNamespace) ->
         let outerPath = mspec.CompilationPath.AccessPath
 
-        let path = fullPath mspec [mspec.DemangledModuleOrNamespaceName]
-        let nm = path |> List.last
+        let path, isNamespace = fullPath mspec [mspec.DemangledModuleOrNamespaceName]
         
         let denv = denv.AddOpenPath path
         let nextL =
-            if mspec.IsNamespace then
+            if isNamespace then
                 // This is a container namespace. We print the header when we get to the first concrete module.
                 wordL (tagKeyword "namespace") ^^ wordL (tagKeyword "rec") ^^ sepListL SepL.dot (List.map (tagNamespace >> wordL) path)
             else
                 // This is a module 
-                let nmL = wordL (tagModule nm)
+                let nmL = 
+                    match path with
+                    | [nm] -> wordL (tagModule nm)
+                    | _ ->
+                        let nm = path |> List.last
+                        let innerPath = path.[..path.Length - 2]
+                        sepListL SepL.dot (List.map (tagNamespace >> wordL) innerPath) ^^ SepL.dot ^^ wordL (tagModule nm)
                 // Check if its an outer module or a nested module
                 if (outerPath |> List.forall (fun (_, istype) -> istype = Namespace)) then 
                     // Check if this is an outer module with no namespace
