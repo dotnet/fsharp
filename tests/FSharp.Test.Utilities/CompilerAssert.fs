@@ -649,6 +649,29 @@ let main argv = 0"""
 
             errors
 
+    /// Parses and type checks the given source. Fails if type checker is aborted.
+    static member ParseAndTypeCheck(options, name, source: string) =
+        lock gate <| fun () ->
+            let parseResults, fileAnswer =
+                checker.ParseAndCheckFileInProject(
+                    name,
+                    0,
+                    SourceText.ofString source,
+                    { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
+                |> Async.RunSynchronously
+
+            match fileAnswer with
+            | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); failwith "Type Checker Aborted"
+            | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> parseResults, typeCheckResults
+
+    /// Parses and type checks the given source. Fails if the type checker is aborted or the parser returns any diagnostics.
+    static member TypeCheck(options, name, source: string) =
+        let parseResults, checkResults = CompilerAssert.ParseAndTypeCheck(options, name, source)
+        
+        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
+
+        checkResults
+
     static member TypeCheckWithErrorsAndOptionsAndAdjust options libAdjust (source: string) expectedTypeErrors =
         lock gate <| fun () ->
             let errors =

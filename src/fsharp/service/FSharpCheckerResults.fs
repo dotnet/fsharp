@@ -1972,10 +1972,6 @@ type FSharpCheckFileResults
 
     member _.GenerateSignatureText() =
         threadSafeOp (fun () -> None) (fun scope ->
-            match scope.ThisCcu.QualifiedName with
-            | None -> None
-            | Some qualifiedName ->
-
             let tcGlobals = scope.TcGlobals
 
             let denv = DisplayEnv.Empty tcGlobals
@@ -2007,11 +2003,7 @@ type FSharpCheckFileResults
                        (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName) 
                      ] @ extraOpenPaths)
 
-            let mtyQualifiedName =
-                qualifiedName 
-                |> String.split StringSplitOptions.RemoveEmptyEntries [|"."|]
-                |> List.ofArray
-            NicePrint.layoutOfModuleOrNamespaceType denv (scope.CcuSigForFile, mtyQualifiedName) |> LayoutRender.showL
+            NicePrint.layoutOfModuleOrNamespaceType denv scope.CcuSigForFile |> LayoutRender.showL
             |> SourceText.ofString
             |> Some
         )

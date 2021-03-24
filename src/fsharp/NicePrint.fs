@@ -2085,11 +2085,36 @@ let minimalStringOfType denv ty =
     let denvMin = { denv with showImperativeTyparAnnotations=false; showConstraintTyparAnnotations=false }
     showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 2 ty)
 
-let layoutOfModuleOrNamespaceType (_denv: DisplayEnv) (mty: ModuleOrNamespaceType, mtyQualifiedName: string list) =
-    let top =
-        if mty.ModuleOrNamespaceKind = ModuleOrNamespaceKind.Namespace then
-            wordL (tagKeyword "namespace") ^^ wordL (tagKeyword "rec") ^^ sepListL SepL.dot (List.map (tagNamespace >> wordL) mtyQualifiedName)
-        else
-            wordL (tagKeyword "module") ^^ wordL (tagKeyword "rec") ^^ sepListL SepL.dot (List.map (tagNamespace >> wordL) mtyQualifiedName)
-
-    top
+let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (mty: ModuleOrNamespaceType) =
+    ((denv, Layout.emptyL), mty.ModuleAndNamespaceDefinitions)
+    ||> List.fold (fun (denv, currentL) (mspec: ModuleOrNamespace) ->
+        let nm = mspec.DemangledModuleOrNamespaceName
+        let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath
+        let outerPath = mspec.CompilationPath.AccessPath
+        
+        let denv = denv.AddOpenPath (List.map fst innerPath)
+        let nextL =
+            if mspec.IsNamespace then
+                // This is a container namespace. We print the header when we get to the first concrete module.
+                wordL (tagKeyword "namespace") ^^ wordL (tagKeyword "rec") ^^ sepListL SepL.dot (List.map (fst >> tagNamespace >> wordL) innerPath)
+            else
+                // This is a module 
+                let nmL = wordL (tagModule nm)
+                // Check if its an outer module or a nested module
+                if (outerPath |> List.forall (fun (_, istype) -> istype = Namespace)) then 
+                    // OK, we're not in F# Interactive
+                    // Check if this is an outer module with no namespace
+                    if isNil outerPath then 
+                        // If so print a "module" declaration
+                        (wordL (tagKeyword "module") ^^ nmL)
+                    else 
+                        // Otherwise this is an outer module contained immediately in a namespace
+                        // We already printed the namespace declaration earlier. So just print the 
+                        // module now.
+                        (wordL (tagKeyword"module") ^^ nmL ^^ WordL.equals)
+                else
+                    // OK, this is a nested module
+                    (wordL (tagKeyword "module") ^^ nmL ^^ WordL.equals)
+        (denv, currentL ^^ nextL)
+    )
+    |> snd

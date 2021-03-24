@@ -297,8 +297,7 @@ type public FSharpCheckFileResults =
     member IsRelativeNameResolvableFromSymbol: cursorPos : pos * plid : string list * symbol: FSharpSymbol -> bool
 
     /// Generates a signature of the file as source text.
-    /// Internal for the time being.
-    member internal GenerateSignatureText: unit -> ISourceText option
+    member GenerateSignatureText: unit -> ISourceText option
 
     /// Represents complete typechecked implementation file, including its typechecked signatures if any.
     member ImplementationFile: FSharpImplementationFileContents option
