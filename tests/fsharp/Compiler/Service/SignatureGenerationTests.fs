@@ -78,6 +78,22 @@ type TestType =
   private { x: int }"""
 
     [<Test>]
+    let ``Generate signature with correct namespace and private inner record type and module with private inner record type``() =
+        """
+namespace Test.ANamespaceForSignature
+
+type TestType = private { x: int }
+
+module ModuleA =
+
+    type TestType2 = private { x: float32 }
+        """
+        |> sigShouldBe """namespace rec Test.ANamespaceForSignature
+
+type TestType =
+  private { x: int }"""
+
+    [<Test>]
     let ``Generate signature with correct module``() =
         """
 module AModuleForSignature
@@ -89,4 +105,6 @@ module AModuleForSignature
         """
 module Test.AModuleForSignature
         """
-        |> sigShouldBe """module rec Test.AModuleForSignature"""
+        |> sigShouldBe """namespace rec Test
+
+module rec AModuleForSignature = begin end"""

@@ -2092,7 +2092,7 @@ let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (infoReader: InfoReader) (a
     let rec fullPath (mspec: ModuleOrNamespace) acc =
         if mspec.IsNamespace then
             match mspec.ModuleOrNamespaceType.ModuleAndNamespaceDefinitions |> List.tryHead with
-            | Some next when next.IsModuleOrNamespace ->
+            | Some next when next.IsNamespace ->
                 fullPath next (acc @ [next.DemangledModuleOrNamespaceName])
             | _ ->
                 acc, mspec
@@ -2125,13 +2125,19 @@ let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (infoReader: InfoReader) (a
                         // If so print a "module" declaration
                         (wordL (tagKeyword "module") ^^ wordL (tagKeyword "rec") ^^ nmL)
                     else 
-                        // Otherwise this is an outer module contained immediately in a namespace
-                        // We already printed the namespace declaration earlier. So just print the 
-                        // module now.
-                        (wordL (tagKeyword "module") ^^ wordL (tagKeyword "rec") ^^ nmL ^^ WordL.equals)
+                        if mspec.ModuleOrNamespaceType.AllEntities |> Seq.isEmpty && mspec.ModuleOrNamespaceType.AllValsAndMembers |> Seq.isEmpty then
+                            (wordL (tagKeyword "module") ^^ wordL (tagKeyword "rec") ^^ nmL ^^ WordL.equals ^^ wordL (tagKeyword "begin") ^^ wordL (tagKeyword "end"))
+                        else
+                            // Otherwise this is an outer module contained immediately in a namespace
+                            // We already printed the namespace declaration earlier. So just print the 
+                            // module now.
+                            (wordL (tagKeyword "module") ^^ wordL (tagKeyword "rec") ^^ nmL ^^ WordL.equals)
                 else
-                    // OK, this is a nested module
-                    (wordL (tagKeyword "module") ^^ wordL (tagKeyword "rec") ^^ nmL ^^ WordL.equals)
+                    if mspec.ModuleOrNamespaceType.AllEntities |> Seq.isEmpty && mspec.ModuleOrNamespaceType.AllValsAndMembers |> Seq.isEmpty then
+                        (wordL (tagKeyword "module") ^^ wordL (tagKeyword "rec") ^^ nmL ^^ WordL.equals ^^ wordL (tagKeyword "begin") ^^ wordL (tagKeyword "end"))
+                    else
+                        // OK, this is a nested module
+                        (wordL (tagKeyword "module") ^^ wordL (tagKeyword "rec") ^^ nmL ^^ WordL.equals)
 
         let entityLs =
             mspec.ModuleOrNamespaceType.AllEntities
@@ -2151,9 +2157,11 @@ let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (infoReader: InfoReader) (a
                 |> sepListL sepDoubleLineBreakL
 
             if isFirstTopLevel then
-                nextL ++ sepL lineBreak @@ entitiesL
+                aboveL 
+                    (nextL ^^ sepL lineBreak)
+                    entitiesL
             else
-                nextL ++ sepL lineBreak @@- entitiesL
+                nextL ^^ entitiesL
 
     let moduleOrNamespaces =
         mty.ModuleAndNamespaceDefinitions
