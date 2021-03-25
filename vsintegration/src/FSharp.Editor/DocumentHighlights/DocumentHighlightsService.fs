@@ -51,14 +51,16 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
         |> Seq.distinctBy (fun span -> span.TextSpan.Start)
         |> Seq.toArray
 
-    static member GetDocumentHighlights(checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, 
-                                        defines: string list, options: FSharpProjectOptions, textVersionHash: int, languageServicePerformanceOptions: LanguageServicePerformanceOptions) : Async<FSharpHighlightSpan[] option> =
+    static member GetDocumentHighlights(checker: FSharpChecker, document: Document, position: int, 
+                                        defines: string list, options: FSharpProjectOptions, languageServicePerformanceOptions: LanguageServicePerformanceOptions) : Async<FSharpHighlightSpan[] option> =
         asyncMaybe {
+            let! sourceText = document.GetTextAsync() |> liftTaskAsync
+            let filePath = document.FilePath
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! symbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy, false, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, languageServicePerformanceOptions,  userOpName = userOpName)
+            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, filePath, defines, SymbolLookupKind.Greedy, false, false)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, languageServicePerformanceOptions,  userOpName = userOpName)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
             let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
             return 
@@ -75,12 +77,9 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
         member _.GetDocumentHighlightsAsync(document, position, _documentsToSearch, cancellationToken) : Task<ImmutableArray<FSharpDocumentHighlights>> =
             asyncMaybe {
                 let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let! textVersion = document.GetTextVersionAsync(cancellationToken) 
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
                 let perfOptions = document.FSharpOptions.LanguageServicePerformance
-                let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(checkerProvider.Checker, document.Id, sourceText, document.FilePath, 
-                                                                                   position, defines, projectOptions, textVersion.GetHashCode(), perfOptions)
+                let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(checkerProvider.Checker, document, position, defines, projectOptions, perfOptions)
                 let highlightSpans = 
                     spans 
                     |> Array.map (fun span ->
