@@ -46,6 +46,9 @@ type public FSharpParseFileResults =
     /// </summary>
     member TryRangeOfRefCellDereferenceContainingPos: expressionPos: pos -> range option
 
+    /// Gets the range of an expression being dereferenced. For `!expr`, gives the range of `expr`
+    member TryRangeOfExpressionBeingDereferencedContainingPos: expressionPos: pos -> range option
+
     /// Notable parse info for ParameterInfo at a given location
     member FindParameterLocations: pos:pos -> ParameterLocations option
 
