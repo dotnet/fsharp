@@ -2085,7 +2085,9 @@ let minimalStringOfType denv ty =
     let denvMin = { denv with showImperativeTyparAnnotations=false; showConstraintTyparAnnotations=false }
     showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 2 ty)
 
-let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (mty: ModuleOrNamespaceType) =
+let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (infoReader: InfoReader) (ad: AccessibilityLogic.AccessorDomain) (mty: ModuleOrNamespaceType) =
+
+    let sepDoubleLineBreakL = (sepL lineBreak ^^ sepL lineBreak)
 
     let rec fullPath (mspec: ModuleOrNamespace) acc =
         if mspec.IsNamespace then
@@ -2093,18 +2095,18 @@ let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (mty: ModuleOrNamespaceType
             | Some next when next.IsModuleOrNamespace ->
                 fullPath next (acc @ [next.DemangledModuleOrNamespaceName])
             | _ ->
-                acc, mspec.IsNamespace
+                acc, mspec
         else
-            acc, mspec.IsNamespace
+            acc, mspec
 
-    let moduleOrNamespaceL (denv: DisplayEnv) (mspec: ModuleOrNamespace) =
+    let rec moduleOrNamespaceL isFirstTopLevel (denv: DisplayEnv) (mspec: ModuleOrNamespace) =
         let outerPath = mspec.CompilationPath.AccessPath
 
-        let path, isNamespace = fullPath mspec [mspec.DemangledModuleOrNamespaceName]
+        let path, mspec = fullPath mspec [mspec.DemangledModuleOrNamespaceName]
         
-        let _denv = denv.AddOpenPath path
+        let denv = denv.AddOpenPath path
         let nextL =
-            if isNamespace then
+            if mspec.IsNamespace then
                 // This is a container namespace. We print the header when we get to the first concrete module.
                 wordL (tagKeyword "namespace") ^^ wordL (tagKeyword "rec") ^^ sepListL SepL.dot (List.map (tagNamespace >> wordL) path)
             else
@@ -2130,12 +2132,33 @@ let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (mty: ModuleOrNamespaceType
                 else
                     // OK, this is a nested module
                     (wordL (tagKeyword "module") ^^ wordL (tagKeyword "rec") ^^ nmL ^^ WordL.equals)
-        nextL
+
+        let entityLs =
+            mspec.ModuleOrNamespaceType.AllEntities
+            |> QueueList.toList
+            |> List.map (fun entity ->
+                if entity.IsModuleOrNamespace then
+                    moduleOrNamespaceL false denv entity
+                else
+                    layoutTycon denv infoReader ad Range.range0 entity
+            )         
+
+        if List.isEmpty entityLs then
+            nextL
+        else
+            let entitiesL =
+                entityLs
+                |> sepListL sepDoubleLineBreakL
+
+            if isFirstTopLevel then
+                nextL ++ sepL lineBreak @@ entitiesL
+            else
+                nextL ++ sepL lineBreak @@- entitiesL
 
     let moduleOrNamespaces =
         mty.ModuleAndNamespaceDefinitions
         |> List.map (fun mspec ->
-            moduleOrNamespaceL denv mspec
+            moduleOrNamespaceL true denv mspec
         )
 
-    sepListL (sepL lineBreak ^^ sepL lineBreak) moduleOrNamespaces
+    sepListL sepDoubleLineBreakL moduleOrNamespaces

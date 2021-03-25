@@ -114,4 +114,4 @@ val minimalStringsOfTwoValues: denv:DisplayEnv -> v1:Val -> v2:Val -> string * s
 
 val minimalStringOfType: denv:DisplayEnv -> ty:TType -> string
 
-val layoutOfModuleOrNamespaceType: denv:DisplayEnv -> mty:ModuleOrNamespaceType -> Layout
+val layoutOfModuleOrNamespaceType: denv:DisplayEnv -> infoReader: InfoReader -> ad: AccessibilityLogic.AccessorDomain -> mty:ModuleOrNamespaceType -> Layout

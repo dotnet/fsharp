@@ -2003,7 +2003,8 @@ type FSharpCheckFileResults
                        (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName) 
                      ] @ extraOpenPaths)
 
-            NicePrint.layoutOfModuleOrNamespaceType denv scope.CcuSigForFile |> LayoutRender.showL
+            let infoReader = InfoReader(scope.SymbolEnv.g, scope.SymbolEnv.amap)
+            NicePrint.layoutOfModuleOrNamespaceType denv infoReader scope.AccessRights scope.CcuSigForFile |> LayoutRender.showL
             |> SourceText.ofString
             |> Some
         )

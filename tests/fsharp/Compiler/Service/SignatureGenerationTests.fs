@@ -25,8 +25,8 @@ module SignatureGenerationTests =
             |> sigText
 
         let textString = text.ToString()
-        let expected = expected.Replace("\r\n", "\n")
-        Assert.shouldBeEquivalentTo expected textString
+        let expected2 = expected.Replace("\r\n", "\n")
+        Assert.shouldBeEquivalentTo expected2 textString
 
     [<Test>]
     let ``Generate signature with correct namespace``() =
@@ -52,6 +52,30 @@ namespace Test2.ANamespaceForSignature2
         |> sigShouldBe """namespace rec Test.ANamespaceForSignature
 
 namespace rec Test2.ANamespaceForSignature2"""
+
+
+    [<Test>]
+    let ``Generate signature with correct namespace and type``() =
+        """
+namespace Test.ANamespaceForSignature
+
+type TestType = class end
+        """
+        |> sigShouldBe """namespace rec Test.ANamespaceForSignature
+
+type TestType"""
+
+    [<Test>]
+    let ``Generate signature with correct namespace and private inner record type``() =
+        """
+namespace Test.ANamespaceForSignature
+
+type TestType = private { x: int }
+        """
+        |> sigShouldBe """namespace rec Test.ANamespaceForSignature
+
+type TestType =
+  private { x: int }"""
 
     [<Test>]
     let ``Generate signature with correct module``() =
