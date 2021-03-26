@@ -29,9 +29,9 @@ type internal FSharpConvertToAnonymousRecordCodeFixProvider
         asyncMaybe {
             let document = context.Document
             let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! parseResults = checkerProvider.Checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName=userOpName) |> liftAsync
+            let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions, userOpName=userOpName)
 
+            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let errorRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
             let! recordRange = parseResults.TryRangeOfRecordExpressionContainingPos errorRange.Start
             let! recordSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, recordRange)

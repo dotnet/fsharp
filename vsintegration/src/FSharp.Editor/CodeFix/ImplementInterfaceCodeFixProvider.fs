@@ -145,7 +145,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document, context.CancellationToken, userOpName)
             let cancellationToken = context.CancellationToken
             let! sourceText = context.Document.GetTextAsync(cancellationToken)
-            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(context.Document, projectOptions, sourceText = sourceText, userOpName = userOpName)
+            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(context.Document, projectOptions, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition context.Span.Start
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             // Notice that context.Span doesn't return reliable ranges to find tokens at exact positions.

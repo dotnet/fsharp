@@ -70,14 +70,14 @@ module Helpers =
         && FSharpProjectOptions.UseSameProject(o1,o2)
 
     /// Determine whether two (fileName,sourceText,options) keys should be identical w.r.t. parsing
-    let AreSameForParsing((fileName1: string, source1Hash: int, options1), (fileName2, source2Hash, options2)) =
+    let AreSameForParsing((fileName1: string, source1Hash: int64, options1), (fileName2, source2Hash, options2)) =
         fileName1 = fileName2 && options1 = options2 && source1Hash = source2Hash
 
     let AreSimilarForParsing((fileName1, _, _), (fileName2, _, _)) =
         fileName1 = fileName2
         
     /// Determine whether two (fileName,sourceText,options) keys should be identical w.r.t. checking
-    let AreSameForChecking3((fileName1: string, source1Hash: int, options1: FSharpProjectOptions), (fileName2, source2Hash, options2)) =
+    let AreSameForChecking3((fileName1: string, source1Hash: int64, options1: FSharpProjectOptions), (fileName2, source2Hash, options2)) =
         (fileName1 = fileName2) 
         && FSharpProjectOptions.AreSameForChecking(options1,options2)
         && source1Hash = source2Hash
@@ -196,7 +196,8 @@ module CompileHelpers =
             System.Console.SetError error
         | None -> ()
 
-type SourceTextHash = int        
+type SourceTextHash = int64
+type CacheStamp = int64
 type FileName = string      
 type FilePath = string
 type ProjectPath = string
@@ -367,7 +368,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     let parseCacheLock = Lock<ParseCacheLockToken>()
     
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseFileInProjectCache. Most recently used cache for parsing files.
-    let parseFileCache = MruCache<ParseCacheLockToken,_,_>(parseFileCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
+    let parseFileCache = MruCache<ParseCacheLockToken,(_ * SourceTextHash * _),_>(parseFileCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileInProjectCachePossiblyStale 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileInProjectCache
@@ -385,7 +386,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     // Also keyed on source. This can only be out of date if the antecedent is out of date
     let checkFileInProjectCache = 
-        MruCache<ParseCacheLockToken,FileName * SourceTextHash * FSharpProjectOptions, FSharpParseFileResults * FSharpCheckFileResults * FileVersion * DateTime>
+        MruCache<ParseCacheLockToken,FileName * CacheStamp * FSharpProjectOptions, FSharpParseFileResults * FSharpCheckFileResults * FileVersion * DateTime>
             (keepStrongly=checkFileInProjectCacheSize,
              areSame=AreSameForChecking3,
              areSimilar=AreSubsumable3)
@@ -401,15 +402,15 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     static let mutable actualCheckFileCount = 0
 
-    member _.RecordCheckFileInProjectResults(filename,options,parsingOptions,parseResults,fileVersion,priorTimeStamp,checkAnswer,sourceText) =        
+    member _.RecordCheckFileInProjectResults(filename,options,parsingOptions,parseResults,fileVersion,priorTimeStamp,checkAnswer,hash,cacheStamp) =        
         match checkAnswer with 
         | None -> ()
         | Some typedResults -> 
             actualCheckFileCount <- actualCheckFileCount + 1
             parseCacheLock.AcquireLock (fun ltok -> 
                 checkFileInProjectCachePossiblyStale.Set(ltok, (filename,options),(parseResults,typedResults,fileVersion))  
-                checkFileInProjectCache.Set(ltok, (filename, sourceText, options),(parseResults,typedResults,fileVersion,priorTimeStamp))
-                parseFileCache.Set(ltok, (filename, sourceText, parsingOptions), parseResults))
+                checkFileInProjectCache.Set(ltok, (filename, cacheStamp, options),(parseResults,typedResults,fileVersion,priorTimeStamp))
+                parseFileCache.Set(ltok, (filename, hash, parsingOptions), parseResults))
 
     member bc.ImplicitlyStartCheckProjectInBackground(options, userOpName) =        
         if implicitlyStartBackgroundWork then 
@@ -418,7 +419,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     member _.ParseFile(filename: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, userOpName: string) =
         async {
           if cache then
-            let hash = sourceText.GetHashCode()
+            let hash = sourceText.GetHashCode() |> int64
             match parseCacheLock.AcquireLock(fun ltok -> parseFileCache.TryGet(ltok, (filename, hash, options))) with
             | Some res -> return res
             | None ->
@@ -446,20 +447,37 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 return FSharpParseFileResults(diagnostics = diagnostics, input = parseTree, sourceText=None, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
         }
 
-    member _.GetCachedCheckFileResult(builder: IncrementalBuilder, filename, sourceText: ISourceText, options) =
-        // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
-        let cachedResults = parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.TryGet(ltok, (filename, sourceText.GetHashCode(), options)))
+    member _.GetCachedCheckFileResult(builder: IncrementalBuilder, filename, sourceText: ISourceText, options, cacheStamp: int64 option) =
+        let stamp =
+            match cacheStamp with
+            | None -> sourceText.GetHashCode() |> int64
+            | Some cacheStamp -> cacheStamp
 
-        match cachedResults with 
-        | Some (parseResults, checkResults,_,priorTimeStamp) 
-                when 
-                (match builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename with 
-                | None -> false
-                | Some(tcPrior) -> 
-                    tcPrior.TimeStamp = priorTimeStamp &&
-                    builder.AreCheckResultsBeforeFileInProjectReady(filename)) -> 
-            Some (parseResults,checkResults)
-        | _ -> None
+        // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
+        let cachedResults = parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.TryGet(ltok, (filename, stamp, options)))
+
+        let result =
+            if cacheStamp.IsSome then
+                match cachedResults with 
+                | Some (parseResults, checkResults, _, _) -> Some (parseResults, checkResults)
+                | _ -> None
+            else
+                match cachedResults with 
+                | Some (parseResults, checkResults,_,priorTimeStamp) 
+                        when 
+                        (match builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename with 
+                        | None -> false
+                        | Some(tcPrior) -> 
+                            tcPrior.TimeStamp = priorTimeStamp &&
+                            builder.AreCheckResultsBeforeFileInProjectReady(filename)) -> 
+                    Some (parseResults,checkResults)
+                | _ ->
+                    None
+
+        if result.IsNone then
+            parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.RemoveAnySimilar(ltok, (filename, stamp, options)))
+
+        result
 
     /// 1. Repeatedly try to get cached file check results or get file "lock". 
     /// 
@@ -484,20 +502,23 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
          tcPrior: PartialCheckResults,
          tcInfo: TcInfo,
          tcInfoOptionalExtras: TcInfoExtras option,
-         creationDiags: FSharpDiagnostic[]) = 
-    
+         creationDiags: FSharpDiagnostic[],
+         cacheStamp: int64 option) = 
+   
         async {
             let beingCheckedFileKey = fileName, options, fileVersion
             let stopwatch = Stopwatch.StartNew()
             let rec loop() =
                 async {
                     // results may appear while we were waiting for the lock, let's recheck if it's the case
-                    let cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) 
+                    let cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options, cacheStamp) 
             
                     match cachedResults with
                     | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
                     | None ->
                         if beingCheckedFileTable.TryAdd(beingCheckedFileKey, ()) then
+                            let hash: SourceTextHash = sourceText.GetHashCode() |> int64
+                            let cacheStamp = defaultArg cacheStamp hash
                             try
                                 // Get additional script #load closure information if applicable.
                                 // For scripts, this will have been recorded by GetProjectOptionsFromScript.
@@ -528,7 +549,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                             suggestNamesForErrors) |> Cancellable.toAsync
                                 let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
                                 reactor.SetPreferredUILang tcConfig.preferredUiLang
-                                bc.RecordCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, sourceText.GetHashCode()) 
+                                bc.RecordCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, hash, cacheStamp) 
                                 return FSharpCheckFileAnswer.Succeeded checkAnswer
                             finally
                                 let dummy = ref ()
@@ -556,7 +577,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
                         match builderOpt with
                         | Some builder ->
-                            match bc.GetCachedCheckFileResult(builder, filename, sourceText, options) with
+                            match bc.GetCachedCheckFileResult(builder, filename, sourceText, options, None) with
                             | Some (_, checkResults) -> return Some (builder, creationDiags, Some (FSharpCheckFileAnswer.Succeeded checkResults))
                             | _ -> return Some (builder, creationDiags, None)
                         | _ -> return None // the builder wasn't ready
@@ -574,7 +595,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             
                     match tcPrior with
                     | Some(tcPrior, Some (tcInfo, tcInfoOptionalExtras)) -> 
-                        let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, tcInfoOptionalExtras, creationDiags)
+                        let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, tcInfoOptionalExtras, creationDiags, None)
                         return Some checkResults
                     | _ -> return None  // the incremental builder was not up to date
             finally 
@@ -582,7 +603,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         }
 
     /// Type-check the result obtained by parsing. Force the evaluation of the antecedent type checking context if needed.
-    member bc.CheckFileInProject(parseResults: FSharpParseFileResults, filename, fileVersion, sourceText: ISourceText, options, userOpName) =
+    member bc.CheckFileInProject(parseResults: FSharpParseFileResults, filename, fileVersion, sourceText: ISourceText, options, cacheStamp, userOpName) =
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "CheckFileInProject", filename, action)
 
         async {
@@ -594,7 +615,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 | None -> return FSharpCheckFileAnswer.Succeeded (FSharpCheckFileResults.MakeEmpty(filename, creationDiags, true))
                 | Some builder -> 
                     // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
-                    let cachedResults = bc.GetCachedCheckFileResult(builder, filename, sourceText, options)
+                    let cachedResults = bc.GetCachedCheckFileResult(builder, filename, sourceText, options, cacheStamp)
 
                     match cachedResults with
                     | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
@@ -612,14 +633,14 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                         let! tcInfo = tcPrior.GetTcInfoWithOptionalExtras() |> Eventually.toCancellable
                                         return (tcPrior, tcInfo)
                                     } 
-                        let! checkAnswer = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, tcInfoOptionalExtras, creationDiags)
+                        let! checkAnswer = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, tcInfoOptionalExtras, creationDiags, cacheStamp)
                         return checkAnswer
             finally 
                 bc.ImplicitlyStartCheckProjectInBackground(options, userOpName)
         }
 
     /// Parses and checks the source file and returns untyped AST and check results.
-    member bc.ParseAndCheckFileInProject (filename:string, fileVersion, sourceText: ISourceText, options:FSharpProjectOptions, userOpName) =
+    member bc.ParseAndCheckFileInProject (filename:string, fileVersion, sourceText: ISourceText, options:FSharpProjectOptions, cacheStamp, userOpName) =
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckFileInProject", filename, action)
 
         async {
@@ -641,7 +662,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     return (parseResults, FSharpCheckFileAnswer.Aborted)
 
                 | Some builder -> 
-                    let cachedResults = bc.GetCachedCheckFileResult(builder, filename, sourceText, options)
+                    let cachedResults = bc.GetCachedCheckFileResult(builder, filename, sourceText, options, cacheStamp)
 
                     match cachedResults with 
                     | Some (parseResults, checkResults) -> 
@@ -668,7 +689,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                         reactor.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
                         let parseDiags, parseTree, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName, suggestNamesForErrors)
                         let parseResults = FSharpParseFileResults(parseDiags, parseTree, Some sourceText, anyErrors, builder.AllDependenciesDeprecated)
-                        let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, tcInfoOptionalExtras, creationDiags)
+                        let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, tcInfoOptionalExtras, creationDiags, cacheStamp)
 
                         Logger.LogBlockMessageStop (filename + strGuid + "-Successful") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
 
@@ -830,11 +851,12 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     | Some sc -> return Some (sc.GetView ()) })
 
     /// Try to get recent approximate type check results for a file. 
-    member _.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, sourceText: ISourceText option, _userOpName: string) =
+    member _.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, sourceText: ISourceText option, cacheStamp: CacheStamp option, _userOpName: string) =
         parseCacheLock.AcquireLock (fun ltok -> 
             match sourceText with 
             | Some sourceText -> 
-                match checkFileInProjectCache.TryGet(ltok,(filename,sourceText.GetHashCode(),options)) with
+                let cacheStamp = defaultArg cacheStamp (sourceText.GetHashCode() |> int64)
+                match checkFileInProjectCache.TryGet(ltok,(filename,cacheStamp,options)) with
                 | Some (a,b,c,_) -> Some (a,b,c)
                 | None -> checkFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options))
             | None -> checkFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options)))
@@ -1135,7 +1157,7 @@ type FSharpChecker(legacyReferenceResolver,
 
     member _.MatchBraces(filename, sourceText: ISourceText, options: FSharpParsingOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
-        let hash = sourceText.GetHashCode()
+        let hash = sourceText.GetHashCode() |> int64
         async {
             match braceMatchCache.TryGet(AnyCallerThread, (filename, hash, options)) with
             | Some res -> return res
@@ -1174,9 +1196,9 @@ type FSharpChecker(legacyReferenceResolver,
         backgroundCompiler.GetBackgroundCheckResultsForFileInProject(filename,options, userOpName)
         
     /// Try to get recent approximate type check results for a file. 
-    member _.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, ?sourceText, ?userOpName: string) =
+    member _.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, ?sourceText, ?userOpName: string, ?cacheStamp: int64) =
         let userOpName = defaultArg userOpName "Unknown"
-        backgroundCompiler.TryGetRecentCheckResultsForFile(filename,options,sourceText, userOpName)
+        backgroundCompiler.TryGetRecentCheckResultsForFile(filename,options,sourceText,cacheStamp,userOpName)
 
     member _.Compile(argv: string[], ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
@@ -1316,10 +1338,10 @@ type FSharpChecker(legacyReferenceResolver,
 
     /// Typecheck a source code file, returning a handle to the results of the 
     /// parse including the reconstructed types in the file.
-    member ic.CheckFileInProject(parseResults:FSharpParseFileResults, filename:string, fileVersion:int, sourceText:ISourceText, options:FSharpProjectOptions, ?userOpName: string) =        
+    member ic.CheckFileInProject(parseResults:FSharpParseFileResults, filename:string, fileVersion:int, sourceText:ISourceText, options:FSharpProjectOptions, ?userOpName: string, ?cacheStamp: int64) =        
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
-        backgroundCompiler.CheckFileInProject(parseResults,filename,fileVersion,sourceText,options,userOpName)
+        backgroundCompiler.CheckFileInProject(parseResults,filename,fileVersion,sourceText,options,cacheStamp,userOpName)
 
     member ic.AnalyzeFileInProject(parseResults: FSharpParseFileResults, checkResults: FSharpCheckFileResults, options, userOpName) =
         let userOpName = defaultArg userOpName "Unknown"
@@ -1331,10 +1353,10 @@ type FSharpChecker(legacyReferenceResolver,
 
     /// Typecheck a source code file, returning a handle to the results of the 
     /// parse including the reconstructed types in the file.
-    member ic.ParseAndCheckFileInProject(filename:string, fileVersion:int, sourceText:ISourceText, options:FSharpProjectOptions, ?userOpName: string) =        
+    member ic.ParseAndCheckFileInProject(filename:string, fileVersion:int, sourceText:ISourceText, options:FSharpProjectOptions, ?userOpName: string, ?cacheStamp: int64) =        
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
-        backgroundCompiler.ParseAndCheckFileInProject(filename, fileVersion, sourceText, options, userOpName)
+        backgroundCompiler.ParseAndCheckFileInProject(filename, fileVersion, sourceText, options, cacheStamp, userOpName)
             
     member ic.ParseAndCheckProject(options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"

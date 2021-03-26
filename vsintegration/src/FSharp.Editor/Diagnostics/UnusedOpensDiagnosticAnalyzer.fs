@@ -30,17 +30,16 @@ type internal UnusedOpensDiagnosticAnalyzer
         asyncMaybe {
             do! Option.guard document.FSharpOptions.CodeFixes.UnusedOpens
             let! sourceText = document.GetTextAsync()
-            let! parseResults, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, userOpName = userOpName)
+            let! parseResults, _, checkResults = checker.ParseAndCheckDocument(document, options, userOpName = userOpName)
             let! unusedOpens = UnusedOpens.getUnusedOpens(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
             return parseResults, checkResults, unusedOpens
         } 
 
     interface IFSharpUnusedOpensDiagnosticAnalyzer with
 
-        member this.AnalyzeSemanticsAsync(descriptor, document: Document, cancellationToken: CancellationToken) =
+        member _.AnalyzeSemanticsAsync(descriptor, document: Document, cancellationToken: CancellationToken) =
             asyncMaybe {
                 do Trace.TraceInformation("{0:n3} (start) UnusedOpensAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
-                do! Async.Sleep DefaultTuning.UnusedOpensAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
                 let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync()
                 let checker = checkerProvider.Checker

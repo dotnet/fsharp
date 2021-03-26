@@ -864,8 +864,6 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
                   | Some prefixPath when not hadSig -> TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m tcSigEnv (prefixPath, m)
                   | _ -> tcSigEnv 
 
-              let ccuSig = CombineCcuContentFragments m [implFileSigType; tcState.tcsCcuSig ]
-
               let ccuSigForFile = CombineCcuContentFragments m [implFileSigType; tcState.tcsCcuSig]
 
               let tcState = 
@@ -873,7 +871,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
                         tcsTcSigEnv=tcSigEnv
                         tcsTcImplEnv=tcImplEnv
                         tcsRootImpls=rootImpls
-                        tcsCcuSig=ccuSig
+                        tcsCcuSig=ccuSigForFile
                         tcsCreatesGeneratedProvidedTypes=tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes }
               return (tcEnvAtEnd, topAttrs, (inp, Some implFile, ccuSigForFile)), tcState
      

@@ -85,15 +85,23 @@ type internal FSharpDocumentDiagnosticAnalyzer
                 Some(RoslynHelpers.ConvertError(error, location)))
         |> Seq.toImmutableArray
 
-    static member GetDiagnostics(checker: FSharpChecker, filePath: string, sourceText: SourceText, textVersionHash: int, parsingOptions: FSharpParsingOptions, options: FSharpProjectOptions, diagnosticType: DiagnosticsType) = 
+    static member GetDiagnostics(checker: FSharpChecker, document: Document, parsingOptions: FSharpParsingOptions, options: FSharpProjectOptions, diagnosticType: DiagnosticsType) = 
         async {
-            let fsSourceText = sourceText.ToFSharpSourceText()
-            let! parseResults = checker.ParseFile(filePath, fsSourceText, parsingOptions, userOpName=userOpName) 
+            let! ct = Async.CancellationToken
+
+            let! parseResults = checker.ParseDocument(document, parsingOptions, userOpName)
+            match parseResults with
+            | None -> return ImmutableArray.Empty
+            | Some parseResults ->
+
+            let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
+            let filePath = document.FilePath
             let! diagnostics = 
+
                 async {
                     match diagnosticType with
                     | DiagnosticsType.Semantic ->
-                        let! checkResultsAnswer = checker.CheckFileInProject(parseResults, filePath, textVersionHash, fsSourceText, options, userOpName=userOpName) 
+                        let! checkResultsAnswer = checker.CheckDocument(document, parseResults, options, userOpName)
                         match checkResultsAnswer with
                         | FSharpCheckFileAnswer.Aborted -> return [||]
                         | FSharpCheckFileAnswer.Succeeded results ->
@@ -114,10 +122,8 @@ type internal FSharpDocumentDiagnosticAnalyzer
         member _.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
             asyncMaybe {
                 let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 return! 
-                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checkerProvider.Checker, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Syntax)
+                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checkerProvider.Checker, document, parsingOptions, projectOptions, DiagnosticsType.Syntax)
                     |> liftAsync
             } 
             |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
@@ -126,12 +132,9 @@ type internal FSharpDocumentDiagnosticAnalyzer
         member _.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
             asyncMaybe {
                 let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken, userOpName) 
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                // Only analyze in-project files and scripts
                 if document.Project.Name <> FSharpConstants.FSharpMiscellaneousFilesName || isScriptFile document.FilePath then
                     return! 
-                        FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checkerProvider.Checker, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Semantic)
+                        FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checkerProvider.Checker, document, parsingOptions, projectOptions, DiagnosticsType.Semantic)
                         |> liftAsync
                 else
                     return ImmutableArray<Diagnostic>.Empty

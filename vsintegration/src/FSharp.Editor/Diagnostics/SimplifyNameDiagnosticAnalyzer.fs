@@ -37,7 +37,6 @@ type internal SimplifyNameDiagnosticAnalyzer
             asyncMaybe {
                 do! Option.guard document.FSharpOptions.CodeFixes.SimplifyName
                 do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
-                do! Async.Sleep DefaultTuning.SimplifyNameInitialDelay |> liftAsync 
                 let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let textVersionHash = textVersion.GetHashCode()
@@ -49,7 +48,7 @@ type internal SimplifyNameDiagnosticAnalyzer
                     | _ ->
                         let! sourceText = document.GetTextAsync()
                         let checker = checkerProvider.Checker
-                        let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName=userOpName)
+                        let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName=userOpName)
                         let! result = SimplifyNames.getSimplifiableNames(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
                         let mutable diag = ResizeArray()
                         for r in result do

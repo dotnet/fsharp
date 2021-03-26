@@ -511,7 +511,7 @@ module TcRecdUnionAndEnumDeclarations =
         let unionCases' = unionCases |> List.map (TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv) 
         unionCases' |> CheckDuplicates (fun uc -> uc.Id) "union case" 
 
-    let TcEnumDecl cenv env parent thisTy fieldTy (SynEnumCase(Attributes synAttrs, id, v, xmldoc, m)) =
+    let TcEnumDecl cenv env parent thisTy fieldTy (SynEnumCase(Attributes synAttrs, id, v, _, xmldoc, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.Field synAttrs
         match v with 
         | SynConst.Bytes _
@@ -2365,8 +2365,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
                   let ity' = 
                       let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTyconTypars envForTycon
                       TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType envinner emptyUnscopedTyparEnv ity |> fst
-                  if not (isInterfaceTy g ity') then errorR(Error(FSComp.SR.tcTypeIsNotInterfaceType0(), ity.Range))
-                  
+
                   if not (tcref.HasInterface g ity') then 
                       error(Error(FSComp.SR.tcAllImplementedInterfacesShouldBeDeclared(), ity.Range))
                    

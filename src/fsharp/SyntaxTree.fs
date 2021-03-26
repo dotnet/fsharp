@@ -114,7 +114,7 @@ type SynConst =
 
     | UInt16s of uint16[]
 
-    | Measure of constant: SynConst * SynMeasure
+    | Measure of constant: SynConst * constantRange: Range * SynMeasure
 
     member c.Range dflt =
         match c with
@@ -1297,6 +1297,7 @@ type SynEnumCase =
         attributes: SynAttributes *
         ident: Ident * 
         value: SynConst *
+        valueRange: range *
         xmlDoc: PreXmlDoc *
         range: range
 
