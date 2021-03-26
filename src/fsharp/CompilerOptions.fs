@@ -733,6 +733,10 @@ let resourcesFlagsFsi (_tcConfigB: TcConfigBuilder) = []
 let resourcesFlagsFsc (tcConfigB: TcConfigBuilder) =
     [
         CompilerOption
+            ("win32icon", tagFile,
+             OptionString (fun s -> tcConfigB.win32icon <- s), None,
+             Some (FSComp.SR.optsWin32icon()))
+        CompilerOption
            ("win32res", tagFile,
             OptionString (fun s -> tcConfigB.win32res <- s), None,
             Some (FSComp.SR.optsWin32res()))

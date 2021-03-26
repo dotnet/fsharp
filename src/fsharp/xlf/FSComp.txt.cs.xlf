@@ -267,6 +267,11 @@
         <target state="translated">Zobrazit banner verze kompilátoru a ukončit</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsWin32icon">
+        <source>Specify a Win32 icon file (.ico)</source>
+        <target state="new">Specify a Win32 icon file (.ico)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">Funkce správy balíčků vyžaduje jazykovou verzi 5.0, použijte /langversion:preview.</target>
