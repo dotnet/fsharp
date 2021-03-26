@@ -16,6 +16,9 @@ open System.Runtime.CompilerServices
 [<MethodImpl(MethodImplOptions.NoInlining)>]
 let f () = 3
 
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let sideEffect () = ()
+
 let x () =
     let a, b =
         "".ToString () |> ignore
@@ -28,14 +31,14 @@ let x () =
 let y () =
     let a, b, c =
         let a = f ()
-        System.Console.ReadKey () |> ignore
+        sideEffect ()
         a, f (), f ()
     a + b + c
 
 let z () =
     let a, b, c =
         let u, v = 3, 4
-        System.Console.ReadKey () |> ignore
+        sideEffect ()
         f (), f () + u, f () + v
     a + b + c
          """
@@ -82,7 +85,7 @@ let z () =
 // public static int y()
 // {
 //     int num = TupleElimination.f();
-//     ConsoleKeyInfo consoleKeyInfo = Console.ReadKey();
+//     TupleElimination.sideEffect();
 //     return num + TupleElimination.f() + TupleElimination.f();
 // }
                       """
@@ -90,43 +93,39 @@ let z () =
 {
   
   .maxstack  4
-  .locals init (int32 V_0,
-           valuetype [runtime]System.ConsoleKeyInfo V_1)
+  .locals init (int32 V_0)
   IL_0000:  call       int32 TupleElimination::f()
   IL_0005:  stloc.0
-  IL_0006:  call       valuetype [runtime]System.ConsoleKeyInfo [runtime]System.Console::ReadKey()
-  IL_000b:  stloc.1
-  IL_000c:  ldloc.0
-  IL_000d:  call       int32 TupleElimination::f()
-  IL_0012:  add
-  IL_0013:  call       int32 TupleElimination::f()
-  IL_0018:  add
-  IL_0019:  ret
+  IL_0006:  call       void TupleElimination::sideEffect()
+  IL_000b:  ldloc.0
+  IL_000c:  call       int32 TupleElimination::f()
+  IL_0011:  add
+  IL_0012:  call       int32 TupleElimination::f()
+  IL_0017:  add
+  IL_0018:  ret
 }
 """
 
 // public static int z()
 // {
-//     ConsoleKeyInfo consoleKeyInfo = Console.ReadKey();
+//     TupleElimination.sideEffect();
 //     return TupleElimination.f() + (TupleElimination.f() + 3) + (TupleElimination.f() + 4);
 // }
                       """
 .method public static int32  z() cil managed
 {
   
-  .maxstack  5
-  .locals init (valuetype [runtime]System.ConsoleKeyInfo V_0)
-  IL_0000:  call       valuetype [runtime]System.ConsoleKeyInfo [runtime]System.Console::ReadKey()
-  IL_0005:  stloc.0
-  IL_0006:  call       int32 TupleElimination::f()
-  IL_000b:  call       int32 TupleElimination::f()
-  IL_0010:  ldc.i4.3
+  .maxstack  8
+  IL_0000:  call       void TupleElimination::sideEffect()
+  IL_0005:  call       int32 TupleElimination::f()
+  IL_000a:  call       int32 TupleElimination::f()
+  IL_000f:  ldc.i4.3
+  IL_0010:  add
   IL_0011:  add
-  IL_0012:  add
-  IL_0013:  call       int32 TupleElimination::f()
-  IL_0018:  ldc.i4.4
+  IL_0012:  call       int32 TupleElimination::f()
+  IL_0017:  ldc.i4.4
+  IL_0018:  add
   IL_0019:  add
-  IL_001a:  add
-  IL_001b:  ret
+  IL_001a:  ret
 }
 """]
