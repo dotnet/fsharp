@@ -1699,7 +1699,10 @@ and CheckAttribs cenv env (attribs: Attribs) =
     // Check for violations of allowMultiple = false
     let duplicates = 
         tcrefs
-        |> Seq.groupBy (fun (tcref, gs, _) -> (tcref.Stamp, gs)) 
+        |> Seq.groupBy (fun (tcref, gs, _) ->
+            // Don't allow CompiledNameAttribute on both a property and its getter/setter (see E_CompiledName test)
+            if tyconRefEq cenv.g cenv.g.attrib_CompiledNameAttribute.TyconRef tcref then (tcref.Stamp, false) else
+            (tcref.Stamp, gs)) 
         |> Seq.map (fun (_, elems) -> List.last (List.ofSeq elems), Seq.length elems) 
         |> Seq.filter (fun (_, count) -> count > 1) 
         |> Seq.map fst 
