@@ -467,7 +467,7 @@ module MainModuleBuilder =
                   yield  ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader() 
                                                  yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.ReadAllBytesShim win32Manifest), tcConfig.target = CompilerTarget.Dll)) |]
               if tcConfig.win32res = "" && tcConfig.win32icon <> "" && tcConfig.target <> CompilerTarget.Dll then
-                  let ms = new MemoryStream()
+                  use ms = new MemoryStream()
                   Win32ResourceConversions.AppendIconToResourceStream(ms, FileSystem.FileStreamReadShim tcConfig.win32icon)
                   yield ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader()
                                                 yield! ms.ToArray() |] ]
@@ -492,4 +492,3 @@ module MainModuleBuilder =
                         yield! codegenResults.ilNetModuleAttrs ])
               NativeResources=nativeResources
               Manifest = manifest }
-
