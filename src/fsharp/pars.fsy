@@ -4118,12 +4118,16 @@ atomicExpr:
         // silent recovery 
         exprFromParseError (SynExpr.ArrayOrList (false, [ ], rhs parseState 1)), false  } 
 
-  | STRUCT LPAREN tupleExpr rparen  
-      { let exprs, commas = $3 in SynExpr.Tuple (true, List.rev exprs, List.rev commas, (commas.Head, exprs) ||> unionRangeWithListBy (fun e -> e.Range) ), false }
+  | STRUCT LPAREN tupleExpr rparen
+      { let exprs, commas = $3
+        let m = rhs2 parseState 1 4
+        SynExpr.Tuple (true, List.rev exprs, List.rev commas, m), false }
 
-  | STRUCT LPAREN tupleExpr recover  
-      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedBracket()); 
-        let exprs, commas = $3 in SynExpr.Tuple (true, List.rev exprs, List.rev commas, (commas.Head, exprs) ||> unionRangeWithListBy (fun e -> e.Range) ), false }
+  | STRUCT LPAREN tupleExpr recover
+      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedBracket());
+        let exprs, commas = $3
+        let m = (rhs parseState 1, exprs) ||> unionRangeWithListBy (fun e -> e.Range)
+        SynExpr.Tuple (true, List.rev exprs, List.rev commas, m), false }
 
   | atomicExprAfterType 
       { $1, false }
