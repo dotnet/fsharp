@@ -1723,8 +1723,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsEventAddMethod = 
         if isUnresolved() then false else 
         match d with 
-        | M m when m.LogicalName.StartsWithOrdinal("add_") -> 
-            let eventName = m.LogicalName.[4..]
+        | M m ->
+            let logicalName = m.LogicalName
+            logicalName.Length > 4 && logicalName.StartsWithOrdinal("add_") &&
+
+            let eventName = logicalName.[4..]
             let entityTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
             not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
             let declaringTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
@@ -1737,8 +1740,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsEventRemoveMethod = 
         if isUnresolved() then false else 
         match d with 
-        | M m when m.LogicalName.StartsWithOrdinal("remove_") -> 
-            let eventName = m.LogicalName.[7..]
+        | M m ->
+            let logicalName = m.LogicalName
+            logicalName.Length > 4 && logicalName.StartsWithOrdinal("remove_") &&
+
+            let eventName = logicalName.[7..]
             let entityTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
             not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
             let declaringTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
@@ -1750,8 +1756,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsPropertyGetterMethod = 
         if isUnresolved() then false else 
         match d with 
-        | M m when m.LogicalName.StartsWithOrdinal("get_") -> 
-            let propName = PrettyNaming.ChopPropertyName(m.LogicalName) 
+        | M m ->
+            let logicalName = m.LogicalName
+            logicalName.Length > 4 && logicalName.StartsWithOrdinal("get_") &&
+
+            let propName = PrettyNaming.ChopPropertyName(logicalName)
             let declaringTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
             not (isNil (GetImmediateIntrinsicPropInfosOfType (Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy))
         | V v -> v.IsPropertyGetterMethod
@@ -1760,9 +1769,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsPropertySetterMethod = 
         if isUnresolved() then false else 
         match d with 
-        // Look for a matching property with the right name. 
-        | M m when m.LogicalName.StartsWithOrdinal("set_") -> 
-            let propName = PrettyNaming.ChopPropertyName(m.LogicalName) 
+        | M m ->
+            let logicalName = m.LogicalName
+            logicalName.Length > 4 && logicalName.StartsWithOrdinal("set_") &&
+
+            let propName = PrettyNaming.ChopPropertyName(logicalName) 
             let declaringTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
             not (isNil (GetImmediateIntrinsicPropInfosOfType (Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy))
         | V v -> v.IsPropertySetterMethod
@@ -1912,11 +1923,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | P p -> 
             [ [ for (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) in p.GetParamDatas(cenv.amap, range0) do 
-                // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
-                // either .NET or F# parameters
-                let argInfo: ArgReprInfo = { Name=nmOpt; Attribs= [] }
-                yield FSharpParameter(cenv, pty, argInfo, None, x.DeclarationLocationOpt, isParamArrayArg, isInArg, isOutArg, optArgInfo.IsOptional, false) ] 
-               |> makeReadOnlyCollection  ]
+                    // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
+                    // either .NET or F# parameters
+                    let argInfo: ArgReprInfo = { Name=nmOpt; Attribs= [] }
+                    yield FSharpParameter(cenv, pty, argInfo, None, x.DeclarationLocationOpt, isParamArrayArg, isInArg, isOutArg, optArgInfo.IsOptional, false) ] 
+              |> makeReadOnlyCollection  ]
            |> makeReadOnlyCollection
 
         | E _ ->  []  |> makeReadOnlyCollection
@@ -2096,6 +2107,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.IsValue =
         match d with
         | V valRef -> not (isForallFunctionTy cenv.g valRef.Type)
+        | _ -> false
+
+    member x.IsFunction =
+        match d with
+        | V valRef -> isForallFunctionTy cenv.g valRef.Type
         | _ -> false
 
     override x.Equals(other: obj) =
@@ -2362,12 +2378,21 @@ type FSharpType(cenv, ty:TType) =
 
     member _.Format(context: FSharpDisplayContext) = 
        protect <| fun () -> 
-        NicePrint.prettyStringOfTyNoCx (context.Contents cenv.g) ty 
+            NicePrint.prettyStringOfTyNoCx (context.Contents cenv.g) ty 
+
+    member _.FormatWithConstraints(context: FSharpDisplayContext) = 
+        protect <| fun () -> 
+            NicePrint.prettyStringOfTy (context.Contents cenv.g) ty 
 
     member _.FormatLayout(context: FSharpDisplayContext) =
        protect <| fun () -> 
-        NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
-        |> LayoutRender.toArray
+            NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
+            |> LayoutRender.toArray
+
+    member _.FormatLayoutWithConstraints(context: FSharpDisplayContext) =
+        protect <| fun () -> 
+            NicePrint.prettyLayoutOfType (context.Contents cenv.g) ty
+            |> LayoutRender.toArray
 
     override _.ToString() = 
        protect <| fun () -> 

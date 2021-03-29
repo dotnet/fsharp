@@ -25,4 +25,4 @@ module ``PreComputedTupleConstructor Tests`` =
         let testDelegate = TestDelegate (fun () -> 
             Reflection.FSharpValue.PreComputeTupleConstructor(typeof<int * string>) [| box "text"; box 12; |] |> ignore)
 
-        Assert.Throws<System.ArgumentException> testDelegate |> ignore
+        Assert.Throws<System.InvalidCastException> testDelegate |> ignore

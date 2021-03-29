@@ -769,10 +769,10 @@ let TcConst cenv ty m env c =
     let unifyMeasureArg iszero tcr c =
         let measureTy = 
             match c with 
-            | SynConst.Measure(_, SynMeasure.Anon _) ->
+            | SynConst.Measure(_, _, SynMeasure.Anon _) ->
               (mkAppTy tcr [TType_measure (Measure.Var (NewAnonTypar (TyparKind.Measure, m, TyparRigidity.Anon, (if iszero then TyparStaticReq.None else TyparStaticReq.HeadType), TyparDynamicReq.No)))])
 
-            | SynConst.Measure(_, ms) -> mkAppTy tcr [TType_measure (tcMeasure ms)]
+            | SynConst.Measure(_, _, ms) -> mkAppTy tcr [TType_measure (tcMeasure ms)]
             | _ -> mkAppTy tcr [TType_measure Measure.One]
         unif measureTy
 
@@ -795,19 +795,19 @@ let TcConst cenv ty m env c =
     | SynConst.UInt32 i -> unif cenv.g.uint32_ty; Const.UInt32 i
     | SynConst.UInt64 i -> unif cenv.g.uint64_ty; Const.UInt64 i
     | SynConst.UIntPtr i -> unif cenv.g.unativeint_ty; Const.UIntPtr i
-    | SynConst.Measure(SynConst.Single f, _) -> unifyMeasureArg (f=0.0f) cenv.g.pfloat32_tcr c; Const.Single f
-    | SynConst.Measure(SynConst.Double f, _) -> unifyMeasureArg (f=0.0) cenv.g.pfloat_tcr c; Const.Double f
-    | SynConst.Measure(SynConst.Decimal f, _) -> unifyMeasureArg false cenv.g.pdecimal_tcr c; Const.Decimal f
-    | SynConst.Measure(SynConst.SByte i, _) -> unifyMeasureArg (i=0y) cenv.g.pint8_tcr c; Const.SByte i
-    | SynConst.Measure(SynConst.Int16 i, _) -> unifyMeasureArg (i=0s) cenv.g.pint16_tcr c; Const.Int16 i
-    | SynConst.Measure(SynConst.Int32 i, _) -> unifyMeasureArg (i=0) cenv.g.pint_tcr c; Const.Int32 i
-    | SynConst.Measure(SynConst.Int64 i, _) -> unifyMeasureArg (i=0L) cenv.g.pint64_tcr c; Const.Int64 i
-    | SynConst.Measure(SynConst.IntPtr i, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0L) cenv.g.pnativeint_tcr c; Const.IntPtr i
-    | SynConst.Measure(SynConst.Byte i, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0uy) cenv.g.puint8_tcr c; Const.Byte i
-    | SynConst.Measure(SynConst.UInt16 i, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0us) cenv.g.puint16_tcr c; Const.UInt16 i
-    | SynConst.Measure(SynConst.UInt32 i, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0u) cenv.g.puint_tcr c; Const.UInt32 i
-    | SynConst.Measure(SynConst.UInt64 i, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0UL) cenv.g.puint64_tcr c; Const.UInt64 i
-    | SynConst.Measure(SynConst.UIntPtr i, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0UL) cenv.g.punativeint_tcr c; Const.UIntPtr i
+    | SynConst.Measure(SynConst.Single f, _, _) -> unifyMeasureArg (f=0.0f) cenv.g.pfloat32_tcr c; Const.Single f
+    | SynConst.Measure(SynConst.Double f, _, _) -> unifyMeasureArg (f=0.0) cenv.g.pfloat_tcr c; Const.Double f
+    | SynConst.Measure(SynConst.Decimal f, _, _) -> unifyMeasureArg false cenv.g.pdecimal_tcr c; Const.Decimal f
+    | SynConst.Measure(SynConst.SByte i, _, _) -> unifyMeasureArg (i=0y) cenv.g.pint8_tcr c; Const.SByte i
+    | SynConst.Measure(SynConst.Int16 i, _, _) -> unifyMeasureArg (i=0s) cenv.g.pint16_tcr c; Const.Int16 i
+    | SynConst.Measure(SynConst.Int32 i, _, _) -> unifyMeasureArg (i=0) cenv.g.pint_tcr c; Const.Int32 i
+    | SynConst.Measure(SynConst.Int64 i, _, _) -> unifyMeasureArg (i=0L) cenv.g.pint64_tcr c; Const.Int64 i
+    | SynConst.Measure(SynConst.IntPtr i, _, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0L) cenv.g.pnativeint_tcr c; Const.IntPtr i
+    | SynConst.Measure(SynConst.Byte i, _, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0uy) cenv.g.puint8_tcr c; Const.Byte i
+    | SynConst.Measure(SynConst.UInt16 i, _, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0us) cenv.g.puint16_tcr c; Const.UInt16 i
+    | SynConst.Measure(SynConst.UInt32 i, _, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0u) cenv.g.puint_tcr c; Const.UInt32 i
+    | SynConst.Measure(SynConst.UInt64 i, _, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0UL) cenv.g.puint64_tcr c; Const.UInt64 i
+    | SynConst.Measure(SynConst.UIntPtr i, _, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0UL) cenv.g.punativeint_tcr c; Const.UIntPtr i
     | SynConst.Char c -> unif cenv.g.char_ty; Const.Char c
     | SynConst.String (s, _, _) -> unif cenv.g.string_ty; Const.String s
     | SynConst.UserNum _ -> error (InternalError(FSComp.SR.tcUnexpectedBigRationalConstant(), m))
@@ -1200,7 +1200,7 @@ let PublishValueDefn cenv env declKind (vspec: Val) =
     if (declKind = ModuleOrMemberBinding) && 
        ((GetCurrAccumulatedModuleOrNamespaceType env).ModuleOrNamespaceKind = Namespace) && 
        (Option.isNone vspec.MemberInfo) then 
-           errorR(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(), vspec.Range))
+           errorR(Error(FSComp.SR.tcNamespaceCannotContainValues(), vspec.Range))
 
     if (declKind = ExtrinsicExtensionBinding) && 
        ((GetCurrAccumulatedModuleOrNamespaceType env).ModuleOrNamespaceKind = Namespace) then 
@@ -4028,10 +4028,10 @@ and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv 
                     if SynInfo.HasOptionalArgs valSynInfo then 
                         let curriedArgTys, returnTy = GetTopTauTypeInFSharpForm cenv.g argsData ty' m
                         let curriedArgTys = 
-                            (List.zip (List.mapSquared fst curriedArgTys) valSynInfo.CurriedArgInfos) 
-                            |> List.map (fun (argTys, argInfos) ->
-                                 (List.zip argTys argInfos)
-                                 |> List.map (fun (argty, argInfo) ->
+                            ((List.mapSquared fst curriedArgTys), valSynInfo.CurriedArgInfos)
+                            ||> List.map2 (fun argTys argInfos ->
+                                 (argTys, argInfos)
+                                 ||> List.map2 (fun argty argInfo ->
                                      if SynInfo.IsOptionalArg argInfo then mkOptionTy cenv.g argty
                                      else argty))
                         mkIteratedFunTy cenv.g (List.map (mkRefTupledTy cenv.g) curriedArgTys) returnTy

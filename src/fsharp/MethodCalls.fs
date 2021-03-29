@@ -1702,7 +1702,7 @@ module ProvidedMethodCalls =
             | true, v -> v
             | _ ->
                 let typeProviderDesignation = ExtensionTyping.DisplayNameOfTypeProvider (pe.TypeProvider, m)
-                error(NumberedError(FSComp.SR.etIncorrectParameterExpression(typeProviderDesignation, vRaw.Name), m))
+                error(Error(FSComp.SR.etIncorrectParameterExpression(typeProviderDesignation, vRaw.Name), m))
                 
         and exprToExpr expr =
             let _, (resExpr, _) = exprToExprAndWitness false expr

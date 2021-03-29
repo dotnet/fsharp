@@ -47,6 +47,7 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 
 
 		- RESOURCES -
+--win32icon:<file>                       Specify a Win32 icon file (.ico)
 --win32res:<file>                        Specify a Win32 resource file (.res)
 --win32manifest:<file>                   Specify a Win32 manifest file
 --nowin32manifest                        Do not include the default Win32

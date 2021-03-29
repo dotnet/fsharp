@@ -114,7 +114,7 @@ type SynConst =
 
     | UInt16s of uint16[]
 
-    | Measure of constant: SynConst * SynMeasure
+    | Measure of constant: SynConst * constantRange: Range * SynMeasure
 
     member c.Range dflt =
         match c with
@@ -1311,6 +1311,7 @@ type SynEnumCase =
         attributes: SynAttributes *
         ident: Ident * 
         value: SynConst *
+        valueRange: range *
         xmlDoc: PreXmlDoc *
         range: range
 
@@ -1877,6 +1878,11 @@ type ParsedInput =
     | ImplFile of ParsedImplFileInput
 
     | SigFile of ParsedSigFileInput
+
+    member inp.FileName =
+        match inp with
+        | ParsedInput.ImplFile (ParsedImplFileInput (fileName=filename))
+        | ParsedInput.SigFile (ParsedSigFileInput (fileName=filename)) -> filename
 
     member inp.Range =
         match inp with

@@ -193,10 +193,7 @@ module ParsedInput =
     
     let emptyStringSet = HashSet<string>()
 
-    let GetRangeOfExprLeftOfDot(pos: pos, parsedInputOpt) =
-        match parsedInputOpt with 
-        | None -> None 
-        | Some parseTree ->
+    let GetRangeOfExprLeftOfDot(pos: pos, parsedInput) =
         let CheckLongIdent(longIdent: LongIdent) =
             // find the longest prefix before the "pos" dot
             let mutable r = (List.head longIdent).idRange 
@@ -207,7 +204,7 @@ module ParsedInput =
                     couldBeBeforeFront <- false
             couldBeBeforeFront, r
 
-        SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxVisitorBase<_>() with
+        SyntaxTraversal.Traverse(pos, parsedInput, { new SyntaxVisitorBase<_>() with
         member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
             let expr = expr // fix debugger locals
             match expr with
@@ -290,10 +287,7 @@ module ParsedInput =
         })
     
     /// searches for the expression island suitable for the evaluation by the debugger
-    let TryFindExpressionIslandInPosition(pos: pos, parsedInputOpt) = 
-        match parsedInputOpt with 
-        | None -> None 
-        | Some parseTree ->
+    let TryFindExpressionIslandInPosition(pos: pos, parsedInput) = 
             let getLidParts (lid : LongIdent) = 
                 lid 
                 |> Seq.takeWhile (fun i -> posGeq pos i.idRange.Start)
@@ -332,7 +326,7 @@ module ParsedInput =
                             | _ -> defaultTraverse expr
                         else
                             None }
-            SyntaxTraversal.Traverse(pos, parseTree, walker)
+            SyntaxTraversal.Traverse(pos, parsedInput, walker)
 
     // Given a cursor position here:
     //    f(x)   .   ident
@@ -346,10 +340,7 @@ module ParsedInput =
     //      ^
     // would return None
     // TODO would be great to unify this with GetRangeOfExprLeftOfDot above, if possible, as they are similar
-    let TryFindExpressionASTLeftOfDotLeftOfCursor(pos, parsedInputOpt) =
-        match parsedInputOpt with 
-        | None -> None 
-        | Some parseTree ->
+    let TryFindExpressionASTLeftOfDotLeftOfCursor(pos, parsedInput) =
         let dive x = SyntaxTraversal.dive x
         let pick x = SyntaxTraversal.pick pos x
         let walker = 
@@ -441,7 +432,7 @@ module ParsedInput =
                                 Some (lhs.Range.End, false)
                             | x -> x  // we found the answer deeper somewhere in the lhs
                         | _ -> defaultTraverse expr }
-        SyntaxTraversal.Traverse(pos, parseTree, walker)
+        SyntaxTraversal.Traverse(pos, parsedInput, walker)
     
     let GetEntityKind (pos: pos, parsedInput: ParsedInput) : EntityKind option =
         let (|ConstructorPats|) = function
@@ -680,7 +671,7 @@ module ParsedInput =
                 |> Option.orElse (walkExpr e)
             | _ -> None
 
-        and walkEnumCase (SynEnumCase(Attributes attrs, _, _, _, _)) = List.tryPick walkAttribute attrs
+        and walkEnumCase (SynEnumCase(Attributes attrs, _, _, _, _, _)) = List.tryPick walkAttribute attrs
 
         and walkUnionCaseType = function
             | SynUnionCaseKind.Fields fields -> List.tryPick walkField fields
@@ -1159,7 +1150,7 @@ module ParsedInput =
         | SynArgPats.NamePatPairs(xs, _) -> List.map snd xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
-    let getLongIdents (parsedInput: ParsedInput option) : IDictionary<pos, LongIdent> =
+    let getLongIdents (parsedInput: ParsedInput) : IDictionary<pos, LongIdent> =
         let identsByEndPos = Dictionary<pos, LongIdent>()
     
         let addLongIdent (longIdent: LongIdent) =
@@ -1370,7 +1361,7 @@ module ParsedInput =
                 List.iter walkTypar ts
                 walkMemberSig sign
                 walkExpr e
-            | SynExpr.Const (SynConst.Measure(_, m), _) -> walkMeasure m
+            | SynExpr.Const (SynConst.Measure(_, _, m), _) -> walkMeasure m
             | _ -> ()
     
         and walkMeasure = function
@@ -1440,7 +1431,7 @@ module ParsedInput =
                 walkExpr e
             | _ -> ()
     
-        and walkEnumCase (SynEnumCase(Attributes attrs, _, _, _, _)) = List.iter walkAttribute attrs
+        and walkEnumCase (SynEnumCase(Attributes attrs, _, _, _, _, _)) = List.iter walkAttribute attrs
     
         and walkUnionCaseType = function
             | SynUnionCaseKind.Fields fields -> List.iter walkField fields
@@ -1499,14 +1490,14 @@ module ParsedInput =
             | _ -> ()
     
         match parsedInput with
-        | Some (ParsedInput.ImplFile input) ->
+        | ParsedInput.ImplFile input ->
              walkImplFileInput input
         | _ -> ()
         //debug "%A" idents
         upcast identsByEndPos
     
     let GetLongIdentAt parsedInput pos =
-        let idents = getLongIdents (Some parsedInput)
+        let idents = getLongIdents parsedInput
         match idents.TryGetValue pos with
         | true, idents -> Some idents
         | _ -> None

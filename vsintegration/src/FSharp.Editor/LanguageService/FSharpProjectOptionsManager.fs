@@ -55,22 +55,23 @@ module private FSharpProjectOptionsHelpers =
     let hasProjectVersionChanged (oldProject: Project) (newProject: Project) =
         oldProject.Version <> newProject.Version
 
-    let hasDependentVersionChanged (oldProject: Project) (newProject: Project) =
+    let hasDependentVersionChanged (oldProject: Project) (newProject: Project) (ct: CancellationToken) =
         let oldProjectRefs = oldProject.ProjectReferences
         let newProjectRefs = newProject.ProjectReferences
         oldProjectRefs.Count() <> newProjectRefs.Count() ||
         (oldProjectRefs, newProjectRefs)
         ||> Seq.exists2 (fun p1 p2 ->
+            ct.ThrowIfCancellationRequested()
             let doesProjectIdDiffer = p1.ProjectId <> p2.ProjectId
             let p1 = oldProject.Solution.GetProject(p1.ProjectId)
             let p2 = newProject.Solution.GetProject(p2.ProjectId)
             doesProjectIdDiffer || p1.Version <> p2.Version
         )
 
-    let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) =
+    let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) ct =
         let hasProjectVersionChanged = hasProjectVersionChanged oldProject newProject
         if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
-            hasProjectVersionChanged || hasDependentVersionChanged oldProject newProject
+            hasProjectVersionChanged || hasDependentVersionChanged oldProject newProject ct
         else
             hasProjectVersionChanged
 
@@ -151,7 +152,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
             | true, site -> Some site
             | _ -> None
     
-    let rec tryComputeOptions (project: Project) =
+    let rec tryComputeOptions (project: Project) ct =
         async {
             let projectId = project.Id
             match cache.TryGetValue(projectId) with
@@ -167,7 +168,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     for projectReference in project.ProjectReferences do
                         let referencedProject = project.Solution.GetProject(projectReference.ProjectId)
                         if referencedProject.Language = FSharpConstants.FSharpLanguageName then
-                            match! tryComputeOptions referencedProject with
+                            match! tryComputeOptions referencedProject ct with
                             | None -> canBail <- true
                             | Some(_, projectOptions) -> referencedProjects.Add(referencedProject.OutputFilePath, projectOptions)
 
@@ -239,9 +240,9 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     return Some(parsingOptions, projectOptions)
   
             | true, (oldProject, parsingOptions, projectOptions) ->
-                if isProjectInvalidated oldProject project settings then
+                if isProjectInvalidated oldProject project settings ct then
                     cache.TryRemove(projectId) |> ignore
-                    return! tryComputeOptions project
+                    return! tryComputeOptions project ct
                 else
                     return Some(parsingOptions, projectOptions)
         }
@@ -266,7 +267,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                                 // We do this to prevent any possible cache thrashing in FCS.
                                 let project = document.Project.Solution.Workspace.CurrentSolution.GetProject(document.Project.Id)
                                 if not (isNull project) then
-                                    let! options = tryComputeOptions project
+                                    let! options = tryComputeOptions project ct
                                     reply.Reply options
                                 else
                                     reply.Reply None
@@ -286,7 +287,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                                 // We do this to prevent any possible cache thrashing in FCS.
                                 let project = project.Solution.Workspace.CurrentSolution.GetProject(project.Id)
                                 if not (isNull project) then
-                                    let! options = tryComputeOptions project
+                                    let! options = tryComputeOptions project ct
                                     reply.Reply options
                                 else
                                     reply.Reply None

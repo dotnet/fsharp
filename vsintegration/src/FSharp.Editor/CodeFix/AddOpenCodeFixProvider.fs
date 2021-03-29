@@ -90,7 +90,7 @@ type internal FSharpAddOpenCodeFixProvider
             let document = context.Document
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName = userOpName)
+            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName = userOpName)
             let line = sourceText.Lines.GetLineFromPosition(context.Span.End)
             let linePos = sourceText.Lines.GetLinePosition(context.Span.End)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions

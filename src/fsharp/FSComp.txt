@@ -853,6 +853,7 @@ optsNoInterface,"Don't add a resource to the generated assembly containing F#-sp
 optsSig,"Print the inferred interface of the assembly to a file"
 optsReference,"Reference an assembly (Short form: -r)"
 optsCompilerTool,"Reference an assembly or directory containing a design time tool (Short form: -t)"
+optsWin32icon,"Specify a Win32 icon file (.ico)"
 optsWin32res,"Specify a Win32 resource file (.res)"
 optsWin32manifest,"Specify a Win32 manifest file"
 optsNowin32manifest,"Do not include the default Win32 manifest"
@@ -1560,6 +1561,7 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3382,parsEmptyFillInInterpolatedString,"Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected."
 3383,lexRBraceInInterpolatedString,"A '}}' character must be escaped (by doubling) in an interpolated string."
 3384,scriptSdkNotDetermined,"The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '%s --version' in the directory '%s' was: '%s' and the exit code was '%d'."
+3384,scriptSdkNotDeterminedUnexpected,"The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '%s'."
 #3501   "This construct is not supported by your version of the F# compiler" CompilerMessage(ExperimentalAttributeMessages.NotSupportedYet, 3501, IsError=true)
 3390,xmlDocBadlyFormed,"This XML comment is invalid: '%s'"
 3390,xmlDocMissingParameterName,"This XML comment is invalid: missing 'name' attribute for parameter or parameter reference"

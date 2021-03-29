@@ -11,9 +11,11 @@ type Ident =
      new: text: string * range: range -> Ident
      member idText: string
      member idRange: range
+       
 
 /// Represents a long identifier e.g. 'A.B.C'
 type LongIdent = Ident list
+
 
 /// Represents a long identifier with possible '.' at end.
 ///
@@ -148,7 +150,7 @@ type SynConst =
     | UInt16s of uint16[]
 
     /// Old comment: "we never iterate, so the const here is not another SynConst.Measure"
-    | Measure of constant: SynConst * SynMeasure
+    | Measure of constant: SynConst * constantRange: range * SynMeasure
 
     /// Gets the syntax range of this construct
     member Range: dflt: range -> range
@@ -1500,6 +1502,7 @@ type SynEnumCase =
         attributes: SynAttributes *
         ident: Ident * 
         value: SynConst *
+        valueRange: range *
         xmlDoc: PreXmlDoc *
         range: range
 
@@ -2119,6 +2122,9 @@ type ParsedInput =
 
     /// A parsed signature file
     | SigFile of ParsedSigFileInput
+
+    /// Gets the file name for the parsed input
+    member FileName: string
 
     /// Gets the syntax range of this construct
     member Range: range
