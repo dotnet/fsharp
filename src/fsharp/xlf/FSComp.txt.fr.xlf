@@ -267,6 +267,11 @@
         <target state="translated">Afficher la bannière de la version du compilateur et quitter</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsWin32icon">
+        <source>Specify a Win32 icon file (.ico)</source>
+        <target state="translated">Spécifier un fichier icône Win32 (.ico)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">La fonctionnalité de gestion des packages nécessite la version 5.0 du langage. Utilisez /langversion:preview</target>
