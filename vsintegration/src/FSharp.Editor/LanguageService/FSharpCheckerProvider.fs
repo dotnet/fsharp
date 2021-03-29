@@ -68,20 +68,22 @@ type internal FSharpCheckerProvider
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,
             // we request Roslyn to reanalyze that individual file.
-            checker.BeforeBackgroundFileCheck.Add(fun (fileName, _extraProjectInfo) ->  
-                async {
-                    try 
-                        let solution = workspace.CurrentSolution
-                        let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
-                        if not documentIds.IsEmpty then 
-                            let documentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
-                            for documentId in documentIdsFiltered do
-                                Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
-                            if documentIdsFiltered.Length > 0 then 
-                                analyzerService.Reanalyze(workspace,documentIds=documentIdsFiltered)
-                    with ex -> 
-                        Assert.Exception(ex)
-                } |> Async.StartImmediate
+            checker.BeforeBackgroundFileCheck.Add(fun (fileName, _extraProjectInfo) ->
+                // Only do this for scripts as misc script Rolsyn projects do not understand the dependencies of the script. e.x "#r "../test.dll"", "#load "test2.fsx""
+                if isScriptFile fileName then
+                    async {
+                        try 
+                            let solution = workspace.CurrentSolution
+                            let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
+                            if not documentIds.IsEmpty then 
+                                let documentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
+                                for documentId in documentIdsFiltered do
+                                    Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
+                                if documentIdsFiltered.Length > 0 then 
+                                    analyzerService.Reanalyze(workspace,documentIds=documentIdsFiltered)
+                        with ex -> 
+                            Assert.Exception(ex)
+                    } |> Async.StartImmediate
             )
             checker
 

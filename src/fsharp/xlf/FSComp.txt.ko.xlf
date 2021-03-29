@@ -272,6 +272,11 @@
         <target state="translated">컴파일러 버전 배너를 표시하고 종료</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsWin32icon">
+        <source>Specify a Win32 icon file (.ico)</source>
+        <target state="new">Specify a Win32 icon file (.ico)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">패키지 관리 기능을 사용하려면 언어 버전 5.0이 필요합니다. /langversion:preview를 사용하세요.</target>
@@ -335,6 +340,11 @@
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'.</source>
         <target state="new">This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedUnexpected">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
+        <target state="new">The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">

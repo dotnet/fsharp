@@ -78,6 +78,7 @@ type public Fsc () as this =
     let mutable versionFile : string = null
     let mutable warningLevel : string = null
     let mutable warnOn : string = null
+    let mutable win32icon: string = null
     let mutable win32res : string = null
     let mutable win32manifest : string = null
     let mutable vserrors : bool = false
@@ -224,6 +225,9 @@ type public Fsc () as this =
         match warningsNotAsErrors with
         | null -> ()
         | _ -> builder.AppendSwitchIfNotNull("--warnaserror-:", warningsNotAsErrors |> splitAndWsTrim, ",")
+
+        // Win32IconFile
+        builder.AppendSwitchIfNotNull("--win32icon:", win32icon)
 
         // Win32ResourceFile
         builder.AppendSwitchIfNotNull("--win32res:", win32res)
@@ -490,6 +494,11 @@ type public Fsc () as this =
         with get() = versionFile
         and set(s) = versionFile <- s
 
+    // For specifying a win32 icon file (.ico)
+    member fsc.Win32IconFile
+        with get() = win32icon
+        and set(s) = win32icon <- s
+
     // For specifying a win32 native resource file (.res)
     member fsc.Win32ResourceFile
         with get() = win32res
@@ -577,9 +586,11 @@ type public Fsc () as this =
                                                         CultureInfo.InvariantCulture)
                         unbox ret
                     with
-                    | :? TargetInvocationException as tie when (match tie.InnerException with | :? Microsoft.Build.Exceptions.BuildAbortedException -> true | _ -> false) ->
+                    // ok, this is what happens when VS IDE cancels the build, no need to assert, just log the build-canceled error and return -1 to denote task failed
+                    // Do a string compare on the type name to do eliminate a compile time dependency on Microsoft.Build.dll
+                    | :? TargetInvocationException as tie when not (isNull tie.InnerException) && (tie.InnerException).GetType().FullName = "Microsoft.Build.Exceptions.BuildAbortedException" ->
                         fsc.Log.LogError(tie.InnerException.Message, [| |])
-                        -1  // ok, this is what happens when VS IDE cancels the build, no need to assert, just log the build-canceled error and return -1 to denote task failed
+                        -1
                     | e -> reraise()
 
                 let baseCallDelegate = Func<int>(fun () -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) )

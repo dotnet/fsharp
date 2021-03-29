@@ -3405,6 +3405,7 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
       codedBigness 2 TableNames.Assembly
     
     let mrpBigness = 
+      codedBigness 3 TableNames.TypeDef ||
       codedBigness 3 TableNames.TypeRef ||
       codedBigness 3 TableNames.ModuleRef ||
       codedBigness 3 TableNames.Method ||
@@ -3936,7 +3937,7 @@ let OpenILModuleReader fileName opts =
         //
         let ilModuleReader = 
             // Check if we are doing metadataOnly reading (the most common case in both the compiler and IDE)
-            if metadataOnly then 
+            if not runningOnMono && metadataOnly then 
 
                 // See if tryGetMetadata gives us a BinaryFile for the metadata section alone.
                 let mdfileOpt = 
@@ -3984,7 +3985,7 @@ let OpenILModuleReader fileName opts =
         // multi-proc build. So use memory mapping, but only for stable files. Other files
         // still use an in-memory ByteFile
         let pefile = 
-            if alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath then 
+            if not runningOnMono && (alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath) then 
                 let _, pefile = createMemoryMapFile fullPath
                 pefile
             else

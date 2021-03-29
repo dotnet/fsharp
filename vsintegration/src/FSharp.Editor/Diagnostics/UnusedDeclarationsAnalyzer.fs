@@ -28,12 +28,11 @@ type internal UnusedDeclarationsAnalyzer
                 do! Option.guard document.FSharpOptions.CodeFixes.UnusedDeclarations
 
                 do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
-                do! Async.Sleep DefaultTuning.UnusedDeclarationsAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
                 match! projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName) with
                 | (_parsingOptions, projectOptions) ->
                     let! sourceText = document.GetTextAsync()
                     let checker = checkerProvider.Checker
-                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName = userOpName)
+                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName = userOpName)
                     let! unusedRanges = UnusedDeclarations.getUnusedDeclarations( checkResults, (isScriptFile document.FilePath)) |> liftAsync
                     return
                         unusedRanges
