@@ -58,7 +58,7 @@ type IRawFSharpAssemblyData =
 type TimeStampCache = 
     new: defaultTimeStamp: DateTime -> TimeStampCache
     member GetFileTimeStamp: string -> DateTime
-    member GetProjectReferenceTimeStamp: IProjectReference * CompilationThreadToken -> DateTime
+    member GetProjectReferenceTimeStamp: IProjectReference -> DateTime
 
 and IProjectReference = 
 
@@ -76,7 +76,7 @@ and IProjectReference =
     ///
     /// The operation returns None only if it is not possible to create an IncrementalBuilder for the project at all, e.g. if there
     /// are fatal errors in the options for the project.
-    abstract TryGetLogicalTimeStamp: TimeStampCache * CompilationThreadToken -> System.DateTime option
+    abstract TryGetLogicalTimeStamp: TimeStampCache -> System.DateTime option
 
 type AssemblyReference = 
     | AssemblyReference of range * string  * IProjectReference option
@@ -207,6 +207,7 @@ type TcConfigBuilder =
       mutable ignoreSymbolStoreSequencePoints: bool
       mutable internConstantStrings: bool
       mutable extraOptimizationIterations: int
+      mutable win32icon: string 
       mutable win32res: string 
       mutable win32manifest: string
       mutable includewin32manifest: bool
@@ -232,6 +233,7 @@ type TcConfigBuilder =
       mutable optSettings  : Optimizer.OptimizationSettings 
       mutable emitTailcalls: bool
       mutable deterministic: bool
+      mutable concurrentBuild: bool
       mutable preferredUiLang: string option
       mutable lcid        : int option
       mutable productNameForBannerText: string
@@ -254,9 +256,9 @@ type TcConfigBuilder =
       mutable copyFSharpCore: CopyFSharpCoreFlag
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
-      mutable fxResolver: FxResolver
-      mutable rangeForErrors: range
-      mutable sdkDirOverride: string option
+      mutable fxResolver: FxResolver option
+      rangeForErrors: range
+      sdkDirOverride: string option
 
       /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
       /// and from which we can read the metadata. Only used when metadataOnly=true.
@@ -272,8 +274,6 @@ type TcConfigBuilder =
 
       mutable langVersion : LanguageVersion
     }
-
-    static member Initial: TcConfigBuilder
 
     static member CreateNew:
         legacyReferenceResolver: LegacyReferenceResolver *
@@ -319,6 +319,9 @@ type TcConfigBuilder =
 
     member FxResolver: FxResolver
 
+    member SetUseSdkRefs: useSdkRefs: bool -> unit
+
+    member SetPrimaryAssembly: primaryAssembly: PrimaryAssembly -> unit
 
 /// Immutable TcConfig, modifications are made via a TcConfigBuilder
 [<Sealed>]
@@ -393,6 +396,7 @@ type TcConfig =
     member ignoreSymbolStoreSequencePoints: bool
     member internConstantStrings: bool
     member extraOptimizationIterations: int
+    member win32icon: string
     member win32res: string 
     member win32manifest: string
     member includewin32manifest: bool
@@ -416,6 +420,7 @@ type TcConfig =
     member optSettings  : Optimizer.OptimizationSettings 
     member emitTailcalls: bool
     member deterministic: bool
+    member concurrentBuild: bool
     member pathMap: PathMap
     member preferredUiLang: string option
     member optsOn       : bool 

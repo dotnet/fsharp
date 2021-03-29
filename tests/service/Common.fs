@@ -87,7 +87,7 @@ let sysLib nm =
 [<AutoOpen>]
 module Helpers = 
     type DummyType = A | B
-    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<FSharpChecker>.Assembly.CodeBase).LocalPath), p)
+    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<FSharpChecker>.Assembly.Location).LocalPath), p)
 
 let fsCoreDefaultReference() = 
     PathRelativeToTestAssembly "FSharp.Core.dll"
@@ -233,14 +233,13 @@ let matchBraces (name: string, code: string) =
     braces
 
 
-let getSingleModuleLikeDecl (input: ParsedInput option) =
+let getSingleModuleLikeDecl (input: ParsedInput) =
     match input with
-    | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = [ decl ]))) -> decl
+    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ decl ])) -> decl
     | _ -> failwith "Could not get module decls"
     
 let parseSourceCodeAndGetModule (source: string) =
     parseSourceCode ("test", source) |> getSingleModuleLikeDecl
-
 
 /// Extract range info 
 let tups (m: range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
@@ -432,3 +431,10 @@ let coreLibAssemblyName =
     "mscorlib"
 #endif
 
+let assertRange
+    (expectedStartLine: int, expectedStartColumn: int)
+    (expectedEndLine: int, expectedEndColumn: int)
+    (actualRange: range)
+    : unit =
+    Assert.AreEqual(Position.mkPos expectedStartLine expectedStartColumn, actualRange.Start)
+    Assert.AreEqual(Position.mkPos expectedEndLine expectedEndColumn, actualRange.End)

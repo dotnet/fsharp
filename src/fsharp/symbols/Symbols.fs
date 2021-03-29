@@ -1916,11 +1916,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | P p -> 
             [ [ for (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) in p.GetParamDatas(cenv.amap, range0) do 
-                // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
-                // either .NET or F# parameters
-                let argInfo: ArgReprInfo = { Name=nmOpt; Attribs= [] }
-                yield FSharpParameter(cenv, pty, argInfo, None, x.DeclarationLocationOpt, isParamArrayArg, isInArg, isOutArg, optArgInfo.IsOptional, false) ] 
-               |> makeReadOnlyCollection  ]
+                    // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
+                    // either .NET or F# parameters
+                    let argInfo: ArgReprInfo = { Name=nmOpt; Attribs= [] }
+                    yield FSharpParameter(cenv, pty, argInfo, None, x.DeclarationLocationOpt, isParamArrayArg, isInArg, isOutArg, optArgInfo.IsOptional, false) ] 
+              |> makeReadOnlyCollection  ]
            |> makeReadOnlyCollection
 
         | E _ ->  []  |> makeReadOnlyCollection
@@ -2100,6 +2100,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.IsValue =
         match d with
         | V valRef -> not (isForallFunctionTy cenv.g valRef.Type)
+        | _ -> false
+
+    member x.IsFunction =
+        match d with
+        | V valRef -> isForallFunctionTy cenv.g valRef.Type
         | _ -> false
 
     override x.Equals(other: obj) =
@@ -2348,12 +2353,21 @@ type FSharpType(cenv, ty:TType) =
 
     member _.Format(context: FSharpDisplayContext) = 
        protect <| fun () -> 
-        NicePrint.prettyStringOfTyNoCx (context.Contents cenv.g) ty 
+            NicePrint.prettyStringOfTyNoCx (context.Contents cenv.g) ty 
+
+    member _.FormatWithConstraints(context: FSharpDisplayContext) = 
+        protect <| fun () -> 
+            NicePrint.prettyStringOfTy (context.Contents cenv.g) ty 
 
     member _.FormatLayout(context: FSharpDisplayContext) =
        protect <| fun () -> 
-        NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
-        |> LayoutRender.toArray
+            NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
+            |> LayoutRender.toArray
+
+    member _.FormatLayoutWithConstraints(context: FSharpDisplayContext) =
+        protect <| fun () -> 
+            NicePrint.prettyLayoutOfType (context.Contents cenv.g) ty
+            |> LayoutRender.toArray
 
     override _.ToString() = 
        protect <| fun () -> 

@@ -454,7 +454,7 @@ module TcRecdUnionAndEnumDeclarations =
 
     let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) = 
         let seen = Dictionary()
-        for (sf, f) in List.zip synFields tastFields do
+        (synFields, tastFields) ||> List.iter2 (fun sf f ->
             match seen.TryGetValue f.Name with
             | true, synField ->
                 match sf, synField with
@@ -465,7 +465,7 @@ module TcRecdUnionAndEnumDeclarations =
                     error(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(id.idText), id.idRange))
                 | _ -> assert false
             | _ ->
-                seen.Add(f.Name, sf)
+                seen.Add(f.Name, sf))
                 
     let TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv (SynUnionCase(Attributes synAttrs, id, args, xmldoc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
@@ -511,7 +511,7 @@ module TcRecdUnionAndEnumDeclarations =
         let unionCases' = unionCases |> List.map (TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv) 
         unionCases' |> CheckDuplicates (fun uc -> uc.Id) "union case" 
 
-    let TcEnumDecl cenv env parent thisTy fieldTy (SynEnumCase(Attributes synAttrs, id, v, xmldoc, m)) =
+    let TcEnumDecl cenv env parent thisTy fieldTy (SynEnumCase(Attributes synAttrs, id, v, _, xmldoc, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.Field synAttrs
         match v with 
         | SynConst.Bytes _
@@ -2364,8 +2364,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
                   let ity' = 
                       let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTyconTypars envForTycon
                       TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType envinner emptyUnscopedTyparEnv ity |> fst
-                  if not (isInterfaceTy g ity') then errorR(Error(FSComp.SR.tcTypeIsNotInterfaceType0(), ity.Range))
-                  
+
                   if not (tcref.HasInterface g ity') then 
                       error(Error(FSComp.SR.tcAllImplementedInterfacesShouldBeDeclared(), ity.Range))
                    
@@ -5025,7 +5024,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
         | SynModuleSigDecl.Val (vspec, m) -> 
             let parentModule = 
                 match parent with 
-                | ParentNone -> error(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(), vspec.RangeOfId)) 
+                | ParentNone -> error(Error(FSComp.SR.tcNamespaceCannotContainValues(), vspec.RangeOfId)) 
                 | Parent p -> p
             let containerInfo = ModuleOrNamespaceContainerInfo parentModule
             let idvs, _ = TcAndPublishValSpec (cenv, env, containerInfo, ModuleOrMemberBinding, None, emptyUnscopedTyparEnv, vspec)
@@ -5196,7 +5195,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
                       decls, (false, false)
 
                 | SynModuleSigDecl.Val (vspec, _) -> 
-                    if isNamespace then error(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(), vspec.RangeOfId)) 
+                    if isNamespace then error(Error(FSComp.SR.tcNamespaceCannotContainValues(), vspec.RangeOfId)) 
                     let decls = [ MutRecShape.Lets vspec ]
                     decls, (false, false)
 
@@ -5280,9 +5279,9 @@ let CheckLetOrDoInNamespace binds m =
     | [ SynBinding (None, (SynBindingKind.StandaloneExpression | SynBindingKind.Do), false, false, [], _, _, _, None, (SynExpr.Do (SynExpr.Const (SynConst.Unit, _), _) | SynExpr.Const (SynConst.Unit, _)), _, _) ] ->
         ()
     | [] -> 
-        error(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(), m)) 
+        error(Error(FSComp.SR.tcNamespaceCannotContainValues(), m)) 
     | _ -> 
-        error(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(), binds.Head.RangeOfHeadPattern)) 
+        error(Error(FSComp.SR.tcNamespaceCannotContainValues(), binds.Head.RangeOfHeadPattern)) 
 
 /// The non-mutually recursive case for a declaration
 let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem env synDecl = 

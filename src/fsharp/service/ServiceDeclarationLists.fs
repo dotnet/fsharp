@@ -580,9 +580,8 @@ module internal DescriptionListsImpl =
 
         // Remake the params using the prettified versions
         let parameters = 
-            (prettyParamTys, prettyParamTysL) 
-            ||> List.zip 
-            |> List.map (fun (tau, tyL) -> 
+            (prettyParamTys, prettyParamTysL)
+            ||> List.map2 (fun tau tyL ->
                 let display = LayoutRender.toArray tyL
                 MethodGroupItemParameter(
                     name = "",
