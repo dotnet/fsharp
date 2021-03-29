@@ -121,7 +121,8 @@ type public FSharpChecker =
     /// <param name="sourceText">The full source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member CheckFileInProject: parseResults: FSharpParseFileResults * filename: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckFileAnswer>
+    /// <param name="cacheStamp">Used to determine if we should use cached results. If None, it will use ISourceText.GetHashCode.</param>
+    member CheckFileInProject: parseResults: FSharpParseFileResults * filename: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string * ?cacheStamp: int64 -> Async<FSharpCheckFileAnswer>
 
     /// <summary>
     /// <para>
@@ -140,7 +141,8 @@ type public FSharpChecker =
     /// <param name="sourceText">The source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member ParseAndCheckFileInProject: filename: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpParseFileResults * FSharpCheckFileAnswer>
+    /// <param name="cacheStamp">Used to determine if we should use cached results. If None, it will use ISourceText.GetHashCode.</param>
+    member ParseAndCheckFileInProject: filename: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string * ?cacheStamp: int64 -> Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     /// <summary>
     /// <para>Parse and typecheck all files in a project.</para>
@@ -349,7 +351,8 @@ type public FSharpChecker =
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="sourceText">Optionally, specify source that must match the previous parse precisely.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member TryGetRecentCheckResultsForFile: filename: string * options:FSharpProjectOptions * ?sourceText: ISourceText * ?userOpName: string -> (FSharpParseFileResults * FSharpCheckFileResults * (*version*)int) option
+    /// <param name="cacheStamp">Used to determine if we should use cached results. If None, it will use ISourceText.GetHashCode.</param>
+    member TryGetRecentCheckResultsForFile: filename: string * options:FSharpProjectOptions * ?sourceText: ISourceText * ?userOpName: string * ?cacheStamp: int64 -> (FSharpParseFileResults * FSharpCheckFileResults * (*version*)int) option
 
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.
     member InvalidateAll: unit -> unit

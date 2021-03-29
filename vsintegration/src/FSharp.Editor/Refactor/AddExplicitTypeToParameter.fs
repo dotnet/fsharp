@@ -38,7 +38,7 @@ type internal FSharpAddExplicitTypeToParameterRefactoring
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! parseFileResults, _, checkFileResults = checker.ParseAndCheckDocument (document, projectOptions, sourceText=sourceText, userOpName=userOpName)
+            let! parseFileResults, _, checkFileResults = checker.ParseAndCheckDocument (document, projectOptions, userOpName=userOpName)
             let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
 
