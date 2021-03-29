@@ -177,25 +177,27 @@ type internal FSharpNavigateToSearchService
     let GetNavigableItems(document: Document, parsingOptions: FSharpParsingOptions, kinds: IImmutableSet<string>) =
         async {
             let! cancellationToken = Async.CancellationToken
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-            let! parseResults = checkerProvider.Checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions)
+            let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions, userOpName)
+            match parseResults with
+            | None -> return [||]
+            | Some parseResults ->
 
+            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let navItems parsedInput =
                 NavigateTo.GetNavigableItems parsedInput
                 |> Array.filter (fun i -> kinds.Contains(navigateToItemKindToRoslynKind i.Kind))
 
-            return 
-                match parseResults.ParseTree |> Option.map navItems with
-                | Some items ->
-                    [| for item in items do
-                         match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with 
-                         | None -> ()
-                         | Some sourceSpan ->
-                             let glyph = navigateToItemKindToGlyph item.Kind
-                             let kind = navigateToItemKindToRoslynKind item.Kind
-                             let additionalInfo = containerToString item.Container document.Project
-                             yield NavigableItem(document, sourceSpan, glyph, item.Name, kind, additionalInfo) |]
-                | None -> [||]
+            let items = parseResults.ParseTree |> navItems
+            let navigableItems =
+                [| for item in items do
+                        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with 
+                        | None -> ()
+                        | Some sourceSpan ->
+                            let glyph = navigateToItemKindToGlyph item.Kind
+                            let kind = navigateToItemKindToRoslynKind item.Kind
+                            let additionalInfo = containerToString item.Container document.Project
+                            yield NavigableItem(document, sourceSpan, glyph, item.Name, kind, additionalInfo) |]
+            return navigableItems
         }
 
     let getCachedIndexedNavigableItems(document: Document, parsingOptions: FSharpParsingOptions, kinds: IImmutableSet<string>) =

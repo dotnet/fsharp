@@ -1660,10 +1660,10 @@ type UsingMSBuild() as this =
         Assert.IsTrue((countInvaldiationHandlersAdded() = countInvaldiationHandlersRemoved()), "Check6b2, at end, all invalidation handlers removed after explicit cleraring")
         checkConfigsDisposed()
 
-    [<Test;Category("TypeProvider"); Category("Expensive")>]
+    [<Test;Category("TypeProvider"); Category("Expensive"); Ignore("Flaky test, unclear if it is valuable")>]
     member public this.``TypeProvider.Disposal.SmokeTest1``() = this.TypeProviderDisposalSmokeTest(true)
 
-    [<Test;Category("TypeProvider")>]
+    [<Test;Category("TypeProvider"); Ignore("Flaky test, unclear if it is valuable")>]
     member public this.``TypeProvider.Disposal.SmokeTest2``() = this.TypeProviderDisposalSmokeTest(false)
 
 

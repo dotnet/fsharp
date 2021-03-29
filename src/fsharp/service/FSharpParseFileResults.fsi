@@ -12,7 +12,7 @@ open FSharp.Compiler.Text
 type public FSharpParseFileResults = 
 
     /// The syntax tree resulting from the parse
-    member ParseTree: ParsedInput option
+    member ParseTree: ParsedInput
 
     /// Attempts to find the range of the name of the nearest outer binding that contains a given position.
     member TryRangeOfNameOfNearestOuterBindingContainingPos: pos: pos -> range option
@@ -46,11 +46,20 @@ type public FSharpParseFileResults =
     /// </summary>
     member TryRangeOfRefCellDereferenceContainingPos: expressionPos: pos -> range option
 
+    /// Gets the range of an expression being dereferenced. For `!expr`, gives the range of `expr`
+    member TryRangeOfExpressionBeingDereferencedContainingPos: expressionPos: pos -> range option
+
     /// Notable parse info for ParameterInfo at a given location
     member FindParameterLocations: pos:pos -> ParameterLocations option
 
     /// Determines if the given position is contained within a curried parameter in a binding.
     member IsPositionContainedInACurriedParameter: pos: pos -> bool
+
+    /// Determines if the expression or pattern at the given position has a type annotation
+    member IsTypeAnnotationGivenAtPosition: pos -> bool
+
+    /// Determines if the binding at the given position is bound to a lambda expression
+    member IsBindingALambdaAtPosition: pos -> bool
 
     /// Name of the file for which this information were created
     member FileName: string
@@ -70,5 +79,5 @@ type public FSharpParseFileResults =
     /// Indicates if any errors occurred during the parse
     member ParseHadErrors: bool
 
-    internal new: diagnostics: FSharpDiagnostic[] * input: ParsedInput option * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
+    internal new: diagnostics: FSharpDiagnostic[] * input: ParsedInput * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
 
