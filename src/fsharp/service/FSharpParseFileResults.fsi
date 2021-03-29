@@ -46,11 +46,20 @@ type public FSharpParseFileResults =
     /// </summary>
     member TryRangeOfRefCellDereferenceContainingPos: expressionPos: pos -> range option
 
+    /// Gets the range of an expression being dereferenced. For `!expr`, gives the range of `expr`
+    member TryRangeOfExpressionBeingDereferencedContainingPos: expressionPos: pos -> range option
+
     /// Notable parse info for ParameterInfo at a given location
     member FindParameterLocations: pos:pos -> ParameterLocations option
 
     /// Determines if the given position is contained within a curried parameter in a binding.
     member IsPositionContainedInACurriedParameter: pos: pos -> bool
+
+    /// Determines if the expression or pattern at the given position has a type annotation
+    member IsTypeAnnotationGivenAtPosition: pos -> bool
+
+    /// Determines if the binding at the given position is bound to a lambda expression
+    member IsBindingALambdaAtPosition: pos -> bool
 
     /// Name of the file for which this information were created
     member FileName: string

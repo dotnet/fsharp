@@ -17,6 +17,11 @@
         <target state="translated">Přidejte klíčové slovo new.</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddTypeAnnotation">
+        <source>Add type annotation</source>
+        <target state="new">Add type annotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
         <target state="translated">Převést na anonymní záznam</target>
@@ -255,6 +260,11 @@
       <trans-unit id="UseNotForNegation">
         <source>Use 'not' to negate expression</source>
         <target state="translated">Negovat výraz pomocí not</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseValueInsteadOfDeref">
+        <source>Use '.Value' to dereference expression</source>
+        <target state="new">Use '.Value' to dereference expression</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">
