@@ -502,21 +502,20 @@ type internal FSharpSignatureHelpProvider
             defines: string list,
             checker: FSharpChecker,
             documentationBuilder: IDocumentationBuilder,
-            sourceText: SourceText,
             caretPosition: int,
             options: FSharpProjectOptions,
-            filePath: string,
-            textVersionHash: int,
             triggerTypedChar: char option,
             possibleCurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind option
         ) =
         asyncMaybe {
+            let! sourceText = document.GetTextAsync() |> liftTaskAsync
+
             let textLines = sourceText.Lines
             let perfOptions = document.FSharpOptions.LanguageServicePerformance
             let caretLinePos = textLines.GetLinePosition(caretPosition)
             let caretLineColumn = caretLinePos.Character
 
-            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, perfOptions, userOpName = userOpName)
+            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(document, options, perfOptions, userOpName = userOpName)
 
             let adjustedColumnInSource =
 
@@ -544,7 +543,7 @@ type internal FSharpSignatureHelpProvider
                         sourceText,
                         caretPosition,
                         adjustedColumnInSource,
-                        filePath)
+                        document.FilePath)
             | _, Some FunctionApplication when adjustedColumnChar <> ',' && adjustedColumnChar <> '(' && adjustedColumnChar <> '<' ->
                 return!
                     FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
@@ -556,7 +555,7 @@ type internal FSharpSignatureHelpProvider
                         sourceText,
                         caretPosition,
                         adjustedColumnInSource,
-                        filePath)
+                        document.FilePath)
             | _ ->
                 let! paramInfoLocations = parseResults.FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn)
                 return!
@@ -579,8 +578,6 @@ type internal FSharpSignatureHelpProvider
             asyncMaybe {
                 let! _, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let checker = checkerProvider.Checker
 
                 let triggerTypedChar = 
@@ -596,11 +593,8 @@ type internal FSharpSignatureHelpProvider
                                 defines,
                                 checker,
                                 documentationBuilder,
-                                sourceText,
                                 position,
                                 projectOptions,
-                                document.FilePath,
-                                textVersion.GetHashCode(),
                                 triggerTypedChar,
                                 possibleCurrentSignatureHelpSessionKind)
                         match signatureHelpDataOpt with

@@ -26,8 +26,12 @@ type internal FSharpBreakpointResolutionService
     ) =
 
     static let userOpName = "BreakpointResolution"
-    static member GetBreakpointLocation(checker: FSharpChecker, sourceText: SourceText, fileName: string, textSpan: TextSpan, parsingOptions: FSharpParsingOptions) = 
+    static member GetBreakpointLocation(checker: FSharpChecker, document: Document, textSpan: TextSpan, parsingOptions: FSharpParsingOptions) = 
         async {
+            let! ct = Async.CancellationToken
+
+            let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
+
             let textLinePos = sourceText.Lines.GetLinePosition(textSpan.Start)
             let textInLine = sourceText.GetSubText(sourceText.Lines.[textLinePos.Line].Span).ToString()
 
@@ -36,16 +40,18 @@ type internal FSharpBreakpointResolutionService
             else
                 let textLineColumn = textLinePos.Character
                 let fcsTextLineNumber = Line.fromZ textLinePos.Line // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-                let! parseResults = checker.ParseFile(fileName, sourceText.ToFSharpSourceText(), parsingOptions, userOpName = userOpName)
-                return parseResults.ValidateBreakpointLocation(mkPos fcsTextLineNumber textLineColumn)
+                let! parseResults = checker.ParseDocument(document, parsingOptions, userOpName)
+                match parseResults with
+                | Some parseResults -> return parseResults.ValidateBreakpointLocation(mkPos fcsTextLineNumber textLineColumn)
+                | _ -> return None
         }
 
     interface IFSharpBreakpointResolutionService with
         member this.ResolveBreakpointAsync(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken): Task<FSharpBreakpointResolutionResult> =
             asyncMaybe {
                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
+                let! range = FSharpBreakpointResolutionService.GetBreakpointLocation(checkerProvider.Checker, document, textSpan, parsingOptions)
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! range = FSharpBreakpointResolutionService.GetBreakpointLocation(checkerProvider.Checker, sourceText, document.Name, textSpan, parsingOptions)
                 let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
                 return FSharpBreakpointResolutionResult.CreateSpanResult(document, span)
             } 
