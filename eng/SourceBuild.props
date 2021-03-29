@@ -34,7 +34,7 @@
     The build script bootstraps some tooling for the build.  Since the inner build is triggerred via msbuild,
     trigger the bootstrapping for the inner build.
   -->
-  <Target Name="CopyBootstrap"
+  <Target Name="BuildBootstrap"
           DependsOnTargets="PrepareInnerSourceBuildRepoRoot"
           BeforeTargets="RunInnerSourceBuildCommand">
 
