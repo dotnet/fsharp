@@ -11,6 +11,7 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.NativeRes
 open FSharp.Compiler.AbstractIL.StrongNameSign
 open FSharp.Compiler.BinaryResourceFormats
 open FSharp.Compiler.CheckDeclarations
@@ -71,7 +72,7 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig, tcGlobals, topAttrs) =
     let delaySignAttrib = AttributeHelpers.TryFindBoolAttribute tcGlobals "System.Reflection.AssemblyDelaySignAttribute" topAttrs.assemblyAttrs
     let signerAttrib = AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyKeyFileAttribute" topAttrs.assemblyAttrs
     let containerAttrib = AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyKeyNameAttribute" topAttrs.assemblyAttrs
-    
+
     // if delaySign is set via an attribute, validate that it wasn't set via an option
     let delaysign = 
         match delaySignAttrib with 
@@ -82,7 +83,7 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig, tcGlobals, topAttrs) =
           else
             delaysign
         | _ -> tcConfig.delaysign
-        
+
     // if signer is set via an attribute, validate that it wasn't set via an option
     let signer = 
         match signerAttrib with
@@ -93,20 +94,22 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig, tcGlobals, topAttrs) =
             else
                 Some signer
         | None -> tcConfig.signer
-    
+
     // if container is set via an attribute, validate that it wasn't set via an option, and that they keyfile wasn't set
     // if keyfile was set, use that instead (silently)
     // REVIEW: This is C# behavior, but it seems kind of sketchy that we fail silently
     let container = 
-        match containerAttrib with 
-        | Some container -> 
+        match containerAttrib with
+        | Some container ->
+            if not (FSharpEnvironment.isRunningOnCoreClr) then
+                warning(Error(FSComp.SR.containerDeprecated(), rangeCmdArgs))
             if tcConfig.container.IsSome && tcConfig.container <> Some container then
-              warning(Error(FSComp.SR.fscKeyNameWarning(), rangeCmdArgs)) 
+              warning(Error(FSComp.SR.fscKeyNameWarning(), rangeCmdArgs))
               tcConfig.container
             else
               Some container
         | None -> tcConfig.container
-    
+
     StrongNameSigningInfo (delaysign, tcConfig.publicsign, signer, container)
 
 /// Get the object used to perform strong-name signing
@@ -462,7 +465,12 @@ module MainModuleBuilder =
                   yield ILNativeResource.Out (FileSystem.ReadAllBytesShim tcConfig.win32res) 
               if tcConfig.includewin32manifest && not(win32Manifest = "") && not runningOnMono then
                   yield  ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader() 
-                                                 yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.ReadAllBytesShim win32Manifest), tcConfig.target = CompilerTarget.Dll)) |]]
+                                                 yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.ReadAllBytesShim win32Manifest), tcConfig.target = CompilerTarget.Dll)) |]
+              if tcConfig.win32res = "" && tcConfig.win32icon <> "" && tcConfig.target <> CompilerTarget.Dll then
+                  use ms = new MemoryStream()
+                  Win32ResourceConversions.AppendIconToResourceStream(ms, FileSystem.FileStreamReadShim tcConfig.win32icon)
+                  yield ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader()
+                                                yield! ms.ToArray() |] ]
 
         // Add attributes, version number, resources etc. 
         {mainModule with 
@@ -484,4 +492,3 @@ module MainModuleBuilder =
                         yield! codegenResults.ilNetModuleAttrs ])
               NativeResources=nativeResources
               Manifest = manifest }
-

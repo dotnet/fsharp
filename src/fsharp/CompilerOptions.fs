@@ -455,7 +455,8 @@ let subSystemVersionSwitch (tcConfigB: TcConfigBuilder) (text: string) =
         | _ -> fail()
 
 let SetUseSdkSwitch (tcConfigB: TcConfigBuilder) switch =
-    tcConfigB.useSdkRefs <- (switch = OptionSwitch.On)
+    let useSdkRefs = (switch = OptionSwitch.On)
+    tcConfigB.SetUseSdkRefs useSdkRefs
 
 let (++) x s = x @ [s]
 
@@ -689,11 +690,6 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
             Some (FSComp.SR.optsStrongKeyFile()))
 
         CompilerOption
-           ("keycontainer", tagString,
-            OptionString(fun s -> tcConfigB.container <- Some s), None,
-            Some(FSComp.SR.optsStrongKeyContainer()))
-
-        CompilerOption
            ("platform", tagString,
             OptionString (fun s -> 
                 tcConfigB.platform <- 
@@ -736,6 +732,10 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
 let resourcesFlagsFsi (_tcConfigB: TcConfigBuilder) = []
 let resourcesFlagsFsc (tcConfigB: TcConfigBuilder) =
     [
+        CompilerOption
+            ("win32icon", tagFile,
+             OptionString (fun s -> tcConfigB.win32icon <- s), None,
+             Some (FSComp.SR.optsWin32icon()))
         CompilerOption
            ("win32res", tagFile,
             OptionString (fun s -> tcConfigB.win32res <- s), None,
@@ -909,8 +909,8 @@ let cliRootFlag (_tcConfigB: TcConfigBuilder) =
          OptionString (fun _  -> ()), Some(DeprecatedCommandLineOptionFull(FSComp.SR.optsClirootDeprecatedMsg(), rangeCmdArgs)),
          Some(FSComp.SR.optsClirootDescription()))
 
-let SetTargetProfile tcConfigB v = 
-    tcConfigB.primaryAssembly <- 
+let SetTargetProfile (tcConfigB: TcConfigBuilder) v = 
+    let primaryAssembly = 
         match v with
         // Indicates we assume "mscorlib.dll", i.e .NET Framework, Mono and Profile 47
         | "mscorlib" -> PrimaryAssembly.Mscorlib
@@ -919,6 +919,7 @@ let SetTargetProfile tcConfigB v =
         // Indicates we assume "netstandard.dll", i.e .NET Standard 2.0 and above
         | "netstandard"  -> PrimaryAssembly.NetStandard
         | _ -> error(Error(FSComp.SR.optsInvalidTargetProfile v, rangeCmdArgs))
+    tcConfigB.SetPrimaryAssembly  primaryAssembly
 
 let advancedFlagsBoth tcConfigB =
     [
@@ -1039,6 +1040,7 @@ let testFlag tcConfigB =
                 | "DumpDebugInfo"    -> tcConfigB.dumpDebugInfo <- true
                 | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
                 | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
+                | "ParallelOff" -> tcConfigB.concurrentBuild <- false
 #if DEBUG
                 | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
@@ -1402,6 +1404,16 @@ let deprecatedFlagsFsc tcConfigB =
         OptionUnit (fun () -> SetOptimizeOff tcConfigB),
         Some(DeprecatedCommandLineOptionSuggestAlternative("-Ooff", "--optimize-", rangeCmdArgs)), None)
 
+
+    CompilerOption
+       ("keycontainer", tagString,
+        OptionString(fun s ->
+            if FSharpEnvironment.isRunningOnCoreClr then error(Error(FSComp.SR.containerSigningUnsupportedOnThisPlatform(), rangeCmdArgs))
+            else tcConfigB.container <- Some s),
+            if FSharpEnvironment.isRunningOnCoreClr then None
+            else Some(DeprecatedCommandLineOptionSuggestAlternative("--keycontainer", "--keyfile", rangeCmdArgs))
+        ,None)
+
     mlKeywordsFlag 
     gnuStyleErrorsFlag tcConfigB ]
 
@@ -1710,11 +1722,16 @@ let DoWithColor newColor f =
         finally
             ignoreFailureOnMono1_1_16 (fun () -> Console.ForegroundColor <- c)
 
-let DoWithErrorColor isError f =
+let DoWithDiagnosticColor severity f =
     match foreBackColor() with
     | None -> f()
     | Some (_, backColor) ->
+        let infoColor = if backColor = ConsoleColor.White then ConsoleColor.Blue else ConsoleColor.Green
         let warnColor = if backColor = ConsoleColor.White then ConsoleColor.DarkBlue else ConsoleColor.Cyan
         let errorColor = ConsoleColor.Red
-        let color = if isError then errorColor else warnColor 
+        let color = 
+            match severity with 
+            | FSharpDiagnosticSeverity.Error -> errorColor
+            | FSharpDiagnosticSeverity.Warning -> warnColor
+            | _ -> infoColor
         DoWithColor color f

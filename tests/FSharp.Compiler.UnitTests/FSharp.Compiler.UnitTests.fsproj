@@ -3,8 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net472;net5.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net5.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefineConstants>$(DefineConstants);ASSUME_PREVIEW_FSHARP_CORE</DefineConstants>
@@ -25,6 +25,7 @@
     <Compile Include="SuggestionBuffer.fs" />
     <Compile Include="ByteMemoryTests.fs" />
     <Compile Include="FsiTests.fs" />
+    <Compile Include="AssemblySigningAttributes.fs" />
     <Compile Include="..\..\tests\service\FsUnit.fs">
       <Link>CompilerService\FsUnit.fs</Link>
     </Compile>
