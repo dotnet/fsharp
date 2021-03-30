@@ -26,41 +26,15 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.TextManager.Interop
 
-open FSharp.Compiler.Text
-
 module internal MetadataAsSource =
 
-    open Microsoft.CodeAnalysis.CSharp
-    open ICSharpCode.Decompiler
-    open ICSharpCode.Decompiler.CSharp
-    open ICSharpCode.Decompiler.Metadata
-    open ICSharpCode.Decompiler.CSharp.Transforms
-    open ICSharpCode.Decompiler.TypeSystem
-
-    let generateTemporaryCSharpDocument (asmIdentity: AssemblyIdentity, name: string, metadataReferences) =
+    let generateTemporaryDocument (asmIdentity: AssemblyIdentity, name: string, metadataReferences) =
         let rootPath = Path.Combine(Path.GetTempPath(), "MetadataAsSource")
-        let extension = ".cs"
+        let extension = ".fsi"
         let directoryName = Guid.NewGuid().ToString("N")
         let temporaryFilePath = Path.Combine(rootPath, directoryName, name + extension)
 
         let projectId = ProjectId.CreateNewId()
-
-        let parseOptions = CSharpParseOptions.Default.WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-        // Just say it's always a DLL since we probably won't have a Main method
-        let compilationOptions = Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-
-        // We need to include the version information of the assembly so InternalsVisibleTo and stuff works
-        let assemblyInfoDocumentId = DocumentId.CreateNewId(projectId)
-        let assemblyInfoFileName = "AssemblyInfo" + extension
-        let assemblyInfoString = String.Format(@"[assembly: System.Reflection.AssemblyVersion(""{0}"")]", asmIdentity.Version)
-
-        let assemblyInfoSourceTextContainer = SourceText.From(assemblyInfoString, Encoding.UTF8).Container
-
-        let assemblyInfoDocument = 
-            DocumentInfo.Create(
-                assemblyInfoDocumentId,
-                assemblyInfoFileName,
-                loader = TextLoader.From(assemblyInfoSourceTextContainer, VersionStamp.Default))
 
         let generatedDocumentId = DocumentId.CreateNewId(projectId)
         let documentInfo = 
@@ -76,33 +50,11 @@ module internal MetadataAsSource =
                 VersionStamp.Default,
                 name = asmIdentity.Name,
                 assemblyName = asmIdentity.Name,
-                language = LanguageNames.CSharp,
-                compilationOptions = compilationOptions,
-                parseOptions = parseOptions,
-                documents = [|assemblyInfoDocument;documentInfo|],
+                language = LanguageNames.FSharp,
+                documents = [|documentInfo|],
                 metadataReferences = metadataReferences)
 
         (projectInfo, documentInfo)
-
-    let decompileCSharp (symbolFullTypeName: string, assemblyLocation: string) =
-        let logger = new StringBuilder()
-
-        // Initialize a decompiler with default settings.
-        let decompiler = CSharpDecompiler(assemblyLocation, DecompilerSettings())
-        // Escape invalid identifiers to prevent Roslyn from failing to parse the generated code.
-        // (This happens for example, when there is compiler-generated code that is not yet recognized/transformed by the decompiler.)
-        decompiler.AstTransforms.Add(new EscapeInvalidIdentifiers())
-
-        let fullTypeName = FullTypeName(symbolFullTypeName)
-
-        // Try to decompile; if an exception is thrown the caller will handle it
-        let text = decompiler.DecompileTypeAsString(fullTypeName)
-
-        let text = text + "#if false // " + Environment.NewLine
-        let text = text + logger.ToString()
-        let text = text + "#endif" + Environment.NewLine
-
-        SourceText.From(text)
 
     let showDocument (filePath, name, serviceProvider: IServiceProvider) =
         let vsRunningDocumentTable4 = serviceProvider.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable4>()
@@ -139,9 +91,9 @@ module internal MetadataAsSource =
 [<Sealed>]
 type internal FSharpMetadataAsSourceService() =
 
-    member val CSharpFiles = System.Collections.Concurrent.ConcurrentDictionary(StringComparer.OrdinalIgnoreCase)
+    member val Files = System.Collections.Concurrent.ConcurrentDictionary(StringComparer.OrdinalIgnoreCase)
 
-    member this.ShowCSharpDocument(projInfo: ProjectInfo, docInfo: DocumentInfo, text: Text.SourceText) =
+    member this.ShowDocument(projInfo: ProjectInfo, docInfo: DocumentInfo, text: Text.SourceText) =
         let _ =
             let directoryName = Path.GetDirectoryName(docInfo.FilePath)
             if Directory.Exists(directoryName) |> not then
@@ -150,6 +102,6 @@ type internal FSharpMetadataAsSourceService() =
             use writer = new StreamWriter(fileStream)
             text.Write(writer)
 
-        this.CSharpFiles.[docInfo.FilePath] <- (projInfo, docInfo)
+        this.Files.[docInfo.FilePath] <- (projInfo, docInfo)
 
         MetadataAsSource.showDocument(docInfo.FilePath, docInfo.Name, ServiceProvider.GlobalProvider)

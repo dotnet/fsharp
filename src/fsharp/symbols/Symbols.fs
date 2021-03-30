@@ -24,6 +24,8 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.AbstractIL
 
 type FSharpAccessibility(a:Accessibility, ?isProtected) = 
     let isProtected = defaultArg isProtected  false
@@ -805,6 +807,35 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member x.TryGetMembersFunctionsAndValues() = 
         try x.MembersFunctionsAndValues with _ -> [||] :> _
+
+    member _.TryGenerateSignatureText() =
+        match entity.TryDeref with
+        | ValueSome entity ->
+            let denv = DisplayEnv.Empty cenv.g
+            let denv = 
+                { denv with 
+                    showImperativeTyparAnnotations=true
+                    showHiddenMembers=true
+                    showObsoleteMembers=true
+                    showAttributes=true
+                    shrinkOverloads=false
+                    printVerboseSignatures=false }
+
+            let denv =
+                denv.SetOpenPaths 
+                    ([ FSharpLib.RootPath 
+                       FSharpLib.CorePath 
+                       FSharpLib.CollectionsPath 
+                       FSharpLib.ControlPath 
+                       (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName) 
+                     ])
+
+            let infoReader = cenv.infoReader
+            NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere range0 entity |> LayoutRender.showL
+            |> SourceText.ofString
+            |> Some
+        | _ ->
+            None
 
     override x.Equals(other: obj) =
         box x === other ||

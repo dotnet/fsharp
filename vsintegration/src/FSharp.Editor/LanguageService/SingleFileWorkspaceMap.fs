@@ -33,8 +33,8 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
         projectContext.AddSourceFile(filePath, sourceCodeKind = createSourceCodeKind filePath)
         projectContext
 
-    let createCSharpMetadataProjectContext (projInfo: ProjectInfo) (docInfo: DocumentInfo) =
-        let projectContext = projectContextFactory.CreateProjectContext(LanguageNames.CSharp, projInfo.Id.ToString(), projInfo.FilePath, Guid.NewGuid(), null, null)
+    let createMetadataProjectContext (projInfo: ProjectInfo) (docInfo: DocumentInfo) =
+        let projectContext = projectContextFactory.CreateProjectContext(LanguageNames.FSharp, projInfo.Id.ToString(), projInfo.FilePath, Guid.NewGuid(), null, null)
         projectContext.DisplayName <- projInfo.Name
         projectContext.AddSourceFile(docInfo.FilePath, sourceCodeKind = SourceCodeKind.Regular)
         
@@ -54,10 +54,10 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
             if document.Project.Language = FSharpConstants.FSharpLanguageName && workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath).Length = 0 then
                 files.[document.FilePath] <- createProjectContext document.FilePath
 
-            if optionsManager.MetadataAsSource.CSharpFiles.ContainsKey(document.FilePath) && workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath).Length = 0 then
-                match optionsManager.MetadataAsSource.CSharpFiles.TryGetValue(document.FilePath) with
+            if optionsManager.MetadataAsSource.Files.ContainsKey(document.FilePath) && workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath).Length = 0 then
+                match optionsManager.MetadataAsSource.Files.TryGetValue(document.FilePath) with
                 | true, (projInfo, docInfo) ->
-                    files.[document.FilePath] <- createCSharpMetadataProjectContext projInfo docInfo
+                    files.[document.FilePath] <- createMetadataProjectContext projInfo docInfo
                 | _ ->
                     ()
         )
@@ -80,7 +80,7 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
                 projectContext.Dispose()
             | _ -> ()
 
-            optionsManager.MetadataAsSource.CSharpFiles.TryRemove(document.FilePath) |> ignore
+            optionsManager.MetadataAsSource.Files.TryRemove(document.FilePath) |> ignore
         )
 
         do

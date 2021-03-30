@@ -69,30 +69,24 @@ type internal FSharpGoToDefinitionService
                         gtd.NavigateToItem(navItem, statusBar)
                         // 'true' means do it, like Sheev Palpatine would want us to.
                         true
-                    | FSharpGoToDefinitionResult.ExternalAssembly(tmpProjInfo, tmpDocInfo, targetSymbolUse, targetExternalSymbol) ->
-                        match targetSymbolUse.Symbol.Assembly.FileName with
-                        | Some targetSymbolAssemblyFileName ->
-                            try
-                                let symbolFullTypeName =
-                                    match targetExternalSymbol with
-                                    | FindDeclExternalSymbol.Constructor(tyName, _)
-                                    | FindDeclExternalSymbol.Event(tyName, _)
-                                    | FindDeclExternalSymbol.Field(tyName, _)
-                                    | FindDeclExternalSymbol.Method(tyName, _, _, _)
-                                    | FindDeclExternalSymbol.Property(tyName, _)
-                                    | FindDeclExternalSymbol.Type(tyName) -> tyName
+                    | FSharpGoToDefinitionResult.ExternalAssembly(tmpProjInfo, tmpDocInfo, targetSymbolUse, _targetExternalSymbol) ->
+                        let textOpt =
+                            match targetSymbolUse.Symbol with
+                            | :? FSharp.Compiler.Symbols.FSharpEntity as symbol ->
+                                symbol.TryGenerateSignatureText()
+                            | :? FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue as symbol ->
+                                symbol.ApparentEnclosingEntity.TryGenerateSignatureText()
+                            | _ ->
+                                None
 
-                                let text = MetadataAsSource.decompileCSharp(symbolFullTypeName, targetSymbolAssemblyFileName)
-                                let tmpShownDocOpt = metadataAsSourceService.ShowCSharpDocument(tmpProjInfo, tmpDocInfo, text)
-                                match tmpShownDocOpt with
-                                | Some tmpShownDoc ->
-                                    let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, TextSpan())                               
-                                    gtd.NavigateToItem(navItem, statusBar)
-                                    true
-                                | _ ->
-                                    statusBar.TempMessage (SR.CannotDetermineSymbol())
-                                    false
-                            with
+                        match textOpt with
+                        | Some text ->
+                            let tmpShownDocOpt = metadataAsSourceService.ShowDocument(tmpProjInfo, tmpDocInfo, SourceText.From(text.ToString()))
+                            match tmpShownDocOpt with
+                            | Some tmpShownDoc ->
+                                let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, TextSpan())                               
+                                gtd.NavigateToItem(navItem, statusBar)
+                                true
                             | _ ->
                                 statusBar.TempMessage (SR.CannotDetermineSymbol())
                                 false

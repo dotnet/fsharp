@@ -359,6 +359,9 @@ type FSharpEntity =
     /// Safe version of `GetMembersFunctionsAndValues`.
     member TryGetMembersFunctionsAndValues: unit -> IList<FSharpMemberOrFunctionOrValue>
 
+    /// Generates the signature of the symbol as source text.
+    member TryGenerateSignatureText: unit -> ISourceText option
+
 /// Represents a delegate signature in an F# symbol
 [<Class>] 
 type FSharpDelegateSignature =

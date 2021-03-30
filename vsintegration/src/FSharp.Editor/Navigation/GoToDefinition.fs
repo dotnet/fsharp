@@ -272,7 +272,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                     let! location = symbol.Locations |> Seq.tryHead
                     return (FSharpGoToDefinitionResult.NavigableItem(FSharpGoToDefinitionNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan)), idRange)
                 | _ ->
-                    let tmpProjInfo, tmpDocId = MetadataAsSource.generateTemporaryCSharpDocument(AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName), targetSymbolUse.Symbol.DisplayName, originDocument.Project.MetadataReferences)
+                    let tmpProjInfo, tmpDocId = MetadataAsSource.generateTemporaryDocument(AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName), targetSymbolUse.Symbol.DisplayName, originDocument.Project.MetadataReferences)
                     return (FSharpGoToDefinitionResult.ExternalAssembly(tmpProjInfo, tmpDocId, targetSymbolUse, targetExternalSym), idRange)
 
             | FindDeclResult.DeclFound targetRange -> 
