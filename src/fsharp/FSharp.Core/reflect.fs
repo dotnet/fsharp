@@ -188,7 +188,7 @@ module internal Impl =
         expr.Compile ()
 
     let compileTupleReader tupleEncField getTupleElementAccessors typ =
-        let rec assignments (typ: Type) (tuple: Expression) outputArray startIndex = seq {
+        let rec writeTupleIntoArray (typ: Type) (tuple: Expression) outputArray startIndex = seq {
             let elements =
                 match getTupleElementAccessors typ with
                 | Choice1Of2 (fi: FieldInfo[]) -> fi |> Array.map (fun fi -> Expression.Field (tuple, fi), fi.FieldType)
@@ -196,12 +196,12 @@ module internal Impl =
 
             for index, (element, elementType) in elements |> Array.indexed do
                 if index = tupleEncField then
-                    let innerTupleParam = Expression.Parameter (elementType, "innerTuple" + index.ToString ())
+                    let innerTupleParam = Expression.Parameter (elementType, "innerTuple")
                     Expression.Block (
                         [ innerTupleParam ],
                         [
                             yield Expression.Assign (innerTupleParam, element) :> Expression
-                            yield! assignments elementType innerTupleParam outputArray (startIndex + index)
+                            yield! writeTupleIntoArray elementType innerTupleParam outputArray (startIndex + index)
                         ]
                     ) :> Expression
                 else
@@ -229,7 +229,7 @@ module internal Impl =
                             outputArray,
                             Expression.NewArrayBounds (typeof<obj>, Expression.Constant (outputLength tupleEncField typ))
                         ) :> Expression
-                        yield! assignments typ (Expression.Convert (param, typ)) outputArray 0
+                        yield! writeTupleIntoArray typ (Expression.Convert (param, typ)) outputArray 0
                         yield outputArray :> Expression
                     |]
                 ),
