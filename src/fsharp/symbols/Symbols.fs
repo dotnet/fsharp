@@ -808,7 +808,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member x.TryGetMembersFunctionsAndValues() = 
         try x.MembersFunctionsAndValues with _ -> [||] :> _
 
-    member _.TryGenerateSignatureText() =
+    member this.TryGenerateSignatureText() =
         match entity.TryDeref with
         | ValueSome entity ->
             let denv = DisplayEnv.Empty cenv.g
@@ -821,17 +821,70 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                     shrinkOverloads=false
                     printVerboseSignatures=false }
 
+            let extraOpenPath =
+                match entity.CompilationPathOpt with
+                | Some cpath ->
+                    let rec getOpenPath accessPath acc =
+                        match accessPath with
+                        | [] -> acc
+                        | (name, ModuleOrNamespaceKind.ModuleOrType) :: accessPath ->
+                            getOpenPath accessPath (name :: acc)
+                        | (name, ModuleOrNamespaceKind.Namespace) :: accessPath ->
+                            getOpenPath accessPath (name :: acc)
+                        | (name, ModuleOrNamespaceKind.FSharpModuleWithSuffix) :: accessPath ->
+                            getOpenPath accessPath (name :: acc)
+
+                    getOpenPath cpath.AccessPath []
+                | _ -> 
+                    []
+
+            let needOpenType =
+                match entity.CompilationPathOpt with
+                | Some cpath ->
+                    match cpath.AccessPath with
+                    | (_, ModuleOrNamespaceKind.ModuleOrType) :: _ ->
+                        match this.DeclaringEntity with
+                        | Some (declaringEntity: FSharpEntity) -> not declaringEntity.IsFSharpModule
+                        | _ -> false
+                    | _ -> false
+                | _ ->
+                    false
+
             let denv =
                 denv.SetOpenPaths 
                     ([ FSharpLib.RootPath 
                        FSharpLib.CorePath 
                        FSharpLib.CollectionsPath 
                        FSharpLib.ControlPath 
-                       (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName) 
+                       (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName)
+                       extraOpenPath
                      ])
 
             let infoReader = cenv.infoReader
-            NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere range0 entity |> LayoutRender.showL
+
+            let openPathL =
+                extraOpenPath
+                |> List.map (fun x -> Layout.wordL (TaggedText.tagUnknownEntity x))
+
+            let openL = 
+                if List.isEmpty openPathL then Layout.emptyL
+                else
+                    let openKeywordL =
+                        if needOpenType then
+                            Layout.(^^)
+                                (Layout.wordL (FSharp.Compiler.Text.TaggedText.tagKeyword "open"))
+                                (Layout.wordL FSharp.Compiler.Text.TaggedText.keywordType)
+                        else
+                            Layout.wordL (FSharp.Compiler.Text.TaggedText.tagKeyword "open")
+                            
+                    Layout.(^^)
+                        openKeywordL
+                        (Layout.sepListL (Layout.sepL TaggedText.dot) openPathL)
+
+            Layout.aboveL
+                (Layout.(^^) openL (Layout.sepL TaggedText.lineBreak))
+                (NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere range0 entity) 
+            |> LayoutRender.showL
             |> SourceText.ofString
             |> Some
         | _ ->
