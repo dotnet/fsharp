@@ -2169,7 +2169,7 @@ let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (infoReader: InfoReader) (a
                     (nextL ^^ sepL lineBreak)
                     entitiesL
             else
-                (nextL ^^ sepL lineBreak) @@-- entitiesL
+                (nextL ^^ sepL lineBreak) @@- entitiesL
 
     let moduleOrNamespaces =
         mty.ModuleAndNamespaceDefinitions

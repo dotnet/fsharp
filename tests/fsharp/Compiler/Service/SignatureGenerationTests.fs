@@ -95,8 +95,8 @@ type TestType =
 
 module rec ModuleA =
 
-   type TestType2 =
-     private { x: float32 }"""
+  type TestType2 =
+    private { x: float32 }"""
 
     [<Test>]
     let ``Generate signature with correct module``() =
