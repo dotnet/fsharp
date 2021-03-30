@@ -1980,7 +1980,9 @@ type FSharpCheckFileResults
                    showImperativeTyparAnnotations=true
                    showHiddenMembers=true
                    showObsoleteMembers=true
-                   showAttributes=true }
+                   showAttributes=true
+                   shrinkOverloads=false
+                   printVerboseSignatures=false }
 
             let rec pathForSynTy (_synTy: SynType) =
                 List.empty
