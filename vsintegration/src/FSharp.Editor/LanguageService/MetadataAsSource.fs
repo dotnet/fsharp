@@ -18,6 +18,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 open Microsoft.VisualStudio.ComponentModelHost
+open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
@@ -48,7 +49,7 @@ module internal MetadataAsSource =
             ProjectInfo.Create(
                 projectId,
                 VersionStamp.Default,
-                name = asmIdentity.Name,
+                name = FSharpConstants.FSharpMetadataFilesName,
                 assemblyName = asmIdentity.Name,
                 language = LanguageNames.FSharp,
                 documents = [|documentInfo|],
@@ -71,6 +72,7 @@ module internal MetadataAsSource =
         let textBuffer = editorAdaptersFactory.GetDataBuffer(vsTextBuffer)
 
         if not fileAlreadyOpen then
+            ErrorHandler.ThrowOnFailure(vsTextBuffer.SetStateFlags(uint32 BUFFERSTATEFLAGS.BSF_USER_READONLY)) |> ignore
             ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_IsProvisional, true)) |> ignore
             ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideCaption, name)) |> ignore
             ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideToolTip, name)) |> ignore
@@ -89,19 +91,49 @@ module internal MetadataAsSource =
             None
 
 [<Sealed>]
-type internal FSharpMetadataAsSourceService() =
+type internal FSharpMetadataAsSourceService(workspace: Workspace, projectContextFactory: IWorkspaceProjectContextFactory) =
 
-    member val Files = System.Collections.Concurrent.ConcurrentDictionary(StringComparer.OrdinalIgnoreCase)
+    let projs = System.Collections.Concurrent.ConcurrentDictionary<string, IWorkspaceProjectContext>()
 
-    member this.ShowDocument(projInfo: ProjectInfo, docInfo: DocumentInfo, text: Text.SourceText) =
-        let _ =
-            let directoryName = Path.GetDirectoryName(docInfo.FilePath)
-            if Directory.Exists(directoryName) |> not then
-                Directory.CreateDirectory(directoryName) |> ignore
-            use fileStream = new FileStream(docInfo.FilePath, IO.FileMode.Create)
-            use writer = new StreamWriter(fileStream)
-            text.Write(writer)
+    let createMetadataProjectContext (projInfo: ProjectInfo) (docInfo: DocumentInfo) =
+        let projectContext = projectContextFactory.CreateProjectContext(LanguageNames.FSharp, projInfo.Id.ToString(), projInfo.FilePath, Guid.NewGuid(), null, null)
+        projectContext.DisplayName <- FSharpConstants.FSharpMetadataFilesName
+        projectContext.AddSourceFile(docInfo.FilePath, sourceCodeKind = SourceCodeKind.Regular)
+        
+        for metaRef in projInfo.MetadataReferences do
+            match metaRef with
+            | :? PortableExecutableReference as peRef ->
+                projectContext.AddMetadataReference(peRef.FilePath, MetadataReferenceProperties.Assembly)
+            | _ ->
+                ()
 
-        this.Files.[docInfo.FilePath] <- (projInfo, docInfo)
+        projectContext
 
-        MetadataAsSource.showDocument(docInfo.FilePath, docInfo.Name, ServiceProvider.GlobalProvider)
+    do
+        workspace.DocumentClosed.Add(fun args ->
+            let doc = args.Document
+            let proj = doc.Project
+            if proj.Language = LanguageNames.FSharp then
+                match projs.TryGetValue(doc.FilePath) with
+                | true, projectContext -> projectContext.Dispose()
+                | _ -> ()
+        )
+
+    member _.ShowDocument(projInfo: ProjectInfo, filePath: string, text: Text.SourceText) =
+        match projInfo.Documents |> Seq.tryFind (fun doc -> doc.FilePath = filePath) with
+        | Some document ->
+            let _ =
+                let directoryName = Path.GetDirectoryName(filePath)
+                if Directory.Exists(directoryName) |> not then
+                    Directory.CreateDirectory(directoryName) |> ignore
+                use fileStream = new FileStream(filePath, IO.FileMode.Create)
+                use writer = new StreamWriter(fileStream)
+                text.Write(writer)
+
+            let projectContext = createMetadataProjectContext projInfo document
+
+            projs.[filePath] <- projectContext
+
+            MetadataAsSource.showDocument(filePath, Path.GetFileName(filePath) + " [Metadata]", ServiceProvider.GlobalProvider)
+        | _ ->
+            None

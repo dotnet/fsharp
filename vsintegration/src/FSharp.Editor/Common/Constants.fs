@@ -51,6 +51,10 @@ module internal FSharpConstants =
     /// "F# Miscellaneous Files"
     let FSharpMiscellaneousFilesName = "F# Miscellaneous Files"
 
+    [<Literal>]
+    /// "F# Metadata Files"
+    let FSharpMetadataFilesName = "F# Metadata Files"
+
 [<RequireQualifiedAccess>]
 module internal FSharpProviderConstants =
 

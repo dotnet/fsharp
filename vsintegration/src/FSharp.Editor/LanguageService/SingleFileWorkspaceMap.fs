@@ -33,38 +33,18 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
         projectContext.AddSourceFile(filePath, sourceCodeKind = createSourceCodeKind filePath)
         projectContext
 
-    let createMetadataProjectContext (projInfo: ProjectInfo) (docInfo: DocumentInfo) =
-        let projectContext = projectContextFactory.CreateProjectContext(LanguageNames.FSharp, projInfo.Id.ToString(), projInfo.FilePath, Guid.NewGuid(), null, null)
-        projectContext.DisplayName <- projInfo.Name
-        projectContext.AddSourceFile(docInfo.FilePath, sourceCodeKind = SourceCodeKind.Regular)
-        
-        for metaRef in projInfo.MetadataReferences do
-            match metaRef with
-            | :? PortableExecutableReference as peRef ->
-                projectContext.AddMetadataReference(peRef.FilePath, MetadataReferenceProperties.Assembly)
-            | _ ->
-                ()
-
-        projectContext
-
     do
         miscFilesWorkspace.DocumentOpened.Add(fun args ->
             let document = args.Document
 
             if document.Project.Language = FSharpConstants.FSharpLanguageName && workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath).Length = 0 then
                 files.[document.FilePath] <- createProjectContext document.FilePath
-
-            if optionsManager.MetadataAsSource.Files.ContainsKey(document.FilePath) && workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath).Length = 0 then
-                match optionsManager.MetadataAsSource.Files.TryGetValue(document.FilePath) with
-                | true, (projInfo, docInfo) ->
-                    files.[document.FilePath] <- createMetadataProjectContext projInfo docInfo
-                | _ ->
-                    ()
         )
 
         workspace.DocumentOpened.Add(fun args ->
             let document = args.Document
-            if document.Project.Language = FSharpConstants.FSharpLanguageName && document.Project.Name <> FSharpConstants.FSharpMiscellaneousFilesName then
+            if document.Project.Language = FSharpConstants.FSharpLanguageName && 
+               not document.Project.IsFSharpMiscellaneousOrMetadata then
                 match files.TryRemove(document.FilePath) with
                 | true, projectContext ->
                     optionsManager.ClearSingleFileOptionsCache(document.Id)
@@ -74,13 +54,13 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
 
         workspace.DocumentClosed.Add(fun args ->
             let document = args.Document
-            match files.TryRemove(document.FilePath) with
-            | true, projectContext ->
-                optionsManager.ClearSingleFileOptionsCache(document.Id)
-                projectContext.Dispose()
-            | _ -> ()
-
-            optionsManager.MetadataAsSource.Files.TryRemove(document.FilePath) |> ignore
+            if document.Project.Language = FSharpConstants.FSharpLanguageName && 
+               document.Project.IsFSharpMiscellaneousOrMetadata then
+                match files.TryRemove(document.FilePath) with
+                | true, projectContext ->
+                    optionsManager.ClearSingleFileOptionsCache(document.Id)
+                    projectContext.Dispose()
+                | _ -> ()
         )
 
         do

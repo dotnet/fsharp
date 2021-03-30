@@ -15,6 +15,8 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
+open Microsoft.VisualStudio.FSharp.Editor
+
 type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph
 type private FSharpRoslynGlyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
 
@@ -36,6 +38,11 @@ type ProjectId with
     member this.ToFSharpProjectIdString() =
         this.Id.ToString("D").ToLowerInvariant()
 
+type Project with
+    member this.IsFSharpMiscellaneousOrMetadata =
+        this.Name <> FSharpConstants.FSharpMiscellaneousFilesName ||
+        this.Name <> FSharpConstants.FSharpMetadataFilesName
+
 type Document with
     member this.TryGetLanguageService<'T when 'T :> ILanguageService>() =
         match this.Project with
@@ -46,6 +53,9 @@ type Document with
             | languageServices ->
                 languageServices.GetService<'T>()
                 |> Some
+
+    member this.IsFSharpScript =
+        isScriptFile this.FilePath
 
 module private SourceText =
 

@@ -359,7 +359,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let a = typeof<N.T(*Marker*)> """
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
-         "type T =\n  new : unit -> T\n  static member M : unit -> int []\n  static member StaticProp : decimal\n  event Event1 : EventHandler", 
+         "type T =\n  new : unit -> T\n  static member M : unit -> int []\n  static member StaticProp : decimal\n  member Event1 : EventHandler", 
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
@@ -372,7 +372,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let a = typeof<N.T(*Marker*)> """
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
-         "type T =\n  new : unit -> T\n  static member M : unit -> int []\n  static member StaticProp : decimal\n  event Event1 : EventHandler",
+         "type T =\n  new : unit -> T\n  static member M : unit -> int []\n  static member StaticProp : decimal\n  member Event1 : EventHandler",
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithEmptyComment.dll")])
          
 
@@ -517,7 +517,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 t.Event1(*Marker*)"""
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)",
-         "event N.T.Event1: IEvent<System.EventHandler,System.EventArgs>", 
+         "member N.T.Event1: IEvent<System.EventHandler,System.EventArgs>", 
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
@@ -531,7 +531,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 t.Event1(*Marker*)"""
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)",
-         "event N.T.Event1: IEvent<System.EventHandler,System.EventArgs>",
+         "member N.T.Event1: IEvent<System.EventHandler,System.EventArgs>",
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithEmptyComment.dll")])
     
 

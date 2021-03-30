@@ -125,14 +125,14 @@ type internal FSharpDocumentDiagnosticAnalyzer
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
         member this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+            if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then Task.FromResult(ImmutableArray.Empty)
+            else
+
             asyncMaybe {
                 let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken, userOpName) 
-                if document.Project.Name <> FSharpConstants.FSharpMiscellaneousFilesName || isScriptFile document.FilePath then
-                    return! 
-                        FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checkerProvider.Checker, document, parsingOptions, projectOptions, DiagnosticsType.Semantic)
-                        |> liftAsync
-                else
-                    return ImmutableArray<Diagnostic>.Empty
+                return! 
+                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checkerProvider.Checker, document, parsingOptions, projectOptions, DiagnosticsType.Semantic)
+                    |> liftAsync
             }
             |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken

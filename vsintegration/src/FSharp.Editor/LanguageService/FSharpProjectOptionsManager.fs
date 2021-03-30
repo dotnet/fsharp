@@ -259,7 +259,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             // For now, disallow miscellaneous workspace since we are using the hacky F# miscellaneous files project.
                             if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
                                 reply.Reply None
-                            elif document.Project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
+                            elif document.Project.IsFSharpMiscellaneousOrMetadata then
                                 let! options = tryComputeOptionsByFile document ct userOpName
                                 reply.Reply options
                             else
@@ -280,7 +280,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                         reply.Reply None
                     else
                         try
-                            if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
+                            if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.IsFSharpMiscellaneousOrMetadata then
                                 reply.Reply None
                             else
                                 // We only care about the latest project in the workspace's solution.

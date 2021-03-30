@@ -81,7 +81,7 @@ type internal FSharpGoToDefinitionService
 
                         match textOpt with
                         | Some text ->
-                            let tmpShownDocOpt = metadataAsSourceService.ShowDocument(tmpProjInfo, tmpDocInfo, SourceText.From(text.ToString()))
+                            let tmpShownDocOpt = metadataAsSourceService.ShowDocument(tmpProjInfo, tmpDocInfo.FilePath, SourceText.From(text.ToString()))
                             match tmpShownDocOpt with
                             | Some tmpShownDoc ->
                                 let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, TextSpan())                               
