@@ -2153,15 +2153,23 @@ let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (infoReader: InfoReader) (a
             nextL
         else
             let entitiesL =
-                entityLs
-                |> sepListL sepDoubleLineBreakL
+                match entityLs with
+                | [] -> emptyL
+                | [entityL] -> entityL
+                | entityL :: entityLs ->
+                    entityL @@
+                        (
+                            entityLs
+                            |> List.map (fun entityL -> sepL lineBreak ^^ entityL)
+                            |> aboveListL
+                        )
 
             if isFirstTopLevel then
                 aboveL 
                     (nextL ^^ sepL lineBreak)
                     entitiesL
             else
-                nextL ^^ entitiesL
+                (nextL ^^ sepL lineBreak) @@-- entitiesL
 
     let moduleOrNamespaces =
         mty.ModuleAndNamespaceDefinitions
