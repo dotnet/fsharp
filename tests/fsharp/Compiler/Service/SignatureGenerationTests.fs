@@ -113,3 +113,12 @@ module Test.AModuleForSignature
         |> sigShouldBe """namespace rec Test
 
 module rec AModuleForSignature = begin end"""
+
+    [<Test>]
+    let ``Generate signature with correct module includes attributes``() =
+        """
+[<RequireQualifiedAccess>]
+module AModuleForSignature
+        """
+        |> sigShouldBe """[<RequireQualifiedAccess>]
+module rec AModuleForSignature"""
