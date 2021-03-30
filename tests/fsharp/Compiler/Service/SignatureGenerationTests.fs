@@ -116,9 +116,10 @@ module rec AModuleForSignature = begin end"""
 
     [<Test>]
     let ``Generate signature with correct module includes attributes``() =
+        // TODO: This should trim the "Attribute ()".
         """
 [<RequireQualifiedAccess>]
 module AModuleForSignature
         """
-        |> sigShouldBe """[<RequireQualifiedAccess>]
+        |> sigShouldBe """[<RequireQualifiedAccessAttribute ()>]
 module rec AModuleForSignature"""

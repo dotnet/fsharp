@@ -2139,6 +2139,9 @@ let layoutOfModuleOrNamespaceType (denv: DisplayEnv) (infoReader: InfoReader) (a
                         // OK, this is a nested module
                         (wordL (tagKeyword "module") ^^ wordL (tagKeyword "rec") ^^ nmL ^^ WordL.equals)
 
+        let nextL =
+            PrintTypes.layoutAttribs denv false (generalizedTyconRef(mkLocalEntityRef mspec)) mspec.TypeOrMeasureKind mspec.Attribs nextL
+
         let entityLs =
             mspec.ModuleOrNamespaceType.AllEntities
             |> QueueList.toList
