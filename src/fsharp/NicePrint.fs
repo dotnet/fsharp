@@ -1424,7 +1424,7 @@ module private TastDefinitionPrinting =
 
         let nameL = eventTag |> wordL
         let typL = layoutType denv (e.GetDelegateType(amap, m))
-        staticL ^^ WordL.keywordEvent ^^ nameL ^^ WordL.colon ^^ typL
+        staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL
        
     let private layoutPropInfo denv amap m (p: PropInfo) =
         match p.ArbitraryValRef with
