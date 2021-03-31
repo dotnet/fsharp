@@ -122,21 +122,24 @@ module internal PrintUtilities =
         squareAngleL (layoutTyconRefImpl true denv tcref)
 
     /// layout the xml docs immediately before another block
-    let layoutXmlDoc (_denv: DisplayEnv) (xml: XmlDoc) restL =
-        let xmlDocL =
-            if xml.IsEmpty
-            then
-                if debug then Diagnostics.dprintfn "layoutXmlDoc: empty xmlDoc"
-                emptyL
-            else
-                if debug then Diagnostics.dprintfn "layoutXmlDoc: writing lines %A" xml.UnprocessedLines
-                xml.UnprocessedLines
-                |> List.ofArray
-                /// note here that we don't add a space after the triple-slash, because
-                /// the implicit spacing hasn't been trimmed here.
-                |> List.map (fun line -> ("///" + line) |> tagText |> wordL)
-                |> spaceListL
-        xmlDocL @@ restL
+    let layoutXmlDoc (denv: DisplayEnv) (xml: XmlDoc) restL =
+        if denv.showDocumentation
+        then
+            let xmlDocL =
+                if xml.IsEmpty
+                then
+                    if debug then Diagnostics.dprintfn "layoutXmlDoc: empty xmlDoc"
+                    emptyL
+                else
+                    if debug then Diagnostics.dprintfn "layoutXmlDoc: writing lines %A" xml.UnprocessedLines
+                    xml.UnprocessedLines
+                    |> List.ofArray
+                    /// note here that we don't add a space after the triple-slash, because
+                    /// the implicit spacing hasn't been trimmed here.
+                    |> List.map (fun line -> ("///" + line) |> tagText |> wordL)
+                    |> spaceListL
+            xmlDocL @@ restL
+        else restL
 
 module private PrintIL = 
 
@@ -1904,7 +1907,10 @@ module private InferredSigPrinting =
                     else
                         // This is a namespace that only contains namespaces. Skip the header
                         basic
-                layoutXmlDoc denv mspec.XmlDoc basicL
+                // NOTE: explicitly not calling `layoutXmlDoc` here, because even though
+                // `ModuleOrNamespace` has a field for XmlDoc, it is never present at the parser
+                // level.  This should be changed if the parser/spec changes.
+                basicL
             else
                 // This is a module 
                 let nmL = layoutAccessibility denv mspec.Accessibility (wordL (tagModule nm))

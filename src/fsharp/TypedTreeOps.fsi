@@ -986,6 +986,8 @@ type DisplayEnv =
       showConstraintTyparAnnotations:bool
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
+      /// If set, signatures will be rendered with XML documentation comments for members if they exist
+      showDocumentation: bool
       shrinkOverloads: bool
       printVerboseSignatures: bool
       g: TcGlobals
