@@ -21,6 +21,7 @@
   <ItemGroup>
     <Compile Include="EmittedIL\Operators.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
+    <Compile Include="EmittedIL\Misc.fs" />
     <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
