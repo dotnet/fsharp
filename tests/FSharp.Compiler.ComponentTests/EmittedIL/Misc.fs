@@ -31,7 +31,7 @@ let zGeneric<'a> (): 'a[] = [||]
   IL_0005:  ret
 } 
 
-.method public static class string[] zString() cil managed
+.method public static string[] zString() cil managed
 {
 
   .maxstack  8
