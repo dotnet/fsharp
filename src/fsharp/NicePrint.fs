@@ -1424,7 +1424,7 @@ module private TastDefinitionPrinting =
 
         let nameL = eventTag |> wordL
         let typL = layoutType denv (e.GetDelegateType(amap, m))
-        staticL ^^ WordL.keywordEvent ^^ nameL ^^ WordL.colon ^^ typL
+        staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL
        
     let private layoutPropInfo denv amap m (p: PropInfo) =
         match p.ArbitraryValRef with
@@ -1783,6 +1783,17 @@ module private TastDefinitionPrinting =
             let xs = List.map (layoutTycon denv infoReader ad m false (wordL (tagKeyword "and"))) t
             aboveListL (x :: xs)
 
+    let layoutEntity (denv: DisplayEnv) (infoReader: InfoReader) ad m (entity: Entity) =
+        if entity.IsModule then
+            // TODO: Implementation of layoutTycon isn't correct for module.
+            layoutTycon denv infoReader ad m false (wordL (tagKeyword "module")) entity
+        elif entity.IsNamespace then
+            emptyL
+        elif entity.IsExceptionDecl then
+            layoutExnDefn denv entity
+        else
+            layoutTycon denv infoReader ad m true WordL.keywordType entity
+
 //--------------------------------------------------------------------------
 
 module private InferredSigPrinting = 
@@ -1975,6 +1986,8 @@ let layoutExnDef denv x = x |> TastDefinitionPrinting.layoutExnDefn denv
 let stringOfTyparConstraints denv x = x |> PrintTypes.layoutConstraintsWithInfo denv SimplifyTypes.typeSimplificationInfo0 |> showL
 
 let layoutTycon denv infoReader ad m (* width *) x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true WordL.keywordType x (* |> Display.squashTo width *)
+
+let layoutEntity denv infoReader ad m x = TastDefinitionPrinting.layoutEntity denv infoReader ad m x
 
 let layoutUnionCases denv x = x |> TastDefinitionPrinting.layoutUnionCaseFields denv true
 
