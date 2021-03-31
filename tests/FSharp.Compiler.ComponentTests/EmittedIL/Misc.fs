@@ -23,7 +23,7 @@ let zGeneric<'a> (): 'a[] = [||]
          |> compileForNetCore
          |> shouldSucceed
          |> verifyIL ["""
-.method public static valuetype int32[] zInt() cil managed
+.method public static int32[] zInt() cil managed
 {
 
   .maxstack  8
