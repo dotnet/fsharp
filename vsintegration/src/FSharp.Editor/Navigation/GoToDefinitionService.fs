@@ -84,9 +84,30 @@ type internal FSharpGoToDefinitionService
                             let tmpShownDocOpt = metadataAsSourceService.ShowDocument(tmpProjInfo, tmpDocInfo.FilePath, SourceText.From(text.ToString()))
                             match tmpShownDocOpt with
                             | Some tmpShownDoc ->
-                                let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, TextSpan())                               
-                                gtd.NavigateToItem(navItem, statusBar)
-                                true
+                                let possibleRangesAsync =
+                                    asyncMaybe {
+                                        let userOpName = "TryGoToDefinition"
+                                        let! _, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject (tmpShownDoc, cancellationToken, userOpName)
+                                        return! checkerProvider.Checker.FindBackgroundReferencesInFile(tmpShownDoc.FilePath, projectOptions, targetSymbolUse.Symbol, canInvalidateProject=false) |> liftAsync
+                                    }
+
+                                match Async.RunSynchronously(possibleRangesAsync, cancellationToken = cancellationToken) with
+                                | Some possibleRanges ->
+                                    let span =
+                                        possibleRanges
+                                        |> Seq.tryHead
+                                        |> Option.map (fun r ->
+                                            match RoslynHelpers.TryFSharpRangeToTextSpan(tmpShownDoc.GetTextAsync(cancellationToken).Result, r) with
+                                            | Some span -> span
+                                            | _ -> TextSpan()
+                                        )
+                                        |> Option.defaultValue (TextSpan())
+                                    let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, span)                               
+                                    gtd.NavigateToItem(navItem, statusBar)
+                                    true
+                                | _ ->
+                                    statusBar.TempMessage (SR.CannotDetermineSymbol())
+                                    false
                             | _ ->
                                 statusBar.TempMessage (SR.CannotDetermineSymbol())
                                 false

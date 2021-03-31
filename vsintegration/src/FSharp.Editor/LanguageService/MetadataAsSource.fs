@@ -49,7 +49,7 @@ module internal MetadataAsSource =
             ProjectInfo.Create(
                 projectId,
                 VersionStamp.Default,
-                name = FSharpConstants.FSharpMetadataFilesName,
+                name = FSharpConstants.FSharpMetadataName + " - " + asmIdentity.Name,
                 assemblyName = asmIdentity.Name,
                 language = LanguageNames.FSharp,
                 documents = [|documentInfo|],
@@ -91,13 +91,14 @@ module internal MetadataAsSource =
             None
 
 [<Sealed>]
-type internal FSharpMetadataAsSourceService(workspace: Workspace, projectContextFactory: IWorkspaceProjectContextFactory) =
+type internal FSharpMetadataAsSourceService(projectContextFactory: IWorkspaceProjectContextFactory) =
 
+    let serviceProvider = ServiceProvider.GlobalProvider
     let projs = System.Collections.Concurrent.ConcurrentDictionary<string, IWorkspaceProjectContext>()
 
     let createMetadataProjectContext (projInfo: ProjectInfo) (docInfo: DocumentInfo) =
         let projectContext = projectContextFactory.CreateProjectContext(LanguageNames.FSharp, projInfo.Id.ToString(), projInfo.FilePath, Guid.NewGuid(), null, null)
-        projectContext.DisplayName <- FSharpConstants.FSharpMetadataFilesName
+        projectContext.DisplayName <- projInfo.Name
         projectContext.AddSourceFile(docInfo.FilePath, sourceCodeKind = SourceCodeKind.Regular)
         
         for metaRef in projInfo.MetadataReferences do
@@ -109,14 +110,19 @@ type internal FSharpMetadataAsSourceService(workspace: Workspace, projectContext
 
         projectContext
 
-    do
-        workspace.DocumentClosed.Add(fun args ->
-            let doc = args.Document
-            let proj = doc.Project
-            if proj.Language = LanguageNames.FSharp then
-                match projs.TryGetValue(doc.FilePath) with
-                | true, projectContext -> projectContext.Dispose()
-                | _ -> ()
+    let clear filePath (projectContext: IWorkspaceProjectContext) =
+        projs.TryRemove(filePath) |> ignore
+        projectContext.Dispose()
+        try
+            File.Delete filePath |> ignore
+        with
+        | _ -> ()
+
+    member _.ClearGeneratedFiles() =
+        let projsArr = projs.ToArray()
+        projsArr
+        |> Array.iter (fun pair ->
+            clear pair.Key pair.Value
         )
 
     member _.ShowDocument(projInfo: ProjectInfo, filePath: string, text: Text.SourceText) =
@@ -134,6 +140,6 @@ type internal FSharpMetadataAsSourceService(workspace: Workspace, projectContext
 
             projs.[filePath] <- projectContext
 
-            MetadataAsSource.showDocument(filePath, Path.GetFileName(filePath) + " [Metadata]", ServiceProvider.GlobalProvider)
+            MetadataAsSource.showDocument(filePath, Path.GetFileName(filePath), serviceProvider)
         | _ ->
             None

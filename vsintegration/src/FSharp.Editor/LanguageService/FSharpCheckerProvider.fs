@@ -28,7 +28,7 @@ type internal FSharpCheckerProvider
         settings: EditorOptions
     ) =
 
-    let metadataAsSource = FSharpMetadataAsSourceService(workspace, projectContextFactory)
+    let metadataAsSource = FSharpMetadataAsSourceService(projectContextFactory)
 
     let tryGetMetadataSnapshot (path, timeStamp) = 
         try
