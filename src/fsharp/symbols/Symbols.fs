@@ -808,7 +808,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member x.TryGetMembersFunctionsAndValues() = 
         try x.MembersFunctionsAndValues with _ -> [||] :> _
 
-    member this.TryGenerateSignatureText() =
+    member this.TryGetMetadataText() =
         match entity.TryDeref with
         | ValueSome entity ->
             let denv = DisplayEnv.Empty cenv.g

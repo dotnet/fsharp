@@ -74,10 +74,10 @@ type internal FSharpGoToDefinitionService
                         let textOpt =
                             match targetSymbolUse.Symbol with
                             | :? FSharpEntity as symbol ->
-                                symbol.TryGenerateSignatureText()
+                                symbol.TryGetMetadataText()
                                 |> Option.map (fun text -> text, symbol.DisplayName)
                             | :? FSharpMemberOrFunctionOrValue as symbol ->
-                                symbol.ApparentEnclosingEntity.TryGenerateSignatureText()
+                                symbol.ApparentEnclosingEntity.TryGetMetadataText()
                                 |> Option.map (fun text -> text, symbol.ApparentEnclosingEntity.DisplayName)
                             | _ ->
                                 None
