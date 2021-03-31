@@ -40,9 +40,8 @@ type ProjectId with
 
 type Project with
     member this.IsFSharpMiscellaneous = this.Name = FSharpConstants.FSharpMiscellaneousFilesName
-    member this.IsFSharpMiscellaneousOrMetadata =
-        this.IsFSharpMiscellaneous ||
-        this.Name.StartsWith(FSharpConstants.FSharpMetadataName)
+    member this.IsFSharpMetadata = this.Name.StartsWith(FSharpConstants.FSharpMetadataName)
+    member this.IsFSharpMiscellaneousOrMetadata = this.IsFSharpMiscellaneous || this.IsFSharpMetadata
 
 type Document with
     member this.TryGetLanguageService<'T when 'T :> ILanguageService>() =

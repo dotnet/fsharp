@@ -70,7 +70,7 @@ type internal FSharpGoToDefinitionService
                         gtd.NavigateToItem(navItem, statusBar)
                         // 'true' means do it, like Sheev Palpatine would want us to.
                         true
-                    | FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, _targetExternalSymbol, metadataReferences) ->
+                    | FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences) ->
                         let textOpt =
                             match targetSymbolUse.Symbol with
                             | :? FSharpEntity as symbol ->

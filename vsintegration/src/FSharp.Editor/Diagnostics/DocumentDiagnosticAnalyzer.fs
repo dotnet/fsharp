@@ -115,6 +115,9 @@ type internal FSharpDocumentDiagnosticAnalyzer
     interface IFSharpDocumentDiagnosticAnalyzer with
 
         member this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+            if document.Project.IsFSharpMetadata then Task.FromResult(ImmutableArray.Empty)
+            else
+
             asyncMaybe {
                 let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 return! 
