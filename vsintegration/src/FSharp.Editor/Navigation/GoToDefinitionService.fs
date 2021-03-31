@@ -21,6 +21,7 @@ open Microsoft.VisualStudio.LanguageServices
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
 
 [<Export(typeof<IFSharpGoToDefinitionService>)>]
 [<Export(typeof<FSharpGoToDefinitionService>)>]
@@ -69,45 +70,91 @@ type internal FSharpGoToDefinitionService
                         gtd.NavigateToItem(navItem, statusBar)
                         // 'true' means do it, like Sheev Palpatine would want us to.
                         true
-                    | FSharpGoToDefinitionResult.ExternalAssembly(tmpProjInfo, tmpDocInfo, targetSymbolUse, _targetExternalSymbol) ->
+                    | FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, _targetExternalSymbol, metadataReferences) ->
                         let textOpt =
                             match targetSymbolUse.Symbol with
-                            | :? FSharp.Compiler.Symbols.FSharpEntity as symbol ->
+                            | :? FSharpEntity as symbol ->
                                 symbol.TryGenerateSignatureText()
-                            | :? FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue as symbol ->
+                                |> Option.map (fun text -> text, symbol.DisplayName)
+                            | :? FSharpMemberOrFunctionOrValue as symbol ->
                                 symbol.ApparentEnclosingEntity.TryGenerateSignatureText()
+                                |> Option.map (fun text -> text, symbol.ApparentEnclosingEntity.DisplayName)
                             | _ ->
                                 None
 
                         match textOpt with
-                        | Some text ->
+                        | Some (text, fileName) ->
+                            let tmpProjInfo, tmpDocInfo = 
+                                MetadataAsSource.generateTemporaryDocument(
+                                    AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName), 
+                                    fileName, 
+                                    metadataReferences)
                             let tmpShownDocOpt = metadataAsSourceService.ShowDocument(tmpProjInfo, tmpDocInfo.FilePath, SourceText.From(text.ToString()))
                             match tmpShownDocOpt with
                             | Some tmpShownDoc ->
-                                let possibleRangesAsync =
+                                let goToAsync =
                                     asyncMaybe {
                                         let userOpName = "TryGoToDefinition"
                                         let! _, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject (tmpShownDoc, cancellationToken, userOpName)
-                                        return! checkerProvider.Checker.FindBackgroundReferencesInFile(tmpShownDoc.FilePath, projectOptions, targetSymbolUse.Symbol, canInvalidateProject=false) |> liftAsync
-                                    }
+                                        let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(tmpShownDoc, projectOptions, userOpName)
+                                        let! r =
+                                            let rec areTypesEqual (ty1: FSharpType) (ty2: FSharpType) =
+                                                let ty1 = ty1.StripAbbreviations()
+                                                let ty2 = ty2.StripAbbreviations()
+                                                ty1.TypeDefinition.DisplayName = ty2.TypeDefinition.DisplayName &&
+                                                ty1.TypeDefinition.AccessPath = ty2.TypeDefinition.AccessPath &&
+                                                ty1.GenericArguments.Count = ty2.GenericArguments.Count &&
+                                                (
+                                                    (ty1.GenericArguments, ty2.GenericArguments)
+                                                    ||> Seq.forall2 areTypesEqual
+                                                )
 
-                                match Async.RunSynchronously(possibleRangesAsync, cancellationToken = cancellationToken) with
-                                | Some possibleRanges ->
-                                    let span =
-                                        possibleRanges
-                                        |> Seq.tryHead
-                                        |> Option.map (fun r ->
+                                            // This tries to find the best possible location of the target symbol's location in the metadata source.
+                                            // We really should rely on symbol equality within FCS instead of doing it here, 
+                                            //     but the generated metadata as source isn't perfect for symbol equality.
+                                            checkResults.GetAllUsesOfAllSymbolsInFile(cancellationToken)
+                                            |> Seq.tryFind (fun x ->
+                                                match x.Symbol, targetSymbolUse.Symbol with
+                                                | (:? FSharpEntity as symbol1), (:? FSharpEntity as symbol2) when x.IsFromDefinition ->
+                                                    symbol1.DisplayName = symbol2.DisplayName
+                                                | (:? FSharpMemberOrFunctionOrValue as symbol1), (:? FSharpMemberOrFunctionOrValue as symbol2) ->
+                                                    symbol1.DisplayName = symbol2.DisplayName &&
+                                                    symbol1.GenericParameters.Count = symbol2.GenericParameters.Count &&
+                                                    symbol1.CurriedParameterGroups.Count = symbol2.CurriedParameterGroups.Count &&
+                                                    (
+                                                        (symbol1.CurriedParameterGroups, symbol2.CurriedParameterGroups)
+                                                        ||> Seq.forall2 (fun pg1 pg2 ->
+                                                            pg1.Count = pg2.Count &&
+                                                            (
+                                                                (pg1, pg2)
+                                                                ||> Seq.forall2 (fun p1 p2 ->
+                                                                    areTypesEqual p1.Type p2.Type
+                                                                )
+                                                            )
+                                                        )
+                                                    ) &&
+                                                    areTypesEqual symbol1.ReturnParameter.Type symbol2.ReturnParameter.Type
+                                                | _ ->
+                                                    false
+                                            )
+                                            |> Option.map (fun x -> x.Range)
+
+                                        let span =
                                             match RoslynHelpers.TryFSharpRangeToTextSpan(tmpShownDoc.GetTextAsync(cancellationToken).Result, r) with
                                             | Some span -> span
                                             | _ -> TextSpan()
-                                        )
-                                        |> Option.defaultValue (TextSpan())
-                                    let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, span)                               
-                                    gtd.NavigateToItem(navItem, statusBar)
-                                    true
-                                | _ ->
-                                    statusBar.TempMessage (SR.CannotDetermineSymbol())
-                                    false
+
+                                        return span                             
+                                    }
+
+                                let span =
+                                    match Async.RunSynchronously(goToAsync, cancellationToken = cancellationToken) with
+                                    | Some span -> span
+                                    | _ -> TextSpan()
+
+                                let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, span)                               
+                                gtd.NavigateToItem(navItem, statusBar)
+                                true
                             | _ ->
                                 statusBar.TempMessage (SR.CannotDetermineSymbol())
                                 false

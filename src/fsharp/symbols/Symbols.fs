@@ -837,6 +837,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                     getOpenPath cpath.AccessPath []
                 | _ -> 
                     []
+                |> List.rev
 
             let needOpenType =
                 match entity.CompilationPathOpt with
@@ -866,24 +867,40 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                 extraOpenPath
                 |> List.map (fun x -> Layout.wordL (TaggedText.tagUnknownEntity x))
 
+            let pathL =
+                if List.isEmpty extraOpenPath then
+                    Layout.emptyL
+                else
+                    Layout.sepListL (Layout.sepL TaggedText.dot) openPathL
+                    
+            let headerL =
+                if List.isEmpty extraOpenPath then
+                    Layout.emptyL
+                else
+                    Layout.(^^)
+                        (Layout.wordL (TaggedText.tagKeyword "namespace"))
+                        pathL
+
             let openL = 
                 if List.isEmpty openPathL then Layout.emptyL
                 else
                     let openKeywordL =
                         if needOpenType then
                             Layout.(^^)
-                                (Layout.wordL (FSharp.Compiler.Text.TaggedText.tagKeyword "open"))
-                                (Layout.wordL FSharp.Compiler.Text.TaggedText.keywordType)
+                                (Layout.wordL (TaggedText.tagKeyword "open"))
+                                (Layout.wordL TaggedText.keywordType)
                         else
-                            Layout.wordL (FSharp.Compiler.Text.TaggedText.tagKeyword "open")
-                            
+                            Layout.wordL (TaggedText.tagKeyword "open")                            
                     Layout.(^^)
                         openKeywordL
-                        (Layout.sepListL (Layout.sepL TaggedText.dot) openPathL)
+                        pathL
 
-            Layout.aboveL
-                (Layout.(^^) openL (Layout.sepL TaggedText.lineBreak))
-                (NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere range0 entity) 
+            Layout.aboveListL
+                [
+                    (Layout.(^^) headerL (Layout.sepL TaggedText.lineBreak))
+                    (Layout.(^^) openL (Layout.sepL TaggedText.lineBreak))
+                    (NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere range0 entity)
+                ]
             |> LayoutRender.showL
             |> SourceText.ofString
             |> Some

@@ -156,7 +156,7 @@ type internal FSharpGoToDefinitionNavigableItem(document, sourceSpan) =
 [<RequireQualifiedAccess>]
 type internal FSharpGoToDefinitionResult =
     | NavigableItem of FSharpNavigableItem
-    | ExternalAssembly of ProjectInfo * DocumentInfo * FSharpSymbolUse * FindDeclExternalSymbol
+    | ExternalAssembly of FSharpSymbolUse * FindDeclExternalSymbol * MetadataReference seq
 
 type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager) =
     let userOpName = "GoToDefinition"
@@ -273,8 +273,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                     return (FSharpGoToDefinitionResult.NavigableItem(FSharpGoToDefinitionNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan)), idRange)
                 | _ ->
                     let metadataReferences = originDocument.Project.MetadataReferences                        
-                    let tmpProjInfo, tmpDocId = MetadataAsSource.generateTemporaryDocument(AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName), targetSymbolUse.Symbol.DisplayName, metadataReferences)
-                    return (FSharpGoToDefinitionResult.ExternalAssembly(tmpProjInfo, tmpDocId, targetSymbolUse, targetExternalSym), idRange)
+                    return (FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, targetExternalSym, metadataReferences), idRange)
 
             | FindDeclResult.DeclFound targetRange -> 
                 // if goto definition is called at we are alread at the declaration location of a symbol in
