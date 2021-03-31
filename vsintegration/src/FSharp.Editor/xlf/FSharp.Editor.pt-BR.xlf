@@ -97,6 +97,11 @@
         <target state="translated">Remover 'return!'</target>
         <note />
       </trans-unit>
+      <trans-unit id="RemoveUnusedBinding">
+        <source>Remove unused binding</source>
+        <target state="new">Remove unused binding</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RemoveYield">
         <source>Remove 'yield'</source>
         <target state="translated">Remover 'yield'</target>
