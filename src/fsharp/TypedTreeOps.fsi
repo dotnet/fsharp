@@ -1560,6 +1560,8 @@ val normalizeEnumTy: TcGlobals -> TType -> TType
 /// Determine if a type is a struct type
 val isStructTy: TcGlobals -> TType -> bool
 
+val isStructOrEnumTyconTy: TcGlobals -> TType -> bool
+
 /// Determine if a type is a variable type with the ': struct' constraint.
 ///
 /// Note, isStructTy does not include type parameters with the ': struct' constraint

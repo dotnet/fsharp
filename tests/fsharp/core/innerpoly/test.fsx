@@ -389,6 +389,33 @@ module InnerGenericBindingsInComputationExpressions = begin
     f()
 end
 
+module LocalTypeFunctionRequiredForWitnessPassingOfGenericInnerFunctionsConstrainedByMemberConstraints = 
+    let inline clamp16 v = uint16 (max 0. (min 65535. v))
+    let inline clamp8  v = uint8  (max 0. (min   255. v))
+
+    type Clampage =
+        static member inline FromFloat (_ : byte,   _ : Clampage) = fun (x : float) -> clamp8  x
+        static member inline FromFloat (_ : uint16, _ : Clampage) = fun (x : float) -> clamp16 x
+
+        static member inline Invoke (x: float) : 'Num =
+            let inline call2 (a: ^a, b: ^b) = ((^a or ^b) : (static member FromFloat : _*_ -> _) (b, a))
+            let inline call (a: 'a) = fun (x: 'x) -> call2 (a, Unchecked.defaultof<'r>) x : 'r
+            call Unchecked.defaultof<Clampage> x
+
+    let inline clamp x = Clampage.Invoke x
+    let x1 : byte = clamp 3.0 
+    let x2 : uint16 = clamp 3.0 
+    let x3 : byte = clamp 257.0 
+    check "clecqwe1" x1 3uy
+    check "clecqwe2" x2 3us
+    check "clecqwe3" x3 255uy
+
+module Bug10408 = 
+    let test x =
+        match x with
+        | [| |] -> x
+        | _ -> x
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else

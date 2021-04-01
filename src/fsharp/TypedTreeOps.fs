@@ -8799,7 +8799,7 @@ and remapValToNonLocal g tmenv inp =
 let ApplyExportRemappingToEntity g tmenv x = remapTyconToNonLocal g tmenv x
 
 (* Which constraints actually get compiled to .NET constraints? *)
-let isCompiledConstraint cx = 
+let isCompiledOrWitnessPassingConstraint (g: TcGlobals) cx = 
     match cx with 
       | TyparConstraint.SupportsNull _ // this implies the 'class' constraint
       | TyparConstraint.IsReferenceType _  // this is the 'class' constraint
@@ -8807,13 +8807,15 @@ let isCompiledConstraint cx =
       | TyparConstraint.IsReferenceType _
       | TyparConstraint.RequiresDefaultConstructor _
       | TyparConstraint.CoercesTo _ -> true
+      | TyparConstraint.MayResolveMember _ when g.langVersion.SupportsFeature LanguageFeature.WitnessPassing -> true
       | _ -> false
     
-// Is a value a first-class polymorphic value with .NET constraints? 
-// Used to turn off TLR and method splitting
+// Is a value a first-class polymorphic value with .NET constraints, or witness-passing constraints? 
+// Used to turn off TLR and method splitting and do not compile to
+// FSharpTypeFunc, but rather bake a "local type function" for each TyLambda abstraction.
 let IsGenericValWithGenericConstraints g (v: Val) = 
     isForallTy g v.Type && 
-    v.Type |> destForallTy g |> fst |> List.exists (fun tp -> List.exists isCompiledConstraint tp.Constraints)
+    v.Type |> destForallTy g |> fst |> List.exists (fun tp -> List.exists (isCompiledOrWitnessPassingConstraint g) tp.Constraints)
 
 // Does a type support a given interface? 
 type Entity with 
