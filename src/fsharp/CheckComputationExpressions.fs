@@ -423,27 +423,52 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
     // Environment is needed for completions
     CallEnvSink cenv.tcSink (comp.Range, env.NameEnv, ad)
 
-    // Check for the [<ProjectionParameter>] attribute on an argument position
+    let tryGetArgAttribsForCustomOperator (nm: Ident) = 
+        match tryGetDataForCustomOperation nm with 
+        | Some argInfos -> 
+            argInfos 
+            |> List.map (fun (_nm, __maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, methInfo) -> 
+                match methInfo.GetParamAttribs(cenv.amap, mWhole) with 
+                | [curriedArgInfo] -> Some curriedArgInfo // one for the actual argument group
+                | _ -> None)
+            |> Some
+        | _ -> None
+
     let tryGetArgInfosForCustomOperator (nm: Ident) = 
         match tryGetDataForCustomOperation nm with 
         | Some argInfos -> 
             argInfos 
             |> List.map (fun (_nm, __maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, methInfo) -> 
-                match methInfo with 
-                | FSMeth(_, _, vref, _) -> 
+                match methInfo with
+                | FSMeth(_, _, vref, _) ->
                     match ArgInfosOfMember cenv.g vref with
-                    | [curriedArgInfo] -> Some curriedArgInfo // one for the actual argument group
+                    | [curriedArgInfo] -> Some curriedArgInfo
                     | _ -> None
                 | _ -> None)
             |> Some
         | _ -> None
 
     let tryExpectedArgCountForCustomOperator (nm: Ident) = 
-        match tryGetArgInfosForCustomOperator nm with 
+        match tryGetArgAttribsForCustomOperator nm with 
         | None -> None
         | Some argInfosForOverloads -> 
             let nums = argInfosForOverloads |> List.map (function None -> -1 | Some argInfos -> List.length argInfos)
-            if nums |> List.forall (fun v -> v >= 0 && v = nums.[0]) then 
+
+            // Prior to 'OverloadsForCustomOperations' we count exact arguments.
+            //
+            // With 'OverloadsForCustomOperations' we don't compute an exact expected argument count
+            // if any arguments are optional, out or ParamArray.
+            let isSpecial = 
+                if cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations then
+                    argInfosForOverloads |> List.exists (fun info -> 
+                        match info with 
+                        | None -> false
+                        | Some args -> 
+                            args |> List.exists (fun (isParamArrayArg, _isInArg, isOutArg, optArgInfo, _callerInfo, _reflArgInfo) -> isParamArrayArg || isOutArg || optArgInfo.IsOptional))
+                else
+                    false
+
+            if not isSpecial && nums |> List.forall (fun v -> v >= 0 && v = nums.[0]) then 
                 Some (max (nums.[0] - 1) 0) // drop the computation context argument
             else
                 None
