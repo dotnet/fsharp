@@ -28,8 +28,8 @@
     <Compile Include="Common\Logger.fsi" />
     <Compile Include="Common\Logger.fs" />
     <Compile Include="Common\Pervasive.fs" />
-    <Compile Include="Common\Extensions.fs" />
     <Compile Include="Common\Constants.fs" />
+    <Compile Include="Common\Extensions.fs" />
     <Compile Include="Common\Error.fs" />
     <Compile Include="Common\Logging.fs" />
     <Compile Include="Common\RoslynHelpers.fs" />
@@ -112,6 +112,7 @@
     <Compile Include="CodeFix\AddOpenCodeFixProvider.fs" />
     <Compile Include="CodeFix\ProposeUppercaseLabel.fs" />
     <Compile Include="CodeFix\ReplaceWithSuggestion.fs" />
+    <Compile Include="CodeFix\RemoveUnusedBinding.fs" />
     <Compile Include="CodeFix\RenameUnusedValue.fs" />
     <Compile Include="CodeFix\ImplementInterfaceCodeFixProvider.fs" />
     <Compile Include="CodeFix\SimplifyName.fs" />
