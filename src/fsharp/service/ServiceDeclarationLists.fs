@@ -368,7 +368,7 @@ module DeclarationListHelpers =
         // Types.
         | Item.Types(_, ((TType_app(tcref, _)) :: _))
         | Item.UnqualifiedType (tcref :: _) -> 
-            let denv = { denv with shortTypeNames = true  }
+            let denv = { denv with shortTypeNames = true; showDocumentation = false  }
             let layout = NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere m (* width *) tcref.Deref
             let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
             let layout = LayoutRender.toArray layout
