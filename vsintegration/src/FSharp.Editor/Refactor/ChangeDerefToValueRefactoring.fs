@@ -32,7 +32,7 @@ type internal FSharpChangeDerefToValueRefactoring
             let document = context.Document
             let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! parseResults = checkerProvider.Checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName=userOpName) |> liftAsync
+            let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions, userOpName=userOpName)
 
             let selectionRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
             let! derefRange = parseResults.TryRangeOfRefCellDereferenceContainingPos selectionRange.Start
