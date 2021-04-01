@@ -594,11 +594,9 @@ let inputFileFlagsFsi (tcConfigB: TcConfigBuilder) =
 let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) = 
     let trimFS (s:string) = if s.StartsWithOrdinal "FS" then s.Substring 2 else s
     let trimFStoInt (s:string) =
-        try
-            Some (int32 (trimFS s))
-        with _ ->
-            errorR(Error(FSComp.SR.buildArgInvalidInt s, rangeCmdArgs))
-            None
+        match Int32.TryParse (trimFS s) with
+        | true, n ->  Some n
+        | false, _ -> None
     [
         CompilerOption("warnaserror", tagNone, OptionSwitch(fun switch ->
             tcConfigB.errorSeverityOptions <-
