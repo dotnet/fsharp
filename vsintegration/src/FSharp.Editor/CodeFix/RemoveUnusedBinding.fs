@@ -50,7 +50,6 @@ type internal FSharpRemoveUnusedBindingCodeFixProvider
     inherit CodeFixProvider()
     static let userOpName = "RemoveUnusedBinding"
     let fixableDiagnosticIds = set ["FS1182"]
-    let checker = checkerProvider.Checker
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -63,7 +62,7 @@ type internal FSharpRemoveUnusedBindingCodeFixProvider
             let! sourceText = document.GetTextAsync(context.CancellationToken)
 
             let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
-            let! parseResults = checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName = userOpName) |> liftAsync
+            let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions, userOpName=userOpName)
 
             let diagnostics =
                 context.Diagnostics
