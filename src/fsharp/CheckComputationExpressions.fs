@@ -601,7 +601,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
         | _ -> 
             None
 
-    let (|ForEachThenJoinOrGroupJoinOrZipClause|_|) e = 
+    let (|ForEachThenJoinOrGroupJoinOrZipClause|_|) strict e = 
         match e with 
         | ForEachThen (isFromSource, firstSourcePat, firstSource, JoinOrGroupJoinOrZipClause(nm, secondSourcePat, secondSource, keySelectorsOpt, pat3opt, mOpCore), innerComp) 
             when 
@@ -612,7 +612,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
 
              -> Some (isFromSource, firstSourcePat, firstSource, nm, secondSourcePat, secondSource, keySelectorsOpt, pat3opt, mOpCore, innerComp)
 
-        | JoinOrGroupJoinOrZipClause(nm, pat2, expr2, expr3, pat3opt, mOpCore) -> 
+        | JoinOrGroupJoinOrZipClause(nm, pat2, expr2, expr3, pat3opt, mOpCore) when strict -> 
             errorR(Error(FSComp.SR.tcBinaryOperatorRequiresBody(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
             Some (true, arbPat e.Range, arbExpr("_outerSource", e.Range), nm, pat2, expr2, expr3, pat3opt, mOpCore, arbExpr("_innerComp", e.Range))
 
@@ -754,7 +754,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
         // ...
         //    --> 
         // zip expr1 expr2 (fun pat1 pat3 -> ...)
-        | ForEachThenJoinOrGroupJoinOrZipClause (isFromSource, firstSourcePat, firstSource, nm, secondSourcePat, secondSource, keySelectorsOpt, secondResultPatOpt, mOpCore, innerComp) -> 
+        | ForEachThenJoinOrGroupJoinOrZipClause true (isFromSource, firstSourcePat, firstSource, nm, secondSourcePat, secondSource, keySelectorsOpt, secondResultPatOpt, mOpCore, innerComp) -> 
 
 
             if q = CustomOperationsMode.Denied then error(Error(FSComp.SR.tcCustomOperationMayNotBeUsedHere(), nm.idRange))
@@ -1562,7 +1562,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
     and isSimpleExpr comp =
 
         match comp with 
-        | ForEachThenJoinOrGroupJoinOrZipClause _ -> false
+        | ForEachThenJoinOrGroupJoinOrZipClause false _ -> false
         | SynExpr.ForEach _ -> false
         | SynExpr.For _ -> false
         | SynExpr.While _ -> false
