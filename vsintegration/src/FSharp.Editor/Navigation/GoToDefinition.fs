@@ -276,8 +276,8 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                     return (FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), idRange)
 
             | FindDeclResult.DeclFound targetRange -> 
-                // If the file does not actually exist, it's external considered external.
-                if not (File.Exists targetRange.FileName) then
+                // If the file is not associated with a document, it's considered external.
+                if not (originDocument.Project.Solution.ContainsDocumentWithFilePath(targetRange.FileName)) then
                     let metadataReferences = originDocument.Project.MetadataReferences
                     return (FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), idRange)
                 else
