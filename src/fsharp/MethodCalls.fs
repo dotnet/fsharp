@@ -215,7 +215,7 @@ let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnown
                 // If at the beginning of inference then use a type variable.
                 else 
                     match calledArg.OptArgInfo with
-                    // If inference has not solved the kind of Nullable for the called arg then use this.
+                    // If inference has not solved the kind of Nullable on the called arg and is not optional then use this.
                     | NotOptional when isTyparTy g (destNullableTy g calledArgTy) ->
                         calledArgTy
                     | _ ->
