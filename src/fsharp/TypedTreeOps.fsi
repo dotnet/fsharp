@@ -987,6 +987,7 @@ type DisplayEnv =
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
       /// If set, signatures will be rendered with XML documentation comments for members if they exist
+      /// Defaults to false, expected use cases include things like signature file generation.
       showDocumentation: bool
       shrinkOverloads: bool
       printVerboseSignatures: bool

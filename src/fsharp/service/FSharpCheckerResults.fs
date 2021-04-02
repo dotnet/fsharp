@@ -1974,13 +1974,15 @@ type FSharpCheckFileResults
         threadSafeOp (fun () -> None) (fun scope ->
             scope.ImplementationFile
             |> Option.map (fun implFile ->
-                let denv = DisplayEnv.Empty scope.TcGlobals
+                // this logic copied from fsc's InterfaceFileWriter.BuildInitialDisplayEnvForSigFileGeneration,
+                // should/can it be consolidated?
                 let denv =
-                    { denv with
-                       showImperativeTyparAnnotations=true
-                       showHiddenMembers=true
-                       showObsoleteMembers=true
-                       showAttributes=true }
+                    { DisplayEnv.Empty scope.TcGlobals with
+                       showImperativeTyparAnnotations = true
+                       showHiddenMembers = true
+                       showObsoleteMembers = true
+                       showAttributes = true
+                       showDocumentation = true }
                 let denv =
                     denv.SetOpenPaths
                         [ FSharpLib.RootPath
