@@ -27,6 +27,7 @@ open FSharp.Compiler.TypedTreeOps
 
 open FSharp.Core.Printf
 
+let debug = false
 [<AutoOpen>]
 module internal PrintUtilities = 
     let bracketIfL x lyt = if x then bracketL lyt else lyt
@@ -119,6 +120,26 @@ module internal PrintUtilities =
     let layoutBuiltinAttribute (denv: DisplayEnv) (attrib: BuiltinAttribInfo) =
         let tcref = attrib.TyconRef
         squareAngleL (layoutTyconRefImpl true denv tcref)
+
+    /// layout the xml docs immediately before another block
+    let layoutXmlDoc (denv: DisplayEnv) (xml: XmlDoc) restL =
+        if denv.showDocumentation
+        then
+            let xmlDocL =
+                if xml.IsEmpty
+                then
+                    if debug then Diagnostics.dprintfn "layoutXmlDoc: empty xmlDoc"
+                    emptyL
+                else
+                    if debug then Diagnostics.dprintfn "layoutXmlDoc: writing lines %A" xml.UnprocessedLines
+                    xml.UnprocessedLines
+                    |> List.ofArray
+                    /// note here that we don't add a space after the triple-slash, because
+                    /// the implicit spacing hasn't been trimmed here.
+                    |> List.map (fun line -> ("///" + line) |> tagText |> wordL)
+                    |> spaceListL
+            xmlDocL @@ restL
+        else restL
 
 module private PrintIL = 
 
@@ -943,80 +964,83 @@ module private PrintTastMemberOrVals =
         let mkNameL niceMethodTypars tagFunction name =
             let nameL =
                 DemangleOperatorNameAsLayout (tagFunction >> mkNav v.DefinitionRange) name
-            let nameL = 
+            let nameL =
                 if denv.showMemberContainers then 
                     layoutTyconRef denv v.MemberApparentEntity ^^ SepL.dot ^^ nameL
-                else 
+                else
                     nameL
             let nameL = if denv.showTyparBinding then layoutTyparDecls denv nameL true niceMethodTypars else nameL
             let nameL = layoutAccessibility denv v.Accessibility nameL
             nameL
 
-        match membInfo.MemberFlags.MemberKind with 
-        | SynMemberKind.Member -> 
-            let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv v typarInst argInfos rty
-            let resL =
-                if short then tauL
-                else
-                    let nameL = mkNameL niceMethodTypars tagMember v.LogicalName
-                    stat --- (nameL ^^ WordL.colon ^^ tauL)
-            prettyTyparInst, resL
-
-        | SynMemberKind.ClassConstructor
-        | SynMemberKind.Constructor -> 
-            let prettyTyparInst, _, tauL = prettyLayoutOfMemberType denv v typarInst argInfos rty
-            let resL = 
-                if short then tauL
-                else
-                    let newL = layoutAccessibility denv v.Accessibility WordL.keywordNew
-                    stat ++ newL ^^ wordL (tagPunctuation ":") ^^ tauL
-            prettyTyparInst, resL
-
-        | SynMemberKind.PropertyGetSet -> 
-            emptyTyparInst, stat
-
-        | SynMemberKind.PropertyGet -> 
-            if isNil argInfos then
-                // use error recovery because intellisense on an incomplete file will show this
-                errorR(Error(FSComp.SR.tastInvalidFormForPropertyGetter(), v.Id.idRange))
-                let nameL = mkNameL [] tagProperty v.CoreDisplayName
-                let resL = 
-                    if short then nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
-                    else stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
-                emptyTyparInst, resL
-            else
-                let argInfos = 
-                    match argInfos with 
-                    | [[(ty, _)]] when isUnitTy denv.g ty -> []
-                    | _ -> argInfos
+        let prettyTyparInst, memberL =
+            match membInfo.MemberFlags.MemberKind with
+            | SynMemberKind.Member ->
                 let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv v typarInst argInfos rty
-                let resL = 
-                    if short then
-                        if isNil argInfos then tauL 
-                        else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)
+                let resL =
+                    if short then tauL
                     else
-                        let nameL = mkNameL niceMethodTypars tagProperty v.CoreDisplayName
-                        stat --- (nameL ^^ WordL.colon ^^ (if isNil argInfos then tauL else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)))
+                        let nameL = mkNameL niceMethodTypars tagMember v.LogicalName
+                        stat --- (nameL ^^ WordL.colon ^^ tauL)
                 prettyTyparInst, resL
 
-        | SynMemberKind.PropertySet -> 
-            if argInfos.Length <> 1 || isNil argInfos.Head then 
-                // use error recovery because intellisense on an incomplete file will show this
-                errorR(Error(FSComp.SR.tastInvalidFormForPropertySetter(), v.Id.idRange))
-                let nameL = mkNameL [] tagProperty v.CoreDisplayName
-                let resL = stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordSet)
-                emptyTyparInst, resL
-            else 
-                let argInfos, valueInfo = List.frontAndBack argInfos.Head
-                let prettyTyparInst, niceMethodTypars, tauL = prettyLayoutOfMemberType denv v typarInst (if isNil argInfos then [] else [argInfos]) (fst valueInfo)
+            | SynMemberKind.ClassConstructor
+            | SynMemberKind.Constructor ->
+                let prettyTyparInst, _, tauL = prettyLayoutOfMemberType denv v typarInst argInfos rty
                 let resL = 
-                    if short then
-                        (tauL --- (WordL.keywordWith ^^ WordL.keywordSet))
+                    if short then tauL
                     else
-                        let nameL = mkNameL niceMethodTypars tagProperty v.CoreDisplayName
-                        stat --- (nameL ^^ wordL (tagPunctuation ":") ^^ (tauL --- (WordL.keywordWith ^^ WordL.keywordSet)))
+                        let newL = layoutAccessibility denv v.Accessibility WordL.keywordNew
+                        stat ++ newL ^^ wordL (tagPunctuation ":") ^^ tauL
                 prettyTyparInst, resL
-                
+
+            | SynMemberKind.PropertyGetSet ->
+                emptyTyparInst, stat
+
+            | SynMemberKind.PropertyGet ->
+                if isNil argInfos then
+                    // use error recovery because intellisense on an incomplete file will show this
+                    errorR(Error(FSComp.SR.tastInvalidFormForPropertyGetter(), v.Id.idRange))
+                    let nameL = mkNameL [] tagProperty v.CoreDisplayName
+                    let resL =
+                        if short then nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
+                        else stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
+                    emptyTyparInst, resL
+                else
+                    let argInfos =
+                        match argInfos with
+                        | [[(ty, _)]] when isUnitTy denv.g ty -> []
+                        | _ -> argInfos
+                    let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv v typarInst argInfos rty
+                    let resL =
+                        if short then
+                            if isNil argInfos then tauL
+                            else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)
+                        else
+                            let nameL = mkNameL niceMethodTypars tagProperty v.CoreDisplayName
+                            stat --- (nameL ^^ WordL.colon ^^ (if isNil argInfos then tauL else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)))
+                    prettyTyparInst, resL
+
+            | SynMemberKind.PropertySet ->
+                if argInfos.Length <> 1 || isNil argInfos.Head then
+                    // use error recovery because intellisense on an incomplete file will show this
+                    errorR(Error(FSComp.SR.tastInvalidFormForPropertySetter(), v.Id.idRange))
+                    let nameL = mkNameL [] tagProperty v.CoreDisplayName
+                    let resL = stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordSet)
+                    emptyTyparInst, resL
+                else
+                    let argInfos, valueInfo = List.frontAndBack argInfos.Head
+                    let prettyTyparInst, niceMethodTypars, tauL = prettyLayoutOfMemberType denv v typarInst (if isNil argInfos then [] else [argInfos]) (fst valueInfo)
+                    let resL =
+                        if short then
+                            (tauL --- (WordL.keywordWith ^^ WordL.keywordSet))
+                        else
+                            let nameL = mkNameL niceMethodTypars tagProperty v.CoreDisplayName
+                            stat --- (nameL ^^ wordL (tagPunctuation ":") ^^ (tauL --- (WordL.keywordWith ^^ WordL.keywordSet)))
+                    prettyTyparInst, resL
+
+        prettyTyparInst, layoutXmlDoc denv v.XmlDoc memberL
+
     let prettyLayoutOfMember denv typarInst (v:Val) = prettyLayoutOfMemberShortOption denv typarInst v false
 
     let prettyLayoutOfMemberNoInstShort denv v = 
@@ -1092,14 +1116,16 @@ module private PrintTastMemberOrVals =
             match denv.generatedValueLayout v with
             | None -> valAndTypeL
             | Some rhsL -> (valAndTypeL ++ wordL (tagPunctuation"=")) --- rhsL
-        match v.LiteralValue with
-        | Some literalValue -> valAndTypeL ++ layoutOfLiteralValue literalValue
-        | None -> valAndTypeL
+        let overallL =
+            match v.LiteralValue with
+            | Some literalValue -> valAndTypeL ++ layoutOfLiteralValue literalValue
+            | None -> valAndTypeL
+        layoutXmlDoc denv v.XmlDoc overallL
 
     let prettyLayoutOfValOrMember denv typarInst (v: Val) =
-        let prettyTyparInst, vL = 
+        let prettyTyparInst, vL =
             match v.MemberInfo with 
-            | None -> 
+            | None ->
                 let tps, tau = v.TypeScheme
 
                 // adjust the type in case this is the 'this' pointer stored in a reference cell
@@ -1110,6 +1136,7 @@ module private PrintTastMemberOrVals =
                 prettyTyparInst, resL
             | Some _ -> 
                 prettyLayoutOfMember denv typarInst v
+
         prettyTyparInst, layoutAttribs denv true v.Type TyparKind.Type v.Attribs vL
 
     let prettyLayoutOfValOrMemberNoInst denv v =
@@ -1194,6 +1221,7 @@ module InfoMemberPrinting =
                         PrintTypes.layoutTyparDecls denv (minfo.LogicalName |> tagMethod |> wordL) true minfo.FormalMethodTypars
                 ) ^^
                 WordL.colon
+            let layout = layoutXmlDoc denv minfo.XmlDoc layout
             let paramDatas = minfo.GetParamDatas(amap, m, minst)
             let layout =
                 layout ^^
@@ -1354,7 +1382,8 @@ module private TastDefinitionPrinting =
             |> wordL
         let lhs = (if addAccess then layoutAccessibility denv fld.Accessibility lhs else lhs)
         let lhs = if fld.IsMutable then wordL (tagKeyword "mutable") --- lhs else lhs
-        (lhs ^^ RightL.colon) --- layoutType denv fld.FormalType
+        let fieldL = (lhs ^^ RightL.colon) --- layoutType denv fld.FormalType
+        layoutXmlDoc denv fld.XmlDoc fieldL
 
     let layoutUnionOrExceptionField denv isGenerated i (fld: RecdField) =
         if isGenerated i fld then layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 2 fld.FormalType
@@ -1377,9 +1406,11 @@ module private TastDefinitionPrinting =
     let layoutUnionCase denv prefixL (ucase: UnionCase) =
         let nmL = DemangleOperatorNameAsLayout (tagUnionCase >> mkNav ucase.DefinitionRange) ucase.Id.idText
         //let nmL = layoutAccessibility denv ucase.Accessibility nmL
-        match ucase.RecdFields with
-        | []     -> (prefixL ^^ nmL)
-        | fields -> (prefixL ^^ nmL ^^ WordL.keywordOf) --- layoutUnionCaseFields denv true fields
+        let caseL =
+            match ucase.RecdFields with
+            | []     -> (prefixL ^^ nmL)
+            | fields -> (prefixL ^^ nmL ^^ WordL.keywordOf) --- layoutUnionCaseFields denv true fields
+        layoutXmlDoc denv ucase.XmlDoc caseL
 
     let layoutUnionCases denv ucases =
         let prefixL = WordL.bar // See bug://2964 - always prefix in case preceded by accessibility modifier
@@ -1424,13 +1455,15 @@ module private TastDefinitionPrinting =
 
         let nameL = eventTag |> wordL
         let typL = layoutType denv (e.GetDelegateType(amap, m))
-        staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL
-       
+        let overallL = staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL
+        layoutXmlDoc denv e.XmlDoc overallL
+
     let private layoutPropInfo denv amap m (p: PropInfo) =
         match p.ArbitraryValRef with
         | Some v ->
             PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv v.Deref
         | None ->
+
             let modifierAndMember =
                 if p.IsStatic then
                     WordL.keywordStatic ^^ WordL.keywordMember
@@ -1445,8 +1478,8 @@ module private TastDefinitionPrinting =
             let nameL = propTag |> wordL
             
             let typL = layoutType denv (p.GetPropertyType(amap, m)) // shouldn't happen
-
-            modifierAndMember ^^ nameL ^^ WordL.colon ^^ typL
+            let overallL = modifierAndMember ^^ nameL ^^ WordL.colon ^^ typL
+            layoutXmlDoc denv p.XmlDoc overallL
 
     let layoutTycon (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified typewordL (tycon: Tycon) =
         let g = denv.g
@@ -1752,7 +1785,8 @@ module private TastDefinitionPrinting =
                 | Some a -> 
                     (lhsL ^^ WordL.equals) --- (layoutType { denv with shortTypeNames = false } a)
 
-        layoutAttribs denv false ty tycon.TypeOrMeasureKind tycon.Attribs reprL
+        let attribsL = layoutAttribs denv false ty tycon.TypeOrMeasureKind tycon.Attribs reprL
+        layoutXmlDoc denv tycon.XmlDoc attribsL
 
     // Layout: exception definition
     let layoutExnDefn denv (exnc: Entity) =
@@ -1770,7 +1804,8 @@ module private TastDefinitionPrinting =
                 | [] -> emptyL
                 | r -> WordL.keywordOf --- layoutUnionCaseFields denv false r
 
-        exnL ^^ reprL
+        let overallL = exnL ^^ reprL
+        layoutXmlDoc denv exnc.XmlDoc overallL
 
     // Layout: module spec 
 
@@ -1954,40 +1989,47 @@ module private InferredSigPrinting =
             let denv = denv.AddOpenPath (List.map fst innerPath) 
             if mspec.IsNamespace then
                 let basic = imdefL denv def
-                // Check if this namespace contains anything interesting
-                if isConcreteNamespace def then 
-                    // This is a container namespace. We print the header when we get to the first concrete module.
-                    let headerL = 
-                        wordL (tagKeyword "namespace") ^^ sepListL SepL.dot (List.map (fst >> tagNamespace >> wordL) innerPath)
-                    headerL @@-- basic
-                else
-                    // This is a namespace that only contains namespaces. Skip the header
-                    basic
+                let basicL =
+                    // Check if this namespace contains anything interesting
+                    if isConcreteNamespace def then
+                        // This is a container namespace. We print the header when we get to the first concrete module.
+                        let headerL =
+                            wordL (tagKeyword "namespace") ^^ sepListL SepL.dot (List.map (fst >> tagNamespace >> wordL) innerPath)
+                        headerL @@-- basic
+                    else
+                        // This is a namespace that only contains namespaces. Skip the header
+                        basic
+                // NOTE: explicitly not calling `layoutXmlDoc` here, because even though
+                // `ModuleOrNamespace` has a field for XmlDoc, it is never present at the parser
+                // level.  This should be changed if the parser/spec changes.
+                basicL
             else
                 // This is a module 
                 let nmL = layoutAccessibility denv mspec.Accessibility (wordL (tagModule nm))
-                let denv = denv.AddAccessibility mspec.Accessibility 
+                let denv = denv.AddAccessibility mspec.Accessibility
                 let basic = imdefL denv def
-                // Check if its an outer module or a nested module
-                if (outerPath |> List.forall (fun (_, istype) -> istype = Namespace) ) then 
-                    // OK, this is an outer module
-                    if showHeader then 
-                        // OK, we're not in F# Interactive
-                        // Check if this is an outer module with no namespace
-                        if isNil outerPath then 
-                            // If so print a "module" declaration
-                            (wordL (tagKeyword "module") ^^ nmL) @@ basic
-                        else 
-                            // Otherwise this is an outer module contained immediately in a namespace
-                            // We already printed the namespace declaration earlier. So just print the 
-                            // module now.
-                            ((wordL (tagKeyword"module") ^^ nmL ^^ WordL.equals ^^ wordL (tagKeyword "begin")) @@-- basic) @@ WordL.keywordEnd
+                let basicL =
+                    // Check if its an outer module or a nested module
+                    if (outerPath |> List.forall (fun (_, istype) -> istype = Namespace) ) then
+                        // OK, this is an outer module
+                        if showHeader then
+                            // OK, we're not in F# Interactive
+                            // Check if this is an outer module with no namespace
+                            if isNil outerPath then
+                                // If so print a "module" declaration
+                                (wordL (tagKeyword "module") ^^ nmL) @@ basic
+                            else
+                                // Otherwise this is an outer module contained immediately in a namespace
+                                // We already printed the namespace declaration earlier. So just print the
+                                // module now.
+                                ((wordL (tagKeyword"module") ^^ nmL ^^ WordL.equals ^^ wordL (tagKeyword "begin")) @@-- basic) @@ WordL.keywordEnd
+                        else
+                            // OK, we're in F# Interactive, presumably the implicit module for each interaction.
+                            basic
                     else
-                        // OK, we're in F# Interactive, presumably the implicit module for each interaction.
-                        basic
-                else
-                    // OK, this is a nested module
-                    ((wordL (tagKeyword "module") ^^ nmL ^^ WordL.equals ^^ wordL (tagKeyword"begin")) @@-- basic) @@ WordL.keywordEnd
+                        // OK, this is a nested module
+                        ((wordL (tagKeyword "module") ^^ nmL ^^ WordL.equals ^^ wordL (tagKeyword"begin")) @@-- basic) @@ WordL.keywordEnd
+                layoutXmlDoc denv mspec.XmlDoc basicL
         imexprL denv expr
 
 //--------------------------------------------------------------------------
