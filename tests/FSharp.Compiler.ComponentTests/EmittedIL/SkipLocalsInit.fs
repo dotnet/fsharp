@@ -6,6 +6,8 @@ open Xunit
 open FSharp.Test.Utilities.Compiler
 
 module ``SkipLocalsInit`` =
+    let private compileForNetCore opts =
+        opts |> ignoreWarnings |> withOptions ["-g"; "--targetprofile:netcore"] |> compile
 
     [<Fact>]
     let ``Init in method not emitted when applied on method``() =
@@ -17,7 +19,7 @@ let x () =
     let x = "ssa".Length
     x + x
          """
-         |> compile
+         |> compileForNetCore
          |> shouldSucceed
          |> verifyIL ["""
 .method public static int32  x() cil managed
