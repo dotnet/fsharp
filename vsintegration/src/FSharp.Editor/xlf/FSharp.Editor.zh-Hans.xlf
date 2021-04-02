@@ -97,6 +97,11 @@
         <target state="translated">删除 "return!"</target>
         <note />
       </trans-unit>
+      <trans-unit id="RemoveUnusedBinding">
+        <source>Remove unused binding</source>
+        <target state="new">Remove unused binding</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RemoveYield">
         <source>Remove 'yield'</source>
         <target state="translated">删除 "yield"</target>
@@ -260,6 +265,11 @@
       <trans-unit id="UseNotForNegation">
         <source>Use 'not' to negate expression</source>
         <target state="translated">使用 "not" 对表达式求反</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseValueInsteadOfDeref">
+        <source>Use '.Value' to dereference expression</source>
+        <target state="new">Use '.Value' to dereference expression</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">

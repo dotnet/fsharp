@@ -54,8 +54,9 @@ let formatCompletions(completions : string seq) =
 
 let VerifyCompletionListWithOptions(fileContents: string, marker: string, expected: string list, unexpected: string list, opts) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
     let results = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions opts, filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, document, caretPosition, projectOptions opts, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.map(fun result -> result.DisplayText)
@@ -103,10 +104,11 @@ let VerifyCompletionList(fileContents, marker, expected, unexpected) =
 
 
 let VerifyCompletionListExactly(fileContents: string, marker: string, expected: string list) =
+    let projectOptions = { projectOptions [| |] with ProjectId = Some(Guid.NewGuid().ToString()) }
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
-    
+    let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
     let actual = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions [| |], filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, document, caretPosition, projectOptions, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.toList
