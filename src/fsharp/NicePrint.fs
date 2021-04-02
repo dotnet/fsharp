@@ -27,7 +27,6 @@ open FSharp.Compiler.TypedTreeOps
 
 open FSharp.Core.Printf
 
-let debug = false
 [<AutoOpen>]
 module internal PrintUtilities = 
     let bracketIfL x lyt = if x then bracketL lyt else lyt
@@ -128,10 +127,8 @@ module internal PrintUtilities =
             let xmlDocL =
                 if xml.IsEmpty
                 then
-                    if debug then Diagnostics.dprintfn "layoutXmlDoc: empty xmlDoc"
                     emptyL
                 else
-                    if debug then Diagnostics.dprintfn "layoutXmlDoc: writing lines %A" xml.UnprocessedLines
                     xml.UnprocessedLines
                     |> List.ofArray
                     /// note here that we don't add a space after the triple-slash, because

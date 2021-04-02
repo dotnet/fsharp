@@ -302,8 +302,8 @@ type public FSharpCheckFileResults =
     /// Open declarations in the file, including auto open modules.
     member OpenDeclarations: FSharpOpenDeclaration[]
 
-    /// Lays out and returns the formatted signature for the typechecked file
-    member GenerateSignatureForFile: unit -> string option
+    /// Lays out and returns the formatted signature for the typechecked file as source text.
+    member GenerateSignature: unit -> ISourceText option
 
     /// Internal constructor
     static member internal MakeEmpty : 
