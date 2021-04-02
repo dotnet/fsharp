@@ -2764,6 +2764,7 @@ type DisplayEnv =
       showConstraintTyparAnnotations: bool
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
+      showDocumentation: bool
       shrinkOverloads: bool
       printVerboseSignatures : bool
       g: TcGlobals
@@ -2794,6 +2795,7 @@ type DisplayEnv =
         showAttributes = false
         showOverrides = true
         showConstraintTyparAnnotations = true
+        showDocumentation = false
         abbreviateAdditionalConstraints = false
         showTyparDefaultConstraints = false
         shortConstraints = false
