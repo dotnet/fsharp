@@ -426,6 +426,17 @@ module rec Compiler =
         | FS fs -> typecheckFSharp fs
         | _ -> failwith "Typecheck only supports F#"
 
+    let typecheckResults (cUnit: CompilationUnit) : FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults =
+        match cUnit with
+        | FS fsSource ->
+            let source = getSource fsSource.Source
+            let options = fsSource.Options |> Array.ofList
+
+            let name = match fsSource.Name with | None -> "test.fs" | Some n -> n
+
+            CompilerAssert.TypeCheck(options, name, source)
+        | _ -> failwith "Typecheck only supports F#"
+
     let run (result: TestResult) : TestResult =
         match result with
         | Failure f -> failwith (sprintf "Compilation should be successfull in order to run.\n Errors: %A" (f.Diagnostics))
