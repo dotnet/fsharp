@@ -13,7 +13,7 @@ open FSharp.Tests
 module SignatureGenerationTests =
 
     let sigText (checkResults: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults) =
-        match checkResults.GenerateSignatureForFile() with
+        match checkResults.GenerateSignature() with
         | None -> failwith "Unable to generate signature text."
         | Some text -> text
 

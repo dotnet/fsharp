@@ -822,7 +822,8 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                     showObsoleteMembers=true
                     showAttributes=true
                     shrinkOverloads=false
-                    printVerboseSignatures=false }
+                    printVerboseSignatures=false
+                    showDocumentation=true }
 
             let extraOpenPath =
                 match entity.CompilationPathOpt with
