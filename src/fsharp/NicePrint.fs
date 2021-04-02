@@ -1783,12 +1783,104 @@ module private TastDefinitionPrinting =
             let xs = List.map (layoutTycon denv infoReader ad m false (wordL (tagKeyword "and"))) t
             aboveListL (x :: xs)
 
-    let layoutEntity (denv: DisplayEnv) (infoReader: InfoReader) ad m (entity: Entity) =
-        if entity.IsModule then
-            // TODO: Implementation of layoutTycon isn't correct for module.
-            layoutTycon denv infoReader ad m false (wordL (tagKeyword "module")) entity
-        elif entity.IsNamespace then
-            emptyL
+    let rec layoutModuleOrNamespace (denv: DisplayEnv) (infoReader: InfoReader) ad m isFirstTopLevel (mspec: ModuleOrNamespace) =
+        let rec fullPath (mspec: ModuleOrNamespace) acc =
+            if mspec.IsNamespace then
+                match mspec.ModuleOrNamespaceType.ModuleAndNamespaceDefinitions |> List.tryHead with
+                | Some next when next.IsNamespace ->
+                    fullPath next (acc @ [next.DemangledModuleOrNamespaceName])
+                | _ ->
+                    acc, mspec
+            else
+                acc, mspec
+
+        let outerPath = mspec.CompilationPath.AccessPath
+
+        let path, mspec = fullPath mspec [mspec.DemangledModuleOrNamespaceName]
+
+        let denv = denv.AddOpenPath path
+
+        let headerL =
+            if mspec.IsNamespace then
+                // This is a container namespace. We print the header when we get to the first concrete module.
+                wordL (tagKeyword "namespace") ^^ sepListL SepL.dot (List.map (tagNamespace >> wordL) path)
+            else
+                // This is a module 
+                let nmL = 
+                    match path with
+                    | [nm] -> wordL (tagModule nm)
+                    | _ ->
+                        let nm = path |> List.last
+                        let innerPath = path.[..path.Length - 2]
+                        sepListL SepL.dot (List.map (tagNamespace >> wordL) innerPath) ^^ SepL.dot ^^ wordL (tagModule nm)
+                // Check if its an outer module or a nested module
+                if (outerPath |> List.forall (fun (_, istype) -> istype = Namespace)) then 
+                    // Check if this is an outer module with no namespace
+                    if isNil outerPath then 
+                        // If so print a "module" declaration
+                        (wordL (tagKeyword "module") ^^ nmL)
+                    else 
+                        if mspec.ModuleOrNamespaceType.AllEntities |> Seq.isEmpty && mspec.ModuleOrNamespaceType.AllValsAndMembers |> Seq.isEmpty then
+                            (wordL (tagKeyword "module") ^^ nmL ^^ WordL.equals ^^ wordL (tagKeyword "begin") ^^ wordL (tagKeyword "end"))
+                        else
+                            // Otherwise this is an outer module contained immediately in a namespace
+                            // We already printed the namespace declaration earlier. So just print the 
+                            // module now.
+                            (wordL (tagKeyword "module") ^^ nmL ^^ WordL.equals)
+                else
+                    if mspec.ModuleOrNamespaceType.AllEntities |> Seq.isEmpty && mspec.ModuleOrNamespaceType.AllValsAndMembers |> Seq.isEmpty then
+                        (wordL (tagKeyword "module") ^^ nmL ^^ WordL.equals ^^ wordL (tagKeyword "begin") ^^ wordL (tagKeyword "end"))
+                    else
+                        // OK, this is a nested module
+                        (wordL (tagKeyword "module") ^^ nmL ^^ WordL.equals)
+
+        let headerL =
+            PrintTypes.layoutAttribs denv false (generalizedTyconRef(mkLocalEntityRef mspec)) mspec.TypeOrMeasureKind mspec.Attribs headerL
+
+        let shouldShow (v: Val) =
+            (denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g v.Attribs)) &&
+            (denv.showHiddenMembers || not (CheckFSharpAttributesForHidden denv.g v.Attribs))
+
+        let entityLs =
+            if mspec.IsNamespace then []
+            else
+                mspec.ModuleOrNamespaceType.AllEntities
+                |> QueueList.toList
+                |> List.map (fun entity -> layoutEntity denv infoReader ad m entity)
+            
+        let valLs =
+            if mspec.IsNamespace then []
+            else
+                mspec.ModuleOrNamespaceType.AllValsAndMembers
+                |> QueueList.toList
+                |> List.filter shouldShow
+                |> List.sortBy (fun v -> v.DisplayName)
+                |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv)
+
+        if List.isEmpty entityLs && List.isEmpty valLs then
+            headerL
+        else
+            let entitiesL =
+                entityLs
+                |> aboveListL
+
+            let valsL =
+                valLs
+                |> aboveListL
+
+            if isFirstTopLevel then
+                aboveListL
+                    [
+                        headerL
+                        entitiesL
+                        valsL
+                    ]
+            else
+                headerL @@- (aboveL entitiesL valsL)
+
+    and layoutEntity (denv: DisplayEnv) (infoReader: InfoReader) ad m (entity: Entity) =
+        if entity.IsModuleOrNamespace then
+            layoutModuleOrNamespace denv infoReader ad m false entity
         elif entity.IsExceptionDecl then
             layoutExnDefn denv entity
         else
