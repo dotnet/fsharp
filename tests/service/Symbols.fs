@@ -497,3 +497,18 @@ let m = 7.000<cm>
             assertRange (2, 8) (2, 12) r1
             assertRange (3, 8) (3, 13) r2
         | _ -> Assert.Fail "Could not get valid AST"
+
+module SynModuleOrNamespaceSig =
+    [<Test>]
+    let ``Range member returns range of SynModuleOrNamespaceSig`` () =
+        let parseResults =
+            getParseResultsOfSignatureFile
+                """
+namespace Foobar
+
+type Bar = | Bar of string * int"""
+
+        match parseResults with
+        | ParsedInput.SigFile(ParsedSigFileInput(modules = [singleModule])) ->
+            assertRange (4,0) (4,32) singleModule.Range
+        | _ -> Assert.Fail "Could not get valid AST"
