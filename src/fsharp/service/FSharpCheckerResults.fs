@@ -1970,7 +1970,7 @@ type FSharpCheckFileResults
             let (nenv, _), _ = scope.GetBestDisplayEnvForPos cursorPos
             Some(FSharpDisplayContext(fun _ -> nenv.DisplayEnv)))
 
-    member _.GenerateSignatureForFile () =
+    member _.GenerateSignature () =
         threadSafeOp (fun () -> None) (fun scope ->
             scope.ImplementationFile
             |> Option.map (fun implFile ->
@@ -1993,7 +1993,7 @@ type FSharpCheckFileResults
                 let infoReader = InfoReader(scope.TcGlobals, scope.TcImports.GetImportMap())
                 let (TImplFile (_, _, mexpr, _, _, _)) = implFile
                 let layout = NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr
-                layout |> LayoutRender.showL
+                layout |> LayoutRender.showL |> SourceText.ofString
             )
         )
 
