@@ -1758,6 +1758,10 @@ type SynModuleOrNamespaceSig =
         accessibility: SynAccess option *
         range: range
 
+    member this.Range =
+        match this with
+        | SynModuleOrNamespaceSig (range=m) -> m
+
 [<NoEquality; NoComparison>]
 type ParsedHashDirective =
     | ParsedHashDirective of
