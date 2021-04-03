@@ -18,7 +18,7 @@ let x () =
          |> compile
          |> shouldSucceed
          |> verifyIL ["""
-.method public static int32  x() cil managed
+.method public static void  x() cil managed
 {
   .custom instance void [runtime]System.Runtime.CompilerServices.SkipLocalsInitAttribute::.ctor() = ( 01 00 00 00 )
 

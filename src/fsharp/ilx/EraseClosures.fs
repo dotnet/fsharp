@@ -311,7 +311,7 @@ let convILMethodBody (thisClo, boxReturnTy) (il: ILMethodBody) =
         match boxReturnTy with
         | None    -> code
         | Some ty -> morphILInstrsInILCode (convReturnInstr ty) code
-    {il with MaxStack=newMax; IsZeroInit=true; Code= code }
+    { il with MaxStack = newMax; Code = code }
 
 let convMethodBody thisClo = function
     | MethodBody.IL il -> 
