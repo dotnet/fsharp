@@ -809,8 +809,10 @@ moduleSpfn:
            match $3 with
            | [] -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEmptyModuleDefn()) 
            | h :: t -> h, t 
-        let tc = (SynTypeDefnSig(SynComponentInfo($1@cas, a, cs, b, c, d, d2, d3), e, f, g))in 
-        SynModuleSigDecl.Types (tc :: rest, rhs parseState 3) } 
+        let tc = (SynTypeDefnSig(SynComponentInfo($1@cas, a, cs, b, c, d, d2, d3), e, f, g))
+        let lastType = List.tryLast rest |> Option.defaultValue tc |> fun t -> t.Range
+        let m = mkRange lastType.FileName (lhs parseState).Start lastType.End
+        SynModuleSigDecl.Types (tc :: rest, m) } 
 
   | opt_attributes opt_declVisibility exconSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
