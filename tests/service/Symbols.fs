@@ -509,6 +509,24 @@ namespace Foobar
 type Bar = | Bar of string * int"""
 
         match parseResults with
-        | ParsedInput.SigFile(ParsedSigFileInput(modules = [singleModule])) ->
-            assertRange (4,0) (4,32) singleModule.Range
+        | ParsedInput.SigFile(ParsedSigFileInput(modules = [
+            SynModuleOrNamespaceSig(kind = SynModuleOrNamespaceKind.DeclaredNamespace) as singleModule
+        ])) ->
+            assertRange (2,0) (4,32) singleModule.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``GlobalNamespace should start at namespace keyword`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """// foo
+// bar
+namespace  global
+
+type Bar = | Bar of string * int"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig(kind = SynModuleOrNamespaceKind.GlobalNamespace; range = r) ])) ->
+            assertRange (3, 0) (5, 32) r
         | _ -> Assert.Fail "Could not get valid AST"
