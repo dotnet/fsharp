@@ -6,20 +6,16 @@ open Xunit
 open FSharp.Test.Utilities.Compiler
 
 module ``SkipLocalsInit`` =
-    let private compileForNetCore opts =
-        opts |> ignoreWarnings |> withOptions ["-g"; "--targetprofile:netcore"] |> compile
-
     [<Fact>]
-    let ``Init in method not emitted when applied on method``() =
+    let ``Init in function and closure not emitted when applied on function``() =
         FSharp """
 module SkipLocalsInit
 
 [<System.Runtime.CompilerServices.SkipLocalsInitAttribute>]
 let x () =
-    let x = "ssa".Length
-    x + x
-         """
-         |> compileForNetCore
+    [||] |> Array.filter (fun x -> let y = "".Length in y + y = x) |> ignore
+"""
+         |> compile
          |> shouldSucceed
          |> verifyIL ["""
 .method public static int32  x() cil managed
@@ -27,12 +23,75 @@ let x () =
   .custom instance void [runtime]System.Runtime.CompilerServices.SkipLocalsInitAttribute::.ctor() = ( 01 00 00 00 )
 
   .maxstack  4
+  .locals (int32[] V_0)
+"""
+
+                      """
+.method public strict virtual instance bool 
+        Invoke(int32 x) cil managed
+{
+          
+  .maxstack  6
+  .locals (int32 V_0)"""]
+
+    [<Fact>]
+    let ``Init in static method not emitted when applied on class``() =
+        FSharp """
+module SkipLocalsInit
+
+[<System.Runtime.CompilerServices.SkipLocalsInitAttribute>]
+type X () =
+    static member Y () =
+        let x = "ssa".Length
+        x + x
+         """
+         |> compile
+         |> shouldSucceed
+         |> verifyIL ["""
+.custom instance void [runtime]System.Runtime.CompilerServices.SkipLocalsInitAttribute::.ctor() = ( 01 00 00 00 ) 
+.custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+"""
+
+                      """
+.method public static int32  Y() cil managed
+{
+  
+  .maxstack  4
+  .locals (int32 V_0)"""]
+
+    [<Fact>]
+    let ``Init in static method and function not emitted when applied on module``() =
+        FSharp """
+[<System.Runtime.CompilerServices.SkipLocalsInitAttribute>]
+module SkipLocalsInit
+
+let x () =
+    let x = "ssa".Length
+    x + x
+
+type X () =
+    static member Y () =
+        let x = "ssa".Length
+        x + x
+         """
+         |> compile
+         |> shouldSucceed
+         |> verifyIL ["""
+.custom instance void [runtime]System.Runtime.CompilerServices.SkipLocalsInitAttribute::.ctor() = ( 01 00 00 00 ) 
+.custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+"""
+
+                      """
+.method public static int32  x() cil managed
+{
+
+  .maxstack  4
   .locals (int32 V_0)
-  IL_0000:  ldstr      "ssa"
-  IL_0005:  callvirt   instance int32 [runtime]System.String::get_Length()
-  IL_000a:  stloc.0
-  IL_000b:  ldloc.0
-  IL_000c:  ldloc.0
-  IL_000d:  add
-  IL_000e:  ret
-}"""]
+"""
+
+                      """
+.method public static int32  Y() cil managed
+{
+  
+  .maxstack  4
+  .locals (int32 V_0)"""]
