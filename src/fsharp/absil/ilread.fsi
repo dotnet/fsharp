@@ -29,16 +29,16 @@ module FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.IL 
 
 /// Used to implement a Binary file over native memory, used by Roslyn integration
-type internal ILReaderMetadataSnapshot = (obj * nativeint * int) 
-type internal ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
+type ILReaderMetadataSnapshot = (obj * nativeint * int) 
+type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
 
 [<RequireQualifiedAccess>]
-type internal MetadataOnlyFlag = Yes | No
+type MetadataOnlyFlag = Yes | No
 
 [<RequireQualifiedAccess>]
-type internal ReduceMemoryFlag = Yes | No
+type ReduceMemoryFlag = Yes | No
 
-type internal ILReaderOptions =
+type ILReaderOptions =
    { pdbDirPath: string option
 
      // fsc.exe does not use reduceMemoryUsage (hence keeps MORE caches in AbstractIL and MORE memory mapping and MORE memory hogging but FASTER and SIMPLER file access)

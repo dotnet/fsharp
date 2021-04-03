@@ -132,7 +132,7 @@ type ILScopeRef =
 // ILThisConvention.InstanceExplicit is only used by Managed C++, and indicates 
 // that the 'this' pointer is actually explicit in the signature. 
 [<StructuralEquality; StructuralComparison; RequireQualifiedAccess>]
-type internal ILArgConvention = 
+type ILArgConvention = 
     | Default
     | CDecl 
     | StdCall 
@@ -141,7 +141,7 @@ type internal ILArgConvention =
     | VarArg
       
 [<StructuralEquality; StructuralComparison; RequireQualifiedAccess>]
-type internal ILThisConvention =
+type ILThisConvention =
     /// accepts an implicit 'this' pointer 
     | Instance           
 
@@ -153,7 +153,6 @@ type internal ILThisConvention =
 
 [<StructuralEquality; StructuralComparison>]
 type ILCallingConv =
-    internal
     | Callconv of ILThisConvention * ILArgConvention
 
     member internal IsInstance: bool
@@ -628,7 +627,7 @@ type internal ILCode =
 
 /// Field Init
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
-type internal ILFieldInit = 
+type ILFieldInit = 
     | String of string
     | Bool of bool
     | Char of uint16
@@ -698,7 +697,6 @@ type internal ILNativeVariant =
 /// Most of these are listed in the CLI ECMA-335 Spec (Partition II, 7.4).  
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type ILNativeType = 
-    internal
     | Empty
     | Custom of ILGuid * nativeTypeName: string * custMarshallerName: string * cookieString: byte[]
     | FixedSysString of int32
@@ -934,7 +932,7 @@ type internal ILOverridesSpec =
     member DeclaringType: ILType 
 
 [<RequireQualifiedAccess>]
-type internal MethodBody =
+type MethodBody =
     | IL of Lazy<ILMethodBody>
     | PInvoke of Lazy<PInvokeMethod> 
     | Abstract
@@ -1217,7 +1215,6 @@ type ILMethodImplDefs =
 /// Type Layout information.
 [<RequireQualifiedAccess>]
 type ILTypeDefLayout =
-    internal 
     | Auto
     | Sequential of ILTypeDefLayoutInfo
     | Explicit of ILTypeDefLayoutInfo 
@@ -1804,7 +1801,7 @@ val internal andTailness: ILTailcall -> bool -> ILTailcall
 val internal mkILParam: string option * ILType -> ILParameter
 val internal mkILParamAnon: ILType -> ILParameter
 val internal mkILParamNamed: string * ILType -> ILParameter
-val internal mkILReturn: ILType -> ILReturn
+val mkILReturn: ILType -> ILReturn
 val internal mkILLocal: ILType -> (string * int * int) option -> ILLocal
 
 /// Make a formal generic parameters.
@@ -1873,41 +1870,41 @@ val internal mkCtorMethSpecForDelegate: ILGlobals -> ILType * bool -> ILMethodSp
 val internal mkILTypeForGlobalFunctions: ILScopeRef -> ILType
 
 /// Making tables of custom attributes, etc.
-val internal mkILCustomAttrs: ILAttribute list -> ILAttributes
+val mkILCustomAttrs: ILAttribute list -> ILAttributes
 val mkILCustomAttrsFromArray: ILAttribute[] -> ILAttributes
-val internal storeILCustomAttrs: ILAttributes -> ILAttributesStored
+val storeILCustomAttrs: ILAttributes -> ILAttributesStored
 val internal mkILCustomAttrsReader: (int32 -> ILAttribute[]) -> ILAttributesStored
 val emptyILCustomAttrs: ILAttributes
 
-val internal mkILSecurityDecls: ILSecurityDecl list -> ILSecurityDecls
+val mkILSecurityDecls: ILSecurityDecl list -> ILSecurityDecls
 val emptyILSecurityDecls: ILSecurityDecls
-val internal storeILSecurityDecls: ILSecurityDecls -> ILSecurityDeclsStored
+val storeILSecurityDecls: ILSecurityDecls -> ILSecurityDeclsStored
 val internal mkILSecurityDeclsReader: (int32 -> ILSecurityDecl[]) -> ILSecurityDeclsStored
 
-val internal mkILEvents: ILEventDef list -> ILEventDefs
-val internal mkILEventsLazy: Lazy<ILEventDef list> -> ILEventDefs
-val internal emptyILEvents: ILEventDefs
+val mkILEvents: ILEventDef list -> ILEventDefs
+val mkILEventsLazy: Lazy<ILEventDef list> -> ILEventDefs
+val emptyILEvents: ILEventDefs
 
-val internal mkILProperties: ILPropertyDef list -> ILPropertyDefs
-val internal mkILPropertiesLazy: Lazy<ILPropertyDef list> -> ILPropertyDefs
-val internal emptyILProperties: ILPropertyDefs
+val mkILProperties: ILPropertyDef list -> ILPropertyDefs
+val mkILPropertiesLazy: Lazy<ILPropertyDef list> -> ILPropertyDefs
+val emptyILProperties: ILPropertyDefs
 
-val internal mkILMethods: ILMethodDef list -> ILMethodDefs
-val internal mkILMethodsFromArray: ILMethodDef[] -> ILMethodDefs
-val internal mkILMethodsComputed: (unit -> ILMethodDef[]) -> ILMethodDefs
-val internal emptyILMethods: ILMethodDefs
+val mkILMethods: ILMethodDef list -> ILMethodDefs
+val mkILMethodsFromArray: ILMethodDef[] -> ILMethodDefs
+val mkILMethodsComputed: (unit -> ILMethodDef[]) -> ILMethodDefs
+val emptyILMethods: ILMethodDefs
 
-val internal mkILFields: ILFieldDef list -> ILFieldDefs
-val internal mkILFieldsLazy: Lazy<ILFieldDef list> -> ILFieldDefs
-val internal emptyILFields: ILFieldDefs
+val mkILFields: ILFieldDef list -> ILFieldDefs
+val mkILFieldsLazy: Lazy<ILFieldDef list> -> ILFieldDefs
+val emptyILFields: ILFieldDefs
 
-val internal mkILMethodImpls: ILMethodImplDef list -> ILMethodImplDefs
-val internal mkILMethodImplsLazy: Lazy<ILMethodImplDef list> -> ILMethodImplDefs
-val internal emptyILMethodImpls: ILMethodImplDefs
+val mkILMethodImpls: ILMethodImplDef list -> ILMethodImplDefs
+val mkILMethodImplsLazy: Lazy<ILMethodImplDef list> -> ILMethodImplDefs
+val emptyILMethodImpls: ILMethodImplDefs
 
-val internal mkILTypeDefs: ILTypeDef list -> ILTypeDefs
-val internal mkILTypeDefsFromArray: ILTypeDef[] -> ILTypeDefs
-val internal emptyILTypeDefs: ILTypeDefs
+val mkILTypeDefs: ILTypeDef list -> ILTypeDefs
+val mkILTypeDefsFromArray: ILTypeDef[] -> ILTypeDefs
+val emptyILTypeDefs: ILTypeDefs
 
 /// Create table of types which is loaded/computed on-demand, and whose individual 
 /// elements are also loaded/computed on-demand. Any call to tdefs.AsList will 
@@ -1931,7 +1928,7 @@ val emptyILResources: ILResources
 val internal mkILResources: ILResource list -> ILResources
 
 /// Making modules.
-val internal mkILSimpleModule: assemblyName:string -> moduleName:string -> dll:bool -> subsystemVersion: (int * int) -> useHighEntropyVA: bool -> ILTypeDefs -> int32 option -> string option -> int -> ILExportedTypesAndForwarders -> string -> ILModuleDef
+val mkILSimpleModule: assemblyName:string -> moduleName:string -> dll:bool -> subsystemVersion: (int * int) -> useHighEntropyVA: bool -> ILTypeDefs -> int32 option -> string option -> int -> ILExportedTypesAndForwarders -> string -> ILModuleDef
 
 /// Generate references to existing type definitions, method definitions
 /// etc.  Useful for generating references, e.g. to a  class we're processing
@@ -1950,7 +1947,7 @@ val internal mkRefToILField: ILTypeRef * ILFieldDef -> ILFieldRef
 val internal mkRefToILAssembly: ILAssemblyManifest -> ILAssemblyRef
 val internal mkRefToILModule: ILModuleDef -> ILModuleRef
 
-val internal NoMetadataIdx: int32
+val NoMetadataIdx: int32
 
 // -------------------------------------------------------------------- 
 // Rescoping.
