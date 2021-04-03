@@ -5580,7 +5580,8 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) star
     | Some _, Some e -> cgbuf.mgbuf.AddReflectedDefinition(vspec, e)
     | _ -> ()
 
-    let eenv = {eenv with letBoundVars= (mkLocalValRef vspec) :: eenv.letBoundVars}
+    let eenv = { eenv with letBoundVars = (mkLocalValRef vspec) :: eenv.letBoundVars;
+                           initLocals = eenv.initLocals && (match vspec.ApparentEnclosingEntity with Parent ref -> not (HasFSharpAttribute g g.attrib_SkipLocalsInitAttribute ref.Attribs) | _ -> true) }
 
     let access = ComputeMethodAccessRestrictedBySig eenv vspec
 
@@ -7278,10 +7279,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
     | TNoRepr -> ()
     | TAsmRepr _ | TILObjectRepr _ | TMeasureableRepr _ -> ()
     | TFSharpObjectRepr _ | TRecdRepr _ | TUnionRepr _ ->
-        let eenvinner =
-            let eenvinner = ReplaceTyenv (TypeReprEnv.ForTycon tycon) eenv
-            let eenvinner = if eenvinner.initLocals && HasFSharpAttribute g g.attrib_SkipLocalsInitAttribute tycon.Attribs then { eenvinner with initLocals = false } else eenvinner
-            eenvinner
+        let eenvinner = ReplaceTyenv (TypeReprEnv.ForTycon tycon) eenv
         let thisTy = generalizedTyconRef tcref
 
         let ilThisTy = GenType cenv.amap m eenvinner.tyenv thisTy
