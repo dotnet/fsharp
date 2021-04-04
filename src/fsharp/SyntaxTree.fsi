@@ -1558,6 +1558,9 @@ type SynTypeDefnSig =
         members: SynMemberSig list *
         range: range
 
+    /// Gets the syntax range of this construct
+    member Range: range
+
 /// Represents the syntax tree for a field declaration in a record or class
 [<NoEquality; NoComparison>]
 type SynField =
