@@ -10,6 +10,48 @@ type SurfaceAreaTest() =
     member _.VerifyArea() =
         let expected = @"
 FSharp.Compiler.AbstractIL.IL
+FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 CDecl
+FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 Default
+FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 FastCall
+FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 StdCall
+FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 ThisCall
+FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 VarArg
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean Equals(ILArgConvention)
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean Equals(System.Object)
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsCDecl
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsDefault
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsFastCall
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsStdCall
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsThisCall
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsVarArg
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean get_IsCDecl()
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean get_IsDefault()
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean get_IsFastCall()
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean get_IsStdCall()
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean get_IsThisCall()
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean get_IsVarArg()
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: ILArgConvention CDecl
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: ILArgConvention Default
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: ILArgConvention FastCall
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: ILArgConvention StdCall
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: ILArgConvention ThisCall
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: ILArgConvention VarArg
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: ILArgConvention get_CDecl()
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: ILArgConvention get_Default()
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: ILArgConvention get_FastCall()
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: ILArgConvention get_StdCall()
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: ILArgConvention get_ThisCall()
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: ILArgConvention get_VarArg()
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Int32 CompareTo(ILArgConvention)
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Int32 CompareTo(System.Object)
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Int32 GetHashCode()
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Int32 Tag
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Int32 get_Tag()
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILArrayShape: Boolean Equals(ILArrayShape)
 FSharp.Compiler.AbstractIL.IL+ILArrayShape: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILArrayShape: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -263,15 +305,22 @@ FSharp.Compiler.AbstractIL.IL+ILAttributesStored: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(ILCallingConv)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILArgConvention Item2
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILArgConvention get_Item2()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv Instance
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv NewCallconv(ILThisConvention, ILArgConvention)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv Static
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv get_Instance()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv get_Static()
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILThisConvention Item1
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILThisConvention get_Item1()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 CompareTo(ILCallingConv)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 CompareTo(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 GetHashCode()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 Tag
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILCallingSignature: Boolean Equals(ILCallingSignature)
 FSharp.Compiler.AbstractIL.IL+ILCallingSignature: Boolean Equals(System.Object)
@@ -400,6 +449,115 @@ FSharp.Compiler.AbstractIL.IL+ILFieldDefs: Boolean Equals(System.Object, System.
 FSharp.Compiler.AbstractIL.IL+ILFieldDefs: Int32 GetHashCode()
 FSharp.Compiler.AbstractIL.IL+ILFieldDefs: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILFieldDefs: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Bool: Boolean Item
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Bool: Boolean get_Item()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Char: UInt16 Item
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Char: UInt16 get_Item()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Double: Double Item
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Double: Double get_Item()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Int16: Int16 Item
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Int16: Int16 get_Item()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Int32: Int32 Item
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Int32: Int32 get_Item()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Int64: Int64 Item
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Int64: Int64 get_Item()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Int8: SByte Item
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Int8: SByte get_Item()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Single: Single Item
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Single: Single get_Item()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+String: System.String Item
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+String: System.String get_Item()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Tags: Int32 Bool
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Tags: Int32 Char
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Tags: Int32 Double
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Tags: Int32 Int16
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Tags: Int32 Int32
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Tags: Int32 Int64
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Tags: Int32 Int8
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Tags: Int32 Null
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Tags: Int32 Single
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Tags: Int32 String
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Tags: Int32 UInt16
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Tags: Int32 UInt32
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Tags: Int32 UInt64
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+Tags: Int32 UInt8
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+UInt16: UInt16 Item
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+UInt16: UInt16 get_Item()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+UInt32: UInt32 Item
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+UInt32: UInt32 get_Item()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+UInt64: UInt64 Item
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+UInt64: UInt64 get_Item()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+UInt8: Byte Item
+FSharp.Compiler.AbstractIL.IL+ILFieldInit+UInt8: Byte get_Item()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean Equals(ILFieldInit)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean Equals(System.Object)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean IsBool
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean IsChar
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean IsDouble
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean IsInt16
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean IsInt32
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean IsInt64
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean IsInt8
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean IsNull
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean IsSingle
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean IsString
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean IsUInt16
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean IsUInt32
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean IsUInt64
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean IsUInt8
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean get_IsBool()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean get_IsChar()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean get_IsDouble()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean get_IsInt16()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean get_IsInt32()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean get_IsInt64()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean get_IsInt8()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean get_IsNull()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean get_IsSingle()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean get_IsString()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean get_IsUInt16()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean get_IsUInt32()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean get_IsUInt64()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean get_IsUInt8()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: FSharp.Compiler.AbstractIL.IL+ILFieldInit+Bool
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: FSharp.Compiler.AbstractIL.IL+ILFieldInit+Char
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: FSharp.Compiler.AbstractIL.IL+ILFieldInit+Double
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: FSharp.Compiler.AbstractIL.IL+ILFieldInit+Int16
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: FSharp.Compiler.AbstractIL.IL+ILFieldInit+Int32
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: FSharp.Compiler.AbstractIL.IL+ILFieldInit+Int64
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: FSharp.Compiler.AbstractIL.IL+ILFieldInit+Int8
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: FSharp.Compiler.AbstractIL.IL+ILFieldInit+Single
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: FSharp.Compiler.AbstractIL.IL+ILFieldInit+String
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: FSharp.Compiler.AbstractIL.IL+ILFieldInit+Tags
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: FSharp.Compiler.AbstractIL.IL+ILFieldInit+UInt16
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: FSharp.Compiler.AbstractIL.IL+ILFieldInit+UInt32
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: FSharp.Compiler.AbstractIL.IL+ILFieldInit+UInt64
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: FSharp.Compiler.AbstractIL.IL+ILFieldInit+UInt8
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: ILFieldInit NewBool(Boolean)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: ILFieldInit NewChar(UInt16)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: ILFieldInit NewDouble(Double)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: ILFieldInit NewInt16(Int16)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: ILFieldInit NewInt32(Int32)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: ILFieldInit NewInt64(Int64)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: ILFieldInit NewInt8(SByte)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: ILFieldInit NewSingle(Single)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: ILFieldInit NewString(System.String)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: ILFieldInit NewUInt16(UInt16)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: ILFieldInit NewUInt32(UInt32)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: ILFieldInit NewUInt64(UInt64)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: ILFieldInit NewUInt8(Byte)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: ILFieldInit Null
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: ILFieldInit get_Null()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Int32 CompareTo(ILFieldInit)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Int32 CompareTo(System.Object)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Int32 GetHashCode()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Int32 Tag
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Int32 get_Tag()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: System.Object AsObject()
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILFieldRef: Boolean Equals(ILFieldRef)
 FSharp.Compiler.AbstractIL.IL+ILFieldRef: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILFieldRef: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -770,14 +928,227 @@ FSharp.Compiler.AbstractIL.IL+ILNativeResource: Int32 CompareTo(System.Object, S
 FSharp.Compiler.AbstractIL.IL+ILNativeResource: Int32 GetHashCode()
 FSharp.Compiler.AbstractIL.IL+ILNativeResource: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILNativeResource: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Array: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILNativeType] Item1
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Array: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILNativeType] get_Item1()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Array: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.Int32,Microsoft.FSharp.Core.FSharpOption`1[System.Int32]]] Item2
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Array: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.Int32,Microsoft.FSharp.Core.FSharpOption`1[System.Int32]]] get_Item2()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] Item1
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] cookieString
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] get_Item1()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] get_cookieString()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String custMarshallerName
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String get_custMarshallerName()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String get_nativeTypeName()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String nativeTypeName
+FSharp.Compiler.AbstractIL.IL+ILNativeType+FixedArray: Int32 Item
+FSharp.Compiler.AbstractIL.IL+ILNativeType+FixedArray: Int32 get_Item()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+FixedSysString: Int32 Item
+FSharp.Compiler.AbstractIL.IL+ILNativeType+FixedSysString: Int32 get_Item()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+SafeArray: ILNativeVariant Item1
+FSharp.Compiler.AbstractIL.IL+ILNativeType+SafeArray: ILNativeVariant get_Item1()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+SafeArray: Microsoft.FSharp.Core.FSharpOption`1[System.String] Item2
+FSharp.Compiler.AbstractIL.IL+ILNativeType+SafeArray: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_Item2()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 ANSIBSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Array
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 AsAny
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 BSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Bool
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 ByValStr
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Byte
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Currency
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Custom
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Double
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Empty
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Error
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 FixedArray
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 FixedSysString
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 IDispatch
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 IUnknown
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Int
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Int16
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Int32
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Int64
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Int8
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Interface
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 LPSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 LPSTRUCT
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 LPTSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 LPUTF8STR
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 LPWSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Method
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 SafeArray
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Single
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Struct
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 TBSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 UInt
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 UInt16
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 UInt32
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 UInt64
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 VariantBool
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Void
 FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean Equals(ILNativeType)
 FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsANSIBSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsArray
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsAsAny
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsBSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsBool
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsByValStr
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsByte
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsCurrency
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsCustom
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsDouble
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsEmpty
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsError
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsFixedArray
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsFixedSysString
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsIDispatch
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsIUnknown
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsInt
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsInt16
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsInt32
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsInt64
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsInt8
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsInterface
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsLPSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsLPSTRUCT
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsLPTSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsLPUTF8STR
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsLPWSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsMethod
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsSafeArray
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsSingle
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsStruct
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsTBSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsUInt
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsUInt16
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsUInt32
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsUInt64
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsVariantBool
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsVoid
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsANSIBSTR()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsArray()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsAsAny()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsBSTR()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsBool()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsByValStr()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsByte()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsCurrency()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsCustom()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsDouble()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsEmpty()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsError()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsFixedArray()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsFixedSysString()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsIDispatch()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsIUnknown()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsInt()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsInt16()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsInt32()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsInt64()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsInt8()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsInterface()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsLPSTR()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsLPSTRUCT()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsLPTSTR()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsLPUTF8STR()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsLPWSTR()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsMethod()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsSafeArray()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsSingle()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsStruct()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsTBSTR()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsUInt()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsUInt16()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsUInt32()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsUInt64()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsVariantBool()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean get_IsVoid()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: FSharp.Compiler.AbstractIL.IL+ILNativeType+Array
+FSharp.Compiler.AbstractIL.IL+ILNativeType: FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom
+FSharp.Compiler.AbstractIL.IL+ILNativeType: FSharp.Compiler.AbstractIL.IL+ILNativeType+FixedArray
+FSharp.Compiler.AbstractIL.IL+ILNativeType: FSharp.Compiler.AbstractIL.IL+ILNativeType+FixedSysString
+FSharp.Compiler.AbstractIL.IL+ILNativeType: FSharp.Compiler.AbstractIL.IL+ILNativeType+SafeArray
+FSharp.Compiler.AbstractIL.IL+ILNativeType: FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType ANSIBSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType AsAny
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType BSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Bool
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType ByValStr
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Byte
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Currency
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Double
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Empty
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Error
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType IDispatch
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType IUnknown
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Int
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Int16
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Int32
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Int64
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Int8
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Interface
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType LPSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType LPSTRUCT
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType LPTSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType LPUTF8STR
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType LPWSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Method
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType NewArray(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILNativeType], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.Int32,Microsoft.FSharp.Core.FSharpOption`1[System.Int32]]])
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType NewCustom(Byte[], System.String, System.String, Byte[])
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType NewFixedArray(Int32)
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType NewFixedSysString(Int32)
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType NewSafeArray(ILNativeVariant, Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Single
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Struct
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType TBSTR
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType UInt
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType UInt16
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType UInt32
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType UInt64
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType VariantBool
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType Void
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_ANSIBSTR()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_AsAny()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_BSTR()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Bool()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_ByValStr()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Byte()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Currency()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Double()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Empty()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Error()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_IDispatch()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_IUnknown()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Int()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Int16()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Int32()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Int64()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Int8()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Interface()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_LPSTR()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_LPSTRUCT()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_LPTSTR()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_LPUTF8STR()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_LPWSTR()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Method()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Single()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Struct()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_TBSTR()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_UInt()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_UInt16()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_UInt32()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_UInt64()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_VariantBool()
+FSharp.Compiler.AbstractIL.IL+ILNativeType: ILNativeType get_Void()
 FSharp.Compiler.AbstractIL.IL+ILNativeType: Int32 CompareTo(ILNativeType)
 FSharp.Compiler.AbstractIL.IL+ILNativeType: Int32 CompareTo(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILNativeType: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.AbstractIL.IL+ILNativeType: Int32 GetHashCode()
 FSharp.Compiler.AbstractIL.IL+ILNativeType: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Int32 Tag
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILNativeType: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILNestedExportedType: ILAttributes CustomAttrs
 FSharp.Compiler.AbstractIL.IL+ILNestedExportedType: ILAttributes get_CustomAttrs()
@@ -933,6 +1304,33 @@ FSharp.Compiler.AbstractIL.IL+ILSourceDocument: Microsoft.FSharp.Core.FSharpOpti
 FSharp.Compiler.AbstractIL.IL+ILSourceDocument: System.String File
 FSharp.Compiler.AbstractIL.IL+ILSourceDocument: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILSourceDocument: System.String get_File()
+FSharp.Compiler.AbstractIL.IL+ILThisConvention+Tags: Int32 Instance
+FSharp.Compiler.AbstractIL.IL+ILThisConvention+Tags: Int32 InstanceExplicit
+FSharp.Compiler.AbstractIL.IL+ILThisConvention+Tags: Int32 Static
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Boolean Equals(ILThisConvention)
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Boolean Equals(System.Object)
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Boolean IsInstance
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Boolean IsInstanceExplicit
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Boolean IsStatic
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Boolean get_IsInstance()
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Boolean get_IsInstanceExplicit()
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Boolean get_IsStatic()
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: FSharp.Compiler.AbstractIL.IL+ILThisConvention+Tags
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: ILThisConvention Instance
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: ILThisConvention InstanceExplicit
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: ILThisConvention Static
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: ILThisConvention get_Instance()
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: ILThisConvention get_InstanceExplicit()
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: ILThisConvention get_Static()
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Int32 CompareTo(ILThisConvention)
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Int32 CompareTo(System.Object)
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Int32 GetHashCode()
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Int32 Tag
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Int32 get_Tag()
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILType+Array: ILArrayShape Item1
 FSharp.Compiler.AbstractIL.IL+ILType+Array: ILArrayShape get_Item1()
 FSharp.Compiler.AbstractIL.IL+ILType+Array: ILType Item2
@@ -1150,14 +1548,36 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Int32 GetHashCode(System.Collection
 FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Explicit: ILTypeDefLayoutInfo Item
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Explicit: ILTypeDefLayoutInfo get_Item()
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Sequential: ILTypeDefLayoutInfo Item
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Sequential: ILTypeDefLayoutInfo get_Item()
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags: Int32 Auto
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags: Int32 Explicit
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags: Int32 Sequential
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean Equals(ILTypeDefLayout)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean IsAuto
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean IsExplicit
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean IsSequential
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean get_IsAuto()
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean get_IsExplicit()
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean get_IsSequential()
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Explicit
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Sequential
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout Auto
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout NewExplicit(ILTypeDefLayoutInfo)
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout NewSequential(ILTypeDefLayoutInfo)
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout get_Auto()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 CompareTo(ILTypeDefLayout)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 CompareTo(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 GetHashCode()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 Tag
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILTypeInit+Tags: Int32 BeforeField
 FSharp.Compiler.AbstractIL.IL+ILTypeInit+Tags: Int32 OnAny
@@ -1237,6 +1657,44 @@ FSharp.Compiler.AbstractIL.IL+ILVersionInfo: UInt16 get_Major()
 FSharp.Compiler.AbstractIL.IL+ILVersionInfo: UInt16 get_Minor()
 FSharp.Compiler.AbstractIL.IL+ILVersionInfo: UInt16 get_Revision()
 FSharp.Compiler.AbstractIL.IL+ILVersionInfo: Void .ctor(UInt16, UInt16, UInt16, UInt16)
+FSharp.Compiler.AbstractIL.IL+MethodBody+IL: System.Lazy`1[FSharp.Compiler.AbstractIL.IL+ILMethodBody] Item
+FSharp.Compiler.AbstractIL.IL+MethodBody+IL: System.Lazy`1[FSharp.Compiler.AbstractIL.IL+ILMethodBody] get_Item()
+FSharp.Compiler.AbstractIL.IL+MethodBody+PInvoke: System.Lazy`1[FSharp.Compiler.AbstractIL.IL+PInvokeMethod] Item
+FSharp.Compiler.AbstractIL.IL+MethodBody+PInvoke: System.Lazy`1[FSharp.Compiler.AbstractIL.IL+PInvokeMethod] get_Item()
+FSharp.Compiler.AbstractIL.IL+MethodBody+Tags: Int32 Abstract
+FSharp.Compiler.AbstractIL.IL+MethodBody+Tags: Int32 IL
+FSharp.Compiler.AbstractIL.IL+MethodBody+Tags: Int32 Native
+FSharp.Compiler.AbstractIL.IL+MethodBody+Tags: Int32 NotAvailable
+FSharp.Compiler.AbstractIL.IL+MethodBody+Tags: Int32 PInvoke
+FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean Equals(MethodBody)
+FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean Equals(System.Object)
+FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean IsAbstract
+FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean IsIL
+FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean IsNative
+FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean IsNotAvailable
+FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean IsPInvoke
+FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean get_IsAbstract()
+FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean get_IsIL()
+FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean get_IsNative()
+FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean get_IsNotAvailable()
+FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean get_IsPInvoke()
+FSharp.Compiler.AbstractIL.IL+MethodBody: FSharp.Compiler.AbstractIL.IL+MethodBody+IL
+FSharp.Compiler.AbstractIL.IL+MethodBody: FSharp.Compiler.AbstractIL.IL+MethodBody+PInvoke
+FSharp.Compiler.AbstractIL.IL+MethodBody: FSharp.Compiler.AbstractIL.IL+MethodBody+Tags
+FSharp.Compiler.AbstractIL.IL+MethodBody: Int32 GetHashCode()
+FSharp.Compiler.AbstractIL.IL+MethodBody: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+MethodBody: Int32 Tag
+FSharp.Compiler.AbstractIL.IL+MethodBody: Int32 get_Tag()
+FSharp.Compiler.AbstractIL.IL+MethodBody: MethodBody Abstract
+FSharp.Compiler.AbstractIL.IL+MethodBody: MethodBody Native
+FSharp.Compiler.AbstractIL.IL+MethodBody: MethodBody NewIL(System.Lazy`1[FSharp.Compiler.AbstractIL.IL+ILMethodBody])
+FSharp.Compiler.AbstractIL.IL+MethodBody: MethodBody NewPInvoke(System.Lazy`1[FSharp.Compiler.AbstractIL.IL+PInvokeMethod])
+FSharp.Compiler.AbstractIL.IL+MethodBody: MethodBody NotAvailable
+FSharp.Compiler.AbstractIL.IL+MethodBody: MethodBody get_Abstract()
+FSharp.Compiler.AbstractIL.IL+MethodBody: MethodBody get_Native()
+FSharp.Compiler.AbstractIL.IL+MethodBody: MethodBody get_NotAvailable()
+FSharp.Compiler.AbstractIL.IL+MethodBody: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+PublicKey+PublicKey: Byte[] Item
 FSharp.Compiler.AbstractIL.IL+PublicKey+PublicKey: Byte[] get_Item()
 FSharp.Compiler.AbstractIL.IL+PublicKey+PublicKeyToken: Byte[] Item
@@ -1272,6 +1730,7 @@ FSharp.Compiler.AbstractIL.IL+PublicKey: PublicKey KeyAsToken(Byte[])
 FSharp.Compiler.AbstractIL.IL+PublicKey: PublicKey NewPublicKey(Byte[])
 FSharp.Compiler.AbstractIL.IL+PublicKey: PublicKey NewPublicKeyToken(Byte[])
 FSharp.Compiler.AbstractIL.IL+PublicKey: System.String ToString()
+FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILArgConvention
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILArrayShape
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILAssemblyLongevity
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILAssemblyManifest
@@ -1289,6 +1748,7 @@ FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILExportedTypeOrFor
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILExportedTypesAndForwarders
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILFieldDef
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILFieldDefs
+FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILFieldInit
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILFieldRef
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILFieldSpec
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef
@@ -1316,6 +1776,7 @@ FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILReturn
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILScopeRef
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILSecurityDeclsStored
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILSourceDocument
+FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILThisConvention
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILType
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeDef
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess
@@ -1326,28 +1787,119 @@ FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeInit
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeRef
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeSpec
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILVersionInfo
+FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+MethodBody
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+PublicKey
 FSharp.Compiler.AbstractIL.IL: ILAttributes emptyILCustomAttrs
 FSharp.Compiler.AbstractIL.IL: ILAttributes get_emptyILCustomAttrs()
+FSharp.Compiler.AbstractIL.IL: ILAttributes mkILCustomAttrs(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAttribute])
 FSharp.Compiler.AbstractIL.IL: ILAttributes mkILCustomAttrsFromArray(ILAttribute[])
+FSharp.Compiler.AbstractIL.IL: ILAttributesStored storeILCustomAttrs(ILAttributes)
+FSharp.Compiler.AbstractIL.IL: ILEventDefs emptyILEvents
+FSharp.Compiler.AbstractIL.IL: ILEventDefs get_emptyILEvents()
+FSharp.Compiler.AbstractIL.IL: ILEventDefs mkILEvents(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILEventDef])
+FSharp.Compiler.AbstractIL.IL: ILEventDefs mkILEventsLazy(System.Lazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILEventDef]])
 FSharp.Compiler.AbstractIL.IL: ILExportedTypesAndForwarders mkILExportedTypes(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILExportedTypeOrForwarder])
+FSharp.Compiler.AbstractIL.IL: ILFieldDefs emptyILFields
+FSharp.Compiler.AbstractIL.IL: ILFieldDefs get_emptyILFields()
+FSharp.Compiler.AbstractIL.IL: ILFieldDefs mkILFields(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILFieldDef])
+FSharp.Compiler.AbstractIL.IL: ILFieldDefs mkILFieldsLazy(System.Lazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILFieldDef]])
+FSharp.Compiler.AbstractIL.IL: ILMethodDefs emptyILMethods
+FSharp.Compiler.AbstractIL.IL: ILMethodDefs get_emptyILMethods()
+FSharp.Compiler.AbstractIL.IL: ILMethodDefs mkILMethods(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef])
+FSharp.Compiler.AbstractIL.IL: ILMethodDefs mkILMethodsComputed(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.IL+ILMethodDef[]])
+FSharp.Compiler.AbstractIL.IL: ILMethodDefs mkILMethodsFromArray(ILMethodDef[])
+FSharp.Compiler.AbstractIL.IL: ILMethodImplDefs emptyILMethodImpls
+FSharp.Compiler.AbstractIL.IL: ILMethodImplDefs get_emptyILMethodImpls()
+FSharp.Compiler.AbstractIL.IL: ILMethodImplDefs mkILMethodImpls(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodImplDef])
+FSharp.Compiler.AbstractIL.IL: ILMethodImplDefs mkILMethodImplsLazy(System.Lazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodImplDef]])
+FSharp.Compiler.AbstractIL.IL: ILModuleDef mkILSimpleModule(System.String, System.String, Boolean, System.Tuple`2[System.Int32,System.Int32], Boolean, ILTypeDefs, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.String], Int32, ILExportedTypesAndForwarders, System.String)
 FSharp.Compiler.AbstractIL.IL: ILNestedExportedTypes mkILNestedExportedTypes(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILNestedExportedType])
+FSharp.Compiler.AbstractIL.IL: ILPropertyDefs emptyILProperties
+FSharp.Compiler.AbstractIL.IL: ILPropertyDefs get_emptyILProperties()
+FSharp.Compiler.AbstractIL.IL: ILPropertyDefs mkILProperties(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILPropertyDef])
+FSharp.Compiler.AbstractIL.IL: ILPropertyDefs mkILPropertiesLazy(System.Lazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILPropertyDef]])
 FSharp.Compiler.AbstractIL.IL: ILResources emptyILResources
 FSharp.Compiler.AbstractIL.IL: ILResources get_emptyILResources()
+FSharp.Compiler.AbstractIL.IL: ILReturn mkILReturn(ILType)
 FSharp.Compiler.AbstractIL.IL: ILSecurityDecls emptyILSecurityDecls
 FSharp.Compiler.AbstractIL.IL: ILSecurityDecls get_emptyILSecurityDecls()
+FSharp.Compiler.AbstractIL.IL: ILSecurityDecls mkILSecurityDecls(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILSecurityDecl])
+FSharp.Compiler.AbstractIL.IL: ILSecurityDeclsStored storeILSecurityDecls(ILSecurityDecls)
+FSharp.Compiler.AbstractIL.IL: ILTypeDefs emptyILTypeDefs
+FSharp.Compiler.AbstractIL.IL: ILTypeDefs get_emptyILTypeDefs()
+FSharp.Compiler.AbstractIL.IL: ILTypeDefs mkILTypeDefs(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILTypeDef])
 FSharp.Compiler.AbstractIL.IL: ILTypeDefs mkILTypeDefsComputed(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.IL+ILPreTypeDef[]])
+FSharp.Compiler.AbstractIL.IL: ILTypeDefs mkILTypeDefsFromArray(ILTypeDef[])
+FSharp.Compiler.AbstractIL.IL: Int32 NoMetadataIdx
+FSharp.Compiler.AbstractIL.IL: Int32 get_NoMetadataIdx()
 FSharp.Compiler.AbstractIL.ILBinaryReader
 FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader: ILModuleDef ILModuleDef
 FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader: ILModuleDef get_ILModuleDef()
 FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAssemblyRef] ILAssemblyRefs
 FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAssemblyRef] get_ILAssemblyRefs()
+FSharp.Compiler.AbstractIL.ILBinaryReader+ILReaderOptions: MetadataOnlyFlag get_metadataOnly()
+FSharp.Compiler.AbstractIL.ILBinaryReader+ILReaderOptions: MetadataOnlyFlag metadataOnly
+FSharp.Compiler.AbstractIL.ILBinaryReader+ILReaderOptions: Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]] get_tryGetMetadataSnapshot()
+FSharp.Compiler.AbstractIL.ILBinaryReader+ILReaderOptions: Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]] tryGetMetadataSnapshot
+FSharp.Compiler.AbstractIL.ILBinaryReader+ILReaderOptions: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_pdbDirPath()
+FSharp.Compiler.AbstractIL.ILBinaryReader+ILReaderOptions: Microsoft.FSharp.Core.FSharpOption`1[System.String] pdbDirPath
+FSharp.Compiler.AbstractIL.ILBinaryReader+ILReaderOptions: ReduceMemoryFlag get_reduceMemoryUsage()
+FSharp.Compiler.AbstractIL.ILBinaryReader+ILReaderOptions: ReduceMemoryFlag reduceMemoryUsage
+FSharp.Compiler.AbstractIL.ILBinaryReader+ILReaderOptions: System.String ToString()
+FSharp.Compiler.AbstractIL.ILBinaryReader+ILReaderOptions: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[System.String], ReduceMemoryFlag, MetadataOnlyFlag, Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]])
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag+Tags: Int32 No
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag+Tags: Int32 Yes
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Boolean Equals(MetadataOnlyFlag)
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Boolean Equals(System.Object)
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Boolean IsNo
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Boolean IsYes
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Boolean get_IsNo()
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Boolean get_IsYes()
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag+Tags
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Int32 CompareTo(MetadataOnlyFlag)
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Int32 CompareTo(System.Object)
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Int32 GetHashCode()
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Int32 Tag
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Int32 get_Tag()
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: MetadataOnlyFlag No
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: MetadataOnlyFlag Yes
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: MetadataOnlyFlag get_No()
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: MetadataOnlyFlag get_Yes()
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: System.String ToString()
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag+Tags: Int32 No
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag+Tags: Int32 Yes
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Boolean Equals(ReduceMemoryFlag)
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Boolean Equals(System.Object)
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Boolean IsNo
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Boolean IsYes
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Boolean get_IsNo()
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Boolean get_IsYes()
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag+Tags
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Int32 CompareTo(ReduceMemoryFlag)
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Int32 CompareTo(System.Object)
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Int32 GetHashCode()
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Int32 Tag
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Int32 get_Tag()
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: ReduceMemoryFlag No
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: ReduceMemoryFlag Yes
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: ReduceMemoryFlag get_No()
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: ReduceMemoryFlag get_Yes()
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: System.String ToString()
 FSharp.Compiler.AbstractIL.ILBinaryReader+Shim+IAssemblyReader: ILModuleReader GetILModuleReader(System.String, ILReaderOptions)
 FSharp.Compiler.AbstractIL.ILBinaryReader+Shim: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim+IAssemblyReader
 FSharp.Compiler.AbstractIL.ILBinaryReader+Shim: IAssemblyReader AssemblyReader
 FSharp.Compiler.AbstractIL.ILBinaryReader+Shim: IAssemblyReader get_AssemblyReader()
 FSharp.Compiler.AbstractIL.ILBinaryReader+Shim: Void set_AssemblyReader(IAssemblyReader)
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader
+FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ILReaderOptions
+FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag
+FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Succeeded: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults Item
@@ -6869,6 +7421,8 @@ FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Syntax.PreXmlDoc
 FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Syntax.SynModuleOrNamespaceKind get_kind()
 FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Syntax.SynModuleOrNamespaceKind kind
 FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Syntax.SynModuleOrNamespaceSig NewSynModuleOrNamespaceSig(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], Boolean, FSharp.Compiler.Syntax.SynModuleOrNamespaceKind, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleSigDecl], FSharp.Compiler.Syntax.PreXmlDoc, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: Int32 Tag

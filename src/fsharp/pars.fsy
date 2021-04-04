@@ -731,9 +731,12 @@ fileModuleSpec:
   | moduleSpfnsPossiblyEmptyBlock 
     { let m = (rhs parseState 1) 
       (fun (isRec, path, xml) -> 
-        match path with 
+        match path with
         | [] -> ParsedSigFileFragment.AnonModule($1, m)  
-        | _ -> ParsedSigFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, xml, [], m))  } 
+        | _ ->
+            let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
+            let m = mkRange lastDeclRange.FileName (lhs parseState).Start lastDeclRange.End
+            ParsedSigFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, xml, [], m))  } 
 
 
 moduleSpfnsPossiblyEmptyBlock: 

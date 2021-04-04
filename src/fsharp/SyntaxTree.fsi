@@ -1979,6 +1979,9 @@ type SynModuleOrNamespaceSig =
         accessibility: SynAccess option *
         range: range
 
+    /// Gets the syntax range of this construct
+    member Range: range
+
 /// Represents a parsed hash directive
 [<NoEquality; NoComparison>]
 type ParsedHashDirective =
