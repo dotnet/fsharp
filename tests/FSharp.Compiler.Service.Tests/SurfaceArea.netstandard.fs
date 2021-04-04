@@ -8379,6 +8379,8 @@ FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynComponentInfo t
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynTypeDefnSig NewSynTypeDefnSig(FSharp.Compiler.Syntax.SynComponentInfo, FSharp.Compiler.Syntax.SynTypeDefnSigRepr, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberSig], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynTypeDefnSigRepr get_typeRepr()
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynTypeDefnSigRepr typeRepr
+FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynTypeDefnSig: Int32 Tag

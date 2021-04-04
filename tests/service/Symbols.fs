@@ -506,7 +506,8 @@ module SynModuleOrNamespaceSig =
                 """
 namespace Foobar
 
-type Bar = | Bar of string * int"""
+type Bar = | Bar of string * int
+"""
 
         match parseResults with
         | ParsedInput.SigFile(ParsedSigFileInput(modules = [
@@ -523,10 +524,31 @@ type Bar = | Bar of string * int"""
 // bar
 namespace  global
 
-type Bar = | Bar of string * int"""
+type Bar = | Bar of string * int
+"""
 
         match parseResults with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig(kind = SynModuleOrNamespaceKind.GlobalNamespace; range = r) ])) ->
             assertRange (3, 0) (5, 32) r
+        | _ -> Assert.Fail "Could not get valid AST"
+
+module SignatureTypes =
+    [<Test>]
+    let ``Range of Type should end at end keyword`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """namespace GreatProjectThing
+
+type Meh =
+        class
+        end
+
+
+// foo"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(range = r)]) ])) ->
+            assertRange (3, 0) (5,11) r
         | _ -> Assert.Fail "Could not get valid AST"
