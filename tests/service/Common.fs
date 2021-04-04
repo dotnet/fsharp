@@ -215,7 +215,7 @@ let parseAndCheckScript (file, input) = parseAndCheckScriptWithOptions (file, in
 let parseSourceCode (name: string, code: string) =
     let location = Path.Combine(Path.GetTempPath(),"test"+string(hash (name, code)))
     try Directory.CreateDirectory(location) |> ignore with _ -> ()
-    let filePath = Path.Combine(location, name + ".fs")
+    let filePath = Path.Combine(location, name)
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
@@ -239,7 +239,7 @@ let getSingleModuleLikeDecl (input: ParsedInput) =
     | _ -> failwith "Could not get module decls"
     
 let parseSourceCodeAndGetModule (source: string) =
-    parseSourceCode ("test", source) |> getSingleModuleLikeDecl
+    parseSourceCode ("test.fsx", source) |> getSingleModuleLikeDecl
 
 /// Extract range info 
 let tups (m: range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
@@ -343,6 +343,9 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
 
 let getParseResults (source: string) =
     parseSourceCode("/home/user/Test.fsx", source)
+
+let getParseResultsOfSignatureFile (source: string) =
+    parseSourceCode("/home/user/Test.fsi", source)
 
 let getParseAndCheckResults (source: string) =
     parseAndCheckScript("/home/user/Test.fsx", source)
