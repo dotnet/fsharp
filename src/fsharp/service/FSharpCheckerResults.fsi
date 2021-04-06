@@ -84,8 +84,14 @@ type public FSharpProjectOptions =
 
 and [<NoComparison>] public FSharpReferencedProject =
     internal
-    | FSharp of projectFileName: string * options: FSharpProjectOptions
-    | IL of projectFileName: string * stamp: DateTime * lazyData: Lazy<byte []>
+    | FSharpReference of projectFileName: string * options: FSharpProjectOptions
+    | ILReference of projectFileName: string * stamp: DateTime * lazyData: Lazy<byte []>
+
+    member IsFSharp : bool
+
+    member IsIL : bool
+
+    member ProjectFileName : string
 
     static member CreateFSharp : projectFileName: string * options: FSharpProjectOptions -> FSharpReferencedProject
 

@@ -48,6 +48,7 @@ open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
+open System.Reflection.PortableExecutable
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -57,14 +58,29 @@ type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of Unresolved
 
 [<RequireQualifiedAccess;NoComparison>]
 type FSharpReferencedProject =
-    | FSharp of projectFileName: string * options: FSharpProjectOptions
-    | IL of projectFileName: string * stamp: DateTime * lazyData: Lazy<byte []>
+    | FSharpReference of projectFileName: string * options: FSharpProjectOptions
+    | ILReference of projectFileName: string * stamp: DateTime * lazyData: Lazy<byte[]>
+
+    member this.IsFSharp =
+        match this with
+        | FSharpReference _ -> true
+        | _ -> false
+
+    member this.IsIL =
+        match this with
+        | ILReference _ -> true
+        | _ -> false
+
+    member this.ProjectFileName =
+        match this with
+        | FSharpReference(projectFileName=projectFileName)
+        | ILReference(projectFileName=projectFileName) -> projectFileName
 
     static member CreateFSharp(projectFileName, options) =
-        FSharp(projectFileName, options)
+        FSharpReference(projectFileName, options)
 
     static member CreateIL(projectFileName, stamp, lazyData) =
-        IL(projectFileName, stamp, lazyData)
+        ILReference(projectFileName, stamp, lazyData)
 
 // NOTE: may be better just to move to optional arguments here
 and FSharpProjectOptions =
@@ -103,9 +119,9 @@ and FSharpProjectOptions =
         (options1.ReferencedProjects, options2.ReferencedProjects)
         ||> Array.forall2 (fun r1 r2 ->
             match r1, r2 with
-            | FSharpReferencedProject.FSharp(n1,a), FSharpReferencedProject.FSharp(n2,b) ->
+            | FSharpReferencedProject.FSharpReference(n1,a), FSharpReferencedProject.FSharpReference(n2,b) ->
                 n1 = n2 && FSharpProjectOptions.AreSameForChecking(a,b)
-            | FSharpReferencedProject.IL(n1, stamp1, _), FSharpReferencedProject.IL(n2, stamp2, _) ->
+            | FSharpReferencedProject.ILReference(n1, stamp1, _), FSharpReferencedProject.ILReference(n2, stamp2, _) ->
                 n1 = n2 && stamp1 = stamp2
             | _ ->
                 false) &&
