@@ -129,9 +129,9 @@ type TcAssemblyResolutions =
     static member GetAssemblyResolutionInformation: ctok: CompilationThreadToken * tcConfig: TcConfig -> AssemblyResolution list * UnresolvedAssemblyReference list
 
 [<Sealed>]
-type RawILAssemblyData =
+type RawFSharpAssemblyData =
 
-    new : ilModule: ILModuleDef * ilAssemblyRefs: ILAssemblyRef list -> RawILAssemblyData
+    new : ilModule: ILModuleDef * ilAssemblyRefs: ILAssemblyRef list -> RawFSharpAssemblyData
 
     interface IRawFSharpAssemblyData
 

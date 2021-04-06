@@ -183,14 +183,13 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                         else
                             let! ilComp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
                             referencedProjects.Add(
-                                FSharpReferencedProject.CreateIL(
+                                FSharpReferencedProject.CreatePortableExecutable(
                                     referencedProject.OutputFilePath, 
                                     DateTime.UtcNow,
-                                      lazy
-                                        let ms = new MemoryStream()
-                                        let emitOptions = Emit.EmitOptions(metadataOnly = true)
-                                        ilComp.Emit(ms, options = emitOptions) |> ignore
-                                        ms.ToArray() // REVIEW: Not performant but works until we figure a better way to get the data.
+                                    let ms = new MemoryStream() // do not dispose the stream as it will be owned on the reference.
+                                    let emitOptions = Emit.EmitOptions(metadataOnly = true)
+                                    ilComp.Emit(ms, options = emitOptions, cancellationToken = ct) |> ignore
+                                    ms
                             ))
 
                 if canBail then

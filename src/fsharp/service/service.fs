@@ -264,7 +264,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                 self.TryGetLogicalTimeStampForProject(cache, opts)
                             member x.FileName = nm }
                             
-                | FSharpReferencedProject.ILReference(nm,stamp,lazyData) ->
+                | FSharpReferencedProject.PEReference(nm,stamp,stream) ->
                     yield
                         { new IProjectReference with 
                             member x.EvaluateRawContents(_) = 
@@ -276,9 +276,9 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                         metadataOnly = MetadataOnlyFlag.Yes
                                         tryGetMetadataSnapshot = fun _ -> None                        
                                     }
-                                let ilReader = ILBinaryReader.OpenILModuleReaderFromBytes nm lazyData.Value ilReaderOptions
+                                let ilReader = ILBinaryReader.OpenILModuleReaderFromStream nm stream ilReaderOptions
                                 let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
-                                return RawILAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
+                                return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
                               }
                             member x.TryGetLogicalTimeStamp(_) = stamp |> Some
                             member x.FileName = nm }

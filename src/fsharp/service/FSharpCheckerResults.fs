@@ -59,28 +59,36 @@ type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of Unresolved
 [<RequireQualifiedAccess;NoComparison>]
 type FSharpReferencedProject =
     | FSharpReference of projectFileName: string * options: FSharpProjectOptions
-    | ILReference of projectFileName: string * stamp: DateTime * lazyData: Lazy<byte[]>
+    | PEReference of projectFileName: string * stamp: DateTime * reader: ILModuleReader
 
     member this.IsFSharp =
         match this with
         | FSharpReference _ -> true
         | _ -> false
 
-    member this.IsIL =
+    member this.IsPortableExecutable =
         match this with
-        | ILReference _ -> true
+        | PEReference _ -> true
         | _ -> false
 
     member this.ProjectFileName =
         match this with
         | FSharpReference(projectFileName=projectFileName)
-        | ILReference(projectFileName=projectFileName) -> projectFileName
+        | PEReference(projectFileName=projectFileName) -> projectFileName
 
     static member CreateFSharp(projectFileName, options) =
         FSharpReference(projectFileName, options)
 
-    static member CreateIL(projectFileName, stamp, lazyData) =
-        ILReference(projectFileName, stamp, lazyData)
+    static member CreatePortableExecutable(projectFileName, stamp, stream) =
+        let ilReaderOptions: ILReaderOptions = 
+            {
+                pdbDirPath = None
+                reduceMemoryUsage = ReduceMemoryFlag.Yes
+                metadataOnly = MetadataOnlyFlag.Yes
+                tryGetMetadataSnapshot = fun _ -> None                        
+            }
+        let ilReader = ILBinaryReader.OpenILModuleReaderFromStream projectFileName stream ilReaderOptions
+        PEReference(projectFileName, stamp, ilReader)
 
 // NOTE: may be better just to move to optional arguments here
 and FSharpProjectOptions =
@@ -121,7 +129,7 @@ and FSharpProjectOptions =
             match r1, r2 with
             | FSharpReferencedProject.FSharpReference(n1,a), FSharpReferencedProject.FSharpReference(n2,b) ->
                 n1 = n2 && FSharpProjectOptions.AreSameForChecking(a,b)
-            | FSharpReferencedProject.ILReference(n1, stamp1, _), FSharpReferencedProject.ILReference(n2, stamp2, _) ->
+            | FSharpReferencedProject.PEReference(n1, stamp1, _), FSharpReferencedProject.PEReference(n2, stamp2, _) ->
                 n1 = n2 && stamp1 = stamp2
             | _ ->
                 false) &&

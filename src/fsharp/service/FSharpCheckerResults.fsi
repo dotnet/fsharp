@@ -3,9 +3,11 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
+open System.IO
 open System.Threading
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CheckDeclarations
@@ -85,17 +87,20 @@ type public FSharpProjectOptions =
 and [<NoComparison>] public FSharpReferencedProject =
     internal
     | FSharpReference of projectFileName: string * options: FSharpProjectOptions
-    | ILReference of projectFileName: string * stamp: DateTime * lazyData: Lazy<byte []>
+    | PEReference of projectFileName: string * stamp: DateTime * reader: ILModuleReader
 
     member IsFSharp : bool
 
-    member IsIL : bool
+    member IsPortableExecutable : bool
 
     member ProjectFileName : string
 
+    /// Creates a reference for an F# project. The physical data for it is stored/cached inside of the compiler service.
     static member CreateFSharp : projectFileName: string * options: FSharpProjectOptions -> FSharpReferencedProject
 
-    static member CreateIL : projectFileName: string * stamp: DateTime * lazyData: Lazy<byte []> -> FSharpReferencedProject
+    /// Creates a reference for any portable executable, including F#. The stream is owned by this reference.
+    /// The stream will be automatically disposed when there are no references to FSharpReferencedProject and is GC collected.
+    static member CreatePortableExecutable : projectFileName: string * stamp: DateTime * stream: Stream -> FSharpReferencedProject
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]
