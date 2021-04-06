@@ -328,8 +328,10 @@ module InterfaceFileWriter =
         let writeAllToSameFile declaredImpls =
             /// Use a UTF-8 Encoding with no Byte Order Mark
             let os =
-                if tcConfig.printSignatureFile = "" then Console.Out
-                else (File.CreateText tcConfig.printSignatureFile :> TextWriter)
+                if tcConfig.printSignatureFile = "" then
+                    Console.Out
+                else
+                    File.CreateText tcConfig.printSignatureFile :> TextWriter
 
             writeHeader tcConfig.printSignatureFile os
 
@@ -339,9 +341,10 @@ module InterfaceFileWriter =
             if tcConfig.printSignatureFile <> "" then os.Dispose()
 
         let extensionForFile (filePath: string) =
-            if (List.exists (Filename.checkSuffix filePath) mlCompatSuffixes)
-            then ".mli"
-            else ".fsi"
+            if (List.exists (Filename.checkSuffix filePath) mlCompatSuffixes) then
+                ".mli"
+            else
+                ".fsi"
 
         let writeToSeparateFiles (declaredImpls: TypedImplFile list) =
             for (TImplFile (name, _, _, _, _, _) as impl) in declaredImpls do
@@ -351,10 +354,10 @@ module InterfaceFileWriter =
                 writeHeader filename os
                 writeToFile os impl
 
-        if tcConfig.printSignature
-        then writeAllToSameFile declaredImpls
-        else if tcConfig.printAllSignatureFiles
-        then writeToSeparateFiles declaredImpls
+        if tcConfig.printSignature then
+            writeAllToSameFile declaredImpls
+        else if tcConfig.printAllSignatureFiles then
+            writeToSeparateFiles declaredImpls
 
 //----------------------------------------------------------------------------
 // CopyFSharpCore
