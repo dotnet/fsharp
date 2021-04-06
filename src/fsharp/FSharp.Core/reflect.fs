@@ -191,7 +191,9 @@ module internal Impl =
         let rec writeTupleIntoArray (typ: Type) (tuple: Expression) outputArray startIndex = seq {
             let elements =
                 match getTupleElementAccessors typ with
+                // typ is a struct tuple and its elements are accessed via fields 
                 | Choice1Of2 (fi: FieldInfo[]) -> fi |> Array.map (fun fi -> Expression.Field (tuple, fi), fi.FieldType)
+                // typ is a class tuple and its elements are accessed via properties 
                 | Choice2Of2 (pi: PropertyInfo[]) -> pi |> Array.map (fun pi -> Expression.Property (tuple, pi), pi.PropertyType)
 
             for index, (element, elementType) in elements |> Array.indexed do
@@ -224,14 +226,14 @@ module internal Impl =
             Expression.Lambda<Func<obj, obj[]>> (
                 Expression.Block (
                     [ outputArray ],
-                    [|
+                    [
                         yield Expression.Assign (
                             outputArray,
                             Expression.NewArrayBounds (typeof<obj>, Expression.Constant (outputLength tupleEncField typ))
                         ) :> Expression
                         yield! writeTupleIntoArray typ (Expression.Convert (param, typ)) outputArray 0
                         yield outputArray :> Expression
-                    |]
+                    ]
                 ),
                 param)
 
