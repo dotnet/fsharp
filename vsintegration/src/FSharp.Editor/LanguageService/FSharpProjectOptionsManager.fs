@@ -22,6 +22,7 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices
 open Microsoft.VisualStudio.FSharp.Interactive.Session
+open System.Runtime.CompilerServices
 
 [<AutoOpen>]
 module private FSharpProjectOptionsHelpers =
@@ -103,6 +104,26 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
     let cache = ConcurrentDictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
     let singleFileCache = ConcurrentDictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
 
+    // This is used to not constantly emit the same compilation.
+    let weakPEReferences = ConditionalWeakTable<Compilation, FSharpReferencedProject>()
+
+    let createPEReference (referencedProject: Project) (comp: Compilation) ct =
+        match weakPEReferences.TryGetValue comp with
+        | true, fsRefProj -> fsRefProj
+        | _ ->
+            let fsRefProj =
+                FSharpReferencedProject.CreatePortableExecutable(
+                    referencedProject.OutputFilePath, 
+                    DateTime.UtcNow,
+                    let ms = new MemoryStream() // do not dispose the stream as it will be owned on the reference.
+                    let emitOptions = Emit.EmitOptions(metadataOnly = true, includePrivateMembers = false, tolerateErrors = true)
+                    comp.Emit(ms, options = emitOptions, cancellationToken = ct) |> ignore
+                    ms.Position <- 0L
+                    ms
+                )
+            weakPEReferences.Add(comp, fsRefProj)
+            fsRefProj
+
     let rec tryComputeOptionsByFile (document: Document) (ct: CancellationToken) userOpName =
         async {
             let! fileStamp = document.GetTextVersionAsync(ct) |> Async.AwaitTask
@@ -181,17 +202,8 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             | None -> canBail <- true
                             | Some(_, projectOptions) -> referencedProjects.Add(FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions))
                         else
-                            let! ilComp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
-                            referencedProjects.Add(
-                                FSharpReferencedProject.CreatePortableExecutable(
-                                    referencedProject.OutputFilePath, 
-                                    DateTime.UtcNow,
-                                    let ms = new MemoryStream() // do not dispose the stream as it will be owned on the reference.
-                                    let emitOptions = Emit.EmitOptions(metadataOnly = true, includePrivateMembers = false)
-                                    ilComp.Emit(ms, options = emitOptions, cancellationToken = ct) |> ignore
-                                    ms.Position <- 0L
-                                    ms
-                            ))
+                            let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
+                            referencedProjects.Add(createPEReference referencedProject comp ct)
 
                 if canBail then
                     return None
