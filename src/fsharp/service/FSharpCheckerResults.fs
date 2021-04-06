@@ -61,17 +61,7 @@ type FSharpReferencedProject =
     | FSharpReference of projectFileName: string * options: FSharpProjectOptions
     | PEReference of projectFileName: string * stamp: DateTime * reader: ILModuleReader
 
-    member this.IsFSharp =
-        match this with
-        | FSharpReference _ -> true
-        | _ -> false
-
-    member this.IsPortableExecutable =
-        match this with
-        | PEReference _ -> true
-        | _ -> false
-
-    member this.ProjectFileName =
+    member this.FileName =
         match this with
         | FSharpReference(projectFileName=projectFileName)
         | PEReference(projectFileName=projectFileName) -> projectFileName

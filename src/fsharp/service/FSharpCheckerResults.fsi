@@ -89,11 +89,7 @@ and [<NoComparison>] public FSharpReferencedProject =
     | FSharpReference of projectFileName: string * options: FSharpProjectOptions
     | PEReference of projectFileName: string * stamp: DateTime * reader: ILModuleReader
 
-    member IsFSharp : bool
-
-    member IsPortableExecutable : bool
-
-    member ProjectFileName : string
+    member FileName : string
 
     /// Creates a reference for an F# project. The physical data for it is stored/cached inside of the compiler service.
     static member CreateFSharp : projectFileName: string * options: FSharpProjectOptions -> FSharpReferencedProject
