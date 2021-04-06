@@ -187,8 +187,9 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                                     referencedProject.OutputFilePath, 
                                     DateTime.UtcNow,
                                     let ms = new MemoryStream() // do not dispose the stream as it will be owned on the reference.
-                                    let emitOptions = Emit.EmitOptions(metadataOnly = true)
+                                    let emitOptions = Emit.EmitOptions(metadataOnly = true, includePrivateMembers = false)
                                     ilComp.Emit(ms, options = emitOptions, cancellationToken = ct) |> ignore
+                                    ms.Position <- 0L
                                     ms
                             ))
 
