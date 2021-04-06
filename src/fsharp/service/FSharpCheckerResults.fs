@@ -1986,7 +1986,34 @@ type FSharpCheckFileResults
         threadSafeOp (fun () -> None) (fun scope -> 
             let (nenv, _), _ = scope.GetBestDisplayEnvForPos cursorPos
             Some(FSharpDisplayContext(fun _ -> nenv.DisplayEnv)))
-            
+
+    member _.GenerateSignature () =
+        threadSafeOp (fun () -> None) (fun scope ->
+            scope.ImplementationFile
+            |> Option.map (fun implFile ->
+                // this logic copied from fsc's InterfaceFileWriter.BuildInitialDisplayEnvForSigFileGeneration,
+                // should/can it be consolidated?
+                let denv =
+                    { DisplayEnv.Empty scope.TcGlobals with
+                       showImperativeTyparAnnotations = true
+                       showHiddenMembers = true
+                       showObsoleteMembers = true
+                       showAttributes = true
+                       showDocumentation = true }
+                let denv =
+                    denv.SetOpenPaths
+                        [ FSharpLib.RootPath
+                          FSharpLib.CorePath
+                          FSharpLib.CollectionsPath
+                          FSharpLib.ControlPath
+                          (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName) ]
+                let infoReader = InfoReader(scope.TcGlobals, scope.TcImports.GetImportMap())
+                let (TImplFile (_, _, mexpr, _, _, _)) = implFile
+                let layout = NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr
+                layout |> LayoutRender.showL |> SourceText.ofString
+            )
+        )
+
     member _.ImplementationFile =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
         scopeOptX 

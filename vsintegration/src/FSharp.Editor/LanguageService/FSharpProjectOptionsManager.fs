@@ -280,16 +280,22 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             // For now, disallow miscellaneous workspace since we are using the hacky F# miscellaneous files project.
                             if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
                                 reply.Reply None
-                            elif document.Project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
+                            elif document.Project.IsFSharpMiscellaneousOrMetadata then
                                 let! options = tryComputeOptionsByFile document ct userOpName
-                                reply.Reply options
+                                if ct.IsCancellationRequested then
+                                    reply.Reply None
+                                else
+                                    reply.Reply options
                             else
                                 // We only care about the latest project in the workspace's solution.
                                 // We do this to prevent any possible cache thrashing in FCS.
                                 let project = document.Project.Solution.Workspace.CurrentSolution.GetProject(document.Project.Id)
                                 if not (isNull project) then
                                     let! options = tryComputeOptions project ct
-                                    reply.Reply options
+                                    if ct.IsCancellationRequested then
+                                        reply.Reply None
+                                    else
+                                        reply.Reply options
                                 else
                                     reply.Reply None
                         with
@@ -301,7 +307,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                         reply.Reply None
                     else
                         try
-                            if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
+                            if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.IsFSharpMiscellaneousOrMetadata then
                                 reply.Reply None
                             else
                                 // We only care about the latest project in the workspace's solution.
@@ -309,7 +315,10 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                                 let project = project.Solution.Workspace.CurrentSolution.GetProject(project.Id)
                                 if not (isNull project) then
                                     let! options = tryComputeOptions project ct
-                                    reply.Reply options
+                                    if ct.IsCancellationRequested then
+                                        reply.Reply None
+                                    else
+                                        reply.Reply options
                                 else
                                     reply.Reply None
                         with
@@ -317,10 +326,18 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             reply.Reply None
 
                 | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
-                    cache.TryRemove(projectId) |> ignore
+                    match cache.TryRemove(projectId) with
+                    | true, (_, _, projectOptions) ->
+                        checkerProvider.Checker.ClearCache([projectOptions])
+                    | _ ->
+                        ()
                     legacyProjectSites.TryRemove(projectId) |> ignore
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
-                    singleFileCache.TryRemove(documentId) |> ignore
+                    match singleFileCache.TryRemove(documentId) with
+                    | true, (_, _, projectOptions) ->
+                        checkerProvider.Checker.ClearCache([projectOptions])
+                    | _ ->
+                        ()
         }
 
     let agent = MailboxProcessor.Start((fun agent -> loop agent), cancellationToken = cancellationTokenSource.Token)
@@ -381,6 +398,13 @@ type internal FSharpProjectOptionsManager
             match args.Kind with
             | WorkspaceChangeKind.ProjectRemoved -> reactor.ClearOptionsByProjectId(args.ProjectId)
             | _ -> ()
+        )
+
+        workspace.DocumentClosed.Add(fun args ->
+            let doc = args.Document
+            let proj = doc.Project
+            if proj.Language = LanguageNames.FSharp && proj.IsFSharpMiscellaneousOrMetadata then
+                reactor.ClearSingleFileOptionsCache(doc.Id)
         )
 
     member _.SetLegacyProjectSite (projectId, projectSite) =

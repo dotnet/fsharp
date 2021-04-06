@@ -513,28 +513,19 @@ let mkValInfo info (v: Val) = { ValExprInfo=info.Info; ValMakesNoCriticalTailcal
 (* Bind a value *)
 let BindInternalLocalVal cenv (v: Val) vval env = 
     let vval = if v.IsMutable then UnknownValInfo else vval
-#if CHECKED
-#else
+
     match vval.ValExprInfo with 
     | UnknownValue -> env
-    | _ -> 
-#endif
+    | _ ->
         cenv.localInternalVals.[v.Stamp] <- vval
         env
         
 let BindExternalLocalVal cenv (v: Val) vval env = 
-#if CHECKED
-    CheckInlineValueIsComplete v vval
-#endif
-
     let vval = if v.IsMutable then {vval with ValExprInfo=UnknownValue } else vval
-    let env = 
-#if CHECKED
-#else
+    let env =
         match vval.ValExprInfo with 
         | UnknownValue -> env  
-        | _ -> 
-#endif
+        | _ ->
             { env with localExternalVals=env.localExternalVals.Add (v.Stamp, vval) }
     // If we're compiling fslib then also bind the value as a non-local path to 
     // allow us to resolve the compiler-non-local-references that arise from env.fs
@@ -561,21 +552,14 @@ let rec BindValsInModuleOrNamespace cenv (mval: LazyModuleInfo) env =
     env
 
 let inline BindInternalValToUnknown cenv v env = 
-#if CHECKED
-    BindInternalLocalVal cenv v UnknownValue env
-#else
     ignore cenv 
     ignore v
     env
-#endif
+
 let inline BindInternalValsToUnknown cenv vs env = 
-#if CHECKED
-    List.foldBack (BindInternalValToUnknown cenv) vs env
-#else
     ignore cenv
     ignore vs
     env
-#endif
 
 let BindTypeVar tyv typeinfo env = { env with typarInfos= (tyv, typeinfo) :: env.typarInfos } 
 
@@ -606,9 +590,6 @@ let GetInfoForLocalValue cenv env (v: Val) m =
             | None -> 
                 if v.MustInline then
                     errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
-#if CHECKED
-                warning(Error(FSComp.SR.optLocalValueNotFoundDuringOptimization(v.DisplayName), m)) 
-#endif
                 UnknownValInfo 
 
 let TryGetInfoForCcu env (ccu: CcuThunk) = env.globalModuleInfos.TryFind(ccu.AssemblyName)
