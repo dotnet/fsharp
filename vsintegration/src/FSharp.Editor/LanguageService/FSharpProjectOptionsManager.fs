@@ -203,11 +203,8 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             | Some(_, projectOptions) -> referencedProjects.Add(FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions))
                         else
                             let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
-                            try
-                                let peRef = createPEReference referencedProject comp ct
-                                referencedProjects.Add(peRef)
-                            with
-                            | _ -> ()
+                            let peRef = createPEReference referencedProject comp ct
+                            referencedProjects.Add(peRef)
 
                 if canBail then
                     return None
