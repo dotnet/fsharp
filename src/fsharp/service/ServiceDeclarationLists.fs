@@ -368,7 +368,13 @@ module DeclarationListHelpers =
         // Types.
         | Item.Types(_, ((TType_app(tcref, _)) :: _))
         | Item.UnqualifiedType (tcref :: _) -> 
-            let denv = { denv with shortTypeNames = true  }
+            let denv = { denv with
+                            // tooltips are space-constrained, so use shorter names
+                            shortTypeNames = true
+                            // tooltips are space-constrained, so don't include xml doc comments
+                            // on types/members. The doc comments for the actual member will still
+                            // be shown in the tip.
+                            showDocumentation = false  }
             let layout = NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere m (* width *) tcref.Deref
             let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
             let layout = LayoutRender.toArray layout

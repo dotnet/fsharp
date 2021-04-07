@@ -309,20 +309,20 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
 /// Write a .fsi file for the --sig option
 module InterfaceFileWriter =
 
-    let BuildInitialDisplayEnvForSigFileGeneration tcGlobals = 
-        let denv = DisplayEnv.Empty tcGlobals
-        let denv = 
-            { denv with 
-               showImperativeTyparAnnotations=true
-               showHiddenMembers=true
-               showObsoleteMembers=true
-               showAttributes=true }
-        denv.SetOpenPaths 
-            [ FSharpLib.RootPath 
-              FSharpLib.CorePath 
-              FSharpLib.CollectionsPath 
-              FSharpLib.ControlPath 
-              (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName) ] 
+    let BuildInitialDisplayEnvForSigFileGeneration tcGlobals =
+        let denv =
+            { DisplayEnv.Empty tcGlobals with
+               showImperativeTyparAnnotations = true
+               showHiddenMembers = true
+               showObsoleteMembers = true
+               showAttributes = true
+               showDocumentation = true }
+        denv.SetOpenPaths
+            [ FSharpLib.RootPath
+              FSharpLib.CorePath
+              FSharpLib.CollectionsPath
+              FSharpLib.ControlPath
+              (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName) ]
 
     let WriteInterfaceFile (tcGlobals, tcConfig: TcConfig, infoReader, declaredImpls) =
 
