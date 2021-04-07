@@ -4106,7 +4106,6 @@ module QuotationOfComputationExpressionZipOperation =
                                                            [x, y])]))))])),
              PropertyGet (None, builder, []))"""
         
-        
 module CheckEliminatedConstructs = 
     let isNullQuoted (ts : 't[]) =
         <@
