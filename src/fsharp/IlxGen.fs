@@ -696,6 +696,8 @@ type ArityInfo = int list
 //
 //   input-val<directTyargs>
 //
+// Note 'input-val' is never used without applying it to some type arguments.
+//
 // Basic examples - first define some functions that extract information from generic parameters, and which are constrained:
 //
 //    type TypeInfo<'T> = TypeInfo of System.Type 
