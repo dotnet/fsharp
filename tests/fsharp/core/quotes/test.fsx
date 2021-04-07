@@ -4107,6 +4107,19 @@ module QuotationOfComputationExpressionZipOperation =
              PropertyGet (None, builder, []))"""
         
         
+module CheckEliminatedConstructs = 
+    let isNullQuoted (ts : 't[]) =
+        <@
+            match ts with
+            | null -> true
+            | _ -> false
+        @>
+
+    let actual1 = ((isNullQuoted [| |]).ToString())
+    checkStrings "brewbreebrvwe1" actual1
+       """IfThenElse (Call (None, op_Equality, [ValueWithName ([||], ts), Value (<null>)]),
+            Value (true), Value (false))"""
+        
 module TestAssemblyAttributes = 
     let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
 
