@@ -3509,3 +3509,59 @@ let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
             argText2 |> shouldEqual "type  ^T ->  ^T ->  ^T"
     end
 
+//---------------------------------------------------------------------------------------------------------
+// This project is for witness arguments, testing for https://github.com/dotnet/fsharp/issues/10364
+
+module internal ProjectForWitnesses4 = 
+
+    let fileSource1 = """
+module M
+
+let isEmptyArray x =
+    match x with
+    | [| |] -> x
+    | _ -> x
+
+let isNull (ts : 't[]) =
+    match ts with
+    | null -> true
+    | _ -> false
+
+let isNullQuoted (ts : 't[]) =
+    <@
+        match ts with
+        | null -> true
+        | _ -> false
+    @>
+
+"""
+
+    let createOptions() = createOptionsAux [fileSource1] ["--langversion:preview"]
+    
+[<Test>]
+let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
+    let cleanup, options = ProjectForWitnesses4.createOptions()
+    use _holder = cleanup
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+
+    for e in wholeProjectResults.Diagnostics do 
+        printfn "ProjectForWitnesses4 error: <<<%s>>>" e.Message
+
+    Assert.AreEqual(wholeProjectResults.Diagnostics.Length, 0)
+
+    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
+    let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
+
+    let expected = 
+        ["type M";
+         "let isEmptyArray(x) = (if (if Operators.op_Inequality<'a Microsoft.FSharp.Core.[]> (x,dflt) then Operators.op_Equality<Microsoft.FSharp.Core.int> (ArrayModule.Length<'a> (x),0) else False) then x else x) @ (5,10--5,11)";
+         "let isNull(ts) = (if Operators.op_Equality<'t Microsoft.FSharp.Core.[]> (ts,dflt) then True else False) @ (10,10--10,12)";
+         "let isNullQuoted(ts) = quote((if Operators.op_Equality<'t Microsoft.FSharp.Core.[]> (ts,dflt) then True else False)) @ (15,4--19,6)"]
+
+    let actual = 
+      printDeclarations None (List.ofSeq file1.Declarations)
+      |> Seq.toList 
+    printfn "actual:\n\n%A" actual
+    actual
+      |> shouldPairwiseEqual expected
