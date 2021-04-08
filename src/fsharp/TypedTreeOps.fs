@@ -2815,6 +2815,25 @@ type DisplayEnv =
     member denv.UseGenericParameterStyle style =
         { denv with genericParameterStyle = style }
 
+    static member InitialForSigFileGeneration g =
+        let denv =
+            { DisplayEnv.Empty g with
+               showImperativeTyparAnnotations = true
+               showHiddenMembers = true
+               showObsoleteMembers = true
+               showAttributes = true
+               showInlineKeyword = true
+               showDocumentation = true
+               shrinkOverloads = false
+               printVerboseSignatures = true 
+               }
+        denv.SetOpenPaths
+            [ FSharpLib.RootPath
+              FSharpLib.CorePath
+              FSharpLib.CollectionsPath
+              FSharpLib.ControlPath
+              (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName) ]
+
 let (+.+) s1 s2 = if s1 = "" then s2 else s1+"."+s2
 
 let layoutOfPath p =
