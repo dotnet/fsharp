@@ -815,7 +815,6 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
             else
 
             let denv = DisplayEnv.InitialForSigFileGeneration cenv.g
-            let denv = { denv with printVerboseSignatures=false }
 
             let extraOpenPath =
                 match entity.CompilationPathOpt with

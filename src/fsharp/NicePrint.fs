@@ -947,7 +947,7 @@ module private PrintTastMemberOrVals =
     open PrintTypes 
 
     let mkInlineL denv (v: Val) nameL = 
-        if denv.showInlineKeyword && v.MustInline && not denv.suppressInlineKeyword then 
+        if v.MustInline && not denv.suppressInlineKeyword then 
             wordL (tagKeyword "inline") ++ nameL 
         else 
             nameL

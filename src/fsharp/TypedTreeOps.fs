@@ -2754,7 +2754,6 @@ type DisplayEnv =
       useColonForReturnType: bool
       showAttributes: bool
       showOverrides: bool
-      showInlineKeyword: bool
       showConstraintTyparAnnotations: bool
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
@@ -2783,12 +2782,11 @@ type DisplayEnv =
         showHiddenMembers = false
         showTyparBinding = false
         showImperativeTyparAnnotations = false
-        suppressInlineKeyword = false
+        suppressInlineKeyword = true
         suppressMutableKeyword = false
         showMemberContainers = false
         showAttributes = false
         showOverrides = true
-        showInlineKeyword = false
         showConstraintTyparAnnotations = true
         showDocumentation = false
         abbreviateAdditionalConstraints = false
@@ -2822,10 +2820,9 @@ type DisplayEnv =
                showHiddenMembers = true
                showObsoleteMembers = true
                showAttributes = true
-               showInlineKeyword = true
+               suppressInlineKeyword = false
                showDocumentation = true
                shrinkOverloads = false
-               printVerboseSignatures = true 
                }
         denv.SetOpenPaths
             [ FSharpLib.RootPath
