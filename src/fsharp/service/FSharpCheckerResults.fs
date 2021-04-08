@@ -1974,22 +1974,7 @@ type FSharpCheckFileResults
         threadSafeOp (fun () -> None) (fun scope ->
             scope.ImplementationFile
             |> Option.map (fun implFile ->
-                // this logic copied from fsc's InterfaceFileWriter.BuildInitialDisplayEnvForSigFileGeneration,
-                // should/can it be consolidated?
-                let denv =
-                    { DisplayEnv.Empty scope.TcGlobals with
-                       showImperativeTyparAnnotations = true
-                       showHiddenMembers = true
-                       showObsoleteMembers = true
-                       showAttributes = true
-                       showDocumentation = true }
-                let denv =
-                    denv.SetOpenPaths
-                        [ FSharpLib.RootPath
-                          FSharpLib.CorePath
-                          FSharpLib.CollectionsPath
-                          FSharpLib.ControlPath
-                          (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName) ]
+                let denv = DisplayEnv.InitialForSigFileGeneration scope.TcGlobals
                 let infoReader = InfoReader(scope.TcGlobals, scope.TcImports.GetImportMap())
                 let (TImplFile (_, _, mexpr, _, _, _)) = implFile
                 let layout = NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr
