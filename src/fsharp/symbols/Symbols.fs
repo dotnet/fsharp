@@ -24,6 +24,8 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.AbstractIL
 
 type FSharpAccessibility(a:Accessibility, ?isProtected) = 
     let isProtected = defaultArg isProtected  false
@@ -805,6 +807,109 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member x.TryGetMembersFunctionsAndValues() = 
         try x.MembersFunctionsAndValues with _ -> [||] :> _
+
+    member this.TryGetMetadataText() =
+        match entity.TryDeref with
+        | ValueSome entity ->
+            if entity.IsNamespace then None
+            else
+
+            let denv = DisplayEnv.Empty cenv.g
+            let denv = 
+                { denv with 
+                    showImperativeTyparAnnotations=true
+                    showHiddenMembers=true
+                    showObsoleteMembers=true
+                    showAttributes=true
+                    shrinkOverloads=false
+                    printVerboseSignatures=false
+                    showDocumentation=true }
+
+            let extraOpenPath =
+                match entity.CompilationPathOpt with
+                | Some cpath ->
+                    let rec getOpenPath accessPath acc =
+                        match accessPath with
+                        | [] -> acc
+                        | (name, ModuleOrNamespaceKind.ModuleOrType) :: accessPath ->
+                            getOpenPath accessPath (name :: acc)
+                        | (name, ModuleOrNamespaceKind.Namespace) :: accessPath ->
+                            getOpenPath accessPath (name :: acc)
+                        | (name, ModuleOrNamespaceKind.FSharpModuleWithSuffix) :: accessPath ->
+                            getOpenPath accessPath (name :: acc)
+
+                    getOpenPath cpath.AccessPath []
+                | _ -> 
+                    []
+                |> List.rev
+
+            let needOpenType =
+                match entity.CompilationPathOpt with
+                | Some cpath ->
+                    match cpath.AccessPath with
+                    | (_, ModuleOrNamespaceKind.ModuleOrType) :: _ ->
+                        match this.DeclaringEntity with
+                        | Some (declaringEntity: FSharpEntity) -> not declaringEntity.IsFSharpModule
+                        | _ -> false
+                    | _ -> false
+                | _ ->
+                    false
+
+            let denv =
+                denv.SetOpenPaths 
+                    ([ FSharpLib.RootPath 
+                       FSharpLib.CorePath 
+                       FSharpLib.CollectionsPath 
+                       FSharpLib.ControlPath 
+                       (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName)
+                       extraOpenPath
+                     ])
+
+            let infoReader = cenv.infoReader
+
+            let openPathL =
+                extraOpenPath
+                |> List.map (fun x -> Layout.wordL (TaggedText.tagUnknownEntity x))
+
+            let pathL =
+                if List.isEmpty extraOpenPath then
+                    Layout.emptyL
+                else
+                    Layout.sepListL (Layout.sepL TaggedText.dot) openPathL
+                    
+            let headerL =
+                if List.isEmpty extraOpenPath then
+                    Layout.emptyL
+                else
+                    Layout.(^^)
+                        (Layout.wordL (TaggedText.tagKeyword "namespace"))
+                        pathL
+
+            let openL = 
+                if List.isEmpty openPathL then Layout.emptyL
+                else
+                    let openKeywordL =
+                        if needOpenType then
+                            Layout.(^^)
+                                (Layout.wordL (TaggedText.tagKeyword "open"))
+                                (Layout.wordL TaggedText.keywordType)
+                        else
+                            Layout.wordL (TaggedText.tagKeyword "open")                            
+                    Layout.(^^)
+                        openKeywordL
+                        pathL
+
+            Layout.aboveListL
+                [
+                    (Layout.(^^) headerL (Layout.sepL TaggedText.lineBreak))
+                    (Layout.(^^) openL (Layout.sepL TaggedText.lineBreak))
+                    (NicePrint.layoutEntity denv infoReader AccessibleFromSomewhere range0 entity)
+                ]
+            |> LayoutRender.showL
+            |> SourceText.ofString
+            |> Some
+        | _ ->
+            None
 
     override x.Equals(other: obj) =
         box x === other ||

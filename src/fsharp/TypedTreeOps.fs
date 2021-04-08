@@ -163,11 +163,7 @@ let remapTyconRef (tcmap: TyconRefMap<_>) tcref =
 let remapUnionCaseRef tcmap (UnionCaseRef(tcref, nm)) = UnionCaseRef(remapTyconRef tcmap tcref, nm)
 let remapRecdFieldRef tcmap (RecdFieldRef(tcref, nm)) = RecdFieldRef(remapTyconRef tcmap tcref, nm)
 
-let mkTyparInst (typars: Typars) tyargs =  
-#if CHECKED
-    if List.length typars <> List.length tyargs then
-      failwith ("mkTyparInst: invalid type" + (sprintf " %d <> %d" (List.length typars) (List.length tyargs)))
-#endif
+let mkTyparInst (typars: Typars) tyargs =
     (List.zip typars tyargs: TyparInst)
 
 let generalizeTypar tp = mkTyparTy tp
@@ -1611,9 +1607,6 @@ let GetTopTauTypeInFSharpForm g (curriedArgInfos: ArgReprInfo list list) tau m =
 
 let destTopForallTy g (ValReprInfo (ntps, _, _)) ty =
     let tps, tau = (if isNil ntps then [], ty else tryDestForallTy g ty)
-#if CHECKED
-    if tps.Length <> kinds.Length then failwith (sprintf "destTopForallTy: internal error, #tps = %d, #ntps = %d" (List.length tps) ntps)
-#endif
     // tps may be have been equated to other tps in equi-recursive type inference. Normalize them here 
     let tps = NormalizeDeclaredTyparsForEquiRecursiveInference g tps
     tps, tau
@@ -2764,6 +2757,7 @@ type DisplayEnv =
       showConstraintTyparAnnotations: bool
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
+      showDocumentation: bool
       shrinkOverloads: bool
       printVerboseSignatures : bool
       g: TcGlobals
@@ -2794,6 +2788,7 @@ type DisplayEnv =
         showAttributes = false
         showOverrides = true
         showConstraintTyparAnnotations = true
+        showDocumentation = false
         abbreviateAdditionalConstraints = false
         showTyparDefaultConstraints = false
         shortConstraints = false

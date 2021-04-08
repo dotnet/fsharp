@@ -24,6 +24,9 @@ type internal UnusedDeclarationsAnalyzer
     interface IFSharpUnusedDeclarationsDiagnosticAnalyzer with
 
         member _.AnalyzeSemanticsAsync(descriptor, document, cancellationToken) =
+            if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then Threading.Tasks.Task.FromResult(ImmutableArray.Empty)
+            else
+
             asyncMaybe {
                 do! Option.guard document.FSharpOptions.CodeFixes.UnusedDeclarations
 
@@ -32,7 +35,7 @@ type internal UnusedDeclarationsAnalyzer
                 | (_parsingOptions, projectOptions) ->
                     let! sourceText = document.GetTextAsync()
                     let checker = checkerProvider.Checker
-                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName = userOpName)
+                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName = userOpName)
                     let! unusedRanges = UnusedDeclarations.getUnusedDeclarations( checkResults, (isScriptFile document.FilePath)) |> liftAsync
                     return
                         unusedRanges

@@ -158,6 +158,35 @@ module internal Impl =
                 param)
         expr.Compile ()
 
+    let compileTupleConstructor tupleEncField getTupleConstructorMethod typ =
+        let rec constituentTuple (typ: Type) elements startIndex =
+            Expression.New (
+                getTupleConstructorMethod typ,
+                [
+                    let genericArgs = typ.GetGenericArguments ()
+
+                    for paramIndex in 0 .. genericArgs.Length - 1 do
+                        let genericArg = genericArgs.[paramIndex]
+                        
+                        if paramIndex = tupleEncField then
+                            constituentTuple genericArg elements (startIndex + paramIndex) :> Expression
+                        else
+                            Expression.Convert (Expression.ArrayAccess (elements, Expression.Constant (startIndex + paramIndex)), genericArg)
+                ])
+
+        let elements = Expression.Parameter (typeof<obj[]>, "elements")
+
+        let expr =
+            Expression.Lambda<Func<obj[], obj>> (
+                Expression.Convert (
+                    constituentTuple typ elements 0,
+                    typeof<obj>
+                ),
+                elements
+            )
+
+        expr.Compile ()
+
     //-----------------------------------------------------------------
     // ATTRIBUTE DECOMPILATION
 
@@ -988,7 +1017,7 @@ type FSharpValue =
 
     static member PreComputeTupleConstructor(tupleType: Type) =
         checkTupleType("tupleType", tupleType)
-        getTupleConstructor tupleType
+        (compileTupleConstructor tupleEncField getTupleConstructorMethod tupleType).Invoke
 
     static member PreComputeTupleConstructorInfo(tupleType: Type) =
         checkTupleType("tupleType", tupleType)

@@ -61,6 +61,7 @@ type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager) =
 
         member _.OnAfterCloseSolution(_) =
             projectManager.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+            projectManager.MetadataAsSource.ClearGeneratedFiles()
             VSConstants.S_OK
 
         member _.OnAfterLoadProject(_, _) = VSConstants.E_NOTIMPL

@@ -258,6 +258,44 @@ let tester2: int Group = []
                 | _ -> Assert.Fail (sprintf "Couldn't get member: %s" entityName)
             )
 
+    [<Test>]
+    let ``Single SynEnumCase contains range of constant`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo = One = 0x00000001
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [
+                SynTypeDefn.SynTypeDefn(typeRepr =
+                    SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Enum(cases = [ SynEnumCase.SynEnumCase(valueRange = r) ])))])
+        ]) ])) ->
+            assertRange (2, 17) (2, 27) r
+        | _ -> Assert.Fail "Could not get valid AST"
+        
+    [<Test>]
+    let ``Multiple SynEnumCase contains range of constant`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo =
+    | One =  0x00000001
+    | Two = 2
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [
+                SynTypeDefn.SynTypeDefn(typeRepr =
+                    SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Enum(cases = [ SynEnumCase.SynEnumCase(valueRange = r1)
+                                                                                             SynEnumCase.SynEnumCase(valueRange = r2) ])))])
+        ]) ])) ->
+            assertRange (3, 13) (3, 23) r1
+            assertRange (4, 12) (4, 13) r2
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SyntaxExpressions =
     [<Test>]
     let ``SynExpr.Do contains the range of the do keyword`` () =
@@ -439,4 +477,78 @@ type X = int
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [
             SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.GlobalNamespace; range = r) ])) ->
             assertRange (3, 0) (5, 12) r
+        | _ -> Assert.Fail "Could not get valid AST"
+
+module SynConsts =
+    [<Test>]
+    let ``Measure contains the range of the constant`` () =
+        let parseResults = 
+            getParseResults
+                """
+let n = 1.0m<cm>
+let m = 7.000<cm>
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Measure(constantRange = r1), _)) ])
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Measure(constantRange = r2), _)) ])
+        ]) ])) ->
+            assertRange (2, 8) (2, 12) r1
+            assertRange (3, 8) (3, 13) r2
+        | _ -> Assert.Fail "Could not get valid AST"
+
+module SynModuleOrNamespaceSig =
+    [<Test>]
+    let ``Range member returns range of SynModuleOrNamespaceSig`` () =
+        let parseResults =
+            getParseResultsOfSignatureFile
+                """
+namespace Foobar
+
+type Bar = | Bar of string * int
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile(ParsedSigFileInput(modules = [
+            SynModuleOrNamespaceSig(kind = SynModuleOrNamespaceKind.DeclaredNamespace) as singleModule
+        ])) ->
+            assertRange (2,0) (4,32) singleModule.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``GlobalNamespace should start at namespace keyword`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """// foo
+// bar
+namespace  global
+
+type Bar = | Bar of string * int
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig(kind = SynModuleOrNamespaceKind.GlobalNamespace; range = r) ])) ->
+            assertRange (3, 0) (5, 32) r
+        | _ -> Assert.Fail "Could not get valid AST"
+
+module SignatureTypes =
+    [<Test>]
+    let ``Range of Type should end at end keyword`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """namespace GreatProjectThing
+
+type Meh =
+        class
+        end
+
+
+// foo"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(range = r)]) ])) ->
+            assertRange (3, 0) (5,11) r
         | _ -> Assert.Fail "Could not get valid AST"
