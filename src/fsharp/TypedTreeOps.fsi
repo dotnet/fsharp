@@ -983,6 +983,7 @@ type DisplayEnv =
       useColonForReturnType:bool
       showAttributes: bool
       showOverrides:bool
+      showInlineKeyword: bool
       showConstraintTyparAnnotations:bool
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool

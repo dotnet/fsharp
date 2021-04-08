@@ -316,6 +316,7 @@ module InterfaceFileWriter =
                showHiddenMembers = true
                showObsoleteMembers = true
                showAttributes = true
+               showInlineKeyword = true
                showDocumentation = true }
         denv.SetOpenPaths
             [ FSharpLib.RootPath

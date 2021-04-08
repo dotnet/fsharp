@@ -2754,6 +2754,7 @@ type DisplayEnv =
       useColonForReturnType: bool
       showAttributes: bool
       showOverrides: bool
+      showInlineKeyword: bool
       showConstraintTyparAnnotations: bool
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
@@ -2787,6 +2788,7 @@ type DisplayEnv =
         showMemberContainers = false
         showAttributes = false
         showOverrides = true
+        showInlineKeyword = false
         showConstraintTyparAnnotations = true
         showDocumentation = false
         abbreviateAdditionalConstraints = false
