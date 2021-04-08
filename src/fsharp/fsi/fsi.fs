@@ -1201,6 +1201,7 @@ type internal FsiDynamicCompiler
                 else
                   // With #load items, the vals in the inferred signature do not tie up with those generated. Disable printing.
                   denv 
+            let denv = { denv with suppressInlineKeyword = false } // dont' suppress 'inline' in 'val inline f = ...'
 
             // 'Open' the path for the fragment we just compiled for any future printing.
             let denv = denv.AddOpenPath (pathOfLid prefixPath) 
