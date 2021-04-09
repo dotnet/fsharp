@@ -243,24 +243,38 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
       cancellable {
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CreateOneIncrementalBuilder", options.ProjectFileName)
         let projectReferences =  
-            [ for (nm,opts) in options.ReferencedProjects do
-               
-               // Don't use cross-project references for FSharp.Core, since various bits of code require a concrete FSharp.Core to exist on-disk.
-               // The only solutions that have these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The only ramification
-               // of this is that you need to build FSharp.Core to get intellisense in those projects.
+            [ for r in options.ReferencedProjects do
 
-               if (try Path.GetFileNameWithoutExtension(nm) with _ -> "") <> GetFSharpCoreLibraryName() then
+               match r with
+               | FSharpReferencedProject.FSharpReference(nm,opts) ->
+                   // Don't use cross-project references for FSharp.Core, since various bits of code require a concrete FSharp.Core to exist on-disk.
+                   // The only solutions that have these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The only ramification
+                   // of this is that you need to build FSharp.Core to get intellisense in those projects.
 
-                 yield
-                    { new IProjectReference with 
-                        member x.EvaluateRawContents(ctok) = 
-                          cancellable {
-                            Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
-                            return! self.GetAssemblyData(opts, ctok, userOpName + ".CheckReferencedProject("+nm+")")
-                          }
-                        member x.TryGetLogicalTimeStamp(cache) = 
-                            self.TryGetLogicalTimeStampForProject(cache, opts)
-                        member x.FileName = nm } ]
+                   if (try Path.GetFileNameWithoutExtension(nm) with _ -> "") <> GetFSharpCoreLibraryName() then
+
+                     yield
+                        { new IProjectReference with 
+                            member x.EvaluateRawContents(ctok) = 
+                              cancellable {
+                                Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
+                                return! self.GetAssemblyData(opts, ctok, userOpName + ".CheckReferencedProject("+nm+")")
+                              }
+                            member x.TryGetLogicalTimeStamp(cache) = 
+                                self.TryGetLogicalTimeStampForProject(cache, opts)
+                            member x.FileName = nm }
+                            
+                | FSharpReferencedProject.PEReference(nm,stamp,ilReader) ->
+                    yield
+                        { new IProjectReference with 
+                            member x.EvaluateRawContents(_) = 
+                              cancellable {
+                                let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
+                                return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
+                              }
+                            member x.TryGetLogicalTimeStamp(_) = stamp |> Some
+                            member x.FileName = nm }
+                ]
 
         let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
 

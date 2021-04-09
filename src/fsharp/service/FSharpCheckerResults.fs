@@ -48,6 +48,7 @@ open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
+open System.Reflection.PortableExecutable
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -55,14 +56,38 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 
 type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
+[<RequireQualifiedAccess;NoComparison>]
+type FSharpReferencedProject =
+    | FSharpReference of projectFileName: string * options: FSharpProjectOptions
+    | PEReference of projectFileName: string * stamp: DateTime * reader: ILModuleReader
+
+    member this.FileName =
+        match this with
+        | FSharpReference(projectFileName=projectFileName)
+        | PEReference(projectFileName=projectFileName) -> projectFileName
+
+    static member CreateFSharp(projectFileName, options) =
+        FSharpReference(projectFileName, options)
+
+    static member CreatePortableExecutable(projectFileName, stamp, stream) =
+        let ilReaderOptions: ILReaderOptions = 
+            {
+                pdbDirPath = None
+                reduceMemoryUsage = ReduceMemoryFlag.Yes
+                metadataOnly = MetadataOnlyFlag.Yes
+                tryGetMetadataSnapshot = fun _ -> None                        
+            }
+        let ilReader = ILBinaryReader.OpenILModuleReaderFromStream projectFileName stream ilReaderOptions
+        PEReference(projectFileName, stamp, ilReader)
+
 // NOTE: may be better just to move to optional arguments here
-type FSharpProjectOptions =
+and FSharpProjectOptions =
     { 
       ProjectFileName: string
       ProjectId: string option
       SourceFiles: string[]
       OtherOptions: string[]
-      ReferencedProjects: (string * FSharpProjectOptions)[]
+      ReferencedProjects: FSharpReferencedProject[]
       IsIncompleteTypeCheckEnvironment : bool
       UseScriptResolutionRules : bool      
       LoadTime : System.DateTime
@@ -89,9 +114,15 @@ type FSharpProjectOptions =
         options1.UnresolvedReferences = options2.UnresolvedReferences &&
         options1.OriginalLoadReferences = options2.OriginalLoadReferences &&
         options1.ReferencedProjects.Length = options2.ReferencedProjects.Length &&
-        Array.forall2 (fun (n1,a) (n2,b) ->
-            n1 = n2 && 
-            FSharpProjectOptions.AreSameForChecking(a,b)) options1.ReferencedProjects options2.ReferencedProjects &&
+        (options1.ReferencedProjects, options2.ReferencedProjects)
+        ||> Array.forall2 (fun r1 r2 ->
+            match r1, r2 with
+            | FSharpReferencedProject.FSharpReference(n1,a), FSharpReferencedProject.FSharpReference(n2,b) ->
+                n1 = n2 && FSharpProjectOptions.AreSameForChecking(a,b)
+            | FSharpReferencedProject.PEReference(n1, stamp1, _), FSharpReferencedProject.PEReference(n2, stamp2, _) ->
+                n1 = n2 && stamp1 = stamp2
+            | _ ->
+                false) &&
         options1.LoadTime = options2.LoadTime
 
     member po.ProjectDirectory = System.IO.Path.GetDirectoryName(po.ProjectFileName)

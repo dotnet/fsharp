@@ -3,9 +3,11 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
+open System.IO
 open System.Threading
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CheckDeclarations
@@ -46,7 +48,7 @@ type public FSharpProjectOptions =
 
       /// The command line arguments for the other projects referenced by this project, indexed by the
       /// exact text used in the "-r:" reference in FSharpProjectOptions.
-      ReferencedProjects: (string * FSharpProjectOptions)[]
+      ReferencedProjects: FSharpReferencedProject[]
 
       /// When true, the typechecking environment is known a priori to be incomplete, for
       /// example when a .fs file is opened outside of a project. In this case, the number of error
@@ -81,6 +83,20 @@ type public FSharpProjectOptions =
 
     /// Compute the project directory.
     member internal ProjectDirectory: string
+
+and [<NoComparison>] public FSharpReferencedProject =
+    internal
+    | FSharpReference of projectFileName: string * options: FSharpProjectOptions
+    | PEReference of projectFileName: string * stamp: DateTime * reader: ILModuleReader
+
+    member FileName : string
+
+    /// Creates a reference for an F# project. The physical data for it is stored/cached inside of the compiler service.
+    static member CreateFSharp : projectFileName: string * options: FSharpProjectOptions -> FSharpReferencedProject
+
+    /// Creates a reference for any portable executable, including F#. The stream is owned by this reference.
+    /// The stream will be automatically disposed when there are no references to FSharpReferencedProject and is GC collected.
+    static member CreatePortableExecutable : projectFileName: string * stamp: DateTime * stream: Stream -> FSharpReferencedProject
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]

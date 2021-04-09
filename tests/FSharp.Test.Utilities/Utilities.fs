@@ -75,7 +75,7 @@ module Utilities =
             let systemConsoleRef = lazy AssemblyMetadata.CreateFromImage(NetCoreApp31Refs.System_Console ()).GetReference(display = "System.Console.dll (netcoreapp 3.1 ref)")
 
     [<RequireQualifiedAccess>]
-    module internal TargetFrameworkUtil =
+    module TargetFrameworkUtil =
 
         open TestReferences
 
@@ -84,7 +84,7 @@ module Utilities =
         let private netCoreApp31References =
             lazy ImmutableArray.Create(NetCoreApp31.netStandard.Value, NetCoreApp31.mscorlibRef.Value, NetCoreApp31.systemRuntimeRef.Value, NetCoreApp31.systemCoreRef.Value, NetCoreApp31.systemDynamicRuntimeRef.Value, NetCoreApp31.systemConsoleRef.Value)
 
-        let internal getReferences tf =
+        let getReferences tf =
             match tf with
                 | TargetFramework.NetStandard20 -> netStandard20References.Value
                 | TargetFramework.NetCoreApp31 -> netCoreApp31References.Value
