@@ -138,6 +138,20 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                         assumeDotNetFramework=not SessionsProperties.fsiUseNetCore,
                         userOpName=userOpName)
 
+                let project = document.Project
+
+                let otherOptions =
+                    if project.IsFSharpMetadata then
+                        project.ProjectReferences
+                        |> Seq.map (fun x -> "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath)
+                        |> Array.ofSeq
+                        |> Array.append (
+                                project.MetadataReferences.OfType<PortableExecutableReference>()
+                                |> Seq.map (fun x -> "-r:" + x.FilePath)
+                                |> Array.ofSeq)
+                    else
+                        [||]
+
                 let projectOptions =
                     if isScriptFile document.FilePath then
                         scriptProjectOptions
@@ -146,7 +160,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             ProjectFileName = document.FilePath
                             ProjectId = None
                             SourceFiles = [|document.FilePath|]
-                            OtherOptions = [||]
+                            OtherOptions = otherOptions
                             ReferencedProjects = [||]
                             IsIncompleteTypeCheckEnvironment = false
                             UseScriptResolutionRules = CompilerEnvironment.MustBeSingleFileProject (Path.GetFileName(document.FilePath))

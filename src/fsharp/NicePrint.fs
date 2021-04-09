@@ -1833,7 +1833,9 @@ module private TastDefinitionPrinting =
 
         let path, mspec = fullPath mspec [mspec.DemangledModuleOrNamespaceName]
 
-        let denv = denv.AddOpenPath path
+        let denv =
+            let outerPath = outerPath |> List.map fst
+            denv.AddOpenPath (outerPath @ path)
 
         let headerL =
             if mspec.IsNamespace then
