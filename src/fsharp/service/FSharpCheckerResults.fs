@@ -79,21 +79,26 @@ type internal DelayedILModuleReader =
                         // see if we have a result or not after the lock so we do not evaluate the stream more than once
                         match box this.result with
                         | null ->
-                            let streamOpt = this.getStream ct
-                            match streamOpt with
-                            | Some stream ->
-                                let ilReaderOptions: ILReaderOptions = 
-                                    {
-                                        pdbDirPath = None
-                                        reduceMemoryUsage = ReduceMemoryFlag.Yes
-                                        metadataOnly = MetadataOnlyFlag.Yes
-                                        tryGetMetadataSnapshot = fun _ -> None                        
-                                    }
-                                let ilReader = ILBinaryReader.OpenILModuleReaderFromStream this.name stream ilReaderOptions
-                                this.result <- ilReader
-                                this.getStream <- Unchecked.defaultof<_> // clear out the function so we do not hold onto anything
-                                Some ilReader
-                            | _ ->
+                            try
+                                let streamOpt = this.getStream ct
+                                match streamOpt with
+                                | Some stream ->
+                                    let ilReaderOptions: ILReaderOptions = 
+                                        {
+                                            pdbDirPath = None
+                                            reduceMemoryUsage = ReduceMemoryFlag.Yes
+                                            metadataOnly = MetadataOnlyFlag.Yes
+                                            tryGetMetadataSnapshot = fun _ -> None                        
+                                        }
+                                    let ilReader = ILBinaryReader.OpenILModuleReaderFromStream this.name stream ilReaderOptions
+                                    this.result <- ilReader
+                                    this.getStream <- Unchecked.defaultof<_> // clear out the function so we do not hold onto anything
+                                    Some ilReader
+                                | _ ->
+                                    None
+                            with
+                            | ex ->
+                                Trace.TraceInformation("FCS: Unable to get an ILModuleReader: {0}", ex)
                                 None
                         | _ ->
                             Some this.result

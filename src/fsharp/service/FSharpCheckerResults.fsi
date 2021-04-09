@@ -107,6 +107,7 @@ and [<NoComparison;CustomEquality>] public FSharpReferencedProject =
     /// Creates a reference for any portable executable, including F#. The stream is owned by this reference.
     /// The stream will be automatically disposed when there are no references to FSharpReferencedProject and is GC collected.
     /// Once the stream is evaluated, the function that constructs the stream will no longer be referenced by anything.
+    /// If the stream evaluation throws an exception, it will be automatically handled.
     static member CreatePortableExecutable : projectFileName: string * stamp: DateTime * getStream: (CancellationToken -> Stream option) -> FSharpReferencedProject
 
 /// Represents the use of an F# symbol from F# source code
