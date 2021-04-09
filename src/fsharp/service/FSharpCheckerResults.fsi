@@ -26,6 +26,16 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 
+/// Delays the creation of an ILModuleReader
+[<Sealed>]
+type internal DelayedILModuleReader =
+
+    new : name: string * getStream: (CancellationToken -> Stream option) -> DelayedILModuleReader
+
+    /// Will lazily create the ILModuleReader.
+    /// Is only evaluated once and can be called by multiple threads.
+    member TryGetILModuleReader : unit -> Cancellable<ILModuleReader option>
+
 /// <summary>Unused in this API</summary>
 type public FSharpUnresolvedReferencesSet =
     internal 
@@ -84,10 +94,10 @@ type public FSharpProjectOptions =
     /// Compute the project directory.
     member internal ProjectDirectory: string
 
-and [<NoComparison>] public FSharpReferencedProject =
+and [<NoComparison;CustomEquality>] public FSharpReferencedProject =
     internal
     | FSharpReference of projectFileName: string * options: FSharpProjectOptions
-    | PEReference of projectFileName: string * stamp: DateTime * reader: ILModuleReader
+    | PEReference of projectFileName: string * stamp: DateTime * delayedReader: DelayedILModuleReader
 
     member FileName : string
 
@@ -96,7 +106,8 @@ and [<NoComparison>] public FSharpReferencedProject =
 
     /// Creates a reference for any portable executable, including F#. The stream is owned by this reference.
     /// The stream will be automatically disposed when there are no references to FSharpReferencedProject and is GC collected.
-    static member CreatePortableExecutable : projectFileName: string * stamp: DateTime * stream: Stream -> FSharpReferencedProject
+    /// Once the stream is evaluated, the function that constructs the stream will no longer be referenced by anything.
+    static member CreatePortableExecutable : projectFileName: string * stamp: DateTime * getStream: (CancellationToken -> Stream option) -> FSharpReferencedProject
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]
