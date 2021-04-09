@@ -101,13 +101,20 @@ type internal FSharpGoToDefinitionService
                                             let rec areTypesEqual (ty1: FSharpType) (ty2: FSharpType) =
                                                 let ty1 = ty1.StripAbbreviations()
                                                 let ty2 = ty2.StripAbbreviations()
-                                                ty1.TypeDefinition.DisplayName = ty2.TypeDefinition.DisplayName &&
-                                                ty1.TypeDefinition.AccessPath = ty2.TypeDefinition.AccessPath &&
-                                                ty1.GenericArguments.Count = ty2.GenericArguments.Count &&
-                                                (
-                                                    (ty1.GenericArguments, ty2.GenericArguments)
-                                                    ||> Seq.forall2 areTypesEqual
-                                                )
+                                                let generic =
+                                                    ty1.IsGenericParameter && ty2.IsGenericParameter ||
+                                                    (
+                                                        ty1.GenericArguments.Count = ty2.GenericArguments.Count &&
+                                                        (ty1.GenericArguments, ty2.GenericArguments)
+                                                        ||> Seq.forall2 areTypesEqual
+                                                    )                                                    
+                                                if generic then
+                                                    true
+                                                else
+                                                    let namesEqual = ty1.TypeDefinition.DisplayName = ty2.TypeDefinition.DisplayName
+                                                    let accessPathsEqual = ty1.TypeDefinition.AccessPath = ty2.TypeDefinition.AccessPath
+                                                    namesEqual && accessPathsEqual
+
 
                                             // This tries to find the best possible location of the target symbol's location in the metadata source.
                                             // We really should rely on symbol equality within FCS instead of doing it here, 
@@ -118,6 +125,8 @@ type internal FSharpGoToDefinitionService
                                                 | (:? FSharpEntity as symbol1), (:? FSharpEntity as symbol2) when x.IsFromDefinition ->
                                                     symbol1.DisplayName = symbol2.DisplayName
                                                 | (:? FSharpMemberOrFunctionOrValue as symbol1), (:? FSharpMemberOrFunctionOrValue as symbol2) ->
+                                                    let symbol1 = symbol1
+                                                    let symbol2 = symbol2
                                                     symbol1.DisplayName = symbol2.DisplayName &&
                                                     symbol1.GenericParameters.Count = symbol2.GenericParameters.Count &&
                                                     symbol1.CurriedParameterGroups.Count = symbol2.CurriedParameterGroups.Count &&
