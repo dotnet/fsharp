@@ -1913,7 +1913,7 @@ module private TastDefinitionPrinting =
                         valsL
                     ]
             else
-                headerL @@- (aboveL entitiesL valsL)
+                headerL @@---- entitiesL @@ valsL
 
     and layoutEntity (denv: DisplayEnv) (infoReader: InfoReader) ad m (entity: Entity) =
         if entity.IsModuleOrNamespace then
