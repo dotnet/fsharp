@@ -1609,6 +1609,10 @@ let rec RearrangeTupleBindings expr fin =
         | Some b -> Some (mkLetBind m bind b)
         | None -> None
     | Expr.Op (TOp.Tuple tupInfo, _, _, _) when not (evalTupInfoIsStruct tupInfo) -> Some (fin expr)
+    | Expr.Sequential (e1, e2, kind, sp, m) ->
+        match RearrangeTupleBindings e2 fin with
+        | Some b -> Some (Expr.Sequential (e1, b, kind, sp, m))
+        | None -> None
     | _ -> None
 
 let ExpandStructuralBinding cenv expr =
