@@ -69,15 +69,17 @@ let z () =
          |> shouldSucceed
          |> verifyIL [
 
-// public static Tuple<long, int> v()
-// {
-//     string text = "".ToString();
-//     DateTime now = DateTime.Now;
-//     text = "3".ToString();
-//     int item = TupleElimination.f();
-//     now = DateTime.Now;
-//     return new Tuple<long, int>(2L, item);
-// }
+(*
+public static Tuple<long, int> v()
+{
+    string text = "".ToString();
+    DateTime now = DateTime.Now;
+    text = "3".ToString();
+    int item = TupleElimination.f();
+    now = DateTime.Now;
+    return new Tuple<long, int>(2L, item);
+}
+*)
                       """
 .method public static class [runtime]System.Tuple`2<int64,int32> 
         v() cil managed
@@ -108,17 +110,19 @@ let z () =
 }
 """
 
-// public static int w()
-// {
-//     string text = "".ToString();
-//     DateTime now = DateTime.Now;
-//     text = "3".ToString();
-//     int num = TupleElimination.f();
-//     Tuple<int, int> x = new Tuple<int, int>(2, num);
-//     now = DateTime.Now;
-//     TupleElimination.Test.test(x);
-//     return 2 + num;
-// }
+(*
+public static int w()
+{
+    string text = "".ToString();
+    DateTime now = DateTime.Now;
+    text = "3".ToString();
+    int num = TupleElimination.f();
+    Tuple<int, int> x = new Tuple<int, int>(2, num);
+    now = DateTime.Now;
+    TupleElimination.Test.test(x);
+    return 2 + num;
+}
+*)
                       """
 .method public static int32  w() cil managed
 {
@@ -154,16 +158,18 @@ let z () =
   IL_003a:  ret
 }
 """
-            
-// public static int x()
-// {
-//     string text = "".ToString();
-//     DateTime now = DateTime.Now;
-//     text = "3".ToString();
-//     int num = TupleElimination.f();
-//     now = DateTime.Now;
-//     return 2 + num;
-// }          
+
+(*
+public static int x()
+{
+    string text = "".ToString();
+    DateTime now = DateTime.Now;
+    text = "3".ToString();
+    int num = TupleElimination.f();
+    now = DateTime.Now;
+    return 2 + num;
+}          
+*)
                       """
 .method public static int32  x() cil managed
 {
@@ -191,12 +197,14 @@ let z () =
 }
 """
 
-// public static int y()
-// {
-//     int num = TupleElimination.f();
-//     TupleElimination.sideEffect();
-//     return num + TupleElimination.f() + TupleElimination.f();
-// }
+(*
+public static int y()
+{
+    int num = TupleElimination.f();
+    TupleElimination.sideEffect();
+    return num + TupleElimination.f() + TupleElimination.f();
+}
+*)
                       """
 .method public static int32  y() cil managed
 {
@@ -215,11 +223,13 @@ let z () =
 }
 """
 
-// public static int z()
-// {
-//     TupleElimination.sideEffect();
-//     return TupleElimination.f() + (TupleElimination.f() + 3) + (TupleElimination.f() + 4);
-// }
+(*
+public static int z()
+{
+    TupleElimination.sideEffect();
+    return TupleElimination.f() + (TupleElimination.f() + 3) + (TupleElimination.f() + 4);
+}
+*)
                       """
 .method public static int32  z() cil managed
 {
@@ -265,17 +275,19 @@ let z () =
          |> shouldSucceed
          |> verifyIL [
 
-// public static int z()
-// {
-//     string text = "".ToString();
-//     DateTime now = DateTime.Now;
-//     text = "3".ToString();
-//     Tuple<int, int> tuple = TupleElimination.Test.test(new Tuple<int, int>(2, TupleElimination.f()));
-//     int item = tuple.Item2;
-//     int item2 = tuple.Item1;
-//     now = DateTime.Now;
-//     return item2 + item;
-// }
+(*
+public static int z()
+{
+    string text = "".ToString();
+    DateTime now = DateTime.Now;
+    text = "3".ToString();
+    Tuple<int, int> tuple = TupleElimination.Test.test(new Tuple<int, int>(2, TupleElimination.f()));
+    int item = tuple.Item2;
+    int item2 = tuple.Item1;
+    now = DateTime.Now;
+    return item2 + item;
+}
+*)
                       """
 .method public static int32  z() cil managed
 {
@@ -312,4 +324,79 @@ let z () =
   IL_0044:  ldloc.3
   IL_0045:  add
   IL_0046:  ret
+}""" ]
+
+    [<Fact>]
+    let ``Branching let binding rhs does not prevent tuple elimination``() =
+        FSharp """
+module TupleElimination
+open System.Runtime.CompilerServices
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let f () = 3
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let sideEffect () = ()
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let cond () = true
+
+type Test =
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    static member test(x: int32 * int32) = x
+
+let z () =
+    let a, b =
+        if cond () then
+            1, 3
+        else
+            3, 4
+    a + b
+         """
+         |> compile
+         |> shouldSucceed
+         |> verifyIL [
+
+(*
+public static int z()
+{
+    int num;
+    int num2;
+    if (TupleElimination.cond())
+    {
+        num = 1;
+        num2 = 3;
+    }
+    else
+    {
+        num = 3;
+        num2 = 4;
+    }
+    return num + num2;
+}
+*)
+                      """
+.method public static int32  z() cil managed
+{
+  
+  .maxstack  4
+  .locals init (int32 V_0,
+           int32 V_1)
+  IL_0000:  call       bool TupleElimination::cond()
+  IL_0005:  brfalse.s  IL_000d
+    
+  IL_0007:  ldc.i4.1
+  IL_0008:  stloc.0
+  IL_0009:  ldc.i4.3
+  IL_000a:  stloc.1
+  IL_000b:  br.s       IL_0011
+    
+  IL_000d:  ldc.i4.3
+  IL_000e:  stloc.0
+  IL_000f:  ldc.i4.4
+  IL_0010:  stloc.1
+  IL_0011:  ldloc.0
+  IL_0012:  ldloc.1
+  IL_0013:  add
+  IL_0014:  ret
 }""" ]
