@@ -48,18 +48,70 @@ open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.AbstractIL
 open System.Reflection.PortableExecutable
 
 open Internal.Utilities
 open Internal.Utilities.Collections
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 
 type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
-[<RequireQualifiedAccess;NoComparison>]
+[<Sealed>]
+type internal DelayedILModuleReader =
+
+    val private name : string
+    val private gate : obj
+    val mutable private getStream : (CancellationToken -> Stream option)
+    val mutable private result : ILModuleReader
+
+    new (name, getStream) = { name = name; gate = obj(); getStream = getStream; result = Unchecked.defaultof<_> }
+
+    member this.TryGetILModuleReader() =
+        // fast path
+        match box this.result with
+        | null ->
+            cancellable {
+                let! ct = Cancellable.token()
+                return
+                    lock this.gate (fun () ->
+                        // see if we have a result or not after the lock so we do not evaluate the stream more than once
+                        match box this.result with
+                        | null ->
+                            try
+                                let streamOpt = this.getStream ct
+                                match streamOpt with
+                                | Some stream ->
+                                    let ilReaderOptions: ILReaderOptions = 
+                                        {
+                                            pdbDirPath = None
+                                            reduceMemoryUsage = ReduceMemoryFlag.Yes
+                                            metadataOnly = MetadataOnlyFlag.Yes
+                                            tryGetMetadataSnapshot = fun _ -> None                        
+                                        }
+                                    let ilReader = ILBinaryReader.OpenILModuleReaderFromStream this.name stream ilReaderOptions
+                                    this.result <- ilReader
+                                    this.getStream <- Unchecked.defaultof<_> // clear out the function so we do not hold onto anything
+                                    Some ilReader
+                                | _ ->
+                                    None
+                            with
+                            | ex ->
+                                Trace.TraceInformation("FCS: Unable to get an ILModuleReader: {0}", ex)
+                                None
+                        | _ ->
+                            Some this.result
+                    )
+            }
+        | _ ->
+            Cancellable.ret (Some this.result)
+
+
+[<RequireQualifiedAccess;NoComparison;CustomEquality>]
 type FSharpReferencedProject =
     | FSharpReference of projectFileName: string * options: FSharpProjectOptions
-    | PEReference of projectFileName: string * stamp: DateTime * reader: ILModuleReader
+    | PEReference of projectFileName: string * stamp: DateTime * delayedReader: DelayedILModuleReader
 
     member this.FileName =
         match this with
@@ -69,16 +121,23 @@ type FSharpReferencedProject =
     static member CreateFSharp(projectFileName, options) =
         FSharpReference(projectFileName, options)
 
-    static member CreatePortableExecutable(projectFileName, stamp, stream) =
-        let ilReaderOptions: ILReaderOptions = 
-            {
-                pdbDirPath = None
-                reduceMemoryUsage = ReduceMemoryFlag.Yes
-                metadataOnly = MetadataOnlyFlag.Yes
-                tryGetMetadataSnapshot = fun _ -> None                        
-            }
-        let ilReader = ILBinaryReader.OpenILModuleReaderFromStream projectFileName stream ilReaderOptions
-        PEReference(projectFileName, stamp, ilReader)
+    static member CreatePortableExecutable(projectFileName, stamp, getStream) =
+        PEReference(projectFileName, stamp, DelayedILModuleReader(projectFileName, getStream))
+
+    override this.Equals(o) =
+        match o with
+        | :? FSharpReferencedProject as o ->
+            match this, o with
+            | FSharpReference(projectFileName1, options1), FSharpReference(projectFileName2, options2) ->
+                projectFileName1 = projectFileName2 && options1 = options2
+            | PEReference(projectFileName1, stamp1, _), PEReference(projectFileName2, stamp2, _) ->
+                projectFileName1 = projectFileName2 && stamp1 = stamp2
+            | _ ->
+                false
+        | _ ->
+            false
+
+    override this.GetHashCode() = this.FileName.GetHashCode()
 
 // NOTE: may be better just to move to optional arguments here
 and FSharpProjectOptions =

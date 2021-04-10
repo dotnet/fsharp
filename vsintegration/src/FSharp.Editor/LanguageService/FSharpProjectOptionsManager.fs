@@ -107,19 +107,29 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
     // This is used to not constantly emit the same compilation.
     let weakPEReferences = ConditionalWeakTable<Compilation, FSharpReferencedProject>()
 
-    let createPEReference (referencedProject: Project) (comp: Compilation) ct =
+    let createPEReference (referencedProject: Project) (comp: Compilation) =
         match weakPEReferences.TryGetValue comp with
         | true, fsRefProj -> fsRefProj
         | _ ->
+            let weakComp = WeakReference<Compilation>(comp)
+            let getStream =
+                fun ct ->
+                    match weakComp.TryGetTarget() with
+                    | true, comp ->
+                        let ms = new MemoryStream() // do not dispose the stream as it will be owned on the reference.
+                        let emitOptions = Emit.EmitOptions(metadataOnly = true, includePrivateMembers = false, tolerateErrors = true)
+                        comp.Emit(ms, options = emitOptions, cancellationToken = ct) |> ignore
+                        ms.Position <- 0L
+                        ms :> Stream
+                        |> Some
+                    | _ ->
+                        None
+
             let fsRefProj =
                 FSharpReferencedProject.CreatePortableExecutable(
                     referencedProject.OutputFilePath, 
                     DateTime.UtcNow,
-                    let ms = new MemoryStream() // do not dispose the stream as it will be owned on the reference.
-                    let emitOptions = Emit.EmitOptions(metadataOnly = true, includePrivateMembers = false, tolerateErrors = true)
-                    comp.Emit(ms, options = emitOptions, cancellationToken = ct) |> ignore
-                    ms.Position <- 0L
-                    ms
+                    getStream
                 )
             weakPEReferences.Add(comp, fsRefProj)
             fsRefProj
@@ -215,9 +225,9 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             match! tryComputeOptions referencedProject ct with
                             | None -> canBail <- true
                             | Some(_, projectOptions) -> referencedProjects.Add(FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions))
-                        else
+                        elif referencedProject.SupportsCompilation then
                             let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
-                            let peRef = createPEReference referencedProject comp ct
+                            let peRef = createPEReference referencedProject comp
                             referencedProjects.Add(peRef)
 
                 if canBail then

@@ -2124,13 +2124,10 @@ FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: System.String[] get_OtherOpti
 FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: System.String[] get_SourceFiles()
 FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], System.String[], System.String[], FSharp.Compiler.CodeAnalysis.FSharpReferencedProject[], Boolean, Boolean, System.DateTime, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Int64])
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject
-FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpReferencedProject)
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean Equals(System.Object)
-FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreateFSharp(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions)
-FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreatePortableExecutable(System.String, System.DateTime, System.IO.Stream)
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreatePortableExecutable(System.String, System.DateTime, Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpOption`1[System.IO.Stream]])
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Int32 GetHashCode()
-FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String FileName
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String get_FileName()

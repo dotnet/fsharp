@@ -33,11 +33,16 @@ namespace CSharpTest
         let csSyntax = CSharpSyntaxTree.ParseText(csSrc)
         let csReferences = TargetFrameworkUtil.getReferences TargetFramework.NetStandard20
         let cs = CSharpCompilation.Create("csharp_test.dll", references = csReferences.As<MetadataReference>(), syntaxTrees = [csSyntax], options = csOptions)
+
         let ms = new MemoryStream()
-        let result = cs.Emit(ms)
-        Assert.shouldBeEmpty(result.Diagnostics)
-        ms.Position <- 0L
-        let csRefProj = FSharpReferencedProject.CreatePortableExecutable("""Z:\csharp_test.dll""", DateTime.UtcNow, ms)
+        let getStream =
+            fun ct ->
+                cs.Emit(ms, cancellationToken = ct) |> ignore
+                ms.Position <- 0L
+                ms :> Stream
+                |> Some
+
+        let csRefProj = FSharpReferencedProject.CreatePortableExecutable("""Z:\csharp_test.dll""", DateTime.UtcNow, getStream)
 
         let fsOptions = CompilerAssert.DefaultProjectOptions
         let fsOptions =

@@ -264,13 +264,18 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                 self.TryGetLogicalTimeStampForProject(cache, opts)
                             member x.FileName = nm }
                             
-                | FSharpReferencedProject.PEReference(nm,stamp,ilReader) ->
+                | FSharpReferencedProject.PEReference(nm,stamp,delayedReader) ->
                     yield
                         { new IProjectReference with 
                             member x.EvaluateRawContents(_) = 
                               cancellable {
-                                let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
-                                return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
+                                let! ilReaderOpt = delayedReader.TryGetILModuleReader()
+                                match ilReaderOpt with
+                                | Some ilReader ->
+                                    let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
+                                    return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
+                                | _ ->
+                                    return None
                               }
                             member x.TryGetLogicalTimeStamp(_) = stamp |> Some
                             member x.FileName = nm }
