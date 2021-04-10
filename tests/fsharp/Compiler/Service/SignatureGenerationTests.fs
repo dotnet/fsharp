@@ -40,11 +40,11 @@ exception MyEx of reason: string
 /// module-level docs
 module Inner =
     /// type-level docs
-    type Farts
+    type Facts
         /// primary ctor docs
         (name: string) =
         /// constructor-level docs
-        new() = Farts("default name")
+        new() = Facts("default name")
         /// member-level docs
         member x.blah() = [1;2;3]
         /// auto-property-level docs
@@ -77,9 +77,11 @@ module Inner =
   /// module-level docs
   module Inner = begin
     /// type-level docs
-    type Farts =
+    type Facts =
       /// constructor-level docs
-      new : unit -> Farts + 1 overload
+      new : unit -> Facts
+      /// primary ctor docs
+      new : name:string -> Facts
       /// member-level docs
       member blah : unit -> int list
       /// auto-property-level docs

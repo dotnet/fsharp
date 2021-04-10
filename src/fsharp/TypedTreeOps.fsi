@@ -1008,6 +1008,8 @@ type DisplayEnv =
 
     member UseGenericParameterStyle: GenericParameterStyle -> DisplayEnv
 
+    static member InitialForSigFileGeneration: TcGlobals -> DisplayEnv
+
 val tagEntityRefName: xref: EntityRef -> name: string -> TaggedText
 
 /// Return the full text for an item as we want it displayed to the user as a fully qualified entity
@@ -1562,6 +1564,8 @@ val normalizeEnumTy: TcGlobals -> TType -> TType
 
 /// Determine if a type is a struct type
 val isStructTy: TcGlobals -> TType -> bool
+
+val isStructOrEnumTyconTy: TcGlobals -> TType -> bool
 
 /// Determine if a type is a variable type with the ': struct' constraint.
 ///

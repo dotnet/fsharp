@@ -946,6 +946,12 @@ module private PrintTypes =
 module private PrintTastMemberOrVals =
     open PrintTypes 
 
+    let mkInlineL denv (v: Val) nameL = 
+        if v.MustInline && not denv.suppressInlineKeyword then 
+            wordL (tagKeyword "inline") ++ nameL 
+        else 
+            nameL
+
     let private prettyLayoutOfMemberShortOption denv typarInst (v:Val) short =
         let v = mkLocalValRef v
         let membInfo = Option.get v.MemberInfo
@@ -978,6 +984,7 @@ module private PrintTastMemberOrVals =
                     if short then tauL
                     else
                         let nameL = mkNameL niceMethodTypars tagMember v.LogicalName
+                        let nameL = if short then nameL else mkInlineL denv v.Deref nameL
                         stat --- (nameL ^^ WordL.colon ^^ tauL)
                 prettyTyparInst, resL
 
@@ -1096,11 +1103,7 @@ module private PrintTastMemberOrVals =
                 wordL (tagKeyword "mutable") ++ nameL 
               else 
                   nameL
-        let nameL = 
-            if v.MustInline && not denv.suppressInlineKeyword then 
-                wordL (tagKeyword "inline") ++ nameL 
-            else 
-                nameL
+        let nameL = mkInlineL denv v nameL
 
         let isOverGeneric = List.length (Zset.elements (freeInType CollectTyparsNoCaching tau).FreeTypars) < List.length tps // Bug: 1143 
         let isTyFunction = v.IsTypeFunction // Bug: 1143, and innerpoly tests 
@@ -1830,7 +1833,9 @@ module private TastDefinitionPrinting =
 
         let path, mspec = fullPath mspec [mspec.DemangledModuleOrNamespaceName]
 
-        let denv = denv.AddOpenPath path
+        let denv =
+            let outerPath = outerPath |> List.map fst
+            denv.AddOpenPath (outerPath @ path)
 
         let headerL =
             if mspec.IsNamespace then

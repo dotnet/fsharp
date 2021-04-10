@@ -814,16 +814,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
             if entity.IsNamespace then None
             else
 
-            let denv = DisplayEnv.Empty cenv.g
-            let denv = 
-                { denv with 
-                    showImperativeTyparAnnotations=true
-                    showHiddenMembers=true
-                    showObsoleteMembers=true
-                    showAttributes=true
-                    shrinkOverloads=false
-                    printVerboseSignatures=false
-                    showDocumentation=true }
+            let denv = DisplayEnv.InitialForSigFileGeneration cenv.g
 
             let extraOpenPath =
                 match entity.CompilationPathOpt with
@@ -855,15 +846,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                 | _ ->
                     false
 
-            let denv =
-                denv.SetOpenPaths 
-                    ([ FSharpLib.RootPath 
-                       FSharpLib.CorePath 
-                       FSharpLib.CollectionsPath 
-                       FSharpLib.ControlPath 
-                       (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName)
-                       extraOpenPath
-                     ])
+            let denv = denv.AddOpenPath extraOpenPath
 
             let infoReader = cenv.infoReader
 
