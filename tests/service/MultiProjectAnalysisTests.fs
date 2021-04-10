@@ -124,8 +124,8 @@ let u = Case1 3
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with 
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project1A.dllName); ("-r:" + Project1B.dllName) |]
-            ReferencedProjects = [| (Project1A.dllName, Project1A.options);
-                                    (Project1B.dllName, Project1B.options); |] }
+            ReferencedProjects = [| FSharpReferencedProject.CreateFSharp(Project1A.dllName, Project1A.options);
+                                    FSharpReferencedProject.CreateFSharp(Project1B.dllName, Project1B.options); |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
@@ -309,7 +309,7 @@ let p = ("""
             let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
             { options with 
                 OtherOptions = Array.append options.OtherOptions [| for p in  projects -> ("-r:" + p.DllName) |]
-                ReferencedProjects = [| for p in projects -> (p.DllName, p.Options); |] }
+                ReferencedProjects = [| for p in projects -> FSharpReferencedProject.CreateFSharp(p.DllName, p.Options); |] }
         { ModuleName = "JointProject"; FileName=fileName; Options = options; DllName=dllName } 
 
     let cleanFileName a = 
@@ -427,7 +427,7 @@ let z = Project1.x
         let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with 
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + MultiProjectDirty1.dllName) |]
-            ReferencedProjects = [| (MultiProjectDirty1.dllName, MultiProjectDirty1.getOptions()) |] }
+            ReferencedProjects = [| FSharpReferencedProject.CreateFSharp(MultiProjectDirty1.dllName, MultiProjectDirty1.getOptions()) |] }
 
 [<Test>]
 let ``Test multi project symbols should pick up changes in dependent projects`` () = 
@@ -638,7 +638,7 @@ let v = Project2A.C().InternalMember // access an internal symbol
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with 
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project2A.dllName);  |]
-            ReferencedProjects = [| (Project2A.dllName, Project2A.options); |] }
+            ReferencedProjects = [| FSharpReferencedProject.CreateFSharp(Project2A.dllName, Project2A.options); |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 //Project2A.fileSource1
@@ -662,7 +662,7 @@ let v = Project2A.C().InternalMember // access an internal symbol
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with 
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project2A.dllName);  |]
-            ReferencedProjects = [| (Project2A.dllName, Project2A.options); |] }
+            ReferencedProjects = [| FSharpReferencedProject.CreateFSharp(Project2A.dllName, Project2A.options); |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
@@ -755,7 +755,7 @@ let fizzBuzz = function
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with 
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project3A.dllName) |]
-            ReferencedProjects = [| (Project3A.dllName, Project3A.options) |] }
+            ReferencedProjects = [| FSharpReferencedProject.CreateFSharp(Project3A.dllName, Project3A.options) |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
@@ -846,7 +846,7 @@ let ``Type provider project references should not throw exceptions`` () =
                   yield "-r:" + r
               yield "-r:" + __SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/TypeProviderLibrary.dll"|];
            ReferencedProjects =
-            [|(__SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/TypeProviderLibrary.dll",
+            [|FSharpReferencedProject.CreateFSharp(__SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/TypeProviderLibrary.dll",
                {ProjectFileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/TypeProviderLibrary.fsproj";
                 ProjectId = None
                 SourceFiles = [|__SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/Library1.fs"|];
@@ -934,7 +934,7 @@ let ``Projects creating generated types should not utilize cross-project-referen
                   yield "-r:" + r
               yield "-r:" + __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/bin/Debug/TypeProvidersBug.dll"|];
            ReferencedProjects =
-            [|(__SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/bin/Debug/TypeProvidersBug.dll",
+            [|FSharpReferencedProject.CreateFSharp(__SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/bin/Debug/TypeProvidersBug.dll",
                {ProjectFileName =
                  __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/TypeProvidersBug.fsproj";
                 ProjectId = None

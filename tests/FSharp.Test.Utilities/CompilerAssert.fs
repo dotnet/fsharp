@@ -460,6 +460,10 @@ let main argv = 0"""
         let exitCode, output, errors = Commands.executeProcess (Some filename) arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
 
+    static member Checker = checker
+
+    static member DefaultProjectOptions = defaultProjectOptions
+
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
         lock gate (fun () ->
