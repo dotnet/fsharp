@@ -991,6 +991,7 @@ type DisplayEnv =
       showDocumentation: bool
       shrinkOverloads: bool
       printVerboseSignatures: bool
+      escapeKeywordNames: bool
       g: TcGlobals
       contextAccessibility: Accessibility
       generatedValueLayout: (Val -> Layout option)
