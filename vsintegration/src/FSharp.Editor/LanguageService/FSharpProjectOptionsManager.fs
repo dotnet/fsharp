@@ -22,6 +22,7 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices
 open Microsoft.VisualStudio.FSharp.Interactive.Session
+open System.Runtime.CompilerServices
 
 [<AutoOpen>]
 module private FSharpProjectOptionsHelpers =
@@ -65,7 +66,16 @@ module private FSharpProjectOptionsHelpers =
             let doesProjectIdDiffer = p1.ProjectId <> p2.ProjectId
             let p1 = oldProject.Solution.GetProject(p1.ProjectId)
             let p2 = newProject.Solution.GetProject(p2.ProjectId)
-            doesProjectIdDiffer || p1.Version <> p2.Version
+            doesProjectIdDiffer || 
+            (
+                // For F# projects, just check the version until we have a better in-memory model for them.
+                if p1.Language = LanguageNames.FSharp then
+                    p1.Version <> p2.Version
+                else
+                    let v1 = p1.GetDependentVersionAsync(ct).Result
+                    let v2 = p2.GetDependentVersionAsync(ct).Result
+                    v1 <> v2
+            )
         )
 
     let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) ct =
@@ -93,6 +103,36 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
 
     let cache = ConcurrentDictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
     let singleFileCache = ConcurrentDictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
+
+    // This is used to not constantly emit the same compilation.
+    let weakPEReferences = ConditionalWeakTable<Compilation, FSharpReferencedProject>()
+
+    let createPEReference (referencedProject: Project) (comp: Compilation) =
+        match weakPEReferences.TryGetValue comp with
+        | true, fsRefProj -> fsRefProj
+        | _ ->
+            let weakComp = WeakReference<Compilation>(comp)
+            let getStream =
+                fun ct ->
+                    match weakComp.TryGetTarget() with
+                    | true, comp ->
+                        let ms = new MemoryStream() // do not dispose the stream as it will be owned on the reference.
+                        let emitOptions = Emit.EmitOptions(metadataOnly = true, includePrivateMembers = false, tolerateErrors = true)
+                        comp.Emit(ms, options = emitOptions, cancellationToken = ct) |> ignore
+                        ms.Position <- 0L
+                        ms :> Stream
+                        |> Some
+                    | _ ->
+                        None
+
+            let fsRefProj =
+                FSharpReferencedProject.CreatePortableExecutable(
+                    referencedProject.OutputFilePath, 
+                    DateTime.UtcNow,
+                    getStream
+                )
+            weakPEReferences.Add(comp, fsRefProj)
+            fsRefProj
 
     let rec tryComputeOptionsByFile (document: Document) (ct: CancellationToken) userOpName =
         async {
@@ -184,7 +224,11 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                         if referencedProject.Language = FSharpConstants.FSharpLanguageName then
                             match! tryComputeOptions referencedProject ct with
                             | None -> canBail <- true
-                            | Some(_, projectOptions) -> referencedProjects.Add(referencedProject.OutputFilePath, projectOptions)
+                            | Some(_, projectOptions) -> referencedProjects.Add(FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions))
+                        elif referencedProject.SupportsCompilation then
+                            let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
+                            let peRef = createPEReference referencedProject comp
+                            referencedProjects.Add(peRef)
 
                 if canBail then
                     return None
