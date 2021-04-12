@@ -1178,7 +1178,7 @@ module InfoMemberPrinting =
             // detect parameter type, if ptyOpt is None - this is .NET style optional argument
             let pty = match ptyOpt with ValueSome x -> x | _ -> pty
             let idText =
-                if Lexhelp.Keywords.keywordNames |> List.contains nm.idText then
+                if denv.escapeKeywordNames && Lexhelp.Keywords.keywordNames |> List.contains nm.idText then
                     "``" + nm.idText + "``"
                 else
                     nm.idText
@@ -1192,7 +1192,7 @@ module InfoMemberPrinting =
         // Layout a named argument 
         | true, Some nm, _, _ -> 
             let idText =
-                if Lexhelp.Keywords.keywordNames |> List.contains nm.idText then
+                if denv.escapeKeywordNames && Lexhelp.Keywords.keywordNames |> List.contains nm.idText then
                     "``" + nm.idText + "``"
                 else
                     nm.idText
@@ -1202,7 +1202,7 @@ module InfoMemberPrinting =
             PrintTypes.layoutType denv pty
         | false, Some nm, _, _ -> 
             let idText =
-                if Lexhelp.Keywords.keywordNames |> List.contains nm.idText then
+                if denv.escapeKeywordNames && Lexhelp.Keywords.keywordNames |> List.contains nm.idText then
                     "``" + nm.idText + "``"
                 else
                     nm.idText
