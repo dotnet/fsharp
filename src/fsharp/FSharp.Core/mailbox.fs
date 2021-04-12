@@ -325,6 +325,10 @@ namespace Microsoft.FSharp.Control
     type AsyncReplyChannel<'Reply>(replyf : 'Reply -> unit) =
         member x.Reply value = replyf value
 
+    module private AsyncStarter =
+        type Func = Async<unit> -> CancellationToken -> unit
+        let defaultFunc c ct = Async.Start(computation=c, cancellationToken=ct)
+
     [<Sealed>]
     [<AutoSerializable(false)>]
     [<CompiledName("FSharpMailboxProcessor`1")>]
@@ -350,7 +354,7 @@ namespace Microsoft.FSharp.Control
         member _.UnsafeMessageQueueContents = mailbox.UnsafeContents
 #endif
 
-        member x.Start() =
+        member x.StartWith(startAsync: AsyncStarter.Func) =
             if started then
                 raise (new InvalidOperationException(SR.GetString(SR.mailboxProcessorAlreadyStarted)))
             else
@@ -365,7 +369,10 @@ namespace Microsoft.FSharp.Control
                             with exn ->
                                 errorEvent.Trigger exn }
 
-                Async.Start(computation=p, cancellationToken=cancellationToken)
+                startAsync p cancellationToken
+
+        member x.Start() =
+            x.StartWith(AsyncStarter.defaultFunc)
 
         member _.Post message = mailbox.Post message
 
@@ -434,7 +441,11 @@ namespace Microsoft.FSharp.Control
         interface System.IDisposable with
             member _.Dispose() = (mailbox :> IDisposable).Dispose()
 
-        static member Start(body, ?cancellationToken) =
+        static member StartWith(body, startAsync, ?cancellationToken) =
             let mailboxProcessor = new MailboxProcessor<'Msg>(body, ?cancellationToken=cancellationToken)
-            mailboxProcessor.Start()
+            mailboxProcessor.StartWith(startAsync)
             mailboxProcessor
+
+        static member Start(body, ?cancellationToken) =
+            MailboxProcessor<'Msg>.StartWith(body, AsyncStarter.defaultFunc, ?cancellationToken=cancellationToken)
+
