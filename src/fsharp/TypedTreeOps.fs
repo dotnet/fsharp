@@ -2759,7 +2759,8 @@ type DisplayEnv =
       showTyparDefaultConstraints: bool
       showDocumentation: bool
       shrinkOverloads: bool
-      printVerboseSignatures : bool
+      printVerboseSignatures: bool
+      escapeKeywordNames: bool
       g: TcGlobals
       contextAccessibility: Accessibility
       generatedValueLayout : (Val -> Layout option)
@@ -2795,6 +2796,7 @@ type DisplayEnv =
         useColonForReturnType = false
         shrinkOverloads = true
         printVerboseSignatures = false
+        escapeKeywordNames = false
         g = tcGlobals
         contextAccessibility = taccessPublic
         generatedValueLayout = (fun _ -> None)
@@ -2823,7 +2825,7 @@ type DisplayEnv =
                suppressInlineKeyword = false
                showDocumentation = true
                shrinkOverloads = false
-               }
+               escapeKeywordNames = true }
         denv.SetOpenPaths
             [ FSharpLib.RootPath
               FSharpLib.CorePath
