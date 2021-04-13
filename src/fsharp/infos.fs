@@ -1172,6 +1172,7 @@ type MethInfo =
 #endif
 
     member x.IsNewSlot =
+        isInterfaceTy x.TcGlobals x.ApparentEnclosingType ||
         (x.IsVirtual &&
           (match x with
            | ILMeth(_, x, _) -> x.IsNewSlot
