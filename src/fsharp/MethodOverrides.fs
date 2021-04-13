@@ -478,7 +478,7 @@ module DispatchSlotChecking =
             // specific method is "optionally" implemented.
             let isInterfaceOptional = ListSet.contains (typeEquiv g) interfaceTy availImpliedInterfaces
             [ for minfo in GetImmediateIntrinsicMethInfosOfType (None, ad) g amap m interfaceTy do
-                if minfo.IsNewSlot then
+                if minfo.IsNewSlot || minfo.IsAbstract then
                       // If the interface itself is considered optional, then we are finished and do not need anymore context.
                       //     Even if the method is actually not abstract.
                       if isInterfaceOptional then
