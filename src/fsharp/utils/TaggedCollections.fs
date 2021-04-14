@@ -12,18 +12,18 @@ namespace Internal.Utilities.Collections.Tagged
 
     [<NoEquality; NoComparison>]
     [<AllowNullLiteral>]
-    type internal SetTree<'T>(k: 'T) =
+    type internal SetTree<'T>(k: 'T, h: int) =
+        member _.Height = h
         member _.Key = k
+        new(k: 'T) = SetTree(k,1)
 
     [<NoEquality; NoComparison>]
     [<Sealed>]
     [<AllowNullLiteral>]
     type internal SetTreeNode<'T>(v:'T, left:SetTree<'T>, right: SetTree<'T>, h: int) =
-        inherit SetTree<'T>(v)
-
+        inherit SetTree<'T>(v,h)
         member _.Left = left
         member _.Right = right
-        member _.Height = h
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module SetTree = 
@@ -31,22 +31,24 @@ namespace Internal.Utilities.Collections.Tagged
 
         let inline isEmpty (t:SetTree<'T>) = isNull t
 
+        let inline private asNode(value:SetTree<'T>) : SetTreeNode<'T> =
+            value :?> SetTreeNode<'T>
+            
         let rec countAux (t:SetTree<'T>) acc = 
             if isEmpty t then
                 acc
             else
-                match t with 
-                | :? SetTreeNode<'T> as tn -> countAux tn.Left (countAux tn.Right (acc+1))
-                | _ -> acc+1
+                if t.Height = 1 then
+                    acc + 1
+                else
+                    let tn = asNode t
+                    countAux tn.Left (countAux tn.Right (acc+1)) 
 
         let count s = countAux s 0
 
         let inline height (t:SetTree<'T>) = 
             if isEmpty t then 0
-            else
-                match t with 
-                | :? SetTreeNode<'T> as tn -> tn.Height
-                | _ -> 1
+            else t.Height
 
         [<Literal>]
         let tolerance = 2
@@ -59,9 +61,6 @@ namespace Internal.Utilities.Collections.Tagged
                 SetTree k
             else
                 SetTreeNode (k, l, r, m+1) :> SetTree<'T>
-
-        let inline private asNode(value:SetTree<'T>) : SetTreeNode<'T> =
-            value :?> SetTreeNode<'T>
 
         let rebalance t1 v t2 =
             let t1h = height t1 
@@ -90,17 +89,16 @@ namespace Internal.Utilities.Collections.Tagged
             if isEmpty t then SetTree k
             else
                 let c = comparer.Compare(k, t.Key)
-                match t with
-                | :? SetTreeNode<'T> as tn ->
-                    if   c < 0 then rebalance (add comparer k tn.Left) tn.Key tn.Right
-                    elif c = 0 then t
-                    else            rebalance tn.Left tn.Key (add comparer k tn.Right)
-                | _ -> 
+                if t.Height = 1 then
                     // nb. no check for rebalance needed for small trees, also be sure to reuse node already allocated 
-                    let c = comparer.Compare(k, t.Key) 
                     if c < 0   then SetTreeNode (k, empty, t, 2) :> SetTree<'T>
                     elif c = 0 then t
                     else            SetTreeNode (k, t, empty, 2) :> SetTree<'T>
+                else
+                    let tn = asNode t
+                    if   c < 0 then rebalance (add comparer k tn.Left) tn.Key tn.Right
+                    elif c = 0 then t
+                    else            rebalance tn.Left tn.Key (add comparer k tn.Right)
 
         let rec balance comparer (t1:SetTree<'T>) k (t2:SetTree<'T>) =
             // Given t1 < k < t2 where t1 and t2 are "balanced", 
@@ -109,10 +107,12 @@ namespace Internal.Utilities.Collections.Tagged
             if isEmpty t1 then add comparer k t2 // drop t1 = empty
             elif isEmpty t2 then add comparer k t1 // drop t2 = empty
             else
-                match t1 with
-                | :? SetTreeNode<'T> as t1n ->
-                    match t2 with
-                    | :? SetTreeNode<'T> as t2n ->
+                if t1.Height = 1 then add comparer k (add comparer t1.Key t2)
+                else
+                    let t1n = asNode t1
+                    if t2.Height = 1 then add comparer k (add comparer t2.Key t1)
+                    else
+                        let t2n = asNode t2
                         // Have:  (t1l < k1 < t1r) < k < (t2l < k2 < t2r)
                         // Either (a) h1, h2 differ by at most 2 - no rebalance needed.
                         //        (b) h1 too small, i.e. h1+2 < h2
@@ -128,16 +128,19 @@ namespace Internal.Utilities.Collections.Tagged
                         else
                             // case: a, h1 and h2 meet balance requirement 
                             mk t1 k t2
-                    | _ -> add comparer k (add comparer t2.Key t1)
-                | _ -> add comparer k (add comparer t1.Key t2)
 
         let rec split (comparer: IComparer<'T>) pivot (t:SetTree<'T>) =
             // Given a pivot and a set t
             // Return { x in t s.t. x < pivot }, pivot in t?, { x in t s.t. x > pivot } 
             if isEmpty t then empty, false, empty
             else
-                match t with
-                | :? SetTreeNode<'T> as tn ->
+                if t.Height = 1 then
+                    let c = comparer.Compare(t.Key, pivot)
+                    if   c < 0 then t, false, empty // singleton under pivot 
+                    elif c = 0 then empty, true, empty // singleton is    pivot 
+                    else            empty, false, t        // singleton over  pivot
+                else
+                    let tn = asNode t
                     let c = comparer.Compare(pivot, tn.Key)
                     if   c < 0 then // pivot t1 
                         let t11Lo, havePivot, t11Hi = split comparer pivot tn.Left
@@ -147,27 +150,24 @@ namespace Internal.Utilities.Collections.Tagged
                     else            // pivot t2 
                         let t12Lo, havePivot, t12Hi = split comparer pivot tn.Right
                         balance comparer tn.Left tn.Key t12Lo, havePivot, t12Hi
-                | _ ->
-                    let c = comparer.Compare(t.Key, pivot)
-                    if   c < 0 then t, false, empty // singleton under pivot 
-                    elif c = 0 then empty, true, empty // singleton is    pivot 
-                    else            empty, false, t        // singleton over  pivot 
-        
+
         let rec spliceOutSuccessor (t:SetTree<'T>) = 
             if isEmpty t then failwith "internal error: Set.spliceOutSuccessor"
             else
-                match t with 
-                | :? SetTreeNode<'T> as tn ->
+                if t.Height = 1 then t.Key, empty
+                else
+                    let tn = asNode t
                     if isEmpty tn.Left then tn.Key, tn.Right
                     else let k3, l' = spliceOutSuccessor tn.Left in k3, mk l' tn.Key tn.Right
-                | _ -> t.Key, empty
 
         let rec remove (comparer: IComparer<'T>) k (t:SetTree<'T>) = 
             if isEmpty t then t
             else
                 let c = comparer.Compare(k, t.Key)
-                match t with 
-                | :? SetTreeNode<'T> as tn ->
+                if t.Height = 1 then
+                    if c = 0 then empty else t
+                else
+                    let tn = asNode t
                     if   c < 0 then rebalance (remove comparer k tn.Left) tn.Key tn.Right
                     elif c = 0 then
                         if isEmpty tn.Left then tn.Right
@@ -176,27 +176,35 @@ namespace Internal.Utilities.Collections.Tagged
                             let sk, r' = spliceOutSuccessor tn.Right 
                             mk tn.Left sk r'
                     else rebalance tn.Left tn.Key (remove comparer k tn.Right)
-                | _ ->  
-                    if   c = 0 then empty
-                    else t
 
-        let rec contains (comparer: IComparer<'T>) k (t:SetTree<'T>) = 
+        let rec mem (comparer: IComparer<'T>) k (t:SetTree<'T>) = 
             if isEmpty t then false
             else
                 let c = comparer.Compare(k, t.Key) 
-                match t with 
-                | :? SetTreeNode<'T> as tn ->
-                    if   c < 0 then contains comparer k tn.Left
+                if t.Height = 1 then (c = 0)
+                else
+                    let tn = asNode t
+                    if   c < 0 then mem comparer k tn.Left
                     elif c = 0 then true
-                    else contains comparer k tn.Right
-                | _ -> (c = 0)
+                    else mem comparer k tn.Right
 
         let rec iter f (t:SetTree<'T>) = 
             if isEmpty t then ()
             else
-                match t with 
-                | :? SetTreeNode<'T> as tn -> iter f tn.Left; f tn.Key; iter f tn.Right
-                | _ -> f t.Key           
+                if t.Height = 1 then f t.Key
+                else
+                    let tn = asNode t
+                    iter f tn.Left; f tn.Key; iter f tn.Right
+
+        let rec foldOpt (f:OptimizedClosures.FSharpFunc<_, _, _>) x (t:SetTree<'T>) = 
+            if isEmpty t then x
+            else
+                if t.Height = 1 then f.Invoke(x, t.Key)
+                else
+                    let tn = asNode t 
+                    let x = foldOpt f x tn.Left in 
+                    let x = f.Invoke(x, tn.Key)
+                    foldOpt f x tn.Right  
 
         // Fold, left-to-right. 
         //
@@ -204,35 +212,42 @@ namespace Internal.Utilities.Collections.Tagged
         let rec fold f (t:SetTree<'T>) x =
             if isEmpty t then x
             else
-              match t with
-              | :? SetTreeNode<'T> as tn -> fold f tn.Right (f tn.Key (fold f tn.Left x))
-              | _ -> f t.Key x          
+              if t.Height = 1 then f t.Key x
+              else
+                let tn = asNode t
+                fold f tn.Right (f tn.Key (fold f tn.Left x))
 
         let rec forall f (t:SetTree<'T>) = 
             if isEmpty t then true
             else
-                match t with 
-                | :? SetTreeNode<'T> as tn -> f tn.Key && forall f tn.Left && forall f tn.Right
-                | _ -> f t.Key          
+                if t.Height = 1 then f t.Key
+                else
+                    let tn = asNode t
+                    f tn.Key && forall f tn.Left && forall f tn.Right
 
         let rec exists f (t:SetTree<'T>) = 
             if isEmpty t then false
             else
-                match t with 
-                | :? SetTreeNode<'T> as tn -> f tn.Key || exists f tn.Left || exists f tn.Right
-                | _ -> f t.Key       
+                if t.Height = 1 then f t.Key
+                else
+                    let tn = asNode t
+                    f tn.Key || exists f tn.Left || exists f tn.Right
 
         let subset comparer a b  =
-            forall (fun x -> contains comparer x b) a
+            forall (fun x -> mem comparer x b) a
+
+        let properSubset comparer a b  =
+            forall (fun x -> mem comparer x b) a && exists (fun x -> not (mem comparer x a)) b
 
         let rec filterAux comparer f (t:SetTree<'T>) acc = 
             if isEmpty t then acc
             else
-                match t with 
-                | :? SetTreeNode<'T> as tn ->
+                if t.Height = 1 then
+                    if f t.Key then add comparer t.Key acc else acc
+                else
+                    let tn = asNode t
                     let acc = if f tn.Key then add comparer tn.Key acc else acc 
                     filterAux comparer f tn.Left (filterAux comparer f tn.Right acc)
-                | _ -> if f t.Key then add comparer t.Key acc else acc        
 
         let filter comparer f s = filterAux comparer f s empty
 
@@ -241,9 +256,10 @@ namespace Internal.Utilities.Collections.Tagged
             else
                 if isEmpty t then acc
                 else
-                    match t with 
-                    | :? SetTreeNode<'T> as tn -> diffAux comparer tn.Left (diffAux comparer tn.Right (remove comparer tn.Key acc))
-                    | _ -> remove comparer t.Key acc     
+                    if t.Height = 1 then remove comparer t.Key acc
+                    else
+                        let tn = asNode t
+                        diffAux comparer tn.Left (diffAux comparer tn.Right (remove comparer tn.Key acc)) 
 
         let diff comparer a b = diffAux comparer b a
 
@@ -252,10 +268,12 @@ namespace Internal.Utilities.Collections.Tagged
             if isEmpty t1 then t2
             elif isEmpty t2 then t1
             else
-                match t1 with
-                | :? SetTreeNode<'T> as t1n ->
-                    match t2 with
-                    | :? SetTreeNode<'T> as t2n -> // (t1l < k < t1r) AND (t2l < k2 < t2r) 
+                if t1.Height = 1 then add comparer t1.Key t2
+                else
+                    if t2.Height = 1 then add comparer t2.Key t1
+                    else
+                        let t1n = asNode t1
+                        let t2n = asNode t2 // (t1l < k < t1r) AND (t2l < k2 < t2r) 
                         // Divide and Conquer:
                         //   Suppose t1 is largest.
                         //   Split t2 using pivot k1 into lo and hi.
@@ -266,19 +284,17 @@ namespace Internal.Utilities.Collections.Tagged
                         else
                             let lo, _, hi = split comparer t2n.Key t1 in
                             balance comparer (union comparer t2n.Left lo) t2n.Key (union comparer t2n.Right hi)
-                    | _ -> add comparer t2.Key t1
-                | _ -> add comparer t1.Key t2
 
         let rec intersectionAux comparer b (t:SetTree<'T>) acc = 
             if isEmpty t then acc
             else
-                match t with 
-                | :? SetTreeNode<'T> as tn -> 
+                if t.Height = 1 then
+                    if mem comparer t.Key b then add comparer t.Key acc else acc
+                else
+                    let tn = asNode t 
                     let acc = intersectionAux comparer b tn.Right acc 
-                    let acc = if contains comparer tn.Key b then add comparer tn.Key acc else acc 
+                    let acc = if mem comparer tn.Key b then add comparer tn.Key acc else acc 
                     intersectionAux comparer b tn.Left acc
-                | _ -> 
-                    if contains comparer t.Key b then add comparer t.Key acc else acc
 
         let intersection comparer a b = intersectionAux comparer b a empty
 
@@ -287,51 +303,55 @@ namespace Internal.Utilities.Collections.Tagged
         let rec partitionAux comparer f (t:SetTree<'T>) acc = 
             if isEmpty t then acc
             else
-                match t with 
-                | :? SetTreeNode<'T> as tn -> 
+                if t.Height = 1 then partition1 comparer f t.Key acc
+                else
+                    let tn = asNode t 
                     let acc = partitionAux comparer f tn.Right acc 
                     let acc = partition1 comparer f tn.Key acc
                     partitionAux comparer f tn.Left acc
-                | _ -> partition1 comparer f t.Key acc
 
         let partition comparer f s = partitionAux comparer f s (empty, empty)
         
         let rec minimumElementAux (t:SetTree<'T>) n = 
             if isEmpty t then n
             else
-                match t with 
-                | :? SetTreeNode<'T> as tn -> minimumElementAux tn.Left tn.Key
-                | _ -> t.Key
+                if t.Height = 1 then t.Key
+                else
+                    let tn = asNode t
+                    minimumElementAux tn.Left tn.Key
 
         and minimumElementOpt (t:SetTree<'T>) = 
             if isEmpty t then None
             else
-                match t with 
-                | :? SetTreeNode<'T> as tn -> Some(minimumElementAux tn.Left tn.Key)
-                | _ -> Some t.Key
+                if t.Height = 1 then Some t.Key
+                else
+                    let tn = asNode t
+                    Some(minimumElementAux tn.Left tn.Key) 
 
         and maximumElementAux (t:SetTree<'T>) n = 
             if isEmpty t then n
             else
-                match t with 
-                | :? SetTreeNode<'T> as tn -> maximumElementAux tn.Right tn.Key
-                | _ -> t.Key
+                if t.Height = 1 then t.Key
+                else
+                    let tn = asNode t
+                    maximumElementAux tn.Right tn.Key 
 
         and maximumElementOpt (t:SetTree<'T>) = 
             if isEmpty t then None
             else
-                match t with 
-                | :? SetTreeNode<'T> as tn -> Some(maximumElementAux tn.Right tn.Key)
-                | _ -> Some t.Key
+                if t.Height = 1 then Some t.Key
+                else
+                    let tn = asNode t
+                    Some(maximumElementAux tn.Right tn.Key)
 
         let minimumElement s = 
             match minimumElementOpt s with 
-            | Some(k) -> k
-            | None -> failwith "minimumElement"            
+            | Some k -> k
+            | None -> failwith "minimumElement"
 
         let maximumElement s = 
             match maximumElementOpt s with 
-            | Some(k) -> k
+            | Some k -> k
             | None -> failwith "maximumElement"
 
         //--------------------------------------------------------------------------
@@ -349,9 +369,10 @@ namespace Internal.Utilities.Collections.Tagged
                 | x :: rest ->
                     if isEmpty x then collapseLHS rest
                     else
-                        match x with
-                        | :? SetTreeNode<'T> as xn-> collapseLHS (xn.Left :: SetTree xn.Key :: xn.Right :: rest)
-                        | _ -> stack
+                        if x.Height = 1 then stack
+                        else
+                            let xn = asNode x
+                            collapseLHS (xn.Left :: SetTree xn.Key :: xn.Right :: rest)
 
             // invariant: always collapseLHS result 
             let mutable stack = collapseLHS [s]
@@ -374,11 +395,11 @@ namespace Internal.Utilities.Collections.Tagged
                   match stack with
                   | [] -> false
                   | t :: rest ->
-                      match t with
-                      | :? SetTreeNode<'T> -> failwith "Please report error: Set iterator, unexpected stack for moveNext"
-                      | _ -> 
-                          stack <- collapseLHS rest
-                          not stack.IsEmpty 
+                      if t.Height = 1 then
+                        stack <- collapseLHS rest
+                        not stack.IsEmpty
+                      else
+                        failwith "Please report error: Set iterator, unexpected stack for moveNext"
               else
                   started <- true; // The first call to MoveNext "starts" the enumeration.
                   not stack.IsEmpty 
@@ -402,15 +423,17 @@ namespace Internal.Utilities.Collections.Tagged
             let cont() =
                 match l1, l2 with 
                 | (x1 :: t1), _ when not (isEmpty x1) ->
-                    match x1 with
-                    | :? SetTreeNode<'T> as x1n ->
+                    if x1.Height = 1 then
+                        compareStacks comparer (empty :: SetTree x1.Key :: t1) l2
+                    else
+                        let x1n = asNode x1
                         compareStacks comparer (x1n.Left :: (SetTreeNode (x1n.Key, empty, x1n.Right, 0) :> SetTree<'T>) :: t1) l2
-                    | _ -> compareStacks comparer (empty :: SetTree x1.Key :: t1) l2
                 | _, (x2 :: t2) when not (isEmpty x2) ->
-                    match x2 with
-                    | :? SetTreeNode<'T> as x2n ->
+                    if x2.Height = 1 then
+                        compareStacks comparer l1 (empty :: SetTree x2.Key :: t2)
+                    else
+                        let x2n = asNode x2
                         compareStacks comparer l1 (x2n.Left :: (SetTreeNode (x2n.Key, empty, x2n.Right, 0) :> SetTree<'T>  ) :: t2)
-                    | _ -> compareStacks comparer l1 (empty :: SetTree x2.Key :: t2)
                 | _ -> failwith "unexpected state in SetTree.compareStacks"
     
             match l1, l2 with 
@@ -423,29 +446,29 @@ namespace Internal.Utilities.Collections.Tagged
                     else cont()
                 elif isEmpty x2 then cont()
                 else
-                    match x1 with
-                    | :? SetTreeNode<'T> as x1n ->
-                        if isEmpty x1n.Left then
-                            match x2 with
-                            | :? SetTreeNode<'T> as x2n ->
-                                if isEmpty x2n.Left then
-                                    let c = comparer.Compare(x1n.Key, x2n.Key) 
-                                    if c <> 0 then c else compareStacks comparer (x1n.Right :: t1) (x2n.Right :: t2)
-                                else cont()
-                            | _ ->
-                                let c = comparer.Compare(x1n.Key, x2.Key) 
-                                if c <> 0 then c else compareStacks comparer (x1n.Right :: t1) (empty :: t2)
-                        else cont()
-                    | _ ->
-                        match x2 with
-                        | :? SetTreeNode<'T> as x2n ->
+                    if x1.Height = 1 then
+                        if x2.Height = 1 then
+                            let c = comparer.Compare(x1.Key, x2.Key) 
+                            if c <> 0 then c else compareStacks comparer t1 t2
+                        else
+                            let x2n = asNode x2
                             if isEmpty x2n.Left then
                                 let c = comparer.Compare(x1.Key, x2n.Key) 
                                 if c <> 0 then c else compareStacks comparer (empty :: t1) (x2n.Right :: t2)
                             else cont()
-                        | _ ->
-                            let c = comparer.Compare(x1.Key, x2.Key) 
-                            if c <> 0 then c else compareStacks comparer t1 t2
+                    else
+                        let x1n = asNode x1
+                        if isEmpty x1n.Left then
+                            if x2.Height = 1 then
+                                let c = comparer.Compare(x1n.Key, x2.Key) 
+                                if c <> 0 then c else compareStacks comparer (x1n.Right :: t1) (empty :: t2)
+                            else
+                                let x2n = asNode x2
+                                if isEmpty x2n.Left then
+                                    let c = comparer.Compare(x1n.Key, x2n.Key) 
+                                    if c <> 0 then c else compareStacks comparer (x1n.Right :: t1) (x2n.Right :: t2)
+                                else cont()
+                        else cont()
                             
         let compare comparer (t1:SetTree<'T>) (t2:SetTree<'T>) = 
             if isEmpty t1 then
@@ -461,10 +484,11 @@ namespace Internal.Utilities.Collections.Tagged
             let rec loop (t':SetTree<'T>) acc =
                 if isEmpty t' then acc
                 else
-                    match t' with 
-                    | :? SetTreeNode<'T> as tn -> loop tn.Left (tn.Key :: loop tn.Right acc)
-                    | _ ->  t'.Key :: acc
-            loop t []         
+                    if t'.Height = 1 then t'.Key :: acc
+                    else
+                        let tn = asNode t'
+                        loop tn.Left (tn.Key :: loop tn.Right acc)
+            loop t []     
 
         let copyToArray s (arr: _[]) i =
             let mutable j = i 
@@ -504,7 +528,7 @@ namespace Internal.Utilities.Collections.Tagged
         member s.Add(x) : Set<'T,'ComparerTag> = refresh s (SetTree.add comparer x tree)
         member s.Remove(x) : Set<'T,'ComparerTag> = refresh s (SetTree.remove comparer x tree)
         member s.Count = SetTree.count tree
-        member s.Contains(x) = SetTree.contains comparer  x tree
+        member s.Contains(x) = SetTree.mem comparer  x tree
         member s.Iterate(x) = SetTree.iter  x tree
         member s.Fold f x  = SetTree.fold f tree x
         member s.IsEmpty  = SetTree.isEmpty tree
@@ -590,7 +614,7 @@ namespace Internal.Utilities.Collections.Tagged
             member s.Add(_) = raise (new System.NotSupportedException("ReadOnlyCollection"))
             member s.Clear() = raise (new System.NotSupportedException("ReadOnlyCollection"))
             member s.Remove(_) = raise (new System.NotSupportedException("ReadOnlyCollection"))
-            member s.Contains(x) = SetTree.contains comparer x tree
+            member s.Contains(x) = SetTree.mem comparer x tree
             member s.CopyTo(arr,i) = SetTree.copyToArray tree arr i
             member s.IsReadOnly = true
             member s.Count = SetTree.count tree  
@@ -610,19 +634,19 @@ namespace Internal.Utilities.Collections.Tagged
 
     [<NoEquality; NoComparison>]
     [<AllowNullLiteral>]
-    type internal MapTree<'Key, 'Value>(k: 'Key, v: 'Value) =
+    type internal MapTree<'Key, 'Value>(k: 'Key, v: 'Value, h: int) =
+        member _.Height = h
         member _.Key = k
         member _.Value = v
-
+        new(k: 'Key, v: 'Value) = MapTree(k,v,1)
+    
     [<NoEquality; NoComparison>]
     [<Sealed>]
     [<AllowNullLiteral>]
     type internal MapTreeNode<'Key, 'Value>(k:'Key, v:'Value, left:MapTree<'Key, 'Value>, right: MapTree<'Key, 'Value>, h: int) =
-        inherit MapTree<'Key,'Value>(k, v)
-
+        inherit MapTree<'Key,'Value>(k, v, h)
         member _.Left = left
         member _.Right = right
-        member _.Height = h
 
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -632,22 +656,24 @@ namespace Internal.Utilities.Collections.Tagged
 
         let inline isEmpty (m:MapTree<'Key, 'Value>) = isNull m
             
+        let inline private asNode(value:MapTree<'Key,'Value>) : MapTreeNode<'Key,'Value> =
+            value :?> MapTreeNode<'Key,'Value>
+    
         let rec sizeAux acc (m:MapTree<'Key, 'Value>) = 
             if isEmpty m then
                 acc
             else
-                match m with
-                | :? MapTreeNode<'Key, 'Value> as mn -> sizeAux (sizeAux (acc+1) mn.Left) mn.Right 
-                | _ -> acc + 1
+                if m.Height = 1 then
+                    acc + 1
+                else
+                    let mn = asNode m
+                    sizeAux (sizeAux (acc+1) mn.Left) mn.Right 
 
         let size x = sizeAux 0 x
 
         let inline height (m: MapTree<'Key, 'Value>) = 
             if isEmpty m then 0
-            else
-                match m with
-                | :? MapTreeNode<'Key, 'Value> as mn -> mn.Height
-                | _ -> 1
+            else m.Height
 
         let mk l k v r : MapTree<'Key, 'Value> = 
             let hl = height l
@@ -657,9 +683,6 @@ namespace Internal.Utilities.Collections.Tagged
                 MapTree(k,v)
             else
                 MapTreeNode(k,v,l,r,m+1) :> MapTree<'Key, 'Value>
-
-        let inline private asNode(value:MapTree<'Key,'Value>) : MapTreeNode<'Key,'Value> =
-          value :?> MapTreeNode<'Key,'Value>
           
         let rebalance t1 (k: 'Key) (v: 'Value) t2 : MapTree<'Key, 'Value> =
             let t1h = height t1
@@ -684,20 +707,19 @@ namespace Internal.Utilities.Collections.Tagged
                         mk t1'.Left t1'.Key t1'.Value (mk t1'.Right k v t2)
                 else mk t1 k v t2
 
-
         let rec add (comparer: IComparer<'Key>) k (v: 'Value) (m: MapTree<'Key, 'Value>) : MapTree<'Key, 'Value> = 
             if isEmpty m then MapTree(k,v)
             else
                 let c = comparer.Compare(k,m.Key)
-                match m with
-                | :? MapTreeNode<'Key, 'Value> as mn ->
-                    if c < 0 then rebalance (add comparer k v mn.Left) mn.Key mn.Value mn.Right
-                    elif c = 0 then MapTreeNode(k,v,mn.Left,mn.Right,mn.Height) :> MapTree<'Key, 'Value>
-                    else rebalance mn.Left mn.Key mn.Value (add comparer k v mn.Right)
-                | _ ->
+                if m.Height = 1 then
                     if c < 0   then MapTreeNode (k,v,empty,m,2) :> MapTree<'Key, 'Value>
                     elif c = 0 then MapTree(k,v)
                     else            MapTreeNode (k,v,m,empty,2) :> MapTree<'Key, 'Value> 
+                else
+                    let mn = asNode m
+                    if c < 0 then rebalance (add comparer k v mn.Left) mn.Key mn.Value mn.Right
+                    elif c = 0 then MapTreeNode(k,v,mn.Left,mn.Right,mn.Height) :> MapTree<'Key, 'Value>
+                    else rebalance mn.Left mn.Key mn.Value (add comparer k v mn.Right)
 
         let indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
@@ -707,10 +729,10 @@ namespace Internal.Utilities.Collections.Tagged
                 let c = comparer.Compare(k, m.Key)
                 if c = 0 then v <- m.Value; true
                 else
-                    match m with
-                    | :? MapTreeNode<'Key, 'Value> as mn ->
+                    if m.Height = 1 then false
+                    else
+                        let mn = asNode m
                         tryGetValue comparer k &v (if c < 0 then mn.Left else mn.Right)
-                    | _ -> false
 
         let find (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) =
             let mutable v = Unchecked.defaultof<'Value>
@@ -732,12 +754,13 @@ namespace Internal.Utilities.Collections.Tagged
         let rec partitionAux (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) acc = 
             if isEmpty m then acc
             else
-                match m with        
-                | :? MapTreeNode<'Key, 'Value> as mn ->
+                if m.Height = 1 then        
+                    partition1 comparer f m.Key m.Value acc
+                else
+                    let mn = asNode m
                     let acc = partitionAux comparer f mn.Right acc 
                     let acc = partition1 comparer f mn.Key mn.Value acc
                     partitionAux comparer f mn.Left acc
-                | _ -> partition1 comparer f m.Key m.Value acc
 
         let partition (comparer: IComparer<'Key>) f m =
             partitionAux comparer (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m (empty, empty)
@@ -748,12 +771,13 @@ namespace Internal.Utilities.Collections.Tagged
         let rec filterAux (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) acc = 
             if isEmpty m then acc
             else
-                match m with 
-                | :? MapTreeNode<'Key, 'Value> as mn ->
+                if m.Height = 1 then  
+                    filter1 comparer f m.Key m.Value acc
+                else
+                    let mn = asNode m
                     let acc = filterAux comparer f mn.Left acc
                     let acc = filter1 comparer f mn.Key mn.Value acc
                     filterAux comparer f mn.Right acc
-                | _ -> filter1 comparer f m.Key m.Value acc
 
         let filter (comparer: IComparer<'Key>) f m =
               filterAux comparer (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m empty
@@ -761,18 +785,21 @@ namespace Internal.Utilities.Collections.Tagged
         let rec spliceOutSuccessor (m: MapTree<'Key, 'Value>) = 
             if isEmpty m then failwith "internal error: Map.spliceOutSuccessor"
             else
-                match m with
-                | :? MapTreeNode<'Key, 'Value> as mn ->
+                if m.Height = 1 then
+                    m.Key, m.Value, empty
+                else
+                    let mn = asNode m
                     if isEmpty mn.Left then mn.Key, mn.Value, mn.Right
                     else let k3, v3, l' = spliceOutSuccessor mn.Left in k3, v3, mk l' mn.Key mn.Value mn.Right
-                | _ -> m.Key, m.Value, empty
 
         let rec remove (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) = 
             if isEmpty m then empty
             else
                 let c = comparer.Compare(k, m.Key)
-                match m with 
-                | :? MapTreeNode<'Key, 'Value> as mn ->
+                if m.Height = 1 then 
+                    if c = 0 then empty else m
+                else
+                    let mn = asNode m 
                     if c < 0 then rebalance (remove comparer k mn.Left) mn.Key mn.Value mn.Right
                     elif c = 0 then
                         if isEmpty mn.Left then mn.Right
@@ -781,25 +808,26 @@ namespace Internal.Utilities.Collections.Tagged
                             let sk, sv, r' = spliceOutSuccessor mn.Right 
                             mk mn.Left sk sv r'
                     else rebalance mn.Left mn.Key mn.Value (remove comparer k mn.Right)
-                | _ ->
-                    if c = 0 then empty else m
 
         let rec mem (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) = 
             if isEmpty m then false
             else
                 let c = comparer.Compare(k, m.Key)
-                match m with 
-                | :? MapTreeNode<'Key, 'Value> as mn ->
+                if m.Height = 1 then 
+                    c = 0
+                else
+                    let mn = asNode m
                     if c < 0 then mem comparer k mn.Left
                     else (c = 0 || mem comparer k mn.Right)
-                | _ -> c = 0
 
         let rec iterOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) =
             if isEmpty m then ()
             else
-                match m with 
-                | :? MapTreeNode<'Key, 'Value> as mn -> iterOpt f mn.Left; f.Invoke (mn.Key, mn.Value); iterOpt f mn.Right
-                | _ -> f.Invoke (m.Key, m.Value)
+                if m.Height = 1 then 
+                    f.Invoke (m.Key, m.Value)
+                else
+                    let mn = asNode m
+                    iterOpt f mn.Left; f.Invoke (mn.Key, mn.Value); iterOpt f mn.Right
 
         let iter f m =
             iterOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
@@ -807,8 +835,10 @@ namespace Internal.Utilities.Collections.Tagged
         let rec tryPickOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) =
             if isEmpty m then None
             else
-                match m with 
-                | :? MapTreeNode<'Key, 'Value> as mn ->
+                if m.Height = 1 then 
+                    f.Invoke (m.Key, m.Value)
+                else
+                    let mn = asNode m
                     match tryPickOpt f mn.Left with 
                     | Some _ as res -> res 
                     | None -> 
@@ -816,7 +846,6 @@ namespace Internal.Utilities.Collections.Tagged
                     | Some _ as res -> res 
                     | None -> 
                     tryPickOpt f mn.Right
-                | _ -> f.Invoke (m.Key, m.Value)
 
         let tryPick f m =
             tryPickOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
@@ -824,9 +853,12 @@ namespace Internal.Utilities.Collections.Tagged
         let rec existsOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) = 
             if isEmpty m then false
             else
-                match m with 
-                | :? MapTreeNode<'Key, 'Value> as mn -> existsOpt f mn.Left || f.Invoke (mn.Key, mn.Value) || existsOpt f mn.Right
-                | _ -> f.Invoke (m.Key, m.Value)
+                if m.Height = 1 then 
+                    f.Invoke (m.Key, m.Value)
+                else
+                    let mn = asNode m
+                    existsOpt f mn.Left || f.Invoke (mn.Key, mn.Value) || existsOpt f mn.Right
+        
 
         let exists f m =
             existsOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
@@ -834,10 +866,11 @@ namespace Internal.Utilities.Collections.Tagged
         let rec forallOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) = 
             if isEmpty m then true
             else
-                match m with 
-                | :? MapTreeNode<'Key, 'Value> as mn -> forallOpt f mn.Left && f.Invoke (mn.Key, mn.Value) && forallOpt f mn.Right
-                | _ -> f.Invoke (m.Key, m.Value)
-        
+                if m.Height = 1 then 
+                    f.Invoke (m.Key, m.Value)
+                else
+                    let mn = asNode m
+                    forallOpt f mn.Left && f.Invoke (mn.Key, mn.Value) && forallOpt f mn.Right
 
         let forall f m =
             forallOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
@@ -845,24 +878,26 @@ namespace Internal.Utilities.Collections.Tagged
         let rec map (f:'Value -> 'Result) (m: MapTree<'Key, 'Value>) : MapTree<'Key, 'Result> = 
             if isEmpty m then empty
             else
-                match m with 
-                | :? MapTreeNode<'Key, 'Value> as mn -> 
+                if m.Height = 1 then 
+                    MapTree (m.Key, f m.Value)
+                else
+                    let mn = asNode m
                     let l2 = map f mn.Left 
                     let v2 = f mn.Value
                     let r2 = map f mn.Right
                     MapTreeNode (mn.Key, v2, l2, r2, mn.Height) :> MapTree<'Key, 'Result>
-                | _ -> MapTree (m.Key, f m.Value)
 
         let rec mapiOpt (f: OptimizedClosures.FSharpFunc<'Key, 'Value, 'Result>) (m: MapTree<'Key, 'Value>) = 
             if isEmpty m then empty
             else
-                match m with
-                | :? MapTreeNode<'Key, 'Value> as mn ->
+                if m.Height = 1 then
+                    MapTree (m.Key, f.Invoke (m.Key, m.Value))
+                else
+                    let mn = asNode m
                     let l2 = mapiOpt f mn.Left
                     let v2 = f.Invoke (mn.Key, mn.Value) 
                     let r2 = mapiOpt f mn.Right
                     MapTreeNode (mn.Key, v2, l2, r2, mn.Height) :> MapTree<'Key, 'Result>
-                | _ -> MapTree (m.Key, f.Invoke (m.Key, m.Value))
 
         let mapi f m =
             mapiOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
@@ -874,12 +909,13 @@ namespace Internal.Utilities.Collections.Tagged
         let rec foldBackOpt (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree<'Key, 'Value>) x = 
             if isEmpty m then x
             else
-                match m with 
-                | :? MapTreeNode<'Key, 'Value> as mn ->
+                if m.Height = 1 then 
+                    f.Invoke (m.Key, m.Value, x)
+                else
+                    let mn = asNode m
                     let x = foldBackOpt f mn.Right x
                     let x = f.Invoke (mn.Key, mn.Value, x)
                     foldBackOpt f mn.Left x
-                | _ -> f.Invoke (m.Key, m.Value, x)
 
         let foldBack f m x =
             foldBackOpt (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) m x
@@ -888,18 +924,18 @@ namespace Internal.Utilities.Collections.Tagged
             let rec foldFromTo (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree<'Key, 'Value>) x = 
                 if isEmpty m then x
                 else
-                    match m with 
-                    | :? MapTreeNode<'Key, 'Value> as mn ->
+                    if m.Height = 1 then 
+                        let cLoKey = comparer.Compare(lo, m.Key)
+                        let cKeyHi = comparer.Compare(m.Key, hi)
+                        let x = if cLoKey <= 0 && cKeyHi <= 0 then f.Invoke (m.Key, m.Value, x) else x
+                        x
+                    else
+                        let mn = asNode m
                         let cLoKey = comparer.Compare(lo, mn.Key)
                         let cKeyHi = comparer.Compare(mn.Key, hi)
                         let x = if cLoKey < 0 then foldFromTo f mn.Left x else x
                         let x = if cLoKey <= 0 && cKeyHi <= 0 then f.Invoke (mn.Key, mn.Value, x) else x
                         let x = if cKeyHi < 0 then foldFromTo f mn.Right x else x
-                        x
-                    | _ ->
-                        let cLoKey = comparer.Compare(lo, m.Key)
-                        let cKeyHi = comparer.Compare(m.Key, hi)
-                        let x = if cLoKey <= 0 && cKeyHi <= 0 then f.Invoke (m.Key, m.Value, x) else x
                         x
 
             if comparer.Compare(lo, hi) = 1 then x else foldFromTo f m x
@@ -910,13 +946,13 @@ namespace Internal.Utilities.Collections.Tagged
         let rec foldMapOpt (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree<'Key, 'Value>) z acc = 
             if isEmpty m then acc,z
             else
-                match m with
-                | :? MapTreeNode<'Key, 'Value> as mn ->
+                if m.Height = 1 then
+                    let mn = asNode m
                     let acc,z = foldMapOpt comparer f mn.Right z acc
                     let v',z = f.Invoke(mn.Key, mn.Value, z)
-                    let acc = add comparer mn.Key v' acc 
+                    let acc = add comparer mn.Key v' acc
                     foldMapOpt comparer f mn.Left z acc
-                | _ -> 
+                else
                     let v',z = f.Invoke(m.Key, m.Value, z)
                     add comparer m.Key v' acc,z
 
@@ -932,10 +968,20 @@ namespace Internal.Utilities.Collections.Tagged
                 let (x,y) = e.Current 
                 mkFromEnumerator comparer (add comparer x y acc) e
             else acc
+
+        let ofArray comparer (arr : array<'Key * 'Value>) =
+            let mutable res = empty
+            for (x, y) in arr do
+                res <- add comparer x y res 
+            res
           
-        let ofSeq comparer (c : seq<_>) =
-            use ie = c.GetEnumerator()
-            mkFromEnumerator comparer empty ie 
+        let ofSeq comparer (c : seq<'Key * 'T>) =
+            match c with 
+            | :? array<'Key * 'T> as xs -> ofArray comparer xs
+            | :? list<'Key * 'T> as xs -> ofList comparer xs
+            | _ -> 
+                use ie = c.GetEnumerator()
+                mkFromEnumerator comparer empty ie 
           
         let copyToArray s (arr: _[]) i =
             let mutable j = i 
@@ -953,9 +999,11 @@ namespace Internal.Utilities.Collections.Tagged
                 | m :: rest ->
                     if isEmpty m then collapseLHS rest
                     else
-                        match m with
-                        | :? MapTreeNode<'Key, 'Value> as mn -> collapseLHS (mn.Left :: MapTree (mn.Key, mn.Value) :: mn.Right :: rest)
-                        | _ -> stack
+                        if m.Height = 1 then
+                            stack
+                        else
+                            let mn = asNode m
+                            collapseLHS (mn.Left :: MapTree (mn.Key, mn.Value) :: mn.Right :: rest)
 
               /// invariant: always collapseLHS result 
             let mutable stack = collapseLHS [s]
@@ -970,9 +1018,9 @@ namespace Internal.Utilities.Collections.Tagged
                     match stack with
                     | []            -> alreadyFinished()
                     | m :: _ ->
-                        match m with
-                        | :? MapTreeNode<'Key, 'Value> -> failwith "Please report error: Map iterator, unexpected stack for current"
-                        | _ -> new KeyValuePair<_, _>(m.Key, m.Value)
+                        if m.Height = 1 then KeyValuePair<_, _>(m.Key, m.Value)
+                        else
+                            failwith "Please report error: Map iterator, unexpected stack for current"
                 else
                     notStarted()
 
@@ -981,11 +1029,11 @@ namespace Internal.Utilities.Collections.Tagged
                     match stack with
                     | [] -> false
                     | m :: rest ->
-                        match m with
-                        | :? MapTreeNode<'Key, 'Value> -> failwith "Please report error: Map iterator, unexpected stack for moveNext"
-                        | _ ->
+                        if m.Height = 1 then
                             stack <- collapseLHS rest
                             not stack.IsEmpty
+                        else
+                            failwith "Please report error: Map iterator, unexpected stack for moveNext"
                 else
                     started <- true  (* The first call to MoveNext "starts" the enumeration. *)
                     not stack.IsEmpty
