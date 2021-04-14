@@ -398,6 +398,7 @@ type TcConfigBuilder =
       mutable internConstantStrings: bool
       mutable extraOptimizationIterations: int
 
+      mutable win32icon: string
       mutable win32res: string 
       mutable win32manifest: string
       mutable includewin32manifest: bool
@@ -603,6 +604,7 @@ type TcConfigBuilder =
           internConstantStrings = true
           extraOptimizationIterations = 0
 
+          win32icon = ""
           win32res = ""
           win32manifest = ""
           includewin32manifest = true
@@ -986,6 +988,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.ignoreSymbolStoreSequencePoints = data.ignoreSymbolStoreSequencePoints
     member x.internConstantStrings = data.internConstantStrings
     member x.extraOptimizationIterations = data.extraOptimizationIterations
+    member x.win32icon = data.win32icon
     member x.win32res = data.win32res
     member x.win32manifest = data.win32manifest
     member x.includewin32manifest = data.includewin32manifest

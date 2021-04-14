@@ -207,6 +207,7 @@ type TcConfigBuilder =
       mutable ignoreSymbolStoreSequencePoints: bool
       mutable internConstantStrings: bool
       mutable extraOptimizationIterations: int
+      mutable win32icon: string 
       mutable win32res: string 
       mutable win32manifest: string
       mutable includewin32manifest: bool
@@ -395,6 +396,7 @@ type TcConfig =
     member ignoreSymbolStoreSequencePoints: bool
     member internConstantStrings: bool
     member extraOptimizationIterations: int
+    member win32icon: string
     member win32res: string 
     member win32manifest: string
     member includewin32manifest: bool

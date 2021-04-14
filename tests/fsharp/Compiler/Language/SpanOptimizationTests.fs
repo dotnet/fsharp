@@ -27,45 +27,37 @@ let test () =
             (fun verifier ->
                 verifier.VerifyIL
                             [
-                            """.method public static void  test() cil managed
-  {
+                            """
+.method public static void  test() cil managed
+{
 
-    .maxstack  5
-    .locals init (valuetype [System.Runtime]System.Span`1<object> V_0,
+    .maxstack  4
+    .locals init (valuetype [runtime]System.Span`1<object> V_0,
              int32 V_1,
-             int32 V_2,
-             object& V_3)
-    IL_0000:  call       valuetype [System.Runtime]System.Span`1<!0> valuetype [System.Runtime]System.Span`1<object>::get_Empty()
+             object& V_2)
+    IL_0000:  call       valuetype [runtime]System.Span`1<!0> valuetype [runtime]System.Span`1<object>::get_Empty()
     IL_0005:  stloc.0
     IL_0006:  ldc.i4.0
-    IL_0007:  stloc.2
-    IL_0008:  ldloca.s   V_0
-    IL_000a:  call       instance int32 valuetype [System.Runtime]System.Span`1<object>::get_Length()
-    IL_000f:  ldc.i4.1
-    IL_0010:  sub
-    IL_0011:  stloc.1
-    IL_0012:  ldloc.1
+    IL_0007:  stloc.1
+    IL_0008:  br.s       IL_0022
+        
+    IL_000a:  ldloca.s   V_0
+    IL_000c:  ldloc.1
+    IL_000d:  call       instance !0& valuetype [runtime]System.Span`1<object>::get_Item(int32)
+    IL_0012:  stloc.2
     IL_0013:  ldloc.2
-    IL_0014:  blt.s      IL_0034
-
-    IL_0016:  ldloca.s   V_0
-    IL_0018:  ldloc.2
-    IL_0019:  call       instance !0& valuetype [System.Runtime]System.Span`1<object>::get_Item(int32)
-    IL_001e:  stloc.3
-    IL_001f:  ldloc.3
-    IL_0020:  ldobj      [System.Runtime]System.Object
-    IL_0025:  call       void [System.Console]System.Console::WriteLine(object)
-    IL_002a:  ldloc.2
-    IL_002b:  ldc.i4.1
-    IL_002c:  add
-    IL_002d:  stloc.2
-    IL_002e:  ldloc.2
-    IL_002f:  ldloc.1
-    IL_0030:  ldc.i4.1
-    IL_0031:  add
-    IL_0032:  bne.un.s   IL_0016
-
-    IL_0034:  ret
+    IL_0014:  ldobj      [runtime]System.Object
+    IL_0019:  call       void [System.Console]System.Console::WriteLine(object)
+    IL_001e:  ldloc.1
+    IL_001f:  ldc.i4.1
+    IL_0020:  add
+    IL_0021:  stloc.1
+    IL_0022:  ldloc.1
+    IL_0023:  ldloca.s   V_0
+    IL_0025:  call       instance int32 valuetype [runtime]System.Span`1<object>::get_Length()
+    IL_002a:  blt.s      IL_000a
+        
+    IL_002c:  ret
   }"""
                                 ])
 
@@ -90,42 +82,33 @@ let test () =
                             """.method public static void  test() cil managed
   {
 
-    .maxstack  5
-    .locals init (valuetype [System.Runtime]System.ReadOnlySpan`1<object> V_0,
-             int32 V_1,
-             int32 V_2,
-             object& V_3)
-    IL_0000:  call       valuetype [System.Runtime]System.ReadOnlySpan`1<!0> valuetype [System.Runtime]System.ReadOnlySpan`1<object>::get_Empty()
+    .maxstack  4
+    .locals init (valuetype [runtime]System.ReadOnlySpan`1<object> V_0,
+         int32 V_1,
+         object& V_2)
+    IL_0000:  call       valuetype [runtime]System.ReadOnlySpan`1<!0> valuetype [runtime]System.ReadOnlySpan`1<object>::get_Empty()
     IL_0005:  stloc.0
     IL_0006:  ldc.i4.0
-    IL_0007:  stloc.2
-    IL_0008:  ldloca.s   V_0
-    IL_000a:  call       instance int32 valuetype [System.Runtime]System.ReadOnlySpan`1<object>::get_Length()
-    IL_000f:  ldc.i4.1
-    IL_0010:  sub
-    IL_0011:  stloc.1
-    IL_0012:  ldloc.1
+    IL_0007:  stloc.1
+    IL_0008:  br.s       IL_0022
+
+    IL_000a:  ldloca.s   V_0
+    IL_000c:  ldloc.1
+    IL_000d:  call       instance !0& modreq([runtime]System.Runtime.InteropServices.InAttribute) valuetype [runtime]System.ReadOnlySpan`1<object>::get_Item(int32)
+    IL_0012:  stloc.2
     IL_0013:  ldloc.2
-    IL_0014:  blt.s      IL_0034
+    IL_0014:  ldobj      [runtime]System.Object
+    IL_0019:  call       void [System.Console]System.Console::WriteLine(object)
+    IL_001e:  ldloc.1
+    IL_001f:  ldc.i4.1
+    IL_0020:  add
+    IL_0021:  stloc.1
+    IL_0022:  ldloc.1
+    IL_0023:  ldloca.s   V_0
+    IL_0025:  call       instance int32 valuetype [runtime]System.ReadOnlySpan`1<object>::get_Length()
+    IL_002a:  blt.s      IL_000a
 
-    IL_0016:  ldloca.s   V_0
-    IL_0018:  ldloc.2
-    IL_0019:  call       instance !0& modreq([System.Runtime]System.Runtime.InteropServices.InAttribute) valuetype [System.Runtime]System.ReadOnlySpan`1<object>::get_Item(int32)
-    IL_001e:  stloc.3
-    IL_001f:  ldloc.3
-    IL_0020:  ldobj      [System.Runtime]System.Object
-    IL_0025:  call       void [System.Console]System.Console::WriteLine(object)
-    IL_002a:  ldloc.2
-    IL_002b:  ldc.i4.1
-    IL_002c:  add
-    IL_002d:  stloc.2
-    IL_002e:  ldloc.2
-    IL_002f:  ldloc.1
-    IL_0030:  ldc.i4.1
-    IL_0031:  add
-    IL_0032:  bne.un.s   IL_0016
-
-    IL_0034:  ret
+    IL_002c:  ret
   }"""
                             ])
 
@@ -230,4 +213,106 @@ module Test =
     IL_004e:  ret
   }"""
                         ])
+
+    [<Test>]
+    let SpanForInBoundsDo() =
+        let source =
+            """
+module Test
+
+open System
+
+let test () =
+let span = Span<obj>.Empty
+for i in 0 .. span.Length-1 do
+    Console.WriteLine(span.[i])
+        """
+
+        CompilerAssert.CompileLibraryAndVerifyIL source
+            (fun verifier ->
+                verifier.VerifyIL
+                            [
+                            """.method public static void  test() cil managed
+  {
+
+    .maxstack  4
+    .locals init (valuetype [runtime]System.Span`1<object> V_0,
+             int32 V_1,
+             object& V_2)
+    IL_0000:  call       valuetype [runtime]System.Span`1<!0> valuetype [runtime]System.Span`1<object>::get_Empty()
+    IL_0005:  stloc.0
+    IL_0006:  ldc.i4.0
+    IL_0007:  stloc.1
+    IL_0008:  br.s       IL_0022
+        
+    IL_000a:  ldloca.s   V_0
+    IL_000c:  ldloc.1
+    IL_000d:  call       instance !0& valuetype [runtime]System.Span`1<object>::get_Item(int32)
+    IL_0012:  stloc.2
+    IL_0013:  ldloc.2
+    IL_0014:  ldobj      [runtime]System.Object
+    IL_0019:  call       void [System.Console]System.Console::WriteLine(object)
+    IL_001e:  ldloc.1
+    IL_001f:  ldc.i4.1
+    IL_0020:  add
+    IL_0021:  stloc.1
+    IL_0022:  ldloc.1
+    IL_0023:  ldloca.s   V_0
+    IL_0025:  call       instance int32 valuetype [runtime]System.Span`1<object>::get_Length()
+    IL_002a:  blt.s      IL_000a
+        
+    IL_002c:  ret
+  }"""
+                            ])
+    [<Test>]
+    let ReadOnlySpanForInBoundsDo() =
+        let source =
+            """
+module Test
+
+open System
+
+let test () =
+let span = ReadOnlySpan<obj>.Empty
+for i in 0 .. span.Length-1 do
+Console.WriteLine(span.[i])
+    """
+
+        CompilerAssert.CompileLibraryAndVerifyIL source
+            (fun verifier ->
+                verifier.VerifyIL
+                        [
+                        """.method public static void  test() cil managed
+  {
+
+    .maxstack  4
+    .locals init (valuetype [runtime]System.ReadOnlySpan`1<object> V_0,
+         int32 V_1,
+         object& V_2)
+    IL_0000:  call       valuetype [runtime]System.ReadOnlySpan`1<!0> valuetype [runtime]System.ReadOnlySpan`1<object>::get_Empty()
+    IL_0005:  stloc.0
+    IL_0006:  ldc.i4.0
+    IL_0007:  stloc.1
+    IL_0008:  br.s       IL_0022
+
+    IL_000a:  ldloca.s   V_0
+    IL_000c:  ldloc.1
+    IL_000d:  call       instance !0& modreq([runtime]System.Runtime.InteropServices.InAttribute) valuetype [runtime]System.ReadOnlySpan`1<object>::get_Item(int32)
+    IL_0012:  stloc.2
+    IL_0013:  ldloc.2
+    IL_0014:  ldobj      [runtime]System.Object
+    IL_0019:  call       void [System.Console]System.Console::WriteLine(object)
+    IL_001e:  ldloc.1
+    IL_001f:  ldc.i4.1
+    IL_0020:  add
+    IL_0021:  stloc.1
+    IL_0022:  ldloc.1
+    IL_0023:  ldloca.s   V_0
+    IL_0025:  call       instance int32 valuetype [runtime]System.ReadOnlySpan`1<object>::get_Length()
+    IL_002a:  blt.s      IL_000a
+
+    IL_002c:  ret
+  }"""
+                        ])
+
 #endif

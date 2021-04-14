@@ -11,6 +11,7 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.NativeRes
 open FSharp.Compiler.AbstractIL.StrongNameSign
 open FSharp.Compiler.BinaryResourceFormats
 open FSharp.Compiler.CheckDeclarations
@@ -464,7 +465,12 @@ module MainModuleBuilder =
                   yield ILNativeResource.Out (FileSystem.ReadAllBytesShim tcConfig.win32res) 
               if tcConfig.includewin32manifest && not(win32Manifest = "") && not runningOnMono then
                   yield  ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader() 
-                                                 yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.ReadAllBytesShim win32Manifest), tcConfig.target = CompilerTarget.Dll)) |]]
+                                                 yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.ReadAllBytesShim win32Manifest), tcConfig.target = CompilerTarget.Dll)) |]
+              if tcConfig.win32res = "" && tcConfig.win32icon <> "" && tcConfig.target <> CompilerTarget.Dll then
+                  use ms = new MemoryStream()
+                  Win32ResourceConversions.AppendIconToResourceStream(ms, FileSystem.FileStreamReadShim tcConfig.win32icon)
+                  yield ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader()
+                                                yield! ms.ToArray() |] ]
 
         // Add attributes, version number, resources etc. 
         {mainModule with 
@@ -486,4 +492,3 @@ module MainModuleBuilder =
                         yield! codegenResults.ilNetModuleAttrs ])
               NativeResources=nativeResources
               Manifest = manifest }
-

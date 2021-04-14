@@ -725,6 +725,47 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
             let attrs = GetCustomAttributesOfILModule ilModule
             List.exists (IsMatchingSignatureDataVersionAttr ilg (parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
 
+[<Sealed>]
+type RawFSharpAssemblyData (ilModule: ILModuleDef, ilAssemblyRefs) = 
+
+    interface IRawFSharpAssemblyData with 
+
+         member _.GetAutoOpenAttributes ilg = GetAutoOpenAttributes ilg ilModule
+
+         member _.GetInternalsVisibleToAttributes ilg = GetInternalsVisibleToAttributes ilg ilModule 
+
+         member _.TryGetILModuleDef() = Some ilModule 
+
+         member _.GetRawFSharpSignatureData(_, _, _) =
+            let resources = ilModule.Resources.AsList
+            [ for iresource in resources do
+                if IsSignatureDataResource iresource then 
+                    let ccuName = GetSignatureDataResourceName iresource
+                    yield (ccuName, fun () -> iresource.GetBytes()) ]
+
+         member _.GetRawFSharpOptimizationData(_, _, _) =
+            ilModule.Resources.AsList
+            |> List.choose (fun r -> if IsOptimizationDataResource r then Some(GetOptimizationDataResourceName r, (fun () -> r.GetBytes())) else None)
+
+         member _.GetRawTypeForwarders() =
+            match ilModule.Manifest with 
+            | Some manifest -> manifest.ExportedTypes
+            | None -> mkILExportedTypes []
+
+         member _.ShortAssemblyName = GetNameOfILModule ilModule 
+
+         member _.ILScopeRef = MakeScopeRefForILModule ilModule
+
+         member _.ILAssemblyRefs = ilAssemblyRefs
+
+         member _.HasAnyFSharpSignatureDataAttribute =
+            let attrs = GetCustomAttributesOfILModule ilModule
+            List.exists IsSignatureDataVersionAttr attrs
+
+         member _.HasMatchingFSharpSignatureDataAttribute ilg =
+            let attrs = GetCustomAttributesOfILModule ilModule
+            List.exists (IsMatchingSignatureDataVersionAttr ilg (parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
+
 //----------------------------------------------------------------------------
 // TcImports
 //--------------------------------------------------------------------------

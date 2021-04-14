@@ -139,7 +139,6 @@ $(POUND_R)
 
     <!-- Disable automagic FSharp.Core resolution when not using with FSharp scripts -->
     <DisableImplicitFSharpCoreReference Condition="'$(SCRIPTEXTENSION)' != '.fsx'">true</DisableImplicitFSharpCoreReference>
-    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
 
     <!-- Temporary fix some sdks, shipped internally with broken parameterization -->

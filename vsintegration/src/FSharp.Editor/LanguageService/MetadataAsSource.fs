@@ -18,6 +18,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 open Microsoft.VisualStudio.ComponentModelHost
+open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
@@ -26,41 +27,15 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.TextManager.Interop
 
-open FSharp.Compiler.Text
-
 module internal MetadataAsSource =
 
-    open Microsoft.CodeAnalysis.CSharp
-    open ICSharpCode.Decompiler
-    open ICSharpCode.Decompiler.CSharp
-    open ICSharpCode.Decompiler.Metadata
-    open ICSharpCode.Decompiler.CSharp.Transforms
-    open ICSharpCode.Decompiler.TypeSystem
-
-    let generateTemporaryCSharpDocument (asmIdentity: AssemblyIdentity, name: string, metadataReferences) =
+    let generateTemporaryDocument (asmIdentity: AssemblyIdentity, name: string, metadataReferences) =
         let rootPath = Path.Combine(Path.GetTempPath(), "MetadataAsSource")
-        let extension = ".cs"
+        let extension = ".fsi"
         let directoryName = Guid.NewGuid().ToString("N")
         let temporaryFilePath = Path.Combine(rootPath, directoryName, name + extension)
 
         let projectId = ProjectId.CreateNewId()
-
-        let parseOptions = CSharpParseOptions.Default.WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-        // Just say it's always a DLL since we probably won't have a Main method
-        let compilationOptions = Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-
-        // We need to include the version information of the assembly so InternalsVisibleTo and stuff works
-        let assemblyInfoDocumentId = DocumentId.CreateNewId(projectId)
-        let assemblyInfoFileName = "AssemblyInfo" + extension
-        let assemblyInfoString = String.Format(@"[assembly: System.Reflection.AssemblyVersion(""{0}"")]", asmIdentity.Version)
-
-        let assemblyInfoSourceTextContainer = SourceText.From(assemblyInfoString, Encoding.UTF8).Container
-
-        let assemblyInfoDocument = 
-            DocumentInfo.Create(
-                assemblyInfoDocumentId,
-                assemblyInfoFileName,
-                loader = TextLoader.From(assemblyInfoSourceTextContainer, VersionStamp.Default))
 
         let generatedDocumentId = DocumentId.CreateNewId(projectId)
         let documentInfo = 
@@ -74,35 +49,13 @@ module internal MetadataAsSource =
             ProjectInfo.Create(
                 projectId,
                 VersionStamp.Default,
-                name = asmIdentity.Name,
+                name = FSharpConstants.FSharpMetadataName + " - " + asmIdentity.Name,
                 assemblyName = asmIdentity.Name,
-                language = LanguageNames.CSharp,
-                compilationOptions = compilationOptions,
-                parseOptions = parseOptions,
-                documents = [|assemblyInfoDocument;documentInfo|],
+                language = LanguageNames.FSharp,
+                documents = [|documentInfo|],
                 metadataReferences = metadataReferences)
 
         (projectInfo, documentInfo)
-
-    let decompileCSharp (symbolFullTypeName: string, assemblyLocation: string) =
-        let logger = new StringBuilder()
-
-        // Initialize a decompiler with default settings.
-        let decompiler = CSharpDecompiler(assemblyLocation, DecompilerSettings())
-        // Escape invalid identifiers to prevent Roslyn from failing to parse the generated code.
-        // (This happens for example, when there is compiler-generated code that is not yet recognized/transformed by the decompiler.)
-        decompiler.AstTransforms.Add(new EscapeInvalidIdentifiers())
-
-        let fullTypeName = FullTypeName(symbolFullTypeName)
-
-        // Try to decompile; if an exception is thrown the caller will handle it
-        let text = decompiler.DecompileTypeAsString(fullTypeName)
-
-        let text = text + "#if false // " + Environment.NewLine
-        let text = text + logger.ToString()
-        let text = text + "#endif" + Environment.NewLine
-
-        SourceText.From(text)
 
     let showDocument (filePath, name, serviceProvider: IServiceProvider) =
         let vsRunningDocumentTable4 = serviceProvider.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable4>()
@@ -119,6 +72,7 @@ module internal MetadataAsSource =
         let textBuffer = editorAdaptersFactory.GetDataBuffer(vsTextBuffer)
 
         if not fileAlreadyOpen then
+            ErrorHandler.ThrowOnFailure(vsTextBuffer.SetStateFlags(uint32 BUFFERSTATEFLAGS.BSF_USER_READONLY)) |> ignore
             ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_IsProvisional, true)) |> ignore
             ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideCaption, name)) |> ignore
             ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideToolTip, name)) |> ignore
@@ -137,19 +91,55 @@ module internal MetadataAsSource =
             None
 
 [<Sealed>]
-type internal FSharpMetadataAsSourceService() =
+type internal FSharpMetadataAsSourceService(projectContextFactory: IWorkspaceProjectContextFactory) =
 
-    member val CSharpFiles = System.Collections.Concurrent.ConcurrentDictionary(StringComparer.OrdinalIgnoreCase)
+    let serviceProvider = ServiceProvider.GlobalProvider
+    let projs = System.Collections.Concurrent.ConcurrentDictionary<string, IWorkspaceProjectContext>()
 
-    member this.ShowCSharpDocument(projInfo: ProjectInfo, docInfo: DocumentInfo, text: Text.SourceText) =
-        let _ =
-            let directoryName = Path.GetDirectoryName(docInfo.FilePath)
-            if Directory.Exists(directoryName) |> not then
-                Directory.CreateDirectory(directoryName) |> ignore
-            use fileStream = new FileStream(docInfo.FilePath, IO.FileMode.Create)
-            use writer = new StreamWriter(fileStream)
-            text.Write(writer)
+    let createMetadataProjectContext (projInfo: ProjectInfo) (docInfo: DocumentInfo) =
+        let projectContext = projectContextFactory.CreateProjectContext(LanguageNames.FSharp, projInfo.Id.ToString(), projInfo.FilePath, Guid.NewGuid(), null, null)
+        projectContext.DisplayName <- projInfo.Name
+        projectContext.AddSourceFile(docInfo.FilePath, sourceCodeKind = SourceCodeKind.Regular)
+        
+        for metaRef in projInfo.MetadataReferences do
+            match metaRef with
+            | :? PortableExecutableReference as peRef ->
+                projectContext.AddMetadataReference(peRef.FilePath, MetadataReferenceProperties.Assembly)
+            | _ ->
+                ()
 
-        this.CSharpFiles.[docInfo.FilePath] <- (projInfo, docInfo)
+        projectContext
 
-        MetadataAsSource.showDocument(docInfo.FilePath, docInfo.Name, ServiceProvider.GlobalProvider)
+    let clear filePath (projectContext: IWorkspaceProjectContext) =
+        projs.TryRemove(filePath) |> ignore
+        projectContext.Dispose()
+        try
+            File.Delete filePath |> ignore
+        with
+        | _ -> ()
+
+    member _.ClearGeneratedFiles() =
+        let projsArr = projs.ToArray()
+        projsArr
+        |> Array.iter (fun pair ->
+            clear pair.Key pair.Value
+        )
+
+    member _.ShowDocument(projInfo: ProjectInfo, filePath: string, text: Text.SourceText) =
+        match projInfo.Documents |> Seq.tryFind (fun doc -> doc.FilePath = filePath) with
+        | Some document ->
+            let _ =
+                let directoryName = Path.GetDirectoryName(filePath)
+                if Directory.Exists(directoryName) |> not then
+                    Directory.CreateDirectory(directoryName) |> ignore
+                use fileStream = new FileStream(filePath, IO.FileMode.Create)
+                use writer = new StreamWriter(fileStream)
+                text.Write(writer)
+
+            let projectContext = createMetadataProjectContext projInfo document
+
+            projs.[filePath] <- projectContext
+
+            MetadataAsSource.showDocument(filePath, Path.GetFileName(filePath), serviceProvider)
+        | _ ->
+            None

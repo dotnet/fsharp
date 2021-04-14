@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
-        <target state="new">The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</target>
+        <target state="translated">Атрибут "AssemblyKeyNameAttribute" является устаревшим. Используйте вместо него атрибут "AssemblyKeyFileAttribute".</target>
         <note />
       </trans-unit>
       <trans-unit id="containerSigningUnsupportedOnThisPlatform">
         <source>Key container signing is not supported on this platform.</source>
-        <target state="new">Key container signing is not supported on this platform.</target>
+        <target state="translated">Подписывание контейнера ключей не поддерживается на этой платформе.</target>
         <note />
       </trans-unit>
       <trans-unit id="couldNotLoadAnalyzerExtension">
@@ -302,6 +302,11 @@
         <target state="translated">Отобразить окно с версией компилятора и выйти</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsWin32icon">
+        <source>Specify a Win32 icon file (.ico)</source>
+        <target state="new">Specify a Win32 icon file (.ico)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">Для функции управления пакетами требуется версия языка 5.0, используйте параметр /langversion:preview</target>
@@ -364,7 +369,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
-        <target state="new">The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</target>
+        <target state="translated">Не удалось определить пакет SDK .NET для этого скрипта. Если сценарий находится в каталоге с использованием файла "global.json", убедитесь, что установлен соответствующий пакет SDK .NET. Непредвиденная ошибка "{0}".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -2809,7 +2814,7 @@
       </trans-unit>
       <trans-unit id="tcMemberKindPropertyGetSetNotExpected">
         <source>SynMemberKind.PropertyGetSet only expected in parse trees</source>
-        <target state="needs-review-translation">MemberKind.PropertyGetSet требуется только в деревьях синтаксического анализа</target>
+        <target state="translated">SynMemberKind.PropertyGetSet используется только в деревьях синтаксического анализа</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainValues">

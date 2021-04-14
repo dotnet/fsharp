@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
-        <target state="new">The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</target>
+        <target state="translated">O 'AssemblyKeyNameAttribute' foi preterido. Use o 'AssemblyKeyFileAttribute'.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerSigningUnsupportedOnThisPlatform">
         <source>Key container signing is not supported on this platform.</source>
-        <target state="new">Key container signing is not supported on this platform.</target>
+        <target state="translated">Não há suporte para a assinatura do contêiner de chave nesta plataforma.</target>
         <note />
       </trans-unit>
       <trans-unit id="couldNotLoadAnalyzerExtension">
@@ -302,6 +302,11 @@
         <target state="translated">Exibir a faixa de versão do compilador e sair</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsWin32icon">
+        <source>Specify a Win32 icon file (.ico)</source>
+        <target state="new">Specify a Win32 icon file (.ico)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">O recurso de gerenciamento de pacotes requer a versão de idioma 5.0. Use /langversion:preview</target>
@@ -364,7 +369,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
-        <target state="new">The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</target>
+        <target state="translated">Não foi possível determinar o SDK do .NET deste script. Se o script estiver em um diretório que usa um 'global.json', verifique se o SDK do .NET relevante está instalado. Erro inesperado '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -2809,7 +2814,7 @@
       </trans-unit>
       <trans-unit id="tcMemberKindPropertyGetSetNotExpected">
         <source>SynMemberKind.PropertyGetSet only expected in parse trees</source>
-        <target state="needs-review-translation">MemberKind.PropertyGetSet só é esperado em árvores de análise</target>
+        <target state="translated">SynMemberKind.PropertyGetSet só é esperado em árvores de análise</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainValues">

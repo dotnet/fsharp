@@ -763,8 +763,7 @@ module internal SymbolHelpers =
         items |> List.filter (fun item -> not (IsExplicitlySuppressed g item.Item))
 
     let SimplerDisplayEnv denv = 
-        { denv with suppressInlineKeyword=true
-                    shortConstraints=true
+        { denv with shortConstraints=true
                     showConstraintTyparAnnotations=false
                     abbreviateAdditionalConstraints=false
                     suppressNestedTypes=true
