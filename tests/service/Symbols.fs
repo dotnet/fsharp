@@ -552,3 +552,110 @@ type Meh =
             SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(range = r)]) ])) ->
             assertRange (3, 0) (5,11) r
         | _ -> Assert.Fail "Could not get valid AST"
+
+module SynMatchClause =
+    [<Test>]
+    let ``Range of single SynMatchClause`` () =
+        let parseResults = 
+            getParseResults
+                """
+try
+    let content = tryDownloadFile url
+    Some content
+with ex ->
+    Infrastructure.ReportWarning ex
+    None"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(range = range) as clause ]))
+        ]) ])) ->
+            assertRange (5, 5) (7, 8) range
+            assertRange (5, 5) (7, 8) clause.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of multiple SynMatchClause`` () =
+        let parseResults = 
+            getParseResults
+                """
+try
+    let content = tryDownloadFile url
+    Some content
+with
+| ex ->
+    Infrastructure.ReportWarning ex
+    None
+| exx ->
+    None"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(range = r1) as clause1
+                                                                      SynMatchClause(range = r2) as clause2 ]))
+        ]) ])) ->
+            assertRange (6, 2) (8, 8) r1
+            assertRange (6, 2) (8, 8) clause1.Range
+            
+            assertRange (9, 2) (10, 8) r2
+            assertRange (9, 2) (10, 8) clause2.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of single SynMatchClause followed by bar`` () =
+        let parseResults = 
+            getParseResults
+                """
+try
+    let content = tryDownloadFile url
+    Some content
+with
+| ex ->
+    ()
+| """
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(range = range) as clause ]))
+        ]) ])) ->
+            assertRange (6, 2) (7, 6) range
+            assertRange (6, 2) (7, 6) clause.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+    
+    [<Test>]
+    let ``Range of single SynMatchClause with missing body`` () =
+        let parseResults = 
+            getParseResults
+                """
+try
+    let content = tryDownloadFile url
+    Some content
+with
+| ex ->"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(range = range) as clause ]))
+        ]) ])) ->
+            assertRange (6, 2) (6, 4) range
+            assertRange (6, 2) (6, 4) clause.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of single SynMatchClause with missing body and when expr`` () =
+        let parseResults = 
+            getParseResults
+                """
+try
+    let content = tryDownloadFile url
+    Some content
+with
+| ex when (isNull ex) ->"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(range = range) as clause ]))
+        ]) ])) ->
+            assertRange (6, 2) (6, 21) range
+            assertRange (6, 2) (6, 21) clause.Range
+        | _ -> Assert.Fail "Could not get valid AST"

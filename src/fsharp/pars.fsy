@@ -3908,30 +3908,38 @@ patternClauses:
   | patternAndGuard patternResult %prec prec_pat_pat_action
      { let pat, guard, patm = $1 
        let mLast = $2.Range 
-       [SynMatchClause(pat, guard, $2, patm, DebugPointForTarget.Yes)], mLast  }
+       let m = unionRanges $2.Range patm
+       [SynMatchClause(pat, guard, $2, m, DebugPointForTarget.Yes)], mLast  }
 
   | patternAndGuard patternResult BAR patternClauses 
      { let pat, guard, patm = $1 
-       let clauses, mLast = $4 
-       (SynMatchClause(pat, guard, $2, patm, DebugPointForTarget.Yes) :: clauses), mLast }
+       let clauses, mLast = $4
+       let m = unionRanges $2.Range patm
+       (SynMatchClause(pat, guard, $2, m, DebugPointForTarget.Yes) :: clauses), mLast }
 
   | patternAndGuard patternResult BAR error 
      { let pat, guard, patm = $1 
        let mLast = rhs parseState 3 
-       // silent recovery 
-       [SynMatchClause(pat, guard, $2, patm, DebugPointForTarget.Yes)], mLast  }
+       let m = unionRanges $2.Range patm
+       // silent recovery
+       [SynMatchClause(pat, guard, $2, m, DebugPointForTarget.Yes)], mLast  }
 
   | patternAndGuard patternResult error 
      { let pat, guard, patm = $1 
-       let mLast = $2.Range 
+       let mLast = $2.Range
+       let m = unionRanges $2.Range patm
        // silent recovery 
-       [SynMatchClause(pat, guard, $2, patm, DebugPointForTarget.Yes)], mLast }
+       [SynMatchClause(pat, guard, $2, m, DebugPointForTarget.Yes)], mLast }
 
   | patternAndGuard error 
      { let pat, guard, patm = $1 
        let mLast = rhs parseState 2
+       let m = 
+           match guard with 
+           | Some e -> unionRanges patm e.Range 
+           | _ -> patm
        // silent recovery 
-       [SynMatchClause(pat, guard, SynExpr.Const (SynConst.Unit, mLast.EndRange), patm, DebugPointForTarget.Yes)], mLast }
+       [SynMatchClause(pat, guard, SynExpr.Const (SynConst.Unit, mLast.EndRange), m, DebugPointForTarget.Yes)], mLast }
  
 patternGuard: 
   | WHEN declExpr 
