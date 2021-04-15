@@ -886,12 +886,18 @@ namespace Microsoft.FSharp.Core
         /// <returns>RequireQualifiedAccessAttribute</returns>
         new : unit -> RequireQualifiedAccessAttribute
 
+    /// <summary>This attribute is used to mandate that call site to a method bearing the attribute
+    /// use named arguments argument syntax.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
-    type RequireNamedParametersAttribute =
+    type RequireNamedArgumentAttribute =
         inherit Attribute
         
-        new : unit -> RequireNamedParametersAttribute
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <returns>RequireNamedArgumentAttribute</returns>
+        new : unit -> RequireNamedArgumentAttribute
 
     /// <summary>Indicates a construct is automatically opened when brought into scope through
     /// an assembly reference or then opening of the containing namespace or module.</summary>

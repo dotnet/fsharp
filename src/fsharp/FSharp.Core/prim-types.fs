@@ -349,7 +349,7 @@ namespace Microsoft.FSharp.Core
     
     [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
-    type RequireNamedParametersAttribute() =
+    type RequireNamedArgumentAttribute() =
         inherit System.Attribute()
         
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly, AllowMultiple=true)>]  

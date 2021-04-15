@@ -1557,4 +1557,4 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3391,tcLiteralAttributeCannotUseActivePattern,"A [<Literal>] declaration cannot use an active pattern for its identifier"
 3392,containerDeprecated,"The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead."
 3393,containerSigningUnsupportedOnThisPlatform,"Key container signing is not supported on this platform."
-3394,tcMethodRequireNamedParametersAttribute,"The method '%s' has the 'RequireNamedParametersAttribute' attribute specified, use the named parameters syntax (i.e. 'MethodName(x = value)')."
+3394,tcMethodRequireNamedArgumentAttribute,"The method '%s' has the 'RequireNamedArgumentAttribute' attribute specified, use the named arguments syntax (e.g. 'MethodName(x = value)')."
