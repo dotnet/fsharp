@@ -497,3 +497,58 @@ let m = 7.000<cm>
             assertRange (2, 8) (2, 12) r1
             assertRange (3, 8) (3, 13) r2
         | _ -> Assert.Fail "Could not get valid AST"
+
+module SynModuleOrNamespaceSig =
+    [<Test>]
+    let ``Range member returns range of SynModuleOrNamespaceSig`` () =
+        let parseResults =
+            getParseResultsOfSignatureFile
+                """
+namespace Foobar
+
+type Bar = | Bar of string * int
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile(ParsedSigFileInput(modules = [
+            SynModuleOrNamespaceSig(kind = SynModuleOrNamespaceKind.DeclaredNamespace) as singleModule
+        ])) ->
+            assertRange (2,0) (4,32) singleModule.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``GlobalNamespace should start at namespace keyword`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """// foo
+// bar
+namespace  global
+
+type Bar = | Bar of string * int
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig(kind = SynModuleOrNamespaceKind.GlobalNamespace; range = r) ])) ->
+            assertRange (3, 0) (5, 32) r
+        | _ -> Assert.Fail "Could not get valid AST"
+
+module SignatureTypes =
+    [<Test>]
+    let ``Range of Type should end at end keyword`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """namespace GreatProjectThing
+
+type Meh =
+        class
+        end
+
+
+// foo"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(range = r)]) ])) ->
+            assertRange (3, 0) (5,11) r
+        | _ -> Assert.Fail "Could not get valid AST"

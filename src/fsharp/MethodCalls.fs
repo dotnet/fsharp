@@ -214,11 +214,10 @@ let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnown
                     calledArgTy
                 // If at the beginning of inference then use a type variable.
                 else 
-                    let destTy = destNullableTy g calledArgTy
                     match calledArg.OptArgInfo with
-                    // Use the type variable from the Nullable if called arg is not optional.
-                    | NotOptional when isTyparTy g destTy ->
-                        destTy
+                    // If inference has not solved the kind of Nullable on the called arg and is not optional then use this.
+                    | NotOptional when isTyparTy g (destNullableTy g calledArgTy) ->
+                        calledArgTy
                     | _ ->
                         let compgenId = mkSynId range0 unassignedTyparName
                         mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false))

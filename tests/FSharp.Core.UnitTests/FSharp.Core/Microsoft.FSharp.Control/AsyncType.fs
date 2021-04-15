@@ -250,10 +250,14 @@ type AsyncType() =
             let! result = tcs.Task |> Async.AwaitTask
             return result }
 
-        try
-            Async.RunSynchronously(a, cancellationToken = cts.Token)
-                |> ignore
-        with :? OperationCanceledException as o -> ()
+        let cancelled =
+            try
+                Async.RunSynchronously(a, cancellationToken = cts.Token) |> ignore
+                false
+            with :? OperationCanceledException as o -> true
+                 | _ -> false
+
+        Assert.True (cancelled, "Task is not cancelled")
 
     [<Fact>]
     member this.ExceptionPropagatesToTask () =
@@ -433,7 +437,7 @@ type AsyncType() =
                 let! s1 = Async.AwaitTask(t)
                 return s = s1
             }
-        Async.RunSynchronously(a, 1000) |> Assert.True
+        Async.RunSynchronously(a) |> Assert.True
 
     [<Fact>]
     member this.AwaitTaskCancellation () =
@@ -486,7 +490,7 @@ type AsyncType() =
                     return false
                 with e -> return true
               }
-        Async.RunSynchronously(a, 1000) |> Assert.True
+        Async.RunSynchronously(a) |> Assert.True
 
     [<Fact>]
     member this.TaskAsyncValueCancellation () =
@@ -522,7 +526,7 @@ type AsyncType() =
                 do! Async.AwaitTask(t)
                 return true
             }
-        let result =Async.RunSynchronously(a, 1000)
+        let result =Async.RunSynchronously(a)
         (!hasBeenCalled && result) |> Assert.True
 
     [<Fact>]
@@ -539,7 +543,7 @@ type AsyncType() =
                     return false
                 with e -> return true
               }
-        Async.RunSynchronously(a, 3000) |> Assert.True
+        Async.RunSynchronously(a) |> Assert.True
 
     [<Fact>]
     member this.NonGenericTaskAsyncValueCancellation () =

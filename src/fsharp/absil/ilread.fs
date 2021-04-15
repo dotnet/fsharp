@@ -28,6 +28,8 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
 open System.Reflection
+open System.Reflection.PortableExecutable
+open FSharp.NativeInterop
 
 #nowarn "9"
 
@@ -131,6 +133,27 @@ type ByteFile(fileName: string, bytes: byte[]) =
     member _.FileName = fileName
     interface BinaryFile with
         override bf.GetView() = view
+
+type PEFile(fileName: string, peReader: PEReader) as this =
+
+    // We store a weak byte memory reference so we do not constantly create a lot of byte memory objects.
+    // We could just have a single ByteMemory stored in the PEFile, but we need to dispose of the stream via the finalizer; we cannot have a cicular reference.
+    let mutable weakMemory = new WeakReference<ByteMemory>(Unchecked.defaultof<_>)
+
+    member _.FileName = fileName
+
+    override _.Finalize() =
+        peReader.Dispose()
+
+    interface BinaryFile with
+        override _.GetView() =
+            match weakMemory.TryGetTarget() with
+            | true, m -> m.AsReadOnly()
+            | _ ->
+                let block = peReader.GetEntireImage() // it's ok to call this everytime we do GetView as it is cached in the PEReader.
+                let m = ByteMemory.FromUnsafePointer(block.Pointer |> NativePtr.toNativeInt, block.Length, this)
+                weakMemory <- WeakReference<ByteMemory>(m)
+                m.AsReadOnly()
  
 /// Same as ByteFile but holds the bytes weakly. The bytes will be re-read from the backing file when a view is requested.
 /// This is the default implementation used by F# Compiler Services when accessing "stable" binaries. It is not used
@@ -3885,6 +3908,12 @@ let createMemoryMapFile fileName =
 
 let OpenILModuleReaderFromBytes fileName assemblyContents options = 
     let pefile = ByteFile(fileName, assemblyContents) :> BinaryFile
+    let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, options.pdbDirPath, (options.reduceMemoryUsage = ReduceMemoryFlag.Yes), true)
+    new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb)) :> ILModuleReader
+
+let OpenILModuleReaderFromStream fileName (peStream: Stream) options = 
+    let peReader = new System.Reflection.PortableExecutable.PEReader(peStream, PEStreamOptions.PrefetchEntireImage)
+    let pefile = PEFile(fileName, peReader) :> BinaryFile
     let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, options.pdbDirPath, (options.reduceMemoryUsage = ReduceMemoryFlag.Yes), true)
     new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb)) :> ILModuleReader
 
