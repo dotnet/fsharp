@@ -227,7 +227,7 @@ type Benchmarks() =
     //                 for i in Seq.init 1000 id do
     //                    res <- i + res }
 
-    [<BenchmarkCategory("TinyVariableSizedResizeArrayBuilderCodeList"); Benchmark(Baseline=true)>]
+    [<BenchmarkCategory("TinyVariableSizedList"); Benchmark(Baseline=true)>]
     member _.TinyVariableSizedList_StateMachine() = Tests.ListBuilder.Examples.tinyVariableSizeBase()
 
     [<BenchmarkCategory("TinyVariableSizedList"); Benchmark>]
