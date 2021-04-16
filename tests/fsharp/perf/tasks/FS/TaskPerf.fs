@@ -227,11 +227,23 @@ type Benchmarks() =
     //                 for i in Seq.init 1000 id do
     //                    res <- i + res }
 
-    // [<BenchmarkCategory("list"); Benchmark(Baseline=true)>]
-    // member _.ListBuilder_ListExpression() = Tests.ListBuilder.Examples.perf2L()
+    [<BenchmarkCategory("TinyVariableSizedResizeArrayBuilderCodeList"); Benchmark(Baseline=true)>]
+    member _.TinyVariableSizedList_StateMachine() = Tests.ListBuilder.Examples.tinyVariableSizeBase()
 
-    // [<BenchmarkCategory("list"); Benchmark>]
-    // member _.ListBuilder_ListBuilder() = Tests.ListBuilder.Examples.perf1L()
+    [<BenchmarkCategory("TinyVariableSizedList"); Benchmark>]
+    member _.TinyVariableSizedList_Builder() = Tests.ListBuilder.Examples.tinyVariableSize()
+
+    [<BenchmarkCategory("VariableSizedList"); Benchmark(Baseline=true)>]
+    member _.VariableSizedList_StateMachine() = Tests.ListBuilder.Examples.variableSizeBase()
+
+    [<BenchmarkCategory("VariableSizedList"); Benchmark>]
+    member _.VariableSizedList_Builder() = Tests.ListBuilder.Examples.variableSize()
+
+    [<BenchmarkCategory("FixedSizedList"); Benchmark(Baseline=true)>]
+    member _.FixedSizeList_StateMachine() = Tests.ListBuilder.Examples.fixedSizeBase()
+
+    [<BenchmarkCategory("FixedSizedList"); Benchmark>]
+    member _.FixedSizeList_Builder() = Tests.ListBuilder.Examples.fixedSize()
 
     [<BenchmarkCategory("TinyVariableSizedArray"); Benchmark(Baseline=true)>]
     member _.TinyVariableSizedArray_StateMachine() = Tests.ArrayBuilder.Examples.tinyVariableSizeBase()
