@@ -29,47 +29,45 @@ type ResizeArrayBuilderStateMachine<'T> =
 
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     member sm.ToResizeArray() = 
-        ResizeArrayBuilderStateMachine<_>.Run(&sm)
         match sm.Result with 
         | null -> ResizeArray()
         | ra -> ra
     
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     member sm.ToArray() = 
-        ResizeArrayBuilderStateMachine<_>.Run(&sm)
         match sm.Result with 
         | null -> Array.empty
         | ra -> ra.ToArray()
 
-type YieldCode<'T> = delegate of byref<ResizeArrayBuilderStateMachine<'T>> -> unit
+type ResizeArrayBuilderCode<'T> = delegate of byref<ResizeArrayBuilderStateMachine<'T>> -> unit
 
 type ResizeArrayBuilderBase() =
     
-    member inline __.Delay(__expand_f : unit -> YieldCode<'T>) : YieldCode<'T> =
-        YieldCode (fun sm -> (__expand_f()).Invoke &sm)
+    member inline __.Delay(__expand_f : unit -> ResizeArrayBuilderCode<'T>) : ResizeArrayBuilderCode<'T> =
+        ResizeArrayBuilderCode (fun sm -> (__expand_f()).Invoke &sm)
 
-    member inline __.Zero() : YieldCode<'T> =
-        YieldCode(fun _sm -> ())
+    member inline __.Zero() : ResizeArrayBuilderCode<'T> =
+        ResizeArrayBuilderCode(fun _sm -> ())
 
-    member inline __.Combine(__expand_task1: YieldCode<'T>, __expand_task2: YieldCode<'T>) : YieldCode<'T> =
-        YieldCode(fun sm -> 
+    member inline __.Combine(__expand_task1: ResizeArrayBuilderCode<'T>, __expand_task2: ResizeArrayBuilderCode<'T>) : ResizeArrayBuilderCode<'T> =
+        ResizeArrayBuilderCode(fun sm -> 
             __expand_task1.Invoke &sm
             __expand_task2.Invoke &sm)
             
-    member inline __.While(__expand_condition : unit -> bool, __expand_body : YieldCode<'T>) : YieldCode<'T> =
-        YieldCode(fun sm -> 
+    member inline __.While(__expand_condition : unit -> bool, __expand_body : ResizeArrayBuilderCode<'T>) : ResizeArrayBuilderCode<'T> =
+        ResizeArrayBuilderCode(fun sm -> 
             while __expand_condition() do
                 __expand_body.Invoke &sm)
 
-    member inline __.TryWith(__expand_body : YieldCode<'T>, __expand_catch : exn -> YieldCode<'T>) : YieldCode<'T> =
-        YieldCode(fun sm -> 
+    member inline __.TryWith(__expand_body : ResizeArrayBuilderCode<'T>, __expand_catch : exn -> ResizeArrayBuilderCode<'T>) : ResizeArrayBuilderCode<'T> =
+        ResizeArrayBuilderCode(fun sm -> 
             try
                 __expand_body.Invoke &sm
             with exn -> 
                 (__expand_catch exn).Invoke &sm)
 
-    member inline __.TryFinally(__expand_body: YieldCode<'T>, compensation : unit -> unit) : YieldCode<'T> =
-        YieldCode(fun sm -> 
+    member inline __.TryFinally(__expand_body: ResizeArrayBuilderCode<'T>, compensation : unit -> unit) : ResizeArrayBuilderCode<'T> =
+        ResizeArrayBuilderCode(fun sm -> 
             try
                 __expand_body.Invoke &sm
             with _ ->
@@ -78,28 +76,28 @@ type ResizeArrayBuilderBase() =
 
             compensation())
 
-    member inline b.Using(disp : #IDisposable, __expand_body : #IDisposable -> YieldCode<'T>) = 
+    member inline b.Using(disp : #IDisposable, __expand_body : #IDisposable -> ResizeArrayBuilderCode<'T>) = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         b.TryFinally(
             (fun sm -> (__expand_body disp).Invoke &sm),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
-    member inline b.For(sequence : seq<'TElement>, __expand_body : 'TElement -> YieldCode<'T>) : YieldCode<'T> =
+    member inline b.For(sequence : seq<'TElement>, __expand_body : 'TElement -> ResizeArrayBuilderCode<'T>) : ResizeArrayBuilderCode<'T> =
         b.Using (sequence.GetEnumerator(), 
             (fun e -> b.While((fun () -> e.MoveNext()), (fun sm -> (__expand_body e.Current).Invoke &sm))))
 
-    member inline __.Yield (v: 'T) : YieldCode<'T> =
-        YieldCode(fun sm ->
+    member inline __.Yield (v: 'T) : ResizeArrayBuilderCode<'T> =
+        ResizeArrayBuilderCode(fun sm ->
             sm.Yield v)
 
-    member inline b.YieldFrom (source: IEnumerable<'T>) : YieldCode<'T> =
+    member inline b.YieldFrom (source: IEnumerable<'T>) : ResizeArrayBuilderCode<'T> =
         b.For(source, (fun value -> b.Yield(value)))
 
 
 type ResizeArrayBuilder() =     
     inherit ResizeArrayBuilderBase()
 
-    member inline b.Run(__expand_code : YieldCode<'T>) : ResizeArray<'T> = 
+    member inline b.Run(__expand_code : ResizeArrayBuilderCode<'T>) : ResizeArray<'T> = 
         if __useResumableStateMachines then
             __resumableStateMachineStruct<ResizeArrayBuilderStateMachine<'T>, _>
                 (MoveNextMethod<ResizeArrayBuilderStateMachine<'T>>(fun sm -> 
@@ -113,20 +111,18 @@ type ResizeArrayBuilder() =
                 // Start
                 (AfterMethod<_,_>(fun sm -> 
                     ResizeArrayBuilderStateMachine<_>.Run(&sm)
-                    match sm.Result with 
-                    | null -> ResizeArray()
-                    | ra -> ra))
+                    sm.ToResizeArray()))
         else
             let mutable sm = ResizeArrayBuilderStateMachine<'T>()
             __expand_code.Invoke(&sm)
-            sm.Result
+            sm.ToResizeArray()
 
 let rsarray = ResizeArrayBuilder()
 
 type ArrayBuilder() =     
     inherit ResizeArrayBuilderBase()
 
-    member inline b.Run(__expand_code : YieldCode<'T>) : 'T[] = 
+    member inline b.Run(__expand_code : ResizeArrayBuilderCode<'T>) : 'T[] = 
         if __useResumableStateMachines then
             __resumableStateMachineStruct<ResizeArrayBuilderStateMachine<'T>, _>
                 (MoveNextMethod<ResizeArrayBuilderStateMachine<'T>>(fun sm -> 
@@ -140,20 +136,30 @@ type ArrayBuilder() =
                 // Start
                 (AfterMethod<_,_>(fun sm -> 
                     ResizeArrayBuilderStateMachine<_>.Run(&sm)
-                    match sm.Result with 
-                    | null -> Array.Empty()
-                    | ra -> ra.ToArray()))
+                    sm.ToArray()))
         else
             let mutable sm = ResizeArrayBuilderStateMachine<'T>()
             __expand_code.Invoke(&sm)
-            match sm.Result with 
-            | null -> Array.Empty()
-            | ra -> ra.ToArray()
+            sm.ToArray()
 
 let array = ArrayBuilder()
 
 module Examples =
-    let perf1A () = 
+    let tinyVariableSize () = 
+        for i in 1 .. 1000000 do
+            array {
+               if i % 3 = 0 then 
+                   yield "b"
+            } |> Array.length |> ignore
+
+    let tinyVariableSizeBase () = 
+        for i in 1 .. 1000000 do
+            [|
+               if i % 3 = 0 then 
+                   yield "b"
+            |] |> Array.length |> ignore
+
+    let variableSize () = 
         for i in 1 .. 1000000 do
             array {
                yield "a"
@@ -168,7 +174,8 @@ module Examples =
                    yield "b"
                yield "c"
             } |> Array.length |> ignore
-    let perf2A () = 
+
+    let variableSizeBase () = 
         for i in 1 .. 1000000 do
             [|
                yield "a"
@@ -184,18 +191,32 @@ module Examples =
                yield "c"
             |] |> Array.length |> ignore
 
-    let perf3A () = 
+    let fixedSize () = 
+        for i in 1 .. 1000000 do
+            array {
+               "a"
+               "b"
+               "b"
+               "b"
+               "b"
+               "b"
+               "b"
+               "b"
+               "b"
+               "c"
+             } |> Array.length |> ignore
+
+    let fixedSizeBase () = 
         for i in 1 .. 1000000 do
             [|
                "a"
                "b"
                "b"
                "b"
-               if i % 3 = 0 then 
-                   "b"
-                   "b"
-                   "b"
-                   "b"
+               "b"
+               "b"
+               "b"
+               "b"
                "b"
                "c"
             |] |> Array.length |> ignore
@@ -206,9 +227,12 @@ module Examples =
         t.Stop()
         printfn "PERF: %s : %d" s t.ElapsedMilliseconds
 
-    perf "perf1A (array builder) " perf1A
-    perf "perf2A (array expression explicit yield)" perf2A
-    perf "perf3A (array expression implicit yield)" perf3A
+    perf "tinyVariableSize (array builder) " tinyVariableSize
+    perf "tinyVariableSizeBase (array expression)" tinyVariableSizeBase
+    perf "variableSize (array builder) " variableSize
+    perf "variableSizeBase (array expression)" variableSizeBase
+    perf "fixedSize (array builder) " fixedSize
+    perf "fixedSizeBase (array expression)" fixedSizeBase
     // let dumpSeq (t: IEnumerable<_>) = 
     //     let e = t.GetEnumerator()
     //     while e.MoveNext() do 

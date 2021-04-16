@@ -34,7 +34,6 @@ type ListBuilderStateMachine<'T> =
     
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     member sm.ToList() = 
-        ListBuilderStateMachine<_>.Run(&sm)
         match box sm.Result with 
         | null -> []
         | _ ->
@@ -109,11 +108,11 @@ type ListBuilder() =
                 // Start
                 (AfterMethod<_,_>(fun sm -> 
                     ListBuilderStateMachine<_>.Run(&sm)
-                    sm.Result))
+                    sm.ToList()))
         else
             let mutable sm = ListBuilderStateMachine<'T>()
             __expand_code.Invoke(&sm)
-            sm.Result
+            sm.ToList()
 
 let list = ListBuilder()
 
@@ -138,7 +137,21 @@ module Examples =
            yield "f"
         }
 
-    let perf1L () = 
+    let tinyVariableSize () = 
+        for i in 1 .. 1000000 do
+            list {
+               if i % 3 = 0 then 
+                   yield "b"
+            } |> List.length |> ignore
+
+    let tinyVariableSizeBase () = 
+        for i in 1 .. 1000000 do
+            [
+               if i % 3 = 0 then 
+                   yield "b"
+            ] |> List.length |> ignore
+
+    let variableSize () = 
         for i in 1 .. 1000000 do
             list {
                yield "a"
@@ -152,25 +165,9 @@ module Examples =
                    yield "b"
                    yield "b"
                yield "c"
-            } |> Seq.length |> ignore
+            } |> List.length |> ignore
 
-    let perf1Li () = 
-        for i in 1 .. 1000000 do
-            list {
-               "a"
-               "b"
-               "b"
-               "b"
-               "b"
-               if i % 3 = 0 then 
-                   "b"
-                   "b"
-                   "b"
-                   "b"
-               "c"
-            } |> Seq.length |> ignore
-
-    let perf2L () = 
+    let variableSizeBase () = 
         for i in 1 .. 1000000 do
             [
                yield "a"
@@ -178,16 +175,30 @@ module Examples =
                yield "b"
                yield "b"
                yield "b"
-               yield "b"
                if i % 3 = 0 then 
                    yield "b"
                    yield "b"
                    yield "b"
-                   yield "c"
-            ] |> Seq.length |> ignore
+                   yield "b"
+               yield "c"
+            ] |> List.length |> ignore
 
-    // Should be identical to perf2
-    let perf3L () = 
+    let fixedSize () = 
+        for i in 1 .. 1000000 do
+            list {
+               "a"
+               "b"
+               "b"
+               "b"
+               "b"
+               "b"
+               "b"
+               "b"
+               "b"
+               "c"
+             } |> List.length |> ignore
+
+    let fixedSizeBase () = 
         for i in 1 .. 1000000 do
             [
                "a"
@@ -195,14 +206,12 @@ module Examples =
                "b"
                "b"
                "b"
-               if i % 3 = 0 then 
-                   "b"
-                   "b"
-                   "b"
-                   "b"
+               "b"
+               "b"
+               "b"
+               "b"
                "c"
-            ] |> Seq.length |> ignore
-
+            ] |> List.length |> ignore
     let perf s f = 
         let t = System.Diagnostics.Stopwatch()
         t.Start()
@@ -210,8 +219,10 @@ module Examples =
         t.Stop()
         printfn "PERF: %s : %d" s t.ElapsedMilliseconds
 
-    perf "perf1 (list builder yield) " perf1L
-    perf "perf1 (list builder implicit yield) " perf1Li
-    perf "perf2 (list expression explicit yield)" perf2L
-    perf "perf3 (list expression implicit yield)" perf3L
+    perf "tinyVariableSize (list builder) " tinyVariableSize
+    perf "tinyVariableSizeBase (list expression)" tinyVariableSizeBase
+    perf "variableSize (list builder) " variableSize
+    perf "variableSizeBase (list expression)" variableSizeBase
+    perf "fixedSize (list builder) " fixedSize
+    perf "fixedSizeBase (list expression)" fixedSizeBase
     //printfn "t1() = %A" (t1())
