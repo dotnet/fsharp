@@ -61,7 +61,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
             ignore setMachineStateMethod
             ignore afterMethod
             failwith "__resumableStateMachineStruct should always be guarded by __useResumableStateMachines and only used in valid state machine implementations"
-        
+       
 #endif
 
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE

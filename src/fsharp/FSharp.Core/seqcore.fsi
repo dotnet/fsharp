@@ -60,9 +60,10 @@ namespace Microsoft.FSharp.Core.CompilerServices
     open System
     open System.Collections
     open System.Collections.Generic
+    open System.Runtime.CompilerServices
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
-        
+
     [<RequireQualifiedAccess>]
     /// <summary>A group of functions used as part of the compiled representation of F# sequence expressions.</summary>
     module RuntimeHelpers = 
@@ -121,6 +122,13 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <returns>The initialized event.</returns>
         val CreateEvent : addHandler : ('Delegate -> unit) -> removeHandler : ('Delegate -> unit) -> createHandler : ((obj -> 'Args -> unit) -> 'Delegate) -> Microsoft.FSharp.Control.IEvent<'Delegate,'Args>
 
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        val SetFreshConsTail: cons: 'T list -> tail: 'T list -> unit
+
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline FreshConsNoTail: head: 'T -> 'T list
+
     [<AbstractClass>]
     /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
     type GeneratedSequenceBase<'T> =
@@ -128,20 +136,25 @@ namespace Microsoft.FSharp.Core.CompilerServices
         ///
         /// <returns>A new sequence generator for the expression.</returns>
         new : unit -> GeneratedSequenceBase<'T>
+
         /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
         ///
         /// <returns>A new enumerator for the sequence.</returns>
         abstract GetFreshEnumerator : unit -> IEnumerator<'T>
+
         /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
         ///
         /// <param name="result">A reference to the sequence.</param>
         ///
         /// <returns>A 0, 1, and 2 respectively indicate Stop, Yield, and Goto conditions for the sequence generator.</returns>
         abstract GenerateNext : result:byref<IEnumerable<'T>> -> int
+
         /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
         abstract Close: unit -> unit
+
         /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
         abstract CheckClose: bool
+
         /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
         abstract LastGenerated : 'T
         interface IEnumerable<'T> 

@@ -779,8 +779,9 @@ let ConvertStateMachineExprToObject g overallExpr =
     | StateMachineInContext (env, remake, pcExprOpt, codeExpr, m) ->
         let frees = (freeInExpr CollectLocals overallExpr).FreeLocals
         if frees |> Zset.exists isExpandVar then 
+            let nonfree = frees |> Zset.elements |> List.filter  isExpandVar |> List.map (fun v -> v.DisplayName) |> String.concat ","
             if sm_verbose then 
-                printfn "Abandoning: Not all macro variables expanded..."
+                printfn "Abandoning: The macro variables %s have not been expanded in state machine expansion at %A..." nonfree m
             None
         else
             let pcExprROpt = pcExprOpt |> Option.map (ConvertStateMachineLeafExpression env)

@@ -113,143 +113,143 @@ module Helpers =
 [<GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)>]
 [<CategoriesColumn>]
 type Benchmarks() =
-    [<BenchmarkCategory("ManyWriteFile"); Benchmark(Baseline=true)>]
-    member __.ManyWriteFile_CSharpAsync () =
-        TaskPerfCSharp.ManyWriteFileAsync().Wait();
+    // [<BenchmarkCategory("ManyWriteFile"); Benchmark(Baseline=true)>]
+    // member __.ManyWriteFile_CSharpAsync () =
+    //     TaskPerfCSharp.ManyWriteFileAsync().Wait();
 
-    [<BenchmarkCategory("ManyWriteFile");Benchmark>]
-    member __.ManyWriteFile_Task () =
-        let path = Path.GetTempFileName()
-        task {
-            let junk = Array.zeroCreate bufferSize
-            use file = File.Create(path)
-            for i = 1 to manyIterations do
-                do! file.WriteAsync(junk, 0, junk.Length)
-        }
-        |> fun t -> t.Wait()
-        File.Delete(path)
+    // [<BenchmarkCategory("ManyWriteFile");Benchmark>]
+    // member __.ManyWriteFile_Task () =
+    //     let path = Path.GetTempFileName()
+    //     task {
+    //         let junk = Array.zeroCreate bufferSize
+    //         use file = File.Create(path)
+    //         for i = 1 to manyIterations do
+    //             do! file.WriteAsync(junk, 0, junk.Length)
+    //     }
+    //     |> fun t -> t.Wait()
+    //     File.Delete(path)
 
-    [<BenchmarkCategory("ManyWriteFile");Benchmark>]
-    member __.ManyWriteFile_TaskBuilder () =
-        let path = Path.GetTempFileName()
-        taskBuilder {
-            let junk = Array.zeroCreate bufferSize
-            use file = File.Create(path)
-            for i = 1 to manyIterations do
-                do! file.WriteAsync(junk, 0, junk.Length)
-        }
-        |> fun t -> t.Wait()
-        File.Delete(path)
+    // [<BenchmarkCategory("ManyWriteFile");Benchmark>]
+    // member __.ManyWriteFile_TaskBuilder () =
+    //     let path = Path.GetTempFileName()
+    //     taskBuilder {
+    //         let junk = Array.zeroCreate bufferSize
+    //         use file = File.Create(path)
+    //         for i = 1 to manyIterations do
+    //             do! file.WriteAsync(junk, 0, junk.Length)
+    //     }
+    //     |> fun t -> t.Wait()
+    //     File.Delete(path)
 
-    [<BenchmarkCategory("ManyWriteFile");Benchmark>]
-    member __.ManyWriteFile_FSharpAsync () =
-        let path = Path.GetTempFileName()
-        async {
-            let junk = Array.zeroCreate bufferSize
-            use file = File.Create(path)
-            for i = 1 to manyIterations do
-                do! Async.AwaitTask(file.WriteAsync(junk, 0, junk.Length))
-        }
-        |> Async.RunSynchronously
-        File.Delete(path)
+    // [<BenchmarkCategory("ManyWriteFile");Benchmark>]
+    // member __.ManyWriteFile_FSharpAsync () =
+    //     let path = Path.GetTempFileName()
+    //     async {
+    //         let junk = Array.zeroCreate bufferSize
+    //         use file = File.Create(path)
+    //         for i = 1 to manyIterations do
+    //             do! Async.AwaitTask(file.WriteAsync(junk, 0, junk.Length))
+    //     }
+    //     |> Async.RunSynchronously
+    //     File.Delete(path)
 
-    [<BenchmarkCategory("NonAsyncBinds"); Benchmark(Baseline=true)>]
-    member __.NonAsyncBinds_CSharpAsync() = 
-         for i in 1 .. manyIterations*100 do 
-             TaskPerfCSharp.TenBindsSync_CSharp().Wait() 
+    // [<BenchmarkCategory("NonAsyncBinds"); Benchmark(Baseline=true)>]
+    // member __.NonAsyncBinds_CSharpAsync() = 
+    //      for i in 1 .. manyIterations*100 do 
+    //          TaskPerfCSharp.TenBindsSync_CSharp().Wait() 
 
-    [<BenchmarkCategory("NonAsyncBinds"); Benchmark>]
-    member __.NonAsyncBinds_Task() = 
-        for i in 1 .. manyIterations*100 do 
-             tenBindSync_Task().Wait() 
+    // [<BenchmarkCategory("NonAsyncBinds"); Benchmark>]
+    // member __.NonAsyncBinds_Task() = 
+    //     for i in 1 .. manyIterations*100 do 
+    //          tenBindSync_Task().Wait() 
 
-    [<BenchmarkCategory("NonAsyncBinds"); Benchmark>]
-    member __.NonAsyncBinds_TaskBuilder() = 
-        for i in 1 .. manyIterations*100 do 
-             tenBindSync_TaskBuilder().Wait() 
+    // [<BenchmarkCategory("NonAsyncBinds"); Benchmark>]
+    // member __.NonAsyncBinds_TaskBuilder() = 
+    //     for i in 1 .. manyIterations*100 do 
+    //          tenBindSync_TaskBuilder().Wait() 
 
-    [<BenchmarkCategory("NonAsyncBinds"); Benchmark>]
-    member __.NonAsyncBinds_FSharpAsync() = 
-        for i in 1 .. manyIterations*100 do 
-             tenBindSync_FSharpAsync() |> Async.RunSynchronously |> ignore
+    // [<BenchmarkCategory("NonAsyncBinds"); Benchmark>]
+    // member __.NonAsyncBinds_FSharpAsync() = 
+    //     for i in 1 .. manyIterations*100 do 
+    //          tenBindSync_FSharpAsync() |> Async.RunSynchronously |> ignore
 
-    [<BenchmarkCategory("AsyncBinds"); Benchmark(Baseline=true)>]
-    member __.AsyncBinds_CSharpAsync() = 
-         for i in 1 .. manyIterations do 
-             TaskPerfCSharp.TenBindsAsync_CSharp().Wait() 
+    // [<BenchmarkCategory("AsyncBinds"); Benchmark(Baseline=true)>]
+    // member __.AsyncBinds_CSharpAsync() = 
+    //      for i in 1 .. manyIterations do 
+    //          TaskPerfCSharp.TenBindsAsync_CSharp().Wait() 
 
-    [<BenchmarkCategory("AsyncBinds"); Benchmark>]
-    member __.AsyncBinds_Task() = 
-         for i in 1 .. manyIterations do 
-             tenBindAsync_Task().Wait() 
+    // [<BenchmarkCategory("AsyncBinds"); Benchmark>]
+    // member __.AsyncBinds_Task() = 
+    //      for i in 1 .. manyIterations do 
+    //          tenBindAsync_Task().Wait() 
 
-    [<BenchmarkCategory("AsyncBinds"); Benchmark>]
-    member __.AsyncBinds_TaskBuilder() = 
-         for i in 1 .. manyIterations do 
-             tenBindAsync_TaskBuilder().Wait() 
+    // [<BenchmarkCategory("AsyncBinds"); Benchmark>]
+    // member __.AsyncBinds_TaskBuilder() = 
+    //      for i in 1 .. manyIterations do 
+    //          tenBindAsync_TaskBuilder().Wait() 
 
-    //[<Benchmark>]
-    //member __.AsyncBinds_FSharpAsync() = 
+    // //[<Benchmark>]
+    // //member __.AsyncBinds_FSharpAsync() = 
+    // //     for i in 1 .. manyIterations do 
+    // //         tenBindAsync_FSharpAsync() |> Async.RunSynchronously 
+
+    // [<BenchmarkCategory("SingleSyncTask"); Benchmark(Baseline=true)>]
+    // member __.SingleSyncTask_CSharpAsync() = 
+    //      for i in 1 .. manyIterations*500 do 
+    //          TaskPerfCSharp.SingleSyncTask_CSharp().Wait() 
+
+    // [<BenchmarkCategory("SingleSyncTask"); Benchmark>]
+    // member __.SingleSyncTask_Task() = 
+    //      for i in 1 .. manyIterations*500 do 
+    //          singleTask_Task().Wait() 
+
+    // [<BenchmarkCategory("SingleSyncTask"); Benchmark>]
+    // member __.SingleSyncTask_TaskBuilder() = 
+    //      for i in 1 .. manyIterations*500 do 
+    //          singleTask_TaskBuilder().Wait() 
+
+    // [<BenchmarkCategory("SingleSyncTask"); Benchmark>]
+    // member __.SingleSyncTask_FSharpAsync() = 
+    //      for i in 1 .. manyIterations*500 do 
+    //          singleTask_FSharpAsync() |> Async.RunSynchronously |> ignore
+
+    // [<BenchmarkCategory("sync"); Benchmark(Baseline=true)>]
+    // member __.SyncBuilderLoop_NormalCode() = 
     //     for i in 1 .. manyIterations do 
-    //         tenBindAsync_FSharpAsync() |> Async.RunSynchronously 
+    //                 let mutable res = 0
+    //                 for i in Seq.init 1000 id do
+    //                    res <- i + res
 
-    [<BenchmarkCategory("SingleSyncTask"); Benchmark(Baseline=true)>]
-    member __.SingleSyncTask_CSharpAsync() = 
-         for i in 1 .. manyIterations*500 do 
-             TaskPerfCSharp.SingleSyncTask_CSharp().Wait() 
-
-    [<BenchmarkCategory("SingleSyncTask"); Benchmark>]
-    member __.SingleSyncTask_Task() = 
-         for i in 1 .. manyIterations*500 do 
-             singleTask_Task().Wait() 
-
-    [<BenchmarkCategory("SingleSyncTask"); Benchmark>]
-    member __.SingleSyncTask_TaskBuilder() = 
-         for i in 1 .. manyIterations*500 do 
-             singleTask_TaskBuilder().Wait() 
-
-    [<BenchmarkCategory("SingleSyncTask"); Benchmark>]
-    member __.SingleSyncTask_FSharpAsync() = 
-         for i in 1 .. manyIterations*500 do 
-             singleTask_FSharpAsync() |> Async.RunSynchronously |> ignore
-
-    [<BenchmarkCategory("sync"); Benchmark(Baseline=true)>]
-    member __.SyncBuilderLoop_NormalCode() = 
-        for i in 1 .. manyIterations do 
-                    let mutable res = 0
-                    for i in Seq.init 1000 id do
-                       res <- i + res
-
-    [<BenchmarkCategory("sync"); Benchmark>]
-    member __.SyncBuilderLoop_WorkflowCode() = 
-        for i in 1 .. manyIterations do 
-             sync { let mutable res = 0
-                    for i in Seq.init 1000 id do
-                       res <- i + res }
+    // [<BenchmarkCategory("sync"); Benchmark>]
+    // member __.SyncBuilderLoop_WorkflowCode() = 
+    //     for i in 1 .. manyIterations do 
+    //          sync { let mutable res = 0
+    //                 for i in Seq.init 1000 id do
+    //                    res <- i + res }
 
     [<BenchmarkCategory("list"); Benchmark(Baseline=true)>]
-    member __.ListBuilder_ListExpression() = Tests.ListAndArrayBuilder.Examples.perf2()
+    member __.ListBuilder_ListExpression() = Tests.ListBuilder.Examples.perf2L()
 
     [<BenchmarkCategory("list"); Benchmark>]
-    member __.ListBuilder_ListBuilder() = Tests.ListAndArrayBuilder.Examples.perf1()
+    member __.ListBuilder_ListBuilder() = Tests.ListBuilder.Examples.perf1L()
 
     [<BenchmarkCategory("array"); Benchmark(Baseline=true)>]
-    member __.ArrayBuilder_ArrayExpression() = Tests.ListAndArrayBuilder.Examples.perf2A()
+    member __.ArrayBuilder_ArrayExpression() = Tests.ArrayBuilder.Examples.perf2A()
 
     [<BenchmarkCategory("array"); Benchmark>]
-    member __.ArrayBuilder_ArrayBuilder() = Tests.ListAndArrayBuilder.Examples.perf1A()
+    member __.ArrayBuilder_ArrayBuilder() = Tests.ArrayBuilder.Examples.perf1A()
 
-    [<BenchmarkCategory("taskSeq"); Benchmark>]
-    member __.TaskSeq_Example() = 
-        Tests.TaskSeqBuilder.Examples.perf2() |> TaskSeq.iter ignore
+    // [<BenchmarkCategory("taskSeq"); Benchmark>]
+    // member __.TaskSeq_Example() = 
+    //     Tests.TaskSeqBuilder.Examples.perf2() |> TaskSeq.iter ignore
 
-    [<BenchmarkCategory("taskSeq"); Benchmark>]
-    member __.AsyncSeq_Example() = 
-        Tests.TaskSeqBuilder.Examples.perf2_AsyncSeq() |> AsyncSeq.iter ignore |> Async.RunSynchronously
+    // [<BenchmarkCategory("taskSeq"); Benchmark>]
+    // member __.AsyncSeq_Example() = 
+    //     Tests.TaskSeqBuilder.Examples.perf2_AsyncSeq() |> AsyncSeq.iter ignore |> Async.RunSynchronously
 
-    [<BenchmarkCategory("taskSeq"); Benchmark(Baseline=true)>]
-    member __.CSharp_IAsyncEnumerable_Example() = 
-        TaskPerfCSharp.perf2_AsyncEnumerable() |> TaskSeq.iter ignore
+    // [<BenchmarkCategory("taskSeq"); Benchmark(Baseline=true)>]
+    // member __.CSharp_IAsyncEnumerable_Example() = 
+    //     TaskPerfCSharp.perf2_AsyncEnumerable() |> TaskSeq.iter ignore
 
 module Main = 
 
