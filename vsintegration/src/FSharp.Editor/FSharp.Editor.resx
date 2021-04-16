@@ -279,4 +279,7 @@
   <data name="AddTypeAnnotation" xml:space="preserve">
     <value>Add type annotation</value>
   </data>
+  <data name="RemoveUnusedBinding" xml:space="preserve">
+    <value>Remove unused binding</value>
+  </data>
 </root>

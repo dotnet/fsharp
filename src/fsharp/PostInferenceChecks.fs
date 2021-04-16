@@ -1694,21 +1694,24 @@ and CheckAttribArgExpr cenv env expr =
   
 and CheckAttribs cenv env (attribs: Attribs) = 
     if isNil attribs then () else
-    let tcrefs = [ for (Attrib(tcref, _, _, _, _, _, m)) in attribs -> (tcref, m) ]
+    let tcrefs = [ for (Attrib(tcref, _, _, _, gs, _, m)) in attribs -> (tcref, gs, m) ]
 
     // Check for violations of allowMultiple = false
     let duplicates = 
         tcrefs
-        |> Seq.groupBy (fun (tcref, _) -> tcref.Stamp) 
+        |> Seq.groupBy (fun (tcref, gs, _) ->
+            // Don't allow CompiledNameAttribute on both a property and its getter/setter (see E_CompiledName test)
+            if tyconRefEq cenv.g cenv.g.attrib_CompiledNameAttribute.TyconRef tcref then (tcref.Stamp, false) else
+            (tcref.Stamp, gs)) 
         |> Seq.map (fun (_, elems) -> List.last (List.ofSeq elems), Seq.length elems) 
         |> Seq.filter (fun (_, count) -> count > 1) 
         |> Seq.map fst 
         |> Seq.toList
         // Filter for allowMultiple = false
-        |> List.filter (fun (tcref, m) -> TryFindAttributeUsageAttribute cenv.g m tcref <> Some true)
+        |> List.filter (fun (tcref, _, m) -> TryFindAttributeUsageAttribute cenv.g m tcref <> Some true)
 
     if cenv.reportErrors then 
-       for (tcref, m) in duplicates do
+       for (tcref, _, m) in duplicates do
           errorR(Error(FSComp.SR.chkAttrHasAllowMultiFalse(tcref.DisplayName), m))
     
     attribs |> List.iter (CheckAttrib cenv env) 

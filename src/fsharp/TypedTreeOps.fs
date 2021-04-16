@@ -163,11 +163,7 @@ let remapTyconRef (tcmap: TyconRefMap<_>) tcref =
 let remapUnionCaseRef tcmap (UnionCaseRef(tcref, nm)) = UnionCaseRef(remapTyconRef tcmap tcref, nm)
 let remapRecdFieldRef tcmap (RecdFieldRef(tcref, nm)) = RecdFieldRef(remapTyconRef tcmap tcref, nm)
 
-let mkTyparInst (typars: Typars) tyargs =  
-#if CHECKED
-    if List.length typars <> List.length tyargs then
-      failwith ("mkTyparInst: invalid type" + (sprintf " %d <> %d" (List.length typars) (List.length tyargs)))
-#endif
+let mkTyparInst (typars: Typars) tyargs =
     (List.zip typars tyargs: TyparInst)
 
 let generalizeTypar tp = mkTyparTy tp
@@ -1611,9 +1607,6 @@ let GetTopTauTypeInFSharpForm g (curriedArgInfos: ArgReprInfo list list) tau m =
 
 let destTopForallTy g (ValReprInfo (ntps, _, _)) ty =
     let tps, tau = (if isNil ntps then [], ty else tryDestForallTy g ty)
-#if CHECKED
-    if tps.Length <> kinds.Length then failwith (sprintf "destTopForallTy: internal error, #tps = %d, #ntps = %d" (List.length tps) ntps)
-#endif
     // tps may be have been equated to other tps in equi-recursive type inference. Normalize them here 
     let tps = NormalizeDeclaredTyparsForEquiRecursiveInference g tps
     tps, tau
@@ -2764,8 +2757,10 @@ type DisplayEnv =
       showConstraintTyparAnnotations: bool
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
+      showDocumentation: bool
       shrinkOverloads: bool
-      printVerboseSignatures : bool
+      printVerboseSignatures: bool
+      escapeKeywordNames: bool
       g: TcGlobals
       contextAccessibility: Accessibility
       generatedValueLayout : (Val -> Layout option)
@@ -2788,18 +2783,20 @@ type DisplayEnv =
         showHiddenMembers = false
         showTyparBinding = false
         showImperativeTyparAnnotations = false
-        suppressInlineKeyword = false
+        suppressInlineKeyword = true
         suppressMutableKeyword = false
         showMemberContainers = false
         showAttributes = false
         showOverrides = true
         showConstraintTyparAnnotations = true
+        showDocumentation = false
         abbreviateAdditionalConstraints = false
         showTyparDefaultConstraints = false
         shortConstraints = false
         useColonForReturnType = false
         shrinkOverloads = true
         printVerboseSignatures = false
+        escapeKeywordNames = false
         g = tcGlobals
         contextAccessibility = taccessPublic
         generatedValueLayout = (fun _ -> None)
@@ -2817,6 +2814,24 @@ type DisplayEnv =
 
     member denv.UseGenericParameterStyle style =
         { denv with genericParameterStyle = style }
+
+    static member InitialForSigFileGeneration g =
+        let denv =
+            { DisplayEnv.Empty g with
+               showImperativeTyparAnnotations = true
+               showHiddenMembers = true
+               showObsoleteMembers = true
+               showAttributes = true
+               suppressInlineKeyword = false
+               showDocumentation = true
+               shrinkOverloads = false
+               escapeKeywordNames = true }
+        denv.SetOpenPaths
+            [ FSharpLib.RootPath
+              FSharpLib.CorePath
+              FSharpLib.CollectionsPath
+              FSharpLib.ControlPath
+              (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName) ]
 
 let (+.+) s1 s2 = if s1 = "" then s2 else s1+"."+s2
 
@@ -8801,7 +8816,7 @@ and remapValToNonLocal g tmenv inp =
 let ApplyExportRemappingToEntity g tmenv x = remapTyconToNonLocal g tmenv x
 
 (* Which constraints actually get compiled to .NET constraints? *)
-let isCompiledConstraint cx = 
+let isCompiledOrWitnessPassingConstraint (g: TcGlobals) cx = 
     match cx with 
       | TyparConstraint.SupportsNull _ // this implies the 'class' constraint
       | TyparConstraint.IsReferenceType _  // this is the 'class' constraint
@@ -8809,13 +8824,15 @@ let isCompiledConstraint cx =
       | TyparConstraint.IsReferenceType _
       | TyparConstraint.RequiresDefaultConstructor _
       | TyparConstraint.CoercesTo _ -> true
+      | TyparConstraint.MayResolveMember _ when g.langVersion.SupportsFeature LanguageFeature.WitnessPassing -> true
       | _ -> false
     
-// Is a value a first-class polymorphic value with .NET constraints? 
-// Used to turn off TLR and method splitting
+// Is a value a first-class polymorphic value with .NET constraints, or witness-passing constraints? 
+// Used to turn off TLR and method splitting and do not compile to
+// FSharpTypeFunc, but rather bake a "local type function" for each TyLambda abstraction.
 let IsGenericValWithGenericConstraints g (v: Val) = 
     isForallTy g v.Type && 
-    v.Type |> destForallTy g |> fst |> List.exists (fun tp -> List.exists isCompiledConstraint tp.Constraints)
+    v.Type |> destForallTy g |> fst |> List.exists (fun tp -> List.exists (isCompiledOrWitnessPassingConstraint g) tp.Constraints)
 
 // Does a type support a given interface? 
 type Entity with 

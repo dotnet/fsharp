@@ -515,28 +515,19 @@ let mkValInfo info (v: Val) = { ValExprInfo=info.Info; ValMakesNoCriticalTailcal
 (* Bind a value *)
 let BindInternalLocalVal cenv (v: Val) vval env = 
     let vval = if v.IsMutable then UnknownValInfo else vval
-#if CHECKED
-#else
+
     match vval.ValExprInfo with 
     | UnknownValue -> env
-    | _ -> 
-#endif
+    | _ ->
         cenv.localInternalVals.[v.Stamp] <- vval
         env
         
 let BindExternalLocalVal cenv (v: Val) vval env = 
-#if CHECKED
-    CheckInlineValueIsComplete v vval
-#endif
-
     let vval = if v.IsMutable then {vval with ValExprInfo=UnknownValue } else vval
-    let env = 
-#if CHECKED
-#else
+    let env =
         match vval.ValExprInfo with 
         | UnknownValue -> env  
-        | _ -> 
-#endif
+        | _ ->
             { env with localExternalVals=env.localExternalVals.Add (v.Stamp, vval) }
     // If we're compiling fslib then also bind the value as a non-local path to 
     // allow us to resolve the compiler-non-local-references that arise from env.fs
@@ -563,21 +554,14 @@ let rec BindValsInModuleOrNamespace cenv (mval: LazyModuleInfo) env =
     env
 
 let inline BindInternalValToUnknown cenv v env = 
-#if CHECKED
-    BindInternalLocalVal cenv v UnknownValue env
-#else
     ignore cenv 
     ignore v
     env
-#endif
+
 let inline BindInternalValsToUnknown cenv vs env = 
-#if CHECKED
-    List.foldBack (BindInternalValToUnknown cenv) vs env
-#else
     ignore cenv
     ignore vs
     env
-#endif
 
 let BindTypeVar tyv typeinfo env = { env with typarInfos= (tyv, typeinfo) :: env.typarInfos } 
 
@@ -608,9 +592,6 @@ let GetInfoForLocalValue cenv env (v: Val) m =
             | None -> 
                 if v.MustInline then
                     errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
-#if CHECKED
-                warning(Error(FSComp.SR.optLocalValueNotFoundDuringOptimization(v.DisplayName), m)) 
-#endif
                 UnknownValInfo 
 
 let TryGetInfoForCcu env (ccu: CcuThunk) = env.globalModuleInfos.TryFind(ccu.AssemblyName)
@@ -1628,6 +1609,10 @@ let rec RearrangeTupleBindings expr fin =
         | Some b -> Some (mkLetBind m bind b)
         | None -> None
     | Expr.Op (TOp.Tuple tupInfo, _, _, _) when not (evalTupInfoIsStruct tupInfo) -> Some (fin expr)
+    | Expr.Sequential (e1, e2, kind, sp, m) ->
+        match RearrangeTupleBindings e2 fin with
+        | Some b -> Some (Expr.Sequential (e1, b, kind, sp, m))
+        | None -> None
     | _ -> None
 
 let ExpandStructuralBinding cenv expr =
@@ -2284,6 +2269,14 @@ and OptimizeFastIntegerForLoop cenv env (spStart, v, e1, dir, e2, e3, m) =
                   when not (snd(OptimizeExpr cenv env arre)).HasEffect -> 
 
             mkLdlen cenv.g (e2R.Range) arre, CSharpForLoopUp
+
+        | FSharpForLoopUp, Expr.Op (TOp.ILAsm ([ (AI_sub | AI_sub_ovf)], _), _, [Expr.Op (TOp.ILCall(_,_,_,_,_,_,_, mth, _,_,_), _, [arre], _) as lenOp; Expr.Const (Const.Int32 1, _, _)], _) 
+                  when 
+                        mth.Name = "get_Length" && (mth.DeclaringTypeRef.FullName = "System.Span`1" || mth.DeclaringTypeRef.FullName = "System.ReadOnlySpan`1") 
+                        && not (snd(OptimizeExpr cenv env arre)).HasEffect -> 
+
+            lenOp, CSharpForLoopUp
+
 
         // detect upwards for loops with constant bounds, but not MaxValue!
         | FSharpForLoopUp, Expr.Const (Const.Int32 n, _, _) 

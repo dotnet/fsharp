@@ -1360,6 +1360,10 @@ type SynTypeDefnSig =
         members: SynMemberSig list *
         range: range
 
+    member this.Range =
+        match this with
+        | SynTypeDefnSig(range=m) -> m
+
 [<NoEquality; NoComparison>]
 type SynField =
     | SynField of
@@ -1757,6 +1761,10 @@ type SynModuleOrNamespaceSig =
         attribs: SynAttributes *
         accessibility: SynAccess option *
         range: range
+
+    member this.Range =
+        match this with
+        | SynModuleOrNamespaceSig (range=m) -> m
 
 [<NoEquality; NoComparison>]
 type ParsedHashDirective =

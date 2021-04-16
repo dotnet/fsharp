@@ -731,9 +731,12 @@ fileModuleSpec:
   | moduleSpfnsPossiblyEmptyBlock 
     { let m = (rhs parseState 1) 
       (fun (isRec, path, xml) -> 
-        match path with 
+        match path with
         | [] -> ParsedSigFileFragment.AnonModule($1, m)  
-        | _ -> ParsedSigFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, xml, [], m))  } 
+        | _ ->
+            let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
+            let m = mkRange lastDeclRange.FileName (lhs parseState).Start lastDeclRange.End
+            ParsedSigFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, xml, [], m))  } 
 
 
 moduleSpfnsPossiblyEmptyBlock: 
@@ -806,8 +809,10 @@ moduleSpfn:
            match $3 with
            | [] -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEmptyModuleDefn()) 
            | h :: t -> h, t 
-        let tc = (SynTypeDefnSig(SynComponentInfo($1@cas, a, cs, b, c, d, d2, d3), e, f, g))in 
-        SynModuleSigDecl.Types (tc :: rest, rhs parseState 3) } 
+        let tc = (SynTypeDefnSig(SynComponentInfo($1@cas, a, cs, b, c, d, d2, d3), e, f, g))
+        let lastType = List.tryLast rest |> Option.defaultValue tc |> fun t -> t.Range
+        let m = mkRange lastType.FileName (lhs parseState).Start lastType.End
+        SynModuleSigDecl.Types (tc :: rest, m) } 
 
   | opt_attributes opt_declVisibility exconSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
@@ -4118,12 +4123,16 @@ atomicExpr:
         // silent recovery 
         exprFromParseError (SynExpr.ArrayOrList (false, [ ], rhs parseState 1)), false  } 
 
-  | STRUCT LPAREN tupleExpr rparen  
-      { let exprs, commas = $3 in SynExpr.Tuple (true, List.rev exprs, List.rev commas, (commas.Head, exprs) ||> unionRangeWithListBy (fun e -> e.Range) ), false }
+  | STRUCT LPAREN tupleExpr rparen
+      { let exprs, commas = $3
+        let m = rhs2 parseState 1 4
+        SynExpr.Tuple (true, List.rev exprs, List.rev commas, m), false }
 
-  | STRUCT LPAREN tupleExpr recover  
-      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedBracket()); 
-        let exprs, commas = $3 in SynExpr.Tuple (true, List.rev exprs, List.rev commas, (commas.Head, exprs) ||> unionRangeWithListBy (fun e -> e.Range) ), false }
+  | STRUCT LPAREN tupleExpr recover
+      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedBracket());
+        let exprs, commas = $3
+        let m = (rhs parseState 1, exprs) ||> unionRangeWithListBy (fun e -> e.Range)
+        SynExpr.Tuple (true, List.rev exprs, List.rev commas, m), false }
 
   | atomicExprAfterType 
       { $1, false }

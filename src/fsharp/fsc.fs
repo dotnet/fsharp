@@ -309,21 +309,6 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
 /// Write a .fsi file for the --sig option
 module InterfaceFileWriter =
 
-    let BuildInitialDisplayEnvForSigFileGeneration tcGlobals = 
-        let denv = DisplayEnv.Empty tcGlobals
-        let denv = 
-            { denv with 
-               showImperativeTyparAnnotations=true
-               showHiddenMembers=true
-               showObsoleteMembers=true
-               showAttributes=true }
-        denv.SetOpenPaths 
-            [ FSharpLib.RootPath 
-              FSharpLib.CorePath 
-              FSharpLib.CollectionsPath 
-              FSharpLib.ControlPath 
-              (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName) ] 
-
     let WriteInterfaceFile (tcGlobals, tcConfig: TcConfig, infoReader, declaredImpls) =
 
         /// Use a UTF-8 Encoding with no Byte Order Mark
@@ -336,9 +321,9 @@ module InterfaceFileWriter =
             fprintfn os "" 
 
         for (TImplFile (_, _, mexpr, _, _, _)) in declaredImpls do
-            let denv = BuildInitialDisplayEnvForSigFileGeneration tcGlobals
+            let denv = DisplayEnv.InitialForSigFileGeneration tcGlobals
             writeViaBuffer os (fun os s -> Printf.bprintf os "%s\n\n" s)
-              (NicePrint.layoutInferredSigOfModuleExpr true { denv with shrinkOverloads = false; printVerboseSignatures = true } infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> LayoutRender.showL)
+              (NicePrint.layoutInferredSigOfModuleExpr true { denv with printVerboseSignatures = true } infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> LayoutRender.showL)
        
         if tcConfig.printSignatureFile <> "" then os.Dispose()
 
