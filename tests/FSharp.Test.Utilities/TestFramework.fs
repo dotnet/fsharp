@@ -429,14 +429,13 @@ type public InitializeSuiteAttribute () =
 
     override x.Targets = ActionTargets.Test ||| ActionTargets.Suite
 
-let fsharpSuiteDirectory = __SOURCE_DIRECTORY__
-
 let testConfig testDir =
     let cfg = suiteHelpers.Value
-    let dir = Path.GetFullPath(fsharpSuiteDirectory ++ testDir)
-    log "------------------ %s ---------------" dir
-    log "cd %s" dir
-    { cfg with Directory =  dir}
+    if not (Path.IsPathRooted testDir) then
+      failwith $"path is not rooted: {testDir}"
+    log "------------------ %s ---------------" testDir
+    log "cd %s" testDir
+    { cfg with Directory = testDir }
 
 [<AllowNullLiteral>]
 type FileGuard(path: string) =
