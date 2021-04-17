@@ -257,7 +257,7 @@ let ``negative type provider tests`` (name:string) =
         SingleTest.singleNegTest cfg name
 
 let splitAssembly subdir project =
-
+    let subdir = getTestsDirectory subdir
     let cfg = testConfig project
 
     let clean() =
@@ -330,13 +330,12 @@ let splitAssembly subdir project =
         end
 
     clean()
-let splitAssembly' = getTestsDirectory >> splitAssembly
 
 [<Test>]
-let splitAssemblyTools () = splitAssembly' "tools" "typeProviders/splitAssemblyTools"
+let splitAssemblyTools () = splitAssembly "tools" "typeProviders/splitAssemblyTools"
 
 [<Test>]
-let splitAssemblyTypeProviders () = splitAssembly' "typeproviders" "typeProviders/splitAssemblyTypeproviders"
+let splitAssemblyTypeProviders () = splitAssembly "typeproviders" "typeProviders/splitAssemblyTypeproviders"
 
 [<Test>]
 let wedgeAssembly () =
