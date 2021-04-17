@@ -429,7 +429,7 @@ type public InitializeSuiteAttribute () =
 
     override x.Targets = ActionTargets.Test ||| ActionTargets.Suite
 
-let testConfig testDir =
+let testConfig (testDir: string) =
     let cfg = suiteHelpers.Value
     if not (Path.IsPathRooted testDir) then
       failwith $"path is not rooted: {testDir}"
