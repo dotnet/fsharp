@@ -433,6 +433,7 @@ let testConfig (testDir: string) =
     let cfg = suiteHelpers.Value
     if not (Path.IsPathRooted testDir) then
       failwith $"path is not rooted: {testDir}"
+    let testDir = Path.GetFullPath testDir // mostly used to normalize / and \
     log "------------------ %s ---------------" testDir
     log "cd %s" testDir
     { cfg with Directory = testDir }
