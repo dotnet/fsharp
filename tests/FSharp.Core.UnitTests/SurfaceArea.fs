@@ -791,6 +791,8 @@ Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers: System.Collections.Generi
 Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers: System.Collections.Generic.IEnumerable`1[TResult] EnumerateUsing[T,TCollection,TResult](T, Microsoft.FSharp.Core.FSharpFunc`2[T,TCollection])
 Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers: System.Collections.Generic.IEnumerable`1[T] EnumerateThenFinally[T](System.Collections.Generic.IEnumerable`1[T], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers: System.Collections.Generic.IEnumerable`1[T] EnumerateWhile[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.Boolean], System.Collections.Generic.IEnumerable`1[T])
+Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers: Microsoft.FSharp.Collections.FSharpList`1[T] FreshConsNoTail[T](T)
+Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers: Void SetFreshConsTail[T](Microsoft.FSharp.Collections.FSharpList`1[T], Microsoft.FSharp.Collections.FSharpList`1[T])
 Microsoft.FSharp.Core.CompilerServices.SetMachineStateMethod`1[TTemplate]: System.IAsyncResult BeginInvoke(TTemplate ByRef, System.Runtime.CompilerServices.IAsyncStateMachine, System.AsyncCallback, System.Object)
 Microsoft.FSharp.Core.CompilerServices.SetMachineStateMethod`1[TTemplate]: Void .ctor(System.Object, IntPtr)
 Microsoft.FSharp.Core.CompilerServices.SetMachineStateMethod`1[TTemplate]: Void EndInvoke(System.IAsyncResult)
