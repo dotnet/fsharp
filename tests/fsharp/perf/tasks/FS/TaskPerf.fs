@@ -227,53 +227,72 @@ type Benchmarks() =
     //                 for i in Seq.init 1000 id do
     //                    res <- i + res }
 
-    [<BenchmarkCategory("TinyVariableSizedList"); Benchmark(Baseline=true)>]
-    member _.TinyVariableSizedList_StateMachine() = Tests.ListBuilder.Examples.tinyVariableSizeBase()
+    // [<BenchmarkCategory("TinyVariableSizedList"); Benchmark(Baseline=true)>]
+    // member _.TinyVariableSizedList_StateMachine() = Tests.ListBuilder.Examples.tinyVariableSizeBase()
 
-    [<BenchmarkCategory("TinyVariableSizedList"); Benchmark>]
-    member _.TinyVariableSizedList_Builder() = Tests.ListBuilder.Examples.tinyVariableSize()
+    // [<BenchmarkCategory("TinyVariableSizedList"); Benchmark>]
+    // member _.TinyVariableSizedList_Builder() = Tests.ListBuilder.Examples.tinyVariableSize()
 
-    [<BenchmarkCategory("VariableSizedList"); Benchmark(Baseline=true)>]
-    member _.VariableSizedList_StateMachine() = Tests.ListBuilder.Examples.variableSizeBase()
+    // [<BenchmarkCategory("VariableSizedList"); Benchmark(Baseline=true)>]
+    // member _.VariableSizedList_StateMachine() = Tests.ListBuilder.Examples.variableSizeBase()
 
-    [<BenchmarkCategory("VariableSizedList"); Benchmark>]
-    member _.VariableSizedList_Builder() = Tests.ListBuilder.Examples.variableSize()
+    // [<BenchmarkCategory("VariableSizedList"); Benchmark>]
+    // member _.VariableSizedList_Builder() = Tests.ListBuilder.Examples.variableSize()
 
-    [<BenchmarkCategory("FixedSizedList"); Benchmark(Baseline=true)>]
-    member _.FixedSizeList_StateMachine() = Tests.ListBuilder.Examples.fixedSizeBase()
+    // [<BenchmarkCategory("FixedSizedList"); Benchmark(Baseline=true)>]
+    // member _.FixedSizeList_StateMachine() = Tests.ListBuilder.Examples.fixedSizeBase()
 
-    [<BenchmarkCategory("FixedSizedList"); Benchmark>]
-    member _.FixedSizeList_Builder() = Tests.ListBuilder.Examples.fixedSize()
+    // [<BenchmarkCategory("FixedSizedList"); Benchmark>]
+    // member _.FixedSizeList_Builder() = Tests.ListBuilder.Examples.fixedSize()
 
-    [<BenchmarkCategory("TinyVariableSizedArray"); Benchmark(Baseline=true)>]
-    member _.TinyVariableSizedArray_StateMachine() = Tests.ArrayBuilder.Examples.tinyVariableSizeBase()
+    // [<BenchmarkCategory("TinyVariableSizedArray"); Benchmark(Baseline=true)>]
+    // member _.TinyVariableSizedArray_StateMachine() = Tests.ArrayBuilder.Examples.tinyVariableSizeBase()
 
-    [<BenchmarkCategory("TinyVariableSizedArray"); Benchmark>]
-    member _.TinyVariableSizedArray_Builder() = Tests.ArrayBuilder.Examples.tinyVariableSize()
+    // [<BenchmarkCategory("TinyVariableSizedArray"); Benchmark>]
+    // member _.TinyVariableSizedArray_Builder() = Tests.ArrayBuilder.Examples.tinyVariableSize()
 
-    [<BenchmarkCategory("VariableSizedArray"); Benchmark(Baseline=true)>]
-    member _.VariableSizedArray_StateMachine() = Tests.ArrayBuilder.Examples.variableSizeBase()
+    // [<BenchmarkCategory("VariableSizedArray"); Benchmark(Baseline=true)>]
+    // member _.VariableSizedArray_StateMachine() = Tests.ArrayBuilder.Examples.variableSizeBase()
 
-    [<BenchmarkCategory("VariableSizedArray"); Benchmark>]
-    member _.VariableSizedArray_Builder() = Tests.ArrayBuilder.Examples.variableSize()
+    // [<BenchmarkCategory("VariableSizedArray"); Benchmark>]
+    // member _.VariableSizedArray_Builder() = Tests.ArrayBuilder.Examples.variableSize()
 
-    [<BenchmarkCategory("FixedSizedArray"); Benchmark(Baseline=true)>]
-    member _.FixedSizeArray_StateMachine() = Tests.ArrayBuilder.Examples.fixedSizeBase()
+    // [<BenchmarkCategory("FixedSizedArray"); Benchmark(Baseline=true)>]
+    // member _.FixedSizeArray_StateMachine() = Tests.ArrayBuilder.Examples.fixedSizeBase()
 
-    [<BenchmarkCategory("FixedSizedArray"); Benchmark>]
-    member _.FixedSizeArray_Builder() = Tests.ArrayBuilder.Examples.fixedSize()
+    // [<BenchmarkCategory("FixedSizedArray"); Benchmark>]
+    // member _.FixedSizeArray_Builder() = Tests.ArrayBuilder.Examples.fixedSize()
 
-    // [<BenchmarkCategory("taskSeq"); Benchmark>]
-    // member _.TaskSeq_Example() = 
-    //     Tests.TaskSeqBuilder.Examples.perf2() |> TaskSeq.iter ignore
+    // [<BenchmarkCategory("MultiStepOption"); Benchmark(Baseline=true)>]
+    // member _.MultiStepOption_StateMachine() = Tests.OptionBuilder.Examples.multiStepStateMachineBuilder()
 
-    // [<BenchmarkCategory("taskSeq"); Benchmark>]
-    // member _.AsyncSeq_Example() = 
-    //     Tests.TaskSeqBuilder.Examples.perf2_AsyncSeq() |> AsyncSeq.iter ignore |> Async.RunSynchronously
+    // [<BenchmarkCategory("MultiStepOption"); Benchmark>]
+    // member _.MultiStepOption_OldBuilder() = Tests.OptionBuilder.Examples.multiStepOldBuilder()
 
-    // [<BenchmarkCategory("taskSeq"); Benchmark(Baseline=true)>]
-    // member _.CSharp_IAsyncEnumerable_Example() = 
-    //     TaskPerfCSharp.perf2_AsyncEnumerable() |> TaskSeq.iter ignore
+    // [<BenchmarkCategory("MultiStepOption"); Benchmark>]
+    // member _.MultiStepOption_NoBuilder() = Tests.OptionBuilder.Examples.multiStepNoBuilder()
+
+
+    // [<BenchmarkCategory("MultiStepValueOption"); Benchmark(Baseline=true)>]
+    // member _.MultiStepValueOption_StateMachine() = Tests.OptionBuilder.Examples.multiStepStateMachineBuilderV()
+
+    // [<BenchmarkCategory("MultiStepValueOption"); Benchmark>]
+    // member _.MultiStepValueOption_OldBuilder() = Tests.OptionBuilder.Examples.multiStepOldBuilderV()
+
+    // [<BenchmarkCategory("MultiStepValueOption"); Benchmark>]
+    // member _.MultiStepValueOption_NoBuilder() = Tests.OptionBuilder.Examples.multiStepNoBuilderV()
+
+    [<BenchmarkCategory("taskSeq"); Benchmark>]
+    member _.TaskSeq_NestedForLoops() = 
+        Tests.TaskSeqBuilder.Examples.perf2() |> TaskSeq.iter ignore
+
+    [<BenchmarkCategory("taskSeq"); Benchmark>]
+    member _.AsyncSeq_NestedForLoops() = 
+        Tests.TaskSeqBuilder.Examples.perf2_AsyncSeq() |> AsyncSeq.iter ignore |> Async.RunSynchronously
+
+    [<BenchmarkCategory("taskSeq"); Benchmark(Baseline=true)>]
+    member _.CSharp_IAsyncEnumerable_NestedForLoops() = 
+        TaskPerfCSharp.perf2_AsyncEnumerable() |> TaskSeq.iter ignore
 
 module Main = 
 
@@ -296,10 +315,21 @@ module Main =
         //Benchmarks().SingleSyncTask_Task() 
         //Benchmarks().SingleSyncTask_TaskBuilder() 
         //Benchmarks().SingleSyncTask_FSharpAsync()
-        Tests.TaskSeqBuilder.Examples.perf2() |> TaskSeq.iter (printf "%d."); printfn ""
-        Tests.TaskSeqBuilder.Examples.perf2_AsyncSeq() |> AsyncSeq.iter (printf "%d.") |> Async.RunSynchronously; printfn ""
-        TaskPerfCSharp.perf2_AsyncEnumerable() |> TaskSeq.iter (printf "%d."); printfn ""
-        printfn "Running benchmarks..."
 
+        //printfn "Sample t1..."
+        //Tests.TaskSeqBuilder.Examples.t1() |> TaskSeq.iter (printfn "t1(): %s")
+        //printfn "Sample t2..."
+        //Tests.TaskSeqBuilder.Examples.t2() |> TaskSeq.iter (printfn "t2(): %s")
+        //printfn "Sample perf1(2)..."
+        //Tests.TaskSeqBuilder.Examples.perf1(2) |> TaskSeq.iter (printfn "perf1(2): %d")
+        //printfn "Sample perf1(3)..."
+        //Tests.TaskSeqBuilder.Examples.perf1(3) |> TaskSeq.iter (printfn "perf1(3): %d") 
+        //printfn "Sample perf2..."
+        //Tests.TaskSeqBuilder.Examples.perf2() |> TaskSeq.iter (printfn "perf2: %d")
+
+        // Tests.TaskSeqBuilder.Examples.perf2_AsyncSeq() |> AsyncSeq.iter (printf "%d.") |> Async.RunSynchronously; printfn ""
+        // TaskPerfCSharp.perf2_AsyncEnumerable() |> TaskSeq.iter (printf "%d."); printfn ""
+        
+        printfn "Running benchmarks..."
         let results = BenchmarkRunner.Run<Benchmarks>()
         0  

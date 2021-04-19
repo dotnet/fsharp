@@ -151,19 +151,18 @@ module Examples =
     printfn "t1() = %A" (t1())
     printfn "t2() = %A" (t2())
 
-module Perf = 
     type SlowOptionBuilder() =
-        member __.Zero() = None
+        member inline _.Zero() = None
 
-        member __.Return(x: 'T) = Some x
+        member inline _.Return(x: 'T) = Some x
 
-        member __.ReturnFrom(m: 'T option) = m
+        member inline _.ReturnFrom(m: 'T option) = m
 
-        member __.Bind(m: 'T option, f) = Option.bind f m
+        member inline _.Bind(m: 'T option, f) = Option.bind f m
 
-        member __.Delay(f: unit -> _) = f
+        member inline _.Delay(f: unit -> _) = f
 
-        member __.Run(f) = f()
+        member inline _.Run(f) = f()
 
         member this.TryWith(delayedExpr, handler) =
             try this.Run(delayedExpr)
@@ -178,7 +177,33 @@ module Perf =
 
     let optionSlow = SlowOptionBuilder()
 
-    let perf1 () = 
+    type SlowValueOptionBuilder() =
+        member inline _.Zero() = ValueNone
+
+        member inline _.Return(x: 'T) = ValueSome x
+
+        member inline _.ReturnFrom(m: 'T voption) = m
+
+        member inline _.Bind(m: 'T voption, f) = ValueOption.bind f m
+
+        member inline _.Delay(f: unit -> _) = f
+
+        member inline _.Run(f) = f()
+
+        member inline this.TryWith(delayedExpr, handler) =
+            try this.Run(delayedExpr)
+            with exn -> handler exn
+
+        member inline this.TryFinally(delayedExpr, compensation) =
+            try this.Run(delayedExpr)
+            finally compensation()
+
+        member inline this.Using(resource:#IDisposable, body) =
+            this.TryFinally(this.Delay(fun ()->body resource), fun () -> match box resource with null -> () | _ -> resource.Dispose())
+
+    let voptionSlow = SlowValueOptionBuilder()
+
+    let multiStepStateMachineBuilder () = 
         let mutable res = 0
         for i in 1 .. 1000000 do
             let v = 
@@ -186,47 +211,72 @@ module Perf =
                    try 
                       let! x1 = (if i % 5 <> 2 then Some i else None)
                       let! x2 = (if i % 3 <> 1 then Some i else None)
+                      let! x3 = (if i % 3 <> 1 then Some i else None)
+                      let! x4 = (if i % 3 <> 1 then Some i else None)
                       res <- res + 1 
-                      return x1 + x2
+                      return x1 + x2 + x3 + x4
                    with e -> 
                       return failwith "unexpected"
                 } 
             v |> ignore
         res
 
-    let perf2 () = 
+
+    let multiStepStateMachineBuilderV () = 
         let mutable res = 0
         for i in 1 .. 1000000 do
             let v = 
                 voption {
                    try 
-                       let! x1 = (if i % 5 <> 2 then ValueSome i else ValueNone)
-                       let! x2 = (if i % 3 <> 1 then ValueSome i else ValueNone)
-                       res <- res + 1 
-                       return x1 + x2
+                      let! x1 = (if i % 5 <> 2 then ValueSome i else ValueNone)
+                      let! x2 = (if i % 3 <> 1 then ValueSome i else ValueNone)
+                      let! x3 = (if i % 3 <> 1 then ValueSome i else ValueNone)
+                      let! x4 = (if i % 3 <> 1 then ValueSome i else ValueNone)
+                      res <- res + 1 
+                      return x1 + x2 + x3 + x4
                    with e -> 
                       return failwith "unexpected"
                 } 
             v |> ignore
         res
 
-    let perf3 () = 
+    let multiStepOldBuilder () = 
         let mutable res = 0
         for i in 1 .. 1000000 do
             let v = 
                 optionSlow {
                    try 
-                       let! x1 = (if i % 5 <> 2 then Some i else None)
-                       let! x2 = (if i % 3 <> 1 then Some i else None)
-                       res <- res + 1 
-                       return x1 + x2
+                      let! x1 = (if i % 5 <> 2 then Some i else None)
+                      let! x2 = (if i % 3 <> 1 then Some i else None)
+                      let! x3 = (if i % 3 <> 1 then Some i else None)
+                      let! x4 = (if i % 3 <> 1 then Some i else None)
+                      res <- res + 1 
+                      return x1 + x2 + x3 + x4
                    with e -> 
                       return failwith "unexpected"
                 } 
             v |> ignore
         res
 
-    let perf4 () = 
+    let multiStepOldBuilderV () = 
+        let mutable res = 0
+        for i in 1 .. 1000000 do
+            let v = 
+                voptionSlow {
+                   try 
+                      let! x1 = (if i % 5 <> 2 then ValueSome i else ValueNone)
+                      let! x2 = (if i % 3 <> 1 then ValueSome i else ValueNone)
+                      let! x3 = (if i % 3 <> 1 then ValueSome i else ValueNone)
+                      let! x4 = (if i % 3 <> 1 then ValueSome i else ValueNone)
+                      res <- res + 1 
+                      return x1 + x2 + x3 + x4
+                   with e -> 
+                      return failwith "unexpected"
+                } 
+            v |> ignore
+        res
+
+    let multiStepNoBuilder () = 
         let mutable res = 0
         for i in 1 .. 1000000 do
             let v = 
@@ -237,14 +287,20 @@ module Perf =
                     match (if i % 3 <> 1 then Some i else None) with
                     | None -> None
                     | Some x2 -> 
+                    match (if i % 3 <> 1 then Some i else None) with
+                    | None -> None
+                    | Some x3 -> 
+                    match (if i % 3 <> 1 then Some i else None) with
+                    | None -> None
+                    | Some x4 -> 
                     res <- res + 1 
-                    Some (x1 + x2)
+                    Some (x1 + x2 + x3 + x4)
                 with e -> 
                     failwith "unexpected"
             v |> ignore
         res
 
-    let perf5 () = 
+    let multiStepNoBuilderV () = 
         let mutable res = 0
         for i in 1 .. 1000000 do
             let v = 
@@ -255,25 +311,35 @@ module Perf =
                     match (if i % 3 <> 1 then ValueSome i else ValueNone) with
                     | ValueNone -> ValueNone
                     | ValueSome x2 -> 
+                    match (if i % 3 <> 1 then ValueSome i else ValueNone) with
+                    | ValueNone -> ValueNone
+                    | ValueSome x3 -> 
+                    match (if i % 3 <> 1 then ValueSome i else ValueNone) with
+                    | ValueNone -> ValueNone
+                    | ValueSome x4 -> 
                     res <- res + 1 
-                    ValueSome (x1 + x2)
+                    ValueSome (x1 + x2 + x3 + x4)
                 with e -> 
                     failwith "unexpected"
             v |> ignore
         res
 
-    let perf s f = 
-        let t = System.Diagnostics.Stopwatch()
-        t.Start()
-        for i in 1 .. 100 do 
-            f() |> ignore
-        t.Stop()
-        printfn "PERF: %s : %d" s t.ElapsedMilliseconds
+    // let perf s f = 
+    //     let t = System.Diagnostics.Stopwatch()
+    //     t.Start()
+    //     for i in 1 .. 100 do 
+    //         f() |> ignore
+    //     t.Stop()
+    //     printfn "PERF: %s : %d" s t.ElapsedMilliseconds
 
-    printfn "check %d = %d = %d = %d = %d" (perf1 ()) (perf2()) (perf3()) (perf4()) (perf5())
+    // printfn "check %d = %d = %d"(multiStepStateMachineBuilder()) (multiStepNoBuilder()) (multiStepOldBuilder())
 
-    perf "perf (builder option)" perf1 
-    perf "perf (builder voption)" perf2 
-    perf "perf (slow builder option)" perf3
-    perf "perf (hand coded option)" perf4
-    perf "perf (hand coded voption)" perf5
+    // perf "perf (state mechine option)" multiStepStateMachineBuilder 
+    // perf "perf (no builder option)" multiStepNoBuilder 
+    // perf "perf (slow builder option)" multiStepOldBuilder 
+
+    // printfn "check %d = %d = %d" (multiStepStateMachineBuilderV()) (multiStepNoBuilder()) (multiStepOldBuilder())
+    // perf "perf (state mechine voption)" multiStepStateMachineBuilderV
+    // perf "perf (no builder voption)" multiStepNoBuilderV
+    // perf "perf (slow builder voption)" multiStepOldBuilderV
+

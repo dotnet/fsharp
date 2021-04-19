@@ -212,17 +212,17 @@ module Examples =
                "b"
                "c"
             ] |> List.length |> ignore
-    let perf s f = 
-        let t = System.Diagnostics.Stopwatch()
-        t.Start()
-        f()
-        t.Stop()
-        printfn "PERF: %s : %d" s t.ElapsedMilliseconds
+    // let perf s f = 
+    //     let t = System.Diagnostics.Stopwatch()
+    //     t.Start()
+    //     f()
+    //     t.Stop()
+    //     printfn "PERF: %s : %d" s t.ElapsedMilliseconds
 
-    perf "tinyVariableSize (list builder) " tinyVariableSize
-    perf "tinyVariableSizeBase (list expression)" tinyVariableSizeBase
-    perf "variableSize (list builder) " variableSize
-    perf "variableSizeBase (list expression)" variableSizeBase
-    perf "fixedSize (list builder) " fixedSize
-    perf "fixedSizeBase (list expression)" fixedSizeBase
-    //printfn "t1() = %A" (t1())
+    // perf "tinyVariableSize (list builder) " tinyVariableSize
+    // perf "tinyVariableSizeBase (list expression)" tinyVariableSizeBase
+    // perf "variableSize (list builder) " variableSize
+    // perf "variableSizeBase (list expression)" variableSizeBase
+    // perf "fixedSize (list builder) " fixedSize
+    // perf "fixedSizeBase (list expression)" fixedSizeBase
+    // //printfn "t1() = %A" (t1())

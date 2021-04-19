@@ -126,9 +126,6 @@ namespace Microsoft.FSharp.Control
         [<DefaultValue(false)>]
         val mutable MethodBuilder : AsyncTaskMethodBuilder<'T>
 
-        // For debugging
-        member Address: nativeint
-
         interface IAsyncStateMachine
 
     and

@@ -83,11 +83,6 @@ module Utils2 =
 
     let inline hashq x = Microsoft.FSharp.Core.LanguagePrimitives.PhysicalHash x
 
-//[<NoComparison; NoEquality>]
-//type TaskStateMachine<'T> =
-//    [<DefaultValue(false)>]
-//    val mutable State : TaskStateMachine<'T>
-
 [<Struct; NoComparison; NoEquality>]
 /// Acts as a template for struct state machines introduced by __resumableStateMachineStruct, and also as a reflective implementation
 type TaskStateMachine<'TOverall> =
@@ -111,7 +106,7 @@ type TaskStateMachine<'TOverall> =
     [<DefaultValue(false)>]
     val mutable MethodBuilder : AsyncTaskMethodBuilder<'TOverall>
 
-    member sm.Address = 0n
+    //member sm.Address = 0n
         //let addr = &&sm.ResumptionPoint
         //Microsoft.FSharp.NativeInterop.NativePtr.toNativeInt addr
 
