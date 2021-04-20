@@ -21,6 +21,8 @@ type AssemblyLoader =
     /// Resolve an Abstract IL assembly reference to a Ccu
     abstract FindCcuFromAssemblyRef : CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
 
+    abstract TryFindXmlDocumentationInfo : assemblyName: string -> XmlDocumentationInfo option
+
 #if !NO_EXTENSIONTYPING
     /// Get a flag indicating if an assembly is a provided assembly, plus the
     /// table of information recording remappings from type names in the provided assembly to type

@@ -1015,6 +1015,19 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         | ResolvedImportedAssembly importedAssembly -> ResolvedCcu(importedAssembly.FSharpViewOfMetadata)
         | UnresolvedImportedAssembly _ -> UnresolvedCcu(assemblyRef.QualifiedName)
 
+    member tcImports.TryFindXmlDocumentationInfo(assemblyName: string) =
+        CheckDisposed()
+        let rec look (t: TcImports) =
+            match NameMap.tryFind assemblyName t.CcuTable with
+            | Some res -> Some res
+            | None -> 
+                 match t.Base with 
+                 | Some t2 -> look t2 
+                 | None -> None
+
+        match look tcImports with
+        | Some res -> res.FSharpViewOfMetadata.Deref.XmlDocumentationInfo
+        | _ -> None
 
 #if !NO_EXTENSIONTYPING
     member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly>) = 
@@ -1188,6 +1201,10 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             { new Import.AssemblyLoader with 
                  member x.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef) = 
                      tcImports.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef)
+
+                 member x.TryFindXmlDocumentationInfo (assemblyName) =
+                    tcImports.TryFindXmlDocumentationInfo(assemblyName)
+
 #if !NO_EXTENSIONTYPING
                  member x.GetProvidedAssemblyInfo (ctok, m, assembly) = tcImports.GetProvidedAssemblyInfo (ctok, m, assembly)
                  member x.RecordGeneratedTypeRoot root = tcImports.RecordGeneratedTypeRoot root
