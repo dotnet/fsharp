@@ -664,8 +664,6 @@ Microsoft.FSharp.Control.TaskMachineFunc`1[TOverall]: Boolean Invoke(Microsoft.F
 Microsoft.FSharp.Control.TaskMachineFunc`1[TOverall]: System.IAsyncResult BeginInvoke(Microsoft.FSharp.Control.TaskStateMachine`1[TOverall] ByRef, System.AsyncCallback, System.Object)
 Microsoft.FSharp.Control.TaskMachineFunc`1[TOverall]: Void .ctor(System.Object, IntPtr)
 Microsoft.FSharp.Control.TaskStateMachine`1[T]: Int32 ResumptionPoint
-Microsoft.FSharp.Control.TaskStateMachine`1[T]: IntPtr Address
-Microsoft.FSharp.Control.TaskStateMachine`1[T]: IntPtr get_Address()
 Microsoft.FSharp.Control.TaskStateMachine`1[T]: Microsoft.FSharp.Control.TaskMachineFunc`1[T] ResumptionFunc
 Microsoft.FSharp.Control.TaskStateMachine`1[T]: System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[T] MethodBuilder
 Microsoft.FSharp.Control.TaskStateMachine`1[T]: System.Runtime.CompilerServices.ICriticalNotifyCompletion Awaiter
