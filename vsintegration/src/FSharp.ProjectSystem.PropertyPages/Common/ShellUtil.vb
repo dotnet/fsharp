@@ -191,7 +191,7 @@ Namespace Microsoft.VisualStudio.Editors.Common
             Const ProjectsAndSolution As String = "ProjectsandSolution"
 
             Try
-                ProjAndSolutionProperties = DTE.Properties(EnvironmentCategory, ProjectsAndSolution)
+                ProjAndSolutionProperties = DTE.get_Properties(EnvironmentCategory, ProjectsAndSolution)
                 If ProjAndSolutionProperties IsNot Nothing Then
                     ShowValue = CBool(ProjAndSolutionProperties.Item("ShowAdvancedBuildConfigurations").Value)
                 Else
