@@ -925,3 +925,9 @@ let PropTypOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =
     let delTy = einfo.GetDelegateType(amap, m)
     let argsTy = ArgsTypOfEventInfo infoReader m ad einfo 
     mkIEventType g delTy argsTy
+
+let TryFindXmlDocByAssemblyNameAndMetadataKey (infoReader: InfoReader) assemblyName metadataKey =
+    infoReader.amap.assemblyLoader.TryFindXmlDocumentationInfo(assemblyName)
+    |> Option.bind (fun xmlDocInfo ->
+        xmlDocInfo.TryGetXmlDocByMetadataKey(metadataKey)
+    )

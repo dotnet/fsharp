@@ -231,9 +231,10 @@ type XmlDocumentationInfo private (lazyXmlDocument: Lazy<XmlDocument option>) =
     member _.TryGetXmlDocByMetadataKey(metadataKey: string) =
         tryGetSummaryNode metadataKey
         |> Option.map (fun node ->
-            let lines = Array.zeroCreate node.ChildNodes.Count
-            for i = 0 to node.ChildNodes.Count - 1 do
-                let childNode = node.ChildNodes.[i]
+            let childNodes = node.ChildNodes
+            let lines = Array.zeroCreate childNodes.Count
+            for i = 0 to childNodes.Count - 1 do
+                let childNode = childNodes.[i]
                 lines.[i] <- childNode.OuterXml
             XmlDoc(lines, range0)
         )      

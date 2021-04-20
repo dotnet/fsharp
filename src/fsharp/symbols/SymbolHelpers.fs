@@ -557,11 +557,8 @@ module internal SymbolHelpers =
         | FSharpXmlDoc.None
         | FSharpXmlDoc.FromXmlText _ -> xmlDoc
         | FSharpXmlDoc.FromXmlFile(dllName, xmlSig) ->
-            infoReader.amap.assemblyLoader.TryFindXmlDocumentationInfo(Path.GetFileNameWithoutExtension dllName)
-            |> Option.bind (fun xmlDocInfo ->
-                xmlDocInfo.TryGetXmlDocByMetadataKey(xmlSig)
-                |> Option.map FSharpXmlDoc.FromXmlText
-            )
+            TryFindXmlDocByAssemblyNameAndMetadataKey infoReader (Path.GetFileNameWithoutExtension dllName) xmlSig
+            |> Option.map FSharpXmlDoc.FromXmlText
             |> Option.defaultValue xmlDoc
 
     /// This function gets the signature to pass to Visual Studio to use its lookup functions for .NET stuff. 

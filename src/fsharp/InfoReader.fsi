@@ -11,6 +11,7 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 
 /// Try to select an F# value when querying members, and if so return a MethInfo that wraps the F# value.
@@ -153,3 +154,5 @@ val IsStandardEventInfo: infoReader:InfoReader -> m:range -> ad:AccessorDomain -
 val ArgsTypOfEventInfo: infoReader:InfoReader -> m:range -> ad:AccessorDomain -> einfo:EventInfo -> TType
 
 val PropTypOfEventInfo: infoReader:InfoReader -> m:range -> ad:AccessorDomain -> einfo:EventInfo -> TType
+
+val TryFindXmlDocByAssemblyNameAndMetadataKey: infoReader:InfoReader -> assemblyName: string -> metadataKey: string -> XmlDoc option
