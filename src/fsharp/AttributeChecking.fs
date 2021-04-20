@@ -352,9 +352,9 @@ let CheckFSharpAttributesForObsolete g attribs =
     not (isNil attribs) && (HasFSharpAttribute g g.attrib_SystemObsolete attribs)
 
 
-/// Indicate if a list of F# attributes contains RequireNamedArgumentAttribute'. Used to error on call site if arguments aren't explicitly named.
+/// Indicate if a list of F# attributes contains 'RequireArgumentNameAttribute'. Used to error on call site if arguments aren't explicitly named.
 let CheckFSharpAttributesForRequireNamedParametersAttribute g attribs = 
-    not (isNil attribs) && (HasFSharpAttribute g g.attrib_RequireNamedArgumentAttribute attribs)
+    not (isNil attribs) && (HasFSharpAttribute g g.attrib_RequireArgumentNameAttribute attribs)
 
 /// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 /// Also check the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
@@ -404,7 +404,7 @@ let CheckMethInfoAttributes g m tyargsOpt minfo hasUnammedCallerArgs =
                     CheckFSharpAttributes g fsAttribs m ++ (fun () -> 
                         if Option.isNone tyargsOpt && HasFSharpAttribute g g.attrib_RequiresExplicitTypeArgumentsAttribute fsAttribs then
                             ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(minfo.LogicalName), m))
-                        elif Option.isSome hasUnammedCallerArgs && hasUnammedCallerArgs.Value && HasFSharpAttribute g g.attrib_RequireNamedArgumentAttribute fsAttribs then
+                        elif Option.isSome hasUnammedCallerArgs && hasUnammedCallerArgs.Value && HasFSharpAttribute g g.attrib_RequireArgumentNameAttribute fsAttribs then
                             ErrorD(Error(FSComp.SR.tcMethodRequireNamedArgumentAttribute(minfo.LogicalName), m))
                         else
                             CompleteD)
