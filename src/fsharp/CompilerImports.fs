@@ -1076,7 +1076,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 TypeForwarders = Map.empty
                 XmlDocumentationInfo =
                     match tcConfig.xmlDocInfoLoader with
-                    | Some xmlDocInfoLoader -> xmlDocInfoLoader.TryLoad(fileName)
+                    | Some xmlDocInfoLoader -> xmlDocInfoLoader.TryLoad(fileName, ilModule)
                     | _ -> None
               }
                     
@@ -1506,8 +1506,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                       MemberSignatureEquality= (fun ty1 ty2 -> typeEquivAux EraseAll (tcImports.GetTcGlobals()) ty1 ty2)
                       TypeForwarders = ImportILAssemblyTypeForwarders(tcImports.GetImportMap, m, ilModule.GetRawTypeForwarders())
                       XmlDocumentationInfo =
-                        match tcConfig.xmlDocInfoLoader with
-                        | Some xmlDocInfoLoader -> xmlDocInfoLoader.TryLoad(filename)
+                        match tcConfig.xmlDocInfoLoader, ilModule.TryGetILModuleDef() with
+                        | Some xmlDocInfoLoader, Some ilModuleDef -> xmlDocInfoLoader.TryLoad(filename, ilModuleDef)
                         | _ -> None
                     }
 

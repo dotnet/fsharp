@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.IO
+open System.Xml
 open System.Runtime.InteropServices
 open System.Threading
 open Internal.Utilities.Library 
@@ -35,6 +36,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TypedTreeOps
 
@@ -1389,6 +1391,39 @@ type IncrementalBuilder(tcGlobals,
 
                 // Never open PDB files for the language service, even if --standalone is specified
                 tcConfigB.openDebugInformationForLaterStaticLinking <- false
+
+                tcConfigB.xmlDocInfoLoader <-
+                    { new IXmlDocumentationInfoLoader with
+                        /// Try to load xml documentation associated with an assembly by the same file path with the extension ".xml".
+                        /// If that fails, look to see if it exists in ILModuleDef's resources.
+                        member _.TryLoad(assemblyFileName, ilModule) =
+                            let xmlFileName = Path.ChangeExtension(assemblyFileName, ".xml")
+
+                            // REVIEW: File IO - Will eventually need to change this to use a file system interface of some sort.
+                            XmlDocumentationInfo.TryCreateFromFile(xmlFileName)
+                            |> Option.orElseWith (fun () ->
+                                let name = Path.GetFileName(xmlFileName)
+                                ilModule.Resources.AsList
+                                |> List.tryFind (fun x -> x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                                |> Option.map (fun ilRes ->
+                                    let ilRes = WeakReference<_>(ilRes)
+                                    let lazyXmlDocument =
+                                        lazy
+                                            match ilRes.TryGetTarget() with
+                                            | false, _ -> None
+                                            | true, ilRes ->
+                                                try
+                                                    let xmlDocument = XmlDocument()
+                                                    xmlDocument.Load(ilRes.GetBytes().AsStream())
+                                                    Some xmlDocument
+                                                with
+                                                | _ ->
+                                                    None
+                                    XmlDocumentationInfo.Create(lazyXmlDocument)                                               
+                                )
+                            )
+                    }
+                    |> Some
 
                 tcConfigB, sourceFilesNew
 

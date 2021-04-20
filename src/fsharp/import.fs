@@ -612,7 +612,7 @@ let ImportILAssembly(amap: (unit -> ImportMap), m, auxModuleLoader, xmlDocInfoLo
           TypeForwarders = forwarders
           XmlDocumentationInfo = 
             match xmlDocInfoLoader, filename with
-            | Some xmlDocInfoLoader, Some filename -> xmlDocInfoLoader.TryLoad(filename)
+            | Some xmlDocInfoLoader, Some filename -> xmlDocInfoLoader.TryLoad(filename, ilModule)
             | _ -> None
         }
                 

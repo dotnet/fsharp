@@ -11,6 +11,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.AbstractIL.IL
 
 /// Represents collected XmlDoc lines
 [<RequireQualifiedAccess>]
@@ -217,7 +218,7 @@ type PreXmlDoc =
     static member Merge a b = PreXmlMerge (a, b)
 
 [<Sealed>]
-type XmlDocumentationInfo private (fileName: string, lazyXmlDocument: Lazy<XmlDocument option>) =
+type XmlDocumentationInfo private (lazyXmlDocument: Lazy<XmlDocument option>) =
 
     let tryGetSummaryNode metadataKey =
         lazyXmlDocument.Value
@@ -229,30 +230,28 @@ type XmlDocumentationInfo private (fileName: string, lazyXmlDocument: Lazy<XmlDo
                 | null -> None
                 | summaryNode -> Some summaryNode)
 
-    member _.FileName = fileName
-
     member _.TryGetXmlDocByMetadataKey(metadataKey: string) =
         tryGetSummaryNode metadataKey
         |> Option.map (fun node ->
             XmlDoc([|node.InnerText|], range0)
         )      
 
-    static member TryCreateFromFile(fileName: string) =
-        if not (File.Exists(fileName)) || not (String.Equals(Path.GetExtension(fileName), ".xml", StringComparison.OrdinalIgnoreCase)) then
+    static member TryCreateFromFile(xmlFileName: string) =
+        if not (File.Exists(xmlFileName)) || not (String.Equals(Path.GetExtension(xmlFileName), ".xml", StringComparison.OrdinalIgnoreCase)) then
             None
         else
             try
-                let doc = System.Xml.XmlDocument()
-                use xmlStream = File.OpenRead(fileName)
+                let doc = XmlDocument()
+                use xmlStream = File.OpenRead(xmlFileName)
                 doc.Load(xmlStream)
-                Some(XmlDocumentationInfo(fileName, lazy(Some doc)))
+                Some(XmlDocumentationInfo(lazy(Some doc)))
             with
             | _ ->
                 None
 
-    static member Create(fileName: string, lazyXmlDocument: Lazy<XmlDocument option>) =
-        XmlDocumentationInfo(fileName, lazyXmlDocument)
+    static member Create(lazyXmlDocument: Lazy<XmlDocument option>) =
+        XmlDocumentationInfo(lazyXmlDocument)
 
-type internal IXmlDocumentationInfoLoader =
+type IXmlDocumentationInfoLoader =
 
-    abstract TryLoad : assemblyFileName: string -> XmlDocumentationInfo option
+    abstract TryLoad : assemblyFileName: string * ILModuleDef -> XmlDocumentationInfo option

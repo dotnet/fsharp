@@ -4,6 +4,7 @@ namespace FSharp.Compiler.Xml
 
 open System.Xml
 open FSharp.Compiler.Text
+open FSharp.Compiler.AbstractIL.IL
 
 /// Represents collected XmlDoc lines
 [<Class>]
@@ -62,14 +63,12 @@ type public PreXmlDoc =
 [<Sealed>]
 type internal XmlDocumentationInfo =
 
-    member FileName : string
-
     member TryGetXmlDocByMetadataKey : metadataKey: string -> XmlDoc option
 
-    static member TryCreateFromFile : fileName: string -> XmlDocumentationInfo option
+    static member TryCreateFromFile : xmlFileName: string -> XmlDocumentationInfo option
 
-    static member Create : fileName: string * lazyXmlDocument: Lazy<XmlDocument option> -> XmlDocumentationInfo
+    static member Create : lazyXmlDocument: Lazy<XmlDocument option> -> XmlDocumentationInfo
 
 type internal IXmlDocumentationInfoLoader =
 
-    abstract TryLoad : assemblyFileName: string -> XmlDocumentationInfo option
+    abstract TryLoad : assemblyFileName: string * ILModuleDef -> XmlDocumentationInfo option
