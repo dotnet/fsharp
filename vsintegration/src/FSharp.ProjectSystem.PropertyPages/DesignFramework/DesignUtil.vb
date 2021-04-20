@@ -6,7 +6,6 @@ Imports System.Windows.Forms
 Imports Microsoft.VisualStudio.Shell.Interop
 Imports System.Runtime.InteropServices
 Imports VSHelp = Microsoft.VisualStudio.VSHelp
-Imports TextManager = Microsoft.VisualStudio.TextManager
 Imports Design = Microsoft.VisualStudio.Shell.Design
 
 
@@ -327,19 +326,19 @@ Namespace Microsoft.VisualStudio.Editors.DesignerFramework
         ''' <remarks></remarks>
         Friend Shared Function GetEncoding(ByVal dd As Design.Serialization.DocData) As System.Text.Encoding
             ' Try to get the encoding of the textbuffer that we are going to write to...
-            Try
-                Static GUID_VsBufferEncodingVSTFF As New Guid("{16417F39-A6B7-4c90-89FA-770D2C60440B}")
-                Dim oEncoding As Object = Nothing
-                Dim userData As TextManager.Interop.IVsUserData = TryCast(dd.Buffer, TextManager.Interop.IVsUserData)
-                If userData IsNot Nothing Then
-                    VSErrorHandler.ThrowOnFailure(userData.GetData(GUID_VsBufferEncodingVSTFF, oEncoding))
-                    If oEncoding IsNot Nothing Then
-                        Return System.Text.Encoding.GetEncoding(CInt(oEncoding) And TextManager.Interop.__VSTFF.VSTFF_CPMASK)
-                    End If
-                End If
-            Catch ex As Exception
-                Common.RethrowIfUnrecoverable(ex)
-            End Try
+            'Try
+            '    Static GUID_VsBufferEncodingVSTFF As New Guid("{16417F39-A6B7-4c90-89FA-770D2C60440B}")
+            '    Dim oEncoding As Object = Nothing
+            '    Dim userData As TextManager.Interop.IVsUserData = TryCast(dd.Buffer, TextManager.Interop.IVsUserData)
+            '    If userData IsNot Nothing Then
+            '        VSErrorHandler.ThrowOnFailure(userData.GetData(GUID_VsBufferEncodingVSTFF, oEncoding))
+            '        If oEncoding IsNot Nothing Then
+            '            Return System.Text.Encoding.GetEncoding(CInt(oEncoding) And TextManager.Interop.__VSTFF.VSTFF_CPMASK)
+            '        End If
+            '    End If
+            'Catch ex As Exception
+            '    Common.RethrowIfUnrecoverable(ex)
+            'End Try
             Return System.Text.Encoding.Default
         End Function
 

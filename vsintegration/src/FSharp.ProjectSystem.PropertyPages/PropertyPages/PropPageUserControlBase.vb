@@ -3051,7 +3051,7 @@ NextControl:
 
             'First see if it is already in the project
             For Each ProjectItem As EnvDTE.ProjectItem In ProjectItems
-                If ProjectItem.FileNames(1).Equals(FileName, StringComparison.OrdinalIgnoreCase) Then
+                If ProjectItem.get_FileNames(1).Equals(FileName, StringComparison.OrdinalIgnoreCase) Then
                     Return ProjectItem
                 End If
             Next
