@@ -552,47 +552,48 @@ module internal SymbolHelpers =
             Some(ccuFileName, "F:"+formalTypeInfo.ILTypeRef.FullName+"."+finfo.FieldName)
         | _ -> None
 
-    /// This function gets the signature to pass to Visual Studio to use its lookup functions for .NET stuff. 
-    let GetXmlDocHelpSigOfItemForLookup (infoReader: InfoReader) m d = 
-        let g = infoReader.g
-                
-        let xmlDoc =
-            match d with
-            | Item.ActivePatternCase (APElemRef(_, vref, _))        
-            | Item.Value vref | Item.CustomBuilder (_, vref) -> 
-                mkXmlComment (GetXmlDocSigOfValRef g vref)
-            | Item.UnionCase  (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseInfo ucinfo)
-            | Item.ExnCase tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
-            | Item.RecdField rfinfo -> mkXmlComment (GetXmlDocSigOfRecdFieldInfo rfinfo)
-            | Item.NewDef _ -> FSharpXmlDoc.None
-            | Item.ILField finfo -> mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader m finfo)
-            | Item.Types(_, ((TType_app(tcref, _)) :: _)) ->  mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
-            | Item.CustomOperation (_, _, Some minfo) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
-            | Item.TypeVar _  -> FSharpXmlDoc.None
-            | Item.ModuleOrNamespaces(modref :: _) -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m modref)
-
-            | Item.Property(_, (pinfo :: _)) -> mkXmlComment (GetXmlDocSigOfProp infoReader m pinfo)
-            | Item.Event einfo -> mkXmlComment (GetXmlDocSigOfEvent infoReader m einfo)
-
-            | Item.MethodGroup(_, minfo :: _, _) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
-            | Item.CtorGroup(_, minfo :: _) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
-            | Item.ArgName(_, _, Some argContainer) -> 
-                match argContainer with 
-                | ArgumentContainer.Method minfo -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
-                | ArgumentContainer.Type tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
-            | Item.UnionCaseField (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseInfo ucinfo)
-            |  _ -> FSharpXmlDoc.None
-
+    let GetXmlDocFromLoader (infoReader: InfoReader) xmlDoc =
         match xmlDoc with
         | FSharpXmlDoc.None
         | FSharpXmlDoc.FromXmlText _ -> xmlDoc
         | FSharpXmlDoc.FromXmlFile(dllName, xmlSig) ->
-            infoReader.amap.assemblyLoader.TryFindXmlDocumentationInfo(dllName)
+            infoReader.amap.assemblyLoader.TryFindXmlDocumentationInfo(Path.GetFileNameWithoutExtension dllName)
             |> Option.bind (fun xmlDocInfo ->
                 xmlDocInfo.TryGetXmlDocByMetadataKey(xmlSig)
                 |> Option.map FSharpXmlDoc.FromXmlText
             )
             |> Option.defaultValue xmlDoc
+
+    /// This function gets the signature to pass to Visual Studio to use its lookup functions for .NET stuff. 
+    let GetXmlDocHelpSigOfItemForLookup (infoReader: InfoReader) m d = 
+        let g = infoReader.g
+        match d with
+        | Item.ActivePatternCase (APElemRef(_, vref, _))        
+        | Item.Value vref | Item.CustomBuilder (_, vref) -> 
+            mkXmlComment (GetXmlDocSigOfValRef g vref)
+        | Item.UnionCase  (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseInfo ucinfo)
+        | Item.ExnCase tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+        | Item.RecdField rfinfo -> mkXmlComment (GetXmlDocSigOfRecdFieldInfo rfinfo)
+        | Item.NewDef _ -> FSharpXmlDoc.None
+        | Item.ILField finfo -> mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader m finfo)
+        | Item.Types(_, ((TType_app(tcref, _)) :: _)) ->  mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+        | Item.CustomOperation (_, _, Some minfo) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
+        | Item.TypeVar _  -> FSharpXmlDoc.None
+        | Item.ModuleOrNamespaces(modref :: _) -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m modref)
+
+        | Item.Property(_, (pinfo :: _)) -> mkXmlComment (GetXmlDocSigOfProp infoReader m pinfo)
+        | Item.Event einfo -> mkXmlComment (GetXmlDocSigOfEvent infoReader m einfo)
+
+        | Item.MethodGroup(_, minfo :: _, _) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
+        | Item.CtorGroup(_, minfo :: _) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
+        | Item.ArgName(_, _, Some argContainer) -> 
+            match argContainer with 
+            | ArgumentContainer.Method minfo -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
+            | ArgumentContainer.Type tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+        | Item.UnionCaseField (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseInfo ucinfo)
+        |  _ -> FSharpXmlDoc.None
+
+        |> GetXmlDocFromLoader infoReader
 
     /// Produce an XmlComment with a signature or raw text, given the F# comment and the item
     let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d = 
@@ -901,6 +902,8 @@ module internal SymbolHelpers =
         | Item.DelegateCtor _
         |  _ -> 
             GetXmlCommentForItemAux None infoReader m item
+
+        |> GetXmlDocFromLoader infoReader
 
     let IsAttribute (infoReader: InfoReader) item =
         try

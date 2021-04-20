@@ -225,15 +225,17 @@ type XmlDocumentationInfo private (lazyXmlDocument: Lazy<XmlDocument option>) =
         |> Option.bind (fun doc ->
             match doc.SelectSingleNode(sprintf "doc/members/member[@name='%s']" metadataKey) with
             | null -> None
-            | node ->
-                match node.SelectSingleNode("summary") with
-                | null -> None
-                | summaryNode -> Some summaryNode)
+            | node when node.HasChildNodes -> Some node
+            | _ -> None)
 
     member _.TryGetXmlDocByMetadataKey(metadataKey: string) =
         tryGetSummaryNode metadataKey
         |> Option.map (fun node ->
-            XmlDoc([|node.InnerText|], range0)
+            let lines = Array.zeroCreate node.ChildNodes.Count
+            for i = 0 to node.ChildNodes.Count - 1 do
+                let childNode = node.ChildNodes.[i]
+                lines.[i] <- childNode.OuterXml
+            XmlDoc(lines, range0)
         )      
 
     static member TryCreateFromFile(xmlFileName: string) =
