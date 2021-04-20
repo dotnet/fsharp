@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.Syntax
+namespace FSharp.Compiler.Xml
 
+open System.Xml
 open FSharp.Compiler.Text
 
 /// Represents collected XmlDoc lines
@@ -57,3 +58,18 @@ type public PreXmlDoc =
     member ToXmlDoc: check:bool * paramNamesOpt:string list option -> XmlDoc
 
     static member Empty: PreXmlDoc
+
+[<Sealed>]
+type internal XmlDocumentationInfo =
+
+    member FileName : string
+
+    member TryGetXmlDocByMetadataKey : metadataKey: string -> XmlDoc option
+
+    static member TryCreateFromFile : fileName: string -> XmlDocumentationInfo option
+
+    static member Create : fileName: string * lazyXmlDocument: Lazy<XmlDocument option> -> XmlDocumentationInfo
+
+type internal IXmlDocumentationInfoLoader =
+
+    abstract TryLoad : assemblyFileName: string -> XmlDocumentationInfo option

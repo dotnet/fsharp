@@ -24,6 +24,7 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 
 #if DEBUG
 let debugPrint s =

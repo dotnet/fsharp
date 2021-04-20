@@ -29,12 +29,12 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -1073,7 +1073,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 MemberSignatureEquality = (fun ty1 ty2 -> typeEquivAux EraseAll g ty1 ty2)
                 ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
                 TryGetILModuleDef = (fun () -> Some ilModule)
-                TypeForwarders = Map.empty }
+                TypeForwarders = Map.empty
+                XmlDocumentationInfo =
+                    match tcConfig.xmlDocInfoLoader with
+                    | Some xmlDocInfoLoader -> xmlDocInfoLoader.TryLoad(fileName)
+                    | _ -> None
+              }
                     
             let ccu = CcuThunk.Create(ilShortAssemName, ccuData)
             let ccuinfo = 
@@ -1434,7 +1439,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         if verbose then dprintn ("Converting IL assembly to F# data structures "+nm)
         let auxModuleLoader = tcImports.MkLoaderForMultiModuleILAssemblies ctok m
         let invalidateCcu = new Event<_>()
-        let ccu = Import.ImportILAssembly(tcImports.GetImportMap, m, auxModuleLoader, ilScopeRef, tcConfig.implicitIncludeDir, Some filename, ilModule, invalidateCcu.Publish)
+        let ccu = Import.ImportILAssembly(tcImports.GetImportMap, m, auxModuleLoader, tcConfig.xmlDocInfoLoader, ilScopeRef, tcConfig.implicitIncludeDir, Some filename, ilModule, invalidateCcu.Publish)
         
         let ilg = defaultArg ilGlobalsOpt EcmaMscorlibILGlobals
 
@@ -1499,7 +1504,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                       TryGetILModuleDef = ilModule.TryGetILModuleDef
                       UsesFSharp20PlusQuotations = minfo.usesQuotations
                       MemberSignatureEquality= (fun ty1 ty2 -> typeEquivAux EraseAll (tcImports.GetTcGlobals()) ty1 ty2)
-                      TypeForwarders = ImportILAssemblyTypeForwarders(tcImports.GetImportMap, m, ilModule.GetRawTypeForwarders()) }
+                      TypeForwarders = ImportILAssemblyTypeForwarders(tcImports.GetImportMap, m, ilModule.GetRawTypeForwarders())
+                      XmlDocumentationInfo =
+                        match tcConfig.xmlDocInfoLoader with
+                        | Some xmlDocInfoLoader -> xmlDocInfoLoader.TryLoad(filename)
+                        | _ -> None
+                    }
 
                 let ccu = CcuThunk.Create(ccuName, ccuData)
 

@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.Syntax
+namespace FSharp.Compiler.Xml
 
 open System
+open System.IO
+open System.Xml
 open System.Xml.Linq
 open Internal.Utilities.Library
 open FSharp.Compiler.ErrorLogger
@@ -214,3 +216,43 @@ type PreXmlDoc =
 
     static member Merge a b = PreXmlMerge (a, b)
 
+[<Sealed>]
+type XmlDocumentationInfo private (fileName: string, lazyXmlDocument: Lazy<XmlDocument option>) =
+
+    let tryGetSummaryNode metadataKey =
+        lazyXmlDocument.Value
+        |> Option.bind (fun doc ->
+            match doc.SelectSingleNode(sprintf "doc/members/member[@name='%s']" metadataKey) with
+            | null -> None
+            | node ->
+                match node.SelectSingleNode("summary") with
+                | null -> None
+                | summaryNode -> Some summaryNode)
+
+    member _.FileName = fileName
+
+    member _.TryGetXmlDocByMetadataKey(metadataKey: string) =
+        tryGetSummaryNode metadataKey
+        |> Option.map (fun node ->
+            XmlDoc([|node.InnerText|], range0)
+        )      
+
+    static member TryCreateFromFile(fileName: string) =
+        if not (File.Exists(fileName)) || not (String.Equals(Path.GetExtension(fileName), ".xml", StringComparison.OrdinalIgnoreCase)) then
+            None
+        else
+            try
+                let doc = System.Xml.XmlDocument()
+                use xmlStream = File.OpenRead(fileName)
+                doc.Load(xmlStream)
+                Some(XmlDocumentationInfo(fileName, lazy(Some doc)))
+            with
+            | _ ->
+                None
+
+    static member Create(fileName: string, lazyXmlDocument: Lazy<XmlDocument option>) =
+        XmlDocumentationInfo(fileName, lazyXmlDocument)
+
+type internal IXmlDocumentationInfoLoader =
+
+    abstract TryLoad : assemblyFileName: string -> XmlDocumentationInfo option

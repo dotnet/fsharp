@@ -4,6 +4,7 @@ namespace rec FSharp.Compiler.Syntax
 
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 
 /// Represents an identifier in F# code
 [<Struct; NoEquality; NoComparison>]

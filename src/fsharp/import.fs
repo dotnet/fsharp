@@ -14,6 +14,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -579,7 +580,7 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
     ] |> Map.ofList
 
 /// Import an IL assembly as a new TAST CCU
-let ImportILAssembly(amap: (unit -> ImportMap), m, auxModuleLoader, ilScopeRef, sourceDir, filename, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
+let ImportILAssembly(amap: (unit -> ImportMap), m, auxModuleLoader, xmlDocInfoLoader: IXmlDocumentationInfoLoader option, ilScopeRef, sourceDir, filename, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
     invalidateCcu |> ignore
     let aref =   
         match ilScopeRef with 
@@ -608,6 +609,11 @@ let ImportILAssembly(amap: (unit -> ImportMap), m, auxModuleLoader, ilScopeRef, 
           FileName = filename
           MemberSignatureEquality= (fun ty1 ty2 -> typeEquivAux EraseAll (amap()).g ty1 ty2)
           TryGetILModuleDef = (fun () -> Some ilModule)
-          TypeForwarders = forwarders }
+          TypeForwarders = forwarders
+          XmlDocumentationInfo = 
+            match xmlDocInfoLoader, filename with
+            | Some xmlDocInfoLoader, Some filename -> xmlDocInfoLoader.TryLoad(filename)
+            | _ -> None
+        }
                 
     CcuThunk.Create(nm, ccuData)

@@ -63,6 +63,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
+open FSharp.Compiler.Xml
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
