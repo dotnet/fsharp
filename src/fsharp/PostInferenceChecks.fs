@@ -1767,7 +1767,7 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
     // Check accessibility
     if (v.IsMemberOrModuleBinding || v.IsMember) && not v.IsIncrClassGeneratedMember then 
         let access =  AdjustAccess (IsHiddenVal env.sigToImplRemapInfo v) (fun () -> v.TopValDeclaringEntity.CompilationPath) v.Accessibility
-        CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv v) access v.Range v.Type
+        CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv cenv.infoReader v) access v.Range v.Type
     
     let env = if v.IsConstructor && not v.IsIncrClassConstructor then { env with ctorLimitedZone=true } else env
 
@@ -2189,7 +2189,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     match parentMethsOfSameName |> List.tryFind (checkForDup EraseAll) with
                     | None -> ()
                     | Some minfo ->
-                        let mtext = NicePrint.stringOfMethInfo cenv.amap m cenv.denv minfo
+                        let mtext = NicePrint.stringOfMethInfo cenv.infoReader m cenv.denv minfo
                         if parentMethsOfSameName |> List.exists (checkForDup EraseNone) then 
                             warning(Error(FSComp.SR.tcNewMemberHidesAbstractMember mtext, m))
                         else

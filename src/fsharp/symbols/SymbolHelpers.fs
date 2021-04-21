@@ -442,7 +442,7 @@ module internal SymbolHelpers =
             mkXmlComment (GetXmlDocSigOfValRef g vref)
         | Item.UnionCase  (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseInfo ucinfo)
         | Item.ExnCase tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
-        | Item.RecdField rfinfo -> mkXmlComment (GetXmlDocSigOfRecdFieldInfo rfinfo)
+        | Item.RecdField rfinfo -> mkXmlComment (GetXmlDocSigOfRecdFieldRef rfinfo.RecdFieldRef)
         | Item.NewDef _ -> FSharpXmlDoc.None
         | Item.ILField finfo -> mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader m finfo)
         | Item.Types(_, ((TType_app(tcref, _)) :: _)) ->  mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)

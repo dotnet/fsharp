@@ -1130,7 +1130,7 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
             match d with 
             | RecdOrClass v -> 
                 let recd = RecdFieldInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
-                GetXmlDocSigOfRecdFieldInfo recd
+                GetXmlDocSigOfRecdFieldRef recd.RecdFieldRef
             | Union (v, _) -> 
                 let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
                 GetXmlDocSigOfUnionCaseInfo unionCase
@@ -2217,7 +2217,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.FormatLayout (context:FSharpDisplayContext) =
         match x.IsMember, d with
         | true, V v ->
-            NicePrint.prettyLayoutOfMemberNoInstShort { (context.Contents cenv.g) with showMemberContainers=true } v.Deref
+            NicePrint.prettyLayoutOfMemberNoInstShort { (context.Contents cenv.g) with showMemberContainers=true } cenv.infoReader v.Deref
             |> LayoutRender.toArray
         | _,_ ->
             checkIsResolved()

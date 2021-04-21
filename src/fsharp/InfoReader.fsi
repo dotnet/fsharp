@@ -165,7 +165,7 @@ val GetXmlDocSigOfEntityRef: infoReader:InfoReader -> m:range -> eref: EntityRef
 
 val GetXmlDocSigOfScopedValRef: TcGlobals -> tcref: TyconRef -> vref: ValRef -> (string option * string) option
 
-val GetXmlDocSigOfRecdFieldInfo: rfinfo:RecdFieldInfo -> (string option * string) option
+val GetXmlDocSigOfRecdFieldRef: rfref:RecdFieldRef -> (string option * string) option
 
 val GetXmlDocSigOfUnionCaseInfo: ucinfo:UnionCaseInfo -> (string option * string) option
 

@@ -980,12 +980,12 @@ let GetXmlDocSigOfScopedValRef g (tcref: TyconRef) (vref: ValRef) =
         v.XmlDocSig <- XmlDocSigOfVal g false path v
     Some (ccuFileName, v.XmlDocSig)                
 
-let GetXmlDocSigOfRecdFieldInfo (rfinfo: RecdFieldInfo) = 
-    let tcref = rfinfo.TyconRef
+let GetXmlDocSigOfRecdFieldRef (rfref: RecdFieldRef) = 
+    let tcref = rfref.TyconRef
     let ccuFileName = libFileOfEntityRef tcref 
-    if rfinfo.RecdField.XmlDocSig = "" then
-        rfinfo.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfinfo.Name]
-    Some (ccuFileName, rfinfo.RecdField.XmlDocSig)            
+    if rfref.RecdField.XmlDocSig = "" then
+        rfref.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfref.RecdField.Name]
+    Some (ccuFileName, rfref.RecdField.XmlDocSig)
 
 let GetXmlDocSigOfUnionCaseInfo (ucinfo: UnionCaseInfo) = 
     let tcref =  ucinfo.TyconRef
