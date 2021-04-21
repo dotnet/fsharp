@@ -153,14 +153,14 @@
     <MicrosoftVisualStudioPlatformVSEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioPlatformVSEditorVersion>
     <MicrosoftVisualStudioTextUIVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextUIVersion>
     <MicrosoftVisualStudioTextUIWpfVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextUIWpfVersion>
-    <MicrosoftVisualStudioTextDataVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextDataVersion>
+    <MicrosoftVisualStudioTextDataVersion>17.0.24-g4265d215ae</MicrosoftVisualStudioTextDataVersion>
     <MicrosoftVisualStudioTextInternalVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextInternalVersion>
     <!-- Visual Studio language+shell packages -->
     <VisualStudioLanguageAndShellVersion>16.7.30329.88</VisualStudioLanguageAndShellVersion>
     <MicrosoftVisualStudioShell150Version>17.0.0-preview-1-30928-1111</MicrosoftVisualStudioShell150Version>
     <MicrosoftVisualStudioShellDesignVersion>$(VisualStudioLanguageAndShellVersion)</MicrosoftVisualStudioShellDesignVersion>
     <MicrosoftVisualStudioShellFrameworkVersion>17.0.0-preview-1-30928-1111</MicrosoftVisualStudioShellFrameworkVersion>
-    <MicrosoftVisualStudioPackageLanguageService150Version>$(VisualStudioLanguageAndShellVersion)</MicrosoftVisualStudioPackageLanguageService150Version>
+    <MicrosoftVisualStudioPackageLanguageService150Version>17.0.0-preview-1-30928-1112</MicrosoftVisualStudioPackageLanguageService150Version>
     <!-- Misc. Visual Studio packages -->
     <MicrosoftVisualStudioRpcContractsVersion>16.8.30</MicrosoftVisualStudioRpcContractsVersion>
     <MicrosoftVisualStudioComponentModelHostVersion>17.0.3-g7e635753db</MicrosoftVisualStudioComponentModelHostVersion>
