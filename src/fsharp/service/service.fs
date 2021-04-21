@@ -464,10 +464,10 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         }
 
     member _.GetCachedCheckFileResult(builder: IncrementalBuilder, filename, sourceText: ISourceText, options) =
-        let stamp = sourceText.GetHashCode() |> int64
+        let hash = sourceText.GetHashCode() |> int64
 
         // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
-        let cachedResults = parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.TryGet(ltok, (filename, stamp, options)))
+        let cachedResults = parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.TryGet(ltok, (filename, hash, options)))
 
         let result =
             match cachedResults with 
@@ -483,7 +483,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 None
 
         if result.IsNone then
-            parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.RemoveAnySimilar(ltok, (filename, stamp, options)))
+            parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.RemoveAnySimilar(ltok, (filename, hash, options)))
 
         result
 
@@ -796,12 +796,12 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     | Some sc -> return Some (sc.GetView ()) })
 
     /// Try to get recent approximate type check results for a file. 
-    member _.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, sourceText: ISourceText option, cacheStamp: CacheStamp option, _userOpName: string) =
+    member _.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, sourceText: ISourceText option, _userOpName: string) =
         parseCacheLock.AcquireLock (fun ltok -> 
             match sourceText with 
             | Some sourceText -> 
-                let cacheStamp = defaultArg cacheStamp (sourceText.GetHashCode() |> int64)
-                match checkFileInProjectCache.TryGet(ltok,(filename,cacheStamp,options)) with
+                let hash = sourceText.GetHashCode() |> int64
+                match checkFileInProjectCache.TryGet(ltok,(filename,hash,options)) with
                 | Some (a,b,c,_) -> Some (a,b,c)
                 | None -> checkFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options))
             | None -> checkFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options)))
@@ -1141,9 +1141,9 @@ type FSharpChecker(legacyReferenceResolver,
         backgroundCompiler.GetBackgroundCheckResultsForFileInProject(filename,options, userOpName)
         
     /// Try to get recent approximate type check results for a file. 
-    member _.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, ?sourceText, ?userOpName: string, ?cacheStamp: int64) =
+    member _.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, ?sourceText, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
-        backgroundCompiler.TryGetRecentCheckResultsForFile(filename,options,sourceText,cacheStamp,userOpName)
+        backgroundCompiler.TryGetRecentCheckResultsForFile(filename,options,sourceText,userOpName)
 
     member _.Compile(argv: string[], ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
