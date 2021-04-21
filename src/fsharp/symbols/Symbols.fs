@@ -810,7 +810,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member this.TryGetMetadataText() =
         match entity.TryDeref with
-        | ValueSome entity ->
+        | ValueSome _ ->
             if entity.IsNamespace then None
             else
 
@@ -886,7 +886,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                 [
                     (Layout.(^^) headerL (Layout.sepL TaggedText.lineBreak))
                     (Layout.(^^) openL (Layout.sepL TaggedText.lineBreak))
-                    (NicePrint.layoutEntity denv infoReader AccessibleFromSomewhere range0 entity)
+                    (NicePrint.layoutEntityRef denv infoReader AccessibleFromSomewhere range0 entity)
                 ]
             |> LayoutRender.showL
             |> SourceText.ofString

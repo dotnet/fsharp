@@ -2186,7 +2186,7 @@ let stringOfTyparConstraints denv x = x |> PrintTypes.layoutConstraintsWithInfo 
 
 let layoutTycon denv infoReader ad m (* width *) x = TastDefinitionPrinting.layoutTyconRef denv infoReader ad m true WordL.keywordType (mkLocalEntityRef x) (* |> Display.squashTo width *)
 
-let layoutEntity denv infoReader ad m x = TastDefinitionPrinting.layoutEntityRef denv infoReader ad m (mkLocalEntityRef x)
+let layoutEntityRef denv infoReader ad m x = TastDefinitionPrinting.layoutEntityRef denv infoReader ad m x
 
 let layoutUnionCases denv infoReader enclosingTcref x = x |> TastDefinitionPrinting.layoutUnionCaseFields denv infoReader true enclosingTcref
 

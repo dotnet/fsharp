@@ -70,7 +70,7 @@ val stringOfTyparConstraints: denv:DisplayEnv -> x:(Typar * TyparConstraint) lis
 
 val layoutTycon: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> x:Tycon -> Layout
 
-val layoutEntity: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> x:Entity -> Layout
+val layoutEntityRef: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> x:EntityRef -> Layout
 
 val layoutUnionCases: denv:DisplayEnv -> infoReader:InfoReader -> enclosingTcref:TyconRef -> x:RecdField list -> Layout
 
