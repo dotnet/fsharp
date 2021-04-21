@@ -63,7 +63,7 @@ type public PreXmlDoc =
 [<Sealed>]
 type internal XmlDocumentationInfo =
 
-    member TryGetXmlDocByMetadataKey : metadataKey: string -> XmlDoc option
+    member TryGetXmlDocBySig : xmlDocSig: string -> XmlDoc option
 
     static member TryCreateFromFile : xmlFileName: string -> XmlDocumentationInfo option
 

@@ -220,16 +220,16 @@ type PreXmlDoc =
 [<Sealed>]
 type XmlDocumentationInfo private (lazyXmlDocument: Lazy<XmlDocument option>) =
 
-    let tryGetSummaryNode metadataKey =
+    let tryGetSummaryNode xmlDocSig =
         lazyXmlDocument.Value
         |> Option.bind (fun doc ->
-            match doc.SelectSingleNode(sprintf "doc/members/member[@name='%s']" metadataKey) with
+            match doc.SelectSingleNode(sprintf "doc/members/member[@name='%s']" xmlDocSig) with
             | null -> None
             | node when node.HasChildNodes -> Some node
             | _ -> None)
 
-    member _.TryGetXmlDocByMetadataKey(metadataKey: string) =
-        tryGetSummaryNode metadataKey
+    member _.TryGetXmlDocBySig(xmlDocSig: string) =
+        tryGetSummaryNode xmlDocSig
         |> Option.map (fun node ->
             let childNodes = node.ChildNodes
             let lines = Array.zeroCreate childNodes.Count

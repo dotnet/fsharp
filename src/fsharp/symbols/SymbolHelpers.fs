@@ -419,145 +419,17 @@ module internal SymbolHelpers =
                   yield ParamNameAndType(argInfo.Name, ty) ]
         | _ -> []
 
-    // Find the name of the metadata file for this external definition 
-    let metaInfoOfEntityRef (infoReader: InfoReader) m tcref = 
-        let g = infoReader.g
-        match tcref with 
-        | ERefLocal _ -> None
-        | ERefNonLocal nlref -> 
-            // Generalize to get a formal signature 
-            let formalTypars = tcref.Typars m
-            let formalTypeInst = generalizeTypars formalTypars
-            let ty = TType_app(tcref, formalTypeInst)
-            if isILAppTy g ty then
-                let formalTypeInfo = ILTypeInfo.FromType g ty
-                Some(nlref.Ccu.FileName, formalTypars, formalTypeInfo)
-            else None
-
     let mkXmlComment thing =
         match thing with
         | Some (Some fileName, xmlDocSig) -> FSharpXmlDoc.FromXmlFile(fileName, xmlDocSig)
         | _ -> FSharpXmlDoc.None
-
-    let GetXmlDocSigOfEntityRef infoReader m (eref: EntityRef) = 
-        if eref.IsILTycon then 
-            match metaInfoOfEntityRef infoReader m eref  with
-            | None -> None
-            | Some (ccuFileName, _, formalTypeInfo) -> Some(ccuFileName, "T:"+formalTypeInfo.ILTypeRef.FullName)
-        else
-            let ccuFileName = libFileOfEntityRef eref
-            let m = eref.Deref
-            if m.XmlDocSig = "" then
-                m.XmlDocSig <- XmlDocSigOfEntity eref
-            Some (ccuFileName, m.XmlDocSig)
-
-    let GetXmlDocSigOfScopedValRef g (tcref: TyconRef) (vref: ValRef) = 
-        let ccuFileName = libFileOfEntityRef tcref
-        let v = vref.Deref
-        if v.XmlDocSig = "" && v.HasDeclaringEntity then
-            let ap = buildAccessPath vref.TopValDeclaringEntity.CompilationPathOpt
-            let path =
-                if vref.TopValDeclaringEntity.IsModule then
-                    let sep = if ap.Length > 0 then "." else ""
-                    ap + sep + vref.TopValDeclaringEntity.CompiledName
-                else
-                    ap
-            v.XmlDocSig <- XmlDocSigOfVal g false path v
-        Some (ccuFileName, v.XmlDocSig)                
-
-    let GetXmlDocSigOfRecdFieldInfo (rfinfo: RecdFieldInfo) = 
-        let tcref = rfinfo.TyconRef
-        let ccuFileName = libFileOfEntityRef tcref 
-        if rfinfo.RecdField.XmlDocSig = "" then
-            rfinfo.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfinfo.Name]
-        Some (ccuFileName, rfinfo.RecdField.XmlDocSig)            
-
-    let GetXmlDocSigOfUnionCaseInfo (ucinfo: UnionCaseInfo) = 
-        let tcref =  ucinfo.TyconRef
-        let ccuFileName = libFileOfEntityRef tcref
-        if  ucinfo.UnionCase.XmlDocSig = "" then
-            ucinfo.UnionCase.XmlDocSig <- XmlDocSigOfUnionCase [tcref.CompiledRepresentationForNamedType.FullName; ucinfo.Name]
-        Some (ccuFileName, ucinfo.UnionCase.XmlDocSig)
-
-    let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) = 
-        let amap = infoReader.amap
-        match minfo with
-        | FSMeth (g, _, vref, _) ->
-            GetXmlDocSigOfScopedValRef g minfo.DeclaringTyconRef vref
-        | ILMeth (g, ilminfo, _) ->            
-            let actualTypeName = ilminfo.DeclaringTyconRef.CompiledRepresentationForNamedType.FullName
-            let fmtps = ilminfo.FormalMethodTypars            
-            let genArity = if fmtps.Length=0 then "" else sprintf "``%d" fmtps.Length
-
-            match metaInfoOfEntityRef infoReader m ilminfo.DeclaringTyconRef  with 
-            | None -> None
-            | Some (ccuFileName, formalTypars, formalTypeInfo) ->
-                let filminfo = ILMethInfo(g, formalTypeInfo.ToType, None, ilminfo.RawMetadata, fmtps) 
-                let args = 
-                    match ilminfo.IsILExtensionMethod with
-                    | true -> filminfo.GetRawArgTypes(amap, m, minfo.FormalMethodInst)
-                    | false -> filminfo.GetParamTypes(amap, m, minfo.FormalMethodInst)
-
-                // http://msdn.microsoft.com/en-us/library/fsbx0t7x.aspx
-                // If the name of the item itself has periods, they are replaced by the hash-sign ('#'). 
-                // It is assumed that no item has a hash-sign directly in its name. For example, the fully 
-                // qualified name of the String constructor would be "System.String.#ctor".
-                let normalizedName = ilminfo.ILName.Replace(".", "#")
-
-                Some (ccuFileName, "M:"+actualTypeName+"."+normalizedName+genArity+XmlDocArgsEnc g (formalTypars, fmtps) args)
-        | DefaultStructCtor _ -> None
-#if !NO_EXTENSIONTYPING
-        | ProvidedMeth _ -> None
-#endif
-
-    let GetXmlDocSigOfValRef g (vref: ValRef) =
-        if not vref.IsLocalRef then
-            let ccuFileName = vref.nlr.Ccu.FileName
-            let v = vref.Deref
-            if v.XmlDocSig = "" && v.HasDeclaringEntity then
-                v.XmlDocSig <- XmlDocSigOfVal g false vref.TopValDeclaringEntity.CompiledRepresentationForNamedType.Name v
-            Some (ccuFileName, v.XmlDocSig)
-        else 
-            None
-
-    let GetXmlDocSigOfProp infoReader m (pinfo: PropInfo) =
-        let g = pinfo.TcGlobals
-        match pinfo with 
-#if !NO_EXTENSIONTYPING
-        | ProvidedProp _ -> None // No signature is possible. If an xml comment existed it would have been returned by PropInfo.XmlDoc in infos.fs
-#endif
-        | FSProp _ as fspinfo -> 
-            match fspinfo.ArbitraryValRef with 
-            | None -> None
-            | Some vref -> GetXmlDocSigOfScopedValRef g pinfo.DeclaringTyconRef vref
-        | ILProp(ILPropInfo(_, pdef)) -> 
-            match metaInfoOfEntityRef infoReader m pinfo.DeclaringTyconRef with
-            | Some (ccuFileName, formalTypars, formalTypeInfo) ->
-                let filpinfo = ILPropInfo(formalTypeInfo, pdef)
-                Some (ccuFileName, "P:"+formalTypeInfo.ILTypeRef.FullName+"."+pdef.Name+XmlDocArgsEnc g (formalTypars, []) (filpinfo.GetParamTypes(infoReader.amap, m)))
-            | _ -> None
-
-    let GetXmlDocSigOfEvent infoReader m (einfo: EventInfo) =
-        match einfo with
-        | ILEvent _ ->
-            match metaInfoOfEntityRef infoReader m einfo.DeclaringTyconRef with 
-            | Some (ccuFileName, _, formalTypeInfo) -> 
-                Some(ccuFileName, "E:"+formalTypeInfo.ILTypeRef.FullName+"."+einfo.EventName)
-            | _ -> None
-        | _ -> None
-
-    let GetXmlDocSigOfILFieldInfo infoReader m (finfo: ILFieldInfo) =
-        match metaInfoOfEntityRef infoReader m finfo.DeclaringTyconRef with
-        | Some (ccuFileName, _, formalTypeInfo) ->
-            Some(ccuFileName, "F:"+formalTypeInfo.ILTypeRef.FullName+"."+finfo.FieldName)
-        | _ -> None
 
     let GetXmlDocFromLoader (infoReader: InfoReader) xmlDoc =
         match xmlDoc with
         | FSharpXmlDoc.None
         | FSharpXmlDoc.FromXmlText _ -> xmlDoc
         | FSharpXmlDoc.FromXmlFile(dllName, xmlSig) ->
-            TryFindXmlDocByAssemblyNameAndMetadataKey infoReader (Path.GetFileNameWithoutExtension dllName) xmlSig
+            TryFindXmlDocByAssemblyNameAndSig infoReader (Path.GetFileNameWithoutExtension dllName) xmlSig
             |> Option.map FSharpXmlDoc.FromXmlText
             |> Option.defaultValue xmlDoc
 
