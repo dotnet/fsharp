@@ -131,11 +131,15 @@ module internal PrintUtilities =
                     emptyL
                 else
                     xml.UnprocessedLines
-                    |> List.ofArray
+                    |> Array.map (fun x ->
+                        x.Split('\n') // These lines may have new-lines in them and we need to split them so we can format it
+                    )
+                    |> Array.concat
                     /// note here that we don't add a space after the triple-slash, because
                     /// the implicit spacing hasn't been trimmed here.
-                    |> List.map (fun line -> ("///" + line) |> tagText |> wordL)
-                    |> spaceListL
+                    |> Array.map (fun line -> ("///" + line) |> tagText |> wordL)
+                    |> List.ofArray
+                    |> aboveListL
             xmlDocL @@ restL
         else restL
 
