@@ -987,12 +987,12 @@ let GetXmlDocSigOfRecdFieldRef (rfref: RecdFieldRef) =
         rfref.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfref.RecdField.Name]
     Some (ccuFileName, rfref.RecdField.XmlDocSig)
 
-let GetXmlDocSigOfUnionCaseInfo (ucinfo: UnionCaseInfo) = 
-    let tcref =  ucinfo.TyconRef
+let GetXmlDocSigOfUnionCaseRef (ucref: UnionCaseRef) = 
+    let tcref =  ucref.TyconRef
     let ccuFileName = libFileOfEntityRef tcref
-    if  ucinfo.UnionCase.XmlDocSig = "" then
-        ucinfo.UnionCase.XmlDocSig <- XmlDocSigOfUnionCase [tcref.CompiledRepresentationForNamedType.FullName; ucinfo.Name]
-    Some (ccuFileName, ucinfo.UnionCase.XmlDocSig)
+    if  ucref.UnionCase.XmlDocSig = "" then
+        ucref.UnionCase.XmlDocSig <- XmlDocSigOfUnionCase [tcref.CompiledRepresentationForNamedType.FullName; ucref.CaseName]
+    Some (ccuFileName, ucref.UnionCase.XmlDocSig)
 
 let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) = 
     let amap = infoReader.amap

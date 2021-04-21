@@ -161,20 +161,20 @@ val TryFindMetadataInfoOfExternalEntityRef: infoReader:InfoReader -> m:range -> 
 /// Try to find the xml doc associated with the assembly name and metadata key
 val TryFindXmlDocByAssemblyNameAndSig: infoReader:InfoReader -> assemblyName: string -> xmlDocSig: string -> XmlDoc option
 
-val GetXmlDocSigOfEntityRef: infoReader:InfoReader -> m:range -> eref: EntityRef -> (string option * string) option
+val GetXmlDocSigOfEntityRef: infoReader:InfoReader -> m:range -> eref:EntityRef -> (string option * string) option
 
-val GetXmlDocSigOfScopedValRef: TcGlobals -> tcref: TyconRef -> vref: ValRef -> (string option * string) option
+val GetXmlDocSigOfScopedValRef: TcGlobals -> tcref:TyconRef -> vref:ValRef -> (string option * string) option
 
 val GetXmlDocSigOfRecdFieldRef: rfref:RecdFieldRef -> (string option * string) option
 
-val GetXmlDocSigOfUnionCaseInfo: ucinfo:UnionCaseInfo -> (string option * string) option
+val GetXmlDocSigOfUnionCaseRef: ucref:UnionCaseRef -> (string option * string) option
 
 val GetXmlDocSigOfMethInfo: infoReader: InfoReader -> m:range -> minfo:MethInfo -> (string option * string) option
 
 val GetXmlDocSigOfValRef: TcGlobals -> vref: ValRef -> (string option * string) option
 
-val GetXmlDocSigOfProp: infoReader: InfoReader -> m:range -> pinfo:PropInfo -> (string option * string) option
+val GetXmlDocSigOfProp: infoReader:InfoReader -> m:range -> pinfo:PropInfo -> (string option * string) option
 
-val GetXmlDocSigOfEvent: infoReader: InfoReader -> m:range -> einfo:EventInfo -> (string option * string) option
+val GetXmlDocSigOfEvent: infoReader:InfoReader -> m:range -> einfo:EventInfo -> (string option * string) option
 
-val GetXmlDocSigOfILFieldInfo: infoReader: InfoReader -> m:range -> finfo:ILFieldInfo -> (string option * string) option
+val GetXmlDocSigOfILFieldInfo: infoReader:InfoReader -> m:range -> finfo:ILFieldInfo -> (string option * string) option

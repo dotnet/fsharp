@@ -955,7 +955,7 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
     member _.XmlDocSig = 
         checkIsResolved()
         let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
-        match GetXmlDocSigOfUnionCaseInfo unionCase with
+        match GetXmlDocSigOfUnionCaseRef unionCase.UnionCaseRef with
         | Some (_, docsig) -> docsig
         | _ -> ""
 
@@ -1133,7 +1133,7 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
                 GetXmlDocSigOfRecdFieldRef recd.RecdFieldRef
             | Union (v, _) -> 
                 let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
-                GetXmlDocSigOfUnionCaseInfo unionCase
+                GetXmlDocSigOfUnionCaseRef unionCase.UnionCaseRef
             | ILField f -> 
                 GetXmlDocSigOfILFieldInfo cenv.infoReader range0 f
             | AnonField _ -> None
