@@ -117,7 +117,7 @@
     <MicrosoftVisualStudioShellInterop100Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioShellInterop100Version>
     <MicrosoftVisualStudioShellInterop110Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioShellInterop110Version>
     <MicrosoftVisualStudioShellInterop120Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioShellInterop120Version>
-    <MicrosoftVisualStudioImageCatalogVersion>17.0.0-preview-1-30928-1111</MicrosoftVisualStudioImageCatalogVersion>
+    <MicrosoftVisualStudioImageCatalogVersion>17.0.0-preview-1-31204-1114</MicrosoftVisualStudioImageCatalogVersion>
     <MicrosoftVisualStudioShellInteropVersion>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioShellInteropVersion>
     <MicrosoftVisualStudioTextManagerInteropVersion>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioTextManagerInteropVersion>
     <MicrosoftVisualStudioTextManagerInterop80Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioTextManagerInterop80Version>
@@ -153,21 +153,21 @@
     <MicrosoftVisualStudioPlatformVSEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioPlatformVSEditorVersion>
     <MicrosoftVisualStudioTextUIVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextUIVersion>
     <MicrosoftVisualStudioTextUIWpfVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextUIWpfVersion>
-    <MicrosoftVisualStudioTextDataVersion>17.0.24-g4265d215ae</MicrosoftVisualStudioTextDataVersion>
+    <MicrosoftVisualStudioTextDataVersion>17.0.28-g439d20ddd3</MicrosoftVisualStudioTextDataVersion>
     <MicrosoftVisualStudioTextInternalVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextInternalVersion>
     <!-- Visual Studio language+shell packages -->
     <VisualStudioLanguageAndShellVersion>16.7.30329.88</VisualStudioLanguageAndShellVersion>
     <MicrosoftVisualStudioShell150Version>17.0.0-preview-1-31204-1114</MicrosoftVisualStudioShell150Version>
     <MicrosoftVisualStudioShellDesignVersion>17.0.0-preview-1-31204-1114</MicrosoftVisualStudioShellDesignVersion>
-    <MicrosoftVisualStudioShellFrameworkVersion>17.0.0-preview-1-30928-1111</MicrosoftVisualStudioShellFrameworkVersion>
+    <MicrosoftVisualStudioShellFrameworkVersion>17.0.0-preview-1-31204-1114</MicrosoftVisualStudioShellFrameworkVersion>
     <MicrosoftVisualStudioPackageLanguageService150Version>17.0.0-preview-1-30928-1112</MicrosoftVisualStudioPackageLanguageService150Version>
     <!-- Misc. Visual Studio packages -->
     <MicrosoftVisualStudioRpcContractsVersion>16.10.14-alpha</MicrosoftVisualStudioRpcContractsVersion>
     <MicrosoftVisualStudioComponentModelHostVersion>17.0.28-g439d20ddd3</MicrosoftVisualStudioComponentModelHostVersion>
     <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>17.0.0</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>
     <MicrosoftVisualStudioDesignerInterfacesVersion>17.0.0-preview-1-31108-209</MicrosoftVisualStudioDesignerInterfacesVersion>
-    <MicrosoftVisualStudioGraphModelVersion>16.0.28226-alpha</MicrosoftVisualStudioGraphModelVersion>
-    <MicrosoftVisualStudioImagingVersion>16.7.30329.63</MicrosoftVisualStudioImagingVersion>
+    <MicrosoftVisualStudioGraphModelVersion>17.0.0-preview-1-31204-1114</MicrosoftVisualStudioGraphModelVersion>
+    <MicrosoftVisualStudioImagingVersion>17.0.0-preview-1-31204-1114</MicrosoftVisualStudioImagingVersion>
     <MicrosoftVisualStudioManagedInterfacesVersion>8.0.50728</MicrosoftVisualStudioManagedInterfacesVersion>
     <MicrosoftVisualStudioProjectAggregatorVersion>17.0.0-preview-1-31205-065</MicrosoftVisualStudioProjectAggregatorVersion>
     <MicrosoftVisualStudioProjectSystemVersion>16.0.201-pre-g7d366164d0</MicrosoftVisualStudioProjectSystemVersion>
@@ -179,7 +179,7 @@
     <MicrosoftVisualStudioShellInterop160DesignTimeVersion>16.0.1</MicrosoftVisualStudioShellInterop160DesignTimeVersion>
     <MicrosoftVisualStudioShellInterop16DesignTimeVersion>16.0.28924.11111</MicrosoftVisualStudioShellInterop16DesignTimeVersion>
     <MicrosoftVisualStudioThreadingVersion>16.10.51-alpha</MicrosoftVisualStudioThreadingVersion>
-    <MicrosoftVisualStudioUtilitiesVersion>16.7.30329.38</MicrosoftVisualStudioUtilitiesVersion>
+    <MicrosoftVisualStudioUtilitiesVersion>17.0.0-preview-1-31204-1114</MicrosoftVisualStudioUtilitiesVersion>
     <MicrosoftVisualStudioValidationVersion>16.10.22-alpha</MicrosoftVisualStudioValidationVersion>
     <MicrosoftVisualStudioWCFReferenceInteropVersion>9.0.30729</MicrosoftVisualStudioWCFReferenceInteropVersion>
     <MicrosoftVSSDKBuildToolsVersion>17.0.39-dev17-g977fccd6</MicrosoftVSSDKBuildToolsVersion>
