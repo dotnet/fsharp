@@ -2206,11 +2206,14 @@ tyconDefnOrSpfnSimpleRepr:
        SynTypeDefnSimpleRepr.Record ($2, $3, lhs parseState) }
 
   /* An inline-assembly type definition, for FSharp.Core library only */
-  | opt_attributes opt_declVisibility LPAREN inlineAssemblyTyconRepr rparen
+  | opt_attributes opt_declVisibility LPAREN HASH stringOrKeywordString HASH rparen
      { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(), rhs parseState 1))
-       libraryOnlyError (lhs parseState)
+       let lhsm = lhs parseState
+       libraryOnlyError lhsm
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsInlineAssemblyCannotHaveVisibilityDeclarations(), rhs parseState 2))
-       $4 }
+       let s, _ = $5
+       let ilType = ParseAssemblyCodeType s parseState.LexBuffer.SupportsFeature (rhs parseState 5)
+       SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (box ilType, lhsm)  }
 
 
 /* The core of a record type definition */
@@ -2242,14 +2245,6 @@ braceBarFieldDeclListCore:
 
   | LBRACE_BAR error bar_rbrace
      { [] }
-
-inlineAssemblyTyconRepr:
-  | HASH stringOrKeywordString HASH 
-     { libraryOnlyError (lhs parseState)
-       let lhsm = lhs parseState
-       let s, _ = $2
-       let ilType = ParseAssemblyCodeType s parseState.LexBuffer.SupportsFeature (rhs parseState 2)
-       SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (box ilType, lhsm) }
 
 classOrInterfaceOrStruct: 
   | CLASS 
@@ -3908,30 +3903,38 @@ patternClauses:
   | patternAndGuard patternResult %prec prec_pat_pat_action
      { let pat, guard, patm = $1 
        let mLast = $2.Range 
-       [SynMatchClause(pat, guard, $2, patm, DebugPointForTarget.Yes)], mLast  }
+       let m = unionRanges $2.Range patm
+       [SynMatchClause(pat, guard, $2, m, DebugPointForTarget.Yes)], mLast  }
 
   | patternAndGuard patternResult BAR patternClauses 
      { let pat, guard, patm = $1 
-       let clauses, mLast = $4 
-       (SynMatchClause(pat, guard, $2, patm, DebugPointForTarget.Yes) :: clauses), mLast }
+       let clauses, mLast = $4
+       let m = unionRanges $2.Range patm
+       (SynMatchClause(pat, guard, $2, m, DebugPointForTarget.Yes) :: clauses), mLast }
 
   | patternAndGuard patternResult BAR error 
      { let pat, guard, patm = $1 
        let mLast = rhs parseState 3 
-       // silent recovery 
-       [SynMatchClause(pat, guard, $2, patm, DebugPointForTarget.Yes)], mLast  }
+       let m = unionRanges $2.Range patm
+       // silent recovery
+       [SynMatchClause(pat, guard, $2, m, DebugPointForTarget.Yes)], mLast  }
 
   | patternAndGuard patternResult error 
      { let pat, guard, patm = $1 
-       let mLast = $2.Range 
+       let mLast = $2.Range
+       let m = unionRanges $2.Range patm
        // silent recovery 
-       [SynMatchClause(pat, guard, $2, patm, DebugPointForTarget.Yes)], mLast }
+       [SynMatchClause(pat, guard, $2, m, DebugPointForTarget.Yes)], mLast }
 
   | patternAndGuard error 
      { let pat, guard, patm = $1 
        let mLast = rhs parseState 2
+       let m = 
+           match guard with 
+           | Some e -> unionRanges patm e.Range 
+           | _ -> patm
        // silent recovery 
-       [SynMatchClause(pat, guard, SynExpr.Const (SynConst.Unit, mLast.EndRange), patm, DebugPointForTarget.Yes)], mLast }
+       [SynMatchClause(pat, guard, SynExpr.Const (SynConst.Unit, mLast.EndRange), m, DebugPointForTarget.Yes)], mLast }
  
 patternGuard: 
   | WHEN declExpr 
