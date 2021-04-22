@@ -2574,7 +2574,7 @@ let TcValEarlyGeneralizationConsistencyCheck cenv (env: TcEnv) (v: Val, vrec, ti
               let tau3 = instType (mkTyparInst tpsorig tinst) tau2
               //printfn "tau3 = '%s'" (DebugPrint.showType tau3)
               if not (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m tau tau3) then
-                  let txt = bufs (fun buf -> NicePrint.outputQualifiedValSpec env.DisplayEnv cenv.infoReader buf v)
+                  let txt = bufs (fun buf -> NicePrint.outputQualifiedValSpec env.DisplayEnv cenv.infoReader buf (mkLocalValRef v))
                   error(Error(FSComp.SR.tcInferredGenericTypeGivesRiseToInconsistency(v.DisplayName, txt), m)))
     | _ -> ()
 

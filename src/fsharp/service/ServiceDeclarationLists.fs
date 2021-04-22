@@ -159,7 +159,7 @@ module DeclarationListHelpers =
             FormatItemDescriptionToToolTipElement isListItem infoReader m denv { item with Item = Item.Value vref }
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
-            let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv infoReader item.TyparInst vref.Deref
+            let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv infoReader item.TyparInst vref
             let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
             let tpsL = FormatTyparMapping denv prettyTyparInst
             let tpsL = List.map LayoutRender.toArray tpsL

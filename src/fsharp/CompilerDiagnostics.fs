@@ -1349,7 +1349,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           os.Append(UnionPatternsBindDifferentNamesE().Format) |> ignore
 
       | ValueNotContained (denv, infoReader, mref, implVal, sigVal, f) ->
-          let text1, text2 = NicePrint.minimalStringsOfTwoValues denv infoReader implVal sigVal
+          let text1, text2 = NicePrint.minimalStringsOfTwoValues denv infoReader (mkLocalValRef implVal) (mkLocalValRef sigVal)
           os.Append(f((fullDisplayTextOfModRef mref), text1, text2)) |> ignore
 
       | ConstrNotContained (denv, infoReader, enclosingTycon, v1, v2, f) ->
@@ -1519,12 +1519,12 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then 
                 os.Append(ValueRestriction1E().Format
                   v.DisplayName 
-                  (NicePrint.stringOfQualifiedValOrMember denv infoReader v)
+                  (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
                   v.DisplayName) |> ignore
               else
                 os.Append(ValueRestriction2E().Format
                   v.DisplayName 
-                  (NicePrint.stringOfQualifiedValOrMember denv infoReader v)
+                  (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
                   v.DisplayName) |> ignore
           else
               match v.MemberInfo with 
@@ -1535,17 +1535,17 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   | SynMemberKind.Constructor -> true (* can't infer extra polymorphism *)
                   | _ -> false (* can infer extra polymorphism *)
                   end -> 
-                      os.Append(ValueRestriction3E().Format (NicePrint.stringOfQualifiedValOrMember denv infoReader v)) |> ignore
+                      os.Append(ValueRestriction3E().Format (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))) |> ignore
               | _ -> 
                 if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then 
                     os.Append(ValueRestriction4E().Format
                       v.DisplayName
-                      (NicePrint.stringOfQualifiedValOrMember denv infoReader v)
+                      (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
                       v.DisplayName) |> ignore
                 else
                     os.Append(ValueRestriction5E().Format
                       v.DisplayName
-                      (NicePrint.stringOfQualifiedValOrMember denv infoReader v)
+                      (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
                       v.DisplayName) |> ignore
                 
 

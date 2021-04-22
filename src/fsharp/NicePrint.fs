@@ -1115,71 +1115,71 @@ module private PrintTastMemberOrVals =
             | Const.Zero -> literalValue.ToString() |> tagText |> wordL
         WordL.equals ++ literalValue
 
-    let private layoutNonMemberVal denv (tps, v: Val, tau, cxs) =
+    let private layoutNonMemberVal denv infoReader (tps, vref: ValRef, tau, cxs) =
         let env = SimplifyTypes.CollectInfo true [tau] cxs
         let cxs = env.postfixConstraints
-        let argInfos, rty = GetTopTauTypeInFSharpForm denv.g (arityOfVal v).ArgInfos tau v.Range
+        let argInfos, rty = GetTopTauTypeInFSharpForm denv.g (arityOfVal vref.Deref).ArgInfos tau vref.Range
         let nameL =
             let isDiscard (str: string) = str.StartsWith("_")
 
             let tagF =
-                if isForallFunctionTy denv.g v.Type && not (isDiscard v.DisplayName) then
-                    if IsOperatorName v.DisplayName then
+                if isForallFunctionTy denv.g vref.Type && not (isDiscard vref.DisplayName) then
+                    if IsOperatorName vref.DisplayName then
                         tagOperator
                     else
                         tagFunction
-                elif not v.IsCompiledAsTopLevel && not(isDiscard v.DisplayName) then
+                elif not vref.IsCompiledAsTopLevel && not(isDiscard vref.DisplayName) then
                     tagLocal
-                elif v.IsModuleBinding then
+                elif vref.IsModuleBinding then
                     tagModuleBinding
                 else
                     tagUnknownEntity
 
-            v.DisplayName
+            vref.DisplayName
             |> tagF
-            |> mkNav v.DefinitionRange
+            |> mkNav vref.DefinitionRange
             |> wordL 
-        let nameL = layoutAccessibility denv v.Accessibility nameL
+        let nameL = layoutAccessibility denv vref.Accessibility nameL
         let nameL = 
-            if v.IsMutable && not denv.suppressMutableKeyword then 
+            if vref.IsMutable && not denv.suppressMutableKeyword then 
                 wordL (tagKeyword "mutable") ++ nameL 
-              else 
-                  nameL
-        let nameL = mkInlineL denv v nameL
+                else 
+                    nameL
+        let nameL = mkInlineL denv vref.Deref nameL
 
         let isOverGeneric = List.length (Zset.elements (freeInType CollectTyparsNoCaching tau).FreeTypars) < List.length tps // Bug: 1143 
-        let isTyFunction = v.IsTypeFunction // Bug: 1143, and innerpoly tests 
+        let isTyFunction = vref.IsTypeFunction // Bug: 1143, and innerpoly tests 
         let typarBindingsL = 
             if isTyFunction || isOverGeneric || denv.showTyparBinding then 
                 layoutTyparDecls denv nameL true tps 
             else nameL
         let valAndTypeL = (WordL.keywordVal ^^ typarBindingsL --- wordL (tagPunctuation ":")) --- layoutTopType denv env argInfos rty cxs
         let valAndTypeL =
-            match denv.generatedValueLayout v with
+            match denv.generatedValueLayout vref.Deref with
             | None -> valAndTypeL
             | Some rhsL -> (valAndTypeL ++ wordL (tagPunctuation"=")) --- rhsL
         let overallL =
-            match v.LiteralValue with
+            match vref.LiteralValue with
             | Some literalValue -> valAndTypeL ++ layoutOfLiteralValue literalValue
             | None -> valAndTypeL
-        layoutXmlDoc denv v.XmlDoc overallL
+        layoutXmlDocOfValRef denv infoReader vref overallL
 
-    let prettyLayoutOfValOrMember denv infoReader typarInst (v: Val) =
+    let prettyLayoutOfValOrMember denv infoReader typarInst (vref: ValRef) =
         let prettyTyparInst, vL =
-            match v.MemberInfo with 
+            match vref.MemberInfo with 
             | None ->
-                let tps, tau = v.TypeScheme
+                let tps, tau = vref.TypeScheme
 
                 // adjust the type in case this is the 'this' pointer stored in a reference cell
-                let tau = StripSelfRefCell(denv.g, v.BaseOrThisInfo, tau)
+                let tau = StripSelfRefCell(denv.g, vref.BaseOrThisInfo, tau)
 
                 let (prettyTyparInst, prettyTypars, prettyTauTy), cxs = PrettyTypes.PrettifyInstAndTyparsAndType denv.g (typarInst, tps, tau)
-                let resL = layoutNonMemberVal denv (prettyTypars, v, prettyTauTy, cxs)
+                let resL = layoutNonMemberVal denv infoReader (prettyTypars, vref, prettyTauTy, cxs)
                 prettyTyparInst, resL
             | Some _ -> 
-                prettyLayoutOfMember denv infoReader typarInst v
+                prettyLayoutOfMember denv infoReader typarInst vref.Deref
 
-        prettyTyparInst, layoutAttribs denv true v.Type TyparKind.Type v.Attribs vL
+        prettyTyparInst, layoutAttribs denv true vref.Type TyparKind.Type vref.Attribs vL
 
     let prettyLayoutOfValOrMemberNoInst denv infoReader v =
         prettyLayoutOfValOrMember denv infoReader emptyTyparInst v |> snd
@@ -1264,7 +1264,7 @@ module InfoMemberPrinting =
 
         match minfo.ArbitraryValRef with
         | Some vref ->
-            PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref.Deref
+            PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
         | None ->
             let layout = 
                 if not minfo.IsConstructor && not minfo.IsInstance then WordL.keywordStatic
@@ -1367,7 +1367,7 @@ module InfoMemberPrinting =
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
             prettyTyparInst, PrintTypes.layoutTyconRefImpl denv methInfo.ApparentEnclosingTyconRef ^^ wordL (tagPunctuation "()")
         | FSMeth(_, _, vref, _) -> 
-            let prettyTyparInst, resL = PrintTastMemberOrVals.prettyLayoutOfValOrMember { denv with showMemberContainers=true } infoReader typarInst vref.Deref
+            let prettyTyparInst, resL = PrintTastMemberOrVals.prettyLayoutOfValOrMember { denv with showMemberContainers=true } infoReader typarInst vref
             prettyTyparInst, resL
         | ILMeth(_, ilminfo, _) -> 
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m methInfo typarInst ilminfo
@@ -1421,16 +1421,16 @@ module InfoMemberPrinting =
 module private TastDefinitionPrinting = 
     open PrintTypes
 
-    let layoutExtensionMember denv infoReader (v: Val) =
-        let tycon = v.MemberApparentEntity.Deref
-        let nameL = tagMethod tycon.DisplayName |> mkNav v.DefinitionRange |> wordL
+    let layoutExtensionMember denv infoReader (vref: ValRef) =
+        let tycon = vref.MemberApparentEntity.Deref
+        let nameL = tagMethod tycon.DisplayName |> mkNav vref.DefinitionRange |> wordL
         let nameL = layoutAccessibility denv tycon.Accessibility nameL // "type-accessibility"
         let tps =
-            match PartitionValTyparsForApparentEnclosingType denv.g v with
+            match PartitionValTyparsForApparentEnclosingType denv.g vref.Deref with
               | Some(_, memberParentTypars, _, _, _) -> memberParentTypars
               | None -> []
         let lhsL = WordL.keywordType ^^ layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
-        let memberL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader v
+        let memberL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
         (lhsL ^^ WordL.keywordWith) @@-- memberL
 
     let layoutExtensionMembers denv infoReader vs =
@@ -1525,8 +1525,8 @@ module private TastDefinitionPrinting =
         let amap = infoReader.amap
 
         match p.ArbitraryValRef with
-        | Some v ->
-            PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader v.Deref
+        | Some vref ->
+            PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
         | None ->
 
             let modifierAndMember =
@@ -1959,7 +1959,7 @@ module private TastDefinitionPrinting =
                 |> QueueList.toList
                 |> List.filter shouldShow
                 |> List.sortBy (fun v -> v.DisplayName)
-                |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader)
+                |> List.map (mkLocalValRef >> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader)
 
         if List.isEmpty entityLs && List.isEmpty valLs then
             headerL
@@ -2024,12 +2024,14 @@ module private InferredSigPrinting =
                     |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) 
                     |> valsOfBinds 
                     |> List.filter filterExtMem
+                    |> List.map mkLocalValRef
                     |> TastDefinitionPrinting.layoutExtensionMembers denv infoReader) @@
 
                 (mbinds 
                     |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) 
                     |> valsOfBinds 
                     |> List.filter filterVal
+                    |> List.map mkLocalValRef
                     |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader)
                     |> aboveListL) @@
 
@@ -2041,6 +2043,7 @@ module private InferredSigPrinting =
             | TMDefLet(bind, _) -> 
                 ([bind.Var] 
                     |> List.filter filterVal 
+                    |> List.map mkLocalValRef
                     |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader) 
                     |> aboveListL)
 

@@ -471,9 +471,9 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
         Display.layout_to_string opts lay
     
     /// Fetch the saved value of an expression out of the 'it' register and show it.
-    member valuePrinter.InvokeExprPrinter (denv, infoReader, emEnv, ilxGenerator: IlxAssemblyGenerator, vref) = 
+    member valuePrinter.InvokeExprPrinter (denv, infoReader, emEnv, ilxGenerator: IlxAssemblyGenerator, vref: ValRef) = 
         let opts        = valuePrinter.GetFsiPrintOptions()
-        let res    = ilxGenerator.LookupGeneratedValue (valuePrinter.GetEvaluationContext emEnv, vref)
+        let res    = ilxGenerator.LookupGeneratedValue (valuePrinter.GetEvaluationContext emEnv, vref.Deref)
         let rhsL = 
             match res with
                 | None             -> None
@@ -1409,7 +1409,7 @@ type internal FsiDynamicCompiler
         | NameResolution.Item.Value vref -> 
              if not tcConfig.noFeedback then 
                  let infoReader = InfoReader(istate.tcGlobals, istate.tcImports.GetImportMap())
-                 valuePrinter.InvokeExprPrinter (istate.tcState.TcEnvFromImpls.DisplayEnv, infoReader, istate.emEnv, istate.ilxGenerator, vref.Deref)
+                 valuePrinter.InvokeExprPrinter (istate.tcState.TcEnvFromImpls.DisplayEnv, infoReader, istate.emEnv, istate.ilxGenerator, vref)
 
              /// Clear the value held in the previous "it" binding, if any, as long as it has never been referenced.
              match prevIt with

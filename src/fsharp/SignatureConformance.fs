@@ -445,12 +445,12 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             let m2 = NameMap.ofKeyedList (fun (v: ValRef) -> v.DisplayName) sigAbstractSlots
             (m1, m2) ||> NameMap.suball2 (fun _s vref -> 
                 let kindText = implTycon.TypeOrMeasureKind.ToString()
-                let valText = NicePrint.stringValOrMember denv infoReader vref.Deref
+                let valText = NicePrint.stringValOrMember denv infoReader vref
                 errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInImpl(kindText, implTycon.DisplayName, valText), m)); false) (fun _x _y -> true)  &&
 
             (m2, m1) ||> NameMap.suball2 (fun _s vref -> 
                 let kindText = implTycon.TypeOrMeasureKind.ToString()
-                let valText = NicePrint.stringValOrMember denv infoReader vref.Deref
+                let valText = NicePrint.stringValOrMember denv infoReader vref
                 errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInSig(kindText, implTycon.DisplayName, valText), m)); false) (fun _x _y -> true)  
 
         and checkClassFields isStruct m aenv infoReader (implTycon: Tycon) (implFields: TyconRecdFields) (sigFields: TyconRecdFields) =
@@ -583,7 +583,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 errorR(RequiredButNotSpecified(denv, implModRef, "value", (fun os -> 
                    (* In the case of missing members show the full required enclosing type and signature *)
                    if fx.IsMember then 
-                       NicePrint.outputQualifiedValOrMember denv infoReader os fx
+                       NicePrint.outputQualifiedValOrMember denv infoReader os (mkLocalValRef fx)
                    else
                        Printf.bprintf os "%s" fx.DisplayName), m))
             
@@ -667,7 +667,7 @@ let rec CheckNamesOfModuleOrNamespaceContents denv infoReader (implModRef: Modul
                     errorR(RequiredButNotSpecified(denv, implModRef, "value", (fun os -> 
                        // In the case of missing members show the full required enclosing type and signature 
                        if Option.isSome fx.MemberInfo then 
-                           NicePrint.outputQualifiedValOrMember denv infoReader os fx
+                           NicePrint.outputQualifiedValOrMember denv infoReader os (mkLocalValRef fx)
                        else
                            Printf.bprintf os "%s" fx.DisplayName), m)); false)
                 (fun _ _ -> true) 
