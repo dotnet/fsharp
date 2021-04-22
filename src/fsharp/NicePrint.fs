@@ -180,6 +180,13 @@ module internal PrintUtilities =
         else
             restL
 
+    let layoutXmlDocOfEventInfo (denv: DisplayEnv) (infoReader: InfoReader) (einfo: EventInfo) restL =
+        if denv.showDocumentation then
+            GetXmlDocSigOfEvent infoReader Range.range0 einfo
+            |> layoutXmlDocFromSig denv infoReader einfo.XmlDoc restL             
+        else
+            restL
+
     let layoutXmlDocOfRecdFieldRef (denv: DisplayEnv) (infoReader: InfoReader) (rfref: RecdFieldRef) restL =
         if denv.showDocumentation then
             GetXmlDocSigOfRecdFieldRef rfref
@@ -1492,7 +1499,7 @@ module private TastDefinitionPrinting =
             match ucase.RecdFields with
             | []     -> (prefixL ^^ nmL)
             | fields -> (prefixL ^^ nmL ^^ WordL.keywordOf) --- layoutUnionCaseFields denv infoReader true enclosingTcref fields
-        layoutXmlDoc denv ucase.XmlDoc caseL
+        layoutXmlDocOfUnionCaseRef denv infoReader (UnionCaseRef(enclosingTcref, ucase.Id.idText)) caseL
 
     let layoutUnionCases denv infoReader enclosingTcref ucases =
         let prefixL = WordL.bar // See bug://2964 - always prefix in case preceded by accessibility modifier
@@ -1540,7 +1547,7 @@ module private TastDefinitionPrinting =
         let nameL = eventTag |> wordL
         let typL = layoutType denv (e.GetDelegateType(amap, m))
         let overallL = staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL
-        layoutXmlDoc denv e.XmlDoc overallL
+        layoutXmlDocOfEventInfo denv infoReader e overallL
 
     let private layoutPropInfo denv (infoReader: InfoReader) m (p: PropInfo) =
         let amap = infoReader.amap
@@ -1565,7 +1572,7 @@ module private TastDefinitionPrinting =
             
             let typL = layoutType denv (p.GetPropertyType(amap, m)) // shouldn't happen
             let overallL = modifierAndMember ^^ nameL ^^ WordL.colon ^^ typL
-            layoutXmlDoc denv p.XmlDoc overallL
+            layoutXmlDocOfPropInfo denv infoReader p overallL
 
     let layoutTyconRef (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified typewordL (tcref: TyconRef) =
         let g = denv.g
@@ -1873,7 +1880,7 @@ module private TastDefinitionPrinting =
                     (lhsL ^^ WordL.equals) --- (layoutType { denv with shortTypeNames = false } a)
 
         let attribsL = layoutAttribs denv false ty tycon.TypeOrMeasureKind tycon.Attribs reprL
-        layoutXmlDoc denv tycon.XmlDoc attribsL
+        layoutXmlDocOfEntityRef denv infoReader tcref attribsL
 
     // Layout: exception definition
     let layoutExnDefn denv infoReader (exncref: EntityRef) =
@@ -1893,7 +1900,7 @@ module private TastDefinitionPrinting =
                 | r -> WordL.keywordOf --- layoutUnionCaseFields denv infoReader false exncref r
 
         let overallL = exnL ^^ reprL
-        layoutXmlDoc denv exnc.XmlDoc overallL
+        layoutXmlDocOfEntityRef denv infoReader exncref overallL
 
     // Layout: module spec 
 
@@ -2006,6 +2013,7 @@ module private TastDefinitionPrinting =
     and layoutEntityRef (denv: DisplayEnv) (infoReader: InfoReader) ad m (eref: EntityRef) =
         if eref.IsModuleOrNamespace then
             layoutModuleOrNamespace denv infoReader ad m false eref.Deref
+            |> layoutXmlDocOfEntityRef denv infoReader eref
         elif eref.IsExceptionDecl then
             layoutExnDefn denv infoReader eref
         else
