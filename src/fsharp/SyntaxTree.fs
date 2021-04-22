@@ -1100,10 +1100,7 @@ type SynMatchClause =
 
     member this.Range =
         match this with
-        | SynMatchClause(_, eo, e, m, _) ->
-            match eo with
-            | None -> unionRanges e.Range m
-            | Some x -> unionRanges (unionRanges e.Range m) x.Range
+        | SynMatchClause(range = m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynAttribute =
