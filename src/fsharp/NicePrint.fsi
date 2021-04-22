@@ -106,7 +106,7 @@ val prettyLayoutOfValOrMember: denv:DisplayEnv -> infoReader:InfoReader -> typar
 
 val prettyLayoutOfValOrMemberNoInst: denv:DisplayEnv -> infoReader:InfoReader -> v:ValRef -> Layout
 
-val prettyLayoutOfMemberNoInstShort: denv:DisplayEnv -> infoReader:InfoReader -> v:Val -> Layout
+val prettyLayoutOfMemberNoInstShort: denv:DisplayEnv -> v:Val -> Layout
 
 val prettyLayoutOfInstAndSig: denv:DisplayEnv -> TyparInst * TTypes * TType -> TyparInst * (TTypes * TType) * (Layout list * Layout) * Layout
 

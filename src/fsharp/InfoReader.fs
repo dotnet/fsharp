@@ -1033,7 +1033,11 @@ let GetXmlDocSigOfValRef g (vref: ValRef) =
             v.XmlDocSig <- XmlDocSigOfVal g false vref.TopValDeclaringEntity.CompiledRepresentationForNamedType.Name v
         Some (ccuFileName, v.XmlDocSig)
     else 
-        None
+        match vref.ApparentEnclosingEntity with
+        | Parent tcref ->
+            GetXmlDocSigOfScopedValRef g tcref vref
+        | _ ->
+            None
 
 let GetXmlDocSigOfProp infoReader m (pinfo: PropInfo) =
     let g = pinfo.TcGlobals

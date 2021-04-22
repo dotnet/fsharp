@@ -2217,7 +2217,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.FormatLayout (context:FSharpDisplayContext) =
         match x.IsMember, d with
         | true, V v ->
-            NicePrint.prettyLayoutOfMemberNoInstShort { (context.Contents cenv.g) with showMemberContainers=true } cenv.infoReader v.Deref
+            NicePrint.prettyLayoutOfMemberNoInstShort { (context.Contents cenv.g) with showMemberContainers=true } v.Deref
             |> LayoutRender.toArray
         | _,_ ->
             checkIsResolved()
