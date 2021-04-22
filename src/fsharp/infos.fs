@@ -1174,7 +1174,7 @@ type MethInfo =
     member x.IsNewSlot =
         (x.IsVirtual &&
           (match x with
-           | ILMeth(_, x, _) -> x.IsNewSlot
+           | ILMeth(_, x, _) -> x.IsNewSlot || (isInterfaceTy x.TcGlobals x.ApparentEnclosingType && not x.IsFinal)
            | FSMeth(_, _, vref, _) -> vref.IsDispatchSlotMember
 #if !NO_EXTENSIONTYPING
            | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsHideBySig), m) // REVIEW: Check this is correct
