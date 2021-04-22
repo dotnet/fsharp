@@ -173,10 +173,31 @@ module internal PrintUtilities =
         else
             restL
 
+    let layoutXmlDocOfPropInfo (denv: DisplayEnv) (infoReader: InfoReader) (pinfo: PropInfo) restL =
+        if denv.showDocumentation then
+            GetXmlDocSigOfProp infoReader Range.range0 pinfo
+            |> layoutXmlDocFromSig denv infoReader pinfo.XmlDoc restL             
+        else
+            restL
+
     let layoutXmlDocOfRecdFieldRef (denv: DisplayEnv) (infoReader: InfoReader) (rfref: RecdFieldRef) restL =
         if denv.showDocumentation then
             GetXmlDocSigOfRecdFieldRef rfref
             |> layoutXmlDocFromSig denv infoReader rfref.RecdField.XmlDoc restL             
+        else
+            restL
+
+    let layoutXmlDocOfUnionCaseRef (denv: DisplayEnv) (infoReader: InfoReader) (ucref: UnionCaseRef) restL =
+        if denv.showDocumentation then
+            GetXmlDocSigOfUnionCaseRef ucref
+            |> layoutXmlDocFromSig denv infoReader ucref.UnionCase.XmlDoc restL             
+        else
+            restL
+
+    let layoutXmlDocOfEntityRef (denv: DisplayEnv) (infoReader: InfoReader) (eref: EntityRef) restL =
+        if denv.showDocumentation then
+            GetXmlDocSigOfEntityRef infoReader Range.range0 eref
+            |> layoutXmlDocFromSig denv infoReader eref.XmlDoc restL             
         else
             restL
 
