@@ -117,8 +117,8 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
                                     )
                                 )
                                 |> Array.ofSeq
-                            if Array.isEmpty docIdsToReanalyze then ()
-                            else
+
+                            if docIdsToReanalyze.Length > 0 then
                                 analyzerService.Reanalyze(workspace, documentIds=docIdsToReanalyze)
               with
               | ex -> logException ex
