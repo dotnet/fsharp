@@ -2206,11 +2206,14 @@ tyconDefnOrSpfnSimpleRepr:
        SynTypeDefnSimpleRepr.Record ($2, $3, lhs parseState) }
 
   /* An inline-assembly type definition, for FSharp.Core library only */
-  | opt_attributes opt_declVisibility LPAREN inlineAssemblyTyconRepr rparen
+  | opt_attributes opt_declVisibility LPAREN HASH stringOrKeywordString HASH rparen
      { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(), rhs parseState 1))
-       libraryOnlyError (lhs parseState)
+       let lhsm = lhs parseState
+       libraryOnlyError lhsm
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsInlineAssemblyCannotHaveVisibilityDeclarations(), rhs parseState 2))
-       $4 }
+       let s, _ = $5
+       let ilType = ParseAssemblyCodeType s parseState.LexBuffer.SupportsFeature (rhs parseState 5)
+       SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (box ilType, lhsm)  }
 
 
 /* The core of a record type definition */
@@ -2242,14 +2245,6 @@ braceBarFieldDeclListCore:
 
   | LBRACE_BAR error bar_rbrace
      { [] }
-
-inlineAssemblyTyconRepr:
-  | HASH stringOrKeywordString HASH 
-     { libraryOnlyError (lhs parseState)
-       let lhsm = lhs parseState
-       let s, _ = $2
-       let ilType = ParseAssemblyCodeType s parseState.LexBuffer.SupportsFeature (rhs parseState 2)
-       SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (box ilType, lhsm) }
 
 classOrInterfaceOrStruct: 
   | CLASS 
