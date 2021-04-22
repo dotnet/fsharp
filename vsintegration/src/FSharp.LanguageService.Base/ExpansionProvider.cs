@@ -248,7 +248,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
 
             this.view = view;
-            MSXML.IXMLDOMDocument doc = new MSXML.DOMDocumentClass();
+            MSXML.IXMLDOMDocument doc = (MSXML.IXMLDOMDocument)new MSXML.DOMDocumentClass();
             if (!doc.loadXML(snippet.OuterXml)) {
                 throw new ArgumentException(doc.parseError.reason);
             }
