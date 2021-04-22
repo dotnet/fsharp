@@ -144,7 +144,7 @@
     <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCoreVersion>
     <MicrosoftBuildUtilitiesCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildUtilitiesCoreVersion>
     <!-- Visual Studio editor packages -->
-    <VisualStudioEditorPackagesVersion>17.0.26-gd87317d344</VisualStudioEditorPackagesVersion>
+    <VisualStudioEditorPackagesVersion>17.0.28-g439d20ddd3</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
     <MicrosoftVisualStudioEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioEditorVersion>
     <MicrosoftVisualStudioLanguageStandardClassificationVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioLanguageStandardClassificationVersion>
