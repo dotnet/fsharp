@@ -145,6 +145,8 @@ type LexerStringFinisher =
                     let synStringKind =
                         if isTripleQuote then
                             SynStringKind.TripleQuote
+                        elif isVerbatim then
+                            SynStringKind.Verbatim
                         else
                             SynStringKind.Regular
                     if isPart then 
