@@ -68,7 +68,7 @@ namespace Microsoft.FSharp.Control
         member inline Return: value: 'T -> [<ResumableCode>] TaskCode<'T, 'T>
     
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        member inline Run: [<ResumableCode>] __expand_code: TaskCode<'T, 'T> -> [<ResumableCode>] Task<'T>
+        member inline Run: [<ResumableCode>] __expand_code: TaskCode<'T, 'T> -> Task<'T>
     
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         member inline TryFinally: [<ResumableCode>] __expand_body: TaskCode<'TOverall, 'T> * compensation: (unit -> unit) -> [<ResumableCode>] TaskCode<'TOverall, 'T>

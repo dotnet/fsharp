@@ -201,8 +201,6 @@ type cenv =
 
       resumableCodeInfo: Dictionary<Stamp, ((Ident option * bool * bool) list list * bool)> // to save recomputing this
 
-      resumableCodeArgs: HashSet<range> // to save recomputing this
-
       limitVals: Dictionary<Stamp, Limit>
 
       mutable potentialUnboundUsesOfVals: StampMap<range> 
@@ -1139,9 +1137,9 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
             CheckExprNoByrefs cenv env bodyExpr
             true
         
-        // First class use of a ResumableCode parameter is allowed (lookup is by range for point of definition, the
+        // First class use of a ResumableCode parameter is allowed (check is by name, the
         // Val for the parameter doesn't carry the attributes)
-        | Expr.Val (vref, vFlags, m) when cenv.resumableCodeArgs.Contains(vref.Range) -> 
+        | Expr.Val (vref, vFlags, m) when vref.DisplayName.StartsWith("__expand") ->  
             CheckValUse cenv env (vref, vFlags, m) PermitByRefExpr.No |> ignore
             true
 
@@ -2150,7 +2148,6 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
             if argHasRCA then 
                 match argName with 
                 | Some n -> 
-                    cenv.resumableCodeArgs.Add(n.idRange) |> ignore
                     if cenv.reportErrors && not (n.idText.StartsWith("__expand")) then
                         errorR(Error(FSComp.SR.tcResumableCodeArgMustHaveRightName(), n.idRange))
                     if cenv.reportErrors && not argIsFun then
@@ -2683,7 +2680,6 @@ let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, vi
           boundVals = Dictionary<_, _>(100, HashIdentity.Structural) 
           limitVals = Dictionary<_, _>(100, HashIdentity.Structural) 
           resumableCodeInfo = Dictionary<_, _>(100, HashIdentity.Structural) 
-          resumableCodeArgs = HashSet<_>()
           potentialUnboundUsesOfVals=Map.empty 
           anonRecdTypes = StampMap.Empty
           usesQuotations=false 
