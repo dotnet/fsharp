@@ -1220,6 +1220,14 @@ type SynMemberSig =
         nestedType: SynTypeDefnSig *
         range: range
 
+    member d.Range =
+        match d with
+        | SynMemberSig.Member (range=m)
+        | SynMemberSig.Interface (range=m)
+        | SynMemberSig.Inherit (range=m)
+        | SynMemberSig.ValField (range=m)
+        | SynMemberSig.NestedType (range=m) -> m
+
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeDefnKind =
     | Unspecified
