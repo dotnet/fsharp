@@ -11,11 +11,11 @@ type OptionStateMachine<'T> =
     [<DefaultValue(false)>]
     val mutable Result : 'T voption
 
-    member sm.ToOption() = match sm.Result with ValueNone -> None | ValueSome x -> Some x
+    member inline sm.ToOption() = match sm.Result with ValueNone -> None | ValueSome x -> Some x
 
-    member sm.ToValueOption() = sm.Result 
+    member inline sm.ToValueOption() = sm.Result 
 
-    static member Run(sm: byref<'K> when 'K :> IAsyncStateMachine) = sm.MoveNext()
+    static member inline Run(sm: byref<'K> when 'K :> IAsyncStateMachine) = sm.MoveNext()
 
     interface IAsyncStateMachine with 
         member sm.MoveNext() = failwith "no dynamic impl"
@@ -25,39 +25,40 @@ type OptionCode<'T> = delegate of byref<OptionStateMachine<'T>> -> unit
 
 type OptionBuilderBase() =
 
-    member inline __.Delay(__expand_f : unit -> OptionCode<'T>) : OptionCode<'T> = OptionCode (fun sm -> (__expand_f()).Invoke &sm)
+    member inline _.Delay([<ResumableCode>] __expand_f : unit -> OptionCode<'T>) : [<ResumableCode>] OptionCode<'T> =
+        OptionCode (fun sm -> (__expand_f()).Invoke &sm)
 
-    member inline __.Combine(__expand_task1: OptionCode<unit>, __expand_task2: OptionCode<'T>) : OptionCode<'T> =
+    member inline _.Combine([<ResumableCode>] __expand_task1: OptionCode<unit>, [<ResumableCode>] __expand_task2: OptionCode<'T>) : [<ResumableCode>] OptionCode<'T> =
         OptionCode<_>(fun sm -> 
             let mutable sm2 = OptionStateMachine<unit>()
             __expand_task1.Invoke &sm2
             __expand_task2.Invoke &sm)
 
-    member inline __.Bind(res1: 'T1 option, __expand_task2: ('T1 -> OptionCode<'T>)) : OptionCode<'T> =
+    member inline _.Bind(res1: 'T1 option, [<ResumableCode>] __expand_task2: ('T1 -> OptionCode<'T>)) : [<ResumableCode>] OptionCode<'T> =
         OptionCode<_>(fun sm -> 
             match res1 with 
             | None -> ()
             | Some v -> (__expand_task2 v).Invoke &sm)
 
-    member inline __.Bind(res1: 'T1 voption, __expand_task2: ('T1 -> OptionCode<'T>)) : OptionCode<'T> =
+    member inline _.Bind(res1: 'T1 voption, [<ResumableCode>] __expand_task2: ('T1 -> OptionCode<'T>)) : [<ResumableCode>] OptionCode<'T> =
         OptionCode<_>(fun sm -> 
             match res1 with 
             | ValueNone -> ()
             | ValueSome v -> (__expand_task2 v).Invoke &sm)
             
-    member inline __.While(__expand_condition : unit -> bool, __expand_body : OptionCode<unit>) : OptionCode<unit> =
+    member inline _.While([<ResumableCode>] __expand_condition : unit -> bool, [<ResumableCode>] __expand_body : OptionCode<unit>) : [<ResumableCode>] OptionCode<unit> =
         OptionCode<_>(fun sm -> 
             while __expand_condition() do
                 __expand_body.Invoke &sm)
 
-    member inline __.TryWith(__expand_body : OptionCode<'T>, __expand_catch : exn -> OptionCode<'T>) : OptionCode<'T> =
+    member inline _.TryWith([<ResumableCode>] __expand_body : OptionCode<'T>, [<ResumableCode>] __expand_catch : exn -> OptionCode<'T>) : [<ResumableCode>] OptionCode<'T> =
         OptionCode<_>(fun sm -> 
             try
                 __expand_body.Invoke &sm
             with exn -> 
                 (__expand_catch exn).Invoke &sm)
 
-    member inline __.TryFinally(__expand_body: OptionCode<'T>, compensation : unit -> unit) : OptionCode<'T> =
+    member inline _.TryFinally([<ResumableCode>] __expand_body: OptionCode<'T>, compensation : unit -> unit) : [<ResumableCode>] OptionCode<'T> =
         OptionCode<_>(fun sm -> 
             try
                 __expand_body.Invoke &sm
@@ -67,21 +68,21 @@ type OptionBuilderBase() =
 
             compensation())
 
-    member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> OptionCode<'T>) = 
+    member inline this.Using(disp : #IDisposable, [<ResumableCode>] __expand_body : #IDisposable -> OptionCode<'T>) : [<ResumableCode>] OptionCode<'T> = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinally(
             (fun sm -> (__expand_body disp).Invoke &sm),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
-    member inline this.For(sequence : seq<'TElement>, __expand_body : 'TElement -> OptionCode<unit>) : OptionCode<unit> =
+    member inline this.For(sequence : seq<'TElement>, [<ResumableCode>] __expand_body : 'TElement -> OptionCode<unit>) : [<ResumableCode>] OptionCode<unit> =
         this.Using (sequence.GetEnumerator(), 
             (fun e -> this.While((fun () -> e.MoveNext()), (fun sm -> (__expand_body e.Current).Invoke &sm))))
 
-    member inline __.Return (value: 'T) : OptionCode<'T> =
+    member inline _.Return (value: 'T) : [<ResumableCode>] OptionCode<'T> =
         OptionCode<_>(fun sm ->
             sm.Result <- ValueSome value)
 
-    member inline this.ReturnFrom (source: option<'T>) : OptionCode<'T> =
+    member inline this.ReturnFrom (source: option<'T>) : [<ResumableCode>] OptionCode<'T> =
         OptionCode<_>(fun sm ->
             sm.Result <- match source with Some x -> ValueOption.Some x | None -> ValueOption.None)
 
@@ -89,9 +90,9 @@ type OptionBuilder() =
     inherit OptionBuilderBase()
     
 
-    member inline __.Run(__expand_code : OptionCode<'T>) : 'T option = 
+    member inline _.Run([<ResumableCode>] __expand_code : OptionCode<'T>) : 'T option = 
         if __useResumableStateMachines then
-            __resumableStateMachineStruct<OptionStateMachine<'T>, 'T option>
+            __structStateMachine<OptionStateMachine<'T>, 'T option>
                 (MoveNextMethod<_>(fun sm -> 
                        __expand_code.Invoke(&sm)))
 
@@ -111,9 +112,9 @@ type ValueOptionBuilder() =
     inherit OptionBuilderBase()
     
 
-    member inline __.Run(__expand_code : OptionCode<'T>) : 'T voption = 
+    member inline _.Run([<ResumableCode>] __expand_code : OptionCode<'T>) : 'T voption = 
         if __useResumableStateMachines then
-            __resumableStateMachineStruct<OptionStateMachine<'T>, 'T voption>
+            __structStateMachine<OptionStateMachine<'T>, 'T voption>
                 (MoveNextMethod<OptionStateMachine<'T>>(fun sm -> 
                        __expand_code.Invoke(&sm)
                        ))

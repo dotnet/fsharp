@@ -363,7 +363,7 @@ module CoreTests =
 
     [<Test>]
     let ``state-machines-non-optimized`` () = 
-        let cfg = testConfig' "core/state-machines"
+        let cfg = testConfig "core/state-machines"
 
         use testOkFile = fileguard cfg "test.ok"
 
@@ -375,7 +375,7 @@ module CoreTests =
 
     [<Test>]
     let ``state-machines-optimized`` () = 
-        let cfg = testConfig' "core/state-machines"
+        let cfg = testConfig "core/state-machines"
 
         use testOkFile = fileguard cfg "test.ok"
 

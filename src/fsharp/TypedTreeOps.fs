@@ -9478,4 +9478,48 @@ let (|ResumableEntryMatchExpr|_|) g expr =
         | _ -> None
     | _ -> None
 
+let (|StructStateMachineExpr|_|) g expr =
+    match expr with
+    | ValApp g g.cgh__structStateMachine_vref ([templateStructTy; _resultTy], [moveNextExpr; setMachineStateExpr; afterMethodExpr], _m) ->
+        match moveNextExpr, setMachineStateExpr, afterMethodExpr with 
+        | NewDelegateExpr g ([[moveNextMethodThisVar]], moveNextMethodBodyExpr, m), setMachineStateExpr, NewDelegateExpr g ([[afterMethodThisVar]], afterMethodBodyExpr, _) ->
+           Some (templateStructTy, moveNextMethodThisVar, moveNextMethodBodyExpr, m, setMachineStateExpr, afterMethodThisVar, afterMethodBodyExpr)
+        | _ -> None
+    | _ -> None
+
+let (|ResumeAtExpr|_|) g expr =
+    match expr with
+    | ValApp g g.cgh__resumeAt_vref (_, [pcExpr], _m) -> Some pcExpr
+    | _ -> None
+
+// Detect sequencing constructs in state machine code
+let (|SequentialResumableCode|_|) (g: TcGlobals) expr = 
+    match expr with
+
+    // e1; e2
+    | Expr.Sequential(e1, e2, NormalSeq, _, m) ->
+        Some (e1, e2, m, (fun e1 e2 -> mkCompGenSequential m e1 e2))
+
+    // let __stack_step = e1 in e2
+    | Expr.Let(bind, e2, m, _) when bind.Var.CompiledName(g.CompilerGlobalState).StartsWith(stackStepName) ->
+        Some (bind.Expr, e2, m, (fun e1 e2 -> mkLet bind.DebugPoint m bind.Var e1 e2))
+
+    | _ -> None
+
+// Detect an object expression that is a RefStateMachine
+let (|RefStateMachineExpr|_|) (g: TcGlobals) expr =
+    match expr with
+    | Expr.Obj (objExprStamp, ty, basev, basecall, [ (TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, codeExpr, m)) ], iimpls, stateVars, objExprRange) ->
+        if HasFSharpAttribute g g.attrib_ResumableCodeAttribute attribs then
+            let remake2 (moveNextExprWithJumpTable, furtherStateVars) = 
+                let overrideR = TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, moveNextExprWithJumpTable, m) 
+                let objExprR = Expr.Obj (objExprStamp, ty, basev, basecall, [overrideR], iimpls, stateVars @ furtherStateVars, objExprRange)
+                objExprR
+            let info = (codeExpr, remake2, m)
+            Some info
+        else
+            None
+    //| ValApp g g.cgh__resumableStateMachine_vref (_, [e], _m) -> Some e
+    | _ -> None
+
 let mkLabelled m l e = mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e

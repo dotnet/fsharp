@@ -2,93 +2,6 @@
 //
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Core.CompilerServices
-
-    open Microsoft.FSharp.Core
-    open System.Runtime.CompilerServices
-
-    /// A marker interface to give priority to different available overloads.
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    type IPriority3 = interface end
-
-    /// A marker interface to give priority to different available overloads. Overloads using a
-    /// parameter of this type will be preferred to overloads with IPriority3,
-    /// all else being equal.
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    type IPriority2 = interface inherit IPriority3 end
-
-    /// A marker interface to give priority to different available overloads. Overloads using a
-    /// parameter of this type will be preferred to overloads with IPriority2 or IPriority3,
-    /// all else being equal.
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    type IPriority1 = interface inherit IPriority2 end
-
-    /// Defines the implementation of the MoveNext method for a struct state machine.
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    type MoveNextMethod<'Template> = delegate of byref<'Template> -> unit
-
-    /// Defines the implementation of the SetMachineState method for a struct state machine.
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    type SetMachineStateMethod<'Template> = delegate of byref<'Template> * IAsyncStateMachine -> unit
-
-    /// Defines the implementation of the code reun after the creation of a struct state machine.
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    type AfterMethod<'Template, 'Result> = delegate of byref<'Template> -> 'Result
-
-    /// Contains compiler intrinsics related to the definition of state machines.
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    module StateMachineHelpers = 
-
-        /// <summary>
-        /// Statically determines whether resumable code is being used
-        /// </summary>
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val __useResumableStateMachines<'T> : bool 
-
-        /// <summary>
-        /// Indicates a resumption point within resumable code
-        /// </summary>
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val __resumableEntry: unit -> int option
-
-        /// <summary>
-        /// Indicates to jump to a resumption point within resumable code.
-        /// If the 'pc' is statically known then this is a 'goto' into resumable code.  If the 'pc' is not statically
-        /// known it must be a valid resumption point within this block of resumable code.
-        /// </summary>
-        /// <param name="programLabel"></param>
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val __resumeAt : programLabel: int -> 'T
-
-        /// <summary>
-        /// Attempts to convert a computation description to a state machine with resumable code 
-        /// </summary>
-        /// <param name="stateMachineSpecification">An object expression that represents a state machine.</param>
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val __resumableStateMachine<'T> : stateMachineSpecification: 'T -> 'T
-
-        /// <summary>
-        /// Within a compiled state machine, indicates the given methods provide implementations of the
-        /// IAsyncStateMachine functionality for a struct state machine.
-        /// </summary>
-        ///
-        /// <remarks>
-        /// The template type must be a struct type and guides the generation of a new struct type by the F# compiler.  Any mention of the template in
-        /// any of the code is rewritten to this newly generated struct type.  'moveNext' and 'setMachineState' are
-        /// used to implement the methods on the interface implemented by the struct type. The 'after'
-        /// method is executed after the state machine has been created.
-        /// </remarks>
-        /// <param name="moveNextMethod">Gives the implementation of the MoveNext method on IAsyncResult.</param>
-        /// <param name="setMachineStateMethod">Gives the implementation of the SetStateMachine method on IAsyncResult.</param>
-        /// <param name="afterMethod">Gives code to execute after the generation of the state machine and to produce the final result.</param>
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val __resumableStateMachineStruct<'Template, 'Result> : moveNextMethod: MoveNextMethod<'Template> -> setMachineStateMethod: SetMachineStateMethod<'Template> -> afterMethod: AfterMethod<'Template, 'Result> -> 'Result
-
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 namespace Microsoft.FSharp.Control
 
@@ -143,38 +56,38 @@ namespace Microsoft.FSharp.Control
     type TaskBuilder =
     
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        member inline Combine: __expand_task1: TaskCode<'TOverall, unit> * __expand_task2: TaskCode<'TOverall, 'T> -> TaskCode<'TOverall, 'T>
+        member inline Combine: [<ResumableCode>] __expand_task1: TaskCode<'TOverall, unit> * [<ResumableCode>] __expand_task2: TaskCode<'TOverall, 'T> -> [<ResumableCode>] TaskCode<'TOverall, 'T>
     
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        member inline Delay: __expand_f: (unit -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
+        member inline Delay: [<ResumableCode>] __expand_f: (unit -> TaskCode<'TOverall, 'T>) -> [<ResumableCode>] TaskCode<'TOverall, 'T>
     
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        member inline For: sequence: seq<'T> * __expand_body: ('T -> TaskCode<'TOverall, unit>) -> TaskCode<'TOverall, unit>
+        member inline For: sequence: seq<'T> * [<ResumableCode>] __expand_body: ('T -> TaskCode<'TOverall, unit>) -> [<ResumableCode>] TaskCode<'TOverall, unit>
     
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        member inline Return: x: 'T -> TaskCode<'T, 'T>
+        member inline Return: value: 'T -> [<ResumableCode>] TaskCode<'T, 'T>
     
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        member inline Run: __expand_code: TaskCode<'T, 'T> -> Task<'T>
+        member inline Run: [<ResumableCode>] __expand_code: TaskCode<'T, 'T> -> [<ResumableCode>] Task<'T>
     
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        member inline TryFinally: __expand_body: TaskCode<'TOverall, 'T> * compensation: (unit -> unit) -> TaskCode<'TOverall, 'T>
+        member inline TryFinally: [<ResumableCode>] __expand_body: TaskCode<'TOverall, 'T> * compensation: (unit -> unit) -> [<ResumableCode>] TaskCode<'TOverall, 'T>
     
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        member inline TryWith: __expand_body: TaskCode<'TOverall, 'T> * __expand_catch: (exn -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
+        member inline TryWith: [<ResumableCode>] __expand_body: TaskCode<'TOverall, 'T> * [<ResumableCode>] __expand_catch: (exn -> TaskCode<'TOverall, 'T>) -> [<ResumableCode>] TaskCode<'TOverall, 'T>
     
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        member inline Using: resource: 'Resource * __expand_body: ('Resource -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T> when 'Resource :> IDisposable
+        member inline Using: resource: 'Resource * [<ResumableCode>] __expand_body: ('Resource -> TaskCode<'TOverall, 'T>) -> [<ResumableCode>] TaskCode<'TOverall, 'T> when 'Resource :> IDisposable
     
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        member inline While: condition: (unit -> bool) * __expand_body: TaskCode<'TOverall, unit> -> TaskCode<'TOverall, unit>
+        member inline While: condition: (unit -> bool) * [<ResumableCode>] __expand_body: TaskCode<'TOverall, unit> -> [<ResumableCode>] TaskCode<'TOverall, unit>
     
         [<DefaultValue>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        member inline Zero: unit -> TaskCode<'TOverall, unit>
+        member inline Zero: unit -> [<ResumableCode>] TaskCode<'TOverall, unit>
 
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        member inline ReturnFrom: task: Task<'T> -> TaskCode<'T, 'T>
+        member inline ReturnFrom: task: Task<'T> -> [<ResumableCode>] TaskCode<'T, 'T>
 
         /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
@@ -227,7 +140,7 @@ namespace Microsoft.FSharp.Control
                 [<NoDynamicInvocation>]
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter, 'TOverall >
-                        : priority: IPriority2 * task: ^TaskLike * __expand_continuation: ( ^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
+                        : priority: IPriority2 * task: ^TaskLike * [<ResumableCode>] __expand_continuation: ( ^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> [<ResumableCode>] TaskCode<'TOverall, 'TResult2>
                                                     when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                                     and ^Awaiter :> ICriticalNotifyCompletion
                                                     and ^Awaiter: (member get_IsCompleted:  unit -> bool)
@@ -235,16 +148,16 @@ namespace Microsoft.FSharp.Control
 
                 /// Provides evidence that tasks can be used in 'bind' in a task computation expression
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                static member inline CanBind: priority: IPriority1 * task: Task<'TResult1> * __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
+                static member inline CanBind: priority: IPriority1 * task: Task<'TResult1> * [<ResumableCode>] __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) -> [<ResumableCode>] TaskCode<'TOverall, 'TResult2>
 
                 /// Provides evidence that F# Async computations can be used in 'bind' in a task computation expression
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                static member inline CanBind: priority: IPriority1 * computation: Async<'TResult1> * __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
+                static member inline CanBind: priority: IPriority1 * computation: Async<'TResult1> * [<ResumableCode>] __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) -> [<ResumableCode>] TaskCode<'TOverall, 'TResult2>
 
                 /// Provides evidence that task-like types can be used in 'return' in a task workflow
                 [<NoDynamicInvocation>]
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T> : priority: IPriority2 * task: ^TaskLike -> TaskCode< ^T, ^T > 
+                static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T> : priority: IPriority2 * task: ^TaskLike -> [<ResumableCode>] TaskCode< ^T, ^T > 
                                                     when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                                     and ^Awaiter :> ICriticalNotifyCompletion
                                                     and ^Awaiter: (member get_IsCompleted: unit -> bool)
@@ -252,11 +165,11 @@ namespace Microsoft.FSharp.Control
 
                 /// Provides evidence that F# Async computations can be used in 'return' in a task computation expression
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                static member inline CanReturnFrom: IPriority1 * task: Task<'T> -> TaskCode<'T, 'T>
+                static member inline CanReturnFrom: IPriority1 * task: Task<'T> -> [<ResumableCode>] TaskCode<'T, 'T>
 
                 /// Provides evidence that F# Async computations can be used in 'return' in a task computation expression
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                static member inline CanReturnFrom: IPriority1 * computation: Async<'T> -> TaskCode<'T, 'T>
+                static member inline CanReturnFrom: IPriority1 * computation: Async<'T> -> [<ResumableCode>] TaskCode<'T, 'T>
 
                 /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
@@ -291,12 +204,12 @@ namespace Microsoft.FSharp.Control
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member inline Bind< ^TaskLike, ^TResult1, 'TResult2, 'TOverall
                                         when (TaskWitnesses or  ^TaskLike): (static member CanBind: TaskWitnesses * ^TaskLike * (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>)> 
-                             : task: ^TaskLike * __expand_continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>        
+                             : task: ^TaskLike * [<ResumableCode>] __expand_continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> [<ResumableCode>] TaskCode<'TOverall, 'TResult2>        
 
                 /// Provides the ability to return results from a variety of tasks, using context-sensitive semantics
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                member inline ReturnFrom: task: ^TaskLike -> TaskCode< 'T, 'T >
-                    when (TaskWitnesses or  ^TaskLike): (static member CanReturnFrom: TaskWitnesses * ^TaskLike -> TaskCode<'T, 'T>)
+                member inline ReturnFrom: task: ^TaskLike -> [<ResumableCode>] TaskCode< 'T, 'T >
+                    when (TaskWitnesses or  ^TaskLike): (static member CanReturnFrom: TaskWitnesses * ^TaskLike -> [<ResumableCode>] TaskCode<'T, 'T>)
 
 
 (*

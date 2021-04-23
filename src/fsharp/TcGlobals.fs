@@ -351,7 +351,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_decimal_ty      = mkSysNonGenericTy sys "Decimal"
   let v_unit_ty         = mkNonGenericTy v_unit_tcr_nice 
   let v_system_Type_ty = mkSysNonGenericTy sys "Type" 
-
   
   let v_system_Reflection_MethodInfo_ty = mkSysNonGenericTy ["System";"Reflection"] "MethodInfo"
   let v_nullable_tcr = findSysTyconRef sys "Nullable`1"
@@ -556,6 +555,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mk_MFCore_attrib nm : BuiltinAttribInfo = 
       AttribInfo(mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), FSharpLib.Core + "." + nm), mk_MFCore_tcref fslibCcu nm) 
     
+  let mk_MFCompilerServices_attrib nm : BuiltinAttribInfo = 
+      AttribInfo(mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), FSharpLib.Core + "." + nm), mk_MFCompilerServices_tcref fslibCcu nm) 
+    
   let mk_doc filename = ILSourceDocument.Create(language=None, vendor=None, documentType=None, file=filename)
   // Build the memoization table for files
   let v_memoize_file = new MemoizationTable<int, ILSourceDocument> ((fileOfFileIndex >> Filename.fullpath directoryToResolveRelativePaths >> mk_doc), keyComparer=HashIdentity.Structural)
@@ -719,10 +721,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_seq_finally_info           = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateThenFinally"                 , None                 , None          , [varb],     ([[mkSeqTy varbTy]; [v_unit_ty --> v_unit_ty]], mkSeqTy varbTy))
   let v_seq_of_functions_info      = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateFromFunctions"               , None                 , None          , [vara;varb], ([[v_unit_ty --> varaTy]; [varaTy --> v_bool_ty]; [varaTy --> varbTy]], mkSeqTy varbTy))  
   let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty --> (varbTy --> v_unit_ty)) --> varaTy]], TType_app (v_fslib_IEvent2_tcr, [varaTy;varbTy])))
-  let v_cgh__useResumableStateMachines_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__useResumableStateMachines"                   , None                 , None          , [vara],     ([[]], v_bool_ty))
+  let v_cgh__useResumableStateMachines_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,          "__useResumableStateMachines"                   , None                 , None          , [vara],     ([[]], v_bool_ty))
   let v_cgh__resumeAt_info         = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumeAt"                           , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
-  let v_cgh__resumableStateMachine_info  = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumableStateMachine"                    , None                 , None          , [vara],     ([[varaTy]], varaTy))
-  let v_cgh__resumableStateMachineStruct_info  = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumableStateMachineStruct"                    , None                 , None          , [vara; varb],     ([[varbTy; varcTy; (v_unit_ty --> vardTy)]], vardTy))
+  let v_cgh__resumableStateMachine_info  = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,             "__resumableStateMachine"                    , None                 , None          , [vara],     ([[varaTy]], varaTy))
+  let v_cgh__structStateMachine_info  = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                "__structStateMachine"                    , None                 , None          , [vara; varb],     ([[varbTy; varcTy; (v_unit_ty --> vardTy)]], vardTy))
   let v_cgh__resumableEntry_info   = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumableEntry"                     , None                 , None          , [vara],     ([[v_int_ty --> varaTy]; [v_unit_ty --> varaTy]], varaTy))
   let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))  
   let v_seq_to_list_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toList"                               , None                 , Some "ToList" , [varb],     ([[mkSeqTy varbTy]], mkListTy varbTy))
@@ -1103,6 +1105,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       tryMkSysNonGenericTy ["System"; "Runtime"; "ExceptionServices"] "ExceptionDispatchInfo"
 
   member _.system_Reflection_MethodInfo_ty = v_system_Reflection_MethodInfo_ty
+  member _.mk_IAsyncStateMachine_ty = mkSysNonGenericTy sysCompilerServices "IAsyncStateMachine" 
     
   member val system_Array_tcref  = findSysTyconRef sys "Array"
   member val system_Object_tcref  = findSysTyconRef sys "Object"
@@ -1227,6 +1230,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_CompilationArgumentCountsAttribute     = mk_MFCore_attrib "CompilationArgumentCountsAttribute"
   member val attrib_CompilationMappingAttribute            = mk_MFCore_attrib "CompilationMappingAttribute"
   member val attrib_CLIEventAttribute                      = mk_MFCore_attrib "CLIEventAttribute"
+  member val attrib_ResumableCodeAttribute                 = mk_MFCompilerServices_attrib "ResumableCodeAttribute"
   member val attrib_CLIMutableAttribute                    = mk_MFCore_attrib "CLIMutableAttribute"
   member val attrib_AllowNullLiteralAttribute              = mk_MFCore_attrib "AllowNullLiteralAttribute"
   member val attrib_NoEqualityAttribute                    = mk_MFCore_attrib "NoEqualityAttribute"
@@ -1483,7 +1487,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.quote_to_linq_lambda_info        = v_quote_to_linq_lambda_info
 
 
-  member val cgh__resumableStateMachineStruct_vref = ValRefForIntrinsic v_cgh__resumableStateMachineStruct_info
+  member val cgh__structStateMachine_vref = ValRefForIntrinsic v_cgh__structStateMachine_info
   member val cgh__resumableStateMachine_vref = ValRefForIntrinsic v_cgh__resumableStateMachine_info
   member val cgh__useResumableStateMachines_vref = ValRefForIntrinsic v_cgh__useResumableStateMachines_info
   member val cgh__resumeAt_vref = ValRefForIntrinsic v_cgh__resumeAt_info

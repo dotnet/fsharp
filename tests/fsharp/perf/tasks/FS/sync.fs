@@ -3,6 +3,7 @@ module Tests.SyncBuilder
 
 open System
 open System.Runtime.CompilerServices
+open FSharp.Core.CompilerServices
 open FSharp.Core.CompilerServices.StateMachineHelpers
 
 [<AbstractClass>]
@@ -17,45 +18,44 @@ type SyncCode<'T> = unit -> 'T
 
 type SyncBuilder() =
     
-    member inline __.Delay(__expand_f: unit -> SyncCode<'T>) : SyncCode<'T> = (fun () -> __expand_f () ())
+    member inline _.Delay([<ResumableCode>] __expand_f: unit -> SyncCode<'T>) : [<ResumableCode>]  SyncCode<'T> =
+        (fun () -> __expand_f () ())
 
-    member inline __.Run(__expand_code : SyncCode<'T>) : 'T = 
+    member inline _.Run([<ResumableCode>] __expand_code : SyncCode<'T>) : 'T = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
-                { new SyncMachine<'T>() with 
-                    member __.Step ()  = __expand_code () }).Start()
+            { new SyncMachine<'T>() with 
+                [<ResumableCode>]
+                member _.Step ()  = __expand_code () }.Start()
         else
-            failwith ""
-            // let sm = 
-            //     { new SyncMachine<'T>() with 
-            //         member sm.Step () = 
-            //             __expand_code () }
-            // sm.Start()
+            let sm = 
+                { new SyncMachine<'T>() with 
+                    member _.Step () = __expand_code () }
+            sm.Start()
 
-    member inline __.Zero() : SyncCode<unit> = 
+    member inline _.Zero() : [<ResumableCode>] SyncCode<unit> = 
         (fun () -> ())
 
-    member inline __.Return (x: 'T) : SyncCode<'T> =
+    member inline _.Return (x: 'T) : [<ResumableCode>] SyncCode<'T> =
         (fun () -> x)
 
-    member inline __.Combine(__expand_code1: SyncCode<unit>, __expand_code2: SyncCode<'T>) : SyncCode<'T> =
+    member inline _.Combine([<ResumableCode>] __expand_code1: SyncCode<unit>, [<ResumableCode>] __expand_code2: SyncCode<'T>) : [<ResumableCode>] SyncCode<'T> =
         (fun () -> 
             __expand_code1()
             __expand_code2())
 
-    member inline __.While(__expand_condition : unit -> bool, __expand_body : SyncCode<unit>) : SyncCode<unit> =
+    member inline _.While([<ResumableCode>] __expand_condition : unit -> bool, [<ResumableCode>] __expand_body : SyncCode<unit>) : [<ResumableCode>] SyncCode<unit> =
         (fun () -> 
             while __expand_condition() do
                 __expand_body ())
 
-    member inline __.TryWith(__expand_body : SyncCode<'T>, __expand_catch : exn -> 'T) : SyncCode<'T> =
+    member inline _.TryWith([<ResumableCode>] __expand_body : SyncCode<'T>, [<ResumableCode>] __expand_catch : exn -> 'T) : [<ResumableCode>] SyncCode<'T> =
         (fun () -> 
             try
                 __expand_body ()
             with exn -> 
                 __expand_catch exn)
 
-    member inline __.TryFinally(__expand_body: SyncCode<'T>, compensation : unit -> unit) : SyncCode<'T> =
+    member inline _.TryFinally([<ResumableCode>] __expand_body: SyncCode<'T>, compensation : unit -> unit) : [<ResumableCode>] SyncCode<'T> =
         (fun () -> 
             let __stack_step = 
                 try
@@ -66,27 +66,27 @@ type SyncBuilder() =
             compensation()
             __stack_step)
 
-    member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> SyncCode<'T>) : SyncCode<'T> = 
+    member inline this.Using(disp : #IDisposable, [<ResumableCode>] __expand_body : #IDisposable -> SyncCode<'T>) : [<ResumableCode>] SyncCode<'T> = 
         this.TryFinally(
             (fun () -> __expand_body disp ()),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
-    member inline this.For(sequence : seq<'T>, __expand_body : 'T -> SyncCode<unit>) : SyncCode<unit> =
+    member inline this.For(sequence : seq<'T>, [<ResumableCode>] __expand_body : 'T -> SyncCode<unit>) : [<ResumableCode>] SyncCode<unit> =
         this.Using (sequence.GetEnumerator(), 
             (fun e -> this.While((fun () -> e.MoveNext()), (fun () -> __expand_body e.Current ()))))
 
-    member inline __.ReturnFrom (value: 'T) : SyncCode<'T> =
+    member inline _.ReturnFrom (value: 'T) : [<ResumableCode>] SyncCode<'T> =
         (fun () -> 
               value)
 
 (*
     [<NoDynamicInvocation>]
-    member inline __.Bind (__expand_code1: SyncCode<'TResult1>, __expand_continuation: 'TResult1 -> SyncCode<'TResult2>) : SyncCode<'TResult2> =
+    member inline _.Bind (__expand_code1: SyncCode<'TResult1>, __expand_continuation: 'TResult1 -> SyncCode<'TResult2>) : SyncCode<'TResult2> =
         (fun () -> 
              let __stack_step = __expand_code1 ()
              __expand_continuation __stack_step ())
 *)
-    member inline __.Bind (v: 'TResult1, __expand_continuation: 'TResult1 -> SyncCode<'TResult2>) : SyncCode<'TResult2> =
+    member inline _.Bind (v: 'TResult1, [<ResumableCode>] __expand_continuation: 'TResult1 -> SyncCode<'TResult2>) : [<ResumableCode>] SyncCode<'TResult2> =
         (fun () -> 
              __expand_continuation v ())
 
@@ -108,4 +108,4 @@ module Examples =
          }
 
 
-     printfn "t2 6 = %d" (t2 6)
+     //printfn "t2 6 = %d" (t2 6)

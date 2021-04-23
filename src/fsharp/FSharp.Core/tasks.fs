@@ -11,59 +11,6 @@
 // Updates:
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-#if FSHARP_CORE
-
-#nowarn "9"
-#nowarn "51"
-namespace Microsoft.FSharp.Core.CompilerServices
-
-    open System.Runtime.CompilerServices
-    open Microsoft.FSharp.Core
-
-    /// A marker interface to give priority to different available overloads
-    type IPriority3 = interface end
-
-    /// A marker interface to give priority to different available overloads
-    type IPriority2 = interface inherit IPriority3 end
-
-    /// A marker interface to give priority to different available overloads
-    type IPriority1 = interface inherit IPriority2 end
-
-    type MoveNextMethod<'Template> = delegate of byref<'Template> -> unit
-
-    type SetMachineStateMethod<'Template> = delegate of byref<'Template> * IAsyncStateMachine -> unit
-
-    type AfterMethod<'Template, 'Result> = delegate of byref<'Template> -> 'Result
-
-    module StateMachineHelpers = 
-
-        /// Statically determines whether resumable code is being used
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __useResumableStateMachines<'T> : bool = false
-        
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __resumableEntry () : int option = 
-            failwith "__resumableEntry should always be guarded by __useResumableStateMachines and only used in valid state machine implementations"
-
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __resumeAt<'T> (programLabel: int) : 'T = 
-            ignore programLabel
-            failwith "__resumeAt should always be guarded by __useResumableStateMachines and only used in valid state machine implementations"
-
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __resumableStateMachine<'T> (stateMachineSpecification: 'T) : 'T =
-            ignore stateMachineSpecification
-            failwith "__resumableStateMachine should always be guarded by __useResumableStateMachines and only used in valid state machine implementations"
-
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __resumableStateMachineStruct<'Template, 'Result> (moveNextMethod: MoveNextMethod<'Template>) (setMachineStateMethod: SetMachineStateMethod<'Template>) (afterMethod: AfterMethod<'Template, 'Result>): 'Result =
-            ignore moveNextMethod
-            ignore setMachineStateMethod
-            ignore afterMethod
-            failwith "__resumableStateMachineStruct should always be guarded by __useResumableStateMachines and only used in valid state machine implementations"
-       
-#endif
-
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 namespace Microsoft.FSharp.Control
 
@@ -84,7 +31,7 @@ module Utils2 =
     let inline hashq x = Microsoft.FSharp.Core.LanguagePrimitives.PhysicalHash x
 
 [<Struct; NoComparison; NoEquality>]
-/// Acts as a template for struct state machines introduced by __resumableStateMachineStruct, and also as a reflective implementation
+/// Acts as a template for struct state machines introduced by __structStateMachine, and also as a reflective implementation
 type TaskStateMachine<'TOverall> =
 
     /// Holds the final result of the state machine (between the 'return' and the execution of the finally clauses, after which we we eventually call SetResult)
@@ -112,21 +59,18 @@ type TaskStateMachine<'TOverall> =
 
     interface IAsyncStateMachine with 
         
-        // Used when interpreted.  For "__resumableStateMachineStruct" it is replaced.
+        // Used when interpreted.  For "__structStateMachine" it is replaced.
         member sm.MoveNext() = 
             try
-                //Console.WriteLine("[{0}] resuming by invoking {1}....", sm.MethodBuilder.Task.Id, hashq sm.ResumptionFunc )
                 let step = sm.ResumptionFunc.Invoke(&sm) 
                 if step then 
-                    //Console.WriteLine("[{0}] SetResult {1}", sm.MethodBuilder.Task.Id, sm.Result)
                     sm.MethodBuilder.SetResult(sm.Result)
                 else
                     sm.MethodBuilder.AwaitUnsafeOnCompleted(&sm.Awaiter, &sm)
             with exn ->
-                //Console.WriteLine("[{0}] SetException {1}", sm.MethodBuilder.Task.Id, exn)
                 sm.MethodBuilder.SetException exn
 
-        // Used when interpreted.  For "__resumableStateMachineStruct" it is replaced.
+        // Used when interpreted.  For "__structStateMachine" it is replaced.
         member sm.SetStateMachine(state) = 
             sm.MethodBuilder.SetStateMachine(state)
 
@@ -141,46 +85,58 @@ module TaskMethodRequire =
 
     [<NoDynamicInvocation>]
     let inline RequireCanBind< ^Priority, ^TaskLike, ^TResult1, 'TResult2, 'TOverall 
-                                when (^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike * (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>) > (priority: ^Priority) (task: ^TaskLike) __expand_continuation = 
-        ((^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike * (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>) (priority, task, __expand_continuation))
+                                when (^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike * (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>) > 
+                             (priority: ^Priority)
+                             (task: ^TaskLike)
+                             ([<ResumableCode>] __expand_continuation: ^TResult1 -> TaskCode<'TOverall, 'TResult2>) 
+                             : [<ResumableCode>] TaskCode<'TOverall, 'TResult2> = 
+        ((^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike * [<ResumableCode>] __expand_continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> [<ResumableCode>] TaskCode<'TOverall, 'TResult2>) (priority, task, __expand_continuation))
 
     [<NoDynamicInvocation>]
-    let inline RequireCanReturnFrom< ^Priority, ^TaskLike, 'T when (^Priority or ^TaskLike): (static member CanReturnFrom: ^Priority * ^TaskLike -> TaskCode<'T, 'T>)> (priority: ^Priority) (task: ^TaskLike) = 
-        ((^Priority or ^TaskLike): (static member CanReturnFrom : ^Priority * ^TaskLike -> TaskCode<'T, 'T>) (priority, task))
+    let inline RequireCanReturnFrom< ^Priority, ^TaskLike, 'T when (^Priority or ^TaskLike): (static member CanReturnFrom: ^Priority * ^TaskLike -> TaskCode<'T, 'T>)> 
+                             (priority: ^Priority)
+                             (task: ^TaskLike) 
+                             : [<ResumableCode>] TaskCode<'T, 'T> = 
+        ((^Priority or ^TaskLike): (static member CanReturnFrom : ^Priority * ^TaskLike -> [<ResumableCode>] TaskCode<'T, 'T>) (priority, task))
 
 // New style task builder.
 type TaskBuilder() =
-
-    member inline __.Delay(__expand_f : unit -> TaskCode<'TOverall, 'T>) =
+    
+    member inline __.Delay([<ResumableCode>] __expand_f : unit -> TaskCode<'TOverall, 'T>) : [<ResumableCode>] TaskCode<_,_> =
         TaskCode<'TOverall, 'T>(fun sm -> (__expand_f()).Invoke(&sm))
 
-    member inline __.Run(__expand_code : TaskCode<'TOverall, 'TOverall>) : Task<'TOverall> = 
+    member inline __.Run([<ResumableCode>] __expand_code : TaskCode<'TOverall, 'TOverall>) : Task<'TOverall> = 
         if __useResumableStateMachines then 
-            __resumableStateMachineStruct<TaskStateMachine<'TOverall>, Task<'TOverall>>
+            __structStateMachine<TaskStateMachine<'TOverall>, Task<'TOverall>>
                 // MoveNext
                 (MoveNextMethod<_>(fun sm -> 
-                    __resumeAt sm.ResumptionPoint 
-                    try
-                        //Console.WriteLine("[{0}] step from {1}", sm.MethodBuilder.Task.Id, resumptionPoint)
-                        let __stack_step = __expand_code.Invoke(&sm)
-                        if __stack_step then 
-                            //Console.WriteLine("[{0}] SetResult {1}", sm.MethodBuilder.Task.Id, res)
-                            sm.MethodBuilder.SetResult(sm.Result)
-                    with exn ->
-                        //Console.WriteLine("[{0}] exception {1}", sm.MethodBuilder.Task.Id, exn)
-                        sm.MethodBuilder.SetException exn))
+                    if __useResumableStateMachines then 
+                        //-- RESUMABLE CODE START
+                        __resumeAt sm.ResumptionPoint 
+                        try
+                            //Console.WriteLine("[{0}] step from {1}", sm.MethodBuilder.Task.Id, resumptionPoint)
+                            let __stack_step = __expand_code.Invoke(&sm)
+                            if __stack_step then 
+                                //Console.WriteLine("[{0}] SetResult {1}", sm.MethodBuilder.Task.Id, res)
+                                sm.MethodBuilder.SetResult(sm.Result)
+                        with exn ->
+                            //Console.WriteLine("[{0}] exception {1}", sm.MethodBuilder.Task.Id, exn)
+                            sm.MethodBuilder.SetException exn
+                        //-- RESUMABLE CODE END
+                    else
+                        failwith "unreachable"))
 
-                // SetStateMachine
-                (SetMachineStateMethod<_>(fun sm state -> 
-                    sm.MethodBuilder.SetStateMachine(state)))
+                    // SetStateMachine
+                    (SetMachineStateMethod<_>(fun sm state -> 
+                        sm.MethodBuilder.SetStateMachine(state)))
 
-                // Start
-                (AfterMethod<_,_>(fun sm -> 
-                    //Console.WriteLine("[{0}] start", sm.MethodBuilder.Task.Id)
-                    sm.MethodBuilder <- AsyncTaskMethodBuilder<'TOverall>.Create()
-                    sm.MethodBuilder.Start(&sm)
-                    //Console.WriteLine("[{0}] unwrap", sm.MethodBuilder.Task.Id)
-                    sm.MethodBuilder.Task))
+                    // Start
+                    (AfterMethod<_,_>(fun sm -> 
+                        //Console.WriteLine("[{0}] start", sm.MethodBuilder.Task.Id)
+                        sm.MethodBuilder <- AsyncTaskMethodBuilder<'TOverall>.Create()
+                        sm.MethodBuilder.Start(&sm)
+                        //Console.WriteLine("[{0}] unwrap", sm.MethodBuilder.Task.Id)
+                        sm.MethodBuilder.Task))
         else
             TaskBuilder.RunDynamic(__expand_code)
 
@@ -195,21 +151,22 @@ type TaskBuilder() =
 
     /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
     //[<DefaultValue>]
-    member inline __.Zero() : TaskCode<'TOverall, unit> =
+    member inline __.Zero() : [<ResumableCode>] TaskCode<'TOverall, unit> =
         TaskCode<_, unit>(fun sm ->
             true)
 
-    member inline __.Return (x: 'TOverall) : TaskCode<'TOverall, 'TOverall> = 
+    member inline __.Return (value: 'TOverall) : [<ResumableCode>] TaskCode<'TOverall, 'TOverall> = 
         TaskCode<_, _>(fun sm -> 
-            sm.Result <- x
+            sm.Result <- value
             true)
 
     /// Chains together a step with its following step.
     /// Note that this requires that the first step has no result.
     /// This prevents constructs like `task { return 1; return 2; }`.
-    member inline __.Combine(__expand_task1: TaskCode<'TOverall, unit>, __expand_task2: TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
+    member inline __.Combine([<ResumableCode>] __expand_task1: TaskCode<'TOverall, unit>, [<ResumableCode>] __expand_task2: TaskCode<'TOverall, 'T>) : [<ResumableCode>] TaskCode<'TOverall, 'T> =
         TaskCode<_, _>(fun sm ->
             if __useResumableStateMachines then
+                //-- RESUMABLE CODE START
                 // NOTE: The code for __expand_task1 may contain await points! Resuming may branch directly
                 // into this code!
                 let __stack_step = __expand_task1.Invoke(&sm)
@@ -217,6 +174,7 @@ type TaskBuilder() =
                     __expand_task2.Invoke(&sm)
                 else
                     false
+                //-- RESUMABLE CODE END
             else
                 TaskBuilder.CombineDynamic(__expand_task1, __expand_task2).Invoke(&sm))
 
@@ -230,11 +188,9 @@ type TaskBuilder() =
             else
                 let rec resume (mf: TaskMachineFunc<_>) =
                     TaskMachineFunc<_>(fun sm -> 
-                        //Console.WriteLine("[{0}] resuming Combine", sm.MethodBuilder.Task.Id)
                         if mf.Invoke(&sm) then 
                             task2.Invoke(&sm)
                         else
-                            //Console.WriteLine("[{0}] rebinding ResumptionFunc for Combine (2)", sm.MethodBuilder.Task.Id)
                             sm.ResumptionFunc <- resume sm.ResumptionFunc
                             false)
 
@@ -243,9 +199,10 @@ type TaskBuilder() =
                 false)
 
     /// Builds a step that executes the body while the condition predicate is true.
-    member inline __.While (condition : unit -> bool, __expand_body : TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
+    member inline __.While (condition : unit -> bool, [<ResumableCode>] __expand_body : TaskCode<'TOverall, unit>) : [<ResumableCode>] TaskCode<'TOverall, unit> =
         TaskCode<_, _>(fun sm ->
             if __useResumableStateMachines then 
+                //-- RESUMABLE CODE START
                 let mutable __stack_completed = true 
                 while __stack_completed && condition() do
                     __stack_completed <- false 
@@ -255,6 +212,7 @@ type TaskBuilder() =
                     // If we make it to the assignment we prove we've made a step 
                     __stack_completed <- __stack_step
                 __stack_completed
+                //-- RESUMABLE CODE END
             else
                 TaskBuilder.WhileDynamic(condition, __expand_body).Invoke(&sm))
 
@@ -262,24 +220,20 @@ type TaskBuilder() =
         TaskCode<_, _>(fun sm ->
             let rec repeat() = 
                 TaskMachineFunc<_>(fun sm -> 
-                    //Console.WriteLine("[{0}] repeat WhileLoop", sm.MethodBuilder.Task.Id)
                     if condition() then 
                         if body.Invoke (&sm) then
                             repeat().Invoke(&sm)
                         else
-                            //Console.WriteLine("[{0}] rebinding ResumptionFunc for While", sm.MethodBuilder.Task.Id)
                             sm.ResumptionFunc <- resume sm.ResumptionFunc
                             false
                     else
                         true)
             and resume (mf: TaskMachineFunc<_>) =
                 TaskMachineFunc<_>(fun sm -> 
-                    //Console.WriteLine("[{0}] resume WhileLoop body", sm.MethodBuilder.Task.Id)
                     let step = mf.Invoke(&sm)
                     if step then 
                         repeat().Invoke(&sm)
                     else
-                        //Console.WriteLine("[{0}] rebinding ResumptionFunc for While", sm.MethodBuilder.Task.Id)
                         sm.ResumptionFunc <- resume sm.ResumptionFunc
                         false)
 
@@ -287,9 +241,10 @@ type TaskBuilder() =
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
-    member inline __.TryWith (__expand_body : TaskCode<'TOverall, 'T>, __expand_catch : exn -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
+    member inline __.TryWith ([<ResumableCode>] __expand_body : TaskCode<'TOverall, 'T>, [<ResumableCode>] __expand_catch : exn -> TaskCode<'TOverall, 'T>) : [<ResumableCode>] TaskCode<'TOverall, 'T> =
         TaskCode<_, _>(fun sm ->
             if __useResumableStateMachines then 
+                //-- RESUMABLE CODE START
                 let mutable __stack_completed = false
                 let mutable __stack_caught = false
                 let mutable __stack_savedExn = Unchecked.defaultof<_>
@@ -308,6 +263,8 @@ type TaskBuilder() =
                     (__expand_catch __stack_savedExn).Invoke(&sm)
                 else
                     __stack_completed
+                //-- RESUMABLE CODE END
+
             else
                 TaskBuilder.TryWithDynamic(__expand_body, __expand_catch).Invoke(&sm))
 
@@ -316,33 +273,28 @@ type TaskBuilder() =
             let rec resume (mf: TaskMachineFunc<_>) =
                 TaskMachineFunc<_>(fun sm -> 
                     try
-                        //Console.WriteLine("[{0}] resuming TryWith", sm.MethodBuilder.Task.Id)
                         if mf.Invoke (&sm) then 
-                            //Console.WriteLine("[{0}] resumed TryWith completed", sm.MethodBuilder.Task.Id)
                             true
                         else
-                            //Console.WriteLine("[{0}] rebinding ResumptionFunc for TryWith (2)", sm.MethodBuilder.Task.Id)
                             sm.ResumptionFunc <- resume sm.ResumptionFunc
                             false
                     with exn -> 
-                        //Console.WriteLine("[{0}] catch block of resumed TryWith", sm.MethodBuilder.Task.Id)
                         (handler exn).Invoke(&sm))
             try
                 let step = body.Invoke (&sm)
                 if not step then 
-                    //Console.WriteLine("[{0}] rebinding ResumptionFunc {1} to {2} for TryWith, sm.addr = {3}", sm.MethodBuilder.Task.Id, hashq sm.ResumptionFunc, hashq rf2, sm.Address)
                     sm.ResumptionFunc <- sm.ResumptionFunc
                 step
                         
             with exn -> 
-                //Console.WriteLine("[{0}] catch block of TryWith", sm.MethodBuilder.Task.Id)
                 (handler exn).Invoke(&sm))
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
-    member inline __.TryFinally (__expand_body: TaskCode<'TOverall, 'T>, compensation : unit -> unit) : TaskCode<'TOverall, 'T> =
+    member inline __.TryFinally ([<ResumableCode>] __expand_body: TaskCode<'TOverall, 'T>, compensation : unit -> unit) : [<ResumableCode>] TaskCode<'TOverall, 'T> =
         TaskCode<_, _>(fun sm ->
             if __useResumableStateMachines then 
+                //-- RESUMABLE CODE START
                 let mutable __stack_completed = false
                 try
                     let __stack_step = __expand_body.Invoke (&sm)
@@ -356,6 +308,7 @@ type TaskBuilder() =
                 if __stack_completed then 
                     compensation()
                 __stack_completed
+                //-- RESUMABLE CODE END
             else
                 TaskBuilder.TryFinallyDynamic(__expand_body, compensation).Invoke(&sm))
 
@@ -365,10 +318,8 @@ type TaskBuilder() =
                 TaskMachineFunc<_>(fun sm -> 
                     let mutable completed = false
                     try
-                        //Console.WriteLine("[{0}] resumed TryFinally", sm.MethodBuilder.Task.Id)
                         completed <- mf.Invoke (&sm)
                         if not completed then 
-                            //Console.WriteLine("[{0}] rebinding ResumptionFunc for TryFinally (2)", sm.MethodBuilder.Task.Id)
                             sm.ResumptionFunc <- resume sm.ResumptionFunc
                     with _ ->
                         compensation()
@@ -393,21 +344,22 @@ type TaskBuilder() =
 
             completed)
 
-    member inline builder.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (resource : 'Resource, __expand_body : 'Resource -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> = 
+    member inline builder.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (resource : 'Resource, [<ResumableCode>] __expand_body : 'Resource -> TaskCode<'TOverall, 'T>) : [<ResumableCode>] TaskCode<'TOverall, 'T> = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         builder.TryFinally(
             TaskCode<_, _>(fun sm -> (__expand_body resource).Invoke(&sm)),
             (fun () -> if not (isNull (box resource)) then resource.Dispose()))
 
-    member inline builder.For (sequence : seq<'T>, __expand_body : 'T -> TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
+    member inline builder.For (sequence : seq<'T>, [<ResumableCode>] __expand_body : 'T -> TaskCode<'TOverall, unit>) : [<ResumableCode>] TaskCode<'TOverall, unit> =
         // A for loop is just a using statement on the sequence's enumerator...
         builder.Using (sequence.GetEnumerator(), 
             // ... and its body is a while loop that advances the enumerator and runs the body on each element.
             (fun e -> builder.While((fun () -> e.MoveNext()), TaskCode<_, _>(fun sm -> (__expand_body e.Current).Invoke(&sm)))))
 
-    member inline __.ReturnFrom (task: Task<'T>) : TaskCode<'T, 'T> = 
+    member inline __.ReturnFrom (task: Task<'T>) : [<ResumableCode>] TaskCode<'T, 'T> = 
         TaskCode<_, _>(fun sm -> 
             if __useResumableStateMachines then 
+                //-- RESUMABLE CODE START
                 // This becomes a state machine variable
                 let mutable awaiter = task.GetAwaiter()
 
@@ -425,6 +377,7 @@ type TaskBuilder() =
                     //Console.WriteLine("[{0}] resumed ReturnFrom(Task<_>)", sm.MethodBuilder.Task.Id)
                     sm.Result <- awaiter.GetResult()
                     true
+                //-- RESUMABLE CODE END
             else
                 TaskBuilder.ReturnFromDynamic(task).Invoke(&sm))
 
@@ -493,7 +446,7 @@ module ContextSensitiveTasks =
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted:  unit -> bool)
                                             and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>
-                  (priority: IPriority2, task: ^TaskLike, __expand_continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
+                  (priority: IPriority2, task: ^TaskLike, [<ResumableCode>] __expand_continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : [<ResumableCode>] TaskCode<'TOverall, 'TResult2> =
 
             TaskCode<_, _>(fun sm -> 
                 if __useResumableStateMachines then 
@@ -536,7 +489,7 @@ module ContextSensitiveTasks =
                     sm.ResumptionFunc <- cont
                     false)
 
-        static member inline CanBind (priority: IPriority1, task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
+        static member inline CanBind (priority: IPriority1, task: Task<'TResult1>, [<ResumableCode>] __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : [<ResumableCode>] TaskCode<'TOverall, 'TResult2> =
 
             TaskCode<_, _>(fun sm -> 
                 if __useResumableStateMachines then 
@@ -558,7 +511,7 @@ module ContextSensitiveTasks =
                 else
                     TaskWitnesses.CanBindDynamic(priority, task, __expand_continuation).Invoke(&sm))
 
-        static member inline CanBind (priority: IPriority1, computation: Async<'TResult1>, __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
+        static member inline CanBind (priority: IPriority1, computation: Async<'TResult1>, [<ResumableCode>] __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : [<ResumableCode>] TaskCode<'TOverall, 'TResult2> =
             TaskWitnesses.CanBind (priority, Async.StartAsTask computation, __expand_continuation)
 
         static member inline CanReturnFromDynamic< ^TaskLike, ^Awaiter, ^T
@@ -592,7 +545,7 @@ module ContextSensitiveTasks =
                                            and ^Awaiter :> ICriticalNotifyCompletion
                                            and ^Awaiter: (member get_IsCompleted: unit -> bool)
                                            and ^Awaiter: (member GetResult: unit ->  ^T)>
-              (priority: IPriority2, task: ^TaskLike) : TaskCode< ^T, ^T > =
+              (priority: IPriority2, task: ^TaskLike) : [<ResumableCode>] TaskCode< ^T, ^T > =
 
             TaskCode<_, _>(fun sm -> 
                 if __useResumableStateMachines then 
@@ -615,7 +568,7 @@ module ContextSensitiveTasks =
                 else
                     TaskWitnesses.CanReturnFromDynamic(priority, task).Invoke(&sm))
 
-        static member inline CanReturnFrom (priority: IPriority1, task: Task<'T>) : TaskCode<'T, 'T> =
+        static member inline CanReturnFrom (priority: IPriority1, task: Task<'T>) : [<ResumableCode>] TaskCode<'T, 'T> =
 
             TaskCode<_, _>(fun sm -> 
                 if __useResumableStateMachines then 
@@ -658,7 +611,7 @@ module ContextSensitiveTasks =
                     sm.ResumptionFunc <- cont
                     false)
 
-        static member inline CanReturnFrom (priority: IPriority1, computation: Async<'T>) : TaskCode<'T, 'T> =
+        static member inline CanReturnFrom (priority: IPriority1, computation: Async<'T>)  : [<ResumableCode>] TaskCode<'T, 'T> =
             TaskWitnesses.CanReturnFrom (priority, Async.StartAsTask computation)
 
     [<AutoOpen>]
@@ -668,12 +621,12 @@ module ContextSensitiveTasks =
 
             member inline __.Bind< ^TaskLike, ^TResult1, 'TResult2, 'TOverall
                                                when (TaskWitnesses or  ^TaskLike): (static member CanBind: TaskWitnesses * ^TaskLike * (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>)> 
-                        (task: ^TaskLike, __expand_continuation: ^TResult1 -> TaskCode<'TOverall, 'TResult2>) : TaskCode<'TOverall, 'TResult2> =
+                        (task: ^TaskLike, [<ResumableCode>] __expand_continuation: ^TResult1 -> TaskCode<'TOverall, 'TResult2>)  : [<ResumableCode>] TaskCode<'TOverall, 'TResult2> =
 
                 RequireCanBind< TaskWitnesses, ^TaskLike, ^TResult1, 'TResult2, 'TOverall> Unchecked.defaultof<TaskWitnesses> task __expand_continuation
 
             member inline __.ReturnFrom< ^TaskLike, 'T  when (TaskWitnesses or ^TaskLike): (static member CanReturnFrom: TaskWitnesses * ^TaskLike -> TaskCode<'T, 'T>) > 
-                        (task: ^TaskLike) : TaskCode<'T, 'T> =
+                        (task: ^TaskLike)  : [<ResumableCode>] TaskCode<'T, 'T> =
 
                 RequireCanReturnFrom< TaskWitnesses, ^TaskLike, 'T> Unchecked.defaultof<TaskWitnesses> task
 

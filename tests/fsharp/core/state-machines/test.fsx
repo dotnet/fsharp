@@ -306,7 +306,7 @@ module ResumableCode_Struct =
     let mutable res = 0
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            __resumableStateMachineStruct<SyncMachineStruct<int>, int>
+            __structStateMachine<SyncMachineStruct<int>, int>
                 (MoveNextMethod<SyncMachineStruct<int>>(fun sm -> 
                        //printfn "resuming %d" sm.Address
                        __resumeAt 1
@@ -353,7 +353,7 @@ module ResumableCode_StructMacro =
             CodeSpec(fun sm -> (__expand_f ()).Invoke(&sm))
 
         if __useResumableStateMachines then
-            __resumableStateMachineStruct<SyncMachineStruct<int>, int>
+            __structStateMachine<SyncMachineStruct<int>, int>
                 (MoveNextMethod<SyncMachineStruct<int>>(fun sm -> 
                        __expand_code.Invoke(&sm)))
 
@@ -511,7 +511,7 @@ module ResumableCode_ByrefDelegateBetaReductionWithResumption =
     let mutable res = 0
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            __resumableStateMachineStruct<SyncMachineStruct<int>, int>
+            __structStateMachine<SyncMachineStruct<int>, int>
                 (MoveNextMethod<SyncMachineStruct<int>>(fun sm -> 
                        __resumeAt sm.PC
                        // Label 0 goes here

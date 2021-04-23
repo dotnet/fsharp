@@ -48,26 +48,6 @@ type StateMachineConversionFirstPhaseResult =
 
 let sm_verbose = try System.Environment.GetEnvironmentVariable("FSharp_StateMachineVerbose") <> null with _ -> false
 
-
-let (|RefStateMachineExpr|_|) g expr =
-    match expr with
-    | ValApp g g.cgh__resumableStateMachine_vref (_, [e], _m) -> Some e
-    | _ -> None
-
-let (|StructStateMachineExpr|_|) g expr =
-    match expr with
-    | ValApp g g.cgh__resumableStateMachineStruct_vref ([templateStructTy; _resultTy], [moveNextExpr; setMachineStateExpr; afterMethodExpr], m) ->
-        if sm_verbose then 
-            printfn "LowerStateMachine: found resumableStruct call at %A" m 
-        Some (templateStructTy, moveNextExpr, setMachineStateExpr, afterMethodExpr)
-    | _ -> None
-
-
-let (|ResumeAtExpr|_|) g expr =
-    match expr with
-    | ValApp g g.cgh__resumeAt_vref (_, [pcExpr], _m) -> Some pcExpr
-    | _ -> None
-
 let (|OptionalResumeAtExpr|) g expr =
     match expr with
     | Expr.Sequential(ResumeAtExpr g pcExpr, codeExpr, NormalSeq, _, _m) -> (Some pcExpr, codeExpr)
@@ -122,9 +102,8 @@ let RepresentBindingAsStateVar (bind: Binding) (res2: StateMachineConversionFirs
 //
 // GIVEN:
 //   member inline __.Run(code : unit -> TaskStep<'T>) = 
-//       (__resumableStateMachine
 //           { new TaskStateMachine<'T>() with 
-//               member __.Step(pc) = __resumeAt pc code }).Start()
+//               [<ResumableCode>] member _.Step(pc) = __resumeAt pc code }).Start()
 //
 // THEN
 //    task { ... }
@@ -193,20 +172,6 @@ let ConvertStateMachineExprToObject g overallExpr =
 
         | _ ->
             (env, expr)
-
-    // Detect sequencing constructs in state machine code
-    let (|SequentialStateMachineCode|_|) (g: TcGlobals) expr = 
-        match expr with
-
-        // e1; e2
-        | Expr.Sequential(e1, e2, NormalSeq, _, m) ->
-            Some (e1, e2, m, (fun e1 e2 -> mkCompGenSequential m e1 e2))
-
-        // let __stack_step = e1 in e2
-        | Expr.Let(bind, e2, m, _) when bind.Var.CompiledName(g.CompilerGlobalState).StartsWith(stackStepName) ->
-            Some (bind.Expr, e2, m, (fun e1 e2 -> mkLet bind.DebugPoint m bind.Var e1 e2))
-
-        | _ -> None
 
     let rec TryApplyMacroDef (env: env) expr (args: Expr list) = 
         if isNil args then Some expr else
@@ -362,87 +327,57 @@ let ConvertStateMachineExprToObject g overallExpr =
         | None -> env2, expr2
 
     // Detect a reference-type state machine (or an application of a reference type state machine to a method)
-    let (|RefStateMachineInContext|_|) (env: env) expr = 
+    let (|RefStateMachineWithCall|_|) (env: env) expr = 
         match expr with
-        | Expr.App (f0, f0ty, tyargsl, (RefStateMachineExpr g objExpr :: args), mApp) ->
-            Some (env, objExpr, (fun objExprR -> Expr.App (f0, f0ty, tyargsl, (objExprR :: args), mApp)))
-        | RefStateMachineExpr g objExpr ->
-            Some (env, objExpr, id)
-        | _ -> None
-
-    // Detect a struct-type state machine (or an application of a struct type state machine to a method)
-    let (|StructStateMachineInContext|_|) (env: env) expr = 
-        match expr with
-        | StructStateMachineExpr g (templateStructTy, moveNextExpr, setMachineStateExpr, afterMethodExpr) ->
-            Some (env, templateStructTy, moveNextExpr, setMachineStateExpr, afterMethodExpr)
+        | Expr.App (f0, f0ty, tyargsl, (RefStateMachineExpr g info :: args), mApp) ->
+            Some (env, info, (fun objExprR -> Expr.App (f0, f0ty, tyargsl, (objExprR :: args), mApp)))
+        | RefStateMachineExpr g info -> 
+            if sm_verbose then printfn "Found ref state machine object expression..."
+            Some (env, info, id)
         | _ -> None
 
     // Detect a state machine with a single method override
-    let (|StateMachineInContext|_|) inputExpr = 
-        // All true instantiated 'task { .. }' begin with a bind of @builder or '__expand_code' (as opposed to the library definitions of 'Run' etc. which do not)
-        //match inputExpr with 
-        //| Expr.Let (bind, _, _, _) when isExpandVar bind.Var -> 
+    let (|ExpandedStateMachineInContext|_|) inputExpr = 
+        // All expanded resumable code state machines e.g. 'task { .. }' begin with a bind of @builder or '__expand_code' (as opposed to the library definitions of 'Run' etc. which do not)
         if IsPossibleStateMachineExpr g inputExpr then 
             let env, expr = BindMacros env.Empty inputExpr 
             match expr with
-            | RefStateMachineInContext env (env, objExpr, remake) ->
-                if sm_verbose then printfn "Found ref state machine..."
-                match objExpr with 
-                | Expr.Obj (objExprStamp, ty, basev, basecall, overrides, iimpls, stateVars, objExprRange) ->
-                    if sm_verbose then printfn "Found ref state machine object expression..."
-                    match overrides with 
-                    | [ (TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, 
-                             (OptionalResumeAtExpr g (pcExprOpt, codeExpr)), m)) ] ->
-                        if sm_verbose then printfn "Found ref state machine override and jump table call..."
-                        let env, codeExprR = RepeatBindAndApplyOuterMacros env codeExpr
-                        if sm_verbose then printfn "Found ref state machine jump table code lambda..."
+            | RefStateMachineWithCall env (env, (OptionalResumeAtExpr g (pcExprOpt, codeExpr), remake2, m), remake) ->
+                if sm_verbose then printfn "Found ref state machine override and jump table call..."
+                let env, codeExprR = RepeatBindAndApplyOuterMacros env codeExpr
+                if sm_verbose then printfn "Found ref state machine jump table code lambda..."
+                let remake3 (moveNextExprWithJumpTable, furtherStateVars, _thisVars) = 
+                    let objExprR = remake2 (moveNextExprWithJumpTable, furtherStateVars)
+                    let overallExprR = remake objExprR
+                    if sm_verbose then 
+                        printfn "----------- AFTER REWRITE ----------------------"
+                        printfn "%s" (DebugPrint.showExpr g overallExprR)
 
-                        let remake2 (moveNextExprWithJumpTable, furtherStateVars, _thisVars) = 
-                            let overrideR = TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, moveNextExprWithJumpTable, m) 
-                            let objExprR = Expr.Obj (objExprStamp, ty, basev, basecall, [overrideR], iimpls, stateVars @ furtherStateVars, objExprRange)
-                            let overallExprR = remake objExprR
-                            if sm_verbose then 
-                                printfn "----------- AFTER REWRITE ----------------------"
-                                printfn "%s" (DebugPrint.showExpr g overallExprR)
+                    Choice1Of2 overallExprR
 
-                            Choice1Of2 overallExprR
+                Some (env, remake3, pcExprOpt, codeExprR, m)
 
-                        Some (env, remake2, pcExprOpt, codeExprR, m)
-                    | _ -> 
-                        if sm_verbose then printfn "CONVERSION FAILURE: Didn't find ref state machine override and jump table call..."
-                        None
-                | _ -> 
-                    if sm_verbose then printfn "CONVERSION FAILURE: Didn't find ref state machine object expression..."
-                    None
-
-            | StructStateMachineInContext env (env, templateStructTy, moveNextExpr, setMachineStateExpr, afterMethodExpr) ->
+            | StructStateMachineExpr g (templateStructTy, moveNextMethodThisVar, moveNextMethodBodyExpr, m, setMachineStateExpr, afterMethodThisVar, afterMethodBodyExpr) ->
                 let env = { env with TemplateStructTy = Some templateStructTy }
-                if sm_verbose then printfn "Found struct machine call..."
-                match moveNextExpr, setMachineStateExpr, afterMethodExpr with 
-                | NewDelegateExpr g ([[moveNextMethodThisVar]], moveNextMethodBodyExpr, m), setMachineStateExpr, NewDelegateExpr g ([[afterMethodThisVar]], afterMethodBodyExpr, _) ->
-                    if sm_verbose then printfn "Found struct machine lambdas..."
-                    match moveNextMethodBodyExpr with 
-                    | OptionalResumeAtExpr g (pcExprOpt, codeExpr) ->
-                        if sm_verbose then printfn "Found struct machine jump table call..."
-                        let env, codeExprR = RepeatBindAndApplyOuterMacros env codeExpr
-                        let setMachineStateExprR = ConvertStateMachineLeafExpression env setMachineStateExpr
-                        let afterMethodBodyExprR = ConvertStateMachineLeafExpression env afterMethodBodyExpr
-                        //let afterMethodBodyExprR = ConvertStateMachineLeafExpression { env with MachineAddrExpr = Some machineAddrExpr } startExpr
-                        let remake2 (moveNextExprWithJumpTable, stateVars, thisVars) = 
-                            if sm_verbose then 
-                                printfn "----------- AFTER REWRITE moveNextExprWithJumpTable ----------------------"
-                                printfn "%s" (DebugPrint.showExpr g moveNextExprWithJumpTable)
-                                printfn "----------- AFTER REWRITE setMachineStateExprR ----------------------"
-                                printfn "%s" (DebugPrint.showExpr g setMachineStateExprR)
-                                printfn "----------- AFTER REWRITE afterMethodBodyExprR ----------------------"
-                                printfn "%s" (DebugPrint.showExpr g afterMethodBodyExprR)
-                            Choice2Of2 (templateStructTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setMachineStateExprR, afterMethodThisVar, afterMethodBodyExprR)
-                        Some (env, remake2, pcExprOpt, codeExprR, m)
-                | _ -> 
-                    if sm_verbose then printfn "CONVERSION FAILURE: Didn't find struct machine lambdas ...moveNextExpr = %A, afterMethodExpr = %A" moveNextExpr.DebugText afterMethodExpr.DebugText
-                    None
+                if sm_verbose then printfn "Found struct machine..."
+                match moveNextMethodBodyExpr with 
+                | OptionalResumeAtExpr g (pcExprOpt, codeExpr) ->
+                    if sm_verbose then printfn "Found struct machine jump table call..."
+                    let env, codeExprR = RepeatBindAndApplyOuterMacros env codeExpr
+                    let setMachineStateExprR = ConvertStateMachineLeafExpression env setMachineStateExpr
+                    let afterMethodBodyExprR = ConvertStateMachineLeafExpression env afterMethodBodyExpr
+                    //let afterMethodBodyExprR = ConvertStateMachineLeafExpression { env with MachineAddrExpr = Some machineAddrExpr } startExpr
+                    let remake2 (moveNextExprWithJumpTable, stateVars, thisVars) = 
+                        if sm_verbose then 
+                            printfn "----------- AFTER REWRITE moveNextExprWithJumpTable ----------------------"
+                            printfn "%s" (DebugPrint.showExpr g moveNextExprWithJumpTable)
+                            printfn "----------- AFTER REWRITE setMachineStateExprR ----------------------"
+                            printfn "%s" (DebugPrint.showExpr g setMachineStateExprR)
+                            printfn "----------- AFTER REWRITE afterMethodBodyExprR ----------------------"
+                            printfn "%s" (DebugPrint.showExpr g afterMethodBodyExprR)
+                        Choice2Of2 (templateStructTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setMachineStateExprR, afterMethodThisVar, afterMethodBodyExprR)
+                    Some (env, remake2, pcExprOpt, codeExprR, m)
             | _ -> 
-                //if sm_verbose then printfn "ACCEPTABLE CONVERSION FAILURE: recorded expansions but not a state machine expression at %A" expr.Range
                 None
         else
             //if sm_verbose then printfn "ACCEPTABLE CONVERSION FAILURE: no prefix for state machine expression at %A" expr.Range
@@ -537,8 +472,8 @@ let ConvertStateMachineExprToObject g overallExpr =
             // A binding 'let .. = ... in ... ' is considered part of the state machine logic 
             // if it uses a binding variable name of precisely '__stack_step'.
             // If this case 'e1' becomes part of the state machine too.
-            | SequentialStateMachineCode g (e1, e2, _m, recreate) ->
-                if sm_verbose then printfn "SequentialStateMachineCode" 
+            | SequentialResumableCode g (e1, e2, _m, recreate) ->
+                if sm_verbose then printfn "SequentialResumableCode" 
                 // printfn "found sequential"
                 let res1 = ConvertStateMachineCode env pcValInfo e1
                 let res2 = ConvertStateMachineCode env pcValInfo e2
@@ -776,7 +711,7 @@ let ConvertStateMachineExprToObject g overallExpr =
 
     // Detect a state machine and convert it
     match overallExpr with
-    | StateMachineInContext (env, remake, pcExprOpt, codeExpr, m) ->
+    | ExpandedStateMachineInContext (env, remake, pcExprOpt, codeExpr, m) ->
         let frees = (freeInExpr CollectLocals overallExpr).FreeLocals
         if frees |> Zset.exists isExpandVar then 
             let nonfree = frees |> Zset.elements |> List.filter  isExpandVar |> List.map (fun v -> v.DisplayName) |> String.concat ","

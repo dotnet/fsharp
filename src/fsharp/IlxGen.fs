@@ -3382,8 +3382,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
   | Expr.Val (v, _, m), _, _ 
       when valRefEq g v g.cgh__resumeAt_vref || 
            valRefEq g v g.cgh__resumableEntry_vref || 
-           valRefEq g v g.cgh__resumableStateMachineStruct_vref|| 
-           valRefEq g v g.cgh__resumableStateMachine_vref 
+           valRefEq g v g.cgh__structStateMachine_vref
            ->
         error(Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen(v.DisplayName), m))
 
@@ -4594,7 +4593,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, stateVars, thi
 
     let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
 
-    // State vars are only populated for state machine objects made via `__resumableStateMachine` and LowerCallsAndSeqs.
+    // State vars are only populated for state machine objects 
     //
     // Like in GenSequenceExpression we pretend any stateVars and the stateMachineVar are bound in the outer environment. This prevents the being
     // considered true free variables that need to be passed to the constructor.
@@ -4761,7 +4760,7 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
 
     let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
 
-    // State vars are only populated for state machine objects made via `__resumableStateMachine` and LowerCallsAndSeqs.
+    // State vars are only populated for state machine objects 
     //
     // Like in GenSequenceExpression we pretend any stateVars are bound in the outer environment. This prevents the being
     // considered true free variables that need to be passed to the constructor.
