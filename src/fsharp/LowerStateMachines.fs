@@ -210,6 +210,7 @@ let ConvertStateMachineExprToObject g overallExpr =
             | Some bodyExpr2 -> Some (Expr.Sequential (x1, bodyExpr2, sp, ty, m))
             | None -> None
 
+        // This construct arises from the 'mkDefault' in the 'Throw' case of an incomplete pattern match
         | Expr.Const (Const.Zero, m, ty) -> 
             Some (Expr.Const (Const.Zero, m, ty))
 

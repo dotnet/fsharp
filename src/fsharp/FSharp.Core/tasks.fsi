@@ -139,8 +139,11 @@ namespace Microsoft.FSharp.Control
                 /// Provides evidence that task-like types can be used in 'bind' in a task computation expression
                 [<NoDynamicInvocation>]
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter, 'TOverall >
-                        : priority: IPriority2 * task: ^TaskLike * [<ResumableCode>] __expand_continuation: ( ^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> [<ResumableCode>] TaskCode<'TOverall, 'TResult2>
+                static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter, 'TOverall > :
+                    priority: IPriority2 *
+                    task: ^TaskLike *
+                    [<ResumableCode>] __expand_continuation: ( ^TResult1 -> TaskCode<'TOverall, 'TResult2>)
+                        -> [<ResumableCode>] TaskCode<'TOverall, 'TResult2>
                                                     when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                                     and ^Awaiter :> ICriticalNotifyCompletion
                                                     and ^Awaiter: (member get_IsCompleted:  unit -> bool)
@@ -148,16 +151,27 @@ namespace Microsoft.FSharp.Control
 
                 /// Provides evidence that tasks can be used in 'bind' in a task computation expression
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                static member inline CanBind: priority: IPriority1 * task: Task<'TResult1> * [<ResumableCode>] __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) -> [<ResumableCode>] TaskCode<'TOverall, 'TResult2>
+                static member inline CanBind:
+                    priority: IPriority1 *
+                    task: Task<'TResult1> *
+                    [<ResumableCode>] __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
+                        -> [<ResumableCode>] TaskCode<'TOverall, 'TResult2>
 
                 /// Provides evidence that F# Async computations can be used in 'bind' in a task computation expression
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                static member inline CanBind: priority: IPriority1 * computation: Async<'TResult1> * [<ResumableCode>] __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) -> [<ResumableCode>] TaskCode<'TOverall, 'TResult2>
+                static member inline CanBind:
+                    priority: IPriority1 *
+                    computation: Async<'TResult1> *
+                    [<ResumableCode>] __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
+                        -> [<ResumableCode>] TaskCode<'TOverall, 'TResult2>
 
                 /// Provides evidence that task-like types can be used in 'return' in a task workflow
                 [<NoDynamicInvocation>]
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T> : priority: IPriority2 * task: ^TaskLike -> [<ResumableCode>] TaskCode< ^T, ^T > 
+                static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T> : 
+                    priority: IPriority2 *
+                    task: ^TaskLike
+                        -> [<ResumableCode>] TaskCode< ^T, ^T > 
                                                     when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                                     and ^Awaiter :> ICriticalNotifyCompletion
                                                     and ^Awaiter: (member get_IsCompleted: unit -> bool)
@@ -165,16 +179,25 @@ namespace Microsoft.FSharp.Control
 
                 /// Provides evidence that F# Async computations can be used in 'return' in a task computation expression
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                static member inline CanReturnFrom: IPriority1 * task: Task<'T> -> [<ResumableCode>] TaskCode<'T, 'T>
+                static member inline CanReturnFrom:
+                    priority: IPriority1 *
+                    task: Task<'T>
+                        -> [<ResumableCode>] TaskCode<'T, 'T>
 
                 /// Provides evidence that F# Async computations can be used in 'return' in a task computation expression
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                static member inline CanReturnFrom: IPriority1 * computation: Async<'T> -> [<ResumableCode>] TaskCode<'T, 'T>
+                static member inline CanReturnFrom:
+                    priority: IPriority1 *
+                    computation: Async<'T>
+                        -> [<ResumableCode>] TaskCode<'T, 'T>
 
                 /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                static member inline CanBindDynamic< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter, 'TOverall >
-                        : priority: IPriority2 * task: ^TaskLike * __expand_continuation: ( ^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
+                static member inline CanBindDynamic< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter, 'TOverall > :
+                    priority: IPriority2 *
+                    task: ^TaskLike *
+                    continuation: ( ^TResult1 -> TaskCode<'TOverall, 'TResult2>)
+                        -> TaskCode<'TOverall, 'TResult2>
                                                     when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                                     and ^Awaiter :> ICriticalNotifyCompletion
                                                     and ^Awaiter: (member get_IsCompleted:  unit -> bool)
@@ -182,11 +205,18 @@ namespace Microsoft.FSharp.Control
 
                 /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                static member inline CanBindDynamic: priority: IPriority1 * task: Task<'TResult1> * continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
+                static member inline CanBindDynamic:
+                    priority: IPriority1 *
+                    task: Task<'TResult1> *
+                    continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
+                        -> TaskCode<'TOverall, 'TResult2>
 
                 /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                static member inline CanReturnFromDynamic< ^TaskLike, ^Awaiter, ^T> : priority: IPriority2 * task: ^TaskLike -> TaskCode< ^T, ^T > 
+                static member inline CanReturnFromDynamic< ^TaskLike, ^Awaiter, ^T> :
+                    priority: IPriority2 *
+                    task: ^TaskLike
+                        -> TaskCode< ^T, ^T > 
                                                     when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                                     and ^Awaiter :> ICriticalNotifyCompletion
                                                     and ^Awaiter: (member get_IsCompleted: unit -> bool)
@@ -194,7 +224,10 @@ namespace Microsoft.FSharp.Control
 
                 /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-                static member CanReturnFromDynamic: IPriority1 * task: Task<'T> -> TaskCode<'T, 'T>
+                static member CanReturnFromDynamic:
+                    priority: IPriority1 *
+                    task: Task<'T>
+                        -> TaskCode<'T, 'T>
 
         [<AutoOpen>]
         module TaskHelpers = 

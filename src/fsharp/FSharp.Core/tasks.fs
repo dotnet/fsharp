@@ -420,7 +420,7 @@ module ContextSensitiveTasks =
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted:  unit -> bool)
                                             and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>
-                  (priority: IPriority2, task: ^TaskLike, __expand_continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
+                  (priority: IPriority2, task: ^TaskLike, continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
 
             TaskCode<_, _>(fun sm -> 
                 ignore priority
@@ -430,7 +430,7 @@ module ContextSensitiveTasks =
                     (TaskMachineFunc<'TOverall>( fun sm -> 
                         //Console.WriteLine("[{0}] resumed CanBind(TaskLike)", sm.MethodBuilder.Task.Id)
                         let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
-                        (__expand_continuation result).Invoke(&sm)))
+                        (continuation result).Invoke(&sm)))
 
                 // shortcut to continue immediately
                 if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 

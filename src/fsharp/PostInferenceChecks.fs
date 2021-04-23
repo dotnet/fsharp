@@ -1143,6 +1143,9 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
             CheckValUse cenv env (vref, vFlags, m) PermitByRefExpr.No |> ignore
             true
 
+        // This construct arises from the 'mkDefault' in the 'Throw' case of an incomplete pattern match
+        | Expr.Const (Const.Zero, _, _) -> 
+            true
         | _ ->
             warning(Error(FSComp.SR.tcResumableCodeExpected(), expr.Range))
             false
@@ -1200,6 +1203,9 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
         | Expr.LetRec(_bindings, bodyExpr, _range, _frees) -> 
             errorR(Error(FSComp.SR.stateMachineLetRec(), expr.Range))
             CheckExprNoByrefs cenv env bodyExpr
+            true
+        // This construct arises from the 'mkDefault' in the 'Throw' case of an incomplete pattern match
+        | Expr.Const (Const.Zero, _, _) -> 
             true
 
         | _ -> false
