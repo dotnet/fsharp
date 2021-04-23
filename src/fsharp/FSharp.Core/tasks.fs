@@ -11,9 +11,9 @@
 // Updates:
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 namespace Microsoft.FSharp.Control
 
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 open System
 open System.Runtime.CompilerServices
 open System.Threading.Tasks

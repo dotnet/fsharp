@@ -4,6 +4,7 @@
 
 namespace Microsoft.FSharp.Core.CompilerServices
 
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
     open Microsoft.FSharp.Core
     open System
     open System.Runtime.CompilerServices
@@ -95,3 +96,4 @@ namespace Microsoft.FSharp.Core.CompilerServices
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val __structStateMachine<'Template, 'Result> : moveNextMethod: MoveNextMethod<'Template> -> setMachineStateMethod: SetMachineStateMethod<'Template> -> afterMethod: AfterMethod<'Template, 'Result> -> 'Result
 
+#endif

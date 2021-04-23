@@ -9,6 +9,7 @@
 #nowarn "51"
 namespace Microsoft.FSharp.Core.CompilerServices
 
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
     open System
     open System.Runtime.CompilerServices
     open Microsoft.FSharp.Core
@@ -55,3 +56,4 @@ namespace Microsoft.FSharp.Core.CompilerServices
             ignore afterMethod
             failwith "__structStateMachine should always be guarded by __useResumableStateMachines and only used in valid state machine implementations"
        
+#endif
