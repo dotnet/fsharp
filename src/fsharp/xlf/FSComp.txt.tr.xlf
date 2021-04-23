@@ -257,6 +257,11 @@
         <target state="translated">{0} uzaklığında başlayan kaynak üst bilgisi hatalı biçimlendirilmiş.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAllSigs">
+        <source>Print the inferred interfaces of all compilation files to associated signature files</source>
+        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Dil sürümü için izin verilen değerleri görüntüleyin, dil sürümünü 'en son' veya 'önizleme' örneklerindeki gibi belirtin</target>

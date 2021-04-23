@@ -257,6 +257,11 @@
         <target state="translated">從位移 {0} 開始的資源標頭格式錯誤。</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAllSigs">
+        <source>Print the inferred interfaces of all compilation files to associated signature files</source>
+        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">顯示語言版本允許的值，指定 'latest' 或 'preview' 等語言版本</target>

@@ -257,6 +257,11 @@
         <target state="translated">L'en-tête de ressource commençant au décalage {0} est mal formé.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAllSigs">
+        <source>Print the inferred interfaces of all compilation files to associated signature files</source>
+        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Afficher les valeurs autorisées pour la version du langage, spécifier la version du langage comme 'dernière' ou 'préversion'</target>

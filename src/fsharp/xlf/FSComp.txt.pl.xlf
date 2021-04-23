@@ -257,6 +257,11 @@
         <target state="translated">Nagłówek zasobu rozpoczynający się od przesunięcia {0} jest nieprawidłowo sformułowany.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAllSigs">
+        <source>Print the inferred interfaces of all compilation files to associated signature files</source>
+        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Wyświetl dozwolone wartości dla wersji językowej; określ wersję językową, np. „latest” lub „preview”</target>

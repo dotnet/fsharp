@@ -257,6 +257,11 @@
         <target state="translated">L'intestazione di risorsa che inizia a partire dall'offset {0} non è valida.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAllSigs">
+        <source>Print the inferred interfaces of all compilation files to associated signature files</source>
+        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Visualizza i valori consentiti per la versione del linguaggio. Specificare la versione del linguaggio, ad esempio 'latest' o 'preview'</target>
