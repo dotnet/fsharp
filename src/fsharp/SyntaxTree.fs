@@ -116,10 +116,14 @@ type SynConst =
     | UInt16s of uint16[]
 
     | Measure of constant: SynConst * constantRange: Range * SynMeasure
+    
+    | KeywordString of constant: string * value: string * range: Range
 
     member c.Range dflt =
         match c with
-        | SynConst.String (_, _, m0) | SynConst.Bytes (_, _, m0) -> m0
+        | SynConst.String (_, _, m0)
+        | SynConst.Bytes (_, _, m0)
+        | SynConst.KeywordString(_, _, m0) -> m0
         | _ -> dflt
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
