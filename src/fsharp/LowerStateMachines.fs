@@ -48,8 +48,10 @@ type StateMachineConversionFirstPhaseResult =
 
 let sm_verbose = try System.Environment.GetEnvironmentVariable("FSharp_StateMachineVerbose") <> null with _ -> false
 
-let (|OptionalResumeAtExpr|) g expr =
+let rec (|OptionalResumeAtExpr|) g expr =
     match expr with
+    // Eliminate 'if useResumableCode ...'
+    | IfUseResumableStateMachinesExpr g (OptionalResumeAtExpr res, _) -> res
     | Expr.Sequential(ResumeAtExpr g pcExpr, codeExpr, NormalSeq, _, _m) -> (Some pcExpr, codeExpr)
     | _ -> (None, expr)
 
@@ -145,6 +147,7 @@ type env =
 let rec IsPossibleStateMachineExpr g overallExpr = 
     match overallExpr with
     | Expr.Let (macroBind, bodyExpr, _, _) when isExpandVar macroBind.Var -> IsPossibleStateMachineExpr g bodyExpr
+    // Eliminate 'if useResumableCode ...'
     | IfUseResumableStateMachinesExpr g _ -> true
     | _ -> false
 
