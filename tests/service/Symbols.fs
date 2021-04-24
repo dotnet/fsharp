@@ -424,6 +424,18 @@ let bytes = @"yo"B
         | Some (SynExpr.InterpolatedString(_,  kind, _)) -> kind |> should equal SynStringKind.Regular
         | _ -> Assert.Fail "Couldn't find const"
 
+    [<Test>]
+    let ``SynExpr.InterpolatedString with SynStringKind.Verbatim`` () =
+        let parseResults =
+            getParseResults
+                """
+ let s = $@"Migrate notes of file ""{oldId}"" to new file ""{newId}""."
+ """
+
+        match getBindingExpressionValue parseResults with
+        | Some (SynExpr.InterpolatedString(_,  kind, _)) -> kind |> should equal SynStringKind.Verbatim
+        | _ -> Assert.Fail "Couldn't find const"
+
 module SynModuleOrNamespace =
     [<Test>]
     let ``DeclaredNamespace range should start at namespace keyword`` () =
