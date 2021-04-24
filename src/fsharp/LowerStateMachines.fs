@@ -51,7 +51,7 @@ let sm_verbose = try System.Environment.GetEnvironmentVariable("FSharp_StateMach
 let rec (|OptionalResumeAtExpr|) g expr =
     match expr with
     // Eliminate 'if useResumableCode ...'
-    | IfUseResumableStateMachinesExpr g (OptionalResumeAtExpr res, _) -> res
+    | IfUseResumableStateMachinesExpr g (OptionalResumeAtExpr g res, _) -> res
     | Expr.Sequential(ResumeAtExpr g pcExpr, codeExpr, NormalSeq, _, _m) -> (Some pcExpr, codeExpr)
     | _ -> (None, expr)
 
