@@ -5211,12 +5211,7 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
 
     // Binding constructs - see also dtrees below 
     | Expr.Lambda (_, ctorThisValOpt, baseValOpt, vs, b, m, rty) -> 
-        let ctorThisValOpt, tmenv = Option.mapFold (copyAndRemapAndBindVal g compgen) tmenv ctorThisValOpt
-        let baseValOpt, tmenv = Option.mapFold (copyAndRemapAndBindVal g compgen) tmenv baseValOpt
-        let vs, tmenv = copyAndRemapAndBindVals g compgen tmenv vs
-        let b = remapExpr g compgen tmenv b
-        let rty = remapType tmenv rty
-        Expr.Lambda (newUnique(), ctorThisValOpt, baseValOpt, vs, b, m, rty)
+        remapLambaExpr g compgen tmenv (ctorThisValOpt, baseValOpt, vs, b, m, rty)
 
     | Expr.TyLambda (_, tps, b, m, rty) ->
         let tps', tmenvinner = tmenvCopyRemapAndBindTypars (remapAttribs g tmenv) tmenv tps
@@ -5242,14 +5237,7 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
         else Expr.Val (vr', vf', m)
 
     | Expr.Quote (a, dataCell, isFromQueryExpression, m, ty) ->  
-        let doData (typeDefs, argTypes, argExprs, res) = (typeDefs, remapTypesAux tmenv argTypes, remapExprs g compgen tmenv argExprs, res)
-        let data' =
-            match dataCell.Value with 
-            | None -> None
-            | Some (data1, data2) -> Some (doData data1, doData data2)
-            // fix value of compgen for both original expression and pickled AST
-        let compgen = fixValCopyFlagForQuotations compgen
-        Expr.Quote (remapExpr g compgen tmenv a, ref data', isFromQueryExpression, m, remapType tmenv ty)
+        remapQuoteExpr g compgen tmenv (a, dataCell, isFromQueryExpression, m, ty)
 
     | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _stateVars, m) -> 
         let basev', tmenvinner = Option.mapFold (copyAndRemapAndBindVal g compgen) tmenv basev 
@@ -5282,19 +5270,10 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
         mkCompGenLet m tmp (mkUnionCaseFieldGetProvenViaExprAddr (arg, uref, tinst, cidx, m)) (mkValAddr m readonly (mkLocalValRef tmp))
 
     | Expr.Op (op, tinst, args, m) -> 
-        let op' = remapOp tmenv op 
-        let tinst' = remapTypes tmenv tinst 
-        let args' = remapExprs g compgen tmenv args 
-        if op === op' && tinst === tinst' && args === args' then expr 
-        else Expr.Op (op', tinst', args', m)
+        remapOpExpr g compgen tmenv (op, tinst, args, m) expr
 
     | Expr.App (e1, e1ty, tyargs, args, m) -> 
-        let e1' = remapExpr g compgen tmenv e1 
-        let e1ty' = remapPossibleForallTy g tmenv e1ty 
-        let tyargs' = remapTypes tmenv tyargs 
-        let args' = remapExprs g compgen tmenv args 
-        if e1 === e1' && e1ty === e1ty' && tyargs === tyargs' && args === args' then expr 
-        else Expr.App (e1', e1ty', tyargs', args', m)
+        remapAppExpr g compgen tmenv (e1, e1ty, tyargs, args, m) expr
 
     | Expr.Link eref -> 
         remapExpr g compgen tmenv !eref
@@ -5310,6 +5289,39 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
     | Expr.WitnessArg (traitInfo, m) ->
         let traitInfoR = remapTraitInfo tmenv traitInfo
         Expr.WitnessArg (traitInfoR, m)
+
+and remapLambaExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) (ctorThisValOpt, baseValOpt, vs, b, m, rty) =
+    let ctorThisValOpt, tmenv = Option.mapFold (copyAndRemapAndBindVal g compgen) tmenv ctorThisValOpt
+    let baseValOpt, tmenv = Option.mapFold (copyAndRemapAndBindVal g compgen) tmenv baseValOpt
+    let vs, tmenv = copyAndRemapAndBindVals g compgen tmenv vs
+    let b = remapExpr g compgen tmenv b
+    let rty = remapType tmenv rty
+    Expr.Lambda (newUnique(), ctorThisValOpt, baseValOpt, vs, b, m, rty)
+
+and remapQuoteExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) (a, dataCell, isFromQueryExpression, m, ty) =
+    let doData (typeDefs, argTypes, argExprs, res) = (typeDefs, remapTypesAux tmenv argTypes, remapExprs g compgen tmenv argExprs, res)
+    let data' =
+        match dataCell.Value with 
+        | None -> None
+        | Some (data1, data2) -> Some (doData data1, doData data2)
+        // fix value of compgen for both original expression and pickled AST
+    let compgen = fixValCopyFlagForQuotations compgen
+    Expr.Quote (remapExpr g compgen tmenv a, ref data', isFromQueryExpression, m, remapType tmenv ty)
+
+and remapOpExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) (op, tinst, args, m) origExpr =
+    let op' = remapOp tmenv op 
+    let tinst' = remapTypes tmenv tinst 
+    let args' = remapExprs g compgen tmenv args 
+    if op === op' && tinst === tinst' && args === args' then origExpr 
+    else Expr.Op (op', tinst', args', m)
+
+and remapAppExpr  (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) (e1, e1ty, tyargs, args, m) origExpr =
+    let e1' = remapExpr g compgen tmenv e1 
+    let e1ty' = remapPossibleForallTy g tmenv e1ty 
+    let tyargs' = remapTypes tmenv tyargs 
+    let args' = remapExprs g compgen tmenv args 
+    if e1 === e1' && e1ty === e1ty' && tyargs === tyargs' && args === args' then origExpr 
+    else Expr.App (e1', e1ty', tyargs', args', m)
 
 and remapTarget g compgen tmenv (TTarget(vs, e, spTarget, flags)) = 
     let vs', tmenvinner = copyAndRemapAndBindVals g compgen tmenv vs 

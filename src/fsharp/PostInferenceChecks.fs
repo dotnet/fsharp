@@ -1139,7 +1139,7 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
         
         // First class use of a ResumableCode parameter is allowed (check is by name, the
         // Val for the parameter doesn't carry the attributes)
-        | Expr.Val (vref, vFlags, m) when vref.DisplayName.StartsWith("__expand") ->  
+        | Expr.Val (vref, vFlags, m) when vref.DisplayName.StartsWith expansionFunctionPrefix ->  
             CheckValUse cenv env (vref, vFlags, m) PermitByRefExpr.No |> ignore
             true
 
@@ -2154,7 +2154,7 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
             if argHasRCA then 
                 match argName with 
                 | Some n -> 
-                    if cenv.reportErrors && not (n.idText.StartsWith("__expand")) then
+                    if cenv.reportErrors && not (n.idText.StartsWith expansionFunctionPrefix) then
                         errorR(Error(FSComp.SR.tcResumableCodeArgMustHaveRightName(), n.idRange))
                     if cenv.reportErrors && not argIsFun then
                         errorR(Error(FSComp.SR.tcResumableCodeArgMustHaveRightKind(), n.idRange))
