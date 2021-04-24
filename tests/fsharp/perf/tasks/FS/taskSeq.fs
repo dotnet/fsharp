@@ -416,20 +416,20 @@ module TaskSeq =
                e.DisposeAsync().AsTask().Wait() |]
 
     // TODO: something is not compiling here with task { ... }
-    //let toArrayAsync (t: taskSeq<'T>) : Task<'T[]> =
-    //    task { 
-    //       let res = ResizeArray<'T>()
-    //       let e = t.GetAsyncEnumerator(CancellationToken())
-    //       let mutable go = true
-    //       let! step = e.MoveNextAsync()
-    //       go <- step
-    //       while go do 
-    //           res.Add e.Current
-    //           if verbose then printfn "yield %A" e.Current
-    //           let! step = e.MoveNextAsync()
-    //           go <- step
-    //       return res.ToArray()
-    //    }
+    let toArrayAsync (t: taskSeq<'T>) : Task<'T[]> =
+       task { 
+          let res = ResizeArray<'T>()
+          let e = t.GetAsyncEnumerator(CancellationToken())
+          let mutable go = true
+          let! step = e.MoveNextAsync()
+          go <- step
+          while go do 
+              res.Add e.Current
+              if verbose then printfn "yield %A" e.Current
+              let! step = e.MoveNextAsync()
+              go <- step
+          return res.ToArray()
+       }
 
     let iter f (t: taskSeq<'T>) =
         let e = t.GetAsyncEnumerator(CancellationToken())
