@@ -7253,6 +7253,8 @@ FSharp.Compiler.Syntax.SynMemberSig: FSharp.Compiler.Syntax.SynMemberSig+Member
 FSharp.Compiler.Syntax.SynMemberSig: FSharp.Compiler.Syntax.SynMemberSig+NestedType
 FSharp.Compiler.Syntax.SynMemberSig: FSharp.Compiler.Syntax.SynMemberSig+Tags
 FSharp.Compiler.Syntax.SynMemberSig: FSharp.Compiler.Syntax.SynMemberSig+ValField
+FSharp.Compiler.Syntax.SynMemberSig: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynMemberSig: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynMemberSig: Int32 Tag
 FSharp.Compiler.Syntax.SynMemberSig: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynMemberSig: System.String ToString()
