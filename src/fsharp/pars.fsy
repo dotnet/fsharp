@@ -908,17 +908,21 @@ tyconSpfnRhsBlock:
 /* The right-hand-side of a type definition in a signature */
 tyconSpfnRhs: 
   | tyconDefnOrSpfnSimpleRepr 
-     { let m = $1.Range 
-       (fun lhsm nameInfo augmentation -> 
-           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.Simple ($1, m), augmentation, m)) }
+     { (fun lhsm nameInfo augmentation -> 
+           let declRange = unionRanges lhsm $1.Range
+           let mWhole = (declRange, augmentation) ||> unionRangeWithListBy (fun (mem: SynMemberSig) -> mem.Range)
+           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.Simple ($1, $1.Range), augmentation, mWhole)) }
 
   | tyconClassSpfn 
-     { let m = lhs parseState 
+     { let objectModelRange = lhs parseState 
        let needsCheck, (kind, decls) = $1
        (fun nameRange nameInfo augmentation -> 
            if needsCheck && isNil decls then
               reportParseErrorAt nameRange (FSComp.SR.parsEmptyTypeDefinition())
-           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (kind, decls, m), augmentation, m)) }
+           
+           let declRange = unionRanges nameRange objectModelRange
+           let mWhole = (declRange, augmentation) ||> unionRangeWithListBy (fun (mem: SynMemberSig) -> mem.Range)
+           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (kind, decls, objectModelRange), augmentation, mWhole)) }
 
   | DELEGATE OF topType
      { let m = lhs parseState 
@@ -926,7 +930,8 @@ tyconSpfnRhs:
        let invoke = SynMemberSig.Member(SynValSig([], mkSynId m "Invoke", inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m), AbstractMemberFlags SynMemberKind.Member, m) 
        (fun nameRange nameInfo augmentation -> 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
-           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), [], m)) }
+           let mWhole = unionRanges nameRange m
+           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), [], mWhole)) }
 
 
 /* The right-hand-side of an object type definition in a signature */
