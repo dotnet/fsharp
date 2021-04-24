@@ -309,23 +309,55 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
 /// Write a .fsi file for the --sig option
 module InterfaceFileWriter =
 
-    let WriteInterfaceFile (tcGlobals, tcConfig: TcConfig, infoReader, declaredImpls) =
+    let WriteInterfaceFile (tcGlobals, tcConfig: TcConfig, infoReader, declaredImpls: TypedImplFile list) =
+        // there are two modes here:
+        // * write one unified sig file to a given path, or
+        // * write individual sig files to paths matching their impl files
+        let denv = DisplayEnv.InitialForSigFileGeneration tcGlobals
+        let denv = { denv with shrinkOverloads = false; printVerboseSignatures = true }
 
-        /// Use a UTF-8 Encoding with no Byte Order Mark
-        let os = 
-            if tcConfig.printSignatureFile="" then Console.Out
-            else (File.CreateText tcConfig.printSignatureFile :> TextWriter)
+        let writeToFile os (TImplFile (_, _, mexpr, _, _, _)) =
+          writeViaBuffer os (fun os s -> Printf.bprintf os "%s\n\n" s)
+            (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> LayoutRender.showL)
 
-        if tcConfig.printSignatureFile <> "" && not (List.exists (Filename.checkSuffix tcConfig.printSignatureFile) FSharpLightSyntaxFileSuffixes) then
-            fprintfn os "#light" 
-            fprintfn os "" 
+        let writeHeader filePath os =
+            if filePath <> "" && not (List.exists (Filename.checkSuffix filePath) FSharpLightSyntaxFileSuffixes) then
+                fprintfn os "#light"
+                fprintfn os ""
 
-        for (TImplFile (_, _, mexpr, _, _, _)) in declaredImpls do
-            let denv = DisplayEnv.InitialForSigFileGeneration tcGlobals
-            writeViaBuffer os (fun os s -> Printf.bprintf os "%s\n\n" s)
-              (NicePrint.layoutInferredSigOfModuleExpr true { denv with printVerboseSignatures = true } infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> LayoutRender.showL)
-       
-        if tcConfig.printSignatureFile <> "" then os.Dispose()
+        let writeAllToSameFile declaredImpls =
+            /// Use a UTF-8 Encoding with no Byte Order Mark
+            let os =
+                if tcConfig.printSignatureFile = "" then
+                    Console.Out
+                else
+                    File.CreateText tcConfig.printSignatureFile :> TextWriter
+
+            writeHeader tcConfig.printSignatureFile os
+
+            for impl in declaredImpls do
+                writeToFile os impl
+
+            if tcConfig.printSignatureFile <> "" then os.Dispose()
+
+        let extensionForFile (filePath: string) =
+            if (List.exists (Filename.checkSuffix filePath) mlCompatSuffixes) then
+                ".mli"
+            else
+                ".fsi"
+
+        let writeToSeparateFiles (declaredImpls: TypedImplFile list) =
+            for (TImplFile (name, _, _, _, _, _) as impl) in declaredImpls do
+                let filename = System.IO.Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
+                printfn "writing impl file to %s" filename
+                use os = File.CreateText filename :> TextWriter
+                writeHeader filename os
+                writeToFile os impl
+
+        if tcConfig.printSignature then
+            writeAllToSameFile declaredImpls
+        else if tcConfig.printAllSignatureFiles then
+            writeToSeparateFiles declaredImpls
 
 //----------------------------------------------------------------------------
 // CopyFSharpCore
@@ -707,7 +739,7 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
     // write interface, xmldoc
     ReportTime tcConfig ("Write Interface File")
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
-    if tcConfig.printSignature then InterfaceFileWriter.WriteInterfaceFile (tcGlobals, tcConfig, InfoReader(tcGlobals, tcImports.GetImportMap()), typedImplFiles)
+    if tcConfig.printSignature || tcConfig.printAllSignatureFiles then InterfaceFileWriter.WriteInterfaceFile (tcGlobals, tcConfig, InfoReader(tcGlobals, tcImports.GetImportMap()), typedImplFiles)
 
     ReportTime tcConfig ("Write XML document signatures")
     if tcConfig.xmlDocOutputFile.IsSome then 
