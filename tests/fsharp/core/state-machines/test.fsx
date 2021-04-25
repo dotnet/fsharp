@@ -1,5 +1,6 @@
 module Tests_Tasks
 
+#nowarn "57"
 open FSharp.Core.CompilerServices
 open FSharp.Core.CompilerServices.StateMachineHelpers
 open System.Runtime.CompilerServices
@@ -29,7 +30,6 @@ type SyncMachine<'T>() =
 
     abstract Step : unit -> 'T
 
-    [<MethodImpl(MethodImplOptions.NoInlining)>]
     member this.Start() = this.Step()
 
 [<Struct; NoEquality; NoComparison>]
@@ -41,11 +41,12 @@ type SyncMachineStruct<'TOverall> =
     [<DefaultValue(false)>]
     val mutable Result : 'TOverall
 
-    member sm.Address = 0
+    //member sm.Address = 0
         //let addr = &&sm.Dummy
         //Microsoft.FSharp.NativeInterop.NativePtr.toNativeInt addr
 
-    static member MoveNext(sm: byref<'T> when 'T :> IAsyncStateMachine) = sm.MoveNext()
+    // MoveNext without boxing
+    static member inline MoveNext(sm: byref<'T> when 'T :> IAsyncStateMachine) = sm.MoveNext()
     interface IAsyncStateMachine with 
         member sm.MoveNext() = failwith "no dynamic impl"
         member sm.SetStateMachine(state: IAsyncStateMachine) = failwith "no dynamic impl"
@@ -55,9 +56,10 @@ module ResumableObject_OuterConditional =
     // RO with outer "if __useResumableStateMachines then" conditional
     let makeStateMachine() = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  = 1
+                    [<ResumableCode>]
+                    member _.Step ()  = 1
                 }
             ).Start()
         else
@@ -67,9 +69,10 @@ module ResumableObject_OuterConditional =
 module ResumableObject_SimpleImmediateExpression =
     let makeStateMachine()  = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =
+                    [<ResumableCode>]
+                    member _.Step ()  =
                         // TEST: a resumable object may contain simple expressions
                         1 
                 }
@@ -81,9 +84,10 @@ module ResumableObject_SimpleImmediateExpression =
 module ResumableObject_FreeVariable =
     let makeStateMachine x = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =
+                    [<ResumableCode>]
+                    member _.Step ()  =
                        // TEST: a resumable object may contain free variables
                         1 + x
                 }
@@ -96,9 +100,9 @@ module ResumableObject_FreeVariable =
 module ResumableObject_WithoutStart =
     let makeStateMachine x = 
         if __useResumableStateMachines then
-            __resumableStateMachine
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =
+                    [<ResumableCode>]
+                    member _.Step ()  =
                        // TEST: a resumable object may contain free variables
                         1 + x }
         else
@@ -111,9 +115,10 @@ module ResumableObject_OuterLet =
         // TEST: a resumable object may be just after a non-macro 'let'
         let rnd = System.Random().Next(4)
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        x + rnd - rnd
                 }
             ).Start()
@@ -126,9 +131,10 @@ module ResumableCode_Macro1 =
         // TEST: resumable object may declare macros
         let __expand_code x = x + 1
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may invoke macros
                        __expand_code y
                 }
@@ -142,9 +148,10 @@ module ResumableCode_Macro2 =
         if __useResumableStateMachines then
             // TEST: resumable object may declare macros
             let __expand_code x = x + 1
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may invoke macros
                        __expand_code y
                  }
@@ -156,9 +163,10 @@ module ResumableCode_Macro2 =
 module ResumableCode_Macro3 =
     let makeStateMachine y = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable object may declare macros
                        let __expand_code x = x + 1
                        // TEST: resumable code may invoke macros
@@ -175,9 +183,10 @@ module ResumableCode_TwoMacro =
         let __expand_code1 x = x + 1
         let __expand_code2 x = __expand_code1 x + 2
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may invoke a macro that invokes another macro
                        __expand_code2 y
                 }
@@ -189,9 +198,10 @@ module ResumableCode_TwoMacro =
 module ResumableCode_Let =
     let makeStateMachine x = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may let statements
                        let y = 1 - x
                        if x > 3 then 1 + x else y
@@ -206,9 +216,10 @@ module ResumableCode_Let =
 module ResumableCode_LetRec =
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        let rec f x = if x > 0 then f (x-1) else inputValue + 13
                        f 10 + f 2
                  }
@@ -223,9 +234,10 @@ module ResumableCode_Sequential =
         let __expand_code1 () = printfn "step1" 
         let __expand_code2 x = x + 2
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may sequentially do one thing then another
                        __expand_code1 ()
                        __expand_code2 y
@@ -239,9 +251,10 @@ module ResumableCode_Sequential =
 module ResumableCode_Sequential2 =
     let makeStateMachine y = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may sequentially do one thing then another
                        printfn "step1" 
                        y + 2
@@ -255,9 +268,10 @@ module ResumableCode_ResumeAt0 =
     let makeStateMachine y = 
         // TEST: resumable object may declare macros
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                         // TEST: resumable code may have __resumeAt at the start of the code
                         __resumeAt 0
                         // Label 0 goes here
@@ -278,9 +292,10 @@ module ResumableCode_ResumeAt0 =
 module ResumableCode_ResumeAt1 =
     let makeStateMachine y = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                         // TEST: resumable code may have __resumeAt at the start of the code
                         __resumeAt 1
                         // Specify a resumption point
@@ -321,7 +336,7 @@ module ResumableCode_Struct =
                            // This gets executed once in this test.
                            // The answer is 20 + 400
                            let res = 20 + inputValue
-                           printfn "setting result for %d to %d" sm.Address res 
+                           //printfn "setting result for %d to %d" sm.Address res 
                            sm.Result <- 20 + inputValue
                        ))
 
@@ -332,7 +347,7 @@ module ResumableCode_Struct =
                 // Start
                 (AfterMethod<_,_>(fun sm -> 
                     SyncMachineStruct<_>.MoveNext(&sm)
-                    printfn "after method for %d = %d" sm.Address sm.Result
+                    //printfn "after method for %d = %d" sm.Address sm.Result
                     sm.Result))
         else
             failwith "should have been compiled to resumable code, no interpretation available"
@@ -364,7 +379,7 @@ module ResumableCode_StructMacro =
                 // Start
                 (AfterMethod<_,_>(fun sm -> 
                     SyncMachineStruct<_>.MoveNext(&sm)
-                    printfn "after method for %d = %d" sm.Address sm.Result
+                    //printfn "after method for %d = %d" sm.Address sm.Result
                     sm.Result))
         else
             failwith "should have been compiled to resumable code, no interpretation available"
@@ -374,9 +389,10 @@ module ResumableCode_StructMacro =
 module ResumableCode_FSharpFuncBetaReduction =
     let makeStateMachine x = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: a resumable object may contain beta-reducible code
                        (fun () -> 1 + x) () 
                 }
@@ -389,8 +405,9 @@ module ResumableCode_FSharpFuncBetaReduction =
 module ResumableCode_FSharpFuncBetaReductionWithMacroAndResumption =
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
+                    [<ResumableCode>]
                     member sm.Step ()  =  
                        __resumeAt sm.PC
                        // TEST: a resumable object may contain a macro defining beta-reducible code with a resumption point
@@ -416,9 +433,10 @@ module ResumableCode_FSharpFuncBetaReductionWithParameterisedMacroAndResumption1
     let mutable res = 0
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        __resumeAt 0
                        // Label 0 goes here.  
                        // TEST: a resumable object may contain a macro defining beta-reducible code with a resumption point
@@ -446,9 +464,10 @@ module ResumableCode_FSharpFuncBetaReductionWithParameterisedMacroAndResumption1
 module ResumableCode_FSharpFuncBetaReductionWithParameterisedMacroAndResumption2 =
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        __resumeAt 0
                        // TEST: a resumable object may contain a macro defining beta-reducible code with a resumption point
                        let __expand_code n = (fun () -> 
@@ -473,9 +492,10 @@ module ResumableCode_FSharpFuncBetaReductionWithParameterisedMacroAndResumption2
 module ResumableCode_DelegateBetaReduction =
     let makeStateMachine x = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: a resumable object may contain a beta-reduction of a delegate
                        (new System.Func<_, _>(fun a -> a + x)).Invoke 6
                 }
@@ -490,9 +510,10 @@ module ResumableCode_ByrefDelegateBetaReduction =
     let mutable res = 0
     let makeStateMachine x = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: a resumable object may contain a beta-reduction of a delegate
                        (new CodeSpec(fun a -> a <- a + 3 + x)).Invoke &res
                        (new CodeSpec(fun a -> a <- a + 4)).Invoke &res
@@ -538,7 +559,7 @@ module ResumableCode_ByrefDelegateBetaReductionWithResumption =
                 (AfterMethod<_,_>(fun sm -> 
                     SyncMachineStruct<_>.MoveNext(&sm)
                     SyncMachineStruct<_>.MoveNext(&sm)
-                    printfn "after method for %d, result = %d" sm.Address sm.Result
+                    //printfn "after method for %d, result = %d" sm.Address sm.Result
                     sm.Result))
         else
             failwith "should have been compiled to resumable code, no interpretation available"
@@ -548,9 +569,10 @@ module ResumableCode_ByrefDelegateBetaReductionWithResumption =
 module ResumableCode_Conditional =
     let makeStateMachine x = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: a resumable object may contain conditionals
                       if x > 3 then 1 + x else 1 - x
                 }
@@ -562,9 +584,10 @@ module ResumableCode_Conditional =
 module ResumableCode_TryWithNoResumption =
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may contain try-with statements with no resumption
                        try 
                            inputValue + 10
@@ -579,9 +602,10 @@ module ResumableCode_TryWithNoResumption =
 module ResumableCode_TryWithResumption =
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may contain try-with statements with resumption
                        __resumeAt 1 // this goes straight to label 1
                        try 
@@ -604,9 +628,10 @@ module ResumableCode_TryWithResumption =
 module ResumableCode_TryWithResumptionException =
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may contain try-with statements with resumption
                        __resumeAt 1 // this goes straight to label 1
                        try 
@@ -631,9 +656,10 @@ module ResumableCode_TryWithResumptionException =
 module ResumableCode_TryWithExceptionNoResumption =
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may contain try-with statements with no resumption
                        try 
                            failwith "fail"
@@ -646,9 +672,10 @@ module ResumableCode_TryWithExceptionNoResumption =
 module ResumableCode_TryFinallyNoResumption =
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may contain try-with statements with no resumption
                        let mutable res = 0
                        try 
@@ -668,9 +695,10 @@ module ResumableCode_TryFinallyNoResumption =
 module ResumableCode_TryFinallyResumption =
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may contain try-finally statements with a resumption in the try block
                        __resumeAt 1 // this goes straight to label 1
                        let mutable res = inputValue
@@ -702,9 +730,10 @@ module ResumableCode_TryFinallyResumption =
 module ResumableCode_TryFinallySimulatedResumption =
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may contain try-finally statements with a resumption in the try block
                        __resumeAt 1 // this goes straight to label 1
                        let mutable res = 0 // note, this initialization doesn't actually happen since we go straight to label 1. However this is the zero-init value.
@@ -739,9 +768,10 @@ module ResumableCode_TryFinallyExceptionNoResumption =
     let mutable res = 0
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may contain try-finally statements with no resumption
                        try 
                            failwith "fail"
@@ -755,9 +785,10 @@ module ResumableCode_TryFinallyExceptionNoResumption =
 module ResumableCode_WhileLoopNoResumption =
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may contain while loops (here with no resumption point in the loop)
                        let mutable count = 0
                        while count < 10 do 
@@ -771,9 +802,10 @@ module ResumableCode_WhileLoopNoResumption =
 module ResumableCode_WhileLoopWithResumption =
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may contain while loops (here with a resumption point in the loop)
                        __resumeAt 1 // this goes straight to label 1
                        let mutable count = 0 // note, this initialization doesn't actually happen since we go straight to label 1. However this is the zero-init value.
@@ -801,9 +833,10 @@ module ResumableCode_WhileLoopWithResumption =
 module ResumableCode_ForLoopNoResumption =
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may contain for loops (here with no resumption point in the loop)
                        let mutable count = 0
                        for i = 0 to 9 do 
@@ -819,9 +852,10 @@ module ResumableCode_ForLoopNoResumption =
 module ResumableCode_ForLoopWithResumption =
     let makeStateMachine inputValue = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                        // TEST: resumable code may contain while loops (here with a resumption point in the loop)
                        __resumeAt 1 // this goes straight to label 1
                        
@@ -850,9 +884,10 @@ module ResumableCode_ForLoopWithResumption =
 module ResumableCode_ResumeAtIntoConditional =
     let makeStateMachine y = 
         if __useResumableStateMachines then
-            (__resumableStateMachine
+            (
                 { new SyncMachine<int>() with 
-                    member __.Step ()  =  
+                    [<ResumableCode>]
+                    member _.Step ()  =  
                         // TEST: resumable code may have __resumeAt at the start of the code
                         __resumeAt 1
                         failwith "fail"
