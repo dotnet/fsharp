@@ -1105,7 +1105,7 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
             true
 
         | SequentialResumableCode g (e1, e2, _m, _recreate) ->
-            CheckExprNoByrefs cenv env e1
+            CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (false,  allowed) }e1
             CheckExprNoByrefs cenv env e2
             true
 

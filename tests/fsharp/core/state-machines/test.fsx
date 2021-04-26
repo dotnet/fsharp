@@ -272,19 +272,21 @@ module ResumableCode_ResumeAt0 =
                 { new SyncMachine<int>() with 
                     [<ResumableCode>]
                     member _.Step ()  =  
-                        // TEST: resumable code may have __resumeAt at the start of the code
-                        __resumeAt 0
-                        // Label 0 goes here
-                        // Specify a resumption point
-                        match __resumableEntry() with
-                        | Some contID ->
-                            // This is the suspension path. This gets executed as we start at label 0
-                            printfn "contID = %d" contID
-                            10+y
-                        | None -> 
-                            // This is the resumption path
-                            // Label 1 goes here
-                            20+y }).Start()
+                        if __useResumableStateMachines then
+                            // TEST: resumable code may have __resumeAt at the start of the code
+                            __resumeAt 0
+                            // Label 0 goes here
+                            // Specify a resumption point
+                            match __resumableEntry() with
+                            | Some contID ->
+                                // This is the suspension path. This gets executed as we start at label 0
+                                printfn "contID = %d" contID
+                                10+y
+                            | None -> 
+                                // This is the resumption path
+                                // Label 1 goes here
+                                20+y 
+                        else failwith "no" }).Start()
         else
             failwith "should have been compiled to resumable code, no interpretation available"
     check "ResumableCode_ResumeAt0" (makeStateMachine 3) 13
@@ -296,18 +298,21 @@ module ResumableCode_ResumeAt1 =
                 { new SyncMachine<int>() with 
                     [<ResumableCode>]
                     member _.Step ()  =  
-                        // TEST: resumable code may have __resumeAt at the start of the code
-                        __resumeAt 1
-                        // Specify a resumption point
-                        match __resumableEntry() with
-                        | Some contID ->
-                            // This is the suspension path. It is not executed in this test because we jump straight to label 1
-                            printfn "contID = %d" contID
-                            10+y
-                        | None -> 
-                            // This is the resumption path
-                            // Label 1 goes here
-                            20+y
+                        if __useResumableStateMachines then
+                            // TEST: resumable code may have __resumeAt at the start of the code
+                            __resumeAt 1
+                            // Specify a resumption point
+                            match __resumableEntry() with
+                            | Some contID ->
+                                // This is the suspension path. It is not executed in this test because we jump straight to label 1
+                                printfn "contID = %d" contID
+                                10+y
+                            | None -> 
+                                // This is the resumption path
+                                // Label 1 goes here
+                                20+y
+                        else
+                          failwith "dynamic"
                 }
             ).Start()
         else
@@ -322,6 +327,7 @@ module ResumableCode_Struct =
         if __useResumableStateMachines then
             __structStateMachine<SyncMachineStruct<int>, int>
                 (MoveNextMethod<SyncMachineStruct<int>>(fun sm -> 
+                    if __useResumableStateMachines then
                        //printfn "resuming %d" sm.Address
                        __resumeAt 1
                        failwith "unreachable in this test"
@@ -337,7 +343,8 @@ module ResumableCode_Struct =
                            let res = 20 + inputValue
                            //printfn "setting result for %d to %d" sm.Address res 
                            sm.Result <- 20 + inputValue
-                       ))
+                    else failwith "dynamic"
+                    ))
 
                 // SetStateMachine
                 (SetMachineStateMethod<_>(fun sm state -> 
@@ -387,7 +394,6 @@ module ResumableCode_StructMacro =
 
 module ResumableCode_FSharpFuncBetaReduction =
     let makeStateMachine x = 
-        if __useResumableStateMachines then
             (
                 { new SyncMachine<int>() with 
                     [<ResumableCode>]
@@ -396,18 +402,16 @@ module ResumableCode_FSharpFuncBetaReduction =
                        (fun () -> 1 + x) () 
                 }
             ).Start()
-        else
-            failwith "should have been compiled to resumable code, no interpretation available"
 
     check "ResumableCode_FSharpFuncBetaReduction" (makeStateMachine 3) 4
     
 module ResumableCode_FSharpFuncBetaReductionWithMacroAndResumption =
     let makeStateMachine inputValue = 
-        if __useResumableStateMachines then
             (
                 { new SyncMachine<int>() with 
                     [<ResumableCode>]
                     member sm.Step ()  =  
+                      if __useResumableStateMachines then
                        __resumeAt sm.PC
                        // TEST: a resumable object may contain a macro defining beta-reducible code with a resumption point
                        let __expand_code = (fun () -> 
@@ -421,21 +425,20 @@ module ResumableCode_FSharpFuncBetaReductionWithMacroAndResumption =
                                 // Label 1 goes here
                                 20+inputValue)
                        __expand_code () 
+                      else failwith "dynamic"
                }
             ).Start()
-        else
-            failwith "should have been compiled to resumable code, no interpretation available"
 
     check "ResumableCode_FSharpFuncBetaReductionWithMacroAndResumption" (makeStateMachine 3) 23
 
 module ResumableCode_FSharpFuncBetaReductionWithParameterisedMacroAndResumption1 =
     let mutable res = 0
     let makeStateMachine inputValue = 
-        if __useResumableStateMachines then
             (
                 { new SyncMachine<int>() with 
                     [<ResumableCode>]
                     member _.Step ()  =  
+                      if __useResumableStateMachines then
                        __resumeAt 0
                        // Label 0 goes here.  
                        // TEST: a resumable object may contain a macro defining beta-reducible code with a resumption point
@@ -452,21 +455,20 @@ module ResumableCode_FSharpFuncBetaReductionWithParameterisedMacroAndResumption1
                        (__expand_code 100) ()
                        (__expand_code 200) ()
                        res
+                      else failwith "dynamic"
                }
             ).Start()
-        else
-            failwith "should have been compiled to resumable code, no interpretation available"
 
     check "ResumableCode_FSharpFuncBetaReductionWithParameterisedMacroAndResumption1" (makeStateMachine 3) 346
 
 
 module ResumableCode_FSharpFuncBetaReductionWithParameterisedMacroAndResumption2 =
     let makeStateMachine inputValue = 
-        if __useResumableStateMachines then
             (
                 { new SyncMachine<int>() with 
                     [<ResumableCode>]
                     member _.Step ()  =  
+                      if __useResumableStateMachines then
                        __resumeAt 0
                        // TEST: a resumable object may contain a macro defining beta-reducible code with a resumption point
                        let __expand_code n = (fun () -> 
@@ -481,10 +483,10 @@ module ResumableCode_FSharpFuncBetaReductionWithParameterisedMacroAndResumption2
                                 // Answer is 20 + 833 + 100
                                 20 + inputValue + n)
                        (__expand_code 100) ()
+                      else
+                          failwith "should have been compiled to resumable code, no interpretation available"
                }
             ).Start()
-        else
-            failwith "should have been compiled to resumable code, no interpretation available"
 
     check "ResumableCode_FSharpFuncBetaReductionWithParameterisedMacroAndResumption2" (makeStateMachine 833) (20 + 833 + 100)
 
@@ -533,6 +535,7 @@ module ResumableCode_ByrefDelegateBetaReductionWithResumption =
         if __useResumableStateMachines then
             __structStateMachine<SyncMachineStruct<int>, int>
                 (MoveNextMethod<SyncMachineStruct<int>>(fun sm -> 
+                    if __useResumableStateMachines then
                        __resumeAt sm.PC
                        // Label 0 goes here
                        let __expand_code n = new CodeSpec(fun sm -> 
@@ -548,7 +551,9 @@ module ResumableCode_ByrefDelegateBetaReductionWithResumption =
                                 // This gets executed once in this test.
                                 // The answer is 1000 + 20 + 400 + 100
                                 sm.Result <- sm.Result + 20 + inputValue + n)
-                       (__expand_code 100).Invoke &sm))
+                       (__expand_code 100).Invoke &sm
+                    else
+                       failwith "dynamic"))
 
                 // SetStateMachine
                 (SetMachineStateMethod<_>(fun sm state -> 
@@ -600,11 +605,11 @@ module ResumableCode_TryWithNoResumption =
 
 module ResumableCode_TryWithResumption =
     let makeStateMachine inputValue = 
-        if __useResumableStateMachines then
             (
                 { new SyncMachine<int>() with 
                     [<ResumableCode>]
                     member _.Step ()  =  
+                      if __useResumableStateMachines then
                        // TEST: resumable code may contain try-with statements with resumption
                        __resumeAt 1 // this goes straight to label 1
                        try 
@@ -618,19 +623,21 @@ module ResumableCode_TryWithResumption =
                                 // Label 1 goes here
                                 20+inputValue // this is the result
                        with e -> 
-                           12 }).Start()
-        else
-            failwith "should have been compiled to resumable code, no interpretation available"
+                           12 
+                      else
+                        failwith "should have been compiled to resumable code, no interpretation available"
+                           
+                           }).Start()
 
     check "ResumableCode_TryWithResumption" (makeStateMachine 13) 33
 
 module ResumableCode_TryWithResumptionException =
     let makeStateMachine inputValue = 
-        if __useResumableStateMachines then
             (
                 { new SyncMachine<int>() with 
                     [<ResumableCode>]
                     member _.Step ()  =  
+                      if __useResumableStateMachines then
                        // TEST: resumable code may contain try-with statements with resumption
                        __resumeAt 1 // this goes straight to label 1
                        try 
@@ -646,9 +653,9 @@ module ResumableCode_TryWithResumptionException =
                                 inputValue + 15
                        with e -> 
                            inputValue + 12  // this is the result
+                      else
+                        failwith "should have been compiled to resumable code, no interpretation available"
                 }).Start()
-        else
-            failwith "should have been compiled to resumable code, no interpretation available"
 
     check "ResumableCode_TryWithResumptionException" (makeStateMachine 13) 25
 
@@ -659,10 +666,12 @@ module ResumableCode_TryWithExceptionNoResumption =
                 { new SyncMachine<int>() with 
                     [<ResumableCode>]
                     member _.Step ()  =  
+                     if __useResumableStateMachines then
                        // TEST: resumable code may contain try-with statements with no resumption
                        try 
                            failwith "fail"
-                       with e -> inputValue + 12 }).Start()
+                       with e -> inputValue + 12 
+                     else failwith "dynamic" }).Start()
         else
             failwith "should have been compiled to resumable code, no interpretation available"
 
@@ -675,13 +684,16 @@ module ResumableCode_TryFinallyNoResumption =
                 { new SyncMachine<int>() with 
                     [<ResumableCode>]
                     member _.Step ()  =  
+                     if __useResumableStateMachines then
                        // TEST: resumable code may contain try-with statements with no resumption
                        let mutable res = 0
                        try 
                            res <- inputValue + 10
                        finally 
                            res <- inputValue + 40 
-                       res }).Start()
+                       res 
+                      else
+                       failwith "dynamic" }).Start()
         else
             failwith "should have been compiled to resumable code, no interpretation available"
 
@@ -733,6 +745,7 @@ module ResumableCode_TryFinallySimulatedResumption =
                 { new SyncMachine<int>() with 
                     [<ResumableCode>]
                     member _.Step ()  =  
+                     if __useResumableStateMachines then
                        // TEST: resumable code may contain try-finally statements with a resumption in the try block
                        __resumeAt 1 // this goes straight to label 1
                        let mutable res = 0 // note, this initialization doesn't actually happen since we go straight to label 1. However this is the zero-init value.
@@ -757,7 +770,8 @@ module ResumableCode_TryFinallySimulatedResumption =
                            reraise()
                        if __stack_completed then 
                            res <- res + 20 
-                       res }).Start()
+                       res 
+                     else failwith "dynamic"}).Start()
         else
             failwith "should have been compiled to resumable code, no interpretation available"
 
@@ -805,6 +819,7 @@ module ResumableCode_WhileLoopWithResumption =
                 { new SyncMachine<int>() with 
                     [<ResumableCode>]
                     member _.Step ()  =  
+                     if __useResumableStateMachines then
                        // TEST: resumable code may contain while loops (here with a resumption point in the loop)
                        __resumeAt 1 // this goes straight to label 1
                        let mutable count = 0 // note, this initialization doesn't actually happen since we go straight to label 1. However this is the zero-init value.
@@ -822,7 +837,8 @@ module ResumableCode_WhileLoopWithResumption =
                                 count <- count + 1
                                 res <- res + 10 // gets executed once
                        // res ends up as 190
-                       inputValue + res }).Start()
+                       inputValue + res 
+                     else failwith "dyanmic" }).Start()
         else
             failwith "should have been compiled to resumable code, no interpretation available"
 
@@ -887,6 +903,7 @@ module ResumableCode_ResumeAtIntoConditional =
                 { new SyncMachine<int>() with 
                     [<ResumableCode>]
                     member _.Step ()  =  
+                      if __useResumableStateMachines then
                         // TEST: resumable code may have __resumeAt at the start of the code
                         __resumeAt 1
                         failwith "fail"
@@ -900,7 +917,8 @@ module ResumableCode_ResumeAtIntoConditional =
                                 // Label 1 goes here
                                 20+y  // this is the answer
                         else
-                            30 + y }).Start()
+                            30 + y 
+                      else failwith "dynamic" }).Start()
         else
             failwith "should have been compiled to resumable code, no interpretation available"
     check "vewowevewoi" (makeStateMachine 13) 33
