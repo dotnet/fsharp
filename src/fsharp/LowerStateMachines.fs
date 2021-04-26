@@ -7,30 +7,22 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Infos
-open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 
 let mkLabelled m l e = mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e
 
-//---------------------------------------------------------------------------------------------
-
 type StateMachineConversionFirstPhaseResult =
    {
-     // Represents the macro-expanded expression prior to decisions about labels
+     /// Represents the expanded expression prior to decisions about labels
      phase1: Expr
 
      /// The second phase of the transformation.  It is run after all code labels and their mapping to program counters have been determined
      /// after the first phase. 
-     ///
      phase2 : (Map<int, ILCodeLabel> -> Expr)
 
      /// The labels allocated for this portion of the computation
@@ -42,7 +34,7 @@ type StateMachineConversionFirstPhaseResult =
      /// All this values get represented via the 'this' pointer
      thisVars: ValRef list
 
-     /// The vars captured by the non-synchronous path
+     /// The vars captured by the non-synchronous resumable path
      asyncVars: FreeVars
    }
 
@@ -184,24 +176,30 @@ let ConvertStateMachineExprToObject g overallExpr =
             let macroTypars, macroParamsCurried, macroBody, _rty = stripTopLambda (expr, tyOfExpr g expr)
             let m = macroBody.Range
             if not (isNil macroTypars) then 
-                error(Error(FSComp.SR.stateMachineMacroTypars(), m))
-            let macroParams = List.concat macroParamsCurried
-            let macroVal2 = mkLambdas m macroTypars macroParams (macroBody, tyOfExpr g macroBody)
-            if args.Length < macroParams.Length then 
-                error(Error(FSComp.SR.stateMachineMacroUnderapplied(), m))
-            let nowArgs, laterArgs = List.splitAt macroParams.Length args
-            let expandedExpr = MakeApplicationAndBetaReduce g (macroVal2, (tyOfExpr g macroVal2), [], nowArgs, m)
-            TryApplyMacroDef env expandedExpr laterArgs
+                warning(Error(FSComp.SR.stateMachineMacroTypars(), m))
+                None
+            else
+                let macroParams = List.concat macroParamsCurried
+                let macroVal2 = mkLambdas m macroTypars macroParams (macroBody, tyOfExpr g macroBody)
+                if args.Length < macroParams.Length then 
+                    warning(Error(FSComp.SR.stateMachineMacroUnderapplied(), m))
+                    None
+                else
+                    let nowArgs, laterArgs = List.splitAt macroParams.Length args
+                    let expandedExpr = MakeApplicationAndBetaReduce g (macroVal2, (tyOfExpr g macroVal2), [], nowArgs, m)
+                    TryApplyMacroDef env expandedExpr laterArgs
 
         | NewDelegateExpr g (macroParamsCurried, macroBody, _) -> 
             let m = expr.Range
             let macroParams = List.concat macroParamsCurried
             let macroVal2 = mkLambdas m [] macroParams (macroBody, tyOfExpr g macroBody)
             if args.Length < macroParams.Length then 
-                error(Error(FSComp.SR.stateMachineMacroUnderapplied(), m))
-            let nowArgs, laterArgs = List.splitAt macroParams.Length args
-            let expandedExpr = MakeApplicationAndBetaReduce g (macroVal2, (tyOfExpr g macroVal2), [], nowArgs, m)
-            TryApplyMacroDef env expandedExpr laterArgs
+                warning(Error(FSComp.SR.stateMachineMacroUnderapplied(), m))
+                None
+            else
+                let nowArgs, laterArgs = List.splitAt macroParams.Length args
+                let expandedExpr = MakeApplicationAndBetaReduce g (macroVal2, (tyOfExpr g macroVal2), [], nowArgs, m)
+                TryApplyMacroDef env expandedExpr laterArgs
 
         | Expr.Let (bind, bodyExpr, m, _) -> 
             match TryApplyMacroDef env bodyExpr args with 
@@ -291,8 +289,8 @@ let ConvertStateMachineExprToObject g overallExpr =
                 match macroDef with 
                 | Expr.Val _ -> Some (remake macroDef)
                 | _ -> 
-                    error(Error(FSComp.SR.stateMachineMacroInvalidExpansion(), expr.Range))
-                    //error(InternalError(sprintf "invalid macro expansion %A = %A" expr macroDef, expr.Range))
+                    warning(Error(FSComp.SR.stateMachineMacroInvalidExpansion(), expr.Range))
+                    None
 
         // __expand_code.Invoke x --> let arg = x in [__expand_code][arg/x]
         | Expr.App ((Expr.Val (invokeRef, _, _) as iref), a, b, (f :: args2), m) 
@@ -408,7 +406,7 @@ let ConvertStateMachineExprToObject g overallExpr =
             mkCompGenSequential m table (mkLabelled m initLabel expr)
 
     /// Detect constructs allowed in state machines
-    let rec ConvertStateMachineCode env (pcValInfo: ((Val * Expr) * Expr) option) expr = 
+    let rec ConvertStateMachineCode env (pcValInfo: ((Val * Expr) * Expr) option) expr : StateMachineConversionFirstPhaseResult option = 
         if sm_verbose then 
             printfn "---------ConvertStateMachineCode-------------------"
             printfn "%s" (DebugPrint.showExpr g expr)
@@ -430,22 +428,26 @@ let ConvertStateMachineExprToObject g overallExpr =
                 let envSome = { env with Macros = env.Macros.Add someVar (mkInt g someVar.Range reenterPC) }
                 let resNone = ConvertStateMachineCode env pcValInfo noneBranchExpr
                 let resSome = ConvertStateMachineCode envSome pcValInfo someBranchExpr
-                let asyncVars = unionFreeVars (freeInExpr CollectLocals resNone.phase1) resSome.asyncVars 
-                let m = someBranchExpr.Range
-                let recreate reenterLabOpt e1 e2 = 
-                    let lab = (match reenterLabOpt with Some l -> l | _ -> IL.generateCodeLabel())
-                    mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No  m (tyOfExpr g noneBranchExpr) (mkFalse g m) (mkLabelled m lab e1) e2
 
-                { phase1 = recreate None resNone.phase1 resSome.phase1
-                  phase2 = (fun ctxt ->
-                    let generate2 = resSome.phase2 ctxt
-                    let generate1 = resNone.phase2 ctxt
-                    let generate = recreate (Some ctxt.[reenterPC]) generate1 generate2
-                    generate)
-                  entryPoints= resSome.entryPoints @ [reenterPC] @ resNone.entryPoints
-                  stateVars = resSome.stateVars @ resNone.stateVars 
-                  thisVars = resSome.thisVars @ resNone.thisVars
-                  asyncVars = asyncVars }
+                match resNone, resSome with 
+                | Some resNone, Some resSome ->
+                    let asyncVars = unionFreeVars (freeInExpr CollectLocals resNone.phase1) resSome.asyncVars 
+                    let m = someBranchExpr.Range
+                    let recreate reenterLabOpt e1 e2 = 
+                        let lab = (match reenterLabOpt with Some l -> l | _ -> IL.generateCodeLabel())
+                        mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No  m (tyOfExpr g noneBranchExpr) (mkFalse g m) (mkLabelled m lab e1) e2
+                    { phase1 = recreate None resNone.phase1 resSome.phase1
+                      phase2 = (fun ctxt ->
+                        let generate2 = resSome.phase2 ctxt
+                        let generate1 = resNone.phase2 ctxt
+                        let generate = recreate (Some ctxt.[reenterPC]) generate1 generate2
+                        generate)
+                      entryPoints= resSome.entryPoints @ [reenterPC] @ resNone.entryPoints
+                      stateVars = resSome.stateVars @ resNone.stateVars 
+                      thisVars = resSome.thisVars @ resNone.thisVars
+                      asyncVars = asyncVars }
+                    |> Some
+                | _ -> None
 
             | ResumeAtExpr g pcExpr ->
                 if sm_verbose then printfn "ResumeAtExpr" 
@@ -465,8 +467,10 @@ let ConvertStateMachineExprToObject g overallExpr =
                       stateVars = []
                       thisVars = []
                       asyncVars = emptyFreeVars }
+                    |> Some
                 | _ -> 
-                    error(Error(FSComp.SR.stateMachineResumeAtTargetNotStatic(), pcExpr.Range))
+                    warning(Error(FSComp.SR.stateMachineResumeAtTargetNotStatic(), pcExpr.Range))
+                    None
 
             // The expanded code for state machines may use sequential binding and sequential execution.
             //
@@ -481,24 +485,28 @@ let ConvertStateMachineExprToObject g overallExpr =
                 // printfn "found sequential"
                 let res1 = ConvertStateMachineCode env pcValInfo e1
                 let res2 = ConvertStateMachineCode env pcValInfo e2
-                let asyncVars =
-                    if res1.entryPoints.IsEmpty then
-                        // res1 is synchronous
-                        res2.asyncVars
-                    else
-                        // res1 is not synchronous. All of 'e2' is needed after resuming at any of the labels
-                        unionFreeVars res1.asyncVars (freeInExpr CollectLocals res2.phase1)
+                match res1, res2 with 
+                | Some res1, Some res2 ->
+                    let asyncVars =
+                        if res1.entryPoints.IsEmpty then
+                            // res1 is synchronous
+                            res2.asyncVars
+                        else
+                            // res1 is not synchronous. All of 'e2' is needed after resuming at any of the labels
+                            unionFreeVars res1.asyncVars (freeInExpr CollectLocals res2.phase1)
 
-                { phase1 = recreate res1.phase1 res2.phase1
-                  phase2 = (fun ctxt ->
-                    let generate1 = res1.phase2 ctxt
-                    let generate2 = res2.phase2 ctxt
-                    let generate = recreate generate1 generate2
-                    generate)
-                  entryPoints= res1.entryPoints @ res2.entryPoints
-                  stateVars = res1.stateVars @ res2.stateVars
-                  thisVars = res1.thisVars @ res2.thisVars
-                  asyncVars = asyncVars }
+                    { phase1 = recreate res1.phase1 res2.phase1
+                      phase2 = (fun ctxt ->
+                        let generate1 = res1.phase2 ctxt
+                        let generate2 = res2.phase2 ctxt
+                        let generate = recreate generate1 generate2
+                        generate)
+                      entryPoints= res1.entryPoints @ res2.entryPoints
+                      stateVars = res1.stateVars @ res2.stateVars
+                      thisVars = res1.thisVars @ res2.thisVars
+                      asyncVars = asyncVars }
+                    |> Some
+                | _ -> None
 
             // The expanded code for state machines may use while loops...
             | WhileExpr (sp1, sp2, guardExpr, bodyExpr, m) ->
@@ -506,25 +514,29 @@ let ConvertStateMachineExprToObject g overallExpr =
 
                 let resg = ConvertStateMachineCode env pcValInfo guardExpr
                 let resb = ConvertStateMachineCode env pcValInfo bodyExpr
-                let eps = resg.entryPoints @ resb.entryPoints
-                // All free variables get captured if there are any entrypoints at all
-                let asyncVars = if eps.IsEmpty then emptyFreeVars else unionFreeVars (freeInExpr CollectLocals resg.phase1) (freeInExpr CollectLocals resb.phase1)
-                { phase1 = mkWhile g (sp1, sp2, resg.phase1, resb.phase1, m)
-                  phase2 = (fun ctxt -> 
-                        let egR = resg.phase2 ctxt
-                        let ebR = resb.phase2 ctxt
+                match resg, resb with 
+                | Some resg, Some resb ->
+                    let eps = resg.entryPoints @ resb.entryPoints
+                    // All free variables get captured if there are any entrypoints at all
+                    let asyncVars = if eps.IsEmpty then emptyFreeVars else unionFreeVars (freeInExpr CollectLocals resg.phase1) (freeInExpr CollectLocals resb.phase1)
+                    { phase1 = mkWhile g (sp1, sp2, resg.phase1, resb.phase1, m)
+                      phase2 = (fun ctxt -> 
+                            let egR = resg.phase2 ctxt
+                            let ebR = resb.phase2 ctxt
                         
-                        // Clear the pcVal on backward branch, causing jump tables at entry to nested try-blocks to not activate
-                        let ebR2 = 
-                            match pcValInfo with
-                            | None -> ebR
-                            | Some ((pcVal, _), _) -> mkCompGenSequential m ebR (mkValSet m (mkLocalValRef pcVal) (mkZero g m))
+                            // Clear the pcVal on backward branch, causing jump tables at entry to nested try-blocks to not activate
+                            let ebR2 = 
+                                match pcValInfo with
+                                | None -> ebR
+                                | Some ((pcVal, _), _) -> mkCompGenSequential m ebR (mkValSet m (mkLocalValRef pcVal) (mkZero g m))
 
-                        mkWhile g (sp1, sp2, egR, ebR2, m))
-                  entryPoints= eps
-                  stateVars = resg.stateVars @ resb.stateVars 
-                  thisVars = resg.thisVars @ resb.thisVars
-                  asyncVars = asyncVars }
+                            mkWhile g (sp1, sp2, egR, ebR2, m))
+                      entryPoints= eps
+                      stateVars = resg.stateVars @ resb.stateVars 
+                      thisVars = resg.thisVars @ resb.thisVars
+                      asyncVars = asyncVars }
+                    |> Some
+                | _ -> None
 
             // The expanded code for state machines should not normally contain try/finally as any resumptions will repeatedly execute the finally.
             // Hoever we include the synchronous version of the construct here for completeness.
@@ -532,18 +544,24 @@ let ConvertStateMachineExprToObject g overallExpr =
                 if sm_verbose then printfn "TryFinallyExpr" 
                 let res1 = ConvertStateMachineCode env pcValInfo e1
                 let res2 = ConvertStateMachineCode env pcValInfo e2
-                let eps = res1.entryPoints @ res2.entryPoints
-                if eps.Length > 0 then 
-                    error(Error(FSComp.SR.stateMachineResumptionInTryFinally(), expr.Range))
-                { phase1 = mkTryFinally g (res1.phase1, res2.phase1, m, ty, sp1, sp2)
-                  phase2 = (fun ctxt -> 
-                        let egR = res1.phase2 ctxt
-                        let ebR = res2.phase2 ctxt
-                        mkTryFinally g (egR, ebR, m, ty, sp1, sp2))
-                  entryPoints= eps
-                  stateVars = res1.stateVars @ res2.stateVars 
-                  thisVars = res1.thisVars @ res2.thisVars
-                  asyncVars = emptyFreeVars (* eps is empty, hence synchronous, no capture *)  }
+                match res1, res2 with 
+                | Some res1, Some res2 ->
+                    let eps = res1.entryPoints @ res2.entryPoints
+                    if eps.Length > 0 then 
+                        warning(Error(FSComp.SR.stateMachineResumptionInTryFinally(), expr.Range))
+                        None
+                    else
+                        { phase1 = mkTryFinally g (res1.phase1, res2.phase1, m, ty, sp1, sp2)
+                          phase2 = (fun ctxt -> 
+                                let egR = res1.phase2 ctxt
+                                let ebR = res2.phase2 ctxt
+                                mkTryFinally g (egR, ebR, m, ty, sp1, sp2))
+                          entryPoints= eps
+                          stateVars = res1.stateVars @ res2.stateVars 
+                          thisVars = res1.thisVars @ res2.thisVars
+                          asyncVars = emptyFreeVars (* eps is empty, hence synchronous, no capture *)  }
+                        |> Some
+                | _ -> None
 
             // The expanded code for state machines may use for loops....
             | ForLoopExpr (sp1, sp2, e1, e2, v, e3, m) ->
@@ -551,26 +569,32 @@ let ConvertStateMachineExprToObject g overallExpr =
                 let res1 = ConvertStateMachineCode env pcValInfo e1
                 let res2 = ConvertStateMachineCode env pcValInfo e2
                 let res3 = ConvertStateMachineCode env pcValInfo e3
-                let eps = res1.entryPoints @ res2.entryPoints @ res3.entryPoints
-                if eps.Length > 0 then 
-                    error(Error(FSComp.SR.stateMachineResumptionForLoop(), expr.Range))
-                { phase1 = mkFor g (sp1, v, res1.phase1, sp2, res2.phase1, res3.phase1, m)
-                  phase2 = (fun ctxt -> 
-                        let e1R = res1.phase2 ctxt
-                        let e2R = res2.phase2 ctxt
-                        let e3R = res3.phase2 ctxt
+                match res1, res2, res3 with 
+                | Some res1, Some res2, Some res3 ->
+                    let eps = res1.entryPoints @ res2.entryPoints @ res3.entryPoints
+                    if eps.Length > 0 then 
+                        warning(Error(FSComp.SR.stateMachineResumptionForLoop(), expr.Range))
+                        None
+                    else
+                        { phase1 = mkFor g (sp1, v, res1.phase1, sp2, res2.phase1, res3.phase1, m)
+                          phase2 = (fun ctxt -> 
+                                let e1R = res1.phase2 ctxt
+                                let e2R = res2.phase2 ctxt
+                                let e3R = res3.phase2 ctxt
 
-                        // Clear the pcVal on backward branch, causing jump tables at entry to nested try-blocks to not activate
-                        let e3R2 = 
-                            match pcValInfo with
-                            | None -> e3R
-                            | Some ((pcVal, _), _) -> mkCompGenSequential m e3R (mkValSet m (mkLocalValRef pcVal) (mkZero g m))
+                                // Clear the pcVal on backward branch, causing jump tables at entry to nested try-blocks to not activate
+                                let e3R2 = 
+                                    match pcValInfo with
+                                    | None -> e3R
+                                    | Some ((pcVal, _), _) -> mkCompGenSequential m e3R (mkValSet m (mkLocalValRef pcVal) (mkZero g m))
 
-                        mkFor g (sp1, v, e1R, sp2, e2R, e3R2, m))
-                  entryPoints= eps
-                  stateVars = res1.stateVars @ res2.stateVars @ res3.stateVars
-                  thisVars = res1.thisVars @ res2.thisVars @ res3.thisVars
-                  asyncVars = emptyFreeVars (* eps is empty, hence synchronous, no capture *) }
+                                mkFor g (sp1, v, e1R, sp2, e2R, e3R2, m))
+                          entryPoints= eps
+                          stateVars = res1.stateVars @ res2.stateVars @ res3.stateVars
+                          thisVars = res1.thisVars @ res2.thisVars @ res3.thisVars
+                          asyncVars = emptyFreeVars (* eps is empty, hence synchronous, no capture *) }
+                        |> Some
+                | _ -> None
 
             // The expanded code for state machines may use try/with....
             | TryWithExpr (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m) ->
@@ -578,41 +602,50 @@ let ConvertStateMachineExprToObject g overallExpr =
                 let resBody = ConvertStateMachineCode env pcValInfo bodyExpr
                 let resFilter = ConvertStateMachineCode env pcValInfo filterExpr
                 let resHandler = ConvertStateMachineCode env pcValInfo handlerExpr
-                { phase1 = mkTryWith g (resBody.phase1, filterVar, resFilter.phase1, handlerVar, resHandler.phase1, m, resTy, spTry, spWith)
-                  phase2 = (fun ctxt -> 
-                    // We can't jump into a try/catch block.  So we jump to the start of the try/catch and add a new jump table
-                    let pcsAndLabs = ctxt |> Map.toList  
-                    let innerPcs = resBody.entryPoints 
-                    if innerPcs.IsEmpty then 
-                        let vBodyR = resBody.phase2 ctxt
-                        let filterExprR = resFilter.phase2 ctxt
-                        let handlerExprR = resHandler.phase2 ctxt
-                        mkTryWith g (vBodyR, filterVar, filterExprR, handlerVar, handlerExprR, m, resTy, spTry, spWith)
+                match resBody, resFilter, resHandler with 
+                | Some resBody, Some resFilter, Some resHandler ->
+                    let epsNope = resFilter.entryPoints @ resHandler.entryPoints 
+                    if epsNope.Length > 0 then 
+                        warning(Error(FSComp.SR.stateMachineResumptionInTryWithHandlerOrFilter(), expr.Range))
+                        None
                     else
-                        let innerPcSet = innerPcs |> Set.ofList
-                        let outerLabsForInnerPcs = pcsAndLabs |> List.filter (fun (pc, _outerLab) -> innerPcSet.Contains pc) |> List.map snd
-                        // generate the inner labels
-                        let pcsAndInnerLabs = pcsAndLabs |> List.map (fun (pc, l) -> (pc, if innerPcSet.Contains pc then IL.generateCodeLabel() else l))
-                        let innerPc2Lab = Map.ofList pcsAndInnerLabs
+                    { phase1 = mkTryWith g (resBody.phase1, filterVar, resFilter.phase1, handlerVar, resHandler.phase1, m, resTy, spTry, spWith)
+                      phase2 = (fun ctxt -> 
+                        // We can't jump into a try/catch block.  So we jump to the start of the try/catch and add a new jump table
+                        let pcsAndLabs = ctxt |> Map.toList  
+                        let innerPcs = resBody.entryPoints 
+                        if innerPcs.IsEmpty then 
+                            let vBodyR = resBody.phase2 ctxt
+                            let filterExprR = resFilter.phase2 ctxt
+                            let handlerExprR = resHandler.phase2 ctxt
+                            mkTryWith g (vBodyR, filterVar, filterExprR, handlerVar, handlerExprR, m, resTy, spTry, spWith)
+                        else
+                            let innerPcSet = innerPcs |> Set.ofList
+                            let outerLabsForInnerPcs = pcsAndLabs |> List.filter (fun (pc, _outerLab) -> innerPcSet.Contains pc) |> List.map snd
+                            // generate the inner labels
+                            let pcsAndInnerLabs = pcsAndLabs |> List.map (fun (pc, l) -> (pc, if innerPcSet.Contains pc then IL.generateCodeLabel() else l))
+                            let innerPc2Lab = Map.ofList pcsAndInnerLabs
 
-                        let vBodyR = resBody.phase2 innerPc2Lab
-                        let filterExprR = resFilter.phase2 ctxt
-                        let handlerExprR = resHandler.phase2 ctxt
+                            let vBodyR = resBody.phase2 innerPc2Lab
+                            let filterExprR = resFilter.phase2 ctxt
+                            let handlerExprR = resHandler.phase2 ctxt
 
-                        // Add a jump table at the entry to the try
-                        let vBodyRWithJumpTable = 
-                            match pcValInfo with 
-                            | None -> vBodyR
-                            | Some ((_, pcValExpr), _) -> addPcJumpTable m innerPcs innerPc2Lab pcValExpr vBodyR
-                        let coreExpr = mkTryWith g (vBodyRWithJumpTable, filterVar, filterExprR, handlerVar, handlerExprR, m, resTy, spTry, spWith)
-                        // Place all the outer labels just before the try
-                        let labelledExpr = (coreExpr, outerLabsForInnerPcs) ||> List.fold (fun e l -> mkLabelled m l e)                
+                            // Add a jump table at the entry to the try
+                            let vBodyRWithJumpTable = 
+                                match pcValInfo with 
+                                | None -> vBodyR
+                                | Some ((_, pcValExpr), _) -> addPcJumpTable m innerPcs innerPc2Lab pcValExpr vBodyR
+                            let coreExpr = mkTryWith g (vBodyRWithJumpTable, filterVar, filterExprR, handlerVar, handlerExprR, m, resTy, spTry, spWith)
+                            // Place all the outer labels just before the try
+                            let labelledExpr = (coreExpr, outerLabsForInnerPcs) ||> List.fold (fun e l -> mkLabelled m l e)                
 
-                        labelledExpr)
-                  entryPoints= resBody.entryPoints @ resFilter.entryPoints @ resHandler.entryPoints 
-                  stateVars = resBody.stateVars @ resFilter.stateVars @ resHandler.stateVars
-                  thisVars = resBody.thisVars @ resFilter.thisVars @ resHandler.thisVars
-                  asyncVars = unionFreeVars resBody.asyncVars (unionFreeVars(freeInExpr CollectLocals resFilter.phase1) (freeInExpr CollectLocals resHandler.phase1)) }
+                            labelledExpr)
+                      entryPoints= resBody.entryPoints @ resFilter.entryPoints @ resHandler.entryPoints 
+                      stateVars = resBody.stateVars @ resFilter.stateVars @ resHandler.stateVars
+                      thisVars = resBody.thisVars @ resFilter.thisVars @ resHandler.thisVars
+                      asyncVars = unionFreeVars resBody.asyncVars (unionFreeVars(freeInExpr CollectLocals resFilter.phase1) (freeInExpr CollectLocals resHandler.phase1)) }
+                    |> Some
+                | _ -> None
 
             // control-flow match
             | Expr.Match (spBind, exprm, dtree, targets, m, ty) ->
@@ -622,36 +655,41 @@ let ConvertStateMachineExprToObject g overallExpr =
                 let tglArray = 
                     targets |> Array.map (fun (TTarget(_vs, targetExpr, _spTarget, _)) -> 
                         ConvertStateMachineCode env pcValInfo targetExpr)
-                let tgl = Array.toList tglArray
-                let entryPoints = tgl |> List.collect (fun res -> res.entryPoints)
-                let asyncVars =
-                    (emptyFreeVars, Array.zip targets tglArray)
-                    ||> Array.fold (fun fvs ((TTarget(_vs, _, _spTarget, _)), res) ->
-                        if res.entryPoints.IsEmpty then fvs else unionFreeVars fvs res.asyncVars)
-                let stateVars = 
-                    (targets, tglArray) ||> Array.zip |> Array.toList |> List.collect (fun (TTarget(vs, _, _, _), res) -> 
-                        let stateVars = vs |> List.filter (fun v -> res.asyncVars.FreeLocals.Contains(v)) |> List.map mkLocalValRef 
-                        stateVars @ res.stateVars)
-                let thisVars = tglArray |> Array.toList |> List.collect (fun res -> res.thisVars) 
-                { phase1 = 
-                    let gtgs =
-                        (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, spTarget, _)) res -> 
-                            let flags = vs |> List.map (fun v -> res.asyncVars.FreeLocals.Contains(v)) 
-                            TTarget(vs, res.phase1, spTarget, Some flags))
-                    primMkMatch (spBind, exprm, dtreeR, gtgs, m, ty)
+                match (tglArray |> Array.forall (fun tgR -> tgR.IsSome )) with
+                | true ->
+                    let tglArray = tglArray |> Array.map (fun x -> x.Value)
+                    let tgl = tglArray |> Array.toList 
+                    let entryPoints = tgl |> List.collect (fun res -> res.entryPoints)
+                    let asyncVars =
+                        (emptyFreeVars, Array.zip targets tglArray)
+                        ||> Array.fold (fun fvs ((TTarget(_vs, _, _spTarget, _)), res) ->
+                            if res.entryPoints.IsEmpty then fvs else unionFreeVars fvs res.asyncVars)
+                    let stateVars = 
+                        (targets, tglArray) ||> Array.zip |> Array.toList |> List.collect (fun (TTarget(vs, _, _, _), res) -> 
+                            let stateVars = vs |> List.filter (fun v -> res.asyncVars.FreeLocals.Contains(v)) |> List.map mkLocalValRef 
+                            stateVars @ res.stateVars)
+                    let thisVars = tglArray |> Array.toList |> List.collect (fun res -> res.thisVars) 
+                    { phase1 = 
+                        let gtgs =
+                            (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, spTarget, _)) res -> 
+                                let flags = vs |> List.map (fun v -> res.asyncVars.FreeLocals.Contains(v)) 
+                                TTarget(vs, res.phase1, spTarget, Some flags))
+                        primMkMatch (spBind, exprm, dtreeR, gtgs, m, ty)
 
-                  phase2 = (fun ctxt ->
-                                let gtgs =
-                                    (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, spTarget, _)) res ->
-                                        let flags = vs |> List.map (fun v -> res.asyncVars.FreeLocals.Contains(v)) 
-                                        TTarget(vs, res.phase2 ctxt, spTarget, Some flags))
-                                let generate = primMkMatch (spBind, exprm, dtreeR, gtgs, m, ty)
-                                generate)
+                      phase2 = (fun ctxt ->
+                                    let gtgs =
+                                        (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, spTarget, _)) res ->
+                                            let flags = vs |> List.map (fun v -> res.asyncVars.FreeLocals.Contains(v)) 
+                                            TTarget(vs, res.phase2 ctxt, spTarget, Some flags))
+                                    let generate = primMkMatch (spBind, exprm, dtreeR, gtgs, m, ty)
+                                    generate)
 
-                  entryPoints = entryPoints
-                  stateVars = stateVars
-                  asyncVars = asyncVars 
-                  thisVars = thisVars }
+                      entryPoints = entryPoints
+                      stateVars = stateVars
+                      asyncVars = asyncVars 
+                      thisVars = thisVars }
+                    |> Some
+                | _ -> None
 
             // Non-control-flow let binding can appear as part of state machine. The body is considered state-machine code,
             // the expression being bound is not.
@@ -667,32 +705,42 @@ let ConvertStateMachineExprToObject g overallExpr =
 
                 let resBody = ConvertStateMachineCode env pcValInfo bodyExpr
 
-                // The isByrefTy check is an adhoc check to avoid capturing the 'this' parameter of a struct state machine 
-                // You might think we could do this:
-                //
-                //    let sm = &this
-                //    ... await point ...
-                //    ... sm ....
-                // However the 'sm' won't be set on that path.
-                if bind.Var.IsCompiledAsTopLevel || not (resBody.asyncVars.FreeLocals.Contains(bind.Var)) || bind.Var.LogicalName.StartsWith prefixForVariablesThatMayNotBeEliminated then
-                    if sm_verbose then printfn "LetExpr (non-control-flow, rewrite rhs, RepresentBindingAsTopLevelOrLocal)" 
-                    RepresentBindingAsTopLevelOrLocal bind resBody m
-                elif isByrefTy g bind.Var.Type then
-                    match env.TemplateStructTy with 
-                    | None -> error(Error(FSComp.SR.stateMachineResumptionByrefInStructMachine(), m))
-                    | Some ty -> 
-                        if typeEquiv g ty (destByrefTy g bind.Var.Type) then
-                            RepresentBindingAsThis bind resBody m
-                        else
-                            error(Error(FSComp.SR.stateMachineResumptionByrefInStructMachine(), m))
-                else
-                    if sm_verbose then printfn "LetExpr (non-control-flow, rewrite rhs, RepresentBindingAsStateVar)" 
-                    // printfn "found state variable %s" bind.Var.DisplayName
-                    RepresentBindingAsStateVar bind resBody m
+                match resBody with
+                | Some resBody ->
+                    // The isByrefTy check is an adhoc check to avoid capturing the 'this' parameter of a struct state machine 
+                    // You might think we could do this:
+                    //
+                    //    let sm = &this
+                    //    ... await point ...
+                    //    ... sm ....
+                    // However the 'sm' won't be set on that path.
+                    if bind.Var.IsCompiledAsTopLevel || not (resBody.asyncVars.FreeLocals.Contains(bind.Var)) || bind.Var.LogicalName.StartsWith prefixForVariablesThatMayNotBeEliminated then
+                        if sm_verbose then printfn "LetExpr (non-control-flow, rewrite rhs, RepresentBindingAsTopLevelOrLocal)" 
+                        RepresentBindingAsTopLevelOrLocal bind resBody m
+                        |> Some
+                    elif isByrefTy g bind.Var.Type then
+                        match env.TemplateStructTy with 
+                        | None -> 
+                            warning(Error(FSComp.SR.stateMachineResumptionByrefInStructMachine(), m))
+                            None
+                        | Some ty -> 
+                            if typeEquiv g ty (destByrefTy g bind.Var.Type) then
+                                RepresentBindingAsThis bind resBody m
+                                |> Some
+                            else
+                                warning(Error(FSComp.SR.stateMachineResumptionByrefInStructMachine(), m))
+                                None
+                    else
+                        if sm_verbose then printfn "LetExpr (non-control-flow, rewrite rhs, RepresentBindingAsStateVar)" 
+                        // printfn "found state variable %s" bind.Var.DisplayName
+                        RepresentBindingAsStateVar bind resBody m
+                        |> Some
+                | _ -> None
 
             // LetRec bindings may not appear as part of state machine.
             | Expr.LetRec _ -> 
-                  error(Error(FSComp.SR.stateMachineResumptionByrefInStructMachine(), expr.Range))
+                  warning(Error(FSComp.SR.stateMachineLetRec(), expr.Range))
+                  None
 
             // Arbitrary expression
             | _ -> 
@@ -703,14 +751,19 @@ let ConvertStateMachineExprToObject g overallExpr =
                   stateVars = []
                   thisVars = []
                   asyncVars = emptyFreeVars }
+                |> Some
 
         if sm_verbose then 
-            printfn "-------------------"
-            printfn "Phase 1 Done for %s" (DebugPrint.showExpr g res.phase1)
-            printfn "Phase 1 Done, asyncVars = %A" (res.asyncVars.FreeLocals |> Zset.elements |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
-            printfn "Phase 1 Done, stateVars = %A" (res.stateVars |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
-            printfn "Phase 1 Done, thisVars = %A" (res.thisVars |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
-            printfn "-------------------"
+            match res with 
+            | Some res -> 
+                printfn "-------------------"
+                printfn "Phase 1 Done for %s" (DebugPrint.showExpr g res.phase1)
+                printfn "Phase 1 Done, asyncVars = %A" (res.asyncVars.FreeLocals |> Zset.elements |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
+                printfn "Phase 1 Done, stateVars = %A" (res.stateVars |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
+                printfn "Phase 1 Done, thisVars = %A" (res.thisVars |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
+                printfn "-------------------"
+            | None -> 
+                printfn "Phase 1 failed for %s" (DebugPrint.showExpr g expr)
         res
 
     // Detect a state machine and convert it
@@ -739,6 +792,9 @@ let ConvertStateMachineExprToObject g overallExpr =
     
             // Perform phase1 of the conversion
             let phase1 = ConvertStateMachineCode env pcValInfo codeExpr 
+            match phase1 with 
+            | None -> None
+            | Some phase1 ->
 
             // Work out the initial mapping of pcs to labels
             let pcs = [ 1 .. pcCount ]

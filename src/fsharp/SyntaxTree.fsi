@@ -1639,6 +1639,8 @@ type SynArgInfo =
 
     member Ident: Ident option
 
+    member Attributes: SynAttributes
+
 /// Represents the names and other metadata for the type parameters for a member or function
 [<NoEquality; NoComparison>]
 type SynValTyparDecls =

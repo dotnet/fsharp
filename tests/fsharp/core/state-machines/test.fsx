@@ -316,7 +316,6 @@ module ResumableCode_ResumeAt1 =
 
 
 // Resumptions must use byrefs taking the 'this' pointer of the struct state machine. Nothing else is allowed.
-// TODO: negative check for code that violates this.
 module ResumableCode_Struct =
     let mutable res = 0
     let makeStateMachine inputValue = 
@@ -906,6 +905,12 @@ module ResumableCode_ResumeAtIntoConditional =
             failwith "should have been compiled to resumable code, no interpretation available"
     check "vewowevewoi" (makeStateMachine 13) 33
 
+
+module ResumableCode_Explicit1 =
+    let inline f1 () : [<ResumableCode>] (unit -> int) =
+        fun () -> 
+             printfn "hello"
+             1
 
 // The main tests for tasks are in tests\FSharp.Core.UnitTests\FSharp.Core\Microsoft.FSharp.Control\Tasks.fs
 module TaskCompilationSmokeTests =

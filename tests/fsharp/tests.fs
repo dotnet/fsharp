@@ -386,6 +386,9 @@ module CoreTests =
         testOkFile.CheckExists()
 
     [<Test>]
+    let ``state-machines neg01`` () = singleNegTest (testConfig "core/state-machines") "neg01"
+
+    [<Test>]
     let ``lots-of-conditionals``() =
         let cfg = testConfig "core/large/conditionals"
         use testOkFile = fileguard cfg "test.ok"

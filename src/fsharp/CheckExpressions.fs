@@ -1655,6 +1655,9 @@ let CombineSyntacticAndInferredArities g declKind rhsExpr prelimScheme =
     // Don't use any expression information for members, where syntax dictates the arity completely
     | _ when memberInfoOpt.IsSome -> 
         partialValReprInfoOpt
+    // Don't use any expression information for 'let' bindings where return attributes are present
+    | _ when retAttribs.Length > 0 -> 
+        partialValReprInfoOpt
     | Some partialValReprInfoFromSyntax, true -> 
         let (PartialValReprInfo(curriedArgInfosFromSyntax, retInfoFromSyntax)) = partialValReprInfoFromSyntax
         let partialArityInfo = 

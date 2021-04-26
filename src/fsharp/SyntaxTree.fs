@@ -1434,6 +1434,8 @@ type SynArgInfo =
 
     member x.Ident : Ident option = let (SynArgInfo(_,_,id)) = x in id
 
+    member x.Attributes : SynAttributes = let (SynArgInfo(attrs,_,_)) = x in attrs
+
 [<NoEquality; NoComparison>]
 type SynValTyparDecls =
 

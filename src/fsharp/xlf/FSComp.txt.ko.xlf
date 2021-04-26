@@ -348,13 +348,13 @@
         <note />
       </trans-unit>
       <trans-unit id="stateMachineMacroTypars">
-        <source>Invalid resumable code - a macro in a state machine has type parameters</source>
-        <target state="new">Invalid resumable code - a macro in a state machine has type parameters</target>
+        <source>Invalid resumable code. A macro in a state machine has type parameters</source>
+        <target state="new">Invalid resumable code. A macro in a state machine has type parameters</target>
         <note />
       </trans-unit>
       <trans-unit id="stateMachineMacroUnderapplied">
-        <source>Invalid resumable code - a macro in a state machine is under-applied</source>
-        <target state="new">Invalid resumable code - a macro in a state machine is under-applied</target>
+        <source>Invalid resumable code. A macro in a state machine is under-applied</source>
+        <target state="new">Invalid resumable code. A macro in a state machine is under-applied</target>
         <note />
       </trans-unit>
       <trans-unit id="stateMachineNotSupported">
@@ -363,28 +363,33 @@
         <note />
       </trans-unit>
       <trans-unit id="stateMachineResumeAtTargetNotStatic">
-        <source>Invalid resumable code - a target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
-        <target state="new">Invalid resumable code - a target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</target>
+        <source>Invalid resumable code. A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
+        <target state="new">Invalid resumable code. A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</target>
         <note />
       </trans-unit>
       <trans-unit id="stateMachineResumptionByrefInStructMachine">
-        <source>Invalid resumable code - a byref may only be used in resumptions if it is precisely the 'this' pointer of the enclosing struct state machine</source>
-        <target state="new">Invalid resumable code - a byref may only be used in resumptions if it is precisely the 'this' pointer of the enclosing struct state machine</target>
+        <source>Invalid resumable code. A byref may only be used in resumptions if it is precisely the 'this' pointer of the enclosing struct state machine</source>
+        <target state="new">Invalid resumable code. A byref may only be used in resumptions if it is precisely the 'this' pointer of the enclosing struct state machine</target>
         <note />
       </trans-unit>
       <trans-unit id="stateMachineResumptionForLoop">
-        <source>Invalid resumable code - a fast integer for loops may not contain resumption points</source>
-        <target state="new">Invalid resumable code - a fast integer for loops may not contain resumption points</target>
+        <source>Invalid resumable code. A fast integer for loops may not contain resumption points</source>
+        <target state="new">Invalid resumable code. A fast integer for loops may not contain resumption points</target>
         <note />
       </trans-unit>
       <trans-unit id="stateMachineResumptionInTryFinally">
-        <source>Invalid resumable code - a try/finally may not contain resumption points</source>
-        <target state="new">Invalid resumable code - a try/finally may not contain resumption points</target>
+        <source>Invalid resumable code. A try/finally may not contain resumption points</source>
+        <target state="new">Invalid resumable code. A try/finally may not contain resumption points</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="stateMachineResumptionInTryWithHandlerOrFilter">
+        <source>Invalid resumable code. The 'with' block of a try/with may not contain resumption points</source>
+        <target state="new">Invalid resumable code. The 'with' block of a try/with may not contain resumption points</target>
         <note />
       </trans-unit>
       <trans-unit id="structTemplateMustImplementOneInterface">
-        <source>A template struct type used with __structStateMachine must implement precisely one interface 'System.Runtime.CompilerServices.IAsyncStateMachine'. If necessary mark the struct type with [&lt;NoEquality; NoComparison&gt;].</source>
-        <target state="new">A template struct type used with __structStateMachine must implement precisely one interface 'System.Runtime.CompilerServices.IAsyncStateMachine'. If necessary mark the struct type with [&lt;NoEquality; NoComparison&gt;].</target>
+        <source>Invalid resumable code. A template struct type used with __structStateMachine must implement precisely one interface 'System.Runtime.CompilerServices.IAsyncStateMachine'. If necessary mark the struct type with [&lt;NoEquality; NoComparison&gt;].</source>
+        <target state="new">Invalid resumable code. A template struct type used with __structStateMachine must implement precisely one interface 'System.Runtime.CompilerServices.IAsyncStateMachine'. If necessary mark the struct type with [&lt;NoEquality; NoComparison&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
