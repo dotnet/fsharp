@@ -312,7 +312,7 @@ module InterfaceFileWriter =
         /// Use a UTF-8 Encoding with no Byte Order Mark
         let os =
             if tcConfig.printSignatureFile="" then Console.Out
-            else (File.CreateText tcConfig.printSignatureFile :> TextWriter)
+            else (FileSystem.OpenFileForWriteShim(tcConfig.printSignatureFile, FileMode.OpenOrCreate).GetWriter())
 
         if tcConfig.printSignatureFile <> "" && not (List.exists (FileSystemUtils.checkSuffix tcConfig.printSignatureFile) FSharpLightSyntaxFileSuffixes) then
             fprintfn os "#light"
@@ -338,8 +338,8 @@ let CopyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
     let fsharpCoreAssemblyName = GetFSharpCoreLibraryName() + ".dll"
     let fsharpCoreDestinationPath = Path.Combine(outDir, fsharpCoreAssemblyName)
     let copyFileIfDifferent src dest =
-        if not (File.Exists dest) || (File.GetCreationTimeUtc src <> File.GetCreationTimeUtc dest) then
-            File.Copy(src, dest, true)
+        if not (FileSystem.FileExistsShim dest) || (FileSystem.GetCreationTimeShim src <> FileSystem.GetCreationTimeShim dest) then
+            FileSystem.CopyShim(src, dest, true)
 
     match referencedDlls |> Seq.tryFind (fun dll -> String.Equals(Path.GetFileName(dll.Text), fsharpCoreAssemblyName, StringComparison.CurrentCultureIgnoreCase)) with
     | Some referencedFsharpCoreDll -> copyFileIfDifferent referencedFsharpCoreDll.Text fsharpCoreDestinationPath
@@ -348,7 +348,7 @@ let CopyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
             Assembly.GetExecutingAssembly().Location
         let compilerLocation = Path.GetDirectoryName executionLocation
         let compilerFsharpCoreDllPath = Path.Combine(compilerLocation, fsharpCoreAssemblyName)
-        if File.Exists compilerFsharpCoreDllPath then
+        if FileSystem.FileExistsShim compilerFsharpCoreDllPath then
             copyFileIfDifferent compilerFsharpCoreDllPath fsharpCoreDestinationPath
         else
             errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))

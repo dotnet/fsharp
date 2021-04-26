@@ -168,7 +168,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         b.WriteInt32 i
 
     let writeInt64 (i: int64) =
-        b.WriteInt64 i 
+        b.WriteInt64 i
 
     let writeString (str: string) =
         b.WriteUTF16 str
@@ -190,22 +190,22 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         match ilty with
         | ILType.TypeVar n -> writeString "!"; writeUInt16 n
         | ILType.Modified (_, _, ty2) -> writeILType ty2
-        | ILType.Array (ILArrayShape s, ty) -> 
+        | ILType.Array (ILArrayShape s, ty) ->
             writeILType ty
-            writeString "[" 
+            writeString "["
             writeInt32 (s.Length-1)
             writeString "]"
-        | ILType.Value tr 
-        | ILType.Boxed tr -> 
+        | ILType.Value tr
+        | ILType.Boxed tr ->
             tr.TypeRef.Enclosing
             |> List.iter (fun x ->
                 writeString x
                 writeChar '.')
             writeChar '.'
             writeString tr.TypeRef.Name
-        | ILType.Void -> 
+        | ILType.Void ->
             writeString "void"
-        | ILType.Ptr ty -> 
+        | ILType.Ptr ty ->
             writeString "ptr<"
             writeILType ty
             writeChar '>'
@@ -236,7 +236,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString ItemKeyTags.typeFunction
             writeType false d
             writeType false r
-        | TType_measure ms -> 
+        | TType_measure ms ->
             if isStandalone then
                 writeString ItemKeyTags.typeMeasure
                 writeMeasure isStandalone ms
@@ -251,10 +251,10 @@ and [<Sealed>] ItemKeyStoreBuilder() =
 
     and writeMeasure isStandalone (ms: Measure) =
         match ms with
-        | Measure.Var typar -> 
+        | Measure.Var typar ->
             writeString ItemKeyTags.typeMeasureVar
             writeTypar isStandalone typar
-        | Measure.Con tcref -> 
+        | Measure.Con tcref ->
             writeString ItemKeyTags.typeMeasureCon
             writeEntityRef tcref
         | _ ->
@@ -263,7 +263,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
     and writeTypar (isStandalone: bool) (typar: Typar) =
         match typar.Solution with
         | Some ty -> writeType isStandalone ty
-        | _ -> 
+        | _ ->
             if isStandalone then
                 writeInt64 typar.Stamp
 
@@ -304,11 +304,11 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             else
                 writeValRef vref
 
-        | Item.UnionCase(info, _) -> 
+        | Item.UnionCase(info, _) ->
             writeString ItemKeyTags.typeUnionCase
             writeEntityRef info.TyconRef
             writeString info.Name
-            
+
         | Item.ActivePatternResult(info, _, _, _) ->
             writeString ItemKeyTags.itemActivePattern
             info.ActiveTagsWithRanges
@@ -335,7 +335,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeEntityRef info.TyconRef
             writeString info.Name
             writeInt32 fieldIndex
-        
+
         | Item.AnonRecdField(info, tys, i, _) ->
             writeString ItemKeyTags.itemAnonymousRecordField
             writeString info.ILTypeRef.BasicQualifiedName
@@ -374,7 +374,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Item.UnqualifiedType [tcref] ->
             writeEntityRef tcref
 
-        | Item.MethodGroup(_, [info], _) 
+        | Item.MethodGroup(_, [info], _)
         | Item.CtorGroup(_, [info]) ->
             match info with
             | FSMeth(_, _, vref, _) ->
@@ -393,7 +393,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Item.ModuleOrNamespaces [x] ->
             writeString ItemKeyTags.itemModuleOrNamespace
             x.CompilationPath.DemangledPath
-            |> List.iter (fun x -> 
+            |> List.iter (fun x ->
                 writeString x
                 writeString ".")
             writeString x.LogicalName
@@ -418,16 +418,17 @@ and [<Sealed>] ItemKeyStoreBuilder() =
 
         fixup.WriteInt32(postCount - preCount)
 
-    member _.TryBuildAndReset() =
+    // TODO: Needs to use FileSystem APIs?
+    member _._TryBuildAndReset() =
         if b.Count > 0 then
             let length = int64 b.Count
-            let mmf = 
+            let mmf =
                 let mmf =
                     MemoryMappedFile.CreateNew(
-                        null, 
-                        length, 
-                        MemoryMappedFileAccess.ReadWrite, 
-                        MemoryMappedFileOptions.None, 
+                        null,
+                        length,
+                        MemoryMappedFileAccess.ReadWrite,
+                        MemoryMappedFileOptions.None,
                         HandleInheritability.None)
                 use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
                 b.WriteContentTo stream
@@ -435,7 +436,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
 
             b.Clear()
 
-            Some(new ItemKeyStore(mmf, length))       
+            Some(new ItemKeyStore(mmf, length))
         else
             b.Clear()
             None

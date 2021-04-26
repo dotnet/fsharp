@@ -188,8 +188,8 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
 
                     let bytes =
                         match chunk with
-                        | None -> FileSystem.OpenFileShim(fileName).ReadAllBytes()
-                        | Some(start, length) -> FileSystem.OpenFileShim(fileName).ReadBytes(start, length)
+                        | None -> FileSystem.OpenFileForReadShim(fileName).ReadAllBytes()
+                        | Some(start, length) -> FileSystem.OpenFileForReadShim(fileName).ReadBytes(start, length)
 
                     tg <- bytes
 
@@ -3888,16 +3888,14 @@ let createByteFileChunk opts fileName chunk =
     else
         let bytes =
             match chunk with
-            | None -> FileSystem.OpenFileShim(fileName).ReadAllBytes()
-            | Some(start, length) -> FileSystem.OpenFileShim(fileName).ReadBytes(start, length)
+            | None -> FileSystem.OpenFileForReadShim(fileName).ReadAllBytes()
+            | Some(start, length) -> FileSystem.OpenFileForReadShim(fileName).ReadBytes(start, length)
 
         ByteFile(fileName, bytes) :> BinaryFile
 
 let _createMemoryMapFile fileName =
-    let file = FileSystem.OpenFileShim(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)
-
     let mmf, accessor, length =
-        // TODO: Need to integrate with FileSystem.OpenFileShim()
+        // TODO: Need to integrate with FileSystem
         let fileStream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)
         let length = fileStream.Length
         let mmf = MemoryMappedFile.CreateFromFile(fileStream, null, length, MemoryMappedFileAccess.Read, HandleInheritability.None, leaveOpen=false)
@@ -4024,7 +4022,7 @@ let OpenILModuleReader fileName opts =
         // still use an in-memory ByteFile
         let pefile =
             if not runningOnMono && (alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath) then
-                ByteMemoryFile(fullPath, FileSystem.OpenFileShim(fullPath)) :> BinaryFile
+                ByteMemoryFile(fullPath, FileSystem.OpenFileForReadShim(fullPath)) :> BinaryFile
             else
                 createByteFileChunk opts fullPath None
 

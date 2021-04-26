@@ -135,10 +135,12 @@ let EncodeSignatureData(tcConfig: TcConfig, tcGlobals, exportRemapping, generate
         let resource = WriteSignatureData (tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild)
         // The resource gets written to a file for FSharp.Core
         let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
+
         if useDataFiles then
             let sigDataFileName = (FileSystemUtils.chopExtension outfile)+".sigdata"
             let bytes = resource.GetBytes()
-            use fileStream = FileSystem.OpenFileShim(sigDataFileName, FileMode.Create, FileAccess.ReadWrite, FileShare.None).AsStream()
+            use fileStream = FileSystem.OpenFileForWriteShim(sigDataFileName, FileMode.Create, FileAccess.ReadWrite, FileShare.None)
+
             bytes.CopyTo fileStream
         let resources =
             [ resource ]
@@ -152,11 +154,14 @@ let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemappi
         let data = map2Of2 (Optimizer.RemapOptimizationInfo tcGlobals exportRemapping) data
         // As with the sigdata file, the optdata gets written to a file for FSharp.Core
         let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
+
         if useDataFiles then
             let ccu, modulInfo = data
             let bytes = TypedTreePickle.pickleObjWithDanglingCcus isIncrementalBuild outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
             let optDataFileName = (FileSystemUtils.chopExtension outfile)+".optdata"
-            File.WriteAllBytes(optDataFileName, bytes)
+            use fileStream = FileSystem.OpenFileForWriteShim(optDataFileName, FileMode.Create, FileAccess.ReadWrite, FileShare.None)
+            fileStream.Write(bytes)
+
         let (ccu, optData) =
             if tcConfig.onlyEssentialOptimizationData then
                 map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data
@@ -685,7 +690,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                     let sigFileName = Path.ChangeExtension(filename, "sigdata")
                     if not (FileSystem.FileExistsShim sigFileName) then
                         error(Error(FSComp.SR.buildExpectedSigdataFile (FileSystem.GetFullPathShim sigFileName), m))
-                    [ (ilShortAssemName, fun () -> FileSystem.OpenFileShim(sigFileName, fileAccess=FileAccess.Read, shouldShadowCopy=true).AsReadOnly())]
+                    [ (ilShortAssemName, fun () -> FileSystem.OpenFileForReadShim(sigFileName, shouldShadowCopy=true).AsReadOnly())]
                 else
                     sigDataReaders
             sigDataReaders
@@ -701,7 +706,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                     let optDataFile = Path.ChangeExtension(filename, "optdata")
                     if not (FileSystem.FileExistsShim optDataFile) then
                         error(Error(FSComp.SR.buildExpectedFileAlongSideFSharpCore(optDataFile, FileSystem.GetFullPathShim optDataFile), m))
-                    [ (ilShortAssemName, (fun () -> FileSystem.OpenFileShim(optDataFile, fileAccess=FileAccess.Read, shouldShadowCopy=true).AsReadOnly()))]
+                    [ (ilShortAssemName, (fun () -> FileSystem.OpenFileForReadShim(optDataFile, shouldShadowCopy=true).AsReadOnly()))]
                 else
                     optDataReaders
             optDataReaders

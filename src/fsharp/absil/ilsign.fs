@@ -245,7 +245,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         patchSignature stream peReader signature
 
     let signFile filename keyBlob =
-        use fs = File.Open(filename, FileMode.Open, FileAccess.ReadWrite)
+        use fs = FileSystem.OpenFileForWriteShim(filename, FileMode.Open, FileAccess.ReadWrite)
         signStream fs keyBlob
 
     let signatureSize (pk:byte[]) =
@@ -272,9 +272,9 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
     type pubkey = byte[]
     type pubkeyOptions = byte[] * bool
 
-    let signerOpenPublicKeyFile filePath = FileSystem.OpenFileShim(filePath).ReadAllBytes()
+    let signerOpenPublicKeyFile filePath = FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
 
-    let signerOpenKeyPairFile filePath = FileSystem.OpenFileShim(filePath).ReadAllBytes()
+    let signerOpenKeyPairFile filePath = FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
 
     let signerGetPublicKeyForKeyPair (kp: keyPair) : pubkey = getPublicKeyForKeyPair kp
 
@@ -400,9 +400,9 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                         ([<MarshalAs(UnmanagedType.Interface)>] _metaHost :
                             ICLRMetaHost byref)) : unit = failwith "CreateInterface"
 
-    let legacySignerOpenPublicKeyFile filePath = FileSystem.OpenFileShim(filePath).ReadAllBytes()
+    let legacySignerOpenPublicKeyFile filePath = FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
 
-    let legacySignerOpenKeyPairFile filePath = FileSystem.OpenFileShim(filePath).ReadAllBytes()
+    let legacySignerOpenKeyPairFile filePath = FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
 
     let mutable iclrsn: ICLRStrongName option = None
     let getICLRStrongName () =

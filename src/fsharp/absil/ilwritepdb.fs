@@ -135,7 +135,7 @@ let guidSha2 = Guid("8829d00f-11b8-4213-878b-770e8597ac16")
 
 let checkSum (url: string) (checksumAlgorithm: HashAlgorithm) =
     try
-        use file = FileSystem.OpenFileShim(url).AsReadOnlyStream()
+        use file = FileSystem.OpenFileForReadShim(url).AsReadOnlyStream()
         let guid, alg =
             match checksumAlgorithm with
             | HashAlgorithm.Sha1 -> guidSha1, System.Security.Cryptography.SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
@@ -307,10 +307,11 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
         let includeSource file =
             let isInList = embedSourceList |> List.exists (fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase ) = 0)
 
-            if not embedAllSource && not isInList || not (File.Exists file) then
+            if not embedAllSource && not isInList || not (FileSystem.FileExistsShim file) then
                 None
             else
-                let stream = File.OpenRead file
+                use stream = FileSystem.OpenFileForReadShim(file).AsReadOnlyStream()
+
                 let length64 = stream.Length
                 if length64 > int64 (Int32.MaxValue) then raise (new IOException("File is too long"))
 
@@ -353,8 +354,8 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                     dbgInfo
             index.Add(doc.File, handle)
 
-        if not (String.IsNullOrEmpty sourceLink) then
-            let fs = File.OpenRead sourceLink
+        if not (String.IsNullOrWhiteSpace sourceLink) then
+            let fs = FileSystem.OpenFileForReadShim(sourceLink).AsReadOnlyStream()
             let ms = new MemoryStream()
             fs.CopyTo ms
             metadata.AddCustomDebugInformation(
@@ -556,8 +557,8 @@ let compressPortablePdbStream (uncompressedLength: int64) (contentId: BlobConten
 
 let writePortablePdbInfo (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb pathMap cvChunk deterministicPdbChunk checksumPdbChunk algorithmName checksum embeddedPdb deterministic =
     try FileSystem.FileDeleteShim fpdb with _ -> ()
-    use pdbFile = FileSystem.OpenFileShim(fpdb, FileMode.Create, FileAccess.ReadWrite).AsStream()
-    stream.WriteTo pdbFile
+    use fs = FileSystem.OpenFileForWriteShim(fpdb, fileMode = FileMode.Create, fileAccess = FileAccess.ReadWrite)
+    stream.WriteTo fs
     reportTime showTimes "PDB: Closed"
     pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) (PathMap.apply pathMap fpdb) cvChunk None deterministicPdbChunk checksumPdbChunk algorithmName checksum 0L None embeddedPdb deterministic
 

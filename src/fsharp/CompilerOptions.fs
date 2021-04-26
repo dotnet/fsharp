@@ -183,7 +183,7 @@ module ResponseFile =
             | s -> Some (ResponseFileLine.CompilerOptionSpec (s.Trim()))
 
         try
-            use stream = FileSystem.OpenFileShim(path).AsReadOnlyStream()
+            use stream = FileSystem.OpenFileForReadShim(path).AsReadOnlyStream()
             use reader = new StreamReader(stream, true)
             let data =
                 seq { while not reader.EndOfStream do yield reader.ReadLine () }
@@ -1625,7 +1625,7 @@ let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
     if tcConfig.showTerms then
         if tcConfig.writeTermsToFiles then
             let filename = outfile + ".terms"
-            use f = System.IO.File.CreateText (filename + "-" + string showTermFileCount + "-" + header)
+            use f = FileSystem.OpenFileForWriteShim(filename + "-" + string showTermFileCount + "-" + header).GetWriter()
             showTermFileCount <- showTermFileCount + 1
             LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL g expr))
         else

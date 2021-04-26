@@ -137,92 +137,6 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
             new MemoryStream([||], 0, 0, false) :> Stream
 
 [<Sealed>]
-type MaterializedStreamMemory(stream: Stream, offset, length) =
-    inherit ByteMemory()
-
-    let checkCount count =
-        if count < 0 then
-            raise (ArgumentOutOfRangeException(nameof count, "Count is less than zero."))
-
-    let getBytesFromStream s =
-        use ms = new MemoryStream()
-        stream.CopyTo(s)
-        ms.ToArray()
-
-    do
-        if length < 0 || length > (int stream.Length) then
-            raise (ArgumentOutOfRangeException(nameof length))
-
-        if offset < 0 || (offset + length) > (int stream.Length) then
-            raise (ArgumentOutOfRangeException(nameof offset))
-
-    let bytes = getBytesFromStream stream
-
-    override _.Item
-        with get i = bytes.[offset + i]
-        and set i v = bytes.[offset + i] <- v
-
-    override _.Length = length
-
-    override _.ReadAllBytes() = bytes
-
-    override _.ReadBytes(pos, count) =
-        checkCount count
-        if count > 0 then
-            Array.sub bytes (offset + pos) count
-        else
-            Array.empty
-
-    override _.ReadInt32 pos =
-        let finalOffset = offset + pos
-        (uint32 bytes.[finalOffset]) |||
-        ((uint32 bytes.[finalOffset + 1]) <<< 8) |||
-        ((uint32 bytes.[finalOffset + 2]) <<< 16) |||
-        ((uint32 bytes.[finalOffset + 3]) <<< 24)
-        |> int
-
-    override _.ReadUInt16 pos =
-        let finalOffset = offset + pos
-        (uint16 bytes.[finalOffset]) |||
-        ((uint16 bytes.[finalOffset + 1]) <<< 8)
-
-    override _.ReadUtf8String(pos, count) =
-        checkCount count
-        if count > 0 then
-            Encoding.UTF8.GetString(bytes, offset + pos, count)
-        else
-            String.Empty
-
-    override _.Slice(pos, count) =
-        checkCount count
-        if count > 0 then
-            ByteArrayMemory(bytes, offset + pos, count) :> ByteMemory
-        else
-            ByteArrayMemory(Array.empty, 0, 0) :> ByteMemory
-
-    override _.CopyTo stream =
-        if length > 0 then
-            stream.Write(bytes, offset, length)
-
-    override _.Copy(srcOffset, dest, destOffset, count) =
-        checkCount count
-        if count > 0 then
-            Array.blit bytes (offset + srcOffset) dest destOffset count
-
-    override _.ToArray() =
-        if length > 0 then
-            Array.sub bytes offset length
-        else
-            Array.empty
-
-    override _.AsStream() = stream
-
-    override _.AsReadOnlyStream() =
-        let ms = new MemoryStream()
-        stream.CopyTo(ms)
-        ms :> Stream
-
-[<Sealed>]
 type SafeUnmanagedMemoryStream =
     inherit UnmanagedMemoryStream
 
@@ -374,7 +288,8 @@ module MemoryMappedFileExtensions =
 
     type MemoryMappedFile with
 
-        static member TryFromByteMemory(bytes: ReadOnlyByteMemory) =
+        // TODO: Needs to use FileSystem APIs?
+        static member _TryFromByteMemory(bytes: ReadOnlyByteMemory) =
             let length = int64 bytes.Length
             if length = 0L then
                 None
@@ -470,20 +385,6 @@ module internal FileSystemUtils =
 
     let isDll file = hasSuffixCaseInsensitive ".dll" file
 
-    let readAllFromStream (stream: Stream) : string =
-        use sr = new StreamReader(stream, Encoding.UTF8, true)
-        sr.ReadToEnd()
-
-    let readLinesFromStream (stream: Stream) : string seq = seq {
-        use sr = new StreamReader(stream, Encoding.UTF8, true)
-        while not <| sr.EndOfStream do
-            yield sr.ReadLine()
-    }
-
-    let inline writeToStream (stream: Stream) (data: ^a) : unit =
-        use sw = new StreamWriter(stream)
-        sw.Write(data)
-
 type IAssemblyLoader =
     abstract AssemblyLoadFrom: fileName: string -> Assembly
     abstract AssemblyLoad: assemblyName: AssemblyName -> Assembly
@@ -495,7 +396,8 @@ type DefaultAssemblyLoader() =
 
 type IFileSystem =
     abstract AssemblyLoader: IAssemblyLoader
-    abstract OpenFileShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare * ?shouldShadowCopy: bool -> ByteMemory
+    abstract OpenFileForReadShim: filePath: string * ?shouldShadowCopy: bool -> ByteMemory
+    abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
     abstract GetFullPathShim: fileName: string -> string
     abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
     abstract IsPathRootedShim: path: string -> bool
@@ -520,30 +422,21 @@ type MemoryMappedFileSystem() as this =
 
         member _.AssemblyLoader = DefaultAssemblyLoader() :> IAssemblyLoader
 
-        member _.OpenFileShim(filePath: string, ?fileMode: FileMode, ?fileAccess: FileAccess, ?fileShare: FileShare, ?shouldShadowCopy: bool) : ByteMemory =
-            let mode = defaultArg fileMode FileMode.Open
-            let access = defaultArg fileAccess FileAccess.Read
-            let share = defaultArg fileShare FileShare.Read
+        member _.OpenFileForReadShim(filePath: string, ?shouldShadowCopy: bool) : ByteMemory =
+            let fileMode = FileMode.Open
+            let fileAccess = FileAccess.Read
+            let fileShare = FileShare.Read
             let shouldShadowCopy = defaultArg shouldShadowCopy false
 
-            let memoryMappedFileAccess =
-                match access with
-                | FileAccess.Read -> MemoryMappedFileAccess.Read
-                | FileAccess.Write -> MemoryMappedFileAccess.Write
-                | _ -> MemoryMappedFileAccess.ReadWrite
-
-            let fileStream = File.Open(filePath, mode, access, share)
+            let fileStream = File.Open(filePath, fileMode, fileAccess, fileShare)
             let length = fileStream.Length
 
             if runningOnMono then
                 // mono's MemoryMappedFile implementation throws with null `mapName`,
-                // so we use streams instead: https://github.com/mono/mono/issues/10245
-
-                if length = 0L then
-                    MaterializedStreamMemory(new MemoryStream(), 0, 0) :> ByteMemory
-                else
-                    MaterializedStreamMemory(fileStream, 0, (int length)) :> ByteMemory
-
+                // so we use ByteArrayMemory instead: https://github.com/mono/mono/issues/10245
+                let bytes = File.ReadAllBytes filePath
+                let byteArrayMemory = if bytes.Length = 0 then ByteArrayMemory([||], 0, 0) else ByteArrayMemory(bytes, 0, bytes.Length)
+                byteArrayMemory :> ByteMemory
             else
                 let mmf, accessor, length =
                     let mmf =
@@ -552,30 +445,25 @@ type MemoryMappedFileSystem() as this =
                                 MemoryMappedFile.CreateNew(
                                     null,
                                     length,
-                                    MemoryMappedFileAccess.ReadWrite,
+                                    MemoryMappedFileAccess.Read,
                                     MemoryMappedFileOptions.None,
                                     HandleInheritability.None)
-                            use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
+                            use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
                             fileStream.CopyTo(stream)
                             fileStream.Dispose()
                             mmf
                         else
-                            // TODO: Test the behaviour of "LeaveOpen"
                             MemoryMappedFile.CreateFromFile(
                                 fileStream,
                                 null,
                                 length,
-                                memoryMappedFileAccess,
+                                MemoryMappedFileAccess.Read,
                                 HandleInheritability.None,
                                 leaveOpen=false)
-                    mmf, mmf.CreateViewAccessor(0L, length, memoryMappedFileAccess), length
+                    mmf, mmf.CreateViewAccessor(0L, length, MemoryMappedFileAccess.Read), length
 
-                // Validate MMF with the access that was intended.
-                match access with
-                | FileAccess.Read when not accessor.CanRead -> invalidOp "Cannot read file"
-                | FileAccess.Write when not accessor.CanWrite -> invalidOp "Cannot write file"
-                | FileAccess.ReadWrite when not accessor.CanRead || not accessor.CanWrite -> invalidOp "Cannot read or write file"
-                | _ -> ()
+                if not accessor.CanRead then
+                    invalidOp "Cannot read file"
 
                 let safeHolder =
                     { new obj() with
@@ -587,11 +475,60 @@ type MemoryMappedFileSystem() as this =
                             accessor.Dispose()
                             mmf.Dispose() }
 
+                // let safeHolder = (mmf, accessor)
+
                 RawByteMemory(
                     NativePtr.ofNativeInt (accessor.SafeMemoryMappedViewHandle.DangerousGetHandle()),
                     int length,
                     safeHolder) :> ByteMemory
 
+        member _.OpenFileForWriteShim(filePath: string, ?fileMode: FileMode, ?fileAccess: FileAccess, ?fileShare: FileShare) : Stream =
+            let fileMode = defaultArg fileMode FileMode.OpenOrCreate
+            let fileAccess = defaultArg fileAccess FileAccess.ReadWrite
+            let fileShare = defaultArg fileShare FileShare.Read
+
+            let fileStream = File.Open(filePath, fileMode, fileAccess, fileShare)
+            let length = fileStream.Length
+
+            if runningOnMono then
+                // mono's MemoryMappedFile implementation throws with null `mapName`,
+                // so we use plain FileStream instead: https://github.com/mono/mono/issues/10245
+                fileStream :> Stream
+            else
+                let memoryMappedFileAccess =
+                    match fileAccess with
+                    | FileAccess.Read -> MemoryMappedFileAccess.Read
+                    | FileAccess.Write -> MemoryMappedFileAccess.Write
+                    | _ -> MemoryMappedFileAccess.ReadWrite
+
+                let mmf, accessor, length =
+                    let mmf =
+                        MemoryMappedFile.CreateFromFile(
+                            fileStream,
+                            null,
+                            length,
+                            memoryMappedFileAccess,
+                            HandleInheritability.None,
+                            leaveOpen=false)
+                    mmf, mmf.CreateViewAccessor(0L, length, memoryMappedFileAccess), length
+
+                match fileAccess with
+                | FileAccess.Read when not accessor.CanRead -> invalidOp "Cannot read file"
+                | FileAccess.Write when not accessor.CanWrite -> invalidOp "Cannot write file"
+                | FileAccess.ReadWrite when not accessor.CanRead || not accessor.CanWrite -> invalidOp "Cannot read or write file"
+                | _ -> ()
+
+                let safeHolder =
+                        { new obj() with
+                            override x.Finalize() =
+                                (x :?> IDisposable).Dispose()
+                          interface IDisposable with
+                            member x.Dispose() =
+                                GC.SuppressFinalize x
+                                accessor.Dispose()
+                                mmf.Dispose() }
+
+                new SafeUnmanagedMemoryStream(NativePtr.ofNativeInt (accessor.SafeMemoryMappedViewHandle.DangerousGetHandle()), length, safeHolder) :> Stream
 
         member _.GetFullPathShim (fileName: string) = Path.GetFullPath fileName
 
@@ -669,6 +606,37 @@ type MemoryMappedFileSystem() as this =
             directory.Contains("lib/mono/")
 
 [<AutoOpen>]
+module public StreamExtensions =
+    let utf8noBOM = new UTF8Encoding(false, true) :> Encoding
+    type System.IO.Stream with
+        member s.GetWriter(?encoding: Encoding) : TextWriter =
+            let encoding = defaultArg encoding utf8noBOM
+            new StreamWriter(s, encoding) :> TextWriter
+
+        member s.WriteAllLines(contents: string seq, ?encoding: Encoding) =
+            let encoding = defaultArg encoding utf8noBOM
+            use writer = s.GetWriter(encoding)
+            for l in contents do
+                writer.WriteLine(l)
+
+        member s.Write (data: 'a) : unit =
+            use sw = s.GetWriter()
+            sw.Write(data)
+
+        member s.ReadAllText(?encoding: Encoding) =
+            let encoding = defaultArg encoding Encoding.UTF8
+            use sr = new StreamReader(s, encoding, true)
+            sr.ReadToEnd()
+
+        member s.ReadLines(?encoding: Encoding) : string seq =
+            let encoding = defaultArg encoding Encoding.UTF8
+            seq {
+                use sr = new StreamReader(s, encoding, true)
+                while not <| sr.EndOfStream do
+                    yield sr.ReadLine()
+            }
+
+[<AutoOpen>]
 module public FileSystemAutoOpens =
     /// The global hook into the file system
     let mutable FileSystem: IFileSystem = MemoryMappedFileSystem() :> IFileSystem
@@ -683,9 +651,9 @@ type ByteMemory with
         let accessor = mmf.CreateViewAccessor()
         RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int accessor.Capacity, (mmf, accessor))
 
-    static member FromFile(path, access, ?canShadowCopy: bool) =
+    (*static member FromFile(path, access, ?canShadowCopy: bool) =
         let canShadowCopy = defaultArg canShadowCopy false
-        FileSystem.OpenFileShim(path, access, FileAccess.Read, FileShare.Read, canShadowCopy)
+        FileSystem.OpenFileShim(path, access, FileAccess.Read, FileShare.Read, canShadowCopy*)
 
     static member FromUnsafePointer(addr, length, holder: obj) =
         RawByteMemory(NativePtr.ofNativeInt addr, length, holder) :> ByteMemory
@@ -804,7 +772,7 @@ type internal ByteBuffer =
     member buf.Position = buf.bbCurrent
 
     static member Create sz =
-        { bbArray=Bytes.zeroCreate sz
+        { bbArray = Bytes.zeroCreate sz
           bbCurrent = 0 }
 
 [<Sealed>]

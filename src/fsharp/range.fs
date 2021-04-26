@@ -259,7 +259,7 @@ type Range(code1:int64, code2: int64) =
             if FileSystem.IsInvalidPathShim r.FileName then "path invalid: " + r.FileName
             elif not (FileSystem.FileExistsShim r.FileName) then "non existing file: " + r.FileName
             else
-              File.ReadAllLines(r.FileName)
+              FileSystem.OpenFileForReadShim(r.FileName).AsStream().ReadLines()
               |> Seq.skip (r.StartLine - 1)
               |> Seq.take (r.EndLine - r.StartLine + 1)
               |> String.concat "\n"
@@ -391,7 +391,7 @@ module Range =
 
     let mkFirstLineOfFile (file: string) =
         try
-            let lines = File.ReadLines(file) |> Seq.indexed
+            let lines = FileSystem.OpenFileForReadShim(file).AsStream().ReadLines() |> Seq.indexed
             let nonWhiteLine = lines |> Seq.tryFind (fun (_,s) -> not (String.IsNullOrWhiteSpace s))
             match nonWhiteLine with
             | Some (i,s) -> mkRange file (mkPos (i+1) 0) (mkPos (i+1) s.Length)
@@ -402,4 +402,3 @@ module Range =
             | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
         with _ ->
             mkRange file (mkPos 1 0) (mkPos 1 80)
-

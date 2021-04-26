@@ -403,8 +403,8 @@ let checkInputFile (tcConfig: TcConfig) filename =
 
 let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked) =
     // Get a stream reader for the file
-    use reader = FileSystem.OpenFileShim(filename, FileMode.Open, FileAccess.Read, FileShare.Read).AsReadOnlyStream()
-              |> StreamUtils.openReaderAndRetry tcConfig.inputCodePage retryLocked
+    use reader = FileSystem.OpenFileForReadShim(filename).AsReadOnlyStream()
+                 |> StreamUtils.openReaderAndRetry tcConfig.inputCodePage retryLocked
 
     // Set up the LexBuffer for the file
     let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(tcConfig.langVersion.SupportsFeature, reader)

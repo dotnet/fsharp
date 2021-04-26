@@ -3500,8 +3500,8 @@ let writeBinaryAndReportMappings (outfile,
         try
             // Ensure the output directory exists otherwise it will fail
             let dir = FileSystem.GetDirectoryNameShim outfile
-            if not (FileSystem.DirectoryExistsShim dir) then FileSystem.DirectoryCreateShim dir |>ignore
-            let stream = FileSystem.OpenFileShim(outfile, FileMode.Create, FileAccess.Write, FileShare.Read).AsStream()
+            if not (FileSystem.DirectoryExistsShim dir) then FileSystem.DirectoryCreateShim dir |> ignore
+            let stream = FileSystem.OpenFileForWriteShim(outfile, FileMode.Create, FileAccess.Write, FileShare.Read)
             new BinaryWriter(stream)
         with e ->
             failwith ("Could not open file for writing (binary mode): " + outfile)
@@ -3685,7 +3685,7 @@ let writeBinaryAndReportMappings (outfile,
                     resources |> List.map (function
                         | ILNativeResource.Out bytes -> bytes
                         | ILNativeResource.In (fileName, linkedResourceBase, start, len) ->
-                             let linkedResource = FileSystem.OpenFileShim(fileName).ReadBytes(start, len)
+                             let linkedResource = FileSystem.OpenFileForReadShim(fileName).ReadBytes(start, len)
                              unlinkResource linkedResourceBase linkedResource)
 
                 begin
@@ -4176,7 +4176,7 @@ let writeBinaryAndReportMappings (outfile,
             reportTime showTimes "Generate PDB Info"
 
             // Now we have the debug data we can go back and fill in the debug directory in the image
-            let fs2 = FileSystem.OpenFileShim(outfile, FileMode.Open, FileAccess.Write, FileShare.Read).AsStream()
+            let fs2 = FileSystem.OpenFileForWriteShim(outfile, FileMode.Open, FileAccess.Write, FileShare.Read)
             let os2 = new BinaryWriter(fs2)
             try
                 // write the IMAGE_DEBUG_DIRECTORY

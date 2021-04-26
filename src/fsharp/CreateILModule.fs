@@ -328,7 +328,7 @@ module MainModuleBuilder =
                  let name, bytes, pub =
                          let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo file
                          let file = tcConfig.ResolveSourceFile(rangeStartup, file, tcConfig.implicitIncludeDir)
-                         let bytes = FileSystem.OpenFileShim(file).ReadAllBytes()
+                         let bytes = FileSystem.OpenFileForReadShim(file).ReadAllBytes()
                          name, bytes, pub
                  yield { Name=name
                          // TODO: We probably can directly convert ByteMemory to ByteStorage, without reading all bytes.
@@ -343,7 +343,7 @@ module MainModuleBuilder =
               for ri in tcConfig.linkResources do
                  let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo ri
                  yield { Name=name
-                         Location=ILResourceLocation.File(ILModuleRef.Create(name=file, hasMetadata=false, hash=Some (sha1HashBytes (FileSystem.OpenFileShim(file).ReadAllBytes()))), 0)
+                         Location=ILResourceLocation.File(ILModuleRef.Create(name=file, hasMetadata=false, hash=Some (sha1HashBytes (FileSystem.OpenFileForReadShim(file).ReadAllBytes()))), 0)
                          Access=pub
                          CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
                          MetadataIndex = NoMetadataIdx } ]
@@ -456,20 +456,20 @@ module MainModuleBuilder =
             // otherwise, include the default manifest
             else
                 let path = Path.Combine(System.AppContext.BaseDirectory, @"default.win32manifest")
-                if File.Exists(path) then path
+                if FileSystem.FileExistsShim(path) then path
                 else Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), @"default.win32manifest")
 
         let nativeResources =
             [ for av in assemblyVersionResources assemblyVersion do
                   yield ILNativeResource.Out av
               if not(tcConfig.win32res = "") then
-                  yield ILNativeResource.Out (FileSystem.OpenFileShim(tcConfig.win32res).ReadAllBytes())
+                  yield ILNativeResource.Out (FileSystem.OpenFileForReadShim(tcConfig.win32res).ReadAllBytes())
               if tcConfig.includewin32manifest && not(win32Manifest = "") && not runningOnMono then
                   yield  ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader()
-                                                 yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.OpenFileShim(win32Manifest).ReadAllBytes()), tcConfig.target = CompilerTarget.Dll)) |]
+                                                 yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.OpenFileForReadShim(win32Manifest).ReadAllBytes()), tcConfig.target = CompilerTarget.Dll)) |]
               if tcConfig.win32res = "" && tcConfig.win32icon <> "" && tcConfig.target <> CompilerTarget.Dll then
                   use ms = new MemoryStream()
-                  Win32ResourceConversions.AppendIconToResourceStream(ms, FileSystem.OpenFileShim(tcConfig.win32icon).AsStream())
+                  Win32ResourceConversions.AppendIconToResourceStream(ms, FileSystem.OpenFileForWriteShim(tcConfig.win32icon))
                   yield ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader()
                                                 yield! ms.ToArray() |] ]
 

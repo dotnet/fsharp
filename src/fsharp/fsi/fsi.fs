@@ -2192,7 +2192,7 @@ type internal FsiInteractionProcessor
                     let format =
                         if tcConfig.shadowCopyReferences then
                             let resolvedPath = ar.resolvedPath.ToUpperInvariant()
-                            let fileTime = File.GetLastWriteTimeUtc(resolvedPath)
+                            let fileTime = FileSystem.GetLastWriteTimeShim(resolvedPath)
                             match referencedAssemblies.TryGetValue resolvedPath with
                             | false, _ ->
                                 referencedAssemblies.Add(resolvedPath, fileTime)
@@ -2469,7 +2469,7 @@ type internal FsiInteractionProcessor
         WithImplicitHome (tcConfigB, directoryName sourceFile)  (fun () ->
               // An included script file may contain maybe several interaction blocks.
               // We repeatedly parse and process these, until an error occurs.
-                use reader = FileSystem.OpenFileShim(sourceFile).AsReadOnlyStream()
+                use reader = FileSystem.OpenFileForReadShim(sourceFile).AsReadOnlyStream()
                           |> StreamUtils.openReaderAndRetry tcConfigB.inputCodePage false
                 let tokenizer = fsiStdinLexerProvider.CreateIncludedScriptLexer (sourceFile, reader, errorLogger)
                 let rec run istate =
@@ -2818,7 +2818,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
           let tcConfig = tcConfigP.Get(ctokStartup)
           let references, _unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(ctokStartup, tcConfig)
           let lines = [ for r in references -> r.resolvedPath ]
-          File.WriteAllLines(outFile, lines)
+          FileSystem.OpenFileForWriteShim(outFile).WriteAllLines(lines)
           exit 0
       | _ -> ()
 
