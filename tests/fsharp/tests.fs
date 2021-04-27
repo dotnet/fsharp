@@ -386,7 +386,9 @@ module CoreTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``state-machines neg01`` () = singleNegTest (testConfig "core/state-machines") "neg01"
+    let ``state-machines neg-resumable-01`` () =
+        let cfg = testConfig "core/state-machines"
+        singleVersionedNegTest cfg "preview" "neg-resumable-01"
 
     [<Test>]
     let ``lots-of-conditionals``() =
