@@ -106,24 +106,47 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
 
     // This is used to not constantly emit the same compilation.
     let weakPEReferences = ConditionalWeakTable<Compilation, FSharpReferencedProject>()
+    let lastSuccessfulCompilations = ConcurrentDictionary<ProjectId, Compilation>()
 
     let createPEReference (referencedProject: Project) (comp: Compilation) =
+        let projectId = referencedProject.Id
+
         match weakPEReferences.TryGetValue comp with
         | true, fsRefProj -> fsRefProj
         | _ ->
             let weakComp = WeakReference<Compilation>(comp)
             let getStream =
                 fun ct ->
-                    match weakComp.TryGetTarget() with
-                    | true, comp ->
+                    let tryStream (comp: Compilation) =
                         let ms = new MemoryStream() // do not dispose the stream as it will be owned on the reference.
                         let emitOptions = Emit.EmitOptions(metadataOnly = true, includePrivateMembers = false, tolerateErrors = true)
-                        comp.Emit(ms, options = emitOptions, cancellationToken = ct) |> ignore
-                        ms.Position <- 0L
-                        ms :> Stream
-                        |> Some
+                        try
+                            let result = comp.Emit(ms, options = emitOptions, cancellationToken = ct)
+
+                            if result.Success then
+                                lastSuccessfulCompilations.[projectId] <- comp
+                                ms.Position <- 0L
+                                ms :> Stream
+                                |> Some
+                            else
+                                ms.Dispose() // it failed, dispose of stream
+                                None
+                        with
+                        | _ ->
+                            ms.Dispose() // it failed, dispose of stream
+                            None
+
+                    let resultOpt =
+                        match weakComp.TryGetTarget() with
+                        | true, comp -> tryStream comp
+                        | _ -> None
+
+                    match resultOpt with
+                    | Some _ -> resultOpt
                     | _ ->
-                        None
+                        match lastSuccessfulCompilations.TryGetValue(projectId) with
+                        | true, comp -> tryStream comp
+                        | _ -> None                           
 
             let fsRefProj =
                 FSharpReferencedProject.CreatePortableExecutable(
@@ -289,6 +312,12 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                                 projectOptions)
                         checkerProvider.Checker.ClearCache(options, userOpName = "tryComputeOptions")
 
+                    lastSuccessfulCompilations.ToArray()
+                    |> Array.iter (fun pair ->
+                        if not (currentSolution.ContainsProject(pair.Key)) then
+                            lastSuccessfulCompilations.TryRemove(pair.Key) |> ignore
+                    )
+
                     checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompile = false, userOpName = "computeOptions")
 
                     let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
@@ -365,6 +394,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                 | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
                     match cache.TryRemove(projectId) with
                     | true, (_, _, projectOptions) ->
+                        lastSuccessfulCompilations.TryRemove(projectId) |> ignore
                         checkerProvider.Checker.ClearCache([projectOptions])
                     | _ ->
                         ()
@@ -372,6 +402,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
                     match singleFileCache.TryRemove(documentId) with
                     | true, (_, _, projectOptions) ->
+                        lastSuccessfulCompilations.TryRemove(documentId.ProjectId) |> ignore
                         checkerProvider.Checker.ClearCache([projectOptions])
                     | _ ->
                         ()

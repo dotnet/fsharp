@@ -1566,7 +1566,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         phase2
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
-    member tcImports.RegisterAndPrepareToImportReferencedDll (ctok, r: AssemblyResolution) : Cancellable<_ * (unit -> AvailableImportedAssembly list)> =
+    member tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, r: AssemblyResolution) : Cancellable<(_ * (unit -> AvailableImportedAssembly list)) option> =
       cancellable {
         CheckDisposed()
         let m = r.originalReference.Range
@@ -1577,6 +1577,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             | Some ilb -> return! ilb.EvaluateRawContents ctok
             | None -> return None
           }
+
+        // If we have a project reference but did not get any valid contents, 
+        //     just return None and do not attempt to read elsewhere.
+        if contentsOpt.IsNone && r.ProjectReference.IsSome then
+            return None
+        else
 
         let assemblyData = 
             match contentsOpt with 
@@ -1591,7 +1597,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         if tcImports.IsAlreadyRegistered ilShortAssemName then 
             let dllinfo = tcImports.FindDllInfo(ctok, m, ilShortAssemName)
             let phase2() = [tcImports.FindCcuInfo(ctok, m, ilShortAssemName, lookupOnly=true)] 
-            return dllinfo, phase2
+            return Some(dllinfo, phase2)
         else 
             let dllinfo = 
                 { RawMetadata=assemblyData 
@@ -1616,7 +1622,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                         with e -> error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), m))
                 else
                     tcImports.PrepareToImportReferencedILAssembly (ctok, m, filename, dllinfo)
-            return dllinfo, phase2
+            return Some(dllinfo, phase2)
          }
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
@@ -1627,11 +1633,10 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
            nms |> Cancellable.each (fun nm -> 
                cancellable {
                    try
-                            let! res = tcImports.RegisterAndPrepareToImportReferencedDll (ctok, nm)
-                            return Some res
+                        return! tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, nm)
                    with e ->
-                            errorR(Error(FSComp.SR.buildProblemReadingAssembly(nm.resolvedPath, e.Message), nm.originalReference.Range))
-                            return None 
+                        errorR(Error(FSComp.SR.buildProblemReadingAssembly(nm.resolvedPath, e.Message), nm.originalReference.Range))
+                        return None 
                })
 
         let dllinfos, phase2s = results |> List.choose id |> List.unzip
