@@ -1464,7 +1464,7 @@ module private TastDefinitionPrinting =
     let layoutExtensionMembers denv infoReader vs =
         aboveListL (List.map (layoutExtensionMember denv infoReader) vs) 
 
-    let layoutRecdField addAccess denv infoReader enclosingTcref (fld: RecdField) =
+    let layoutRecdField addAccess denv infoReader (enclosingTcref: TyconRef) (fld: RecdField) =
         let lhs =
             tagRecordField fld.Name
             |> mkNav fld.DefinitionRange
@@ -1472,7 +1472,12 @@ module private TastDefinitionPrinting =
         let lhs = (if addAccess then layoutAccessibility denv fld.Accessibility lhs else lhs)
         let lhs = if fld.IsMutable then wordL (tagKeyword "mutable") --- lhs else lhs
         let fieldL = (lhs ^^ RightL.colon) --- layoutType denv fld.FormalType
-        layoutXmlDocOfRecdFieldRef denv infoReader (RecdFieldRef(enclosingTcref, fld.Id.idText)) fieldL
+
+        // The enclosing TyconRef might be a union and we can only get fields from union cases, so we need ignore unions here.
+        if not enclosingTcref.IsUnionTycon then
+            layoutXmlDocOfRecdFieldRef denv infoReader (RecdFieldRef(enclosingTcref, fld.Id.idText)) fieldL
+        else
+            fieldL
 
     let layoutUnionOrExceptionField denv infoReader isGenerated enclosingTcref i (fld: RecdField) =
         if isGenerated i fld then layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 2 fld.FormalType
