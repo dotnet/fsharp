@@ -347,7 +347,7 @@ module InterfaceFileWriter =
             for (TImplFile (name, _, _, _, _, _) as impl) in declaredImpls do
                 let filename = System.IO.Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
                 printfn "writing impl file to %s" filename
-                use FileSystem.OpenFileForWriteShim(filename, FileMode.OpenOrCreate).GetWriter()
+                use os = FileSystem.OpenFileForWriteShim(filename, FileMode.OpenOrCreate).GetWriter()
                 writeHeader filename os
                 writeToFile os impl
 
