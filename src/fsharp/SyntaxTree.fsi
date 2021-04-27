@@ -1407,6 +1407,9 @@ type SynMemberSig =
         nestedType: SynTypeDefnSig *
         range: range
 
+    /// Gets the syntax range of this construct
+    member Range: range
+
 /// Represents the kind of a type definition whether explicit or inferred
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeDefnKind =

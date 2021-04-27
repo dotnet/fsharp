@@ -66,8 +66,8 @@ type OptionSpec =
     | OptionHelp of (CompilerOptionBlock list -> unit)                      // like OptionUnit, but given the "options"
     | OptionGeneral of (string list -> bool) * (string list -> string list) // Applies? * (ApplyReturningResidualArgs)
 
-and  CompilerOption      = CompilerOption of string * string * OptionSpec * Option<exn> * string option
-and  CompilerOptionBlock = PublicOptions  of string * CompilerOption list | PrivateOptions of CompilerOption list
+and  CompilerOption      = CompilerOption of name: string * argumentDescriptionString: string * actionSpec: OptionSpec * deprecationError: Option<exn> * helpText: string option
+and  CompilerOptionBlock = PublicOptions  of heading: string * options: CompilerOption list | PrivateOptions of options: CompilerOption list
 
 let GetOptionsOfBlock block =
     match block with
@@ -277,9 +277,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
                     rspData |> List.choose onlyOptions
 
         processArg (responseFileOptions @ t)
-
     | opt :: t ->
-
         let optToken, argString = parseOption opt
 
         let reportDeprecatedOption errOpt =
@@ -515,6 +513,9 @@ let setSignatureFile tcConfigB s =
     tcConfigB.printSignature <- true
     tcConfigB.printSignatureFile <- s
 
+let setAllSignatureFiles tcConfigB () =
+    tcConfigB.printAllSignatureFiles <- true
+
 // option tags
 let tagString = "<string>"
 let tagExe = "exe"
@@ -716,6 +717,11 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
            ("sig", tagFile,
             OptionString (setSignatureFile tcConfigB), None,
             Some (FSComp.SR.optsSig()))
+
+        CompilerOption
+           ("allsigs", tagNone,
+            OptionUnit (setAllSignatureFiles tcConfigB), None,
+            Some (FSComp.SR.optsAllSigs()))
 
         CompilerOption
            ("nocopyfsharpcore", tagNone,

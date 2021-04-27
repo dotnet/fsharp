@@ -1177,8 +1177,13 @@ module InfoMemberPrinting =
         | _, Some nm, true, ptyOpt -> 
             // detect parameter type, if ptyOpt is None - this is .NET style optional argument
             let pty = match ptyOpt with ValueSome x -> x | _ -> pty
+            let idText =
+                if denv.escapeKeywordNames && Lexhelp.Keywords.keywordNames |> List.contains nm.idText then
+                    "``" + nm.idText + "``"
+                else
+                    nm.idText
             SepL.questionMark ^^
-            wordL (tagParameter nm.idText) ^^
+            wordL (tagParameter idText) ^^
             RightL.colon ^^
             PrintTypes.layoutType denv pty
         // Layout an unnamed argument 
@@ -1186,12 +1191,22 @@ module InfoMemberPrinting =
             PrintTypes.layoutType denv pty
         // Layout a named argument 
         | true, Some nm, _, _ -> 
+            let idText =
+                if denv.escapeKeywordNames && Lexhelp.Keywords.keywordNames |> List.contains nm.idText then
+                    "``" + nm.idText + "``"
+                else
+                    nm.idText
             layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^
-            wordL (tagParameter nm.idText) ^^
+            wordL (tagParameter idText) ^^
             RightL.colon ^^
             PrintTypes.layoutType denv pty
         | false, Some nm, _, _ -> 
-            wordL (tagParameter nm.idText) ^^
+            let idText =
+                if denv.escapeKeywordNames && Lexhelp.Keywords.keywordNames |> List.contains nm.idText then
+                    "``" + nm.idText + "``"
+                else
+                    nm.idText
+            wordL (tagParameter idText) ^^
             RightL.colon ^^
             PrintTypes.layoutType denv pty
 
@@ -1913,7 +1928,7 @@ module private TastDefinitionPrinting =
                         valsL
                     ]
             else
-                headerL @@- (aboveL entitiesL valsL)
+                headerL @@---- entitiesL @@ valsL
 
     and layoutEntity (denv: DisplayEnv) (infoReader: InfoReader) ad m (entity: Entity) =
         if entity.IsModuleOrNamespace then

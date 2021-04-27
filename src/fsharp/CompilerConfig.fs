@@ -370,6 +370,7 @@ type TcConfigBuilder =
       mutable reportNumDecls: bool
       mutable printSignature: bool
       mutable printSignatureFile: string
+      mutable printAllSignatureFiles: bool
       mutable xmlDocOutputFile: string option
       mutable stats: bool
       mutable generateFilterBlocks: bool (* don't generate filter blocks due to bugs on Mono *)
@@ -573,6 +574,7 @@ type TcConfigBuilder =
           reportNumDecls = false
           printSignature = false
           printSignatureFile = ""
+          printAllSignatureFiles = false
           xmlDocOutputFile = None
           stats = false
           generateFilterBlocks = false (* don't generate filter blocks *)
@@ -958,6 +960,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.reportNumDecls = data.reportNumDecls
     member x.printSignature = data.printSignature
     member x.printSignatureFile = data.printSignatureFile
+    member x.printAllSignatureFiles = data.printAllSignatureFiles
     member x.xmlDocOutputFile = data.xmlDocOutputFile
     member x.stats = data.stats
     member x.generateFilterBlocks = data.generateFilterBlocks

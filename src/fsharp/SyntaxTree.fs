@@ -1100,10 +1100,7 @@ type SynMatchClause =
 
     member this.Range =
         match this with
-        | SynMatchClause(_, eo, e, m, _) ->
-            match eo with
-            | None -> unionRanges e.Range m
-            | Some x -> unionRanges (unionRanges e.Range m) x.Range
+        | SynMatchClause(range = m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynAttribute =
@@ -1222,6 +1219,14 @@ type SynMemberSig =
     | NestedType of
         nestedType: SynTypeDefnSig *
         range: range
+
+    member d.Range =
+        match d with
+        | SynMemberSig.Member (range=m)
+        | SynMemberSig.Interface (range=m)
+        | SynMemberSig.Inherit (range=m)
+        | SynMemberSig.ValField (range=m)
+        | SynMemberSig.NestedType (range=m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeDefnKind =

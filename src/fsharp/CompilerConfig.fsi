@@ -185,6 +185,7 @@ type TcConfigBuilder =
       mutable reportNumDecls: bool
       mutable printSignature: bool
       mutable printSignatureFile: string
+      mutable printAllSignatureFiles: bool
       mutable xmlDocOutputFile: string option
       mutable stats: bool
       mutable generateFilterBlocks: bool
@@ -374,6 +375,7 @@ type TcConfig =
     member reportNumDecls: bool
     member printSignature: bool
     member printSignatureFile: string
+    member printAllSignatureFiles: bool
     member xmlDocOutputFile: string option
     member stats: bool
     member generateFilterBlocks: bool

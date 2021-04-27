@@ -6,8 +6,10 @@ open System
 open System.IO
 open System.IO.MemoryMappedFiles
 open System.Reflection.Metadata
+open System.Runtime.InteropServices
 open FSharp.NativeInterop
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
@@ -15,16 +17,12 @@ open FSharp.Compiler.Text.Range
 
 [<Sealed>]
 type SemanticClassificationView(mmf: MemoryMappedFile, length) =
-    member _.ReadRange(reader: byref<BlobReader>) =
-        let startLine = reader.ReadInt32()
-        let startColumn = reader.ReadInt32()
-        let endLine = reader.ReadInt32()
-        let endColumn = reader.ReadInt32()
-        let fileIndex = reader.ReadInt32()
 
-        let posStart = mkPos startLine startColumn
-        let posEnd = mkPos endLine endColumn
-        mkFileIndexRange fileIndex posStart posEnd
+    let buffer = Array.zeroCreate<byte> sizeof<SemanticClassificationItem>
+
+    member _.ReadItem(reader: byref<BlobReader>) =
+        reader.ReadBytes(sizeof<SemanticClassificationItem>, buffer, 0)
+        MemoryMarshal.Cast<byte, SemanticClassificationItem>(Span(buffer)).[0]
 
     member this.ForEach(f: SemanticClassificationItem -> unit) =
         use view = mmf.CreateViewAccessor(0L, length)
@@ -32,9 +30,7 @@ type SemanticClassificationView(mmf: MemoryMappedFile, length) =
 
         reader.Offset <- 0
         while reader.Offset < reader.Length do
-            let m = this.ReadRange &reader
-            let sct = reader.ReadInt32()
-            let item = SemanticClassificationItem((m, (enum<SemanticClassificationType>(sct))))
+            let item = this.ReadItem(&reader)
             f item
 
 [<Sealed>]

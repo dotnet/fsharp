@@ -6,6 +6,7 @@ open System
 open System.IO
 open System.IO.MemoryMappedFiles
 open System.Reflection.Metadata
+open System.Runtime.InteropServices
 open FSharp.NativeInterop
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Infos
@@ -17,6 +18,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 
 #nowarn "9"
+#nowarn "51"
 
 /// These tags are used to create unique item key strings to decrease possible key string collisions when the Items are actually completely different.
 [<RequireQualifiedAccess>]
@@ -94,21 +96,16 @@ module ItemKeyTags =
 [<Sealed>]
 type ItemKeyStore(mmf: MemoryMappedFile, length) =
 
+    let rangeBuffer = Array.zeroCreate<byte> sizeof<range>
+
     let mutable isDisposed = false
     let checkDispose() =
         if isDisposed then
             raise (ObjectDisposedException("ItemKeyStore"))
 
     member _.ReadRange(reader: byref<BlobReader>) =
-        let startLine = reader.ReadInt32()
-        let startColumn = reader.ReadInt32()
-        let endLine = reader.ReadInt32()
-        let endColumn = reader.ReadInt32()
-        let fileIndex = reader.ReadInt32()
-
-        let posStart = mkPos startLine startColumn
-        let posEnd = mkPos endLine endColumn
-        mkFileIndexRange fileIndex posStart posEnd
+        reader.ReadBytes(sizeof<range>, rangeBuffer, 0)
+        MemoryMarshal.Cast<byte, range>(Span(rangeBuffer)).[0]
 
     member _.ReadKeyString(reader: byref<BlobReader>) =
         let size = reader.ReadInt32()
@@ -174,11 +171,9 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         b.WriteUTF16 str
 
     let writeRange (m: range) =
-        b.WriteInt32(m.StartLine)
-        b.WriteInt32(m.StartColumn)
-        b.WriteInt32(m.EndLine)
-        b.WriteInt32(m.EndColumn)
-        b.WriteInt32(m.FileIndex)
+        let mutable m = m
+        let ptr = &&m |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<byte>
+        b.WriteBytes(ptr, sizeof<range>)
 
     let writeEntityRef (eref: EntityRef) =
         writeString ItemKeyTags.entityRef
