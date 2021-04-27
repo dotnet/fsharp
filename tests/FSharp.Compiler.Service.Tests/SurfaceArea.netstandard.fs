@@ -5154,6 +5154,11 @@ FSharp.Compiler.Syntax.DebugPointAtSequential: Int32 GetHashCode(System.Collecti
 FSharp.Compiler.Syntax.DebugPointAtSequential: Int32 Tag
 FSharp.Compiler.Syntax.DebugPointAtSequential: Int32 get_Tag()
 FSharp.Compiler.Syntax.DebugPointAtSequential: System.String ToString()
+FSharp.Compiler.Syntax.DebugPointAtSequential+Tags: Int32 None
+FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean IsNone
+FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean get_IsNone()
+FSharp.Compiler.Syntax.DebugPointAtSequential: FSharp.Compiler.Syntax.DebugPointAtSequential None
+FSharp.Compiler.Syntax.DebugPointAtSequential: FSharp.Compiler.Syntax.DebugPointAtSequential get_None()
 FSharp.Compiler.Syntax.DebugPointAtTry
 FSharp.Compiler.Syntax.DebugPointAtTry+Tags: Int32 Body
 FSharp.Compiler.Syntax.DebugPointAtTry+Tags: Int32 No
