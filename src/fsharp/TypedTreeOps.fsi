@@ -2423,7 +2423,7 @@ val (|ValApp|_|): TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) opti
 /// Match expressions that represent the creation of an instance of an F# delegate value
 val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Val list list * Expr * range) option
 
-/// Match 'if __useResumableStateMachines then ... else ...' expressions
+/// Match 'if __useResumableCode then ... else ...' expressions
 val (|IfUseResumableStateMachinesExpr|_|) : TcGlobals -> Expr -> (Expr * Expr) option
 
 val CombineCcuContentFragments: range -> ModuleOrNamespaceType list -> ModuleOrNamespaceType

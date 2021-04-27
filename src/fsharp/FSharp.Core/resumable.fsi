@@ -59,7 +59,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// </summary>
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val __useResumableStateMachines<'T> : bool 
+        val __useResumableCode<'T> : bool 
 
         /// <summary>
         /// Indicates a resumption point within resumable code

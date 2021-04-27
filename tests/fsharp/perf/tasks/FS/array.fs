@@ -96,7 +96,7 @@ type ResizeArrayBuilder() =
     inherit ResizeArrayBuilderBase()
 
     member inline b.Run([<ResumableCode>] __expand_code : ResizeArrayBuilderCode<'T>) : ResizeArray<'T> = 
-        if __useResumableStateMachines then
+        if __useResumableCode then
             __structStateMachine<ResizeArrayBuilderStateMachine<'T>, _>
                 (MoveNextMethod<ResizeArrayBuilderStateMachine<'T>>(fun sm -> 
                        __expand_code.Invoke(&sm)
@@ -121,7 +121,7 @@ type ArrayBuilder() =
     inherit ResizeArrayBuilderBase()
 
     member inline b.Run([<ResumableCode>] __expand_code : ResizeArrayBuilderCode<'T>) : 'T[] = 
-        if __useResumableStateMachines then
+        if __useResumableCode then
             __structStateMachine<ResizeArrayBuilderStateMachine<'T>, _>
                 (MoveNextMethod<ResizeArrayBuilderStateMachine<'T>>(fun sm -> 
                        __expand_code.Invoke(&sm)

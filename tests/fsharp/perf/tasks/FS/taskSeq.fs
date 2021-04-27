@@ -181,7 +181,7 @@ type TaskSeqBuilder() =
             { new TaskSeqStateMachine<'T>(-1) with 
                 [<ResumableCode>]
                 member sm.Step () = 
-                    if __useResumableStateMachines then
+                    if __useResumableCode then
                         //-- RESUMABLE CODE START
                         __resumeAt sm.ResumptionPoint
                         __expand_code sm
@@ -194,7 +194,7 @@ type TaskSeqBuilder() =
                         code
                     //-- RESUMABLE CODE END
             }
-        if not __useResumableStateMachines then
+        if not __useResumableCode then
             sm.ResumptionFunc <- __expand_code
         sm.Start()
 
@@ -204,7 +204,7 @@ type TaskSeqBuilder() =
 
     member inline _.Combine([<ResumableCode>] __expand_task1: TaskSeqCode<'T>, [<ResumableCode>] __expand_task2: TaskSeqCode<'T>) : [<ResumableCode>] TaskSeqCode<'T> =
         (fun sm -> 
-            if __useResumableStateMachines then
+            if __useResumableCode then
                 let __stack_step = __expand_task1 sm
                 if __stack_step = TaskSeqStatus.DONE then
                     __expand_task2 sm
@@ -231,7 +231,7 @@ type TaskSeqBuilder() =
             
     member inline _.While([<ResumableCode>] __expand_condition : unit -> bool, [<ResumableCode>] __expand_body : TaskSeqCode<'T>) : [<ResumableCode>] TaskSeqCode<'T> =
         (fun sm -> 
-            if __useResumableStateMachines then
+            if __useResumableCode then
                 let mutable __stack_step = TaskSeqStatus.DONE
                 while (__stack_step = TaskSeqStatus.DONE) && __expand_condition() do
                     //if verbose then Console.WriteLine("[{0}] while loop before body", sm.GetHashCode())
@@ -245,7 +245,7 @@ type TaskSeqBuilder() =
 
     member inline _.WhileAsync([<ResumableCode>] __expand_condition : unit -> ValueTask<bool>, [<ResumableCode>] __expand_body : TaskSeqCode<'T>) : [<ResumableCode>] TaskSeqCode<'T> =
         (fun sm -> 
-            if __useResumableStateMachines then
+            if __useResumableCode then
                 //-- RESUMABLE CODE START
                 let mutable __stack_step = TaskSeqStatus.DONE
                 let mutable __stack_proceed = true
@@ -281,7 +281,7 @@ type TaskSeqBuilder() =
 
     member inline _.TryWith([<ResumableCode>] __expand_body : TaskSeqCode<'T>, [<ResumableCode>] __expand_catch : exn -> TaskSeqCode<'T>) : [<ResumableCode>] TaskSeqCode<'T> =
         (fun sm -> 
-            if __useResumableStateMachines then
+            if __useResumableCode then
                 let mutable __stack_step = TaskSeqStatus.DONE
                 let mutable __stack_caught = false
                 let mutable __stack_exn = Unchecked.defaultof<_>
@@ -301,7 +301,7 @@ type TaskSeqBuilder() =
 
     member inline _.TryFinallyAsync([<ResumableCode>] __expand_body: TaskSeqCode<'T>, compensation : unit -> Task<unit>) : [<ResumableCode>] TaskSeqCode<'T> =
         (fun sm -> 
-            if __useResumableStateMachines then
+            if __useResumableCode then
                 let mutable __stack_step = TaskSeqStatus.DONE
                 sm.PushDispose compensation
                 try
@@ -352,7 +352,7 @@ type TaskSeqBuilder() =
 
     member inline _.Yield (v: 'T) : [<ResumableCode>] TaskSeqCode<'T>  =
         (fun sm -> 
-            if __useResumableStateMachines then 
+            if __useResumableCode then 
                 match __resumableEntry() with
                 | Some contID ->
                     //if verbose then Console.WriteLine("[{0}] suspending at yield of {1}", sm.GetHashCode(), v)
@@ -373,7 +373,7 @@ type TaskSeqBuilder() =
 
     member inline _.Bind (task: Task<'TResult1>, [<ResumableCode>] __expand_continuation: ('TResult1 -> TaskSeqCode<'T>)) : [<ResumableCode>] TaskSeqCode<'T> =
         (fun sm -> 
-            if __useResumableStateMachines then 
+            if __useResumableCode then 
                 let mutable awaiter = task.GetAwaiter()
                 match __resumableEntry() with 
                 | Some contID ->

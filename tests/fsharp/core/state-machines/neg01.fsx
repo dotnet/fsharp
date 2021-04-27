@@ -23,7 +23,7 @@ module ``No warning for resumable code that is just a sequential expression`` =
 module ``No warning for protected use of __resumeAt`` =
     let inline f1 () : [<ResumableCode>] (unit -> int) =
         fun () -> 
-             if __useResumableStateMachines then
+             if __useResumableCode then
                 __resumeAt 0 // we don't get a warning here
                 2
              else
@@ -32,7 +32,7 @@ module ``No warning for protected use of __resumeAt`` =
 module ``No warning for protected use of __resumableEntry`` =
     let inline f1 () : [<ResumableCode>] (unit -> int) =
         fun () -> 
-             if __useResumableStateMachines then
+             if __useResumableCode then
                  match __resumableEntry() with 
                  | Some contID -> 1
                  | None -> 2
@@ -80,7 +80,7 @@ type SyncMachineStruct2<'TOverall> =
 // Resumable code may NOT have let rec statements
 module ResumableCode_LetRec =
     let makeStateMachine inputValue = 
-        if __useResumableStateMachines then
+        if __useResumableCode then
             (
                 { new SyncMachine<int>() with 
                     [<ResumableCode>]
@@ -105,7 +105,7 @@ module ``Warning on unprotected __resumeAt`` =
 module ``Warning because for loop doesn't supported resumable code`` =
     let inline f1 () : [<ResumableCode>] (unit -> int) =
         fun () -> 
-             if __useResumableStateMachines then
+             if __useResumableCode then
                  for i in 0 .. 1 do
                     __resumeAt 0 // we expect an error here - this is not valid resumable code
              1
@@ -127,7 +127,7 @@ module ``Error because unprotected __resumableEntry`` =
 
 module ``Error for struct state machine with non-inline method`` =
     let makeStateMachine inputValue = 
-        if __useResumableStateMachines then
+        if __useResumableCode then
             __structStateMachine<SyncMachineStruct1<int>, int>
                 (MoveNextMethod<_>(fun sm -> ()))
                 (SetMachineStateMethod<_>(fun sm state -> ()))
@@ -138,7 +138,7 @@ module ``Error for struct state machine with non-inline method`` =
 
 module ``Error for struct state machine without NoEquality, NoComparison`` =
     let makeStateMachine inputValue = 
-        if __useResumableStateMachines then
+        if __useResumableCode then
             __structStateMachine<SyncMachineStruct2<int>, int>
                 (MoveNextMethod<_>(fun sm -> ()))
                 (SetMachineStateMethod<_>(fun sm state -> ()))
@@ -152,7 +152,7 @@ module ``let bound __expand can't use resumable code constructs`` =
                 { new SyncMachine<int>() with 
                     [<ResumableCode>]
                     member sm.Step ()  =  
-                      if __useResumableStateMachines then
+                      if __useResumableCode then
                        __resumeAt sm.PC
                        // TEST: a resumable object may contain a macro defining beta-reducible code with a resumption point
                        let __expand_code = (fun () -> 

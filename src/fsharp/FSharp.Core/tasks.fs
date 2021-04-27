@@ -106,11 +106,11 @@ type TaskBuilder() =
         TaskCode<'TOverall, 'T>(fun sm -> (__expand_f()).Invoke(&sm))
 
     member inline __.Run([<ResumableCode>] __expand_code : TaskCode<'TOverall, 'TOverall>) : Task<'TOverall> = 
-        if __useResumableStateMachines then 
+        if __useResumableCode then 
             __structStateMachine<TaskStateMachine<'TOverall>, Task<'TOverall>>
                 // MoveNext
                 (MoveNextMethod<_>(fun sm -> 
-                    if __useResumableStateMachines then 
+                    if __useResumableCode then 
                         //-- RESUMABLE CODE START
                         __resumeAt sm.ResumptionPoint 
                         try
@@ -165,7 +165,7 @@ type TaskBuilder() =
     /// This prevents constructs like `task { return 1; return 2; }`.
     member inline __.Combine([<ResumableCode>] __expand_task1: TaskCode<'TOverall, unit>, [<ResumableCode>] __expand_task2: TaskCode<'TOverall, 'T>) : [<ResumableCode>] TaskCode<'TOverall, 'T> =
         TaskCode<_, _>(fun sm ->
-            if __useResumableStateMachines then
+            if __useResumableCode then
                 //-- RESUMABLE CODE START
                 // NOTE: The code for __expand_task1 may contain await points! Resuming may branch directly
                 // into this code!
@@ -201,7 +201,7 @@ type TaskBuilder() =
     /// Builds a step that executes the body while the condition predicate is true.
     member inline __.While (condition : unit -> bool, [<ResumableCode>] __expand_body : TaskCode<'TOverall, unit>) : [<ResumableCode>] TaskCode<'TOverall, unit> =
         TaskCode<_, _>(fun sm ->
-            if __useResumableStateMachines then 
+            if __useResumableCode then 
                 //-- RESUMABLE CODE START
                 let mutable __stack_completed = true 
                 while __stack_completed && condition() do
@@ -243,7 +243,7 @@ type TaskBuilder() =
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline __.TryWith ([<ResumableCode>] __expand_body : TaskCode<'TOverall, 'T>, [<ResumableCode>] __expand_catch : exn -> TaskCode<'TOverall, 'T>) : [<ResumableCode>] TaskCode<'TOverall, 'T> =
         TaskCode<_, _>(fun sm ->
-            if __useResumableStateMachines then 
+            if __useResumableCode then 
                 //-- RESUMABLE CODE START
                 let mutable __stack_completed = false
                 let mutable __stack_caught = false
@@ -293,7 +293,7 @@ type TaskBuilder() =
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline __.TryFinally ([<ResumableCode>] __expand_body: TaskCode<'TOverall, 'T>, compensation : unit -> unit) : [<ResumableCode>] TaskCode<'TOverall, 'T> =
         TaskCode<_, _>(fun sm ->
-            if __useResumableStateMachines then 
+            if __useResumableCode then 
                 //-- RESUMABLE CODE START
                 let mutable __stack_completed = false
                 try
@@ -358,7 +358,7 @@ type TaskBuilder() =
 
     member inline __.ReturnFrom (task: Task<'T>) : [<ResumableCode>] TaskCode<'T, 'T> = 
         TaskCode<_, _>(fun sm -> 
-            if __useResumableStateMachines then 
+            if __useResumableCode then 
                 //-- RESUMABLE CODE START
                 // This becomes a state machine variable
                 let mutable awaiter = task.GetAwaiter()
@@ -449,7 +449,7 @@ module ContextSensitiveTasks =
                   (priority: IPriority2, task: ^TaskLike, [<ResumableCode>] __expand_continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : [<ResumableCode>] TaskCode<'TOverall, 'TResult2> =
 
             TaskCode<_, _>(fun sm -> 
-                if __useResumableStateMachines then 
+                if __useResumableCode then 
                     // Get an awaiter from the awaitable
                     let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
 
@@ -492,7 +492,7 @@ module ContextSensitiveTasks =
         static member inline CanBind (priority: IPriority1, task: Task<'TResult1>, [<ResumableCode>] __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : [<ResumableCode>] TaskCode<'TOverall, 'TResult2> =
 
             TaskCode<_, _>(fun sm -> 
-                if __useResumableStateMachines then 
+                if __useResumableCode then 
                     // Get an awaiter from the task
                     let mutable awaiter = task.GetAwaiter()
 
@@ -548,7 +548,7 @@ module ContextSensitiveTasks =
               (priority: IPriority2, task: ^TaskLike) : [<ResumableCode>] TaskCode< ^T, ^T > =
 
             TaskCode<_, _>(fun sm -> 
-                if __useResumableStateMachines then 
+                if __useResumableCode then 
                     // Get an awaiter from the awaitable
                     let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
 
@@ -571,7 +571,7 @@ module ContextSensitiveTasks =
         static member inline CanReturnFrom (priority: IPriority1, task: Task<'T>) : [<ResumableCode>] TaskCode<'T, 'T> =
 
             TaskCode<_, _>(fun sm -> 
-                if __useResumableStateMachines then 
+                if __useResumableCode then 
                     let mutable awaiter = task.GetAwaiter()
 
                     match __resumableEntry() with

@@ -1229,7 +1229,10 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
         CheckTypeNoByrefs cenv env m ty
         NoLimit
 
-    | StructStateMachineExpr g (templateStructTy, moveNextMethodThisVar, moveNextMethodBodyExpr, m, setMachineStateExpr, afterMethodThisVar, afterMethodBodyExpr) ->
+    | StructStateMachineExpr g (templateStructTy, moveNextMethodThisVar, moveNextMethodBodyExpr, _m, setMachineStateExpr, afterMethodThisVar, afterMethodBodyExpr) ->
+        if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
+            error(Error(FSComp.SR.stateMachineNotSupported(), expr.Range))
+        let m = expr.Range
         match GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m templateStructTy with 
         | [ity] when typeEquiv g ity g.mk_IAsyncStateMachine_ty ->  ()
         | _ -> errorR(Error(FSComp.SR.structTemplateMustImplementOneInterface(), m))
@@ -1428,6 +1431,8 @@ and CheckMethod cenv env baseValOpt (TObjExprMethod(_, attribs, tps, vs, body, m
     let env = BindArgVals env vs
     let env = 
         if HasFSharpAttribute cenv.g cenv.g.attrib_ResumableCodeAttribute attribs then 
+           if not (cenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
+               error(Error(FSComp.SR.stateMachineNotSupported(), m))
            { env with resumableCode = Resumable.ResumableExpr (false, false) } 
         else
            { env with resumableCode = Resumable.None } 
@@ -2116,6 +2121,8 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
                 )
 
         if hasResumableCodeReturn then 
+            if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
+                error(Error(FSComp.SR.stateMachineNotSupported(), bind.Var.Range))
             { env with resumableCode = Resumable.ResumableExpr (true, false) } 
         else
             env

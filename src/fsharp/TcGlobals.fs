@@ -721,7 +721,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_seq_finally_info           = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateThenFinally"                 , None                 , None          , [varb],     ([[mkSeqTy varbTy]; [v_unit_ty --> v_unit_ty]], mkSeqTy varbTy))
   let v_seq_of_functions_info      = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateFromFunctions"               , None                 , None          , [vara;varb], ([[v_unit_ty --> varaTy]; [varaTy --> v_bool_ty]; [varaTy --> varbTy]], mkSeqTy varbTy))  
   let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty --> (varbTy --> v_unit_ty)) --> varaTy]], TType_app (v_fslib_IEvent2_tcr, [varaTy;varbTy])))
-  let v_cgh__useResumableStateMachines_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,          "__useResumableStateMachines"                   , None                 , None          , [vara],     ([[]], v_bool_ty))
+  let v_cgh__useResumableCode_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,          "__useResumableCode"                   , None                 , None          , [vara],     ([[]], v_bool_ty))
   let v_cgh__resumeAt_info         = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumeAt"                           , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
   let v_cgh__resumableStateMachine_info  = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,             "__resumableStateMachine"                    , None                 , None          , [vara],     ([[varaTy]], varaTy))
   let v_cgh__structStateMachine_info  = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                "__structStateMachine"                    , None                 , None          , [vara; varb],     ([[varbTy; varcTy; (v_unit_ty --> vardTy)]], vardTy))
@@ -1489,7 +1489,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member val cgh__structStateMachine_vref = ValRefForIntrinsic v_cgh__structStateMachine_info
   member val cgh__resumableStateMachine_vref = ValRefForIntrinsic v_cgh__resumableStateMachine_info
-  member val cgh__useResumableStateMachines_vref = ValRefForIntrinsic v_cgh__useResumableStateMachines_info
+  member val cgh__useResumableCode_vref = ValRefForIntrinsic v_cgh__useResumableCode_info
   member val cgh__resumeAt_vref = ValRefForIntrinsic v_cgh__resumeAt_info
   member val cgh__resumableEntry_vref = ValRefForIntrinsic v_cgh__resumableEntry_info
 

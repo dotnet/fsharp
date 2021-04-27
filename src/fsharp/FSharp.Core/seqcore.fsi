@@ -124,9 +124,11 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         [<MethodImpl(MethodImplOptions.NoInlining)>]
+        [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
         val SetFreshConsTail: cons: 'T list -> tail: 'T list -> unit
 
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
         val inline FreshConsNoTail: head: 'T -> 'T list
 
     [<AbstractClass>]

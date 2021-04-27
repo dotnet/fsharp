@@ -94,7 +94,7 @@ type ListBuilder() =
         b.For(source, (fun value -> b.Yield(value)))
 
     member inline b.Run([<ResumableCode>] __expand_code : ListBuilderCode<'T>) : 'T list = 
-        if __useResumableStateMachines then
+        if __useResumableCode then
             __structStateMachine<ListBuilderStateMachine<'T>, _>
                 (MoveNextMethod<ListBuilderStateMachine<'T>>(fun sm -> 
                        __expand_code.Invoke(&sm)

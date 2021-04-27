@@ -17,7 +17,7 @@ type ValueCode = unit -> bool
 type ValueBuilder() =
     
     member inline __.Run() : StateMachine<'T> = 
-        if __useResumableStateMachines then
+        if __useResumableCode then
             (__resumableStateMachine
                 { new StateMachine<'T>() with 
                     member sm.Step () =
@@ -35,7 +35,7 @@ type ValueBuilder() =
 
     // member inline __.Combine(__expand_task1: ValueCode<'T>, __expand_task2: ValueCode<'T>) : ValueCode<'T> =
     //     (fun sm -> 
-    //         if __useResumableStateMachines then
+    //         if __useResumableCode then
     //             let __stack_step = __expand_task1 sm
     //             if __stack_step then 
     //                 __expand_task2 sm
@@ -46,7 +46,7 @@ type ValueBuilder() =
 
     // member inline __.While(__expand_condition : unit -> bool, __expand_body : ValueCode<'T>) : ValueCode<'T> =
     //     (fun sm -> 
-    //         if __useResumableStateMachines then
+    //         if __useResumableCode then
     //             let mutable __stack_completed = false 
     //             while __stack_completed && __expand_condition() do
     //                 // NOTE: The body of the 'while' may contain await points, resuming may branch directly into the while loop
@@ -59,7 +59,7 @@ type ValueBuilder() =
 
     // member inline __.TryWith(__expand_body : ValueCode<'T>, __expand_catch : exn -> ValueCode<'T>) : ValueCode<'T> =
     //     (fun sm -> 
-    //         if __useResumableStateMachines then
+    //         if __useResumableCode then
     //             let mutable __stack_completed = false
     //             let mutable __stack_caught = false
     //             let mutable __stack_savedExn = Unchecked.defaultof<_>
@@ -82,7 +82,7 @@ type ValueBuilder() =
 
     // member inline __.TryFinally(__expand_body: ValueCode<'T>, compensation : unit -> unit) : ValueCode<'T> =
     //     (fun sm -> 
-    //         if __useResumableStateMachines then
+    //         if __useResumableCode then
     //             let mutable completed = false
     //             sm.PushDispose compensation
     //             try
@@ -109,7 +109,7 @@ type ValueBuilder() =
 
     member inline __.Return (v: 'T) : ValueCode =
         (fun sm ->
-            //if __useResumableStateMachines then
+            //if __useResumableCode then
                 // match __resumableEntry() with
                 // | Some contID ->
                 //     sm.ResumptionPoint <- contID

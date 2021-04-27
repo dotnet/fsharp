@@ -796,7 +796,7 @@ Microsoft.FSharp.Core.CompilerServices.SetMachineStateMethod`1[TTemplate]: Syste
 Microsoft.FSharp.Core.CompilerServices.SetMachineStateMethod`1[TTemplate]: Void .ctor(System.Object, IntPtr)
 Microsoft.FSharp.Core.CompilerServices.SetMachineStateMethod`1[TTemplate]: Void EndInvoke(System.IAsyncResult)
 Microsoft.FSharp.Core.CompilerServices.SetMachineStateMethod`1[TTemplate]: Void Invoke(TTemplate ByRef, System.Runtime.CompilerServices.IAsyncStateMachine)
-Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Boolean __useResumableStateMachines[T]()
+Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Boolean __useResumableCode[T]()
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] __resumableEntry()
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: T __resumeAt[T](Int32)
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: TResult __structStateMachine[TTemplate,TResult](Microsoft.FSharp.Core.CompilerServices.MoveNextMethod`1[TTemplate], Microsoft.FSharp.Core.CompilerServices.SetMachineStateMethod`1[TTemplate], Microsoft.FSharp.Core.CompilerServices.AfterMethod`2[TTemplate,TResult])

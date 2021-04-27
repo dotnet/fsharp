@@ -91,7 +91,7 @@ type OptionBuilder() =
     
 
     member inline _.Run([<ResumableCode>] __expand_code : OptionCode<'T>) : 'T option = 
-        if __useResumableStateMachines then
+        if __useResumableCode then
             __structStateMachine<OptionStateMachine<'T>, 'T option>
                 (MoveNextMethod<_>(fun sm -> 
                        __expand_code.Invoke(&sm)))
@@ -113,7 +113,7 @@ type ValueOptionBuilder() =
     
 
     member inline _.Run([<ResumableCode>] __expand_code : OptionCode<'T>) : 'T voption = 
-        if __useResumableStateMachines then
+        if __useResumableCode then
             __structStateMachine<OptionStateMachine<'T>, 'T voption>
                 (MoveNextMethod<OptionStateMachine<'T>>(fun sm -> 
                        __expand_code.Invoke(&sm)

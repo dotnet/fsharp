@@ -69,7 +69,7 @@ type SeqBuilder() =
 
     [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : SeqCode<'T>) : IEnumerable<'T> = 
-        if __useResumableStateMachines then
+        if __useResumableCode then
             (__resumableStateMachine
                 { new SeqStateMachine<'T>() with 
                     member sm.Step () =
@@ -90,7 +90,7 @@ type SeqBuilder() =
     [<NoDynamicInvocation>]
     member inline __.Combine(__expand_task1: SeqCode<'T>, __expand_task2: SeqCode<'T>) : SeqCode<'T> =
         (fun sm -> 
-            if __useResumableStateMachines then
+            if __useResumableCode then
                 let __stack_step = __expand_task1 sm
                 if __stack_step then 
                     __expand_task2 sm
@@ -117,7 +117,7 @@ type SeqBuilder() =
     [<NoDynamicInvocation>]
     member inline __.While(__expand_condition : unit -> bool, __expand_body : SeqCode<'T>) : SeqCode<'T> =
         (fun sm -> 
-            if __useResumableStateMachines then
+            if __useResumableCode then
                 let mutable __stack_completed = false 
                 while __stack_completed && __expand_condition() do
                     // NOTE: The body of the 'while' may contain await points, resuming may branch directly into the while loop
@@ -152,7 +152,7 @@ type SeqBuilder() =
     [<NoDynamicInvocation>]
     member inline __.TryWith(__expand_body : SeqCode<'T>, __expand_catch : exn -> SeqCode<'T>) : SeqCode<'T> =
         (fun sm -> 
-            if __useResumableStateMachines then 
+            if __useResumableCode then 
                 let mutable __stack_completed = false
                 let mutable __stack_caught = false
                 let mutable __stack_savedExn = Unchecked.defaultof<_>
@@ -209,7 +209,7 @@ type SeqBuilder() =
     [<NoDynamicInvocation>]
     member inline __.Yield (v: 'T) : SeqCode<'T> =
         (fun sm ->
-            if __useResumableStateMachines then 
+            if __useResumableCode then 
                 match __resumableEntry() with
                 | Some contID ->
                     sm.ResumptionPoint <- contID

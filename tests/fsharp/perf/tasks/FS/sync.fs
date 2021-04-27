@@ -22,7 +22,7 @@ type SyncBuilder() =
         (fun () -> __expand_f () ())
 
     member inline _.Run([<ResumableCode>] __expand_code : SyncCode<'T>) : 'T = 
-        if __useResumableStateMachines then
+        if __useResumableCode then
             { new SyncMachine<'T>() with 
                 [<ResumableCode>]
                 member _.Step ()  = __expand_code () }.Start()

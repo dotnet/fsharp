@@ -9320,7 +9320,7 @@ let (|ValApp|_|) g vref expr =
 
 let (|UseResumableStateMachinesExpr|_|) g expr =
     match expr with
-    | ValApp g g.cgh__useResumableStateMachines_vref (_, _, _m) -> Some ()
+    | ValApp g g.cgh__useResumableCode_vref (_, _, _m) -> Some ()
     | _ -> None
 
 /// Match 
@@ -9331,7 +9331,7 @@ let (|IsThenElseExpr|_|) expr =
         Some (cond, thenExpr,  elseExpr)
     | _ -> None
 
-/// if __useResumableStateMachines then ... else ...
+/// if __useResumableCode then ... else ...
 let (|IfUseResumableStateMachinesExpr|_|) g expr =
     match expr with
     | IsThenElseExpr(UseResumableStateMachinesExpr g (), thenExpr, elseExpr) -> Some (thenExpr, elseExpr)

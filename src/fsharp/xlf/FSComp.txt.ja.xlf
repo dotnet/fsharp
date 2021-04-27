@@ -218,8 +218,8 @@
         <note />
       </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
-        <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableStateMachines then ...' and the overall composition must form valid resumable code.</source>
-        <target state="new">The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableStateMachines then ...' and the overall composition must form valid resumable code.</target>
+        <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</source>
+        <target state="new">The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionConst">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
-        <source>The construct '{0}' may only be used in valid resumable code. For example, 'if __useResumableStateMachines then ...' and the `[&lt;ResumableCode&gt;]' attribute must be used.</source>
-        <target state="new">The construct '{0}' may only be used in valid resumable code. For example, 'if __useResumableStateMachines then ...' and the `[&lt;ResumableCode&gt;]' attribute must be used.</target>
+        <source>The construct '{0}' may only be used in valid resumable code. For example, 'if __useResumableCode then ...' and the `[&lt;ResumableCode&gt;]' attribute must be used.</source>
+        <target state="new">The construct '{0}' may only be used in valid resumable code. For example, 'if __useResumableCode then ...' and the `[&lt;ResumableCode&gt;]' attribute must be used.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">

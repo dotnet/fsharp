@@ -2398,7 +2398,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
             error(Error(FSComp.SR.stateMachineNotSupported(), expr.Range))
            
     | None ->
-    // This part of the GenExprAux may apply because a 'match' expression can be a 'if __useResumableStateMachines ...' expression
+    // This part of the GenExprAux may apply because a 'match' expression can be a 'if __useResumableCode ...' expression
     match expr with
     | IfUseResumableStateMachinesExpr g (_, elseExpr) -> 
         GenExpr cenv cgbuf eenv sp elseExpr sequel

@@ -38,22 +38,22 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
         /// Statically determines whether resumable code is being used
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __useResumableStateMachines<'T> : bool = false
+        let __useResumableCode<'T> : bool = false
         
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         let __resumableEntry () : int option = 
-            failwith "__resumableEntry should always be guarded by __useResumableStateMachines and only used in valid state machine implementations"
+            failwith "__resumableEntry should always be guarded by __useResumableCode and only used in valid state machine implementations"
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         let __resumeAt<'T> (programLabel: int) : 'T = 
             ignore programLabel
-            failwith "__resumeAt should always be guarded by __useResumableStateMachines and only used in valid state machine implementations"
+            failwith "__resumeAt should always be guarded by __useResumableCode and only used in valid state machine implementations"
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         let __structStateMachine<'Template, 'Result> (moveNextMethod: MoveNextMethod<'Template>) (setMachineStateMethod: SetMachineStateMethod<'Template>) (afterMethod: AfterMethod<'Template, 'Result>): 'Result =
             ignore moveNextMethod
             ignore setMachineStateMethod
             ignore afterMethod
-            failwith "__structStateMachine should always be guarded by __useResumableStateMachines and only used in valid state machine implementations"
+            failwith "__structStateMachine should always be guarded by __useResumableCode and only used in valid state machine implementations"
        
 #endif
