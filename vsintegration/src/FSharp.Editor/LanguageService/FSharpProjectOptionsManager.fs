@@ -433,6 +433,13 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
         | true, result -> Some(result)
         | _ -> None
 
+    member _.ClearAllCaches() =
+        cpsCommandLineOptions.Clear()
+        legacyProjectSites.Clear()
+        cache.Clear()
+        singleFileCache.Clear()
+        lastSuccessfulCompilations.Clear()
+
     interface IDisposable with
         member _.Dispose() = 
             cancellationTokenSource.Cancel()
@@ -521,6 +528,9 @@ type internal FSharpProjectOptionsManager
         match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
         | Some (_, parsingOptions, _) -> parsingOptions
         | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile document.Name }
+
+    member this.ClearAllCaches() =
+        reactor.ClearAllCaches()
 
     [<Export>]
     /// This handles commandline change notifications from the Dotnet Project-system
