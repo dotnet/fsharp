@@ -752,8 +752,8 @@ module CheckStateMachineCompilationOfMatchBindingVariables =
 
     check "ccekecnwevwe1" (f (1, 2) |> Seq.toList) [2;2]
     check "ccekecnwevwe2" (f (2, 1) |> Seq.toList) [2;2]
-    check "ccekecnwevwe3" (f (2, 3) |> Seq.toList) [2]
-    check "ccekecnwevwe4" (f (3, 2) |> Seq.toList) [2]
+    check "ccekecnwevwe3" (f (2, 3) |> Seq.toList) [3]
+    check "ccekecnwevwe4" (f (3, 2) |> Seq.toList) [3]
     check "ccekecnwevwe5" (f (3, 3) |> Seq.toList) []
 
 (*---------------------------------------------------------------------------
