@@ -4,6 +4,8 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <OutputType>Exe</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <!-- Turn off "This function is for use by compiled F# code and should not be used directly" -->
+	<OtherFlags>$(OtherFlags) --nowarn:1204</OtherFlags>
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
 

@@ -10,7 +10,10 @@
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
     <DefineConstants Condition="'$(Configuration)' == 'Proto'">BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:3218 --warnon:1182 --warnon:3390 --nowarn:3515 --compiling-fslib --compiling-fslib-40 --maxerrors:100 --extraoptimizationloops:1 --nowarn:57</OtherFlags>
-    <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <!-- preview needed for use of state machines for tasks -->
+    <LangVersion>preview</LangVersion>
+    <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <Tailcalls>true</Tailcalls>
     <NGenBinary>true</NGenBinary>
 
     <PreRelease>true</PreRelease>
