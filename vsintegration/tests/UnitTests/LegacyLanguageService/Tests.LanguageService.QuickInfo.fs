@@ -1948,8 +1948,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              [
               "type KeyCollection<";
               "member CopyTo"; 
-              "[Filename:"; "mscorlib.dll]";
-              "[Signature:T:System.Collections.Generic.Dictionary`2.KeyCollection]"
+              """<summary>Represents the collection of keys in a <see cref="T:System.Collections.Generic.Dictionary`2" />. This class cannot be inherited.</summary>"""
              ]
             )   
 
@@ -2051,8 +2050,7 @@ query."
              "AcceptButton", 
              (* expect to see in order... *)
              [
-              "[Filename:"; "System.Windows.Forms.dll]"
-              "[Signature:P:System.Windows.Forms.Form.AcceptButton]"
+              "<summary>Gets or sets the button on the form that is clicked when the user presses the ENTER key.</summary>"
              ]
             )
 
@@ -2883,7 +2881,7 @@ query."
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker0*)", "Test for members")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1*)", "x1 param!")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2*)", "[ParamName: arg1]")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2*)", "<summary>Concatenates the string representations of two specified objects.</summary>")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3*)", "str of case1")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker4*)", "str of case1")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker5*)", "value param")
