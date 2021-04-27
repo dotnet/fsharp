@@ -1129,6 +1129,7 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
             CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } handlerExpr
             CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } filterExpr
             true
+
         | Expr.Match (_spBind, _exprm, dtree, targets, _m, _ty) ->
             targets |> Array.iter(fun (TTarget(vs, targetExpr, _spTarget, _)) -> 
                 BindVals cenv env vs
@@ -1139,6 +1140,7 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
         | Expr.Let (bind, bodyExpr, _m, _)
                 // Restriction: resumable code can't contain local constrained generic functions
                 when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericConstraints g bind.Var) ->
+            CheckBinding cenv { env with resumableCode = Resumable.None } false PermitByRefExpr.Yes bind |> ignore<Limit>
             BindVal cenv env bind.Var
             CheckExprNoByrefs cenv env bodyExpr
             true
@@ -1158,6 +1160,7 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
         // This construct arises from the 'mkDefault' in the 'Throw' case of an incomplete pattern match
         | Expr.Const (Const.Zero, _, _) -> 
             true
+
         | _ ->
             if checking then 
                 warning(Error(FSComp.SR.tcResumableCodeExpected(), expr.Range))

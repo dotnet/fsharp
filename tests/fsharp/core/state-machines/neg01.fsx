@@ -5,7 +5,8 @@ open FSharp.Core.CompilerServices
 open FSharp.Core.CompilerServices.StateMachineHelpers
 open System.Runtime.CompilerServices
 
-//---------------------------------------------------------------
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+// No warnings expected in the declarations
 
 module ``No warning for resumable code that is just a simple expression`` =
     let inline f1 () : [<ResumableCode>] (unit -> int) =
@@ -41,7 +42,8 @@ module ``No warning for protected use of __resumableEntry`` =
     let inline f2 () : [<ResumableCode>] (unit -> int) =
         f1()
 
-//---------------------------------------------------------------
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// No warnings expected in code before this line
 
 [<AbstractClass>]
 type SyncMachine<'T>() =
@@ -143,4 +145,28 @@ module ``Error for struct state machine without NoEquality, NoComparison`` =
                 (AfterMethod<_,_>(fun sm -> 1))
         else
             failwith "should have been compiled to resumable code, no interpretation available"
+
+module ``let bound __expand can't use resumable code constructs`` =
+    let makeStateMachine inputValue = 
+            (
+                { new SyncMachine<int>() with 
+                    [<ResumableCode>]
+                    member sm.Step ()  =  
+                      if __useResumableStateMachines then
+                       __resumeAt sm.PC
+                       // TEST: a resumable object may contain a macro defining beta-reducible code with a resumption point
+                       let __expand_code = (fun () -> 
+                            // Specify a resumption point
+                            match __resumableEntry() with
+                            | Some contID ->
+                                // This is the suspension path. It is not executed in this test because we jump straight to label 1
+                                __resumeAt contID
+                            | None -> 
+                                // This is the resumption path
+                                // Label 1 goes here
+                                20+inputValue)
+                       __expand_code () 
+                      else failwith "dynamic"
+               }
+            ).Start()
 

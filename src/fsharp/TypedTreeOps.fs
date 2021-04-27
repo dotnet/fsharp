@@ -9524,7 +9524,10 @@ let (|RefStateMachineExpr|_|) (g: TcGlobals) expr =
     | Expr.Obj (objExprStamp, ty, basev, basecall, [ (TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, codeExpr, m)) ], iimpls, stateVars, objExprRange) ->
         if HasFSharpAttribute g g.attrib_ResumableCodeAttribute attribs then
             let remake2 (moveNextExprWithJumpTable, furtherStateVars) = 
-                let overrideR = TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, moveNextExprWithJumpTable, m) 
+                // Remove the ResumableCode attribute so the rebuilt expression isn't recognised as
+                // a RefStateMachine again.
+                let attribs2 = attribs |> List.filter (IsMatchingFSharpAttribute g g.attrib_ResumableCodeAttribute >> not)
+                let overrideR = TObjExprMethod(slotsig, attribs2, methTyparsOfOverridingMethod, methodParams, moveNextExprWithJumpTable, m) 
                 let objExprR = Expr.Obj (objExprStamp, ty, basev, basecall, [overrideR], iimpls, stateVars @ furtherStateVars, objExprRange)
                 objExprR
             let info = (codeExpr, remake2, m)

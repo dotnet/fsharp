@@ -135,12 +135,16 @@ type env =
           //MachineAddrExpr = None 
         }
 
-/// Detect prefix of state machine expressions 
+/// Relatively quick check to detect prefix of expanded, optimized state machine expressions 
+/// This is run on every expression during codegen so we have to be a little careful about performance.
 let rec IsPossibleStateMachineExpr g overallExpr = 
     match overallExpr with
     | Expr.Let (macroBind, bodyExpr, _, _) when isExpandVar macroBind.Var -> IsPossibleStateMachineExpr g bodyExpr
-    // Eliminate 'if useResumableCode ...'
+    // Recognise 'if useResumableCode ...'
     | IfUseResumableStateMachinesExpr g _ -> true
+    | Expr.App (_, _, _, (RefStateMachineExpr g _ :: _), _) -> true
+    | RefStateMachineExpr g _ -> true
+    | StructStateMachineExpr g _ -> true
     | _ -> false
 
 let ConvertStateMachineExprToObject g overallExpr =
