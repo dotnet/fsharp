@@ -1967,8 +1967,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              [
               "type ArgumentException";
               "member Message"; 
-              "[Filename"; "mscorlib.dll]";
-              "[Signature:T:System.ArgumentException]"
+              "<summary>The exception that is thrown when one of the arguments provided to a method is not valid.</summary"
              ]
             )    
 
@@ -1986,8 +1985,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              (* expect to see in order... *)
              [
               "property System.AppDomain.CurrentDomain: System.AppDomain";
-              "[Filename"; "mscorlib.dll]";
-              "[Signature:P:System.AppDomain.CurrentDomain]"
+              """<summary>Gets the current application domain for the current <see cref="T:System.Threading.Thread" />.</summary>"""
              ]
             ) 
 
