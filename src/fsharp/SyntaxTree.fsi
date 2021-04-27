@@ -223,6 +223,9 @@ type DebugPointAtSequential =
     // This means "suppress a in 'a;b'" and "suppress b in 'a before b'"
     | StmtOnly
 
+    // This means "suppress both"
+    | None
+
     // This means "suppress b in 'a;b'" and "suppress a in 'a before b'"
     | ExprOnly
 

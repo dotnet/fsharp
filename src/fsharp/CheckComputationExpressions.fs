@@ -1050,6 +1050,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
                         match sp with 
                         | DebugPointAtSequential.ExprOnly -> DebugPointAtBinding.Yes m
                         | DebugPointAtSequential.StmtOnly -> DebugPointAtBinding.NoneAtDo 
+                        | DebugPointAtSequential.None -> DebugPointAtBinding.NoneAtDo 
                         | DebugPointAtSequential.Both -> DebugPointAtBinding.Yes m
                     Some(trans CompExprTranslationPass.Initial q varSpace (SynExpr.LetOrUseBang (sp, false, true, SynPat.Const(SynConst.Unit, rhsExpr.Range), rhsExpr, [], innerComp2, m)) translatedCtxt)
 

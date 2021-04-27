@@ -2230,6 +2230,7 @@ let rec FirstEmittedCodeWillBeDebugPoint g sp expr =
             | DebugPointAtSequential.Both -> true
             | DebugPointAtSequential.StmtOnly -> true
             | DebugPointAtSequential.ExprOnly -> false
+            | DebugPointAtSequential.None -> false
         | Expr.Match (DebugPointAtBinding.Yes _, _, _, _, _, _) -> true
         | Expr.Op ((TOp.TryWith (DebugPointAtTry.Yes _, _)
                   | TOp.TryFinally (DebugPointAtTry.Yes _, _)
@@ -2786,7 +2787,8 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel preSteps (contf: FakeUnit -> Fa
             (match spSeq with
              | DebugPointAtSequential.Both -> SPAlways, SPAlways
              | DebugPointAtSequential.StmtOnly -> SPSuppress, sp
-             | DebugPointAtSequential.ExprOnly -> sp, SPSuppress)
+             | DebugPointAtSequential.ExprOnly -> sp, SPSuppress
+             | DebugPointAtSequential.None -> SPSuppress, SPSuppress)
         match specialSeqFlag with
         | NormalSeq ->
             GenExpr cenv cgbuf eenv spAction e1 discard

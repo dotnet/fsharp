@@ -5766,8 +5766,40 @@ let rec remarkExpr m x =
     | Expr.App (e1, e1ty, tyargs, args, _) ->
         Expr.App (remarkExpr m e1, e1ty, tyargs, remarkExprs m args, m)
 
-    | Expr.Sequential (e1, e2, dir, _, _) ->
-        Expr.Sequential (remarkExpr m e1, remarkExpr m e2, dir, DebugPointAtSequential.StmtOnly, m)
+    | Expr.Sequential (e1, e2, dir, sp, _) ->
+        let e1R = remarkExpr m e1
+        let e2R = remarkExpr m e2
+
+        // This is to suppress false sequence points when inlining 'TaskBuilder.TryFinally' and 'TaskBuilder.TryWith'
+        // It is adhoc and may need to be improved if the library implementation changes
+        // Normally inlining associated all of the inlined code with the expression range of the overall construct,
+        // which for computation expression calls TryFinally and TryWith is the 'try' keyword.
+        // However this is broken when inlining sophisticated control flow as the 'with' and 'finally'
+        // parts of the code get the 'try' keyword as their sequence point range.
+        //
+        // Here we use an adhoc rule where inlining
+        //     finally
+        //        compensation()
+        //        reraise()
+        // or
+        //     with exn ->
+        //        __stack_caught <- true
+        //        __stack_savedExn <- ...
+        //
+        // we suppress the sequence points on the sequentials altogether.
+        //       
+        // Note: the drop-through case of DebugPointAtSequential.StmtOnly has been the existing implementation in other
+        // cases of inlined sequentials, and is dubious - we are skipping the sequence point
+        // at the first expression for no particular reason except we are avoiding laying down multiple
+        // sequence points.  It's likely this should be better as either 'sp' or DebugPointAtSequential.ExprOnly.
+        let sp = 
+            match sp, e2R with 
+            | DebugPointAtSequential.None, _ -> DebugPointAtSequential.None
+            | _, Expr.Op(TOp.Reraise, _, _, _)  -> DebugPointAtSequential.None
+            | _, Expr.Op(TOp.LValueOp (LSet _, v), _, _, _) when v.DisplayName = "__stack_savedExn" -> DebugPointAtSequential.None
+            | _ -> DebugPointAtSequential.StmtOnly
+
+        Expr.Sequential (e1R, e2R, dir, sp, m)
 
     | Expr.StaticOptimization (eqns, e2, e3, _) ->
         Expr.StaticOptimization (eqns, remarkExpr m e2, remarkExpr m e3, m)

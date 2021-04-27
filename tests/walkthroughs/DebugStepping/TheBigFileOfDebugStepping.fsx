@@ -670,6 +670,31 @@ let TaskExpressionSteppingTest6b () =
             let z = x1 + !y + x4
             return z }
 
+let TaskExpressionSteppingTest7a () = 
+    task  { let x = ref 0 
+            try 
+                let y = ref 0 
+                incr y
+                let z = !x + !y
+                return z 
+            with exn ->
+                incr x
+                Console.WriteLine "done"
+                return 0 }
+
+let TaskExpressionSteppingTest7b () = 
+    task  { let x = ref 0 
+            try 
+                let y = ref 0 
+                incr y
+                failwith "fail"
+                let z = !x + !y
+                return z 
+            with exn ->
+                incr x
+                Console.WriteLine "done"
+                return 0 }
+
 let TaskBreakpoints1 () = 
     task  { let! res1 = 
                 tf2()
@@ -694,83 +719,83 @@ let TaskBreakpoints1 () =
             return () }
 
 
- TailcallRecursionTest1 3
- TailcallRecursionTest2 (U2(3,4))
- SteppingMatch01 (Choice1Of2 3)
- SteppingMatch01 (Choice2Of2 3)
- SteppingMatch03 (Choice1Of2 3)
- SteppingMatch03 (Choice2Of2 "3")
- SteppingMatch03b (Choice1Of3 3)
- SteppingMatch03b (Choice2Of3 "3")
- SteppingMatch03b (Choice3Of3 5.0)
- SteppingMatch04 (Choice1Of3 3)
- SteppingMatch04 (Choice2Of3 "3")
- SteppingMatch04 (Choice3Of3 5.0)
- SteppingMatch05 (Choice1Of3 3)
- SteppingMatch05 (Choice2Of3 "3")
- SteppingMatch05 (Choice3Of3 5.0)
- SteppingMatch06 CaseA
- SteppingMatch06 CaseB
- SteppingMatch07 CaseA
- SteppingMatch07 CaseB
- SteppingMatch08 0
- SteppingMatch08 1
- SteppingMatch09 1
- SteppingMatch09 2
- SteppingMatch09 3
+TailcallRecursionTest1 3
+TailcallRecursionTest2 (U2(3,4))
+SteppingMatch01 (Choice1Of2 3)
+SteppingMatch01 (Choice2Of2 3)
+SteppingMatch03 (Choice1Of2 3)
+SteppingMatch03 (Choice2Of2 "3")
+SteppingMatch03b (Choice1Of3 3)
+SteppingMatch03b (Choice2Of3 "3")
+SteppingMatch03b (Choice3Of3 5.0)
+SteppingMatch04 (Choice1Of3 3)
+SteppingMatch04 (Choice2Of3 "3")
+SteppingMatch04 (Choice3Of3 5.0)
+SteppingMatch05 (Choice1Of3 3)
+SteppingMatch05 (Choice2Of3 "3")
+SteppingMatch05 (Choice3Of3 5.0)
+SteppingMatch06 CaseA
+SteppingMatch06 CaseB
+SteppingMatch07 CaseA
+SteppingMatch07 CaseB
+SteppingMatch08 0
+SteppingMatch08 1
+SteppingMatch09 1
+SteppingMatch09 2
+SteppingMatch09 3
 
- OuterWithGenericInner [1;2;3;4;5;6]
- OuterWithNonGenericInner [1;2;3;4;5;6]
- OuterWithNonGenericInnerWithCapture 5 [1;2;3;4;5;6]
- TestFunction1()
- TestFunction2()
- TestFunction3()
- TestFunction4()
- TestFunction5()
- TestFunction6()
- TestFunction7()
- TestFunction8 3
- TestFunction8 4
- TestFunction9 3
- TestFunction9 4
- TestFunction9 5
- TestFunction10 (5,4)
- TestFunction11 5
- TestFunction12 5
- TestFunction13 5
- TestFunction14 ()
- TestFunction15 3
- TestFunction16 3
- TestFunction17 3
- TestFunction18 3
- TestFunction19 3
- TestFunction21(U2(3,4))
- TestFunction22()
+OuterWithGenericInner [1;2;3;4;5;6]
+OuterWithNonGenericInner [1;2;3;4;5;6]
+OuterWithNonGenericInnerWithCapture 5 [1;2;3;4;5;6]
+TestFunction1()
+TestFunction2()
+TestFunction3()
+TestFunction4()
+TestFunction5()
+TestFunction6()
+TestFunction7()
+TestFunction8 3
+TestFunction8 4
+TestFunction9 3
+TestFunction9 4
+TestFunction9 5
+TestFunction10 (5,4)
+TestFunction11 5
+TestFunction12 5
+TestFunction13 5
+TestFunction14 ()
+TestFunction15 3
+TestFunction16 3
+TestFunction17 3
+TestFunction18 3
+TestFunction19 3
+TestFunction21(U2(3,4))
+TestFunction22()
 
- AsyncBreakpoints1() |> Async.RunSynchronously
- AsyncExpressionSteppingTest1() |> Async.RunSynchronously
- AsyncExpressionSteppingTest2() |> Async.RunSynchronously
- AsyncExpressionSteppingTest3() |> Async.RunSynchronously
+AsyncBreakpoints1() |> Async.RunSynchronously
+AsyncExpressionSteppingTest1() |> Async.RunSynchronously
+AsyncExpressionSteppingTest2() |> Async.RunSynchronously
+AsyncExpressionSteppingTest3() |> Async.RunSynchronously
 AsyncExpressionSteppingTest4() |> Async.RunSynchronously
- AsyncExpressionSteppingTest5() |> Async.RunSynchronously
- AsyncExpressionSteppingTest6b() |> Async.RunSynchronously
- ListExpressionSteppingTest1()
- ListExpressionSteppingTest2()
- ListExpressionSteppingTest3()
- ListExpressionSteppingTest4()
- ListExpressionSteppingTest5()
- ListExpressionSteppingTest6()
- SeqExpressionSteppingTest1()|> Seq.length
- SeqExpressionSteppingTest2()|> Seq.length
- SeqExpressionSteppingTest3()|> Seq.length
- SeqExpressionSteppingTest4()|> Seq.length
- SeqExpressionSteppingTest5()|> Seq.length
- SeqExpressionSteppingTest6() |> Seq.length
- InnerRecursiveFunction "cajcek" |> ignore
- InnerFunctionDefinitionHadTwoBreakpoints "aaaa" |> ignore
- InnerRecursiveFunctionDefinitionHadTwoBreakpoints "aaaa" |> ignore
- LocalValueShadowsArgument1 "123"
- LocalValueShadowsArgument2 "123"
+AsyncExpressionSteppingTest5() |> Async.RunSynchronously
+AsyncExpressionSteppingTest6b() |> Async.RunSynchronously
+ListExpressionSteppingTest1()
+ListExpressionSteppingTest2()
+ListExpressionSteppingTest3()
+ListExpressionSteppingTest4()
+ListExpressionSteppingTest5()
+ListExpressionSteppingTest6()
+SeqExpressionSteppingTest1()|> Seq.length
+SeqExpressionSteppingTest2()|> Seq.length
+SeqExpressionSteppingTest3()|> Seq.length
+SeqExpressionSteppingTest4()|> Seq.length
+SeqExpressionSteppingTest5()|> Seq.length
+SeqExpressionSteppingTest6() |> Seq.length
+InnerRecursiveFunction "cajcek" |> ignore
+InnerFunctionDefinitionHadTwoBreakpoints "aaaa" |> ignore
+InnerRecursiveFunctionDefinitionHadTwoBreakpoints "aaaa" |> ignore
+LocalValueShadowsArgument1 "123"
+LocalValueShadowsArgument2 "123"
 
 module Task =
     let RunSynchronously (t: System.Threading.Tasks.Task<_>) = t.Wait(); t.Result
@@ -782,4 +807,6 @@ TaskExpressionSteppingTest3() |> Task.RunSynchronously
 TaskExpressionSteppingTest4() |> Task.RunSynchronously
 TaskExpressionSteppingTest5() |> Task.RunSynchronously
 TaskExpressionSteppingTest6b() |> Task.RunSynchronously
+TaskExpressionSteppingTest7a() |> Task.RunSynchronously
+TaskExpressionSteppingTest7b() |> Task.RunSynchronously
 TaskBreakpoints1() |> Task.RunSynchronously

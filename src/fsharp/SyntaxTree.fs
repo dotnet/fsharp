@@ -171,9 +171,8 @@ type DebugPointForTarget =
 [<RequireQualifiedAccess>]
 type DebugPointAtSequential =
     | Both
-
     | StmtOnly
-
+    | None
     | ExprOnly
 
 [<RequireQualifiedAccess>]
