@@ -67,8 +67,6 @@ type internal XmlDocumentationInfo =
 
     static member TryCreateFromFile : xmlFileName: string -> XmlDocumentationInfo option
 
-    static member Create : lazyXmlDocument: Lazy<XmlDocument option> -> XmlDocumentationInfo
-
 type internal IXmlDocumentationInfoLoader =
 
     abstract TryLoad : assemblyFileName: string * ILModuleDef -> XmlDocumentationInfo option
