@@ -248,6 +248,9 @@ type TaskBuilder() =
                 let mutable __stack_completed = false
                 let mutable __stack_caught = false
                 let mutable __stack_savedExn = Unchecked.defaultof<_>
+                // This is a meaningless assignment but ensures a debug point gets laid down
+                // at the 'try' in the try/with for code as we enter into the handler.
+                __stack_completed <- __stack_completed || __stack_completed
                 try
                     // The try block may contain await points.
                     let __stack_step = __expand_body.Invoke (&sm)
@@ -296,6 +299,11 @@ type TaskBuilder() =
             if __useResumableCode then 
                 //-- RESUMABLE CODE START
                 let mutable __stack_completed = false
+                // This is a meaningless assignment but ensures a debug point gets laid down
+                // at the 'try' in the try/finally. The 'try' is used as the range for the
+                // F# computation expression desugaring to 'TryFinally' and this range in turn gets applied
+                // to inlined code.
+                __stack_completed <- __stack_completed || __stack_completed
                 try
                     let __stack_step = __expand_body.Invoke (&sm)
                     // If we make it to the assignment we prove we've made a step, an early 'ret' exit out of the try/with

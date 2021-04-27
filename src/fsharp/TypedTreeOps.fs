@@ -9509,8 +9509,8 @@ let (|SequentialResumableCode|_|) (g: TcGlobals) expr =
     match expr with
 
     // e1; e2
-    | Expr.Sequential(e1, e2, NormalSeq, _, m) ->
-        Some (e1, e2, m, (fun e1 e2 -> mkCompGenSequential m e1 e2))
+    | Expr.Sequential(e1, e2, NormalSeq, sp, m) ->
+        Some (e1, e2, m, (fun e1 e2 -> Expr.Sequential(e1, e2, NormalSeq, sp, m)))
 
     // let __stack_step = e1 in e2
     | Expr.Let(bind, e2, m, _) when bind.Var.CompiledName(g.CompilerGlobalState).StartsWith(stackStepName) ->
