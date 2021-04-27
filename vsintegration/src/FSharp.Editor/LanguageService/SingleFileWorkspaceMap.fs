@@ -90,36 +90,43 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
                 // need to be re-analyzed so the changes are propogated.
                 // We only re-analyze F# documents that are dependent on the document that was just saved.
                 // We ignore F# script documents here.
-                let vsTextBuffer = rdt4.GetDocumentData(docCookie) :?> IVsTextBuffer
-                let textBuffer = editorAdaptersFactory.GetDataBuffer(vsTextBuffer)
-                let textContainer = textBuffer.AsTextContainer()
-                let mutable workspace = Unchecked.defaultof<_>
-                if Workspace.TryGetWorkspace(textContainer, &workspace) then
-                    let solution = workspace.CurrentSolution
-                    let documentId = workspace.GetDocumentIdInCurrentContext(textContainer)
-                    match box documentId with
+                // REVIEW: This could be removed when Roslyn workspaces becomes the source of truth for FCS instead of the file system.
+                match rdt4.GetDocumentData(docCookie) with
+                | :? IVsTextBuffer as vsTextBuffer ->
+                    match editorAdaptersFactory.GetDataBuffer(vsTextBuffer) with
                     | null -> ()
-                    | _ -> 
-                        let document = solution.GetDocument(documentId)
-                        if document.Project.Language = LanguageNames.FSharp && not document.IsFSharpScript then
-                            let openDocIds = workspace.GetOpenDocumentIds()
-                            let depProjIds = document.Project.GetDependentProjectIds().Add(document.Project.Id)
+                    | textBuffer ->
+                        match textBuffer.AsTextContainer() with
+                        | null -> ()
+                        | textContainer ->
+                            let mutable workspace = Unchecked.defaultof<_>
+                            if Workspace.TryGetWorkspace(textContainer, &workspace) then
+                                let solution = workspace.CurrentSolution
+                                let documentId = workspace.GetDocumentIdInCurrentContext(textContainer)
+                                match box documentId with
+                                | null -> ()
+                                | _ -> 
+                                    let document = solution.GetDocument(documentId)
+                                    if document.Project.Language = LanguageNames.FSharp && not document.IsFSharpScript then
+                                        let openDocIds = workspace.GetOpenDocumentIds()
+                                        let depProjIds = document.Project.GetDependentProjectIds().Add(document.Project.Id)
 
-                            let docIdsToReanalyze =
-                                openDocIds
-                                |> Seq.filter (fun x ->
-                                    depProjIds.Contains(x.ProjectId) && x <> document.Id &&
-                                    (
-                                        let doc = solution.GetDocument(x)
-                                        match box doc with
-                                        | null -> false
-                                        | _ -> doc.Project.Language = LanguageNames.FSharp
-                                    )
-                                )
-                                |> Array.ofSeq
+                                        let docIdsToReanalyze =
+                                            openDocIds
+                                            |> Seq.filter (fun x ->
+                                                depProjIds.Contains(x.ProjectId) && x <> document.Id &&
+                                                (
+                                                    let doc = solution.GetDocument(x)
+                                                    match box doc with
+                                                    | null -> false
+                                                    | _ -> doc.Project.Language = LanguageNames.FSharp
+                                                )
+                                            )
+                                            |> Array.ofSeq
 
-                            if docIdsToReanalyze.Length > 0 then
-                                analyzerService.Reanalyze(workspace, documentIds=docIdsToReanalyze)
+                                        if docIdsToReanalyze.Length > 0 then
+                                            analyzerService.Reanalyze(workspace, documentIds=docIdsToReanalyze)
+                | _ -> ()
               with
               | ex -> logException ex
         
