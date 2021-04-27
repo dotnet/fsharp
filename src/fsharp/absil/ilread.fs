@@ -116,13 +116,31 @@ type BinaryFile =
 /// Gives views over a raw chunk of memory, for example those returned to us by the memory manager in Roslyn's
 /// Visual Studio integration. 'obj' must keep the memory alive. The object will capture it and thus also keep the memory alive for
 /// the lifetime of this object.
-type RawMemoryFile(fileName: string, obj: obj, addr: nativeint, length: int) =
-    do stats.rawMemoryFileCount <- stats.rawMemoryFileCount + 1
-    let view = ByteMemory.FromUnsafePointer(addr, length, obj).AsReadOnly()
-    member _.HoldObj() = obj // make sure we capture 'obj'
-    member _.FileName = fileName
+type RawMemoryFile =
+    val mutable private holder: obj
+    val mutable private fileName: string
+    val mutable private view: ReadOnlyByteMemory
+
+    new (fileName: string, obj: obj, addr: nativeint, length: int) =
+        stats.rawMemoryFileCount <- stats.rawMemoryFileCount + 1
+        {
+            holder = obj
+            fileName = fileName
+            view = ByteMemory.FromUnsafePointer(addr, length, obj).AsReadOnly()
+        }
+
+    new (fileName: string, holder: obj, bmem: ByteMemory) =
+        {
+            holder = holder // gonna be finalized due to how we pass the holder when create RawByteMemory
+            fileName = fileName
+            view = bmem.AsReadOnly()
+        }
+
+    member r.HoldObj() = r.holder // make sure we capture the holder.
+    member r.FileName = r.fileName
+
     interface BinaryFile with
-        override _.GetView() = view
+        override r.GetView() = r.view
 
 /// Gives a view over any ByteMemory, can be stream-based, mmap-ed, or just byte array.
 type ByteMemoryFile(fileName: string, view: ByteMemory) =
@@ -3893,13 +3911,9 @@ let createByteFileChunk opts fileName chunk =
 
         ByteFile(fileName, bytes) :> BinaryFile
 
-let _createMemoryMapFile fileName =
-    let mmf, accessor, length =
-        // TODO: Need to integrate with FileSystem
-        let fileStream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)
-        let length = fileStream.Length
-        let mmf = MemoryMappedFile.CreateFromFile(fileStream, null, length, MemoryMappedFileAccess.Read, HandleInheritability.None, leaveOpen=false)
-        mmf, mmf.CreateViewAccessor(0L, fileStream.Length, MemoryMappedFileAccess.Read), length
+let createMemoryMapFile fileName =
+    let byteMem = FileSystem.OpenFileForReadShim(fileName)
+
     let safeHolder =
         { new obj() with
             override x.Finalize() =
@@ -3907,11 +3921,12 @@ let _createMemoryMapFile fileName =
           interface IDisposable with
             member x.Dispose() =
                 GC.SuppressFinalize x
-                accessor.Dispose()
-                mmf.Dispose()
+                byteMem.AsStream().Dispose()
                 stats.memoryMapFileClosedCount <- stats.memoryMapFileClosedCount + 1 }
+
     stats.memoryMapFileOpenedCount <- stats.memoryMapFileOpenedCount + 1
-    safeHolder, RawMemoryFile(fileName, safeHolder, accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length) :> BinaryFile
+
+    safeHolder, RawMemoryFile(fileName, safeHolder, byteMem) :> BinaryFile
 
 let OpenILModuleReaderFromBytes fileName assemblyContents options =
     let pefile = ByteFile(fileName, assemblyContents) :> BinaryFile

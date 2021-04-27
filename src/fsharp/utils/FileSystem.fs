@@ -285,11 +285,8 @@ type ReadOnlyByteMemory(bytes: ByteMemory) =
 
 [<AutoOpen>]
 module MemoryMappedFileExtensions =
-
     type MemoryMappedFile with
-
-        // TODO: Needs to use FileSystem APIs?
-        static member _TryFromByteMemory(bytes: ReadOnlyByteMemory) =
+        static member TryFromByteMemory(bytes: ReadOnlyByteMemory) =
             let length = int64 bytes.Length
             if length = 0L then
                 None
@@ -396,8 +393,10 @@ type DefaultAssemblyLoader() =
 
 type IFileSystem =
     abstract AssemblyLoader: IAssemblyLoader
+
     abstract OpenFileForReadShim: filePath: string * ?shouldShadowCopy: bool -> ByteMemory
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
+
     abstract GetFullPathShim: fileName: string -> string
     abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
     abstract IsPathRootedShim: path: string -> bool

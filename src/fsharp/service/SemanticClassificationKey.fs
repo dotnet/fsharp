@@ -63,8 +63,7 @@ type SemanticClassificationKeyStoreBuilder() =
         use ptr = fixed semanticClassification
         b.WriteBytes(NativePtr.ofNativeInt (NativePtr.toNativeInt ptr), semanticClassification.Length * sizeof<SemanticClassificationItem>)
 
-    // TODO: Needs to use FileSystem APIs?
-    member _._TryBuildAndReset() =
+    member _.TryBuildAndReset() =
         if b.Count > 0 then
             let length = int64 b.Count
             let mmf =
