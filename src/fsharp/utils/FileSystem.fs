@@ -416,7 +416,7 @@ type IFileSystem =
     abstract EnumerateDirectoriesShim: path: string -> string seq
     abstract IsStableFileHeuristic: fileName: string -> bool
 
-type MemoryMappedFileSystem() as this =
+type DefaultFileSystem() as this =
     interface IFileSystem with
 
         member _.AssemblyLoader = DefaultAssemblyLoader() :> IAssemblyLoader
@@ -486,48 +486,7 @@ type MemoryMappedFileSystem() as this =
             let fileAccess = defaultArg fileAccess FileAccess.ReadWrite
             let fileShare = defaultArg fileShare FileShare.Read
 
-            let fileStream = File.Open(filePath, fileMode, fileAccess, fileShare)
-            let length = fileStream.Length
-
-            if runningOnMono then
-                // mono's MemoryMappedFile implementation throws with null `mapName`,
-                // so we use plain FileStream instead: https://github.com/mono/mono/issues/10245
-                fileStream :> Stream
-            else
-                let memoryMappedFileAccess =
-                    match fileAccess with
-                    | FileAccess.Read -> MemoryMappedFileAccess.Read
-                    | FileAccess.Write -> MemoryMappedFileAccess.Write
-                    | _ -> MemoryMappedFileAccess.ReadWrite
-
-                let mmf, accessor, length =
-                    let mmf =
-                        MemoryMappedFile.CreateFromFile(
-                            fileStream,
-                            null,
-                            length,
-                            memoryMappedFileAccess,
-                            HandleInheritability.None,
-                            leaveOpen=false)
-                    mmf, mmf.CreateViewAccessor(0L, length, memoryMappedFileAccess), length
-
-                match fileAccess with
-                | FileAccess.Read when not accessor.CanRead -> invalidOp "Cannot read file"
-                | FileAccess.Write when not accessor.CanWrite -> invalidOp "Cannot write file"
-                | FileAccess.ReadWrite when not accessor.CanRead || not accessor.CanWrite -> invalidOp "Cannot read or write file"
-                | _ -> ()
-
-                let safeHolder =
-                        { new obj() with
-                            override x.Finalize() =
-                                (x :?> IDisposable).Dispose()
-                          interface IDisposable with
-                            member x.Dispose() =
-                                GC.SuppressFinalize x
-                                accessor.Dispose()
-                                mmf.Dispose() }
-
-                new SafeUnmanagedMemoryStream(NativePtr.ofNativeInt (accessor.SafeMemoryMappedViewHandle.DangerousGetHandle()), length, safeHolder) :> Stream
+            File.Open(filePath, fileMode, fileAccess, fileShare) :> Stream
 
         member _.GetFullPathShim (fileName: string) = Path.GetFullPath fileName
 
@@ -638,7 +597,7 @@ module public StreamExtensions =
 [<AutoOpen>]
 module public FileSystemAutoOpens =
     /// The global hook into the file system
-    let mutable FileSystem: IFileSystem = MemoryMappedFileSystem() :> IFileSystem
+    let mutable FileSystem: IFileSystem = DefaultFileSystem() :> IFileSystem
 
 type ByteMemory with
 
