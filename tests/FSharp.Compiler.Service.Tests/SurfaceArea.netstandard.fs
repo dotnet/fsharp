@@ -5778,12 +5778,6 @@ FSharp.Compiler.Syntax.SynConst+Int64: Int64 Item
 FSharp.Compiler.Syntax.SynConst+Int64: Int64 get_Item()
 FSharp.Compiler.Syntax.SynConst+IntPtr: Int64 Item
 FSharp.Compiler.Syntax.SynConst+IntPtr: Int64 get_Item()
-FSharp.Compiler.Syntax.SynConst+KeywordString: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.SynConst+KeywordString: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynConst+KeywordString: System.String constant
-FSharp.Compiler.Syntax.SynConst+KeywordString: System.String get_constant()
-FSharp.Compiler.Syntax.SynConst+KeywordString: System.String get_value()
-FSharp.Compiler.Syntax.SynConst+KeywordString: System.String value
 FSharp.Compiler.Syntax.SynConst+Measure: FSharp.Compiler.Syntax.SynConst constant
 FSharp.Compiler.Syntax.SynConst+Measure: FSharp.Compiler.Syntax.SynConst get_constant()
 FSharp.Compiler.Syntax.SynConst+Measure: FSharp.Compiler.Syntax.SynMeasure Item3
@@ -5794,6 +5788,12 @@ FSharp.Compiler.Syntax.SynConst+SByte: SByte Item
 FSharp.Compiler.Syntax.SynConst+SByte: SByte get_Item()
 FSharp.Compiler.Syntax.SynConst+Single: Single Item
 FSharp.Compiler.Syntax.SynConst+Single: Single get_Item()
+FSharp.Compiler.Syntax.SynConst+SourceIdentifier: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynConst+SourceIdentifier: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynConst+SourceIdentifier: System.String constant
+FSharp.Compiler.Syntax.SynConst+SourceIdentifier: System.String get_constant()
+FSharp.Compiler.Syntax.SynConst+SourceIdentifier: System.String get_value()
+FSharp.Compiler.Syntax.SynConst+SourceIdentifier: System.String value
 FSharp.Compiler.Syntax.SynConst+String: FSharp.Compiler.Syntax.SynStringKind get_synStringKind()
 FSharp.Compiler.Syntax.SynConst+String: FSharp.Compiler.Syntax.SynStringKind synStringKind
 FSharp.Compiler.Syntax.SynConst+String: FSharp.Compiler.Text.Range get_range()
@@ -5810,10 +5810,10 @@ FSharp.Compiler.Syntax.SynConst+Tags: Int32 Int16
 FSharp.Compiler.Syntax.SynConst+Tags: Int32 Int32
 FSharp.Compiler.Syntax.SynConst+Tags: Int32 Int64
 FSharp.Compiler.Syntax.SynConst+Tags: Int32 IntPtr
-FSharp.Compiler.Syntax.SynConst+Tags: Int32 KeywordString
 FSharp.Compiler.Syntax.SynConst+Tags: Int32 Measure
 FSharp.Compiler.Syntax.SynConst+Tags: Int32 SByte
 FSharp.Compiler.Syntax.SynConst+Tags: Int32 Single
+FSharp.Compiler.Syntax.SynConst+Tags: Int32 SourceIdentifier
 FSharp.Compiler.Syntax.SynConst+Tags: Int32 String
 FSharp.Compiler.Syntax.SynConst+Tags: Int32 UInt16
 FSharp.Compiler.Syntax.SynConst+Tags: Int32 UInt16s
@@ -5846,10 +5846,10 @@ FSharp.Compiler.Syntax.SynConst: Boolean IsInt16
 FSharp.Compiler.Syntax.SynConst: Boolean IsInt32
 FSharp.Compiler.Syntax.SynConst: Boolean IsInt64
 FSharp.Compiler.Syntax.SynConst: Boolean IsIntPtr
-FSharp.Compiler.Syntax.SynConst: Boolean IsKeywordString
 FSharp.Compiler.Syntax.SynConst: Boolean IsMeasure
 FSharp.Compiler.Syntax.SynConst: Boolean IsSByte
 FSharp.Compiler.Syntax.SynConst: Boolean IsSingle
+FSharp.Compiler.Syntax.SynConst: Boolean IsSourceIdentifier
 FSharp.Compiler.Syntax.SynConst: Boolean IsString
 FSharp.Compiler.Syntax.SynConst: Boolean IsUInt16
 FSharp.Compiler.Syntax.SynConst: Boolean IsUInt16s
@@ -5868,10 +5868,10 @@ FSharp.Compiler.Syntax.SynConst: Boolean get_IsInt16()
 FSharp.Compiler.Syntax.SynConst: Boolean get_IsInt32()
 FSharp.Compiler.Syntax.SynConst: Boolean get_IsInt64()
 FSharp.Compiler.Syntax.SynConst: Boolean get_IsIntPtr()
-FSharp.Compiler.Syntax.SynConst: Boolean get_IsKeywordString()
 FSharp.Compiler.Syntax.SynConst: Boolean get_IsMeasure()
 FSharp.Compiler.Syntax.SynConst: Boolean get_IsSByte()
 FSharp.Compiler.Syntax.SynConst: Boolean get_IsSingle()
+FSharp.Compiler.Syntax.SynConst: Boolean get_IsSourceIdentifier()
 FSharp.Compiler.Syntax.SynConst: Boolean get_IsString()
 FSharp.Compiler.Syntax.SynConst: Boolean get_IsUInt16()
 FSharp.Compiler.Syntax.SynConst: Boolean get_IsUInt16s()
@@ -5890,10 +5890,10 @@ FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewInt16(Int16)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewInt32(Int32)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewInt64(Int64)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewIntPtr(Int64)
-FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewKeywordString(System.String, System.String, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewMeasure(FSharp.Compiler.Syntax.SynConst, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.SynMeasure)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewSByte(SByte)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewSingle(Single)
+FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewSourceIdentifier(System.String, System.String, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewString(System.String, FSharp.Compiler.Syntax.SynStringKind, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewUInt16(UInt16)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewUInt16s(UInt16[])
@@ -5913,10 +5913,10 @@ FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst+Int16
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst+Int32
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst+Int64
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst+IntPtr
-FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst+KeywordString
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst+Measure
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst+SByte
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst+Single
+FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst+SourceIdentifier
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst+String
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst+Tags
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst+UInt16

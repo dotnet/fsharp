@@ -766,7 +766,7 @@ with
             assertRange (6, 2) (6, 21) clause.Range
         | _ -> Assert.Fail "Could not get valid AST"
 
-module KeywordStrings =
+module SourceIdentifiers =
     [<Test>]
     let ``__LINE__`` () =
         let parseResults = 
@@ -776,7 +776,7 @@ __LINE__"""
 
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-            SynModuleDecl.DoExpr(expr = SynExpr.Const(SynConst.KeywordString("__LINE__", "2", range), _))
+            SynModuleDecl.DoExpr(expr = SynExpr.Const(SynConst.SourceIdentifier("__LINE__", "2", range), _))
         ]) ])) ->
             assertRange (2, 0) (2, 8) range
         | _ -> Assert.Fail "Could not get valid AST"
@@ -790,7 +790,7 @@ __SOURCE_DIRECTORY__"""
 
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-            SynModuleDecl.DoExpr(expr = SynExpr.Const(SynConst.KeywordString("__SOURCE_DIRECTORY__", _, range), _))
+            SynModuleDecl.DoExpr(expr = SynExpr.Const(SynConst.SourceIdentifier("__SOURCE_DIRECTORY__", _, range), _))
         ]) ])) ->
             assertRange (2, 0) (2, 20) range
         | _ -> Assert.Fail "Could not get valid AST"
@@ -804,7 +804,7 @@ __SOURCE_FILE__"""
 
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-            SynModuleDecl.DoExpr(expr = SynExpr.Const(SynConst.KeywordString("__SOURCE_FILE__", _, range), _))
+            SynModuleDecl.DoExpr(expr = SynExpr.Const(SynConst.SourceIdentifier("__SOURCE_FILE__", _, range), _))
         ]) ])) ->
             assertRange (2, 0) (2, 15) range
         | _ -> Assert.Fail "Could not get valid AST"

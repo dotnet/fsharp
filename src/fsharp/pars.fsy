@@ -2926,9 +2926,9 @@ rawConstant:
     { let s, synStringKind = $1
       SynConst.String (s, synStringKind, lhs parseState) } 
 
-  | keywordString
+  | sourceIdentifier
     { let c,v = $1
-      SynConst.KeywordString (c, v, lhs parseState) }
+      SynConst.SourceIdentifier (c, v, lhs parseState) }
 
   | BYTEARRAY
     { let (v, synByteStringKind, _) = $1
@@ -5565,7 +5565,7 @@ string:
      { let (s, synStringKind, _) = $1
        s, synStringKind }
 
-keywordString:
+sourceIdentifier:
   | KEYWORD_STRING { $1 }
 
 interpolatedStringFill:

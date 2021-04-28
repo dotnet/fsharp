@@ -155,7 +155,7 @@ type SynConst =
     
     /// Source Line, File, and Path Identifiers
     /// Containing both the original value as the evaluated value.
-    | KeywordString of constant: string * value: string * range: Range
+    | SourceIdentifier of constant: string * value: string * range: Range
 
     /// Gets the syntax range of this construct
     member Range: dflt: range -> range
