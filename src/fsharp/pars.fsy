@@ -722,7 +722,8 @@ fileModuleSpec:
   | opt_attributes opt_declVisibility  moduleIntro moduleSpfnsPossiblyEmptyBlock 
     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
       let m2 = rhs parseState 3
-      let m = (rhs2 parseState 1 4)
+      let mDeclsAndAttrs = (List.map (fun (a: SynAttributeList) -> a.Range) $1) @ (List.map (fun (d: SynModuleSigDecl) -> d.Range) $4)
+      let m = (m2, mDeclsAndAttrs) ||> unionRangeWithListBy id
       let isRec, path2, xml, vis = $3 
       (fun (isRec2, path, _) -> 
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(), m2))
@@ -1156,7 +1157,8 @@ fileModuleImpl:
   | opt_attributes opt_declVisibility moduleIntro moduleDefnsOrExprPossiblyEmptyOrBlock
     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
       let m2 = rhs parseState 3
-      let m = (m2, $4) ||> unionRangeWithListBy (fun modu -> modu.Range)
+      let mDeclsAndAttrs = (List.map (fun (a: SynAttributeList) -> a.Range) $1) @ (List.map (fun (d: SynModuleDecl) -> d.Range) $4)
+      let m = (m2, mDeclsAndAttrs) ||> unionRangeWithListBy id
       let isRec2, path2, xml, vis = $3 
       (fun (isRec, path, _) -> 
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(), m2))
