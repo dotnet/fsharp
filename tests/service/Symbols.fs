@@ -1063,6 +1063,40 @@ type Tiger =
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
+    let ``Range of attribute should be included in secondary constructor`` () =
+        let parseResults = 
+            getParseResults
+                """
+type T() =
+    new () =
+        T ()
+
+    internal new () =
+        T ()
+
+    [<Foo>]
+    new () =
+        T ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                SynMemberDefn.ImplicitCtor _
+                SynMemberDefn.Member(memberDefn = SynBinding(range = mb1)) as m1
+                SynMemberDefn.Member(memberDefn = SynBinding(range = mb2)) as m2
+                SynMemberDefn.Member(memberDefn = SynBinding(range = mb3)) as m3
+            ]))])
+        ]) ])) ->
+            assertRange (3, 4) (3, 10) mb1
+            assertRange (3, 4) (4, 12) m1.Range
+            assertRange (6, 4) (6, 19) mb2
+            assertRange (6, 4) (7, 12) m2.Range
+            assertRange (9, 4) (10, 10) mb3
+            assertRange (9, 4) (11, 12) m3.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    
+    [<Test>]
     let ``Range of attribute should be included in write only SynMemberDefn.Member property`` () =
         let parseResults = 
             getParseResults
