@@ -1087,3 +1087,23 @@ type Bird =
             assertRange (3, 4) (6, 23) mb2
             assertRange (3, 4) (6, 50) setter.Range
         | _ -> Assert.Fail "Could not get valid AST"
+
+module NestedModules =
+
+    [<Test>]
+    let ``Range of attribute should be included in SynModuleDecl.NestedModule`` () =
+        let parseResults = 
+            getParseResults
+                """
+module TopLevel
+
+[<Foo>]
+module Nested =
+    ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.NestedModule _ as nm
+        ]) ])) ->
+            assertRange (4, 0) (6, 6) nm.Range
+        | _ -> Assert.Fail "Could not get valid AST"
