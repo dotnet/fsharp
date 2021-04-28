@@ -41,6 +41,7 @@
     <PackageReference Include="VSSDK.VSHelp" Version="$(VSSDKVSHelpVersion)" PrivateAssets="compile" ExcludeAssets="compile" />
   </ItemGroup>
 
+  <!-- New VS does not allow embedded interop assemblies --- this turns of the target that turns it on -->
   <Target Name="LinkVSSDKEmbeddableAssemblies" AfterTargets="ResolveReferences" BeforeTargets="FindReferenceAssembliesForReferences" />
 
 </Project>
