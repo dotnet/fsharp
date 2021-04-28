@@ -964,6 +964,21 @@ let a = 0"""
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
+    let ``Range of attribute between let keyword and pattern should be included in SynModuleDecl.Let`` () =
+        let parseResults = 
+            getParseResults
+                """
+let [<Literal>] (A x) = 1"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [SynBinding(range = mb)]) as lt
+        ]) ])) ->
+            assertRange (2, 4) (2, 21) mb
+            assertRange (2, 0) (2, 25) lt.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+    
+    [<Test>]
     let ``Range of attribute should be included in SynMemberDefn.LetBindings`` () =
         let parseResults = 
             getParseResults
