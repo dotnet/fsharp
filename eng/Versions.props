@@ -143,6 +143,7 @@
     <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkVersion>
     <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCoreVersion>
     <MicrosoftBuildUtilitiesCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildUtilitiesCoreVersion>
+    <MicrosoftVSSDKBuildToolsVersion>17.0.63-dev17-g3f11f5ab</MicrosoftVSSDKBuildToolsVersion>
     <!-- Visual Studio editor packages -->
     <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
     <MicrosoftVisualStudioEditorVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioEditorVersion>
