@@ -491,6 +491,23 @@ type X = int
             assertRange (3, 0) (5, 12) r
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``Module range should start at first attribute`` () =
+        let parseResults = 
+            getParseResults
+                """
+[<  Foo  >]
+module Bar
+
+let s : string = "s"
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.NamedModule; range = r) ])) ->
+            assertRange (2, 0) (5, 20) r
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SynConsts =
     [<Test>]
     let ``Measure contains the range of the constant`` () =
@@ -543,6 +560,23 @@ type Bar = | Bar of string * int
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig(kind = SynModuleOrNamespaceKind.GlobalNamespace; range = r) ])) ->
             assertRange (3, 0) (5, 32) r
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Module range should start at first attribute`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+ [<  Foo  >]
+module Bar
+
+val s : string
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(kind = SynModuleOrNamespaceKind.NamedModule; range = r) ])) ->
+            assertRange (2, 1) (5, 14) r
         | _ -> Assert.Fail "Could not get valid AST"
 
 module SignatureTypes =
