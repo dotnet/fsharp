@@ -1292,7 +1292,9 @@ moduleDefn:
   | opt_attributes opt_declVisibility typeKeyword tyconDefn tyconDefnList
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let (SynTypeDefn(SynComponentInfo(cas, a, cs, b, c, d, d2, d3), e, f, g, h)) = $4
-        let tc = (SynTypeDefn(SynComponentInfo($1@cas, a, cs, b, c, d, d2, d3), e, f, g, h))
+        let attrs = $1@cas
+        let mTc = (h, attrs)  ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
+        let tc = (SynTypeDefn(SynComponentInfo(attrs, a, cs, b, c, d, d2, d3), e, f, g, mTc))
         let types = tc :: $5
         [ SynModuleDecl.Types(types, (rhs parseState 3, types) ||> unionRangeWithListBy (fun t -> t.Range) ) ] }
 

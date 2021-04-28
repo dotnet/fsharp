@@ -296,6 +296,48 @@ type Foo =
             assertRange (4, 12) (4, 13) r2
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``Range of attribute should be included in SynTypeDefn`` () =
+        let parseResults = 
+            getParseResults
+                """
+[<Foo>]
+type Bar =
+    class
+    end"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [t]) as types
+        ]) ])) ->
+            assertRange (2, 0) (5, 7) types.Range
+            assertRange (2, 0) (5, 7) t.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of attributes should be included in recursive types`` () =
+        let parseResults = 
+            getParseResults
+                """
+[<NoEquality ; NoComparison>]
+type Foo<'context, 'a> =
+    | Apply of ApplyCrate<'context, 'a>
+
+and [<CustomEquality ; NoComparison>] Bar<'context, 'a> =
+    internal {
+        Hash : int
+        Foo : Foo<'a, 'b>
+    }"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [t1;t2]) as types
+        ]) ])) ->
+            assertRange (2, 0) (10, 5) types.Range
+            assertRange (2, 0) (4, 39) t1.Range
+            assertRange (6, 4) (10, 5) t2.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SyntaxExpressions =
     [<Test>]
     let ``SynExpr.Do contains the range of the do keyword`` () =
