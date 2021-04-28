@@ -41,4 +41,6 @@
     <PackageReference Include="VSSDK.VSHelp" Version="$(VSSDKVSHelpVersion)" PrivateAssets="compile" ExcludeAssets="compile" />
   </ItemGroup>
 
+  <Target Name="LinkVSSDKEmbeddableAssemblies" AfterTargets="ResolveReferences" BeforeTargets="FindReferenceAssembliesForReferences" />
+
 </Project>
