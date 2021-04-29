@@ -6,89 +6,97 @@ open System.Runtime.CompilerServices
 open FSharp.Core.CompilerServices
 open FSharp.Core.CompilerServices.StateMachineHelpers
 
-[<AbstractClass>]
-type SyncMachine<'T>() =
+[<Struct; NoEquality; NoComparison>]
+type SyncMachine<'T> =
     
-    abstract Step : unit -> 'T
+    [<DefaultValue(false)>]
+    val mutable Result : 'T
 
-    [<MethodImpl(MethodImplOptions.NoInlining)>]
-    member this.Start() = this.Step()
+    interface IAsyncStateMachine with 
+        member _.MoveNext() = failwith "no dynamic impl"
+        member _.SetStateMachine(_state: IAsyncStateMachine) = failwith "no dynamic impl"
 
-type SyncCode<'T> = unit -> 'T
+    static member inline Run(sm: byref<'K> when 'K :> IAsyncStateMachine) = sm.MoveNext()
+
+[<ResumableCode>]
+type SyncCode<'TOverall,'T> = delegate of byref<SyncMachine<'TOverall>> -> 'T
 
 type SyncBuilder() =
     
-    member inline _.Delay([<ResumableCode>] __expand_f: unit -> SyncCode<'T>) : [<ResumableCode>]  SyncCode<'T> =
-        (fun () -> __expand_f () ())
+    member inline _.Delay(f: unit -> SyncCode<'TOverall,'T>) :  SyncCode<'TOverall,'T> =
+        SyncCode<_>(fun sm -> f().Invoke(&sm))
 
-    member inline _.Run([<ResumableCode>] __expand_code : SyncCode<'T>) : 'T = 
+    member inline _.Run(code : SyncCode<'T,'T>) : 'T = 
         if __useResumableCode then
-            { new SyncMachine<'T>() with 
-                [<ResumableCode>]
-                member _.Step ()  = __expand_code () }.Start()
+            __structStateMachine<SyncMachine<'T>, _>
+                (MoveNextMethod<_>(fun sm -> 
+                       let __stack_result = code.Invoke(&sm)
+                       sm.Result <- __stack_result
+                       ))
+
+                // SetStateMachine
+                (SetMachineStateMethod<_>(fun sm state -> 
+                    ()))
+
+                // Start
+                (AfterMethod<_,_>(fun sm -> 
+                    SyncMachine<_>.Run(&sm)
+                    sm.Result))
         else
-            let sm = 
-                { new SyncMachine<'T>() with 
-                    member _.Step () = __expand_code () }
-            sm.Start()
+            let mutable sm = SyncMachine<'T>()
+            code.Invoke(&sm)
 
-    member inline _.Zero() : [<ResumableCode>] SyncCode<unit> = 
-        (fun () -> ())
+    [<DefaultValue>]
+    member inline _.Zero() : SyncCode<'TOverall, unit> = 
+        SyncCode<_>(fun sm -> ())
 
-    member inline _.Return (x: 'T) : [<ResumableCode>] SyncCode<'T> =
-        (fun () -> x)
+    member inline _.Return (x: 'T) : SyncCode<'T,'T> =
+        SyncCode<_>(fun sm -> x)
 
-    member inline _.Combine([<ResumableCode>] __expand_code1: SyncCode<unit>, [<ResumableCode>] __expand_code2: SyncCode<'T>) : [<ResumableCode>] SyncCode<'T> =
-        (fun () -> 
-            __expand_code1()
-            __expand_code2())
+    member inline _.Combine(code1: SyncCode<'TOverall,unit>, code2: SyncCode<'TOverall,'T>) : SyncCode<'TOverall,'T> =
+        SyncCode<_>(fun sm -> 
+            code1.Invoke(&sm)
+            code2.Invoke(&sm))
 
-    member inline _.While([<ResumableCode>] __expand_condition : unit -> bool, [<ResumableCode>] __expand_body : SyncCode<unit>) : [<ResumableCode>] SyncCode<unit> =
-        (fun () -> 
-            while __expand_condition() do
-                __expand_body ())
+    member inline _.While(condition : unit -> bool, body : SyncCode<'TOverall,unit>) : SyncCode<'TOverall,unit> =
+       SyncCode<_> (fun sm -> 
+            while condition() do
+                body.Invoke(&sm))
 
-    member inline _.TryWith([<ResumableCode>] __expand_body : SyncCode<'T>, [<ResumableCode>] __expand_catch : exn -> 'T) : [<ResumableCode>] SyncCode<'T> =
-        (fun () -> 
+    member inline _.TryWith(body : SyncCode<'TOverall,'T>, catch : exn -> 'T) : SyncCode<'TOverall,'T> =
+        SyncCode<_>(fun sm -> 
             try
-                __expand_body ()
+                body.Invoke(&sm)
             with exn -> 
-                __expand_catch exn)
+                catch exn)
 
-    member inline _.TryFinally([<ResumableCode>] __expand_body: SyncCode<'T>, compensation : unit -> unit) : [<ResumableCode>] SyncCode<'T> =
-        (fun () -> 
+    member inline _.TryFinally(body: SyncCode<'TOverall,'T>, compensation : unit -> unit) : SyncCode<'TOverall,'T> =
+        SyncCode<_>(fun sm -> 
             let __stack_step = 
                 try
-                    __expand_body ()
+                    body.Invoke(&sm)
                 with _ ->
                     compensation()
                     reraise()
             compensation()
             __stack_step)
 
-    member inline this.Using(disp : #IDisposable, [<ResumableCode>] __expand_body : #IDisposable -> SyncCode<'T>) : [<ResumableCode>] SyncCode<'T> = 
+    member inline this.Using(disp : #IDisposable, body : #IDisposable -> SyncCode<'TOverall,'T>) : SyncCode<'TOverall,'T> = 
         this.TryFinally(
-            (fun () -> __expand_body disp ()),
+            SyncCode<_>(fun sm -> (body disp).Invoke(&sm)),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
-    member inline this.For(sequence : seq<'T>, [<ResumableCode>] __expand_body : 'T -> SyncCode<unit>) : [<ResumableCode>] SyncCode<unit> =
+    member inline this.For(sequence : seq<'T>, body : 'T -> SyncCode<'TOverall,unit>) : SyncCode<'TOverall,unit> =
         this.Using (sequence.GetEnumerator(), 
-            (fun e -> this.While((fun () -> e.MoveNext()), (fun () -> __expand_body e.Current ()))))
+            (fun e -> this.While((fun () -> e.MoveNext()), SyncCode<_>(fun sm -> (body e.Current).Invoke(&sm)))))
 
-    member inline _.ReturnFrom (value: 'T) : [<ResumableCode>] SyncCode<'T> =
-        (fun () -> 
+    member inline _.ReturnFrom (value: 'T) : SyncCode<'T,'T> =
+        SyncCode<_>(fun sm -> 
               value)
 
-(*
-    [<NoDynamicInvocation>]
-    member inline _.Bind (__expand_code1: SyncCode<'TResult1>, __expand_continuation: 'TResult1 -> SyncCode<'TResult2>) : SyncCode<'TResult2> =
-        (fun () -> 
-             let __stack_step = __expand_code1 ()
-             __expand_continuation __stack_step ())
-*)
-    member inline _.Bind (v: 'TResult1, [<ResumableCode>] __expand_continuation: 'TResult1 -> SyncCode<'TResult2>) : [<ResumableCode>] SyncCode<'TResult2> =
-        (fun () -> 
-             __expand_continuation v ())
+    member inline _.Bind (v: 'TResult1, continuation: 'TResult1 -> SyncCode<'TOverall,'TResult2>) : SyncCode<'TOverall,'TResult2> =
+        SyncCode<_>(fun sm -> 
+             (continuation v).Invoke(&sm))
 
 let sync = SyncBuilder()
 

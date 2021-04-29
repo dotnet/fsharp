@@ -12,10 +12,10 @@
   <ItemGroup>
     <Compile Include="empty.fs"  />
 	  <!--
-    <Compile Include="sync.fs"  />
     <Compile Include="avalue.fs" />
     <Compile Include="seq2.fs" />
-    <Compile Include="list.fs" />
+    <Compile Include="sync.fs"  />
+	<Compile Include="list.fs" />
     <Compile Include="array.fs" />
     <Compile Include="option.fs" />
     <Compile Include="taskSeq.fs" />

@@ -37,69 +37,70 @@ type ResizeArrayBuilderStateMachine<'T> =
         | null -> Array.empty
         | ra -> ra.ToArray()
 
+[<ResumableCode>]
 type ResizeArrayBuilderCode<'T> = delegate of byref<ResizeArrayBuilderStateMachine<'T>> -> unit
 
 type ResizeArrayBuilderBase() =
     
-    member inline __.Delay([<ResumableCode>] __expand_f : unit -> ResizeArrayBuilderCode<'T>) : [<ResumableCode>] ResizeArrayBuilderCode<'T> =
-        ResizeArrayBuilderCode (fun sm -> (__expand_f()).Invoke &sm)
+    member inline __.Delay(f : unit -> ResizeArrayBuilderCode<'T>) : ResizeArrayBuilderCode<'T> =
+        ResizeArrayBuilderCode (fun sm -> (f()).Invoke &sm)
 
-    member inline __.Zero() : [<ResumableCode>] ResizeArrayBuilderCode<'T> =
+    member inline __.Zero() : ResizeArrayBuilderCode<'T> =
         ResizeArrayBuilderCode(fun _sm -> ())
 
-    member inline __.Combine([<ResumableCode>] __expand_task1: ResizeArrayBuilderCode<'T>, [<ResumableCode>] __expand_task2: ResizeArrayBuilderCode<'T>) : [<ResumableCode>] ResizeArrayBuilderCode<'T> =
+    member inline __.Combine(task1: ResizeArrayBuilderCode<'T>, task2: ResizeArrayBuilderCode<'T>) : ResizeArrayBuilderCode<'T> =
         ResizeArrayBuilderCode(fun sm -> 
-            __expand_task1.Invoke &sm
-            __expand_task2.Invoke &sm)
+            task1.Invoke &sm
+            task2.Invoke &sm)
             
-    member inline __.While([<ResumableCode>] __expand_condition : unit -> bool, [<ResumableCode>] __expand_body : ResizeArrayBuilderCode<'T>) : [<ResumableCode>] ResizeArrayBuilderCode<'T> =
+    member inline __.While(condition : unit -> bool, body : ResizeArrayBuilderCode<'T>) : ResizeArrayBuilderCode<'T> =
         ResizeArrayBuilderCode(fun sm -> 
-            while __expand_condition() do
-                __expand_body.Invoke &sm)
+            while condition() do
+                body.Invoke &sm)
 
-    member inline __.TryWith([<ResumableCode>] __expand_body : ResizeArrayBuilderCode<'T>, [<ResumableCode>] __expand_catch : exn -> ResizeArrayBuilderCode<'T>) : [<ResumableCode>] ResizeArrayBuilderCode<'T> =
+    member inline __.TryWith(body : ResizeArrayBuilderCode<'T>, catch : exn -> ResizeArrayBuilderCode<'T>) : ResizeArrayBuilderCode<'T> =
         ResizeArrayBuilderCode(fun sm -> 
             try
-                __expand_body.Invoke &sm
+                body.Invoke &sm
             with exn -> 
-                (__expand_catch exn).Invoke &sm)
+                (catch exn).Invoke &sm)
 
-    member inline __.TryFinally([<ResumableCode>] __expand_body: ResizeArrayBuilderCode<'T>, compensation : unit -> unit) : [<ResumableCode>] ResizeArrayBuilderCode<'T> =
+    member inline __.TryFinally(body: ResizeArrayBuilderCode<'T>, compensation : unit -> unit) : ResizeArrayBuilderCode<'T> =
         ResizeArrayBuilderCode(fun sm -> 
             try
-                __expand_body.Invoke &sm
+                body.Invoke &sm
             with _ ->
                 compensation()
                 reraise()
 
             compensation())
 
-    member inline b.Using(disp : #IDisposable, [<ResumableCode>] __expand_body : #IDisposable -> ResizeArrayBuilderCode<'T>) : [<ResumableCode>] ResizeArrayBuilderCode<'T> = 
+    member inline b.Using(disp : #IDisposable, body : #IDisposable -> ResizeArrayBuilderCode<'T>) : ResizeArrayBuilderCode<'T> = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         b.TryFinally(
-            (fun sm -> (__expand_body disp).Invoke &sm),
+            (fun sm -> (body disp).Invoke &sm),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
-    member inline b.For(sequence : seq<'TElement>, [<ResumableCode>] __expand_body : 'TElement -> ResizeArrayBuilderCode<'T>) : [<ResumableCode>] ResizeArrayBuilderCode<'T> =
+    member inline b.For(sequence : seq<'TElement>, body : 'TElement -> ResizeArrayBuilderCode<'T>) : ResizeArrayBuilderCode<'T> =
         b.Using (sequence.GetEnumerator(), 
-            (fun e -> b.While((fun () -> e.MoveNext()), (fun sm -> (__expand_body e.Current).Invoke &sm))))
+            (fun e -> b.While((fun () -> e.MoveNext()), (fun sm -> (body e.Current).Invoke &sm))))
 
-    member inline __.Yield (v: 'T) : [<ResumableCode>] ResizeArrayBuilderCode<'T> =
+    member inline __.Yield (v: 'T) : ResizeArrayBuilderCode<'T> =
         ResizeArrayBuilderCode(fun sm ->
             sm.Yield v)
 
-    member inline b.YieldFrom (source: IEnumerable<'T>) : [<ResumableCode>] ResizeArrayBuilderCode<'T> =
+    member inline b.YieldFrom (source: IEnumerable<'T>) : ResizeArrayBuilderCode<'T> =
         b.For(source, (fun value -> b.Yield(value)))
 
 
 type ResizeArrayBuilder() =     
     inherit ResizeArrayBuilderBase()
 
-    member inline b.Run([<ResumableCode>] __expand_code : ResizeArrayBuilderCode<'T>) : ResizeArray<'T> = 
+    member inline b.Run(code : ResizeArrayBuilderCode<'T>) : ResizeArray<'T> = 
         if __useResumableCode then
             __structStateMachine<ResizeArrayBuilderStateMachine<'T>, _>
                 (MoveNextMethod<ResizeArrayBuilderStateMachine<'T>>(fun sm -> 
-                       __expand_code.Invoke(&sm)
+                       code.Invoke(&sm)
                        ))
 
                 // SetStateMachine
@@ -112,7 +113,7 @@ type ResizeArrayBuilder() =
                     sm.ToResizeArray()))
         else
             let mutable sm = ResizeArrayBuilderStateMachine<'T>()
-            __expand_code.Invoke(&sm)
+            code.Invoke(&sm)
             sm.ToResizeArray()
 
 let rsarray = ResizeArrayBuilder()
@@ -120,11 +121,11 @@ let rsarray = ResizeArrayBuilder()
 type ArrayBuilder() =     
     inherit ResizeArrayBuilderBase()
 
-    member inline b.Run([<ResumableCode>] __expand_code : ResizeArrayBuilderCode<'T>) : 'T[] = 
+    member inline b.Run(code : ResizeArrayBuilderCode<'T>) : 'T[] = 
         if __useResumableCode then
             __structStateMachine<ResizeArrayBuilderStateMachine<'T>, _>
                 (MoveNextMethod<ResizeArrayBuilderStateMachine<'T>>(fun sm -> 
-                       __expand_code.Invoke(&sm)
+                       code.Invoke(&sm)
                        ))
 
                 // SetStateMachine
@@ -137,7 +138,7 @@ type ArrayBuilder() =
                     sm.ToArray()))
         else
             let mutable sm = ResizeArrayBuilderStateMachine<'T>()
-            __expand_code.Invoke(&sm)
+            code.Invoke(&sm)
             sm.ToArray()
 
 let array = ArrayBuilder()

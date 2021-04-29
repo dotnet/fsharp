@@ -4,6 +4,8 @@ module Tests_Tasks
 open FSharp.Core.CompilerServices
 open FSharp.Core.CompilerServices.StateMachineHelpers
 open System.Runtime.CompilerServices
+open System.Threading.Tasks
+
 
 let failures = ref []
 
@@ -737,9 +739,6 @@ module ``Check code is flattened because ResumableCode attribute`` =
 
     check "evcwewcjlkwejfvlj" (makeStateMachine 3) 10
 
-
-open Microsoft.FSharp.Control
-open System.Threading.Tasks
 
 let inline checkStateMachine nm = 
     check nm (System.Reflection.MethodBase.GetCurrentMethod().Name) "MoveNext"

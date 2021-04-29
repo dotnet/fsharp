@@ -12,12 +12,13 @@ open FSharp.Core.CompilerServices.StateMachineHelpers
 type ListBuilderStateMachine<'T> =
     [<DefaultValue(false)>]
     val mutable Result : 'T list
+
     [<DefaultValue(false)>]
     val mutable LastCons : 'T list
 
     interface IAsyncStateMachine with 
-        member sm.MoveNext() = failwith "no dynamic impl"
-        member sm.SetStateMachine(state: IAsyncStateMachine) = failwith "no dynamic impl"
+        member _.MoveNext() = failwith "no dynamic impl"
+        member _.SetStateMachine(_state: IAsyncStateMachine) = failwith "no dynamic impl"
 
     static member inline Run(sm: byref<'K> when 'K :> IAsyncStateMachine) = sm.MoveNext()
 
@@ -39,65 +40,66 @@ type ListBuilderStateMachine<'T> =
             RuntimeHelpers.SetFreshConsTail sm.LastCons []
             sm.Result
     
+[<ResumableCode>]
 type ListBuilderCode<'T> = delegate of byref<ListBuilderStateMachine<'T>> -> unit
 
 type ListBuilder() =
 
-    member inline _.Delay([<ResumableCode>] __expand_f : unit -> ListBuilderCode<'T>) : [<ResumableCode>] ListBuilderCode<'T> =
-        ListBuilderCode (fun sm -> (__expand_f()).Invoke &sm)
+    member inline _.Delay(f : unit -> ListBuilderCode<'T>) : ListBuilderCode<'T> =
+        ListBuilderCode (fun sm -> (f()).Invoke &sm)
 
-    member inline _.Zero() : [<ResumableCode>] ListBuilderCode<'T> =
+    member inline _.Zero() : ListBuilderCode<'T> =
         ListBuilderCode(fun _sm -> ())
 
-    member inline _.Combine([<ResumableCode>] __expand_part1: ListBuilderCode<'T>, [<ResumableCode>] __expand_part2: ListBuilderCode<'T>) : [<ResumableCode>] ListBuilderCode<'T> =
+    member inline _.Combine(part1: ListBuilderCode<'T>, part2: ListBuilderCode<'T>) : ListBuilderCode<'T> =
         ListBuilderCode(fun sm -> 
-            __expand_part1.Invoke &sm
-            __expand_part2.Invoke &sm)
+            part1.Invoke &sm
+            part2.Invoke &sm)
             
-    member inline _.While([<ResumableCode>] __expand_condition : unit -> bool, [<ResumableCode>] __expand_body : ListBuilderCode<'T>) : [<ResumableCode>] ListBuilderCode<'T> =
+    member inline _.While(condition : unit -> bool, body : ListBuilderCode<'T>) : ListBuilderCode<'T> =
         ListBuilderCode(fun sm -> 
-            while __expand_condition() do
-                __expand_body.Invoke &sm)
+            while condition() do
+                body.Invoke &sm)
 
-    member inline _.TryWith([<ResumableCode>] __expand_body : ListBuilderCode<'T>, [<ResumableCode>] __expand_catch : exn -> ListBuilderCode<'T>) : ListBuilderCode<'T> =
+    member inline _.TryWith(body : ListBuilderCode<'T>, catch : exn -> ListBuilderCode<'T>) : ListBuilderCode<'T> =
         ListBuilderCode(fun sm -> 
             try
-                __expand_body.Invoke &sm
+                body.Invoke &sm
             with exn -> 
-                (__expand_catch exn).Invoke &sm)
+                (catch exn).Invoke &sm)
 
-    member inline _.TryFinally([<ResumableCode>] __expand_body: ListBuilderCode<'T>, compensation : unit -> unit) : [<ResumableCode>] ListBuilderCode<'T> =
+    member inline _.TryFinally(body: ListBuilderCode<'T>, compensation : unit -> unit) : ListBuilderCode<'T> =
         ListBuilderCode(fun sm -> 
             try
-                __expand_body.Invoke &sm
+                body.Invoke &sm
             with _ ->
                 compensation()
                 reraise()
 
             compensation())
 
-    member inline b.Using(disp : #IDisposable, [<ResumableCode>] __expand_body : #IDisposable -> ListBuilderCode<'T>) : [<ResumableCode>] ListBuilderCode<'T> = 
+    member inline b.Using(disp : #IDisposable, body : #IDisposable -> ListBuilderCode<'T>) : ListBuilderCode<'T> = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         b.TryFinally(
-            (fun sm -> (__expand_body disp).Invoke &sm),
+            (fun sm -> (body disp).Invoke &sm),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
-    member inline b.For(sequence : seq<'TElement>, [<ResumableCode>] __expand_body : 'TElement -> ListBuilderCode<'T>) : [<ResumableCode>] ListBuilderCode<'T> =
+    member inline b.For(sequence : seq<'TElement>, body : 'TElement -> ListBuilderCode<'T>) : ListBuilderCode<'T> =
         b.Using (sequence.GetEnumerator(), 
-            (fun e -> b.While((fun () -> e.MoveNext()), (fun sm -> (__expand_body e.Current).Invoke &sm))))
+            (fun e -> b.While((fun () -> e.MoveNext()), (fun sm -> (body e.Current).Invoke &sm))))
 
-    member inline _.Yield (v: 'T) : [<ResumableCode>] ListBuilderCode<'T> =
+    member inline _.Yield (v: 'T) : ListBuilderCode<'T> =
         ListBuilderCode(fun sm ->
             sm.Yield v)
 
-    member inline b.YieldFrom (source: IEnumerable<'T>) : [<ResumableCode>] ListBuilderCode<'T> =
+    member inline b.YieldFrom (source: IEnumerable<'T>) : ListBuilderCode<'T> =
         b.For(source, (fun value -> b.Yield(value)))
 
-    member inline b.Run([<ResumableCode>] __expand_code : ListBuilderCode<'T>) : 'T list = 
+    member inline _.Run(code : ListBuilderCode<'T>) : 'T list = 
         if __useResumableCode then
             __structStateMachine<ListBuilderStateMachine<'T>, _>
                 (MoveNextMethod<ListBuilderStateMachine<'T>>(fun sm -> 
-                       __expand_code.Invoke(&sm)
+                       code.Invoke(&sm)
                        ))
 
                 // SetStateMachine
@@ -110,7 +112,7 @@ type ListBuilder() =
                     sm.ToList()))
         else
             let mutable sm = ListBuilderStateMachine<'T>()
-            __expand_code.Invoke(&sm)
+            code.Invoke(&sm)
             sm.ToList()
 
 let list = ListBuilder()
