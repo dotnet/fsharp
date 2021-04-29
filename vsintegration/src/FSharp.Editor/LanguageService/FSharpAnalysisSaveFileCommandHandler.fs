@@ -22,16 +22,16 @@ open Microsoft.VisualStudio.Utilities
 [<Export>]
 [<Export(typeof<ICommandHandler>)>]
 [<ContentType(Constants.FSharpContentType)>]
-[<Name("F# Analysis Save File Handler")>]
+[<Name(Constants.FSharpAnalysisSaveFileHandler)>]
 type internal FSharpAnalysisSaveFileCommandHandler
     [<ImportingConstructor>]
     (analyzerService: IFSharpDiagnosticAnalyzerService) =
     
     interface IChainedCommandHandler<SaveCommandArgs> with
 
-        member this.DisplayName = "FSharp Analysis Save File Handler"
+        member _.DisplayName = Constants.FSharpAnalysisSaveFileHandler
 
-        member this.ExecuteCommand(args: SaveCommandArgs, nextCommandHandler: Action, _) = 
+        member _.ExecuteCommand(args: SaveCommandArgs, nextCommandHandler: Action, _) = 
             let textContainer = args.SubjectBuffer.AsTextContainer()
             match textContainer with
             | null -> ()
