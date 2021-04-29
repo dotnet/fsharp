@@ -5139,6 +5139,52 @@ let ``Test project41 all symbols`` () =
            ("M", ((2, 7), (2, 8)), ["module"], (2, 7))]
 
 
+module internal Project42 = 
+
+    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let fileName2 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    // We need to us a stable name to keep the hashes stable
+    let base2 = Path.Combine(Path.GetDirectoryName(Path.GetTempFileName()), "stabletmp.tmp")
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1 = """
+module File1
+
+let test() = ()
+    """
+    File.WriteAllText(fileName1, fileSource1)
+    let fileSource2 = """
+module File2
+
+open File1
+
+let test2() = test()
+    """
+    File.WriteAllText(fileName2, fileSource2)
+    let fileNames = [fileName1;fileName2]
+    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+
+[<Test>]
+let ``Test project42 to ensure cached checked results are invalidated`` () = 
+    let text2 = SourceText.ofString(File.ReadAllText(Project42.fileName2))
+    let checkedFile2 = checker.ParseAndCheckFileInProject(Project42.fileName2, text2.GetHashCode(), text2, Project42.options) |> Async.RunSynchronously
+    match checkedFile2 with
+    | _, FSharpCheckFileAnswer.Succeeded(checkedFile2Results) ->
+        Assert.IsEmpty(checkedFile2Results.Diagnostics)
+        File.WriteAllText(Project42.fileName1, """module File1""")
+        try
+            let checkedFile2Again = checker.ParseAndCheckFileInProject(Project42.fileName2, text2.GetHashCode(), text2, Project42.options) |> Async.RunSynchronously
+            match checkedFile2Again with
+            | _, FSharpCheckFileAnswer.Succeeded(checkedFile2AgainResults) ->
+                Assert.IsNotEmpty(checkedFile2AgainResults.Diagnostics) // this should contain errors as File1 does not contain the function `test()`
+            | _ ->
+                failwith "Project42 failed to check."
+        finally
+            File.WriteAllText(Project42.fileName1, Project42.fileSource1) // Revert to the original state of the file
+    | _ ->
+        failwith "Project42 failed to check."
+
 module internal ProjectBig = 
 
     let fileNamesI = [ for i in 1 .. 10 -> (i, Path.ChangeExtension(Path.GetTempFileName(), ".fs")) ]
