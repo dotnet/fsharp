@@ -443,14 +443,11 @@ type DefaultFileSystem() as this =
                       interface IDisposable with
                         member x.Dispose() =
                             GC.SuppressFinalize x
-                            accessor.SafeMemoryMappedViewHandle.ReleasePointer();
-                            accessor.SafeMemoryMappedViewHandle.Close();
+                            accessor.SafeMemoryMappedViewHandle.Close()
                             accessor.Dispose()
-                            mmf.SafeMemoryMappedFileHandle.Close();
+                            mmf.SafeMemoryMappedFileHandle.Close()
                             mmf.Dispose()
                             fileStream.Dispose() }
-
-                // let safeHolder = (mmf, accessor)
 
                 RawByteMemory(
                     NativePtr.ofNativeInt (accessor.SafeMemoryMappedViewHandle.DangerousGetHandle()),
