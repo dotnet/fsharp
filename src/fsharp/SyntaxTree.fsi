@@ -124,7 +124,7 @@ type SynConst =
     | Single of single
 
     /// F# syntax: 1.30, 1.40e10 etc.
-    | Double of double
+    | Double of notation:string * value:double
 
     /// F# syntax: 'a'
     | Char of char

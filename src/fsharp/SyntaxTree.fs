@@ -101,7 +101,7 @@ type SynConst =
 
     | Single of single
 
-    | Double of double
+    | Double of notation:string * value:double
 
     | Char of char
 

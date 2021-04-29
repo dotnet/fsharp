@@ -784,7 +784,7 @@ let TcConst cenv ty m env c =
     | SynConst.Unit -> unif cenv.g.unit_ty; Const.Unit
     | SynConst.Bool i -> unif cenv.g.bool_ty; Const.Bool i
     | SynConst.Single f -> unif cenv.g.float32_ty; Const.Single f
-    | SynConst.Double f -> unif cenv.g.float_ty; Const.Double f 
+    | SynConst.Double (_,f) -> unif cenv.g.float_ty; Const.Double f 
     | SynConst.Decimal f -> unif (mkAppTy cenv.g.decimal_tcr []); Const.Decimal f 
     | SynConst.SByte i -> unif cenv.g.sbyte_ty; Const.SByte i
     | SynConst.Int16 i -> unif cenv.g.int16_ty; Const.Int16 i
@@ -797,7 +797,7 @@ let TcConst cenv ty m env c =
     | SynConst.UInt64 i -> unif cenv.g.uint64_ty; Const.UInt64 i
     | SynConst.UIntPtr i -> unif cenv.g.unativeint_ty; Const.UIntPtr i
     | SynConst.Measure(SynConst.Single f, _, _) -> unifyMeasureArg (f=0.0f) cenv.g.pfloat32_tcr c; Const.Single f
-    | SynConst.Measure(SynConst.Double f, _, _) -> unifyMeasureArg (f=0.0) cenv.g.pfloat_tcr c; Const.Double f
+    | SynConst.Measure(SynConst.Double (_, f), _, _) -> unifyMeasureArg (f=0.0) cenv.g.pfloat_tcr c; Const.Double f
     | SynConst.Measure(SynConst.Decimal f, _, _) -> unifyMeasureArg false cenv.g.pdecimal_tcr c; Const.Decimal f
     | SynConst.Measure(SynConst.SByte i, _, _) -> unifyMeasureArg (i=0y) cenv.g.pint8_tcr c; Const.SByte i
     | SynConst.Measure(SynConst.Int16 i, _, _) -> unifyMeasureArg (i=0s) cenv.g.pint16_tcr c; Const.Int16 i
@@ -4413,7 +4413,7 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) i
             | SynConst.UInt64 n when typeEquiv g g.uint64_ty kind -> record(g.uint64_ty); box (n: uint64)
             | SynConst.Decimal n when typeEquiv g g.decimal_ty kind -> record(g.decimal_ty); box (n: decimal)
             | SynConst.Single n when typeEquiv g g.float32_ty kind -> record(g.float32_ty); box (n: single)
-            | SynConst.Double n when typeEquiv g g.float_ty kind -> record(g.float_ty); box (n: double)
+            | SynConst.Double (_,n) when typeEquiv g g.float_ty kind -> record(g.float_ty); box (n: double)
             | SynConst.Char n when typeEquiv g g.char_ty kind -> record(g.char_ty); box (n: char)
             | SynConst.String (s, _, _) when s <> null && typeEquiv g g.string_ty kind -> record(g.string_ty); box (s: string)
             | SynConst.Bool b when typeEquiv g g.bool_ty kind -> record(g.bool_ty); box (b: bool)

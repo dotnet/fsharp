@@ -2335,7 +2335,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                   | INT64(v, bad) -> delayMergedToken(INT64((if plus then v else -v), (plus && bad))) // note: '-' makes a 'bad' max int 'good'. '+' does not
                   | NATIVEINT(v, bad) -> delayMergedToken(NATIVEINT((if plus then v else -v), (plus && bad))) // note: '-' makes a 'bad' max int 'good'. '+' does not
                   | IEEE32 v -> delayMergedToken(IEEE32(if plus then v else -v))
-                  | IEEE64 v -> delayMergedToken(IEEE64(if plus then v else -v))
+                  | IEEE64 (n,v) -> delayMergedToken(IEEE64(System.String.Concat((if plus then '+' else '-'),n), if plus then v else -v))
                   | DECIMAL v -> delayMergedToken(DECIMAL(if plus then v else System.Decimal.op_UnaryNegation v))
                   | BIGNUM(v, s) -> delayMergedToken(BIGNUM((if plus then v else "-" + v), s))
                   | _ -> noMerge()

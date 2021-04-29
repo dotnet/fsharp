@@ -486,7 +486,8 @@ rule token args skip = parse
      }
 
  | ieee64
-     { IEEE64 (try float(lexeme lexbuf) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) }
+     { let v = lexeme lexbuf
+       IEEE64 (v, try float v with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) }
 
  | decimal    
      { try 
@@ -506,9 +507,9 @@ rule token args skip = parse
        IEEE32 (System.BitConverter.ToSingle(System.BitConverter.GetBytes(int32 (uint32 (uint64 n64))),0)) }
 
  | xieee64     
-     { 
-       let n64 = (try int64 (removeUnderscores (lexemeTrimRight lexbuf 2)) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0L) 
-       IEEE64 (System.BitConverter.Int64BitsToDouble(n64)) }
+     { let v = lexemeTrimRight lexbuf 2
+       let n64 = (try int64 (removeUnderscores v) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0L) 
+       IEEE64 (String.Concat(v, "LF"), System.BitConverter.Int64BitsToDouble(n64)) }
        
  | bignum     
        { let s = lexeme lexbuf 

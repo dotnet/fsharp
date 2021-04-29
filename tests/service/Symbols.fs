@@ -527,6 +527,66 @@ let m = 7.000<cm>
             assertRange (3, 8) (3, 13) r2
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``original Double notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let n = 1.
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Double(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual("1.", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``original xieee64 Double notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let n = 0x1_4LF
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Double(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual("0x1_4LF", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``original negative Double notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let b = -2.
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Double(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual("-2.", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``original positive Double notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let c = +3.
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Double(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual("+3.", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SynModuleOrNamespaceSig =
     [<Test>]
     let ``Range member returns range of SynModuleOrNamespaceSig`` () =

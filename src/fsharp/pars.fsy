@@ -229,7 +229,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token <uint64> UINT64
 %token <uint64> UNATIVEINT
 %token <single> IEEE32
-%token <double> IEEE64
+%token <string * double> IEEE64
 %token <char> CHAR
 %token <System.Decimal> DECIMAL 
 %token <(string * string)> BIGNUM
