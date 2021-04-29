@@ -1394,7 +1394,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
        not vspec1.IsCompilerGenerated then 
        None 
     elif vspec1.IsFixed then None 
-    elif vspec1.LogicalName.StartsWith prefixForVariablesThatMayNotBeEliminated ||
+    elif vspec1.LogicalName.StartsWith stackVarPrefix ||
          vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated then None
     else
 

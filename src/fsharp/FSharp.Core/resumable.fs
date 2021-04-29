@@ -29,7 +29,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
     type AfterMethod<'Template, 'Result> = delegate of byref<'Template> -> 'Result
 
-    [<AttributeUsage (AttributeTargets.Parameter ||| AttributeTargets.ReturnValue ||| AttributeTargets.Method, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Delegate ||| AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
     type ResumableCodeAttribute() = 
         inherit System.Attribute()

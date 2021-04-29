@@ -7617,7 +7617,7 @@ FSharp.Compiler.Syntax.SynPat+LongIdent: Microsoft.FSharp.Core.FSharpOption`1[FS
 FSharp.Compiler.Syntax.SynPat+LongIdent: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynValTyparDecls] get_typarDecls()
 FSharp.Compiler.Syntax.SynPat+LongIdent: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynValTyparDecls] typarDecls
 FSharp.Compiler.Syntax.SynPat+Named: Boolean get_isSelfIdentifier()
-FSharp.Compiler.Syntax.SynPat+Named: Boolean isSelfIdentifier
+FSharp.Compiler.Syntax.SynPat+Named: Boolean isThisVal
 FSharp.Compiler.Syntax.SynPat+Named: FSharp.Compiler.Syntax.Ident get_ident()
 FSharp.Compiler.Syntax.SynPat+Named: FSharp.Compiler.Syntax.Ident ident
 FSharp.Compiler.Syntax.SynPat+Named: FSharp.Compiler.Syntax.SynPat get_pat()
@@ -7816,7 +7816,7 @@ FSharp.Compiler.Syntax.SynSimplePat+Id: Boolean get_isOptArg()
 FSharp.Compiler.Syntax.SynSimplePat+Id: Boolean get_isThisVar()
 FSharp.Compiler.Syntax.SynSimplePat+Id: Boolean isCompilerGenerated
 FSharp.Compiler.Syntax.SynSimplePat+Id: Boolean isOptArg
-FSharp.Compiler.Syntax.SynSimplePat+Id: Boolean isThisVar
+FSharp.Compiler.Syntax.SynSimplePat+Id: Boolean isThisVal
 FSharp.Compiler.Syntax.SynSimplePat+Id: FSharp.Compiler.Syntax.Ident get_ident()
 FSharp.Compiler.Syntax.SynSimplePat+Id: FSharp.Compiler.Syntax.Ident ident
 FSharp.Compiler.Syntax.SynSimplePat+Id: FSharp.Compiler.Text.Range get_range()

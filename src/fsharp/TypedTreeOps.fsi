@@ -2458,6 +2458,9 @@ val (|TryFinallyExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtFinally * TType
 /// Add a label to use as the target for a goto
 val mkLabelled: range -> ILCodeLabel -> Expr -> Expr 
 
+/// Any delegate type with ResumableCode attribute, or any function returning such a delegate type
+val isResumableCodeTy: TcGlobals -> TType -> bool
+
 /// Shared helper for binding attributes
 val TryBindTyconRefAttribute:
     g:TcGlobals ->
@@ -2468,3 +2471,4 @@ val TryBindTyconRefAttribute:
     f2:(Attrib -> 'a option) ->
     f3:(obj option list * (string * obj option) list -> 'a option) 
     -> 'a option
+

@@ -10,18 +10,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="empty.fs"  />
+	  <!--
     <Compile Include="sync.fs"  />
-<!--
     <Compile Include="avalue.fs" />
     <Compile Include="seq2.fs" />
--->
     <Compile Include="list.fs" />
     <Compile Include="array.fs" />
     <Compile Include="option.fs" />
     <Compile Include="taskSeq.fs" />
     <Compile Include="TaskBuilder.fs" />
     <Compile Include="TaskPerf.fs" />
-    <ProjectReference Include="..\CS\TaskPerfCSharp.csproj" />
+-->
+	<ProjectReference Include="..\CS\TaskPerfCSharp.csproj" />
     <ProjectReference Include="..\..\..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.11.5" />
     <PackageReference Include="FSharp.Control.AsyncSeq" Version="2.0.23" />

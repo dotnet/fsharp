@@ -9,41 +9,40 @@ open System.Runtime.CompilerServices
 // No warnings expected in the declarations
 
 module ``No warning for resumable code that is just a simple expression`` =
-    let inline f1 () : [<ResumableCode>] (unit -> int) =
-        fun () -> 
-             //printfn "hello"
-             1 // check we don't get a warning here
+    [<ResumableCode>]
+    type CodeSpec = delegate of unit -> int
+    let inline f1 ()  = CodeSpec(fun () ->  1 )
 
 module ``No warning for resumable code that is just a sequential expression`` =
-    let inline f1 () : [<ResumableCode>] (unit -> int) =
-        fun () -> 
+    [<ResumableCode>]
+    type CodeSpec = delegate of unit -> int
+    let inline f1 () =
+        CodeSpec(fun () -> 
              printfn "hello"
-             1 // check we don't get a warning here
+             1)
 
 module ``No warning for protected use of __resumeAt`` =
-    let inline f1 () : [<ResumableCode>] (unit -> int) =
-        fun () -> 
+    [<ResumableCode>]
+    type CodeSpec = delegate of unit -> int
+    let inline f1 () =
+        CodeSpec(fun () -> 
              if __useResumableCode then
                 __resumeAt 0 // we don't get a warning here
                 2
              else
-                 1 
+                 1 )
 
 module ``No warning for protected use of __resumableEntry`` =
-    let inline f1 () : [<ResumableCode>] (unit -> int) =
-        fun () -> 
+    [<ResumableCode>]
+    type CodeSpec = delegate of unit -> int
+    let inline f1 () =
+        CodeSpec(fun () -> 
              if __useResumableCode then
                  match __resumableEntry() with 
                  | Some contID -> 1
                  | None -> 2
              else
-                 3
-
-    let inline f2 () : [<ResumableCode>] (unit -> int) =
-        f1()
-
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-// No warnings expected in code before this line
+                 3)
 
 [<AbstractClass>]
 type SyncMachine<'T>() =
@@ -56,7 +55,7 @@ type SyncMachine<'T>() =
     member this.Start() = this.Step()
 
 [<Struct; NoEquality; NoComparison>]
-type SyncMachineStruct1<'TOverall> =
+type SyncMachineStructWithNonInlineMethod<'TOverall> =
 
     [<DefaultValue(false)>]
     val mutable PC : int
@@ -68,7 +67,7 @@ type SyncMachineStruct1<'TOverall> =
         member sm.SetStateMachine(state: IAsyncStateMachine) = failwith "no dynamic impl"
 
 [<Struct>]
-type SyncMachineStruct2<'TOverall> =
+type SyncMachineStructWithOtherInterfaces<'TOverall> =
 
     [<DefaultValue(false)>]
     val mutable PC : int
@@ -77,58 +76,59 @@ type SyncMachineStruct2<'TOverall> =
         member sm.MoveNext() = failwith "no dynamic impl"
         member sm.SetStateMachine(state: IAsyncStateMachine) = failwith "no dynamic impl"
 
-// Resumable code may NOT have let rec statements
-module ResumableCode_LetRec =
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// No warnings expected in code before this line
+
+
+// Resumable code may not have let rec statements
+module ``Error on let rec in resumable code`` =
     let makeStateMachine inputValue = 
-        if __useResumableCode then
-            (
-                { new SyncMachine<int>() with 
-                    [<ResumableCode>]
-                    member _.Step ()  =  
-                       let rec f x = if x > 0 then f (x-1) else inputValue + 13
-                       f 10 + f 2
-                 }
-            ).Start()
-        else
-            failwith "should have been compiled to resumable code, no interpretation available"
+        { new SyncMachine<int>() with 
+            [<ResumableCode>]
+            member _.Step ()  =  
+                if __useResumableCode then
+                    let rec f x = if x > 0 then f (x-1) else inputValue + 13
+                    f 10 + f 2
+                else
+                    failwith "should have been compiled to resumable code, no interpretation available"
+        }.Start()
 
-module ``Warning because resumable parameter not named correctly`` =
-    let inline f ([<ResumableCode>] code : unit -> unit) =
-        ()
+module ``Error on unprotected __resumeAt`` =
+    let inline f1 () =
+        __resumeAt 0 
+        1 
 
-module ``Warning on unprotected __resumeAt`` =
-    let inline f1 () : [<ResumableCode>] (unit -> int) =
-        fun () -> 
-             __resumeAt 0 // we don't get a warning here
-             1 
+module ``Warning on unprotected __resumeAt in resumable code`` =
+    [<ResumableCode>]
+    type CodeSpec = delegate of unit -> int
+    let inline f1 () =
+        CodeSpec(fun () -> __resumeAt 0)
 
 module ``Warning because for loop doesn't supported resumable code`` =
-    let inline f1 () : [<ResumableCode>] (unit -> int) =
-        fun () -> 
-             if __useResumableCode then
+    [<ResumableCode>]
+    type CodeSpec = delegate of unit -> int
+    let inline f1 () =
+        CodeSpec(fun () -> 
+            if __useResumableCode then
                  for i in 0 .. 1 do
                     __resumeAt 0 // we expect an error here - this is not valid resumable code
-             1
+            1)
 
-
-module ``Error because function with resumable parameter not inlined`` =
-    let f ([<ResumableCode>] __expand_code : unit -> unit) =
-        ()
 
 module ``Error because unprotected __resumableEntry`` =
-    let inline f1 () : [<ResumableCode>] (unit -> int) =
-        fun () -> 
+    [<ResumableCode>]
+    type CodeSpec = delegate of unit -> int
+    let inline f1 () =
+        CodeSpec(fun () -> 
                 match __resumableEntry() with 
                 | Some contID -> 1
                 | None -> 2
-
-    let inline f2 () : [<ResumableCode>] (unit -> int) =
-        f1()
+        )
 
 module ``Error for struct state machine with non-inline method`` =
     let makeStateMachine inputValue = 
         if __useResumableCode then
-            __structStateMachine<SyncMachineStruct1<int>, int>
+            __structStateMachine<SyncMachineStructWithNonInlineMethod<int>, int>
                 (MoveNextMethod<_>(fun sm -> ()))
                 (SetMachineStateMethod<_>(fun sm state -> ()))
                 (AfterMethod<_,_>(fun sm -> 1))
@@ -139,34 +139,80 @@ module ``Error for struct state machine with non-inline method`` =
 module ``Error for struct state machine without NoEquality, NoComparison`` =
     let makeStateMachine inputValue = 
         if __useResumableCode then
-            __structStateMachine<SyncMachineStruct2<int>, int>
+            __structStateMachine<SyncMachineStructWithOtherInterfaces<int>, int>
                 (MoveNextMethod<_>(fun sm -> ()))
                 (SetMachineStateMethod<_>(fun sm state -> ()))
                 (AfterMethod<_,_>(fun sm -> 1))
         else
             failwith "should have been compiled to resumable code, no interpretation available"
 
-module ``let bound __expand can't use resumable code constructs`` =
+module ``let bound function can't use resumable code constructs`` =
     let makeStateMachine inputValue = 
-            (
-                { new SyncMachine<int>() with 
-                    [<ResumableCode>]
-                    member sm.Step ()  =  
-                      if __useResumableCode then
-                       __resumeAt sm.PC
-                       // TEST: a resumable object may contain a macro defining beta-reducible code with a resumption point
-                       let __expand_code = (fun () -> 
-                            // Specify a resumption point
-                            match __resumableEntry() with
-                            | Some contID ->
-                                // This is the suspension path. It is not executed in this test because we jump straight to label 1
-                                __resumeAt contID
-                            | None -> 
-                                // This is the resumption path
-                                // Label 1 goes here
-                                20+inputValue)
-                       __expand_code () 
-                      else failwith "dynamic"
-               }
-            ).Start()
+        { new SyncMachine<int>() with 
+            [<ResumableCode>]
+            member sm.Step ()  =  
+                if __useResumableCode then
+                    __resumeAt sm.PC
+                    // TEST: a resumable object may contain a macro defining beta-reducible code with a resumption point
+                    let f () =
+                        // Specify a resumption point
+                        match __resumableEntry() with
+                        | Some contID ->
+                            // This is the suspension path. It is not executed in this test because we jump straight to label 1
+                            __resumeAt contID
+                        | None -> 
+                            // This is the resumption path
+                            // Label 1 goes here
+                            20+inputValue
+                    f() 
+                else failwith "dynamic"
+        }
+
+module ``Check no resumption point in try-finally `` =
+    let makeStateMachine inputValue = 
+        { new SyncMachine<int>() with 
+            [<ResumableCode>]
+            member _.Step ()  =  
+                if __useResumableCode then
+                    __resumeAt 1 
+                    let mutable res = inputValue
+                    try 
+                        // Attempt to specify a resumption point in the try-finally
+                        match __resumableEntry() with
+                        | Some contID ->
+                            failwith "unreachable"
+                            res <- 0
+                        | None -> 
+                            res <- res + 10
+                    finally 
+                        res <- res + 20 
+                    res
+               
+                else
+                    0xdeadbeef 
+         }.Start()
+
+module ``Check no resumption point in for loop`` =
+    let makeStateMachine inputValue = 
+        { new SyncMachine<int>() with 
+            [<ResumableCode>]
+            member _.Step ()  =  
+                if __useResumableCode then
+                    __resumeAt 1 
+                    let mutable res = inputValue
+                    let mutable count = 0
+                    for i = 0 to 9 do 
+                        // Attempt to specify a resumption point in the for loop. THis is not permitted
+                        // and while loops should be used instead
+                        match __resumableEntry() with
+                        | Some contID ->
+                            failwith "unreachable"
+                            res <- 0
+                        | None -> 
+                            res <- res + 10
+                    res
+               
+                else
+                    0xdeadbeef 
+         }.Start()
 

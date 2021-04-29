@@ -49,10 +49,10 @@ type ListBuilder() =
     member inline _.Zero() : [<ResumableCode>] ListBuilderCode<'T> =
         ListBuilderCode(fun _sm -> ())
 
-    member inline _.Combine([<ResumableCode>] __expand_task1: ListBuilderCode<'T>, [<ResumableCode>] __expand_task2: ListBuilderCode<'T>) : [<ResumableCode>] ListBuilderCode<'T> =
+    member inline _.Combine([<ResumableCode>] __expand_part1: ListBuilderCode<'T>, [<ResumableCode>] __expand_part2: ListBuilderCode<'T>) : [<ResumableCode>] ListBuilderCode<'T> =
         ListBuilderCode(fun sm -> 
-            __expand_task1.Invoke &sm
-            __expand_task2.Invoke &sm)
+            __expand_part1.Invoke &sm
+            __expand_part2.Invoke &sm)
             
     member inline _.While([<ResumableCode>] __expand_condition : unit -> bool, [<ResumableCode>] __expand_body : ListBuilderCode<'T>) : [<ResumableCode>] ListBuilderCode<'T> =
         ListBuilderCode(fun sm -> 

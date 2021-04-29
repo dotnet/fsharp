@@ -95,9 +95,12 @@ let RepresentBindingAsStateVar (bind: Binding) (res2: StateMachineConversionFirs
 // We look ahead one binding to find the binding of the code
 //
 // GIVEN:
-//   member inline __.Run(code : unit -> TaskStep<'T>) = 
+//   member inline __.Run(code : TaskCode<'T>) = 
 //           { new TaskStateMachine<'T>() with 
-//               [<ResumableCode>] member _.Step(pc) = __resumeAt pc code }).Start()
+//               [<ResumableCode>] 
+//                 member sm.Step(pc) = 
+//                   __resumeAt pc 
+//                   code.Invoke(sm) }).Start()
 //
 // THEN
 //    task { ... }
@@ -115,11 +118,14 @@ let RepresentBindingAsStateVar (bind: Binding) (res2: StateMachineConversionFirs
 //    let code = (fun ...)
 //    (__resumableStateMachine code).Start()
 
-let isExpandVar (v: Val) = 
+let isExpandVar g (v: Val) = 
     let nm = v.LogicalName
-    (nm.StartsWith expansionFunctionPrefix
-     || nm.StartsWith "builder@" 
-     || (v.BaseOrThisInfo = MemberThisVal)) &&
+    (//nm.StartsWith expansionFunctionPrefix
+     //|| 
+     nm.StartsWith "builder@" 
+     || (v.BaseOrThisInfo = MemberThisVal)
+     // Anything of [<ResumableCode>] type or any function returning [<ResumableCode>] type
+     || isResumableCodeTy g v.Type) &&
     not v.IsCompiledAsTopLevel
 
 type env = 
@@ -139,7 +145,8 @@ type env =
 /// This is run on every expression during codegen so we have to be a little careful about performance.
 let rec IsPossibleStateMachineExpr g overallExpr = 
     match overallExpr with
-    | Expr.Let (macroBind, bodyExpr, _, _) when isExpandVar macroBind.Var -> IsPossibleStateMachineExpr g bodyExpr
+    // 'let' binding of initial code
+    | Expr.Let (macroBind, bodyExpr, _, _) when isExpandVar g macroBind.Var -> IsPossibleStateMachineExpr g bodyExpr
     // Recognise 'if useResumableCode ...'
     | IfUseResumableStateMachinesExpr g _ -> true
     | Expr.App (_, _, _, (RefStateMachineExpr g _ :: _), _) -> true
@@ -159,7 +166,7 @@ let ConvertStateMachineExprToObject g overallExpr =
 
         match expr with
         // Bind 'let __expand_ABC = bindExpr in bodyExpr'
-        | Expr.Let (macroBind, bodyExpr, _, _) when isExpandVar macroBind.Var -> 
+        | Expr.Let (macroBind, bodyExpr, _, _) when isExpandVar g macroBind.Var -> 
             if sm_verbose then printfn "binding %A --> %A..." macroBind.Var macroBind.Expr
             let envR = { env with Macros = env.Macros.Add macroBind.Var macroBind.Expr }
             BindMacros envR bodyExpr
@@ -172,8 +179,8 @@ let ConvertStateMachineExprToObject g overallExpr =
         | _ ->
             (env, expr)
 
-    let rec TryApplyMacroDef (env: env) expr (args: Expr list) = 
-        if isNil args then Some expr else
+    let rec TryReduceApp (env: env) expr (args: Expr list) = 
+        if isNil args then  None else
         match expr with 
         | Expr.TyLambda _ 
         | Expr.Lambda _ -> 
@@ -191,7 +198,12 @@ let ConvertStateMachineExprToObject g overallExpr =
                 else
                     let nowArgs, laterArgs = List.splitAt macroParams.Length args
                     let expandedExpr = MakeApplicationAndBetaReduce g (macroVal2, (tyOfExpr g macroVal2), [], nowArgs, m)
-                    TryApplyMacroDef env expandedExpr laterArgs
+                    if sm_verbose then printfn "reduced application f = %A nowArgs= %A --> %A" macroVal2 nowArgs expandedExpr
+                    if isNil laterArgs then 
+                        Some expandedExpr 
+                    else
+                        if sm_verbose then printfn "application was partial, reducing further args %A" laterArgs
+                        TryReduceApp env expandedExpr laterArgs
 
         | NewDelegateExpr g (macroParamsCurried, macroBody, _) -> 
             let m = expr.Range
@@ -203,15 +215,23 @@ let ConvertStateMachineExprToObject g overallExpr =
             else
                 let nowArgs, laterArgs = List.splitAt macroParams.Length args
                 let expandedExpr = MakeApplicationAndBetaReduce g (macroVal2, (tyOfExpr g macroVal2), [], nowArgs, m)
-                TryApplyMacroDef env expandedExpr laterArgs
+                if sm_verbose then printfn "reduced application f = %A nowArgs= %A --> %A" macroVal2 nowArgs expandedExpr
+                if isNil laterArgs then 
+                    Some expandedExpr 
+                else
+                    if sm_verbose then printfn "application was partial, reducing further args %A" laterArgs
+                    TryReduceApp env expandedExpr laterArgs
 
         | Expr.Let (bind, bodyExpr, m, _) -> 
-            match TryApplyMacroDef env bodyExpr args with 
+            match TryReduceApp env bodyExpr args with 
             | Some bodyExpr2 -> Some (mkLetBind m bind bodyExpr2)
             | None -> None
 
+        | Expr.LetRec _ ->
+            None // TODO
+
         | Expr.Sequential (x1, bodyExpr, sp, ty, m) -> 
-            match TryApplyMacroDef env bodyExpr args with 
+            match TryReduceApp env bodyExpr args with 
             | Some bodyExpr2 -> Some (Expr.Sequential (x1, bodyExpr2, sp, ty, m))
             | None -> None
 
@@ -240,7 +260,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                             Some targetExpr2
                         | _ ->
 
-                        match TryApplyMacroDef env targetExpr args with 
+                        match TryReduceApp env targetExpr args with 
                         | Some targetExpr2 -> 
                             newTyOpt <- Some (tyOfExpr g targetExpr2) 
                             Some targetExpr2
@@ -254,18 +274,18 @@ let ConvertStateMachineExprToObject g overallExpr =
             else
                 None
 
-        | TryFinallyExpr (sp1, sp2, ty, bodyExpr, compensation, m) ->
-            match TryApplyMacroDef env bodyExpr args with
-            | Some bodyExpr2 -> Some (mkTryFinally g (bodyExpr2, compensation, m, ty, sp1, sp2))
-            | None -> None
-
         | WhileExpr (sp1, sp2, guardExpr, bodyExpr, m) ->
-            match TryApplyMacroDef env bodyExpr args with
+            match TryReduceApp env bodyExpr args with
             | Some bodyExpr2 -> Some (mkWhile g (sp1, sp2, guardExpr, bodyExpr2, m))
             | None -> None
 
+        | TryFinallyExpr (sp1, sp2, ty, bodyExpr, compensation, m) ->
+            match TryReduceApp env bodyExpr args with
+            | Some bodyExpr2 -> Some (mkTryFinally g (bodyExpr2, compensation, m, ty, sp1, sp2))
+            | None -> None
+
         | TryWithExpr (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m) ->
-            match TryApplyMacroDef env bodyExpr args with
+            match TryReduceApp env bodyExpr args with
             | Some bodyExpr2 -> Some (mkTryWith g (bodyExpr2, filterVar, filterExpr, handlerVar, handlerExpr, m, resTy, spTry, spWith))
             | None -> None
 
@@ -273,9 +293,8 @@ let ConvertStateMachineExprToObject g overallExpr =
             None
 
     // Apply a single expansion of __expand_ABC at the outermost position in an arbitrary expression
-    let rec TryExpandMacro (env: env) expr args remake = 
-        if sm_verbose then printfn "expanding macros for %A..." expr
-        //let (env, expr) = BindMacros env expr
+    let rec TryReduceExpr (env: env) expr args remake = 
+        if sm_verbose then printfn "expanding macros and reducing %A..." expr
         //if sm_verbose then printfn "checking %A for possible macro application..." expr
         match expr with
         // __expand_code --> [expand_code]
@@ -283,35 +302,36 @@ let ConvertStateMachineExprToObject g overallExpr =
             let macroDef = env.Macros.[macroRef.Deref]
             if sm_verbose then printfn "found macro %A --> %A" macroRef macroDef 
             // Expand the macro definition
-            match TryApplyMacroDef env macroDef args with 
+            match TryReduceApp env macroDef args with 
             | Some expandedExpr -> 
                 if sm_verbose then printfn "expanded macro %A --> %A..." macroRef expandedExpr
                 Some expandedExpr
             | None -> 
-                // If the arity wasn't right and the macro is simply 'a = b' then substitute the r.h.s.
-                // e.g. passing __expand_code to __expand_code parameter
-                match macroDef with 
-                | Expr.Val _ -> Some (remake macroDef)
-                | _ -> 
-                    warning(Error(FSComp.SR.stateMachineMacroInvalidExpansion(), expr.Range))
-                    None
+                Some (remake macroDef)
 
         // __expand_code.Invoke x --> let arg = x in [__expand_code][arg/x]
         | Expr.App ((Expr.Val (invokeRef, _, _) as iref), a, b, (f :: args2), m) 
-                when invokeRef.LogicalName = "Invoke" && isDelegateTy g (tyOfExpr g f) -> 
-            if sm_verbose then printfn "found delegate invoke in possible macro application..." 
-            TryExpandMacro env f (args2 @ args) (fun f2 -> remake (Expr.App ((iref, a, b, (f2 :: args2), m))))
+                when invokeRef.LogicalName = "Invoke" && isResumableCodeTy g (tyOfExpr g f) -> 
+            if sm_verbose then printfn "found delegate invoke in possible reduction, f = %A, args now %A..."  f (args2 @ args)
+            TryReduceExpr env f (args2 @ args) (fun f2 -> remake (Expr.App ((iref, a, b, (f2 :: args2), m))))
 
         // __expand_code x --> let arg = x in [__expand_code][arg/x] 
         | Expr.App (f, _fty, _tyargs, args2, _m) ->
-            if sm_verbose then printfn "found app in possible macro application..." 
-            TryExpandMacro env f (args2 @ args) (fun f2 -> remake (Expr.App (f2, _fty, _tyargs, args2, _m)))
+            if sm_verbose then printfn "found function invoke in possible reduction, f = %A, args now %A..."  f (args2 @ args)
+            TryReduceExpr env f (args2 @ args) (fun f2 -> remake (Expr.App (f2, _fty, _tyargs, args2, _m)))
 
-        | _ -> None
+        | _ -> 
+            //let (env, expr) = BindMacros env expr
+            match TryReduceApp env expr args with 
+            | Some expandedExpr -> 
+                if sm_verbose then printfn "reduction = %A, args = %A --> %A..." expr args expandedExpr
+                Some expandedExpr
+            | None -> 
+                None
 
     // Repeated top-down rewrite
     let makeRewriteEnv (env: env) = 
-        { PreIntercept = Some (fun cont e -> match TryExpandMacro env e [] id with Some e2 -> Some (cont e2) | None -> None)
+        { PreIntercept = Some (fun cont e -> match TryReduceExpr env e [] id with Some e2 -> Some (cont e2) | None -> None)
           PostTransform = (fun _ -> None)
           PreInterceptBinding = None
           IsUnderQuotations=true } 
@@ -328,7 +348,7 @@ let ConvertStateMachineExprToObject g overallExpr =
     let rec RepeatBindAndApplyOuterMacros (env: env) expr = 
         if sm_verbose then printfn "RepeatBindAndApplyOuterMacros for %A..." expr
         let env2, expr2 = BindMacros env expr
-        match TryExpandMacro env2 expr2 [] id with 
+        match TryReduceExpr env2 expr2 [] id with 
         | Some res -> RepeatBindAndApplyOuterMacros env2 res
         | None -> env2, expr2
 
@@ -543,7 +563,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                 | _ -> None
 
             // The expanded code for state machines should not normally contain try/finally as any resumptions will repeatedly execute the finally.
-            // Hoever we include the synchronous version of the construct here for completeness.
+            // However we include the synchronous version of the construct here for completeness.
             | TryFinallyExpr (sp1, sp2, ty, e1, e2, m) ->
                 if sm_verbose then printfn "TryFinallyExpr" 
                 let res1 = ConvertStateMachineCode env pcValInfo e1
@@ -567,7 +587,8 @@ let ConvertStateMachineExprToObject g overallExpr =
                         |> Some
                 | _ -> None
 
-            // The expanded code for state machines may use for loops....
+            // The expanded code for state machines may use for loops, however the
+            // body must be synchronous.
             | ForLoopExpr (sp1, sp2, e1, e2, v, e3, m) ->
                 if sm_verbose then printfn "ForLoopExpr" 
                 let res1 = ConvertStateMachineCode env pcValInfo e1
@@ -718,7 +739,9 @@ let ConvertStateMachineExprToObject g overallExpr =
                     //    ... await point ...
                     //    ... sm ....
                     // However the 'sm' won't be set on that path.
-                    if bind.Var.IsCompiledAsTopLevel || not (resBody.asyncVars.FreeLocals.Contains(bind.Var)) || bind.Var.LogicalName.StartsWith prefixForVariablesThatMayNotBeEliminated then
+                    if bind.Var.IsCompiledAsTopLevel || 
+                       not (resBody.asyncVars.FreeLocals.Contains(bind.Var)) || 
+                       bind.Var.LogicalName.StartsWith stackVarPrefix then
                         if sm_verbose then printfn "LetExpr (non-control-flow, rewrite rhs, RepresentBindingAsTopLevelOrLocal)" 
                         RepresentBindingAsTopLevelOrLocal bind resBody m
                         |> Some
@@ -741,8 +764,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                         |> Some
                 | _ -> None
 
-            // LetRec bindings may not appear as part of state machine.
-            | Expr.LetRec _ -> 
+            | Expr.LetRec _ ->
                   warning(Error(FSComp.SR.stateMachineLetRec(), expr.Range))
                   None
 
@@ -774,10 +796,10 @@ let ConvertStateMachineExprToObject g overallExpr =
     match overallExpr with
     | ExpandedStateMachineInContext (env, remake, pcExprOpt, codeExpr, m) ->
         let frees = (freeInExpr CollectLocals overallExpr).FreeLocals
-        if frees |> Zset.exists isExpandVar then 
-            let nonfree = frees |> Zset.elements |> List.filter  isExpandVar |> List.map (fun v -> v.DisplayName) |> String.concat ","
+        if frees |> Zset.exists (isExpandVar g) then 
+            let nonfree = frees |> Zset.elements |> List.filter (isExpandVar g) |> List.map (fun v -> v.DisplayName) |> String.concat ","
             if sm_verbose then 
-                printfn "Abandoning: The macro variables %s have not been expanded in state machine expansion at %A..." nonfree m
+                printfn "Abandoning: The macro variable(s) '%s' have not been expanded in state machine expansion at %A..." nonfree m
             None
         else
             let pcExprROpt = pcExprOpt |> Option.map (ConvertStateMachineLeafExpression env)

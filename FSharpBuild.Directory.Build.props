@@ -86,7 +86,7 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
     <DebugSymbols>true</DebugSymbols>
     <Optimize>false</Optimize>
-    <Tailcalls>false</Tailcalls>
+    <Tailcalls>true</Tailcalls>
   </PropertyGroup>
   -->
   

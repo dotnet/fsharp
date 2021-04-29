@@ -41,7 +41,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// with a default constructor with property getters and setters.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Parameter ||| AttributeTargets.ReturnValue ||| AttributeTargets.Method,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Delegate ||| AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
     type ResumableCodeAttribute =
         inherit Attribute

@@ -156,8 +156,8 @@ let IsRefusedTLR g (f: Val) =
     // Special values are instance methods etc. on .NET types.  For now leave these alone
     let specialVal = f.MemberInfo.IsSome
     let alreadyChosen = f.ValReprInfo.IsSome
-    let macroName = f.LogicalName.StartsWith(PrettyNaming.expansionFunctionPrefix)
-    let refuseTest = alreadyChosen || mutableVal || byrefVal || specialVal || dllImportStubOrOtherNeverInline || macroName
+    let isResumableCode = isResumableCodeTy g f.Type
+    let refuseTest = alreadyChosen || mutableVal || byrefVal || specialVal || dllImportStubOrOtherNeverInline || isResumableCode
     refuseTest
 
 let IsMandatoryTopLevel (f: Val) =

@@ -187,10 +187,5 @@ val FSharpSignatureDataResourceName2: string
 val internal suffixForVariablesThatMayNotBeEliminated : string = "$cont"
 
 [<Literal>] 
-val internal prefixForVariablesThatMayNotBeEliminated : string = "__stack_"
+val internal stackVarPrefix : string = "__stack_"
 
-[<Literal>] 
-val internal stackStepName : string = "__stack_step"
-
-[<Literal>] 
-val internal expansionFunctionPrefix : string = "__expand_"

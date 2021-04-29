@@ -1964,20 +1964,6 @@ and p_tycon_objmodel_kind x st =
     | TTyconDelegate ss -> p_byte 3 st; p_slotsig ss st
     | TTyconEnum        -> p_byte 4 st
 
-and p_mustinline x st =
-    p_byte (match x with
-            | ValInline.PseudoVal -> 0
-            | ValInline.Always  -> 1
-            | ValInline.Optional -> 2
-            | ValInline.Never -> 3) st
-
-and p_basethis x st =
-    p_byte (match x with
-            | BaseVal -> 0
-            | CtorThisVal  -> 1
-            | NormalVal -> 2
-            | MemberThisVal -> 3) st
-
 and p_vrefFlags x st =
     match x with
     | NormalValUse -> p_byte 0 st
@@ -2263,22 +2249,6 @@ and u_tycon_objmodel_kind st =
     | 3 -> u_slotsig st |> TTyconDelegate
     | 4 -> TTyconEnum
     | _ -> ufailwith st "u_tycon_objmodel_kind"
-
-and u_mustinline st =
-    match u_byte st with
-    | 0 -> ValInline.PseudoVal
-    | 1 -> ValInline.Always
-    | 2 -> ValInline.Optional
-    | 3 -> ValInline.Never
-    | _ -> ufailwith st "u_mustinline"
-
-and u_basethis st =
-    match u_byte st with
-    | 0 -> BaseVal
-    | 1 -> CtorThisVal
-    | 2 -> NormalVal
-    | 3 -> MemberThisVal
-    | _ -> ufailwith st "u_basethis"
 
 and u_vrefFlags st =
     match u_byte st with

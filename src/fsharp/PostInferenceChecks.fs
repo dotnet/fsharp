@@ -198,7 +198,7 @@ let CombineLimits limits =
 type cenv = 
     { boundVals: Dictionary<Stamp, int> // really a hash set
 
-      resumableCodeInfo: Dictionary<Stamp, ((Ident option * bool * bool) list list * bool)> // to save recomputing this
+      //resumableCodeInfo: Dictionary<Stamp, ((Ident option * bool * bool) list list * bool)> // to save recomputing this
 
       limitVals: Dictionary<Stamp, Limit>
 
@@ -235,37 +235,37 @@ type cenv =
 
     override x.ToString() = "<cenv>"
 
-// Get the information about a method or function which has one or more ResumableCodeAttribute parameters or return
-let emptyResumableCodeInfo : ((Ident option * bool * bool) list list * bool) = ([], false)
+//// Get the information about a method or function which has one or more ResumableCodeAttribute parameters or return
+//let emptyResumableCodeInfo : ((Ident option * bool * bool) list list * bool) = ([], false)
 
-let GetResumableCodeInfo (cenv: cenv) (v: Val) =
-    let g = cenv.g
-    match v.ValReprInfo with 
-    | None -> emptyResumableCodeInfo
-    | Some valInfo -> 
-    match cenv.resumableCodeInfo.TryGetValue(v.Stamp) with 
-    | true, v -> v
-    | _ -> 
-        let res = 
-            let _tps, argInfos, _typ, retInfo = GetTopValTypeInFSharpForm g valInfo v.Type v.Range 
+//let GetResumableCodeInfo (cenv: cenv) (v: Val) =
+//    let g = cenv.g
+//    match v.ValReprInfo with 
+//    | None -> emptyResumableCodeInfo
+//    | Some valInfo -> 
+//    match cenv.resumableCodeInfo.TryGetValue(v.Stamp) with 
+//    | true, v -> v
+//    | _ -> 
+//        let res = 
+//            let _tps, argInfos, _typ, retInfo = GetTopValTypeInFSharpForm g valInfo v.Type v.Range 
                 
-            let resumableCodeArgFlags = 
-                argInfos |> List.mapSquared (fun (argTy, argInfo) -> 
-                    let hasRCA = HasFSharpAttribute g g.attrib_ResumableCodeAttribute argInfo.Attribs
-                    argInfo.Name, hasRCA, (isDelegateTy g argTy || isFunTy g argTy))
+//            let resumableCodeArgFlags = 
+//                argInfos |> List.mapSquared (fun (argTy, argInfo) -> 
+//                    let hasRCA = HasFSharpAttribute g g.attrib_ResumableCodeAttribute argInfo.Attribs
+//                    argInfo.Name, hasRCA, (isDelegateTy g argTy || isFunTy g argTy))
 
-            let hasResumableCodeReturn = HasFSharpAttribute g g.attrib_ResumableCodeAttribute retInfo.Attribs
-            resumableCodeArgFlags, hasResumableCodeReturn
-        cenv.resumableCodeInfo.[v.Stamp] <- res
-        res
+//            let hasResumableCodeReturn = HasFSharpAttribute g g.attrib_ResumableCodeAttribute retInfo.Attribs
+//            resumableCodeArgFlags, hasResumableCodeReturn
+//        cenv.resumableCodeInfo.[v.Stamp] <- res
+//        res
 
-let HasResumableCodeArgOrReturn (cenv: cenv) (v: Val) =
-    let resumableCodeArgFlags, hasResumableCodeReturn = GetResumableCodeInfo cenv v
-    List.existsSquared p23 resumableCodeArgFlags || hasResumableCodeReturn
+//let HasResumableCodeArgOrReturn (cenv: cenv) (v: Val) =
+//    let resumableCodeArgFlags, hasResumableCodeReturn = GetResumableCodeInfo cenv v
+//    List.existsSquared p23 resumableCodeArgFlags || hasResumableCodeReturn
 
-let HasResumableCodeArg (cenv: cenv) (v: Val) =
-    let resumableCodeArgFlags, _hasResumableCodeReturn = GetResumableCodeInfo cenv v
-    List.existsSquared p23 resumableCodeArgFlags
+//let HasResumableCodeArg (cenv: cenv) (v: Val) =
+//    let resumableCodeArgFlags, _hasResumableCodeReturn = GetResumableCodeInfo cenv v
+//    List.existsSquared p23 resumableCodeArgFlags
 
 /// Check if the value is an argument of a function
 let IsValArgument env (v: Val) =
@@ -1083,34 +1083,29 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
             CheckExprsPermitByRefLike cenv { env with resumableCode = Resumable.None } args |> ignore
             true
 
-        | QuotationTranslator.ModuleValueOrMemberUse g (vref, _vFlags, _f, _fty, _tyargs, curriedArgs)  
-            when HasResumableCodeArgOrReturn cenv vref.Deref ->
+        //| QuotationTranslator.ModuleValueOrMemberUse g (vref, _vFlags, _f, _fty, _tyargs, curriedArgs)  
+        //    when HasResumableCodeArgOrReturn cenv vref.Deref ->
 
-            let resumableCodeArgFlagsCurried, hasResumableCodeReturn = GetResumableCodeInfo cenv vref.Deref
-            (resumableCodeArgFlagsCurried, curriedArgs) ||> Seq.iter2 (fun resumableCodeArgFlags arg -> 
-                if List.exists p23 resumableCodeArgFlags && resumableCodeArgFlags.Length > 1 && not (isRefTupleExpr arg) then
-                      warning(Error(FSComp.SR.tcResumableCodeExpected(), expr.Range))
+        //    let resumableCodeArgFlagsCurried, hasResumableCodeReturn = GetResumableCodeInfo cenv vref.Deref
+        //    (resumableCodeArgFlagsCurried, curriedArgs) ||> Seq.iter2 (fun resumableCodeArgFlags arg -> 
+        //        if List.exists p23 resumableCodeArgFlags && resumableCodeArgFlags.Length > 1 && not (isRefTupleExpr arg) then
+        //              warning(Error(FSComp.SR.tcResumableCodeExpected(), expr.Range))
 
-                let args = tryDestRefTupleExpr arg
-                (resumableCodeArgFlags, args) ||> Seq.iter2 (fun resumableCodeArgFlag arg -> 
-                    if p23 resumableCodeArgFlag then
-                        // continue checking the argument as resumable code
-                        CheckExprNoByrefs cenv env arg 
-                    else
-                        // check the argument as non-resumable code
-                        CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } arg))
-            if not hasResumableCodeReturn then
-                warning(Error(FSComp.SR.tcResumableCodeExpected(), expr.Range))
+        //        let args = tryDestRefTupleExpr arg
+        //        (resumableCodeArgFlags, args) ||> Seq.iter2 (fun resumableCodeArgFlag arg -> 
+        //            if p23 resumableCodeArgFlag then
+        //                // continue checking the argument as resumable code
+        //                CheckExprNoByrefs cenv env arg 
+        //            else
+        //                // check the argument as non-resumable code
+        //                CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } arg))
+        //    if not hasResumableCodeReturn then
+        //        warning(Error(FSComp.SR.tcResumableCodeExpected(), expr.Range))
             
-            true
+        //    true
 
         | SequentialResumableCode g (e1, e2, _m, _recreate) ->
             CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (false,  allowed) }e1
-            CheckExprNoByrefs cenv env e2
-            true
-
-        | TryFinallyExpr (_sp1, _sp2, _ty, e1, e2, _m) ->
-            CheckExprNoByrefs cenv env e1
             CheckExprNoByrefs cenv env e2
             true
 
@@ -1118,16 +1113,24 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
             CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } guardExpr
             CheckExprNoByrefs cenv env bodyExpr
             true
-        //| ForLoopExpr (_sp1, _sp2, e1, e2, v, e3, _m) ->
-        //    CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } e1
-        //    CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } e2
-        //    BindVal cenv env v
-        //    CheckExprNoByrefs cenv env e3
-        //    true
+
+        // Integer for-loops are allowed but their bodies are not currently resumable
+        | ForLoopExpr (_sp1, _sp2, e1, e2, v, e3, _m) ->
+            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } e1
+            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } e2
+            BindVal cenv env v
+            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } e3
+            true
+
         | TryWithExpr (_spTry, _spWith, _resTy, bodyExpr, _filterVar, filterExpr, _handlerVar, handlerExpr, _m) ->
             CheckExprNoByrefs cenv env bodyExpr
             CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } handlerExpr
             CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } filterExpr
+            true
+
+        | TryFinallyExpr (_sp1, _sp2, _ty, e1, e2, _m) ->
+            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } e1
+            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } e2
             true
 
         | Expr.Match (_spBind, _exprm, dtree, targets, _m, _ty) ->
@@ -1145,25 +1148,25 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
             CheckExprNoByrefs cenv env bodyExpr
             true
         
-        // LetRec bindings may not appear as part of state machine.
-        | Expr.LetRec(_bindings, bodyExpr, _range, _frees) -> 
+        // LetRec bindings may not appear as part of resumable code (TODO: lift this restriction)
+        | Expr.LetRec(_bindings, bodyExpr, _range, _frees) when allowed -> 
             errorR(Error(FSComp.SR.stateMachineLetRec(), expr.Range))
             CheckExprNoByrefs cenv env bodyExpr
             true
         
-        // First class use of a ResumableCode parameter is allowed (check is by name, the
-        // Val for the parameter doesn't carry the attributes)
-        | Expr.Val (vref, vFlags, m) when vref.DisplayName.StartsWith expansionFunctionPrefix ->  
-            CheckValUse cenv env (vref, vFlags, m) PermitByRefExpr.No |> ignore
-            true
+        //// First class use of a ResumableCode parameter is allowed (check is by name, the
+        //// Val for the parameter doesn't carry the attributes)
+        //| Expr.Val (vref, vFlags, m) when vref.DisplayName.StartsWith expansionFunctionPrefix ->  
+        //    CheckValUse cenv env (vref, vFlags, m) PermitByRefExpr.No |> ignore
+        //    true
 
         // This construct arises from the 'mkDefault' in the 'Throw' case of an incomplete pattern match
         | Expr.Const (Const.Zero, _, _) -> 
             true
 
         | _ ->
-            if checking then 
-                warning(Error(FSComp.SR.tcResumableCodeExpected(), expr.Range))
+            //if checking then 
+            //    warning(Error(FSComp.SR.tcResumableCodeExpected(), expr.Range))
             false
 
 /// Check an expression, given information about the position of the expression
@@ -1258,7 +1261,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
 
     | Expr.Obj (_, ty, basev, superInitCall, overrides, iimpls, _stateVars, m) -> 
         CheckExprNoByrefs cenv env superInitCall
-        CheckMethods cenv env basev overrides 
+        CheckMethods cenv env basev ty overrides 
         CheckInterfaceImpls cenv env basev iimpls
         CheckTypeNoByrefs cenv env m ty
 
@@ -1333,27 +1336,27 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
           CheckExprNoByrefs cenv env arg
           NoLimit
 
-    // Any call to a method which consumes resumable code means the corresponding parameter
-    // expressions are checked as potentially resumable code
-    | QuotationTranslator.ModuleValueOrMemberUse g (vref, _vFlags, _f, _fty, _tyargs, curriedArgs)  
-        when HasResumableCodeArg cenv vref.Deref ->
-            let resumableCodeArgFlagsCurried, _hasResumableCodeReturn = GetResumableCodeInfo cenv vref.Deref
+    //// Any call to a method which consumes resumable code means the corresponding parameter
+    //// expressions are checked as potentially resumable code
+    //| QuotationTranslator.ModuleValueOrMemberUse g (vref, _vFlags, _f, _fty, _tyargs, curriedArgs)  
+    //    when HasResumableCodeArg cenv vref.Deref ->
+    //        let resumableCodeArgFlagsCurried, _hasResumableCodeReturn = GetResumableCodeInfo cenv vref.Deref
             
-            // Use Resumable.ResumableCodeBlock for all the arguments that have ResumableCodeAttribute
-            (resumableCodeArgFlagsCurried, curriedArgs) ||> Seq.iter2 (fun resumableCodeArgFlags arg -> 
-                if List.exists p23 resumableCodeArgFlags && resumableCodeArgFlags.Length > 1 && not (isRefTupleExpr arg) then
-                      warning(Error(FSComp.SR.tcResumableCodeExpected(), expr.Range))
+    //        // Use Resumable.ResumableCodeBlock for all the arguments that have ResumableCodeAttribute
+    //        (resumableCodeArgFlagsCurried, curriedArgs) ||> Seq.iter2 (fun resumableCodeArgFlags arg -> 
+    //            if List.exists p23 resumableCodeArgFlags && resumableCodeArgFlags.Length > 1 && not (isRefTupleExpr arg) then
+    //                  warning(Error(FSComp.SR.tcResumableCodeExpected(), expr.Range))
 
-                let args = tryDestRefTupleExpr arg
-                (resumableCodeArgFlags, args) ||> Seq.iter2 (fun resumableCodeArgFlag arg -> 
-                    if p23 resumableCodeArgFlag then
-                        // continue checking the argument as resumable code
-                        CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (true, false) } arg 
-                    else
-                        // check the argument as non-resumable code
-                        CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } arg))
+    //            let args = tryDestRefTupleExpr arg
+    //            (resumableCodeArgFlags, args) ||> Seq.iter2 (fun resumableCodeArgFlag arg -> 
+    //                if p23 resumableCodeArgFlag then
+    //                    // continue checking the argument as resumable code
+    //                    CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (true, false) } arg 
+    //                else
+    //                    // check the argument as non-resumable code
+    //                    CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } arg))
 
-            NoLimit
+    //        NoLimit
 
     // Check an application
     | Expr.App (f, _fty, tyargs, argsl, m) ->
@@ -1422,15 +1425,20 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
     | Expr.Link _ -> 
         failwith "Unexpected reclink"
 
-and CheckMethods cenv env baseValOpt methods = 
-    methods |> List.iter (CheckMethod cenv env baseValOpt) 
+and CheckMethods cenv env baseValOpt ty methods = 
+    methods |> List.iter (CheckMethod cenv env baseValOpt ty) 
 
-and CheckMethod cenv env baseValOpt (TObjExprMethod(_, attribs, tps, vs, body, m)) = 
+and CheckMethod cenv env baseValOpt ty (TObjExprMethod(_, attribs, tps, vs, body, m)) = 
+    let g = cenv.g
     let env = BindTypars cenv.g env tps 
     let vs = List.concat vs
     let env = BindArgVals env vs
     let env = 
-        if HasFSharpAttribute cenv.g cenv.g.attrib_ResumableCodeAttribute attribs then 
+        if // Body of state machine
+           HasFSharpAttribute cenv.g cenv.g.attrib_ResumableCodeAttribute attribs ||
+           // Body of delegate
+           (isAppTy g ty && HasFSharpAttribute cenv.g cenv.g.attrib_ResumableCodeAttribute (tcrefOfAppTy g ty).Attribs)
+           then 
            if not (cenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
                error(Error(FSComp.SR.stateMachineNotSupported(), m))
            { env with resumableCode = Resumable.ResumableExpr (false, false) } 
@@ -1444,8 +1452,8 @@ and CheckMethod cenv env baseValOpt (TObjExprMethod(_, attribs, tps, vs, body, m
 and CheckInterfaceImpls cenv env baseValOpt l = 
     l |> List.iter (CheckInterfaceImpl cenv env baseValOpt)
     
-and CheckInterfaceImpl cenv env baseValOpt (_ty, overrides) = 
-    CheckMethods cenv env baseValOpt overrides 
+and CheckInterfaceImpl cenv env baseValOpt (ty, overrides) = 
+    CheckMethods cenv env baseValOpt ty overrides 
 
 and CheckNoResumableStmtConstructs cenv _env expr =
     let g = cenv.g
@@ -2102,30 +2110,30 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
         
     let topValInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData 
 
-    // If the method has ResumableCode argument or return attribute it must be inline
-    // If the method has ResumableCode return attribute we check the body w.r.t. that
-    let env = 
-        if cenv.reportErrors && HasResumableCodeArgOrReturn cenv v && not v.MustInline then
-            errorR(Error(FSComp.SR.tcResumableCodeFunctionMustBeInline(), v.Range))
+    //// If the method has ResumableCode argument or return attribute it must be inline
+    //// If the method has ResumableCode return attribute we check the body w.r.t. that
+    //let env = 
+    //    if cenv.reportErrors && HasResumableCodeArgOrReturn cenv v && not v.MustInline then
+    //        errorR(Error(FSComp.SR.tcResumableCodeFunctionMustBeInline(), v.Range))
 
-        let resumableCodeArgFlags, hasResumableCodeReturn = GetResumableCodeInfo cenv v
-        resumableCodeArgFlags |> List.iterSquared (fun (argName, argHasRCA, argIsFun) -> 
-            if argHasRCA then 
-                match argName with 
-                | Some n -> 
-                    if cenv.reportErrors && not (n.idText.StartsWith expansionFunctionPrefix) then
-                        errorR(Error(FSComp.SR.tcResumableCodeArgMustHaveRightName(), n.idRange))
-                    if cenv.reportErrors && not argIsFun then
-                        errorR(Error(FSComp.SR.tcResumableCodeArgMustHaveRightKind(), n.idRange))
-                | _ -> ()
-                )
+    //    let resumableCodeArgFlags, hasResumableCodeReturn = GetResumableCodeInfo cenv v
+    //    resumableCodeArgFlags |> List.iterSquared (fun (argName, argHasRCA, argIsFun) -> 
+    //        if argHasRCA then 
+    //            match argName with 
+    //            | Some n -> 
+    //                if cenv.reportErrors && not (n.idText.StartsWith expansionFunctionPrefix) then
+    //                    errorR(Error(FSComp.SR.tcResumableCodeArgMustHaveRightName(), n.idRange))
+    //                if cenv.reportErrors && not argIsFun then
+    //                    errorR(Error(FSComp.SR.tcResumableCodeArgMustHaveRightKind(), n.idRange))
+    //            | _ -> ()
+    //            )
 
-        if hasResumableCodeReturn then 
-            if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
-                error(Error(FSComp.SR.stateMachineNotSupported(), bind.Var.Range))
-            { env with resumableCode = Resumable.ResumableExpr (true, false) } 
-        else
-            env
+    //    if hasResumableCodeReturn then 
+    //        if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
+    //            error(Error(FSComp.SR.stateMachineNotSupported(), bind.Var.Range))
+    //        { env with resumableCode = Resumable.ResumableExpr (true, false) } 
+    //    else
+    //        env
 
     CheckLambdas isTop (Some v) cenv env v.MustInline topValInfo alwaysCheckNoReraise bindRhs v.Range v.Type context
 
@@ -2646,7 +2654,7 @@ let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, vi
           reportErrors=reportErrors 
           boundVals = Dictionary<_, _>(100, HashIdentity.Structural) 
           limitVals = Dictionary<_, _>(100, HashIdentity.Structural) 
-          resumableCodeInfo = Dictionary<_, _>(100, HashIdentity.Structural) 
+          //resumableCodeInfo = Dictionary<_, _>(100, HashIdentity.Structural) 
           potentialUnboundUsesOfVals=Map.empty 
           anonRecdTypes = StampMap.Empty
           usesQuotations=false 
