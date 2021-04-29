@@ -8,6 +8,7 @@ open FSharp.Compiler.IO
 open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler
+open FSharp.Compiler.Xml
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
@@ -275,6 +276,8 @@ type TcConfigBuilder =
       mutable pathMap : PathMap
 
       mutable langVersion : LanguageVersion
+
+      mutable xmlDocInfoLoader : IXmlDocumentationInfoLoader option
     }
 
     static member CreateNew:
@@ -442,6 +445,8 @@ type TcConfig =
     /// If true, indicates all type checking and code generation is in the context of fsi.exe
     member isInteractive: bool
     member isInvalidationSupported: bool
+
+    member xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
     member FxResolver: FxResolver
 

@@ -139,7 +139,7 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | IntfImplInIntrinsicAugmentation m
       | OverrideInExtrinsicAugmentation m
       | IntfImplInExtrinsicAugmentation m
-      | ValueRestriction(_, _, _, _, m)
+      | ValueRestriction(_, _, _, _, _, m)
       | LetRecUnsound (_, _, m)
       | ObsoleteError (_, m)
       | ObsoleteWarning (_, m)
@@ -153,10 +153,10 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | TyconBadArgs(_, _, _, m) ->
           Some m
 
-      | FieldNotContained(_, arf, _, _) -> Some arf.Range
-      | ValueNotContained(_, _, aval, _, _) -> Some aval.Range
-      | ConstrNotContained(_, aval, _, _) -> Some aval.Id.idRange
-      | ExnconstrNotContained(_, aexnc, _, _) -> Some aexnc.Range
+      | FieldNotContained(_, _, _, arf, _, _) -> Some arf.Range
+      | ValueNotContained(_, _, _, aval, _, _) -> Some aval.Range
+      | ConstrNotContained(_, _, _, aval, _, _) -> Some aval.Id.idRange
+      | ExnconstrNotContained(_, _, aexnc, _, _) -> Some aexnc.Range
 
       | VarBoundTwice id
       | UndefinedName(_, _, id, _) ->
@@ -800,7 +800,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                       sprintf " // %s" nameOrOneBasedIndexMessage
                   | _ -> ""
 
-              (NicePrint.stringOfMethInfo x.amap m displayEnv x.methodSlot.Method) + paramInfo
+              (NicePrint.stringOfMethInfo x.infoReader m displayEnv x.methodSlot.Method) + paramInfo
 
           let nl = System.Environment.NewLine
           let formatOverloads (overloads: OverloadInformation list) =
@@ -1345,18 +1345,20 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | UnionPatternsBindDifferentNames _ ->
           os.Append(UnionPatternsBindDifferentNamesE().Format) |> ignore
 
-      | ValueNotContained (denv, mref, implVal, sigVal, f) ->
-          let text1, text2 = NicePrint.minimalStringsOfTwoValues denv implVal sigVal
+      | ValueNotContained (denv, infoReader, mref, implVal, sigVal, f) ->
+          let text1, text2 = NicePrint.minimalStringsOfTwoValues denv infoReader (mkLocalValRef implVal) (mkLocalValRef sigVal)
           os.Append(f((fullDisplayTextOfModRef mref), text1, text2)) |> ignore
 
-      | ConstrNotContained (denv, v1, v2, f) ->
-          os.Append(f((NicePrint.stringOfUnionCase denv v1), (NicePrint.stringOfUnionCase denv v2))) |> ignore
+      | ConstrNotContained (denv, infoReader, enclosingTycon, v1, v2, f) ->
+          let enclosingTcref = mkLocalEntityRef enclosingTycon
+          os.Append(f((NicePrint.stringOfUnionCase denv infoReader enclosingTcref v1), (NicePrint.stringOfUnionCase denv infoReader enclosingTcref v2))) |> ignore
 
-      | ExnconstrNotContained (denv, v1, v2, f) ->
-          os.Append(f((NicePrint.stringOfExnDef denv v1), (NicePrint.stringOfExnDef denv v2))) |> ignore
+      | ExnconstrNotContained (denv, infoReader, v1, v2, f) ->
+          os.Append(f((NicePrint.stringOfExnDef denv infoReader (mkLocalEntityRef v1)), (NicePrint.stringOfExnDef denv infoReader (mkLocalEntityRef v2)))) |> ignore
 
-      | FieldNotContained (denv, v1, v2, f) ->
-          os.Append(f((NicePrint.stringOfRecdField denv v1), (NicePrint.stringOfRecdField denv v2))) |> ignore
+      | FieldNotContained (denv, infoReader, enclosingTycon, v1, v2, f) ->
+          let enclosingTcref = mkLocalEntityRef enclosingTycon
+          os.Append(f((NicePrint.stringOfRecdField denv infoReader enclosingTcref v1), (NicePrint.stringOfRecdField denv infoReader enclosingTcref v2))) |> ignore
 
       | RequiredButNotSpecified (_, mref, k, name, _) ->
           let nsb = new System.Text.StringBuilder()
@@ -1507,19 +1509,19 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
       | MissingFields(sl, _) -> os.Append(MissingFieldsE().Format (String.concat "," sl + ".")) |> ignore
 
-      | ValueRestriction(denv, hassig, v, _, _) ->
+      | ValueRestriction(denv, infoReader, hassig, v, _, _) ->
           let denv = { denv with showImperativeTyparAnnotations=true }
           let tau = v.TauType
           if hassig then
               if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then
                 os.Append(ValueRestriction1E().Format
                   v.DisplayName
-                  (NicePrint.stringOfQualifiedValOrMember denv v)
+                  (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
                   v.DisplayName) |> ignore
               else
                 os.Append(ValueRestriction2E().Format
                   v.DisplayName
-                  (NicePrint.stringOfQualifiedValOrMember denv v)
+                  (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
                   v.DisplayName) |> ignore
           else
               match v.MemberInfo with
@@ -1530,17 +1532,17 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   | SynMemberKind.Constructor -> true (* can't infer extra polymorphism *)
                   | _ -> false (* can infer extra polymorphism *)
                   end ->
-                      os.Append(ValueRestriction3E().Format (NicePrint.stringOfQualifiedValOrMember denv v)) |> ignore
+                      os.Append(ValueRestriction3E().Format (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))) |> ignore
               | _ ->
                 if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then
                     os.Append(ValueRestriction4E().Format
                       v.DisplayName
-                      (NicePrint.stringOfQualifiedValOrMember denv v)
+                      (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
                       v.DisplayName) |> ignore
                 else
                     os.Append(ValueRestriction5E().Format
                       v.DisplayName
-                      (NicePrint.stringOfQualifiedValOrMember denv v)
+                      (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
                       v.DisplayName) |> ignore
 
 

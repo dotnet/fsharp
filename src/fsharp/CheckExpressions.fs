@@ -35,6 +35,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -78,7 +79,7 @@ exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * 
 exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * string * range
 exception UnionPatternsBindDifferentNames of range
 exception VarBoundTwice of Ident
-exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
+exception ValueRestriction of DisplayEnv * InfoReader * bool * Val * Typar * range
 exception ValNotMutable of DisplayEnv * ValRef * range
 exception ValNotLocal of DisplayEnv * ValRef * range
 exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
@@ -2573,7 +2574,7 @@ let TcValEarlyGeneralizationConsistencyCheck cenv (env: TcEnv) (v: Val, vrec, ti
               let tau3 = instType (mkTyparInst tpsorig tinst) tau2
               //printfn "tau3 = '%s'" (DebugPrint.showType tau3)
               if not (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m tau tau3) then
-                  let txt = bufs (fun buf -> NicePrint.outputQualifiedValSpec env.DisplayEnv buf v)
+                  let txt = bufs (fun buf -> NicePrint.outputQualifiedValSpec env.DisplayEnv cenv.infoReader buf (mkLocalValRef v))
                   error(Error(FSComp.SR.tcInferredGenericTypeGivesRiseToInconsistency(v.DisplayName, txt), m)))
     | _ -> ()
 
@@ -6230,7 +6231,7 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implty: TType) virtNameAndArit
     match absSlots with
     | [] when not (CompileAsEvent cenv.g bindAttribs) ->
         let absSlotsByName = List.filter (fst >> fst >> (=) bindName) virtNameAndArityPairs
-        let getSignature absSlot = (NicePrint.stringOfMethInfo cenv.amap mBinding env.DisplayEnv absSlot).Replace("abstract ", "")
+        let getSignature absSlot = (NicePrint.stringOfMethInfo cenv.infoReader mBinding env.DisplayEnv absSlot).Replace("abstract ", "")
         let getDetails (absSlot: MethInfo) =
             if absSlot.GetParamTypes(cenv.amap, mBinding, []) |> List.existsSquared (isAnyTupleTy cenv.g) then
                 FSComp.SR.tupleRequiredInAbstractMethod()
@@ -6506,7 +6507,7 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
         overridesAndVirts |> List.iter (fun (m, implty, dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, overrides) ->
             let overrideSpecs = overrides |> List.map fst
 
-            DispatchSlotChecking.CheckOverridesAreAllUsedOnce (env.DisplayEnv, cenv.g, cenv.amap, true, implty, dispatchSlotsKeyed, availPriorOverrides, overrideSpecs)
+            DispatchSlotChecking.CheckOverridesAreAllUsedOnce (env.DisplayEnv, cenv.g, cenv.infoReader, true, implty, dispatchSlotsKeyed, availPriorOverrides, overrideSpecs)
 
             DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, false, implty, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore)
 
@@ -9908,7 +9909,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (bindingTy, m, syn
                      | [] ->
                          let details =
                              slots
-                             |> Seq.map (NicePrint.stringOfMethInfo cenv.amap m envinner.DisplayEnv)
+                             |> Seq.map (NicePrint.stringOfMethInfo cenv.infoReader m envinner.DisplayEnv)
                              |> Seq.map (sprintf "%s   %s" System.Environment.NewLine)
                              |> String.concat ""
 

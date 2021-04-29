@@ -32,6 +32,7 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
@@ -734,7 +735,8 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
           ILScopeRef=ILScopeRef.Local
           Contents=ccuContents
           MemberSignatureEquality= typeEquivAux EraseAll tcGlobals
-          TypeForwarders=Map.empty }
+          TypeForwarders=Map.empty
+          XmlDocumentationInfo = None }
 
     let ccu = CcuThunk.Create(ccuName, ccuData)
 

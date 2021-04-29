@@ -29,12 +29,12 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -1020,6 +1020,19 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         | ResolvedImportedAssembly importedAssembly -> ResolvedCcu(importedAssembly.FSharpViewOfMetadata)
         | UnresolvedImportedAssembly _ -> UnresolvedCcu(assemblyRef.QualifiedName)
 
+    member tcImports.TryFindXmlDocumentationInfo(assemblyName: string) =
+        CheckDisposed()
+        let rec look (t: TcImports) =
+            match NameMap.tryFind assemblyName t.CcuTable with
+            | Some res -> Some res
+            | None ->
+                 match t.Base with
+                 | Some t2 -> look t2
+                 | None -> None
+
+        match look tcImports with
+        | Some res -> res.FSharpViewOfMetadata.Deref.XmlDocumentationInfo
+        | _ -> None
 
 #if !NO_EXTENSIONTYPING
     member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly>) =
@@ -1078,7 +1091,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 MemberSignatureEquality = (fun ty1 ty2 -> typeEquivAux EraseAll g ty1 ty2)
                 ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
                 TryGetILModuleDef = (fun () -> Some ilModule)
-                TypeForwarders = Map.empty }
+                TypeForwarders = Map.empty
+                XmlDocumentationInfo =
+                    match tcConfig.xmlDocInfoLoader with
+                    | Some xmlDocInfoLoader -> xmlDocInfoLoader.TryLoad(fileName, ilModule)
+                    | _ -> None
+              }
 
             let ccu = CcuThunk.Create(ilShortAssemName, ccuData)
             let ccuinfo =
@@ -1188,6 +1206,10 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             { new Import.AssemblyLoader with
                  member x.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef) =
                      tcImports.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef)
+
+                 member x.TryFindXmlDocumentationInfo (assemblyName) =
+                    tcImports.TryFindXmlDocumentationInfo(assemblyName)
+
 #if !NO_EXTENSIONTYPING
                  member x.GetProvidedAssemblyInfo (ctok, m, assembly) = tcImports.GetProvidedAssemblyInfo (ctok, m, assembly)
                  member x.RecordGeneratedTypeRoot root = tcImports.RecordGeneratedTypeRoot root
@@ -1439,7 +1461,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         if verbose then dprintn ("Converting IL assembly to F# data structures "+nm)
         let auxModuleLoader = tcImports.MkLoaderForMultiModuleILAssemblies ctok m
         let invalidateCcu = new Event<_>()
-        let ccu = Import.ImportILAssembly(tcImports.GetImportMap, m, auxModuleLoader, ilScopeRef, tcConfig.implicitIncludeDir, Some filename, ilModule, invalidateCcu.Publish)
+        let ccu = Import.ImportILAssembly(tcImports.GetImportMap, m, auxModuleLoader, tcConfig.xmlDocInfoLoader, ilScopeRef, tcConfig.implicitIncludeDir, Some filename, ilModule, invalidateCcu.Publish)
 
         let ilg = defaultArg ilGlobalsOpt EcmaMscorlibILGlobals
 
@@ -1504,7 +1526,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                       TryGetILModuleDef = ilModule.TryGetILModuleDef
                       UsesFSharp20PlusQuotations = minfo.usesQuotations
                       MemberSignatureEquality= (fun ty1 ty2 -> typeEquivAux EraseAll (tcImports.GetTcGlobals()) ty1 ty2)
-                      TypeForwarders = ImportILAssemblyTypeForwarders(tcImports.GetImportMap, m, ilModule.GetRawTypeForwarders()) }
+                      TypeForwarders = ImportILAssemblyTypeForwarders(tcImports.GetImportMap, m, ilModule.GetRawTypeForwarders())
+                      XmlDocumentationInfo =
+                        match tcConfig.xmlDocInfoLoader, ilModule.TryGetILModuleDef() with
+                        | Some xmlDocInfoLoader, Some ilModuleDef -> xmlDocInfoLoader.TryLoad(filename, ilModuleDef)
+                        | _ -> None
+                    }
 
                 let ccu = CcuThunk.Create(ccuName, ccuData)
 
@@ -1571,7 +1598,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         phase2
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
-    member tcImports.RegisterAndPrepareToImportReferencedDll (ctok, r: AssemblyResolution) : Cancellable<_ * (unit -> AvailableImportedAssembly list)> =
+    member tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, r: AssemblyResolution) : Cancellable<(_ * (unit -> AvailableImportedAssembly list)) option> =
       cancellable {
         CheckDisposed()
         let m = r.originalReference.Range
@@ -1582,6 +1609,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             | Some ilb -> return! ilb.EvaluateRawContents ctok
             | None -> return None
           }
+
+        // If we have a project reference but did not get any valid contents,
+        //     just return None and do not attempt to read elsewhere.
+        if contentsOpt.IsNone && r.ProjectReference.IsSome then
+            return None
+        else
 
         let assemblyData =
             match contentsOpt with
@@ -1596,7 +1629,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         if tcImports.IsAlreadyRegistered ilShortAssemName then
             let dllinfo = tcImports.FindDllInfo(ctok, m, ilShortAssemName)
             let phase2() = [tcImports.FindCcuInfo(ctok, m, ilShortAssemName, lookupOnly=true)]
-            return dllinfo, phase2
+            return Some(dllinfo, phase2)
         else
             let dllinfo =
                 { RawMetadata=assemblyData
@@ -1621,7 +1654,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                         with e -> error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), m))
                 else
                     tcImports.PrepareToImportReferencedILAssembly (ctok, m, filename, dllinfo)
-            return dllinfo, phase2
+            return Some(dllinfo, phase2)
          }
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
@@ -1632,11 +1665,10 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
            nms |> Cancellable.each (fun nm ->
                cancellable {
                    try
-                            let! res = tcImports.RegisterAndPrepareToImportReferencedDll (ctok, nm)
-                            return Some res
+                        return! tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, nm)
                    with e ->
-                            errorR(Error(FSComp.SR.buildProblemReadingAssembly(nm.resolvedPath, e.Message), nm.originalReference.Range))
-                            return None
+                        errorR(Error(FSComp.SR.buildProblemReadingAssembly(nm.resolvedPath, e.Message), nm.originalReference.Range))
+                        return None
                })
 
         let dllinfos, phase2s = results |> List.choose id |> List.unzip
