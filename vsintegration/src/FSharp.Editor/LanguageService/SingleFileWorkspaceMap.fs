@@ -5,28 +5,19 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Collections.Concurrent
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 open Microsoft.VisualStudio
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.LanguageServices
-open Microsoft.VisualStudio.TextManager.Interop
-open Microsoft.VisualStudio.FSharp.Editor.Logging
 
 [<Sealed>]
 type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
                                      miscFilesWorkspace: MiscellaneousFilesWorkspace,
                                      optionsManager: FSharpProjectOptionsManager, 
                                      projectContextFactory: IWorkspaceProjectContextFactory,
-                                     rdt: IVsRunningDocumentTable,
-                                     rdt4: IVsRunningDocumentTable4,
-                                     editorAdaptersFactory: IVsEditorAdaptersFactoryService,
-                                     analyzerService: IFSharpDiagnosticAnalyzerService) as this =
+                                     rdt: IVsRunningDocumentTable) as this =
 
     let files = ConcurrentDictionary(StringComparer.OrdinalIgnoreCase)
 
@@ -83,54 +74,7 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
 
         member _.OnAfterFirstDocumentLock(_, _, _, _) = VSConstants.E_NOTIMPL
 
-        member _.OnAfterSave(docCookie) = 
-            try
-                // This causes re-analysis to happen when a F# document is saved.
-                // We do this because FCS relies on the file system and existing open documents
-                // need to be re-analyzed so the changes are propogated.
-                // We only re-analyze F# documents that are dependent on the document that was just saved.
-                // We ignore F# script documents here.
-                // REVIEW: This could be removed when Roslyn workspaces becomes the source of truth for FCS instead of the file system.
-                match rdt4.GetDocumentData(docCookie) with
-                | :? IVsTextBuffer as vsTextBuffer ->
-                    match editorAdaptersFactory.GetDataBuffer(vsTextBuffer) with
-                    | null -> ()
-                    | textBuffer ->
-                        match textBuffer.AsTextContainer() with
-                        | null -> ()
-                        | textContainer ->
-                            let mutable workspace = Unchecked.defaultof<_>
-                            if Workspace.TryGetWorkspace(textContainer, &workspace) then
-                                let solution = workspace.CurrentSolution
-                                let documentId = workspace.GetDocumentIdInCurrentContext(textContainer)
-                                match box documentId with
-                                | null -> ()
-                                | _ -> 
-                                    let document = solution.GetDocument(documentId)
-                                    if document.Project.Language = LanguageNames.FSharp && not document.IsFSharpScript then
-                                        let openDocIds = workspace.GetOpenDocumentIds()
-                                        let depProjIds = document.Project.GetDependentProjectIds().Add(document.Project.Id)
-
-                                        let docIdsToReanalyze =
-                                            openDocIds
-                                            |> Seq.filter (fun x ->
-                                                depProjIds.Contains(x.ProjectId) && x <> document.Id &&
-                                                (
-                                                    let doc = solution.GetDocument(x)
-                                                    match box doc with
-                                                    | null -> false
-                                                    | _ -> doc.Project.Language = LanguageNames.FSharp
-                                                )
-                                            )
-                                            |> Array.ofSeq
-
-                                        if docIdsToReanalyze.Length > 0 then
-                                            analyzerService.Reanalyze(workspace, documentIds=docIdsToReanalyze)
-                | _ -> ()
-              with
-              | ex -> logException ex
-        
-            VSConstants.S_OK
+        member _.OnAfterSave(_) = VSConstants.E_NOTIMPL
 
         member _.OnBeforeDocumentWindowShow(_, _, _) = VSConstants.E_NOTIMPL
 

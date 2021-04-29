@@ -180,9 +180,7 @@ type internal FSharpPackage() as this =
                     let solution = solution :?> IVsSolution
                     let solutionEvents = FSharpSolutionEvents(projectInfoManager)
                     let rdt = this.GetServiceAsync(typeof<SVsRunningDocumentTable>).Result
-                    let rdt4 = rdt :?> IVsRunningDocumentTable4
                     let rdt = rdt :?> IVsRunningDocumentTable
-                    let editorAdaptersFactory = this.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
 
                     solutionEventsOpt <- Some(solutionEvents)
                     solution.AdviseSolutionEvents(solutionEvents) |> ignore
@@ -190,17 +188,13 @@ type internal FSharpPackage() as this =
                     let projectContextFactory = this.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
                     let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
                     let miscFilesWorkspace = this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
-                    let analyzerService = this.ComponentModel.GetService<IFSharpDiagnosticAnalyzerService>()
                     let _singleFileWorkspaceMap = 
                         new SingleFileWorkspaceMap(
                             workspace, 
                             miscFilesWorkspace, 
                             projectInfoManager, 
                             projectContextFactory, 
-                            rdt, 
-                            rdt4, 
-                            editorAdaptersFactory,
-                            analyzerService)
+                            rdt)
                     let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, projectInfoManager, projectContextFactory)
                     ()
                 let awaiter = this.JoinableTaskFactory.SwitchToMainThreadAsync().GetAwaiter()
