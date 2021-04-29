@@ -25,6 +25,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 
 #if !NO_EXTENSIONTYPING
@@ -488,6 +489,8 @@ type TcConfigBuilder =
       mutable pathMap: PathMap
 
       mutable langVersion: LanguageVersion
+
+      mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
       }
 
 
@@ -664,6 +667,7 @@ type TcConfigBuilder =
           useFsiAuxLib = isInteractive
           rangeForErrors = rangeForErrors
           sdkDirOverride = sdkDirOverride
+          xmlDocInfoLoader = None
         }
         
     member tcConfigB.FxResolver =
@@ -1036,6 +1040,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
     member x.internalTestSpanStackReferring = data.internalTestSpanStackReferring
     member x.noConditionalErasure = data.noConditionalErasure
+    member x.xmlDocInfoLoader = data.xmlDocInfoLoader
 
     static member Create(builder, validate) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter

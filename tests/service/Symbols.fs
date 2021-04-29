@@ -424,6 +424,18 @@ let bytes = @"yo"B
         | Some (SynExpr.InterpolatedString(_,  kind, _)) -> kind |> should equal SynStringKind.Regular
         | _ -> Assert.Fail "Couldn't find const"
 
+    [<Test>]
+    let ``SynExpr.InterpolatedString with SynStringKind.Verbatim`` () =
+        let parseResults =
+            getParseResults
+                """
+ let s = $@"Migrate notes of file ""{oldId}"" to new file ""{newId}""."
+ """
+
+        match getBindingExpressionValue parseResults with
+        | Some (SynExpr.InterpolatedString(_,  kind, _)) -> kind |> should equal SynStringKind.Verbatim
+        | _ -> Assert.Fail "Couldn't find const"
+
 module SynModuleOrNamespace =
     [<Test>]
     let ``DeclaredNamespace range should start at namespace keyword`` () =
@@ -477,6 +489,23 @@ type X = int
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [
             SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.GlobalNamespace; range = r) ])) ->
             assertRange (3, 0) (5, 12) r
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Module range should start at first attribute`` () =
+        let parseResults = 
+            getParseResults
+                """
+[<  Foo  >]
+module Bar
+
+let s : string = "s"
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.NamedModule; range = r) ])) ->
+            assertRange (2, 0) (5, 20) r
         | _ -> Assert.Fail "Could not get valid AST"
 
 module SynConsts =
@@ -533,6 +562,23 @@ type Bar = | Bar of string * int
             assertRange (3, 0) (5, 32) r
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``Module range should start at first attribute`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+ [<  Foo  >]
+module Bar
+
+val s : string
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(kind = SynModuleOrNamespaceKind.NamedModule; range = r) ])) ->
+            assertRange (2, 1) (5, 14) r
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SignatureTypes =
     [<Test>]
     let ``Range of Type should end at end keyword`` () =
@@ -551,6 +597,66 @@ type Meh =
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(range = r)]) ])) ->
             assertRange (3, 0) (5,11) r
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of TypeDefnSig record should end at last member`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """namespace X
+type MyRecord =
+    { Level: int }
+    member Score : unit -> int"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [SynTypeDefnSig.SynTypeDefnSig(range = r)])]) ])) ->
+            assertRange (2, 5) (4, 30) r
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of TypeDefnSig object model should end at last member`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """namespace X
+type MyRecord =
+    class
+    end
+    member Score : unit -> int"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [SynTypeDefnSig.SynTypeDefnSig(range = r)])]) ])) ->
+            assertRange (2, 5) (5, 30) r
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of TypeDefnSig delegate of should start from name`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """namespace Y
+type MyFunction =
+    delegate of int -> string"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [SynTypeDefnSig.SynTypeDefnSig(range = r)])]) ])) ->
+            assertRange (2, 5) (3, 29) r
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of TypeDefnSig simple should end at last val`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """namespace Z
+type SomeCollection with
+    val LastIndex : int
+    val SomeThingElse : int -> string"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [SynTypeDefnSig.SynTypeDefnSig(range = r)])]) ])) ->
+            assertRange (2, 5) (4, 37) r
         | _ -> Assert.Fail "Could not get valid AST"
 
 module SynMatchClause =
@@ -658,4 +764,47 @@ with
         ]) ])) ->
             assertRange (6, 2) (6, 21) range
             assertRange (6, 2) (6, 21) clause.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+module SourceIdentifiers =
+    [<Test>]
+    let ``__LINE__`` () =
+        let parseResults = 
+            getParseResults
+                """
+__LINE__"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.Const(SynConst.SourceIdentifier("__LINE__", "2", range), _))
+        ]) ])) ->
+            assertRange (2, 0) (2, 8) range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``__SOURCE_DIRECTORY__`` () =
+        let parseResults = 
+            getParseResults
+                """
+__SOURCE_DIRECTORY__"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.Const(SynConst.SourceIdentifier("__SOURCE_DIRECTORY__", _, range), _))
+        ]) ])) ->
+            assertRange (2, 0) (2, 20) range
+        | _ -> Assert.Fail "Could not get valid AST"
+        
+    [<Test>]
+    let ``__SOURCE_FILE__`` () =
+        let parseResults = 
+            getParseResults
+                """
+__SOURCE_FILE__"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.Const(SynConst.SourceIdentifier("__SOURCE_FILE__", _, range), _))
+        ]) ])) ->
+            assertRange (2, 0) (2, 15) range
         | _ -> Assert.Fail "Could not get valid AST"

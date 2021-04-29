@@ -24,6 +24,7 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 
 #if DEBUG
 let debugPrint s =
@@ -201,7 +202,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token <string * ParseHelpers.LexerContinuation> INTERP_STRING_END 
 %token <ParseHelpers.LexerContinuation> LBRACE RBRACE
 
-%token <string> KEYWORD_STRING // Like __SOURCE_DIRECTORY__
+%token <string * string> KEYWORD_STRING // Like __SOURCE_DIRECTORY__
 %token <string> IDENT 
 %token <string> HASH_IDENT 
 %token <string> INFIX_STAR_STAR_OP 
@@ -645,7 +646,7 @@ hashDirectiveArgs:
 
 /* One argument to a #directive */
 hashDirectiveArg: 
-  | stringOrKeywordString 
+  | string 
       { let s, _ = $1
         s }
       
@@ -721,7 +722,8 @@ fileModuleSpec:
   | opt_attributes opt_declVisibility  moduleIntro moduleSpfnsPossiblyEmptyBlock 
     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
       let m2 = rhs parseState 3
-      let m = (rhs2 parseState 1 4)
+      let mDeclsAndAttrs = (List.map (fun (a: SynAttributeList) -> a.Range) $1) @ (List.map (fun (d: SynModuleSigDecl) -> d.Range) $4)
+      let m = (m2, mDeclsAndAttrs) ||> unionRangeWithListBy id
       let isRec, path2, xml, vis = $3 
       (fun (isRec2, path, _) -> 
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(), m2))
@@ -908,17 +910,21 @@ tyconSpfnRhsBlock:
 /* The right-hand-side of a type definition in a signature */
 tyconSpfnRhs: 
   | tyconDefnOrSpfnSimpleRepr 
-     { let m = $1.Range 
-       (fun lhsm nameInfo augmentation -> 
-           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.Simple ($1, m), augmentation, m)) }
+     { (fun lhsm nameInfo augmentation -> 
+           let declRange = unionRanges lhsm $1.Range
+           let mWhole = (declRange, augmentation) ||> unionRangeWithListBy (fun (mem: SynMemberSig) -> mem.Range)
+           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.Simple ($1, $1.Range), augmentation, mWhole)) }
 
   | tyconClassSpfn 
-     { let m = lhs parseState 
+     { let objectModelRange = lhs parseState 
        let needsCheck, (kind, decls) = $1
        (fun nameRange nameInfo augmentation -> 
            if needsCheck && isNil decls then
               reportParseErrorAt nameRange (FSComp.SR.parsEmptyTypeDefinition())
-           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (kind, decls, m), augmentation, m)) }
+           
+           let declRange = unionRanges nameRange objectModelRange
+           let mWhole = (declRange, augmentation) ||> unionRangeWithListBy (fun (mem: SynMemberSig) -> mem.Range)
+           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (kind, decls, objectModelRange), augmentation, mWhole)) }
 
   | DELEGATE OF topType
      { let m = lhs parseState 
@@ -926,7 +932,8 @@ tyconSpfnRhs:
        let invoke = SynMemberSig.Member(SynValSig([], mkSynId m "Invoke", inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m), AbstractMemberFlags SynMemberKind.Member, m) 
        (fun nameRange nameInfo augmentation -> 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
-           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), [], m)) }
+           let mWhole = unionRanges nameRange m
+           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), [], mWhole)) }
 
 
 /* The right-hand-side of an object type definition in a signature */
@@ -1150,7 +1157,8 @@ fileModuleImpl:
   | opt_attributes opt_declVisibility moduleIntro moduleDefnsOrExprPossiblyEmptyOrBlock
     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
       let m2 = rhs parseState 3
-      let m = (m2, $4) ||> unionRangeWithListBy (fun modu -> modu.Range)
+      let mDeclsAndAttrs = (List.map (fun (a: SynAttributeList) -> a.Range) $1) @ (List.map (fun (d: SynModuleDecl) -> d.Range) $4)
+      let m = (m2, mDeclsAndAttrs) ||> unionRangeWithListBy id
       let isRec2, path2, xml, vis = $3 
       (fun (isRec, path, _) -> 
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(), m2))
@@ -2206,7 +2214,7 @@ tyconDefnOrSpfnSimpleRepr:
        SynTypeDefnSimpleRepr.Record ($2, $3, lhs parseState) }
 
   /* An inline-assembly type definition, for FSharp.Core library only */
-  | opt_attributes opt_declVisibility LPAREN HASH stringOrKeywordString HASH rparen
+  | opt_attributes opt_declVisibility LPAREN HASH string HASH rparen
      { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(), rhs parseState 1))
        let lhsm = lhs parseState
        libraryOnlyError lhsm
@@ -2914,9 +2922,13 @@ rawConstant:
   | BIGNUM
     { SynConst.UserNum $1 } 
 
-  | stringOrKeywordString
+  | string
     { let s, synStringKind = $1
       SynConst.String (s, synStringKind, lhs parseState) } 
+
+  | sourceIdentifier
+    { let c,v = $1
+      SynConst.SourceIdentifier (c, v, lhs parseState) }
 
   | BYTEARRAY
     { let (v, synByteStringKind, _) = $1
@@ -4510,7 +4522,7 @@ forLoopDirection:
   | DOWNTO { false }
 
 inlineAssemblyExpr:
-  | HASH stringOrKeywordString opt_inlineAssemblyTypeArg optCurriedArgExprs  optInlineAssemblyReturnTypes HASH 
+  | HASH string opt_inlineAssemblyTypeArg optCurriedArgExprs  optInlineAssemblyReturnTypes HASH 
       { libraryOnlyWarning (lhs parseState)
         let (s, _), sm = $2, rhs parseState 2
         (fun m ->
@@ -5548,11 +5560,13 @@ colonOrEquals:
   | EQUALS { } 
 
 /* A literal string or a string from a keyword like __SOURCE_FILE__ */
-stringOrKeywordString:
+string:
   | STRING 
      { let (s, synStringKind, _) = $1
        s, synStringKind }
-  | KEYWORD_STRING { $1, SynStringKind.Regular }
+
+sourceIdentifier:
+  | KEYWORD_STRING { $1 }
 
 interpolatedStringFill:
   | declExpr

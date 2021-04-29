@@ -11,7 +11,7 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 

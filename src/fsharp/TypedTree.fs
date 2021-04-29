@@ -25,6 +25,7 @@ open FSharp.Compiler.QuotationPickler
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -5086,7 +5087,9 @@ type CcuData =
       MemberSignatureEquality: (TType -> TType -> bool) 
       
       /// The table of .NET CLI type forwarders for this assembly
-      TypeForwarders: CcuTypeForwarderTable }
+      TypeForwarders: CcuTypeForwarderTable
+      
+      XmlDocumentationInfo: XmlDocumentationInfo option }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()

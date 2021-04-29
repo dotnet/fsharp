@@ -7,6 +7,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 
 [<Struct; NoEquality; NoComparison; DebuggerDisplay("{idText}")>]
 type Ident (text: string, range: range) =
@@ -115,10 +116,14 @@ type SynConst =
     | UInt16s of uint16[]
 
     | Measure of constant: SynConst * constantRange: Range * SynMeasure
+    
+    | SourceIdentifier of constant: string * value: string * range: Range
 
     member c.Range dflt =
         match c with
-        | SynConst.String (_, _, m0) | SynConst.Bytes (_, _, m0) -> m0
+        | SynConst.String (_, _, m0)
+        | SynConst.Bytes (_, _, m0)
+        | SynConst.SourceIdentifier(_, _, m0) -> m0
         | _ -> dflt
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1218,6 +1223,14 @@ type SynMemberSig =
     | NestedType of
         nestedType: SynTypeDefnSig *
         range: range
+
+    member d.Range =
+        match d with
+        | SynMemberSig.Member (range=m)
+        | SynMemberSig.Interface (range=m)
+        | SynMemberSig.Inherit (range=m)
+        | SynMemberSig.ValField (range=m)
+        | SynMemberSig.NestedType (range=m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeDefnKind =
