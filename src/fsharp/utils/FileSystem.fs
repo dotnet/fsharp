@@ -312,34 +312,6 @@ module MemoryMappedFileExtensions =
                         None
 
 [<RequireQualifiedAccess>]
-module internal StreamUtils =
-    let private retryDelayMilliseconds = 50
-    let private numRetries = 60
-    let openReaderAndRetry (codePage: int option) (retryLocked: bool) (stream: Stream) : StreamReader =
-        let rec getSource retryNumber =
-          try
-            // Use the .NET functionality to auto-detect the unicode encoding
-            match codePage with
-            | None -> new  StreamReader(stream, true)
-            | Some n -> new  StreamReader(stream, Encoding.GetEncoding(n))
-          with
-              // We can get here if the file is locked--like when VS is saving a file--we don't have direct
-              // access to the HRESULT to see that this is EONOACCESS.
-              | :? IOException as err when retryLocked && err.GetType() = typeof<IOException> ->
-                   // This second check is to make sure the exception is exactly IOException and none of these for example:
-                   //   DirectoryNotFoundException
-                   //   EndOfStreamException
-                   //   FileNotFoundException
-                   //   FileLoadException
-                   //   PathTooLongException
-                   if retryNumber < numRetries then
-                       System.Threading.Thread.Sleep (retryDelayMilliseconds)
-                       getSource (retryNumber + 1)
-                   else
-                       reraise()
-        getSource 0
-
-[<RequireQualifiedAccess>]
 module internal FileSystemUtils =
     let checkPathForIllegalChars  =
         let chars = new System.Collections.Generic.HashSet<_>(Path.GetInvalidPathChars())
@@ -424,7 +396,7 @@ type DefaultFileSystem() as this =
         member _.OpenFileForReadShim(filePath: string, ?shouldShadowCopy: bool) : ByteMemory =
             let fileMode = FileMode.Open
             let fileAccess = FileAccess.Read
-            let fileShare = FileShare.Read
+            let fileShare = FileShare.ReadWrite
             let shouldShadowCopy = defaultArg shouldShadowCopy false
 
             let fileStream = File.Open(filePath, fileMode, fileAccess, fileShare)
@@ -471,8 +443,12 @@ type DefaultFileSystem() as this =
                       interface IDisposable with
                         member x.Dispose() =
                             GC.SuppressFinalize x
+                            accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                            accessor.SafeMemoryMappedViewHandle.Close();
                             accessor.Dispose()
-                            mmf.Dispose() }
+                            mmf.SafeMemoryMappedFileHandle.Close();
+                            mmf.Dispose()
+                            fileStream.Dispose() }
 
                 // let safeHolder = (mmf, accessor)
 
@@ -484,7 +460,7 @@ type DefaultFileSystem() as this =
         member _.OpenFileForWriteShim(filePath: string, ?fileMode: FileMode, ?fileAccess: FileAccess, ?fileShare: FileShare) : Stream =
             let fileMode = defaultArg fileMode FileMode.OpenOrCreate
             let fileAccess = defaultArg fileAccess FileAccess.ReadWrite
-            let fileShare = defaultArg fileShare FileShare.Read
+            let fileShare = defaultArg fileShare FileShare.ReadWrite
 
             File.Open(filePath, fileMode, fileAccess, fileShare) :> Stream
 
@@ -580,6 +556,33 @@ module public StreamExtensions =
         member s.Write (data: 'a) : unit =
             use sw = s.GetWriter()
             sw.Write(data)
+
+        member s.GetReader(codePage: int option, ?retryLocked: bool) =
+            let retryLocked = defaultArg retryLocked false
+            let retryDelayMilliseconds = 50
+            let numRetries = 60
+            let rec getSource retryNumber =
+              try
+                // Use the .NET functionality to auto-detect the unicode encoding
+                match codePage with
+                | None -> new StreamReader(s, true)
+                | Some n -> new StreamReader(s, Encoding.GetEncoding(n))
+              with
+                  // We can get here if the file is locked--like when VS is saving a file--we don't have direct
+                  // access to the HRESULT to see that this is EONOACCESS.
+                  | :? IOException as err when retryLocked && err.GetType() = typeof<IOException> ->
+                       // This second check is to make sure the exception is exactly IOException and none of these for example:
+                       //   DirectoryNotFoundException
+                       //   EndOfStreamException
+                       //   FileNotFoundException
+                       //   FileLoadException
+                       //   PathTooLongException
+                       if retryNumber < numRetries then
+                           System.Threading.Thread.Sleep (retryDelayMilliseconds)
+                           getSource (retryNumber + 1)
+                       else
+                           reraise()
+            getSource 0
 
         member s.ReadAllText(?encoding: Encoding) =
             let encoding = defaultArg encoding Encoding.UTF8

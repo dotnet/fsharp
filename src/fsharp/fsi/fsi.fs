@@ -2469,8 +2469,10 @@ type internal FsiInteractionProcessor
         WithImplicitHome (tcConfigB, directoryName sourceFile)  (fun () ->
               // An included script file may contain maybe several interaction blocks.
               // We repeatedly parse and process these, until an error occurs.
-                use reader = FileSystem.OpenFileForReadShim(sourceFile).AsReadOnlyStream()
-                          |> StreamUtils.openReaderAndRetry tcConfigB.inputCodePage false
+
+                use fileStream = FileSystem.OpenFileForReadShim(sourceFile).AsStream()
+                use reader = fileStream.GetReader(tcConfigB.inputCodePage, false)
+
                 let tokenizer = fsiStdinLexerProvider.CreateIncludedScriptLexer (sourceFile, reader, errorLogger)
                 let rec run istate =
                     let istate,cont = processor.ParseAndExecOneSetOfInteractionsFromLexbuf ((fun f istate -> f ctok istate), istate, tokenizer, errorLogger)
