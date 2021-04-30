@@ -4057,7 +4057,7 @@ FSharp.Compiler.IO.IFileSystem: Boolean FileExistsShim(System.String)
 FSharp.Compiler.IO.IFileSystem: Boolean IsInvalidPathShim(System.String)
 FSharp.Compiler.IO.IFileSystem: Boolean IsPathRootedShim(System.String)
 FSharp.Compiler.IO.IFileSystem: Boolean IsStableFileHeuristic(System.String)
-FSharp.Compiler.IO.IFileSystem: FSharp.Compiler.IO.ByteMemory OpenFileForReadShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
+FSharp.Compiler.IO.IFileSystem: FSharp.Compiler.IO.ByteMemory OpenFileForReadShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.IO.IFileSystem: FSharp.Compiler.IO.IAssemblyLoader AssemblyLoader
 FSharp.Compiler.IO.IFileSystem: FSharp.Compiler.IO.IAssemblyLoader get_AssemblyLoader()
 FSharp.Compiler.IO.IFileSystem: System.Collections.Generic.IEnumerable`1[System.String] EnumerateDirectoriesShim(System.String)
@@ -4133,6 +4133,7 @@ FSharp.Compiler.IO.StreamExtensions: System.Collections.Generic.IEnumerable`1[Sy
 FSharp.Compiler.IO.StreamExtensions: System.IO.StreamReader Stream.GetReader(System.IO.Stream, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.IO.StreamExtensions: System.IO.TextWriter Stream.GetWriter(System.IO.Stream, Microsoft.FSharp.Core.FSharpOption`1[System.Text.Encoding])
 FSharp.Compiler.IO.StreamExtensions: System.String Stream.ReadAllText(System.IO.Stream, Microsoft.FSharp.Core.FSharpOption`1[System.Text.Encoding])
+FSharp.Compiler.IO.StreamExtensions: System.String[] Stream.ReadAllLines(System.IO.Stream, Microsoft.FSharp.Core.FSharpOption`1[System.Text.Encoding])
 FSharp.Compiler.IO.StreamExtensions: System.Text.Encoding get_utf8noBOM()
 FSharp.Compiler.IO.StreamExtensions: System.Text.Encoding utf8noBOM
 FSharp.Compiler.IO.StreamExtensions: Void Stream.WriteAllLines(System.IO.Stream, System.Collections.Generic.IEnumerable`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Text.Encoding])
@@ -10409,5 +10410,7 @@ FSharp.Compiler.Xml.XmlDoc: System.String GetXmlText()
 FSharp.Compiler.Xml.XmlDoc: System.String[] GetElaboratedXmlLines()
 FSharp.Compiler.Xml.XmlDoc: System.String[] UnprocessedLines
 FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
-FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)"
+FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)kenizerLexState: Int64 get_PosBits()
+FSharp.Compiler.Tokenization.FSharpTokenizerLexState: System.String ToString()
+FSharp.Compiler.Tokenization.FSharpTokenizerLexState: Void .ctor(Int64, Int64)"
         SurfaceArea.verify expected "netstandard" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))

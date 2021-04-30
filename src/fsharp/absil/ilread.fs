@@ -3912,7 +3912,7 @@ let createByteFileChunk opts fileName chunk =
         ByteFile(fileName, bytes) :> BinaryFile
 
 let createMemoryMapFile fileName =
-    let byteMem = FileSystem.OpenFileForReadShim(fileName)
+    let byteMem = FileSystem.OpenFileForReadShim(fileName, useMemoryMappedFile = true)
 
     let safeHolder =
         { new obj() with

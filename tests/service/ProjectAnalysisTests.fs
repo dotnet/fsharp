@@ -41,7 +41,7 @@ let fff () = xxx + xxx
 type CAbbrev = C
     """
     let fileSource1 = SourceText.ofString fileSource1Text
-    File.WriteAllText(fileName1, fileSource1Text)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
 
     let fileSource2Text = """
 module N
@@ -86,7 +86,7 @@ let mmmm2 : M.CAbbrev = new M.CAbbrev() // note, these don't count as uses of C
 
     """
     let fileSource2 = SourceText.ofString fileSource2Text
-    File.WriteAllText(fileName2, fileSource2Text)
+    FileSystem.OpenFileForWriteShim(fileName2).Write(fileSource2Text)
 
     let fileNames = [fileName1; fileName2]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -672,7 +672,7 @@ let GenericFunction (x:'T, y: 'T) = (x,y) : ('T * 'T)
 
 let _ = GenericFunction(3, 4)
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -914,7 +914,7 @@ let setP (foo: IFoo) v = foo.InterfacePropertySet <- v
 let getE (foo: IFoo) = foo.InterfaceEvent
 let getM (foo: IFoo) = foo.InterfaceMethod("d")
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -1283,7 +1283,7 @@ type Foo<'T>(x : 'T, y : Foo<'T>) = class end
 
 let inline twice(x : ^U, y : ^U) = x + y
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -1455,7 +1455,7 @@ let parseNumeric str =
    | Float f -> printfn "%f : Floating point" f
    | _ -> printfn "%s : Not matched." str
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
@@ -1666,7 +1666,7 @@ exception Fail of string
 let f () =
    raise (Fail "unknown")
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
@@ -1722,7 +1722,7 @@ let x1 = C.M(arg1 = 3, arg2 = 4, arg3 = 5)
 let x2 = C.M(arg1 = 3, arg2 = 4, ?arg3 = Some 5)
 
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
@@ -1783,7 +1783,7 @@ let x =
     // does not find usage here
     | B (xxx = a; yyy = b) -> ()
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
@@ -1863,7 +1863,7 @@ let inline check< ^T when ^T : (static member IsInfinity : ^T -> bool)> (num: ^T
     if (^T : (static member IsInfinity: ^T -> bool) (num)) then None
     else Some num
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
@@ -1942,7 +1942,7 @@ type C() =
 C.M("http://goo", query = 1)
 
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
@@ -2022,7 +2022,7 @@ let enum = new System.Collections.Generic.Dictionary<int,int>.Enumerator()
 let fff (x:System.Collections.Generic.Dictionary<int,int>.Enumerator) = ()
 
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
@@ -2091,7 +2091,7 @@ let x2 = query { for i in 0 .. 100 do
                  select (i,i) }
 
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
@@ -2158,7 +2158,7 @@ let x2  = new System.DateTime(1,1,1)
 let x3 = new System.DateTime()
 
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
@@ -2309,7 +2309,7 @@ let x1  = S()
 let x2  = S(3)
 
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
@@ -2377,7 +2377,7 @@ let f x =
     | _ -> 0
 
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
@@ -2443,7 +2443,7 @@ and G = Case1 | Case2 of int
 
     """
     let fileSource1 = SourceText.ofString fileSource1Text
-    File.WriteAllText(fileName1, fileSource1Text)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
 
     let sigFileSource1Text = """
 module Impl
@@ -2465,7 +2465,7 @@ and G = Case1 | Case2 of int
 
     """
     let sigFileSource1 = SourceText.ofString sigFileSource1Text
-    File.WriteAllText(sigFileName1, sigFileSource1Text)
+    FileSystem.OpenFileForWriteShim(sigFileName1).Write(sigFileSource1Text)
     let cleanFileName a = if a = fileName1 then "file1" elif a = sigFileName1 then "sig1"  else "??"
 
     let fileNames = [sigFileName1; fileName1]
@@ -2735,7 +2735,7 @@ let f2 (x: System.Collections.Generic.IList<int>) = x.[3] <- 4  // check use of 
 
 let f3 (x: System.Exception) = x.HelpLink <- "" // check use of .NET setter property
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
@@ -2821,7 +2821,7 @@ module Impl
 
 let _ = list<_>.Empty
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
@@ -2877,7 +2877,7 @@ let f x = match x with Enum.EnumCase1 -> 1 | Enum.EnumCase2 -> 2 | _ -> 3
 
 let s = System.DayOfWeek.Monday
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
@@ -2951,7 +2951,7 @@ type A<'T>() =
     member x.M() : 'T = failwith ""
 
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
@@ -3012,7 +3012,7 @@ let _ = { new IMyInterface<int> with
                }
 
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
@@ -3086,7 +3086,7 @@ let f3 (x: System.Collections.ObjectModel.ObservableCollection<'T>) = () // grab
 let f4 (x: int[]) = () // test a one-dimensional array
 let f5 (x: int[,,]) = () // test a multi-dimensional array
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
@@ -3233,7 +3233,7 @@ module Setter =
 
     0 .Value <- 0
 """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
@@ -3405,7 +3405,7 @@ let v8 = TypeWithProperties.StaticAutoPropGetSet
 TypeWithProperties.StaticAutoPropGetSet  <- 3
 
 """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
@@ -3651,7 +3651,7 @@ let r = { Record.Field = 1 }
 
 let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
 """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
@@ -3790,7 +3790,7 @@ type Class() =
     member x.M2([<ParamArray>] arg1, [<OptionalArgument>] arg2) = ()
     member x.M3([<Out>] arg: byref<int>) = ()
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
@@ -3882,7 +3882,7 @@ type CFooImpl() =
     inherit CFoo()
     override _.AbstractMethod _ = "v"
 """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -3947,7 +3947,7 @@ type Use() =
     member x.Test number =
         TestNumber 42
 """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -4025,7 +4025,7 @@ module M
 open System.ComponentModel
 let f (x: INotifyPropertyChanged) = failwith ""
 """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -4084,7 +4084,7 @@ type T() =
     [<Obsolete("hello")>]
     member _.Member = 0
 """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -4144,7 +4144,7 @@ open System.Diagnostics
 let f (x: List<'T>) = failwith ""
 let g = Console.ReadKey()
 """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -4258,14 +4258,14 @@ module internal Project32 =
 module Sample
 let func x = x + 1
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let sigFileSource1 = """
 module Sample
 
 val func : int -> int
     """
-    File.WriteAllText(sigFileName1, sigFileSource1)
+    FileSystem.OpenFileForWriteShim(sigFileName1).Write(sigFileSource1)
     let cleanFileName a = if a = fileName1 then "file1" elif a = sigFileName1 then "sig1"  else "??"
 
     let fileNames = [sigFileName1; fileName1]
@@ -4333,7 +4333,7 @@ type System.Int32 with
     member x.SetValue (_: int) = ()
     member x.GetValue () = x
 """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
@@ -4373,7 +4373,7 @@ module internal Project34 =
     let fileSource1 = """
 module Dummy
 """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
@@ -4441,7 +4441,7 @@ type Test =
     let tupleFunction (one:int, two:float, three:string) =
         float32 (one + int two + int three)
 """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
@@ -4513,7 +4513,7 @@ module internal Project35b =
 #r "notexist.dll"
 """
     let fileSource1 = SourceText.ofString fileSource1Text
-    File.WriteAllText(fileName1, fileSource1Text)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
@@ -4580,7 +4580,7 @@ let [<Literal>] lit = 1.0
 let notLit = 1.0
 let callToOverload = B(5).Overload(4)
 """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
@@ -4694,14 +4694,14 @@ module Test =
 [<assembly: AttrTest()>]
 do ()
 """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let fileSource2 = """
 namespace AttrTests
 
 [<assembly: AttrTest2()>]
 do ()
 """
-    File.WriteAllText(fileName2, fileSource2)
+    FileSystem.OpenFileForWriteShim(fileName2).Write(fileSource2)
     let fileNames = [fileName1; fileName2]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
@@ -4843,7 +4843,7 @@ type A<'XX, 'YY>() =
         member this.Generic<'Y> (a: 'XX, b: 'Y) = ()
         member this.Property = 1
 """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
@@ -4929,7 +4929,7 @@ let uses () =
    C().MemberWithIncompleteSignature (failwith "something")
    C().CurriedMemberWithIncompleteSignature (failwith "x1") (failwith "x2") (failwith "x3", failwith "x4")
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
@@ -5004,7 +5004,7 @@ type C =
 let g (x: C) = x.IsItAnA,x.IsItAnAMethod()
     """
 
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
@@ -5074,7 +5074,7 @@ module M
     let f3 (v : {| X: {| X : int; Y : string |} |}) = v.X.X
 
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
@@ -5153,7 +5153,7 @@ module File1
 
 let test() = ()
     """
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let fileSource2 = """
 module File2
 
@@ -5161,7 +5161,7 @@ open File1
 
 let test2() = test()
     """
-    File.WriteAllText(fileName2, fileSource2)
+    FileSystem.OpenFileForWriteShim(fileName2).Write(fileSource2)
     let fileNames = [fileName1;fileName2]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
@@ -5193,7 +5193,7 @@ module internal ProjectBig =
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSources = [ for (i,f) in fileNamesI -> (f, "module M" + string i) ]
-    for (f,text) in fileSources do File.WriteAllText(f, text)
+    for (f,text) in fileSources do FileSystem.OpenFileForWriteShim(f).Write(text)
     let fileSources2 = [ for (i,f) in fileSources -> SourceText.ofString f ]
 
     let fileNames = [ for (_,f) in fileNamesI -> f ]
@@ -5243,7 +5243,7 @@ let foo (a: Foo): bool =
     | _ -> false
     """
 
-    File.WriteAllText(fileName1, fileSource1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
@@ -5282,7 +5282,7 @@ module M
 let x = (1 = 3.0)
     """
     let fileSource1 = SourceText.ofString fileSource1Text
-    File.WriteAllText(fileName1, fileSource1Text)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
@@ -5323,7 +5323,7 @@ type A(i:int) =
     member x.Value = i
 """
     let fileSource1 = SourceText.ofString fileSource1Text
-    File.WriteAllText(fileName1, fileSource1Text)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -5414,7 +5414,7 @@ type UseTheThings(i:int) =
     member x.UseSomeUsedModuleContainingUnion() = A
 """
     let fileSource1 = SourceText.ofString fileSource1Text
-    File.WriteAllText(fileName1, fileSource1Text)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -5431,7 +5431,7 @@ type UseTheThings(i:int) =
     //(snd symbolUses.[42]).Symbol.IsEffectivelySameAs((snd symbolUses.[37]).Symbol)
     //(snd symbolUses.[42]).Symbol.GetEffectivelySameAsHash()
     //(snd symbolUses.[37]).Symbol.GetEffectivelySameAsHash()
-    let lines = File.ReadAllLines(fileName1)
+    let lines = FileSystem.OpenFileForReadShim(fileName1).AsStream().ReadAllLines()
     let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunSynchronously
     let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
     let expected =
@@ -5487,7 +5487,7 @@ type UseTheThings(i:int) =
     member x.UseSomeUsedModuleContainingUnion() = A
 """
     let fileSource1 = SourceText.ofString fileSource1Text
-    File.WriteAllText(fileName1, fileSource1Text)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -5504,7 +5504,7 @@ type UseTheThings(i:int) =
     //(snd symbolUses.[42]).Symbol.IsEffectivelySameAs((snd symbolUses.[37]).Symbol)
     //(snd symbolUses.[42]).Symbol.GetEffectivelySameAsHash()
     //(snd symbolUses.[37]).Symbol.GetEffectivelySameAsHash()
-    let lines = File.ReadAllLines(fileName1)
+    let lines = FileSystem.OpenFileForReadShim(fileName1).AsStream().ReadAllLines()
     let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunSynchronously
     let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
     let expected =
@@ -5568,7 +5568,7 @@ module M2 =
     let foo x = x.Field
 """
     let fileSource1 = SourceText.ofString fileSource1Text
-    File.WriteAllText(fileName1, fileSource1Text)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -5580,7 +5580,7 @@ module M2 =
         |> function
             | _, FSharpCheckFileAnswer.Succeeded(res) -> res
             | _ -> failwithf "Parsing aborted unexpectedly..."
-    let lines = File.ReadAllLines(fileName1)
+    let lines = FileSystem.OpenFileForReadShim(fileName1).AsStream().ReadAllLines()
     let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunSynchronously
     let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
     let expected =

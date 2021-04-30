@@ -366,7 +366,7 @@ type DefaultAssemblyLoader() =
 type IFileSystem =
     abstract AssemblyLoader: IAssemblyLoader
 
-    abstract OpenFileForReadShim: filePath: string * ?shouldShadowCopy: bool -> ByteMemory
+    abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> ByteMemory
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
 
     abstract GetFullPathShim: fileName: string -> string
@@ -393,23 +393,26 @@ type DefaultFileSystem() as this =
 
         member _.AssemblyLoader = DefaultAssemblyLoader() :> IAssemblyLoader
 
-        member _.OpenFileForReadShim(filePath: string, ?shouldShadowCopy: bool) : ByteMemory =
+        member this.OpenFileForReadShim(filePath: string, ?useMemoryMappedFile: bool, ?shouldShadowCopy: bool) : ByteMemory =
             let fileMode = FileMode.Open
             let fileAccess = FileAccess.Read
-            let fileShare = FileShare.ReadWrite
+            let fileShare = FileShare.Delete ||| FileShare.ReadWrite
             let shouldShadowCopy = defaultArg shouldShadowCopy false
+            let useMemoryMappedFile = defaultArg useMemoryMappedFile false
 
-            let fileStream = File.Open(filePath, fileMode, fileAccess, fileShare)
+            let fileStream = new FileStream(filePath, fileMode, fileAccess, fileShare)
             let length = fileStream.Length
 
-            if runningOnMono then
-                // mono's MemoryMappedFile implementation throws with null `mapName`,
-                // so we use ByteArrayMemory instead: https://github.com/mono/mono/issues/10245
+            // We want to use mmaped files only when:
+            //   -  Opening large binary files (no need to use for source or resource files really)
+            //   -  Running on mono, since its MemoryMappedFile implementation throws when "mapName" is not provided (is null).
+            //      (See: https://github.com/mono/mono/issues/10245)
+            if runningOnMono or (not useMemoryMappedFile) then
                 let bytes = File.ReadAllBytes filePath
                 let byteArrayMemory = if bytes.Length = 0 then ByteArrayMemory([||], 0, 0) else ByteArrayMemory(bytes, 0, bytes.Length)
                 byteArrayMemory :> ByteMemory
             else
-                let mmf, accessor, length =
+                let mmf, viewStream, length =
                     let mmf =
                         if shouldShadowCopy then
                             let mmf =
@@ -431,9 +434,9 @@ type DefaultFileSystem() as this =
                                 MemoryMappedFileAccess.Read,
                                 HandleInheritability.None,
                                 leaveOpen=false)
-                    mmf, mmf.CreateViewAccessor(0L, length, MemoryMappedFileAccess.Read), length
+                    mmf, mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read), length
 
-                if not accessor.CanRead then
+                if not viewStream.CanRead then
                     invalidOp "Cannot read file"
 
                 let safeHolder =
@@ -443,23 +446,22 @@ type DefaultFileSystem() as this =
                       interface IDisposable with
                         member x.Dispose() =
                             GC.SuppressFinalize x
-                            accessor.SafeMemoryMappedViewHandle.Close()
-                            accessor.Dispose()
+                            viewStream.Dispose()
                             mmf.SafeMemoryMappedFileHandle.Close()
                             mmf.Dispose()
                             fileStream.Dispose() }
 
                 RawByteMemory(
-                    NativePtr.ofNativeInt (accessor.SafeMemoryMappedViewHandle.DangerousGetHandle()),
+                    NativePtr.ofNativeInt (viewStream.SafeMemoryMappedViewHandle.DangerousGetHandle()),
                     int length,
                     safeHolder) :> ByteMemory
 
         member _.OpenFileForWriteShim(filePath: string, ?fileMode: FileMode, ?fileAccess: FileAccess, ?fileShare: FileShare) : Stream =
             let fileMode = defaultArg fileMode FileMode.OpenOrCreate
             let fileAccess = defaultArg fileAccess FileAccess.ReadWrite
-            let fileShare = defaultArg fileShare FileShare.ReadWrite
+            let fileShare = defaultArg fileShare FileShare.Delete ||| FileShare.ReadWrite
 
-            File.Open(filePath, fileMode, fileAccess, fileShare) :> Stream
+            new FileStream(filePath, fileMode, fileAccess, fileShare) :> Stream
 
         member _.GetFullPathShim (fileName: string) = Path.GetFullPath fileName
 
@@ -593,6 +595,9 @@ module public StreamExtensions =
                 while not <| sr.EndOfStream do
                     yield sr.ReadLine()
             }
+        member s.ReadAllLines(?encoding: Encoding) : string array =
+            let encoding = defaultArg encoding Encoding.UTF8
+            s.ReadLines(encoding) |> Seq.toArray
 
 [<AutoOpen>]
 module public FileSystemAutoOpens =
