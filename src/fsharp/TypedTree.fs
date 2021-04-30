@@ -4313,6 +4313,8 @@ type DecisionTreeTarget =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
+    member x.TargetExpression = (let (TTarget(_, expr, _, _)) = x in expr)
+
     override x.ToString() = sprintf "DecisionTreeTarget(...)"
 
 /// A collection of simultaneous bindings

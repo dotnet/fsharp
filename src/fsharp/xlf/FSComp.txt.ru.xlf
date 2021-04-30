@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
-        <source>The 'InlineIfLambda' attribute may only be used on function-typed parameters of inlined methods.</source>
-        <target state="new">The 'InlineIfLambda' attribute may only be used on function-typed parameters of inlined methods.</target>
+        <source>The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</source>
+        <target state="new">The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">

@@ -252,7 +252,7 @@ type cenv =
 //            let resumableCodeArgFlags = 
 //                argInfos |> List.mapSquared (fun (argTy, argInfo) -> 
 //                    let hasRCA = HasFSharpAttribute g g.attrib_ResumableCodeAttribute argInfo.Attribs
-//                    argInfo.Name, hasRCA, (isDelegateTy g argTy || isFunTy g argTy))
+//                    argInfo.Name, hasRCA, (isFSharpDelegateTy g argTy || isFunTy g argTy))
 
 //            let hasResumableCodeReturn = HasFSharpAttribute g g.attrib_ResumableCodeAttribute retInfo.Attribs
 //            resumableCodeArgFlags, hasResumableCodeReturn
@@ -1052,14 +1052,14 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
         | Expr.TyLambda _ 
         | Expr.Lambda _ -> 
             let rec strip env e = 
-                match e with 
+                match stripExpr e with 
                 | Expr.TyLambda _ 
                 | Expr.Lambda _ -> 
                     let tps, vs, bodyExpr, _rty = stripTopLambda (expr, tyOfExpr g expr)
                     let env = BindTypars g env tps 
                     let env = BindArgVals env (List.concat vs)
                     strip env bodyExpr
-                | NewDelegateExpr g (vs, bodyExpr, _) ->
+                | NewDelegateExpr g (_, vs, bodyExpr, _, _) ->
                     let env = BindArgVals env (List.concat vs)
                     strip env bodyExpr
                 | _ -> 
@@ -1067,7 +1067,7 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
                         let ety = tyOfExpr g e
                         // partial lambdas where the return is still a ResumableCodeBlock
                         // e.g. the lambda in "sync.Delay (fun () -> sync.Return 1)"
-                        if isDelegateTy g ety || isFunTy g ety then
+                        if isFSharpDelegateTy g ety || isFunTy g ety then
                             env
                         else
                             { env with resumableCode = Resumable.ResumableExpr (false, allowed) }
@@ -1789,7 +1789,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined topValInfo alway
         // Check argument types
         syntacticArgs 
         |> List.iter (fun arg ->
-            if arg.InlineIfLambda && (not inlined || not (isFunTy g arg.Type)) then 
+            if arg.InlineIfLambda && (not inlined || not (isFunTy g arg.Type || isFSharpDelegateTy g arg.Type)) then 
                 errorR(Error(FSComp.SR.tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod(), arg.Range))
 
             CheckValSpecAux permitByRefType cenv env arg (fun () -> 

@@ -1786,6 +1786,8 @@ let isInterfaceTy g ty =
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsInterface
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpInterfaceTy g ty
 
+let isFSharpDelegateTy g ty = isDelegateTy g ty && isFSharpObjModelTy g ty
+
 let isClassTy g ty = 
     match metadataOfTy g ty with 
 #if !NO_EXTENSIONTYPING
@@ -7617,6 +7619,33 @@ let rec MakeApplicationAndBetaReduceAux g (f, fty, tyargsl: TType list list, arg
 let MakeApplicationAndBetaReduce g (f, fty, tyargsl, argl, m) = 
   MakeApplicationAndBetaReduceAux g (f, fty, tyargsl, argl, m)
 
+let (|NewDelegateExpr|_|) g expr =
+    match expr with
+    | Expr.Obj (lambdaId, ty, a, b, [TObjExprMethod(c, d, e, tmvs, body, f)], [], [], m) when isDelegateTy g ty ->
+        Some (lambdaId, tmvs, body, m, (fun bodyR -> Expr.Obj (lambdaId, ty, a, b, [TObjExprMethod(c, d, e, tmvs, bodyR, f)], [], [], m)))
+    | _ -> None
+
+let (|DelegateInvokeExpr|_|) g expr =
+    match expr with
+    | Expr.App ((Expr.Val (invokeRef, _, _)) as iref, fty, tyargs, (f :: args), m) 
+        when invokeRef.LogicalName = "Invoke" && isFSharpDelegateTy g (tyOfExpr g f) -> 
+            Some(iref, fty, tyargs, f, args, m)
+    | _ -> None
+
+let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, f, fty, tyargs, argsl: Expr list, m) =
+    match f with 
+    | Expr.Let (bind, body, mlet, _) ->
+        mkLetBind mlet bind (MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, body, fty, tyargs, argsl, m))
+    | _ -> 
+        match f with
+        | NewDelegateExpr g (_, argvsl, body, m, _) when argvsl.Length = argsl.Length -> 
+            let pairs, body = List.mapFoldBack (MultiLambdaToTupledLambdaIfNeeded g) (List.zip argvsl argsl) body
+            let argvs2, args2 = List.unzip (List.concat pairs)
+            mkLetsBind m (mkCompGenBinds argvs2 args2) body
+        | _ -> 
+            // Remake the delegate invoke
+            Expr.App (invokeRef, fty, tyargs, (f :: argsl), m) 
+      
 //---------------------------------------------------------------------------
 // Adjust for expected usage
 // Convert a use of a value to saturate to the given arity.
@@ -9339,11 +9368,6 @@ let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambda m uv (e, tyOfExpr g e) 
 
-let (|NewDelegateExpr|_|) g expr =
-    match expr with
-    | Expr.Obj (_, ty, _, _, [TObjExprMethod(_, _attribs, _, tmvs, body, _)], [], [], m) when isDelegateTy g ty ->
-        Some (tmvs, body, m)
-    | _ -> None
 
 let (|ValApp|_|) g vref expr =
     match expr with
@@ -9527,7 +9551,7 @@ let (|StructStateMachineExpr|_|) g expr =
     match expr with
     | ValApp g g.cgh__structStateMachine_vref ([templateStructTy; _resultTy], [moveNextExpr; setMachineStateExpr; afterMethodExpr], _m) ->
         match moveNextExpr, setMachineStateExpr, afterMethodExpr with 
-        | NewDelegateExpr g ([[moveNextMethodThisVar]], moveNextMethodBodyExpr, m), setMachineStateExpr, NewDelegateExpr g ([[afterMethodThisVar]], afterMethodBodyExpr, _) ->
+        | NewDelegateExpr g (_, [[moveNextMethodThisVar]], moveNextMethodBodyExpr, m, _), setMachineStateExpr, NewDelegateExpr g (_, [[afterMethodThisVar]], afterMethodBodyExpr, _, _) ->
            Some (templateStructTy, moveNextMethodThisVar, moveNextMethodBodyExpr, m, setMachineStateExpr, afterMethodThisVar, afterMethodBodyExpr)
         | _ -> None
     | _ -> None

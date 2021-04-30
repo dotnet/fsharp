@@ -1,63 +1,71 @@
 ``` ini
 
-BenchmarkDotNet=v0.11.5, OS=Windows 10.0.19042
+BenchmarkDotNet=v0.12.1, OS=Windows 10.0.19042
 Intel Xeon CPU E5-1620 0 3.60GHz, 1 CPU, 8 logical and 4 physical cores
 .NET Core SDK=5.0.104
-  [Host]     : .NET Core 2.1.27 (CoreCLR 4.6.29916.01, CoreFX 4.6.29916.03), 64bit RyuJIT DEBUG
-  DefaultJob : .NET Core 2.1.27 (CoreCLR 4.6.29916.01, CoreFX 4.6.29916.03), 64bit RyuJIT
+  [Host]     : .NET Core 3.1.14 (CoreCLR 4.700.21.16201, CoreFX 4.700.21.16208), X64 RyuJIT DEBUG
+  DefaultJob : .NET Core 3.1.14 (CoreCLR 4.700.21.16201, CoreFX 4.700.21.16208), X64 RyuJIT
 
 
 ```
-|                                 Method |             Categories |            Mean |           Error |          StdDev |          Median |  Ratio | RatioSD |       Gen 0 |     Gen 1 | Gen 2 |    Allocated |
-|--------------------------------------- |----------------------- |----------------:|----------------:|----------------:|----------------:|-------:|--------:|------------:|----------:|------:|-------------:|
-|              ManyWriteFile_CSharpAsync |          ManyWriteFile |     27,720.8 us |       549.95 us |     1,533.03 us |     27,307.7 us |   1.00 |    0.00 |    375.0000 |         - |     - |       1104 B |
-|                     ManyWriteFile_Task |          ManyWriteFile |     27,833.1 us |       554.31 us |       846.50 us |     27,631.0 us |   1.01 |    0.05 |    375.0000 |         - |     - |       1152 B |
-|              ManyWriteFile_TaskBuilder |          ManyWriteFile |     42,984.2 us |       842.84 us |     1,336.83 us |     42,636.6 us |   1.55 |    0.09 |   1000.0000 |         - |     - |       1808 B |
-|              ManyWriteFile_FSharpAsync |          ManyWriteFile |     44,383.7 us |       689.95 us |       576.14 us |     44,628.2 us |   1.65 |    0.05 |   1454.5455 |         - |     - |        936 B |
-|                                        |                        |                 |                 |                 |                 |        |         |             |           |       |              |
-|              NonAsyncBinds_CSharpAsync |          NonAsyncBinds |    162,204.4 us |     1,665.45 us |     1,557.87 us |    161,822.3 us |   1.00 |    0.00 | 151000.0000 |         - |     - |  792000000 B |
-|                     NonAsyncBinds_Task |          NonAsyncBinds |    173,433.4 us |       662.83 us |       553.49 us |    173,342.5 us |   1.07 |    0.01 | 151000.0000 |         - |     - |  792000000 B |
-|              NonAsyncBinds_TaskBuilder |          NonAsyncBinds |    248,864.7 us |     1,025.26 us |       856.14 us |    248,668.0 us |   1.53 |    0.02 | 221000.0000 |         - |     - | 1160000000 B |
-|              NonAsyncBinds_FSharpAsync |          NonAsyncBinds | 12,894,093.8 us |   265,229.61 us |   777,872.54 us | 12,598,945.9 us |  81.07 |    4.59 | 532000.0000 | 2000.0000 |     - |  775999136 B |
-|                                        |                        |                 |                 |                 |                 |        |         |             |           |       |              |
-|                 AsyncBinds_CSharpAsync |             AsyncBinds |    106,408.1 us |     2,000.06 us |     1,964.33 us |    105,633.7 us |   1.00 |    0.00 |    800.0000 |         - |     - |    1528294 B |
-|                        AsyncBinds_Task |             AsyncBinds |    119,073.2 us |     7,718.14 us |     7,925.96 us |    115,067.4 us |   1.12 |    0.08 |   1000.0000 |         - |     - |    2528674 B |
-|                 AsyncBinds_TaskBuilder |             AsyncBinds |    230,811.0 us |     4,185.62 us |     3,915.23 us |    230,812.4 us |   2.17 |    0.06 |   3000.0000 |         - |     - |    4986509 B |
-|                                        |                        |                 |                 |                 |                 |        |         |             |           |       |              |
-|             SingleSyncTask_CSharpAsync |         SingleSyncTask |     77,474.7 us |       264.50 us |       247.41 us |     77,457.0 us |   1.00 |    0.00 |           - |         - |     - |            - |
-|                    SingleSyncTask_Task |         SingleSyncTask |    117,582.2 us |       574.64 us |       537.51 us |    117,470.9 us |   1.52 |    0.01 |           - |         - |     - |            - |
-|             SingleSyncTask_TaskBuilder |         SingleSyncTask |    125,740.5 us |       889.11 us |       694.16 us |    125,876.2 us |   1.62 |    0.01 |  91500.0000 |         - |     - |  480000000 B |
-|             SingleSyncTask_FSharpAsync |         SingleSyncTask | 39,369,928.6 us | 1,189,170.61 us | 3,468,866.48 us | 38,868,183.3 us | 509.95 |   33.20 | 926000.0000 | 3000.0000 |     - | 3879989488 B |
-|                                        |                        |                 |                 |                 |                 |        |         |             |           |       |              |
-|             SyncBuilderLoop_NormalCode |                   sync |    822,671.6 us |     2,060.14 us |     1,927.05 us |    822,652.5 us |   1.00 |    0.00 | 366000.0000 |         - |     - | 1921760000 B |
-|           SyncBuilderLoop_WorkflowCode |                   sync |  1,015,999.3 us |    52,669.34 us |   155,296.75 us |    944,769.5 us |   1.42 |    0.23 | 366000.0000 |         - |     - | 1922240000 B |
-|                                        |                        |                 |                 |                 |                 |        |         |             |           |       |              |
-|     TinyVariableSizedList_StateMachine |  TinyVariableSizedList |     55,059.8 us |     1,229.26 us |     3,406.27 us |     53,935.8 us |   1.00 |    0.00 |  20333.3333 |         - |     - |  106666656 B |
-|          TinyVariableSizedList_Builder |  TinyVariableSizedList |     20,289.4 us |       380.85 us |       356.25 us |     20,290.3 us |   0.34 |    0.02 |   2031.2500 |         - |     - |   10666656 B |
-|                                        |                        |                 |                 |                 |                 |        |         |             |           |       |              |
-|         VariableSizedList_StateMachine |      VariableSizedList |    318,779.3 us |     3,166.39 us |     2,644.08 us |    318,875.7 us |   1.00 |    0.00 |  63000.0000 |         - |     - |  330666624 B |
-|              VariableSizedList_Builder |      VariableSizedList |    164,465.6 us |     2,171.21 us |     2,030.95 us |    163,474.6 us |   0.52 |    0.01 |  44750.0000 |         - |     - |  234666624 B |
-|                                        |                        |                 |                 |                 |                 |        |         |             |           |       |              |
-|             FixedSizeList_StateMachine |         FixedSizedList |    103,506.5 us |     1,997.36 us |     1,961.68 us |    103,209.3 us |   1.00 |    0.00 |  61000.0000 |         - |     - |  320000000 B |
-|                  FixedSizeList_Builder |         FixedSizedList |    221,445.9 us |     3,756.06 us |     3,513.42 us |    220,492.4 us |   2.14 |    0.06 |  61000.0000 |         - |     - |  320000000 B |
-|                                        |                        |                 |                 |                 |                 |        |         |             |           |       |              |
-|    TinyVariableSizedArray_StateMachine | TinyVariableSizedArray |    107,476.4 us |     2,089.38 us |     2,235.61 us |    107,648.8 us |   1.00 |    0.00 |  31400.0000 |         - |     - |  165333304 B |
-|         TinyVariableSizedArray_Builder | TinyVariableSizedArray |     45,025.8 us |     3,065.75 us |     9,039.43 us |     41,278.8 us |   0.33 |    0.01 |  11142.8571 |         - |     - |   58666632 B |
-|                                        |                        |                 |                 |                 |                 |        |         |             |           |       |              |
-|        VariableSizedArray_StateMachine |     VariableSizedArray |    430,924.2 us |     8,682.09 us |    25,049.82 us |    420,930.3 us |   1.00 |    0.00 |  78000.0000 |         - |     - |  413333272 B |
-|             VariableSizedArray_Builder |     VariableSizedArray |    196,516.5 us |     3,734.74 us |     4,151.16 us |    196,858.4 us |   0.42 |    0.02 |  60333.3333 |         - |     - |  317333272 B |
-|                                        |                        |                 |                 |                 |                 |        |         |             |           |       |              |
-|            FixedSizeArray_StateMachine |        FixedSizedArray |     44,270.4 us |       719.12 us |       672.67 us |     44,195.5 us |   1.00 |    0.00 |  19833.3333 |         - |     - |  104000000 B |
-|                 FixedSizeArray_Builder |        FixedSizedArray |    241,253.7 us |     4,215.19 us |     3,736.65 us |    240,190.6 us |   5.45 |    0.12 |  83666.6667 |         - |     - |  440000000 B |
-|                                        |                        |                 |                 |                 |                 |        |         |             |           |       |              |
-|           MultiStepOption_StateMachine |        MultiStepOption |     26,483.4 us |       286.85 us |       239.54 us |     26,508.8 us |   1.00 |    0.00 |  10968.7500 |         - |     - |   57600000 B |
-|             MultiStepOption_OldBuilder |        MultiStepOption |     64,191.9 us |     1,040.66 us |       973.44 us |     64,221.4 us |   2.42 |    0.05 |  38625.0000 |         - |     - |  202666632 B |
-|              MultiStepOption_NoBuilder |        MultiStepOption |     18,692.4 us |       332.48 us |       311.00 us |     18,656.1 us |   0.71 |    0.01 |  13406.2500 |         - |     - |   70399968 B |
-|                                        |                        |                 |                 |                 |                 |        |         |             |           |       |              |
-|      MultiStepValueOption_StateMachine |   MultiStepValueOption |     33,815.1 us |       378.74 us |       354.27 us |     33,742.6 us |   1.00 |    0.00 |           - |         - |     - |         24 B |
-|        MultiStepValueOption_OldBuilder |   MultiStepValueOption |     66,349.2 us |       804.55 us |       713.21 us |     66,472.8 us |   1.96 |    0.03 |  19000.0000 |         - |     - |  100266664 B |
-|         MultiStepValueOption_NoBuilder |   MultiStepValueOption |     27,996.3 us |       137.41 us |       121.81 us |     27,971.6 us |   0.83 |    0.01 |           - |         - |     - |            - |
-|                                        |                        |                 |                 |                 |                 |        |         |             |           |       |              |
-|                 TaskSeq_NestedForLoops |                taskSeq |      1,084.8 us |        21.19 us |        20.81 us |      1,079.1 us |   1.58 |    0.06 |    134.7656 |         - |     - |     711824 B |
-|                AsyncSeq_NestedForLoops |                taskSeq |     16,239.9 us |       324.66 us |       398.71 us |     16,144.4 us |  23.66 |    0.97 |   4468.7500 |  125.0000 |     - |        880 B |
-| CSharp_IAsyncEnumerable_NestedForLoops |                taskSeq |        693.7 us |        13.86 us |        28.93 us |        689.2 us |   1.00 |    0.00 |     26.3672 |         - |     - |     142208 B |
+|                                 Method |             Categories |         Mean |        Error |       StdDev |       Median | Ratio | RatioSD |       Gen 0 |    Gen 1 | Gen 2 |    Allocated |
+|--------------------------------------- |----------------------- |-------------:|-------------:|-------------:|-------------:|------:|--------:|------------:|---------:|------:|-------------:|
+|              ManyWriteFile_CSharpAsync |          ManyWriteFile |  27,564.6 μs |    495.44 μs |    439.19 μs |  27,448.9 μs |  1.00 |    0.00 |    375.0000 |        - |     - |    2005320 B |
+|                     ManyWriteFile_Task |          ManyWriteFile |  25,616.9 μs |    488.74 μs |    600.22 μs |  25,511.1 μs |  0.93 |    0.02 |    375.0000 |        - |     - |    2004992 B |
+|              ManyWriteFile_TaskBuilder |          ManyWriteFile |  37,177.4 μs |    579.24 μs |    513.48 μs |  37,079.8 μs |  1.35 |    0.03 |   1000.0000 |        - |     - |    5290459 B |
+|                                        |                        |              |              |              |              |       |         |             |          |       |              |
+|              NonAsyncBinds_CSharpAsync |          NonAsyncBinds | 165,954.1 μs |  2,450.59 μs |  2,046.36 μs | 165,915.2 μs |  1.00 |    0.00 | 151333.3333 |        - |     - |  792000000 B |
+|                     NonAsyncBinds_Task |          NonAsyncBinds | 185,824.3 μs |  3,583.97 μs |  5,024.23 μs | 183,469.0 μs |  1.13 |    0.04 | 151333.3333 |        - |     - |  792000000 B |
+|              NonAsyncBinds_TaskBuilder |          NonAsyncBinds | 260,215.5 μs |  4,994.49 μs |  5,128.97 μs | 260,403.2 μs |  1.57 |    0.04 | 221500.0000 |        - |     - | 1160000668 B |
+|                                        |                        |              |              |              |              |       |         |             |          |       |              |
+|                 AsyncBinds_CSharpAsync |             AsyncBinds |  89,273.9 μs |  1,784.75 μs |  4,575.00 μs |  88,201.0 μs |  1.00 |    0.00 |    166.6667 |        - |     - |    1121275 B |
+|                        AsyncBinds_Task |             AsyncBinds |  91,374.6 μs |  1,823.00 μs |  2,099.37 μs |  91,201.1 μs |  1.01 |    0.06 |    333.3333 |        - |     - |    2082468 B |
+|                 AsyncBinds_TaskBuilder |             AsyncBinds | 159,356.4 μs |  4,116.82 μs | 12,008.94 μs | 158,436.6 μs |  1.80 |    0.17 |   3000.0000 |        - |     - |   15861808 B |
+|                                        |                        |              |              |              |              |       |         |             |          |       |              |
+|             SingleSyncTask_CSharpAsync |         SingleSyncTask |  87,033.7 μs |    725.82 μs |    643.42 μs |  86,892.5 μs |  1.00 |    0.00 |           - |        - |     - |        223 B |
+|                    SingleSyncTask_Task |         SingleSyncTask |  94,205.9 μs |    892.21 μs |    834.57 μs |  94,210.1 μs |  1.08 |    0.01 |           - |        - |     - |        111 B |
+|             SingleSyncTask_TaskBuilder |         SingleSyncTask | 129,428.4 μs |  1,819.75 μs |  1,702.20 μs | 129,537.8 μs |  1.49 |    0.02 |  91750.0000 |        - |     - |  480000310 B |
+|                                        |                        |              |              |              |              |       |         |             |          |       |              |
+|             SyncBuilderLoop_NormalCode |                   sync | 826,107.7 μs | 10,326.67 μs |  8,623.24 μs | 825,063.5 μs |  1.00 |    0.00 | 367000.0000 |        - |     - | 1921760000 B |
+|           SyncBuilderLoop_WorkflowCode |                   sync | 813,272.6 μs | 10,672.98 μs |  9,461.32 μs | 813,590.3 μs |  0.98 |    0.02 | 367000.0000 |        - |     - | 1921760000 B |
+|                                        |                        |              |              |              |              |       |         |             |          |       |              |
+|          TinyVariableSizedList_Builder |  TinyVariableSizedList |  47,897.0 μs |    602.09 μs |    533.74 μs |  47,905.8 μs |  1.00 |    0.00 |  20363.6364 |        - |     - |  106666656 B |
+|     TinyVariableSizedList_StateMachine |  TinyVariableSizedList |  10,743.3 μs |     67.20 μs |     62.86 μs |  10,755.8 μs |  0.22 |    0.00 |   2031.2500 |        - |     - |   10666665 B |
+|      TinyVariableSizedList_InlinedCode |  TinyVariableSizedList |  16,912.1 μs |    147.83 μs |    138.28 μs |  16,899.8 μs |  0.35 |    0.01 |   2031.2500 |        - |     - |   10666676 B |
+|                                        |                        |              |              |              |              |       |         |             |          |       |              |
+|              VariableSizedList_Builder |      VariableSizedList | 286,776.2 μs |  3,299.21 μs |  2,924.66 μs | 286,845.9 μs |  1.00 |    0.00 |  63000.0000 |        - |     - |  330666624 B |
+|         VariableSizedList_StateMachine |      VariableSizedList | 104,452.2 μs |    907.64 μs |    804.60 μs | 104,295.3 μs |  0.36 |    0.00 |  44800.0000 |        - |     - |  234666891 B |
+|          VariableSizedList_InlinedCode |      VariableSizedList | 162,624.5 μs |  3,240.43 μs |  6,165.25 μs | 159,685.9 μs |  0.58 |    0.03 |  44750.0000 |        - |     - |  234666624 B |
+|                                        |                        |              |              |              |              |       |         |             |          |       |              |
+|                  FixedSizeList_Builder |         FixedSizedList |  95,820.3 μs |    991.52 μs |    878.96 μs |  95,709.9 μs |  1.00 |    0.00 |  61166.6667 |        - |     - |  320000000 B |
+|             FixedSizeList_StateMachine |         FixedSizedList | 132,487.0 μs |  2,003.12 μs |  1,775.72 μs | 132,172.6 μs |  1.38 |    0.02 |  61000.0000 |        - |     - |  320000334 B |
+|              FixedSizeList_InlinedCode |         FixedSizedList | 205,548.8 μs |  2,390.78 μs |  2,236.34 μs | 205,384.5 μs |  2.14 |    0.03 |  61000.0000 |        - |     - |  320000000 B |
+|                                        |                        |              |              |              |              |       |         |             |          |       |              |
+|         TinyVariableSizedArray_Builder | TinyVariableSizedArray |  87,111.2 μs |  1,226.40 μs |  1,024.10 μs |  86,678.3 μs |  1.00 |    0.00 |  30000.0000 |        - |     - |  157333608 B |
+|    TinyVariableSizedArray_StateMachine | TinyVariableSizedArray |  26,585.1 μs |    271.29 μs |    253.76 μs |  26,560.9 μs |  0.31 |    0.00 |  10687.5000 |        - |     - |   55999968 B |
+|     TinyVariableSizedArray_InlinedCode | TinyVariableSizedArray |  27,605.7 μs |    337.14 μs |    315.36 μs |  27,578.0 μs |  0.32 |    0.00 |  10687.5000 |        - |     - |   55999968 B |
+|                                        |                        |              |              |              |              |       |         |             |          |       |              |
+|             VariableSizedArray_Builder |     VariableSizedArray | 363,921.8 μs |  4,287.66 μs |  4,010.68 μs | 362,824.8 μs |  1.00 |    0.00 |  77000.0000 |        - |     - |  405333272 B |
+|        VariableSizedArray_StateMachine |     VariableSizedArray | 148,678.5 μs |  2,090.88 μs |  2,237.22 μs | 148,492.1 μs |  0.41 |    0.01 |  59000.0000 |        - |     - |  309333272 B |
+|         VariableSizedArray_InlinedCode |     VariableSizedArray | 171,921.1 μs |  2,647.75 μs |  2,210.99 μs | 171,483.6 μs |  0.47 |    0.01 |  59000.0000 |        - |     - |  309333717 B |
+|                                        |                        |              |              |              |              |       |         |             |          |       |              |
+|                 FixedSizeArray_Builder |        FixedSizedArray |  41,984.8 μs |    537.08 μs |    502.39 μs |  42,199.8 μs |  1.00 |    0.00 |  19833.3333 |        - |     - |  104000000 B |
+|            FixedSizeArray_StateMachine |        FixedSizedArray | 189,331.6 μs |  3,766.35 μs |  3,867.76 μs | 189,209.7 μs |  4.51 |    0.12 |  82333.3333 |        - |     - |  432000608 B |
+|             FixedSizeArray_InlinedCode |        FixedSizedArray | 213,787.3 μs |  3,551.50 μs |  3,322.07 μs | 213,249.0 μs |  5.09 |    0.10 |  82333.3333 |        - |     - |  432000000 B |
+|                                        |                        |              |              |              |              |       |         |             |          |       |              |
+|           MultiStepOption_StateMachine |        MultiStepOption |  26,161.4 μs |    482.60 μs |    451.42 μs |  26,011.4 μs |  1.00 |    0.00 |  13437.5000 |        - |     - |   70399992 B |
+|         MultiStepOption_InlineIfLambda |        MultiStepOption |  22,772.1 μs |    454.77 μs |    808.35 μs |  22,874.6 μs |  0.87 |    0.03 |  13437.5000 |        - |     - |   70399968 B |
+|             MultiStepOption_OldBuilder |        MultiStepOption |  62,819.0 μs |  1,250.39 μs |  2,317.68 μs |  61,890.3 μs |  2.48 |    0.10 |  38750.0000 |        - |     - |  202666632 B |
+|              MultiStepOption_NoBuilder |        MultiStepOption |  18,267.2 μs |    236.38 μs |    209.55 μs |  18,230.6 μs |  0.70 |    0.02 |  13437.5000 |        - |     - |   70400008 B |
+|                                        |                        |              |              |              |              |       |         |             |          |       |              |
+|      MultiStepValueOption_StateMachine |   MultiStepValueOption |  30,136.0 μs |    299.50 μs |    233.83 μs |  30,242.5 μs |  1.00 |    0.00 |           - |        - |     - |         24 B |
+|    MultiStepValueOption_InlineIfLambda |   MultiStepValueOption |  27,720.7 μs |    170.67 μs |    151.30 μs |  27,661.1 μs |  0.92 |    0.01 |           - |        - |     - |         20 B |
+|        MultiStepValueOption_OldBuilder |   MultiStepValueOption |  65,206.8 μs |    560.50 μs |    496.87 μs |  65,150.9 μs |  2.16 |    0.02 |  19125.0000 |        - |     - |  100266664 B |
+|         MultiStepValueOption_NoBuilder |   MultiStepValueOption |  27,648.2 μs |     59.85 μs |     53.05 μs |  27,636.3 μs |  0.92 |    0.01 |           - |        - |     - |         18 B |
+|                                        |                        |              |              |              |              |       |         |             |          |       |              |
+|                 TaskSeq_NestedForLoops |                taskSeq |           NA |           NA |           NA |           NA |     ? |       ? |           - |        - |     - |            - |
+|                AsyncSeq_NestedForLoops |                taskSeq |  16,360.5 μs |    124.66 μs |    110.50 μs |  16,367.6 μs | 24.35 |    0.24 |   4500.0000 | 125.0000 |     - |   23582240 B |
+| CSharp_IAsyncEnumerable_NestedForLoops |                taskSeq |     671.5 μs |      4.71 μs |      4.41 μs |     672.6 μs |  1.00 |    0.00 |     24.4141 |        - |     - |     131290 B |
+
+Benchmarks with issues:
+  Benchmarks.TaskSeq_NestedForLoops: DefaultJob

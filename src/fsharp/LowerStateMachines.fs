@@ -205,7 +205,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                         if sm_verbose then printfn "application was partial, reducing further args %A" laterArgs
                         TryReduceApp env expandedExpr laterArgs
 
-        | NewDelegateExpr g (macroParamsCurried, macroBody, _) -> 
+        | NewDelegateExpr g (_, macroParamsCurried, macroBody, _, _) -> 
             let m = expr.Range
             let macroParams = List.concat macroParamsCurried
             let macroVal2 = mkLambdas m [] macroParams (macroBody, tyOfExpr g macroBody)

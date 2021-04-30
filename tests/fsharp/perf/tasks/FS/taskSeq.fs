@@ -14,7 +14,6 @@ open FSharp.Core.CompilerServices.StateMachineHelpers
 
 let verbose = false
 
-
 type TaskSeqStatus =  DONE = 0 | YIELD = 1 | AWAIT = 2
 
 type taskSeq<'T> = IAsyncEnumerable<'T>
@@ -230,7 +229,7 @@ type TaskSeqBuilder() =
                     sm.ResumptionFunc <- resume sm.ResumptionFunc
                     step)
             
-    member inline _.WhileAsync(condition : unit -> ValueTask<bool>, body : TaskSeqCode<'T>) : TaskSeqCode<'T> =
+    member inline _.WhileAsync([<InlineIfLambda>] condition : unit -> ValueTask<bool>, body : TaskSeqCode<'T>) : TaskSeqCode<'T> =
         TaskSeqCode<'T>(fun sm -> 
             if __useResumableCode then
                 //-- RESUMABLE CODE START
@@ -266,7 +265,7 @@ type TaskSeqBuilder() =
             else
                 failwith "reflective execution of TaskSeq While loop NYI")
 
-    member inline b.While(condition : unit -> bool, body : TaskSeqCode<'T>) : TaskSeqCode<'T> =
+    member inline b.While([<InlineIfLambda>] condition : unit -> bool, body : TaskSeqCode<'T>) : TaskSeqCode<'T> =
         b.WhileAsync((fun () -> ValueTask<bool>(condition())), body)
 
     member inline _.TryWith(body : TaskSeqCode<'T>, catch : exn -> TaskSeqCode<'T>) : TaskSeqCode<'T> =
@@ -404,7 +403,6 @@ module TaskSeq =
            finally 
                e.DisposeAsync().AsTask().Wait() |]
 
-    // TODO: something is not compiling here with task { ... }
     let toArrayAsync (t: taskSeq<'T>) : Task<'T[]> =
        task { 
           let res = ResizeArray<'T>()
@@ -427,7 +425,6 @@ module TaskSeq =
                 f e.Current
         finally 
             e.DisposeAsync().AsTask().Wait()
-
 
 module Examples =
 
@@ -510,17 +507,17 @@ module Examples =
                      yield! perf1_AsyncSeq i5
         }
 
-    //let dumpTaskSeq (t: IAsyncEnumerable<_>) = 
-    //    printfn "-----"
-    //    let e = t.GetAsyncEnumerator(CancellationToken())
-    //    while (let vt = e.MoveNextAsync() in if vt.IsCompleted then vt.Result else vt.AsTask().Result) do 
-    //        printfn "yield %A" e.Current
+    let dumpTaskSeq (t: IAsyncEnumerable<_>) = 
+        printfn "-----"
+        let e = t.GetAsyncEnumerator(CancellationToken())
+        while (let vt = e.MoveNextAsync() in if vt.IsCompleted then vt.Result else vt.AsTask().Result) do 
+            printfn "yield %A" e.Current
 
-    //dumpTaskSeq (t1())
-    //dumpTaskSeq (t2())
+    dumpTaskSeq (t1())
+    dumpTaskSeq (t2())
 
-    // printfn "t1() = %A" (TaskSeq.toArray (t1()))
-    // printfn "t2() = %A" (TaskSeq.toArray (t2()))
+    printfn "t1() = %A" (TaskSeq.toArray (t1()))
+    printfn "t2() = %A" (TaskSeq.toArray (t2()))
 
-    // printfn "perf2() = %A" (TaskSeq.toArray (perf2()))
+    printfn "perf2() = %A" (TaskSeq.toArray (perf2()))
 

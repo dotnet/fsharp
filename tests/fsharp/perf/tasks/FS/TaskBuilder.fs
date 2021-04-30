@@ -354,7 +354,7 @@ module ContextInsensitive =
     /// all awaited tasks automatically configured *not* to resume on the captured context.
     /// This is often preferable when writing library code that is not context-aware, but undesirable when writing
     /// e.g. code that must interact with user interface controls on the same thread as its caller.
-    let taskBuilder = TaskBuilder.ContextInsensitiveTaskBuilder()
+    let task = TaskBuilder.ContextInsensitiveTaskBuilder()
 
     [<Obsolete("It is no longer necessary to wrap untyped System.Thread.Tasks.Task objects with \"unitTask\".")>]
     let inline unitTask (t : Task) = t.ConfigureAwait(false)
@@ -390,7 +390,7 @@ module V2 =
 
         /// Builds a `System.Threading.Tasks.Task<'a>` similarly to a C# async/await method.
         /// Use this like `task { let! taskResult = someTask(); return taskResult.ToString(); }`.
-        let task = TaskBuilderV2()
+        let taskBuilder = TaskBuilderV2()
 
         [<Obsolete("It is no longer necessary to wrap untyped System.Thread.Tasks.Task objects with \"unitTask\".")>]
         let unitTask (t : Task) = t

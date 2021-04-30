@@ -4647,7 +4647,10 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, stateVars, thi
         mkILNonGenericVirtualMethod("MoveNext", ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL (lazy ilCode))
 
     let setStateMachineMethod =
-        let v0, v1, bodyExpr = match setMachineStateBodyExpr with NewDelegateExpr g ([[v0; v1]], e, _) -> v0, v1, e | _ -> failwith "invalid setStateMachineExpr, expected a new delegate of two vars"
+        let v0, v1, bodyExpr =
+            match setMachineStateBodyExpr with
+            | NewDelegateExpr g (_, [[v0; v1]], e, _, _) -> v0, v1, e
+            | _ -> failwith "invalid setStateMachineExpr, expected a new delegate of two vars"
         let meth = 
             match InfoReader.TryFindIntrinsicMethInfo infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere "SetStateMachine" interfaceTy with
             | [m] when m.IsInstance && m.NumArgs = [1] -> m

@@ -9,6 +9,7 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Rational
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
@@ -1309,7 +1310,12 @@ val MultiLambdaToTupledLambda: TcGlobals -> Val list -> Expr -> Val * Expr
 val AdjustArityOfLambdaBody: TcGlobals -> int -> Val list -> Expr -> Val list * Expr
 
 /// Make an application expression, doing beta reduction by introducing let-bindings
+/// if the function expression is a construction of a lambda
 val MakeApplicationAndBetaReduce: TcGlobals -> Expr * TType * TypeInst list * Exprs * range -> Expr
+
+/// Make a delegate invoke expression for an F# delegate type, doing beta reduction by introducing let-bindings
+/// if the delegate expression is a construction of a delegate.
+val MakeFSharpDelegateInvokeAndTryBetaReduce: TcGlobals -> invokeRef: Expr * f: Expr * fty: TType * tyargs: TypeInst * argsl: Exprs * m: range -> Expr
 
 /// Combine two static-resolution requirements on a type parameter
 val JoinTyparStaticReq: TyparStaticReq -> TyparStaticReq -> TyparStaticReq
@@ -1541,6 +1547,9 @@ val isInterfaceTyconRef: TyconRef -> bool
 
 /// Determine if a type is a delegate type
 val isDelegateTy: TcGlobals -> TType -> bool
+
+/// Determine if a type is a delegate type defined in F# 
+val isFSharpDelegateTy: TcGlobals -> TType -> bool
 
 /// Determine if a type is an interface type
 val isInterfaceTy: TcGlobals -> TType -> bool
@@ -2421,7 +2430,10 @@ val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
 val (|ValApp|_|): TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) option
 
 /// Match expressions that represent the creation of an instance of an F# delegate value
-val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Val list list * Expr * range) option
+val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Unique * Val list list * Expr * range * (Expr -> Expr)) option
+
+/// Match a .Invoke on a delegate
+val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * TypeInst * Expr * Exprs * range) option
 
 /// Match 'if __useResumableCode then ... else ...' expressions
 val (|IfUseResumableStateMachinesExpr|_|) : TcGlobals -> Expr -> (Expr * Expr) option
