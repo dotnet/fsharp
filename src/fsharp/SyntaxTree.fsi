@@ -127,7 +127,7 @@ type SynConst =
     | Double of notation:string * value:double
 
     /// F# syntax: 'a'
-    | Char of char
+    | Char of notation:string * value:char
 
     /// F# syntax: 23.4M
     | Decimal of System.Decimal

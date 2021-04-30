@@ -230,7 +230,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token <uint64> UNATIVEINT
 %token <single> IEEE32
 %token <string * double> IEEE64
-%token <char> CHAR
+%token <string * char> CHAR
 %token <System.Decimal> DECIMAL 
 %token <(string * string)> BIGNUM
 %token <bool> LET YIELD YIELD_BANG AND_BANG
@@ -3135,7 +3135,9 @@ atomicPattern:
       { SynPat.QuoteExpr($1, lhs parseState) } 
 
   | CHAR DOT_DOT CHAR
-      { SynPat.DeprecatedCharRange ($1, $3, rhs2 parseState 1 3) }
+      { let _, c1 = $1
+        let _, c2 = $3
+        SynPat.DeprecatedCharRange (c1, c2, rhs2 parseState 1 3) }
 
   | LBRACE recordPatternElementsAux rbrace
       { let rs, m = $2 in SynPat.Record (rs, rhs2 parseState 1 3) }

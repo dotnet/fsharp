@@ -103,7 +103,7 @@ type SynConst =
 
     | Double of notation:string * value:double
 
-    | Char of char
+    | Char of notation:string * value:char
 
     | Decimal of System.Decimal
 

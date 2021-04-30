@@ -5764,8 +5764,10 @@ FSharp.Compiler.Syntax.SynConst+Bytes: FSharp.Compiler.Syntax.SynByteStringKind 
 FSharp.Compiler.Syntax.SynConst+Bytes: FSharp.Compiler.Syntax.SynByteStringKind synByteStringKind
 FSharp.Compiler.Syntax.SynConst+Bytes: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynConst+Bytes: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynConst+Char: Char Item
-FSharp.Compiler.Syntax.SynConst+Char: Char get_Item()
+FSharp.Compiler.Syntax.SynConst+Char: Char get_value()
+FSharp.Compiler.Syntax.SynConst+Char: Char value
+FSharp.Compiler.Syntax.SynConst+Char: System.String get_notation()
+FSharp.Compiler.Syntax.SynConst+Char: System.String notation
 FSharp.Compiler.Syntax.SynConst+Decimal: System.Decimal Item
 FSharp.Compiler.Syntax.SynConst+Decimal: System.Decimal get_Item()
 FSharp.Compiler.Syntax.SynConst+Double: Double get_value()
@@ -5885,7 +5887,7 @@ FSharp.Compiler.Syntax.SynConst: Boolean get_IsUserNum()
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewBool(Boolean)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewByte(Byte)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewBytes(Byte[], FSharp.Compiler.Syntax.SynByteStringKind, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewChar(Char)
+FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewChar(System.String, Char)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewDecimal(System.Decimal)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewDouble(System.String, Double)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewInt16(Int16)

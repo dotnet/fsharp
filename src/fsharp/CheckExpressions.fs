@@ -809,7 +809,7 @@ let TcConst cenv ty m env c =
     | SynConst.Measure(SynConst.UInt32 i, _, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0u) cenv.g.puint_tcr c; Const.UInt32 i
     | SynConst.Measure(SynConst.UInt64 i, _, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0UL) cenv.g.puint64_tcr c; Const.UInt64 i
     | SynConst.Measure(SynConst.UIntPtr i, _, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0UL) cenv.g.punativeint_tcr c; Const.UIntPtr i
-    | SynConst.Char c -> unif cenv.g.char_ty; Const.Char c
+    | SynConst.Char (_, c) -> unif cenv.g.char_ty; Const.Char c
     | SynConst.String (s, _, _)
     | SynConst.SourceIdentifier (_, s, _) -> unif cenv.g.string_ty; Const.String s
     | SynConst.UserNum _ -> error (InternalError(FSComp.SR.tcUnexpectedBigRationalConstant(), m))
@@ -4414,7 +4414,7 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) i
             | SynConst.Decimal n when typeEquiv g g.decimal_ty kind -> record(g.decimal_ty); box (n: decimal)
             | SynConst.Single n when typeEquiv g g.float32_ty kind -> record(g.float32_ty); box (n: single)
             | SynConst.Double (_,n) when typeEquiv g g.float_ty kind -> record(g.float_ty); box (n: double)
-            | SynConst.Char n when typeEquiv g g.char_ty kind -> record(g.char_ty); box (n: char)
+            | SynConst.Char (_,n) when typeEquiv g g.char_ty kind -> record(g.char_ty); box (n: char)
             | SynConst.String (s, _, _) when s <> null && typeEquiv g g.string_ty kind -> record(g.string_ty); box (s: string)
             | SynConst.Bool b when typeEquiv g g.bool_ty kind -> record(g.bool_ty); box (b: bool)
             | _ -> fail()

@@ -520,7 +520,7 @@ rule token args skip = parse
  
  | char
      { let s = lexeme lexbuf 
-       CHAR (if s.[1] = '\\' then escape s.[2] else s.[1])  }
+       CHAR (s, if s.[1] = '\\' then escape s.[2] else s.[1])  }
 
  | char 'B' 
      { let s = lexeme lexbuf 
@@ -535,9 +535,9 @@ rule token args skip = parse
        let c = trigraph s.[2] s.[3] s.[4] 
        let x = int32 c
        if x < 0 || x > 255 then 
-           fail args lexbuf (FSComp.SR.lexInvalidCharLiteral()) (CHAR c)
+           fail args lexbuf (FSComp.SR.lexInvalidCharLiteral()) (CHAR (s,c))
        else
-           CHAR c }
+           CHAR (s  , c) }
 
  | '\'' trigraph '\'' 'B'
      { let s = lexeme lexbuf 
@@ -554,14 +554,20 @@ rule token args skip = parse
        else
            UINT8 (byte(x))  }
      
- | '\'' hexGraphShort '\'' { CHAR (char (int32 (hexGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
+ | '\'' hexGraphShort '\'' 
+     { let notation = lexeme lexbuf 
+       CHAR (notation, char (int32 (hexGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
 
- | '\'' unicodeGraphShort '\'' { CHAR (char (int32 (unicodeGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
+ | '\'' unicodeGraphShort '\'' 
+     { let notation = lexeme lexbuf
+       CHAR (notation ,char (int32 (unicodeGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
 
  | '\'' unicodeGraphLong '\''  
-     { match unicodeGraphLong (lexemeTrimBoth lexbuf 3 1) with
-       | SingleChar(c) -> CHAR (char c)
-       | _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (char 0)) }
+     { let s = lexemeTrimBoth lexbuf 3 1
+       let notation = lexeme lexbuf 
+       match unicodeGraphLong s with
+       | SingleChar(c) -> CHAR (notation, char c)
+       | _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (notation, char 0)) }
 
  | "(*IF-FSHARP"    
      { if not skip then COMMENT (LexCont.Token (args.ifdefStack, args.stringNest))
