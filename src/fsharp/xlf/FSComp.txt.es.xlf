@@ -222,6 +222,11 @@
         <target state="new">The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</target>
         <note />
       </trans-unit>
+      <trans-unit id="implMissingInlineIfLambda">
+        <source>The 'InlineIfLambda' attribute is present in the signature but not the implementation.</source>
+        <target state="new">The 'InlineIfLambda' attribute is present in the signature but not the implementation.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">Palabra clave para especificar un literal de constante como argumento de parámetro de tipo en los proveedores de tipo.</target>
@@ -255,6 +260,11 @@
       <trans-unit id="nativeResourceHeaderMalformed">
         <source>Resource header beginning at offset {0} is malformed.</source>
         <target state="translated">El encabezado de los recursos que comienza en el desplazamiento {0} está mal formado.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optFailedToInlineSuggestedValue">
+        <source>The value '{0}' was marked 'InlineIfLambda' but was not determined to have a lambda value. This warning is for informational purposes only.</source>
+        <target state="new">The value '{0}' was marked 'InlineIfLambda' but was not determined to have a lambda value. This warning is for informational purposes only.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsAllSigs">
@@ -440,6 +450,11 @@
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">No se permiten tipos byref en una declaración de tipo abierto.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
+        <source>The 'InlineIfLambda' attribute may only be used on function-typed parameters of inlined methods.</source>
+        <target state="new">The 'InlineIfLambda' attribute may only be used on function-typed parameters of inlined methods.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">

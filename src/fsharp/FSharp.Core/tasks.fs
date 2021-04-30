@@ -361,7 +361,7 @@ type TaskBuilder() =
             else
                 TaskBuilder.TryFinallyDynamic(body, compensation).Invoke(&sm))
 
-    static member TryFinallyDynamic (body: TaskCode<'TOverall, 'T>, [<InlineIfLambda>] compensation : unit -> unit) : TaskCode<'TOverall, 'T> =
+    static member TryFinallyDynamic (body: TaskCode<'TOverall, 'T>, compensation : unit -> unit) : TaskCode<'TOverall, 'T> =
         TaskCode<_, _>(fun sm ->
             let rec resume (mf: TaskStateMachineResumption<_>) =
                 TaskStateMachineResumption<_>(fun sm -> 
