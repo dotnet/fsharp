@@ -2328,7 +2328,7 @@ and OptimizeLinearExpr cenv env expr contf =
     let expr = stripExpr expr
 
     // Matching on 'match __resumableEntry() with ...` is really a first-class lanugage construct which we 
-    // donoptimize separately
+    // don't optimize separately
     match expr with 
     | ResumableEntryMatchExpr cenv.g (noneBranchExpr, someVar, someBranchExpr, rebuild) -> 
         let noneBranchExprR, e1info = OptimizeExpr cenv env noneBranchExpr 
@@ -2531,8 +2531,6 @@ and AddValEqualityInfo g m (v: ValRef) info =
 and OptimizeVal cenv env expr (v: ValRef, m) =
     let valInfoForVal = GetInfoForVal cenv env m v 
 
-    if v.InlineIfLambda then 
-        printfn "%s is InlineIfLambda" v.DisplayName
     match TryOptimizeVal cenv env (v.MustInline, v.InlineIfLambda, valInfoForVal.ValExprInfo, m) with
     | Some e -> 
        // don't reoptimize inlined lambdas until they get applied to something
@@ -2550,9 +2548,10 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
            e, AddValEqualityInfo cenv.g m v einfo 
 
     | None -> 
-       if v.MustInline then error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
+       if v.MustInline then
+           error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
        if v.InlineIfLambda then 
-           printfn "%s" ("the inline-if-lambda value '"+v.LogicalName+"' could not be inlined at " + m.ToString())
+           warning(Error(FSComp.SR.optFailedToInlineSuggestedValue(v.DisplayName), m))
        expr, (AddValEqualityInfo cenv.g m v 
                     { Info=valInfoForVal.ValExprInfo 
                       HasEffect=false 

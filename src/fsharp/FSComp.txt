@@ -1578,3 +1578,6 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3512,tcResumableCodeExpected,"Resumable code expected. This expression is expected to be resumable code, but this could not be statically determined. As a result this construct might not compile to an optimized state machine. Consider suppressing this warning if this is intentional."
 3515,tcTraitCallAssumedToReturnResumableCode,"The validity of this resumble code has not been fully checked. This trait call must always statically resolve to a method that returns resumable code. If this is not the case, the construct will not compile to an optimized state machine. Suppress this warning if you have checked that all trait resolutions are correctly marked with [<ResumableCode>]."
 3516,tcStructTemplateMethodsMustBeInline,"All methods on a template struct type used with __structStateMachine must be marked 'inline'."
+3517,optFailedToInlineSuggestedValue,"The value '%s' was marked 'InlineIfLambda' but was not determined to have a lambda value. This warning is for informational purposes only."
+3518,implMissingInlineIfLambda,"The 'InlineIfLambda' attribute is present in the signature but not the implementation."
+3519,tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod,"The 'InlineIfLambda' attribute may only be used on function-typed parameters of inlined methods."

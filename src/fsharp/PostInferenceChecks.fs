@@ -1789,6 +1789,9 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined topValInfo alway
         // Check argument types
         syntacticArgs 
         |> List.iter (fun arg ->
+            if arg.InlineIfLambda && (not inlined || not (isFunTy g arg.Type)) then 
+                errorR(Error(FSComp.SR.tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod(), arg.Range))
+
             CheckValSpecAux permitByRefType cenv env arg (fun () -> 
                 if arg.IsCompilerGenerated then
                     errorR(Error(FSComp.SR.chkErrorUseOfByref(), arg.Range))

@@ -5844,10 +5844,6 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
             match envinner.eLambdaArgInfos with 
             | infos :: rest -> 
                  if infos.Length = vspecs.Length then 
-                    // TODO: this doesn't work as 'vsl' may be a copy because destTopLambda copies the expression
-                    // then it eliminates a TyChoose.
-                    //
-                    // We need to apply these earlier, in the type checker.
                     (vspecs, infos) ||> List.iter2 (fun v argInfo -> 
                         let inlineIfLambda = HasFSharpAttribute cenv.g cenv.g.attrib_InlineIfLambdaAttribute argInfo.Attribs
                         if inlineIfLambda then 
