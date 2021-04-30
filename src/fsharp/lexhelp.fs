@@ -396,11 +396,11 @@ module Keywords =
 
                 if String.IsNullOrEmpty dirname then dirname
                 else PathMap.applyDir args.pathMap dirname
-                |> KEYWORD_STRING
+                |> fun dir -> KEYWORD_STRING(s, dir)
             | "__SOURCE_FILE__" -> 
-                KEYWORD_STRING (System.IO.Path.GetFileName((FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex))) 
+                KEYWORD_STRING (s, System.IO.Path.GetFileName((FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex))) 
             | "__LINE__" -> 
-                KEYWORD_STRING (string lexbuf.StartPos.Line)
+                KEYWORD_STRING (s, string lexbuf.StartPos.Line)
             | _ -> 
                 IdentifierToken args lexbuf s
 

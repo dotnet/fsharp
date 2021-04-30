@@ -202,7 +202,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token <string * ParseHelpers.LexerContinuation> INTERP_STRING_END 
 %token <ParseHelpers.LexerContinuation> LBRACE RBRACE
 
-%token <string> KEYWORD_STRING // Like __SOURCE_DIRECTORY__
+%token <string * string> KEYWORD_STRING // Like __SOURCE_DIRECTORY__
 %token <string> IDENT 
 %token <string> HASH_IDENT 
 %token <string> INFIX_STAR_STAR_OP 
@@ -646,7 +646,7 @@ hashDirectiveArgs:
 
 /* One argument to a #directive */
 hashDirectiveArg: 
-  | stringOrKeywordString 
+  | string 
       { let s, _ = $1
         s }
       
@@ -2214,7 +2214,7 @@ tyconDefnOrSpfnSimpleRepr:
        SynTypeDefnSimpleRepr.Record ($2, $3, lhs parseState) }
 
   /* An inline-assembly type definition, for FSharp.Core library only */
-  | opt_attributes opt_declVisibility LPAREN HASH stringOrKeywordString HASH rparen
+  | opt_attributes opt_declVisibility LPAREN HASH string HASH rparen
      { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(), rhs parseState 1))
        let lhsm = lhs parseState
        libraryOnlyError lhsm
@@ -2922,9 +2922,13 @@ rawConstant:
   | BIGNUM
     { SynConst.UserNum $1 } 
 
-  | stringOrKeywordString
+  | string
     { let s, synStringKind = $1
       SynConst.String (s, synStringKind, lhs parseState) } 
+
+  | sourceIdentifier
+    { let c,v = $1
+      SynConst.SourceIdentifier (c, v, lhs parseState) }
 
   | BYTEARRAY
     { let (v, synByteStringKind, _) = $1
@@ -4518,7 +4522,7 @@ forLoopDirection:
   | DOWNTO { false }
 
 inlineAssemblyExpr:
-  | HASH stringOrKeywordString opt_inlineAssemblyTypeArg optCurriedArgExprs  optInlineAssemblyReturnTypes HASH 
+  | HASH string opt_inlineAssemblyTypeArg optCurriedArgExprs  optInlineAssemblyReturnTypes HASH 
       { libraryOnlyWarning (lhs parseState)
         let (s, _), sm = $2, rhs parseState 2
         (fun m ->
@@ -5556,11 +5560,13 @@ colonOrEquals:
   | EQUALS { } 
 
 /* A literal string or a string from a keyword like __SOURCE_FILE__ */
-stringOrKeywordString:
+string:
   | STRING 
      { let (s, synStringKind, _) = $1
        s, synStringKind }
-  | KEYWORD_STRING { $1, SynStringKind.Regular }
+
+sourceIdentifier:
+  | KEYWORD_STRING { $1 }
 
 interpolatedStringFill:
   | declExpr
