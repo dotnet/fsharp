@@ -458,3 +458,4 @@ stages:
       insertTargetBranch: feature/d17initial
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
+      completeInsertion: 'auto'
