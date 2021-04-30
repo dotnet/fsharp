@@ -803,7 +803,8 @@ moduleSpfn:
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
         let info = SynComponentInfo($1, [], [], path, xml, false, vis, rhs parseState 3)
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        SynModuleSigDecl.NestedModule(info, isRec, $5, rhs2 parseState 1 5) }
+        let m = (rhs2 parseState 1 4, $5) ||> unionRangeWithListBy (fun (d: SynModuleSigDecl) -> d.Range)
+        SynModuleSigDecl.NestedModule(info, isRec, $5, m) }
 
   | opt_attributes opt_declVisibility  tyconSpfns 
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
@@ -811,9 +812,11 @@ moduleSpfn:
            match $3 with
            | [] -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEmptyModuleDefn()) 
            | h :: t -> h, t 
-        let tc = (SynTypeDefnSig(SynComponentInfo($1@cas, a, cs, b, c, d, d2, d3), e, f, g))
+        let attrs = $1@cas
+        let mTc = (g, attrs)  ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
+        let tc = (SynTypeDefnSig(SynComponentInfo(attrs, a, cs, b, c, d, d2, d3), e, f, mTc))
         let lastType = List.tryLast rest |> Option.defaultValue tc |> fun t -> t.Range
-        let m = mkRange lastType.FileName (lhs parseState).Start lastType.End
+        let m = mkRange lastType.FileName mTc.Start lastType.End
         SynModuleSigDecl.Types (tc :: rest, m) } 
 
   | opt_attributes opt_declVisibility exconSpfn
@@ -1009,6 +1012,7 @@ classMemberSpfn:
            match getSetRangeOpt with 
            | None -> unionRanges m ty.Range
            | Some m2 -> unionRanges m m2
+           |> fun m -> (m, $1) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, wholeRange)
        let _, flags = $3 
        SynMemberSig.Member(valSpfn, flags (getSetAdjuster arity), wholeRange) }
