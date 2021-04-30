@@ -190,8 +190,42 @@ type TaskBuilder() =
                 sm.ResumptionFunc <- resume sm.ResumptionFunc
                 false)
 
+    member inline _.WhileAsync([<InlineIfLambda>] condition : unit -> Task<bool>, body : TaskCode<'TOverall,unit>) : TaskCode<'TOverall,unit> =
+        TaskCode<'TOverall,unit>(fun sm -> 
+            if __useResumableCode then
+                //-- RESUMABLE CODE START
+                let mutable __stack_step = false
+                let mutable __stack_proceed = true
+                while __stack_proceed do
+                    let __stack_guard = condition()
+                    if __stack_guard.IsCompleted then
+                        __stack_proceed <- __stack_guard.Result
+                    else
+                        // Async wait for guard task
+                        let mutable awaiter = __stack_guard.GetAwaiter() // **
+                        match __resumableEntry() with 
+                        | Some contID ->
+                            if awaiter.IsCompleted then 
+                                __resumeAt contID
+                            else
+                                sm.ResumptionPoint <- contID
+                                sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+                                __stack_proceed <- false
+                        | None ->
+                            // Label contID: 
+                            __stack_proceed <- awaiter.GetResult()
+
+                    if __stack_proceed then
+                        let __stack_step2 = body.Invoke(&sm)
+                        __stack_step <- __stack_step2
+                        __stack_proceed <- __stack_step2 
+                __stack_step
+                //-- RESUMABLE CODE END
+            else
+                failwith "reflective execution of WhileAsync NYI")
+
     /// Builds a step that executes the body while the condition predicate is true.
-    member inline _.While (condition : unit -> bool, body : TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
+    member inline _.While ([<InlineIfLambda>] condition : unit -> bool, body : TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
         TaskCode<_, _>(fun sm ->
             if __useResumableCode then 
                 //-- RESUMABLE CODE START
@@ -293,7 +327,7 @@ type TaskBuilder() =
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
-    member inline _.TryFinally (body: TaskCode<'TOverall, 'T>, compensation : unit -> unit) : TaskCode<'TOverall, 'T> =
+    member inline _.TryFinally (body: TaskCode<'TOverall, 'T>, [<InlineIfLambda>] compensation : unit -> unit) : TaskCode<'TOverall, 'T> =
         TaskCode<_, _>(fun sm ->
             if __useResumableCode then 
                 //-- RESUMABLE CODE START
@@ -327,7 +361,7 @@ type TaskBuilder() =
             else
                 TaskBuilder.TryFinallyDynamic(body, compensation).Invoke(&sm))
 
-    static member TryFinallyDynamic (body: TaskCode<'TOverall, 'T>, compensation : unit -> unit) : TaskCode<'TOverall, 'T> =
+    static member TryFinallyDynamic (body: TaskCode<'TOverall, 'T>, [<InlineIfLambda>] compensation : unit -> unit) : TaskCode<'TOverall, 'T> =
         TaskCode<_, _>(fun sm ->
             let rec resume (mf: TaskStateMachineResumption<_>) =
                 TaskStateMachineResumption<_>(fun sm -> 

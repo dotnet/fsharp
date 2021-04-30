@@ -261,6 +261,11 @@ namespace Microsoft.FSharp.Core
 
         member x.Message = message
 
+    [<AttributeUsage (AttributeTargets.Parameter,AllowMultiple=false)>]  
+    [<Sealed>]
+    type InlineIfLambdaAttribute() = 
+        inherit System.Attribute()
+
     [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationArgumentCountsAttribute(counts:int[]) =

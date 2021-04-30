@@ -83,6 +83,9 @@ namespace Microsoft.FSharp.Control
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         member inline While: condition: (unit -> bool) * body: TaskCode<'TOverall, unit> -> TaskCode<'TOverall, unit>
     
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        member inline WhileAsync: condition: (unit -> Task<bool>) * body: TaskCode<'TOverall, unit> -> TaskCode<'TOverall, unit>
+    
         [<DefaultValue>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         member inline Zero: unit -> TaskCode<'TOverall, unit>

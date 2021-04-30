@@ -39,9 +39,6 @@ type StampMap<'T> = Map<Stamp, 'T>
 [<RequireQualifiedAccess>]
 type ValInline =
 
-    /// Indicates the value must always be inlined and no .NET IL code is generated for the value/function
-    | PseudoVal
-
     /// Indicates the value is inlined but the .NET IL code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
     | Always
 
@@ -54,7 +51,7 @@ type ValInline =
     /// Returns true if the implementation of a value must always be inlined
     member x.MustInline = 
         match x with 
-        | ValInline.PseudoVal | ValInline.Always -> true 
+        | ValInline.Always -> true 
         | ValInline.Optional | ValInline.Never -> false
 
 /// A flag associated with values that indicates whether the recursive scope of the value is currently being processed, and 
@@ -110,7 +107,6 @@ type ValFlags(flags: int64) =
                      (if isCompGen then                                      0b00000000000000001000L 
                       else                                                   0b000000000000000000000L) |||
                      (match inlineInfo with
-                                        | ValInline.PseudoVal ->             0b00000000000000000000L
                                         | ValInline.Always ->                0b00000000000000010000L
                                         | ValInline.Optional ->              0b00000000000000100000L
                                         | ValInline.Never ->                 0b00000000000000110000L) |||
@@ -142,7 +138,7 @@ type ValFlags(flags: int64) =
 
                      (match isGeneratedEventVal with
                                         | false     ->                       0b00000000000000000000L
-                                        | true      ->                       0b00100000000000000000L)                                        
+                                        | true      ->                       0b00100000000000000000L)                                          
 
         ValFlags flags
 
@@ -167,7 +163,7 @@ type ValFlags(flags: int64) =
 
     member x.InlineInfo = 
                                   match (flags       &&&                     0b00000000000000110000L) with 
-                                                             |               0b00000000000000000000L -> ValInline.PseudoVal
+                                                             |               0b00000000000000000000L
                                                              |               0b00000000000000010000L -> ValInline.Always
                                                              |               0b00000000000000100000L -> ValInline.Optional
                                                              |               0b00000000000000110000L -> ValInline.Never
@@ -204,11 +200,11 @@ type ValFlags(flags: int64) =
 
     member x.WithRecursiveValInfo recValInfo = 
             let flags = 
-                     (flags       &&&                                    ~~~0b00000001100000000000L) |||
+                     (flags       &&&                                     ~~~0b00000001100000000000L) |||
                      (match recValInfo with
-                                     | ValNotInRecScope     ->              0b00000000000000000000L
-                                     | ValInRecScope true  ->               0b00000000100000000000L
-                                     | ValInRecScope false ->               0b00000001000000000000L) 
+                                     | ValNotInRecScope     ->               0b00000000000000000000L
+                                     | ValInRecScope true  ->                0b00000000100000000000L
+                                     | ValInRecScope false ->                0b00000001000000000000L) 
             ValFlags flags
 
     member x.MakesNoCriticalTailcalls         =                   (flags &&& 0b00000010000000000000L) <> 0L
@@ -234,6 +230,10 @@ type ValFlags(flags: int64) =
     member x.IgnoresByrefScope                         =          (flags &&& 0b10000000000000000000L) <> 0L
 
     member x.WithIgnoresByrefScope                     =  ValFlags(flags ||| 0b10000000000000000000L)
+
+    member x.InlineIfLambda                            =         (flags &&& 0b100000000000000000000L) <> 0L
+    
+    member x.WithInlineIfLambda                        = ValFlags(flags ||| 0b100000000000000000000L)
 
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits = 
@@ -2707,6 +2707,9 @@ type Val =
     /// Get the inline declaration on the value
     member x.InlineInfo = x.val_flags.InlineInfo
 
+    /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
+    member x.InlineIfLambda = x.val_flags.InlineIfLambda
+
     /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
     member x.MustInline = x.InlineInfo.MustInline
 
@@ -2909,6 +2912,8 @@ type Val =
     member x.SetIsFixed() = x.val_flags <- x.val_flags.WithIsFixed
 
     member x.SetIgnoresByrefScope() = x.val_flags <- x.val_flags.WithIgnoresByrefScope
+
+    member x.SetInlineIfLambda() = x.val_flags <- x.val_flags.WithInlineIfLambda
 
     member x.SetValReprInfo info = 
         match x.val_opt_data with
@@ -3770,6 +3775,9 @@ type ValRef =
 
     /// Get the inline declaration on the value
     member x.InlineInfo = x.Deref.InlineInfo
+
+    /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
+    member x.InlineIfLambda = x.Deref.InlineIfLambda
 
     /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
     member x.MustInline = x.Deref.MustInline

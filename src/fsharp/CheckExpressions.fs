@@ -215,6 +215,9 @@ type TcEnv =
       eCtorInfo: CtorInfo option
 
       eCallerMemberName: string option
+
+      // Active arg infos in iterated lambdas 
+      eLambdaArgInfos: ArgReprInfo list list
     } 
 
     member tenv.DisplayEnv = tenv.eNameResEnv.DisplayEnv
@@ -1335,7 +1338,7 @@ let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, vscheme,
 
     let inlineFlag = 
         if HasFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute attrs then 
-            if inlineFlag = ValInline.PseudoVal || inlineFlag = ValInline.Always then 
+            if inlineFlag = ValInline.Always then 
               errorR(Error(FSComp.SR.tcDllImportStubsCannotBeInlined(), m)) 
             ValInline.Never 
         else 
@@ -2052,7 +2055,7 @@ module GeneralizationHelpers =
     let rec TrimUngeneralizableTypars genConstrainedTyparFlag inlineFlag (generalizedTypars: Typar list) freeInEnv = 
         // Do not generalize type variables with a static requirement unless function is marked 'inline' 
         let generalizedTypars, ungeneralizableTypars1 =  
-            if inlineFlag = ValInline.PseudoVal then generalizedTypars, []
+            if inlineFlag = ValInline.Always then generalizedTypars, []
             else generalizedTypars |> List.partition (fun tp -> tp.StaticReq = TyparStaticReq.None) 
 
         // Do not generalize type variables which would escape their scope 
@@ -2239,9 +2242,9 @@ let ComputeInlineFlag (memFlagsOption: SynMemberFlags option) isInline isMutable
             | None -> false
             | Some x -> (x.MemberKind = SynMemberKind.Constructor) || x.IsDispatchSlot || x.IsOverrideOrExplicitImpl) 
         then ValInline.Never 
-        elif isInline then ValInline.PseudoVal 
+        elif isInline then ValInline.Always 
         else ValInline.Optional
-    if isInline && (inlineFlag <> ValInline.PseudoVal) then 
+    if isInline && (inlineFlag <> ValInline.Always) then 
         errorR(Error(FSComp.SR.tcThisValueMayNotBeInlined(), m))
     inlineFlag
 
@@ -2319,8 +2322,8 @@ type IsObjExprBinding =
 module BindingNormalization =
     /// Push a bunch of pats at once. They may contain patterns, e.g. let f (A x) (B y) = ... 
     /// In this case the semantics is let f a b = let A x = a in let B y = b 
-    let private PushMultiplePatternsToRhs (cenv: cenv) isMember ps (NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr)) = 
-        let spatsL2, rhsExpr = PushCurriedPatternsToExpr cenv.synArgNameGenerator rhsExpr.Range isMember ps rhsExpr
+    let private PushMultiplePatternsToRhs (cenv: cenv) isMember pats (NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr)) = 
+        let spatsL2, rhsExpr = PushCurriedPatternsToExpr cenv.synArgNameGenerator rhsExpr.Range isMember pats rhsExpr
         NormalizedBindingRhs(spatsL2@spatsL, rtyOpt, rhsExpr)
 
 
@@ -5834,11 +5837,30 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
         let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names 
         let byrefs = vspecMap |> Map.map (fun _ v -> isByrefTy cenv.g v.Type, v)
         let envinner = if isMember then envinner else ExitFamilyRegion envinner
+        let vspecs = vs |> List.map (fun nm -> NameMap.find nm vspecMap)
+        
+        // Match up the arginfos with the generated arguments and apply any information extracted from the attributes
+        let envinner =
+            match envinner.eLambdaArgInfos with 
+            | infos :: rest -> 
+                 if infos.Length = vspecs.Length then 
+                    // TODO: this doesn't work as 'vsl' may be a copy because destTopLambda copies the expression
+                    // then it eliminates a TyChoose.
+                    //
+                    // We need to apply these earlier, in the type checker.
+                    (vspecs, infos) ||> List.iter2 (fun v argInfo -> 
+                        let inlineIfLambda = HasFSharpAttribute cenv.g cenv.g.attrib_InlineIfLambdaAttribute argInfo.Attribs
+                        if inlineIfLambda then 
+                            v.SetInlineIfLambda())
+                 { envinner with eLambdaArgInfos = rest }
+            | [] -> envinner
+                   
         let bodyExpr, tpenv = TcIteratedLambdas cenv false envinner resultTy takenNames tpenv bodyExpr
         // See bug 5758: Non-monotonicity in inference: need to ensure that parameters are never inferred to have byref type, instead it is always declared
         byrefs |> Map.iter (fun _ (orig, v) -> 
             if not orig && isByrefTy cenv.g v.Type then errorR(Error(FSComp.SR.tcParameterInferredByref v.DisplayName, v.Range)))
-        mkMultiLambda m (List.map (fun nm -> NameMap.find nm vspecMap) vs) (bodyExpr, resultTy), tpenv 
+
+        mkMultiLambda m vspecs (bodyExpr, resultTy), tpenv 
     | e -> 
         // Dive into the expression to check for syntax errors and suppress them if they show.
         conditionallySuppressErrorReporting (not isFirst && synExprContainsError e) (fun () ->
@@ -9423,6 +9445,10 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 synExprContainsError rhsExpr
 
             conditionallySuppressErrorReporting atTopNonLambdaDefn (fun () -> 
+
+                // Save the arginfos away to match them up in the lambda
+                let (PartialValReprInfo(argInfos, _)) = partialValReprInfo
+                let envinner = { envinner with eLambdaArgInfos = argInfos }
 
                 if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv overallExprTy envinner tpenv rhsExpr
                 else TcExprThatCantBeCtorBody cenv overallExprTy envinner tpenv rhsExpr)

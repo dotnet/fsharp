@@ -11,18 +11,18 @@ open System.Threading.Tasks
 open System.IO
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
-open TaskBuilderTasks.ContextSensitive // TaskBuilder.fs extension members
+//open TaskBuilderTasks.ContextSensitive // TaskBuilder.fs extension members
 //open FSharp.Control.ContextSensitiveTasks // the default
 open FSharp.Control // AsyncSeq
-open Tests.SyncBuilder
-open Tests.TaskSeqBuilder
+//open Tests.SyncBuilder
+//open Tests.TaskSeqBuilder
 open BenchmarkDotNet.Configs
 
 [<AutoOpen>]
 module Helpers =
     let bufferSize = 128
     let manyIterations = 10000
-
+(*
     let syncTask() = Task.FromResult 100
     let syncTask_FSharpAsync() = async.Return 100
     let asyncTask() = Task.Yield()
@@ -108,11 +108,13 @@ module Helpers =
 
     let singleTask_FSharpAsync() =
         async { return 1 }
+*)
 
 [<MemoryDiagnoser>]
 [<GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)>]
 [<CategoriesColumn>]
 type Benchmarks() =
+(*
     [<BenchmarkCategory("ManyWriteFile"); Benchmark(Baseline=true)>]
     member _.ManyWriteFile_CSharpAsync () =
         TaskPerfCSharp.ManyWriteFileAsync().Wait();
@@ -262,26 +264,31 @@ type Benchmarks() =
 
     [<BenchmarkCategory("FixedSizedArray"); Benchmark>]
     member _.FixedSizeArray_Builder() = Tests.ArrayBuilder.Examples.fixedSize()
-
+*)
     [<BenchmarkCategory("MultiStepOption"); Benchmark(Baseline=true)>]
-    member _.MultiStepOption_StateMachine() = Tests.OptionBuilder.Examples.multiStepStateMachineBuilder()
+    member _.MultiStepOption_StateMachine() = Tests.OptionBuilders.Examples.multiStepStateMachineBuilder()
 
     [<BenchmarkCategory("MultiStepOption"); Benchmark>]
-    member _.MultiStepOption_OldBuilder() = Tests.OptionBuilder.Examples.multiStepOldBuilder()
+    member _.MultiStepOption_InlineIfLambda() = Tests.OptionBuilders.Examples.multiStepInlineIfLambdaBuilder()
 
     [<BenchmarkCategory("MultiStepOption"); Benchmark>]
-    member _.MultiStepOption_NoBuilder() = Tests.OptionBuilder.Examples.multiStepNoBuilder()
+    member _.MultiStepOption_OldBuilder() = Tests.OptionBuilders.Examples.multiStepOldBuilder()
 
+    [<BenchmarkCategory("MultiStepOption"); Benchmark>]
+    member _.MultiStepOption_NoBuilder() = Tests.OptionBuilders.Examples.multiStepNoBuilder()
 
     [<BenchmarkCategory("MultiStepValueOption"); Benchmark(Baseline=true)>]
-    member _.MultiStepValueOption_StateMachine() = Tests.OptionBuilder.Examples.multiStepStateMachineBuilderV()
+    member _.MultiStepValueOption_StateMachine() = Tests.OptionBuilders.Examples.multiStepStateMachineBuilderV()
 
     [<BenchmarkCategory("MultiStepValueOption"); Benchmark>]
-    member _.MultiStepValueOption_OldBuilder() = Tests.OptionBuilder.Examples.multiStepOldBuilderV()
+    member _.MultiStepValueOption_InlineIfLambda() = Tests.OptionBuilders.Examples.multiStepInlineIfLambdaBuilderV()
 
     [<BenchmarkCategory("MultiStepValueOption"); Benchmark>]
-    member _.MultiStepValueOption_NoBuilder() = Tests.OptionBuilder.Examples.multiStepNoBuilderV()
+    member _.MultiStepValueOption_OldBuilder() = Tests.OptionBuilders.Examples.multiStepOldBuilderV()
 
+    [<BenchmarkCategory("MultiStepValueOption"); Benchmark>]
+    member _.MultiStepValueOption_NoBuilder() = Tests.OptionBuilders.Examples.multiStepNoBuilderV()
+(*
     [<BenchmarkCategory("taskSeq"); Benchmark>]
     member _.TaskSeq_NestedForLoops() = 
         Tests.TaskSeqBuilder.Examples.perf2() |> TaskSeq.iter ignore
@@ -293,6 +300,7 @@ type Benchmarks() =
     [<BenchmarkCategory("taskSeq"); Benchmark(Baseline=true)>]
     member _.CSharp_IAsyncEnumerable_NestedForLoops() = 
         TaskPerfCSharp.perf2_AsyncEnumerable() |> TaskSeq.iter ignore
+*)
 
 module Main = 
 

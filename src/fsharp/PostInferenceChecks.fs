@@ -1761,7 +1761,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined topValInfo alway
 
     | Expr.Lambda (_, _, _, _, _, m, _)  
     | Expr.TyLambda (_, _, _, m, _) ->
-        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = destTopLambda g cenv.amap topValInfo (expr, ety) in
+        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = destTopLambda g cenv.amap topValInfo (expr, ety)
         let env = BindTypars g env tps 
         let thisAndBase = Option.toList ctorThisValOpt @ Option.toList baseValOpt
         let restArgs = List.concat vsl

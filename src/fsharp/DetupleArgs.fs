@@ -300,7 +300,6 @@ module GlobalUsageAnalysis =
          tmethodIntercept = tmethodIntercept
       }
 
-
     //-------------------------------------------------------------------------
     // GlobalUsageAnalysis - entry point
     //-------------------------------------------------------------------------
@@ -309,7 +308,6 @@ module GlobalUsageAnalysis =
         let folder = UsageFolders g
         let z = FoldImplFile folder z0 expr
         z
-
 
 let internalError str = raise(Failure(str))
 

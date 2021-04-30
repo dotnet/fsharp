@@ -137,7 +137,7 @@ let mkLocalNameTypeArity compgen m name ty topValInfo =
 
 let GetValsBoundUnderMustInline xinfo =
     let accRejectFrom (v: Val) repr rejectS =
-      if v.InlineInfo = ValInline.PseudoVal then
+      if v.InlineInfo = ValInline.Always then
         Zset.union (GetValsBoundInExpr repr) rejectS
       else rejectS
     let rejectS = Zset.empty valOrder
@@ -158,7 +158,8 @@ let IsRefusedTLR g (f: Val) =
     let specialVal = f.MemberInfo.IsSome
     let alreadyChosen = f.ValReprInfo.IsSome
     let isResumableCode = isResumableCodeTy g f.Type
-    let refuseTest = alreadyChosen || mutableVal || byrefVal || specialVal || dllImportStubOrOtherNeverInline || isResumableCode
+    let isInlineIfLambda = f.InlineIfLambda
+    let refuseTest = alreadyChosen || mutableVal || byrefVal || specialVal || dllImportStubOrOtherNeverInline || isResumableCode || isInlineIfLambda
     refuseTest
 
 let IsMandatoryTopLevel (f: Val) =

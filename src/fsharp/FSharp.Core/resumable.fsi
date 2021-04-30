@@ -37,10 +37,10 @@ namespace Microsoft.FSharp.Core.CompilerServices
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type AfterMethod<'Template, 'Result> = delegate of byref<'Template> -> 'Result
 
-    /// <summary>Adding this attribute to a record type causes it to be compiled to a CLI representation
-    /// with a default constructor with property getters and setters.</summary>
+    /// <summary>Adding this attribute to a delegate type indicates implementations of the delegate may include resumable code.</summary>
     ///
     /// <category>Attributes</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<AttributeUsage (AttributeTargets.Delegate ||| AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
     type ResumableCodeAttribute =

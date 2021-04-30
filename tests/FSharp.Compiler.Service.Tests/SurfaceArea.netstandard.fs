@@ -4666,7 +4666,6 @@ FSharp.Compiler.Symbols.FSharpInlineAnnotation+Tags: Int32 AggressiveInline
 FSharp.Compiler.Symbols.FSharpInlineAnnotation+Tags: Int32 AlwaysInline
 FSharp.Compiler.Symbols.FSharpInlineAnnotation+Tags: Int32 NeverInline
 FSharp.Compiler.Symbols.FSharpInlineAnnotation+Tags: Int32 OptionalInline
-FSharp.Compiler.Symbols.FSharpInlineAnnotation+Tags: Int32 PseudoValue
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean Equals(FSharp.Compiler.Symbols.FSharpInlineAnnotation)
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean Equals(System.Object)
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -4674,22 +4673,18 @@ FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean IsAggressiveInline
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean IsAlwaysInline
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean IsNeverInline
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean IsOptionalInline
-FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean IsPseudoValue
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean get_IsAggressiveInline()
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean get_IsAlwaysInline()
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean get_IsNeverInline()
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean get_IsOptionalInline()
-FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean get_IsPseudoValue()
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: FSharp.Compiler.Symbols.FSharpInlineAnnotation AggressiveInline
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: FSharp.Compiler.Symbols.FSharpInlineAnnotation AlwaysInline
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: FSharp.Compiler.Symbols.FSharpInlineAnnotation NeverInline
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: FSharp.Compiler.Symbols.FSharpInlineAnnotation OptionalInline
-FSharp.Compiler.Symbols.FSharpInlineAnnotation: FSharp.Compiler.Symbols.FSharpInlineAnnotation PseudoValue
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: FSharp.Compiler.Symbols.FSharpInlineAnnotation get_AggressiveInline()
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: FSharp.Compiler.Symbols.FSharpInlineAnnotation get_AlwaysInline()
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: FSharp.Compiler.Symbols.FSharpInlineAnnotation get_NeverInline()
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: FSharp.Compiler.Symbols.FSharpInlineAnnotation get_OptionalInline()
-FSharp.Compiler.Symbols.FSharpInlineAnnotation: FSharp.Compiler.Symbols.FSharpInlineAnnotation get_PseudoValue()
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: FSharp.Compiler.Symbols.FSharpInlineAnnotation+Tags
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Int32 CompareTo(FSharp.Compiler.Symbols.FSharpInlineAnnotation)
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Int32 CompareTo(System.Object)

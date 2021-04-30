@@ -174,7 +174,7 @@ type TaskSeqCode<'T> = delegate of TaskSeqStateMachine<'T> -> TaskSeqStatus
 type TaskSeqBuilder() =
 
     member inline _.Delay(f : unit -> TaskSeqCode<'T>) : TaskSeqCode<'T> =
-        TaskSeqCode<'T>(fun sm -> f () sm)
+        TaskSeqCode<'T>(fun sm -> f().Invoke(sm))
 
 
     member inline _.Run(code : TaskSeqCode<'T>) : IAsyncEnumerable<'T> = 
@@ -185,7 +185,7 @@ type TaskSeqBuilder() =
                     if __useResumableCode then
                         //-- RESUMABLE CODE START
                         __resumeAt sm.ResumptionPoint
-                        code sm
+                        code.Invoke(sm)
                     else 
                         let code = sm.ResumptionFunc sm
                         match code with 
@@ -196,7 +196,7 @@ type TaskSeqBuilder() =
                     //-- RESUMABLE CODE END
             }
         if not __useResumableCode then
-            sm.ResumptionFunc <- code
+            sm.ResumptionFunc <- (fun sm -> code.Invoke(sm))
         sm.Start()
 
 
@@ -206,23 +206,23 @@ type TaskSeqBuilder() =
     member inline _.Combine(task1: TaskSeqCode<'T>, task2: TaskSeqCode<'T>) : TaskSeqCode<'T> =
         TaskSeqCode<'T>(fun sm -> 
             if __useResumableCode then
-                let __stack_step = task1 sm
+                let __stack_step = task1.Invoke(sm)
                 if __stack_step = TaskSeqStatus.DONE then
-                    task2 sm
+                    task2.Invoke(sm)
                 else
                     __stack_step
             else
 
-                let step = task1 sm
+                let step = task1.Invoke(sm)
                 if step = TaskSeqStatus.DONE then
-                    task2 sm
+                    task2.Invoke(sm)
                 else 
                     // Adjust the resumption to also run task2 on completion
                     let rec resume rf =
                         (fun (sm :TaskSeqStateMachine<_>) -> 
                             let step = rf sm
                             if step = TaskSeqStatus.DONE then 
-                                task2 sm
+                                task2.Invoke(sm)
                             else
                                 sm.ResumptionFunc <- resume sm.ResumptionFunc
                                 step)
@@ -230,20 +230,6 @@ type TaskSeqBuilder() =
                     sm.ResumptionFunc <- resume sm.ResumptionFunc
                     step)
             
-    member inline _.While(condition : unit -> bool, body : TaskSeqCode<'T>) : TaskSeqCode<'T> =
-        TaskSeqCode<'T>(fun sm -> 
-            if __useResumableCode then
-                let mutable __stack_step = TaskSeqStatus.DONE
-                while (__stack_step = TaskSeqStatus.DONE) && condition() do
-                    //if verbose then Console.WriteLine("[{0}] while loop before body", sm.GetHashCode())
-                    let __stack_step2 = body sm
-                    __stack_step <- __stack_step2
-                    //if verbose then Console.WriteLine("[{0}] while loop after body, step = {1}", sm.GetHashCode(), step)
-                //if verbose then Console.WriteLine("[{0}] finishing while with {1}", sm.GetHashCode(), step)
-                __stack_step
-            else
-                failwith "reflective execution of TaskSeq While loop NYI")
-
     member inline _.WhileAsync(condition : unit -> ValueTask<bool>, body : TaskSeqCode<'T>) : TaskSeqCode<'T> =
         TaskSeqCode<'T>(fun sm -> 
             if __useResumableCode then
@@ -272,13 +258,16 @@ type TaskSeqBuilder() =
                             __stack_proceed <- awaiter.GetResult()
 
                     if __stack_proceed then
-                        let __stack_step2 = body sm
+                        let __stack_step2 = body.Invoke(sm)
                         __stack_step <- __stack_step2
                         __stack_proceed <- (__stack_step = TaskSeqStatus.DONE)
                 __stack_step
                 //-- RESUMABLE CODE END
             else
                 failwith "reflective execution of TaskSeq While loop NYI")
+
+    member inline b.While(condition : unit -> bool, body : TaskSeqCode<'T>) : TaskSeqCode<'T> =
+        b.WhileAsync((fun () -> ValueTask<bool>(condition())), body)
 
     member inline _.TryWith(body : TaskSeqCode<'T>, catch : exn -> TaskSeqCode<'T>) : TaskSeqCode<'T> =
         TaskSeqCode<'T>(fun sm -> 
@@ -287,14 +276,14 @@ type TaskSeqBuilder() =
                 let mutable __stack_caught = false
                 let mutable __stack_exn = Unchecked.defaultof<_>
                 try
-                    let __stack_step2 = body sm
+                    let __stack_step2 = body.Invoke(sm)
                     __stack_step <- __stack_step2
                 with exn -> 
                     __stack_caught <- true
                     __stack_exn <- exn
 
                 if __stack_caught then 
-                    catch __stack_exn sm
+                    (catch __stack_exn).Invoke sm
                 else
                     __stack_step
             else
@@ -306,7 +295,7 @@ type TaskSeqBuilder() =
                 let mutable __stack_step = TaskSeqStatus.DONE
                 sm.PushDispose compensation
                 try
-                    let __stack_step2 = body sm
+                    let __stack_step2 = body.Invoke sm
                     __stack_step <- __stack_step2
                 with _ ->
                     sm.PopDispose()
@@ -326,13 +315,13 @@ type TaskSeqBuilder() =
     member inline this.Using(disp : #IDisposable, body : #IDisposable -> TaskSeqCode<'T>) : TaskSeqCode<'T> = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinally(
-            (fun sm -> body disp sm),
+            (fun sm -> (body disp).Invoke sm),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
     member inline this.UsingAsync(disp : #IAsyncDisposable, body : #IAsyncDisposable -> TaskSeqCode<'T>) : TaskSeqCode<'T> = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinallyAsync(
-            (fun sm -> body disp sm),
+            (fun sm -> (body disp).Invoke sm),
             (fun () -> 
                 if not (isNull (box disp)) then 
                     // TODO should be async
@@ -343,13 +332,13 @@ type TaskSeqBuilder() =
         // A for loop is just a using statement on the sequence's enumerator...
         this.Using (sequence.GetEnumerator(), 
             // ... and its body is a while loop that advances the enumerator and runs the body on each element.
-            (fun e -> this.While((fun () -> e.MoveNext()), (fun sm -> body e.Current sm))))
+            (fun e -> this.While((fun () -> e.MoveNext()), (fun sm -> (body e.Current).Invoke sm))))
 
     member inline this.For(source: #IAsyncEnumerable<'TElement>, body : 'TElement -> TaskSeqCode<'T>) : TaskSeqCode<'T> =
         TaskSeqCode<'T>(fun sm -> 
             this.UsingAsync(source.GetAsyncEnumerator(sm.CancellationToken), 
                 (fun e -> this.WhileAsync((fun () -> e.MoveNextAsync()), 
-                                          (fun sm -> body e.Current sm)))) sm)
+                                          (fun sm -> (body e.Current).Invoke sm)))).Invoke sm)
 
     member inline _.Yield (v: 'T) : TaskSeqCode<'T>  =
         TaskSeqCode<'T>(fun sm -> 
@@ -383,11 +372,11 @@ type TaskSeqBuilder() =
                         sm.AwaitCompleted(awaiter, contID)
                 | None ->
                      // RESUME - we may jump directly to here on resumption. 'awaiter' will be captured and available
-                    continuation (awaiter.GetResult()) sm
+                    (continuation (awaiter.GetResult())).Invoke sm
 
             else
                 let mutable awaiter = task.GetAwaiter()
-                let cont sm = continuation (awaiter.GetResult()) sm
+                let cont sm = (continuation (awaiter.GetResult())).Invoke sm
                 if awaiter.IsCompleted then 
                     cont sm
                 else

@@ -24,7 +24,7 @@ type SyncCode<'TOverall,'T> = delegate of byref<SyncMachine<'TOverall>> -> 'T
 type SyncBuilder() =
     
     member inline _.Delay(f: unit -> SyncCode<'TOverall,'T>) :  SyncCode<'TOverall,'T> =
-        SyncCode<_>(fun sm -> f().Invoke(&sm))
+        SyncCode<_,_>(fun sm -> f().Invoke(&sm))
 
     member inline _.Run(code : SyncCode<'T,'T>) : 'T = 
         if __useResumableCode then
@@ -48,30 +48,30 @@ type SyncBuilder() =
 
     [<DefaultValue>]
     member inline _.Zero() : SyncCode<'TOverall, unit> = 
-        SyncCode<_>(fun sm -> ())
+        SyncCode<_,_>(fun sm -> ())
 
     member inline _.Return (x: 'T) : SyncCode<'T,'T> =
-        SyncCode<_>(fun sm -> x)
+        SyncCode<_,_>(fun sm -> x)
 
     member inline _.Combine(code1: SyncCode<'TOverall,unit>, code2: SyncCode<'TOverall,'T>) : SyncCode<'TOverall,'T> =
-        SyncCode<_>(fun sm -> 
+        SyncCode<_,_>(fun sm -> 
             code1.Invoke(&sm)
             code2.Invoke(&sm))
 
     member inline _.While(condition : unit -> bool, body : SyncCode<'TOverall,unit>) : SyncCode<'TOverall,unit> =
-       SyncCode<_> (fun sm -> 
+       SyncCode<_,_> (fun sm -> 
             while condition() do
                 body.Invoke(&sm))
 
     member inline _.TryWith(body : SyncCode<'TOverall,'T>, catch : exn -> 'T) : SyncCode<'TOverall,'T> =
-        SyncCode<_>(fun sm -> 
+        SyncCode<_,_>(fun sm -> 
             try
                 body.Invoke(&sm)
             with exn -> 
                 catch exn)
 
     member inline _.TryFinally(body: SyncCode<'TOverall,'T>, compensation : unit -> unit) : SyncCode<'TOverall,'T> =
-        SyncCode<_>(fun sm -> 
+        SyncCode<_,_>(fun sm -> 
             let __stack_step = 
                 try
                     body.Invoke(&sm)
@@ -83,19 +83,19 @@ type SyncBuilder() =
 
     member inline this.Using(disp : #IDisposable, body : #IDisposable -> SyncCode<'TOverall,'T>) : SyncCode<'TOverall,'T> = 
         this.TryFinally(
-            SyncCode<_>(fun sm -> (body disp).Invoke(&sm)),
+            SyncCode<_,_>(fun sm -> (body disp).Invoke(&sm)),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
     member inline this.For(sequence : seq<'T>, body : 'T -> SyncCode<'TOverall,unit>) : SyncCode<'TOverall,unit> =
         this.Using (sequence.GetEnumerator(), 
-            (fun e -> this.While((fun () -> e.MoveNext()), SyncCode<_>(fun sm -> (body e.Current).Invoke(&sm)))))
+            (fun e -> this.While((fun () -> e.MoveNext()), SyncCode<_,_>(fun sm -> (body e.Current).Invoke(&sm)))))
 
     member inline _.ReturnFrom (value: 'T) : SyncCode<'T,'T> =
-        SyncCode<_>(fun sm -> 
+        SyncCode<_,_>(fun sm -> 
               value)
 
     member inline _.Bind (v: 'TResult1, continuation: 'TResult1 -> SyncCode<'TOverall,'TResult2>) : SyncCode<'TOverall,'TResult2> =
-        SyncCode<_>(fun sm -> 
+        SyncCode<_,_>(fun sm -> 
              (continuation v).Invoke(&sm))
 
 let sync = SyncBuilder()

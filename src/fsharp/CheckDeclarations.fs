@@ -5659,7 +5659,8 @@ let emptyTcEnv g =
       eModuleOrNamespaceTypeAccumulator = ref (Construct.NewEmptyModuleOrNamespaceType Namespace)
       eFamilyType = None
       eCtorInfo = None
-      eCallerMemberName = None }
+      eCallerMemberName = None 
+      eLambdaArgInfos = [] }
 
 let CreateInitialTcEnv(g, amap, scopem, assemblyName, ccus) =
     (emptyTcEnv g, ccus) ||> List.fold (fun env (ccu, autoOpens, internalsVisible) -> 

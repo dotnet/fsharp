@@ -1231,6 +1231,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_CompilationMappingAttribute            = mk_MFCore_attrib "CompilationMappingAttribute"
   member val attrib_CLIEventAttribute                      = mk_MFCore_attrib "CLIEventAttribute"
   member val attrib_ResumableCodeAttribute                 = mk_MFCompilerServices_attrib "ResumableCodeAttribute"
+  member val attrib_InlineIfLambdaAttribute                = mk_MFCore_attrib "InlineIfLambdaAttribute"
   member val attrib_CLIMutableAttribute                    = mk_MFCore_attrib "CLIMutableAttribute"
   member val attrib_AllowNullLiteralAttribute              = mk_MFCore_attrib "AllowNullLiteralAttribute"
   member val attrib_NoEqualityAttribute                    = mk_MFCore_attrib "NoEqualityAttribute"

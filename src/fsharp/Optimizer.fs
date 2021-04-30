@@ -2124,7 +2124,7 @@ and OptimizeExprOpReductionsAfter cenv env (op, tyargs, argsR, arginfos, m) =
         | _ -> None
     match knownValue with 
     | Some valu -> 
-        match TryOptimizeVal cenv env (false, valu, m) with 
+        match TryOptimizeVal cenv env (false, false, valu, m) with 
         | Some res -> OptimizeExpr cenv env res (* discard e1 since guard ensures it has no effects *)
         | None -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu
     | None -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos UnknownValue
@@ -2479,7 +2479,7 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
 
 /// Make optimization decisions once we know the optimization information
 /// for a value
-and TryOptimizeVal cenv env (mustInline, valInfoForVal, m) = 
+and TryOptimizeVal cenv env (mustInline, inlineIfLambda, valInfoForVal, m) = 
 
     match valInfoForVal with 
     // Inline all constants immediately 
@@ -2487,20 +2487,20 @@ and TryOptimizeVal cenv env (mustInline, valInfoForVal, m) =
         Some (Expr.Const (c, m, ty))
 
     | SizeValue (_, detail) ->
-        TryOptimizeVal cenv env (mustInline, detail, m) 
+        TryOptimizeVal cenv env (mustInline, inlineIfLambda, detail, m) 
 
     | ValValue (vR, detail) -> 
          // Inline values bound to other values immediately 
          // Prefer to inline using the more specific info if possible 
          // If the more specific info didn't reveal an inline then use the value 
-         match TryOptimizeVal cenv env (mustInline, detail, m) with 
+         match TryOptimizeVal cenv env (mustInline, inlineIfLambda, detail, m) with 
           | Some e -> Some e
           | None -> Some(exprForValRef m vR)
 
     | ConstExprValue(_size, expr) ->
         Some (remarkExpr m (copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated expr))
 
-    | CurriedLambdaValue (_, _, _, expr, _) when mustInline ->
+    | CurriedLambdaValue (_, _, _, expr, _) when mustInline || inlineIfLambda ->
         Some (remarkExpr m (copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated expr))
 
     | TupleValue _ | UnionCaseValue _ | RecdValue _ when mustInline ->
@@ -2514,7 +2514,7 @@ and TryOptimizeVal cenv env (mustInline, valInfoForVal, m) =
     | _ -> None 
   
 and TryOptimizeValInfo cenv env m vinfo = 
-    if vinfo.HasEffect then None else TryOptimizeVal cenv env (false, vinfo.Info, m)
+    if vinfo.HasEffect then None else TryOptimizeVal cenv env (false, false, vinfo.Info, m)
 
 /// Add 'v1 = v2' information into the information stored about a value
 and AddValEqualityInfo g m (v: ValRef) info =
@@ -2531,7 +2531,9 @@ and AddValEqualityInfo g m (v: ValRef) info =
 and OptimizeVal cenv env expr (v: ValRef, m) =
     let valInfoForVal = GetInfoForVal cenv env m v 
 
-    match TryOptimizeVal cenv env (v.MustInline, valInfoForVal.ValExprInfo, m) with
+    if v.InlineIfLambda then 
+        printfn "%s is InlineIfLambda" v.DisplayName
+    match TryOptimizeVal cenv env (v.MustInline, v.InlineIfLambda, valInfoForVal.ValExprInfo, m) with
     | Some e -> 
        // don't reoptimize inlined lambdas until they get applied to something
        match e with 
@@ -2549,6 +2551,8 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
 
     | None -> 
        if v.MustInline then error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
+       if v.InlineIfLambda then 
+           printfn "%s" ("the inline-if-lambda value '"+v.LogicalName+"' could not be inlined at " + m.ToString())
        expr, (AddValEqualityInfo cenv.g m v 
                     { Info=valInfoForVal.ValExprInfo 
                       HasEffect=false 
@@ -2878,11 +2882,33 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
         // devirtualized
         res
     | None -> 
-    let newf0, finfo = OptimizeExpr cenv env f0
+    let optf0, finfo = OptimizeExpr cenv env f0
+
+    // Always lift 'let', 'letrec' and sequentials off computed functions so
+    //     (let x = 1 in fexpr) arg ---> let x = 1 in fexpr arg 
+    // This is always valid because functions are computed before arguments.
+    // We do this even in debug code as it doesn't change debugging properties.
+    // This is useful in DSLs that compute functions and weave them together with user code, e.g.
+    // inline F# computation expressions.
+    let rec strip f =
+        match f with 
+        | Expr.Let (bind, bodyExpr, m, _) -> 
+            let f2, remake2 = strip bodyExpr 
+            f2, (remake2 >> mkLetBind m bind)
+        | Expr.LetRec (binds, bodyExpr, m, _) -> 
+            let f2, remake2 = strip bodyExpr 
+            f2, (remake2 >> mkLetRecBinds m binds)
+        | Expr.Sequential (x1, bodyExpr, sp, ty, m) -> 
+            let f2, remake2 = strip bodyExpr 
+            f2, (remake2 >> (fun bodyExpr2 -> Expr.Sequential (x1, bodyExpr2, sp, ty, m)))
+        | _ -> f, id
+
+    let newf0, remake = strip optf0
+
     match TryInlineApplication cenv env finfo (tyargs, args, m) with 
-    | Some res -> 
+    | Some (res, info) -> 
         // inlined
-        res
+        (res |> remake), info
     | None -> 
 
     let shapes = 
@@ -2905,9 +2931,10 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
 
     let newArgs, arginfos = OptimizeExprsThenReshapeAndConsiderSplits cenv env shapes
     // beta reducing
-    let newExpr = MakeApplicationAndBetaReduce cenv.g (newf0, f0ty, [tyargs], newArgs, m) 
+    let reducedExpr = MakeApplicationAndBetaReduce cenv.g (newf0, f0ty, [tyargs], newArgs, m) 
+    let newExpr = reducedExpr |> remake
     
-    match newf0, newExpr with 
+    match newf0, reducedExpr with 
     | (Expr.Lambda _ | Expr.TyLambda _), Expr.Let _ -> 
        // we beta-reduced, hence reoptimize 
         OptimizeExpr cenv env newExpr
@@ -3221,7 +3248,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         
         let exprOptimized, einfo = 
             let env = if vref.IsCompilerGenerated && Option.isSome env.latestBoundId then env else {env with latestBoundId=Some vref.Id} 
-            let cenv = if vref.InlineInfo = ValInline.PseudoVal then { cenv with optimizing=false} else cenv 
+            let cenv = if vref.InlineInfo.MustInline then { cenv with optimizing=false} else cenv 
             let arityInfo = InferArityOfExprBinding cenv.g AllowTypeDirectedDetupling.No vref expr
             let exprOptimized, einfo = OptimizeLambdas (Some vref) cenv env arityInfo expr vref.Type 
             let size = localVarSize 
@@ -3250,10 +3277,10 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             | UnknownValue | ConstValue _ | ConstExprValue _ -> ivalue
             | SizeValue(_, a) -> MakeSizedValueInfo (cut a) 
 
-        let einfo = if vref.MustInline then einfo else {einfo with Info = cut einfo.Info } 
+        let einfo = if vref.MustInline || vref.InlineIfLambda then einfo else {einfo with Info = cut einfo.Info } 
 
         let einfo = 
-            if (not vref.MustInline && not (cenv.settings.KeepOptimizationValues())) ||
+            if (not vref.MustInline && not vref.InlineIfLambda && not (cenv.settings.KeepOptimizationValues())) ||
                
                // Bug 4916: do not record inline data for initialization trigger expressions
                // Note: we can't eliminate these value infos at the file boundaries because that would change initialization
