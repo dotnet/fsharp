@@ -317,9 +317,9 @@ type Benchmarks() =
     member _.TaskSeq_NestedForLoops() = 
         Tests.TaskSeqBuilder.Examples.perf2() |> TaskSeq.iter ignore
 
-    [<BenchmarkCategory("taskSeq"); Benchmark>]
-    member _.AsyncSeq_NestedForLoops() = 
-        Tests.TaskSeqBuilder.Examples.perf2_AsyncSeq() |> AsyncSeq.iter ignore |> Async.RunSynchronously
+    //[<BenchmarkCategory("taskSeq"); Benchmark>]
+    //member _.AsyncSeq_NestedForLoops() = 
+    //    Tests.TaskSeqBuilder.Examples.perf2_AsyncSeq() |> AsyncSeq.iter ignore |> Async.RunSynchronously
 
     [<BenchmarkCategory("taskSeq"); Benchmark(Baseline=true)>]
     member _.CSharp_IAsyncEnumerable_NestedForLoops() = 

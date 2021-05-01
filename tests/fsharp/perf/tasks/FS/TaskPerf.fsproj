@@ -25,7 +25,7 @@
 	<ProjectReference Include="..\CS\TaskPerfCSharp.csproj" />
     <ProjectReference Include="..\..\..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
-    <PackageReference Include="FSharp.Control.AsyncSeq" Version="2.0.23" />
+    <!-- <PackageReference Include="FSharp.Control.AsyncSeq" Version="2.0.23" /> --> 
     <PackageReference Include="System.Interactive.Async" Version="4.1.1" />
   </ItemGroup>
 
