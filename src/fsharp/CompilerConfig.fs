@@ -25,6 +25,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 
 #if !NO_EXTENSIONTYPING
@@ -371,6 +372,7 @@ type TcConfigBuilder =
       mutable reportNumDecls: bool
       mutable printSignature: bool
       mutable printSignatureFile: string
+      mutable printAllSignatureFiles: bool
       mutable xmlDocOutputFile: string option
       mutable stats: bool
       mutable generateFilterBlocks: bool (* don't generate filter blocks due to bugs on Mono *)
@@ -487,6 +489,8 @@ type TcConfigBuilder =
       mutable pathMap: PathMap
 
       mutable langVersion: LanguageVersion
+
+      mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
       }
 
 
@@ -574,6 +578,7 @@ type TcConfigBuilder =
           reportNumDecls = false
           printSignature = false
           printSignatureFile = ""
+          printAllSignatureFiles = false
           xmlDocOutputFile = None
           stats = false
           generateFilterBlocks = false (* don't generate filter blocks *)
@@ -662,6 +667,7 @@ type TcConfigBuilder =
           useFsiAuxLib = isInteractive
           rangeForErrors = rangeForErrors
           sdkDirOverride = sdkDirOverride
+          xmlDocInfoLoader = None
         }
         
     member tcConfigB.FxResolver =
@@ -959,6 +965,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.reportNumDecls = data.reportNumDecls
     member x.printSignature = data.printSignature
     member x.printSignatureFile = data.printSignatureFile
+    member x.printAllSignatureFiles = data.printAllSignatureFiles
     member x.xmlDocOutputFile = data.xmlDocOutputFile
     member x.stats = data.stats
     member x.generateFilterBlocks = data.generateFilterBlocks
@@ -1033,6 +1040,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
     member x.internalTestSpanStackReferring = data.internalTestSpanStackReferring
     member x.noConditionalErasure = data.noConditionalErasure
+    member x.xmlDocInfoLoader = data.xmlDocInfoLoader
 
     static member Create(builder, validate) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter

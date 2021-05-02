@@ -725,12 +725,14 @@ module FSharpExprConvert =
                 let elemTy = tyOfExpr cenv.g arg
                 let nullVal = mkNull m elemTy
                 let op = mkCallNotEqualsOperator cenv.g m elemTy arg nullVal
+                let env = { env with suppressWitnesses=true }
                 ConvExprPrim cenv env op
 
             | TOp.ILAsm ([ I_ldlen; AI_conv DT_I4 ], _), _, [arr] -> 
                 let arrayTy = tyOfExpr cenv.g arr
                 let elemTy = destArrayTy cenv.g arrayTy
                 let op = mkCallArrayLength cenv.g m elemTy arr
+                let env = { env with suppressWitnesses=true }
                 ConvExprPrim cenv env op
 
             | TOp.ILAsm ([ I_newarr (ILArrayShape [(Some 0, None)], _)], _), [elemTy], xa ->
@@ -777,8 +779,8 @@ module FSharpExprConvert =
             | TOp.ILAsm ([ ILConvertOp convertOp ], [TType_app (tcref,_)]), _, [arg] -> 
                 let ty = tyOfExpr cenv.g arg
                 let op =
-                    if tyconRefEq cenv.g tcref cenv.g.char_tcr
-                    then mkCallToCharOperator cenv.g m ty arg
+                    if tyconRefEq cenv.g tcref cenv.g.char_tcr then
+                        mkCallToCharOperator cenv.g m ty arg
                     else convertOp cenv.g m ty arg
                 ConvExprPrim cenv env op
 
@@ -1275,8 +1277,10 @@ module FSharpExprConvert =
                             E.IfThenElse (E.TypeTest (tyR, eR) |> Mk cenv m cenv.g.bool_ty, acc, ConvDecisionTree cenv env dtreeRetTy dtree m) 
                         | _ -> 
                             let ty = tyOfExpr cenv.g e1
-                            let eq = mkCallEqualsOperator cenv.g m ty e1 (Expr.Const (Const.Zero, m, ty))
-                            let eqR = ConvExpr cenv env eq 
+                            let eqR =
+                                let eq = mkCallEqualsOperator cenv.g m ty e1 (Expr.Const (Const.Zero, m, ty))
+                                let env = { env with suppressWitnesses = true }
+                                ConvExpr cenv env eq 
                             E.IfThenElse (eqR, ConvDecisionTree cenv env dtreeRetTy dtree m, acc) 
                     | DecisionTreeTest.IsInst (_srcty, tgty) -> 
                         let e1R = ConvExpr cenv env e1

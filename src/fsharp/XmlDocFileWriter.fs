@@ -10,6 +10,7 @@ open Internal.Utilities.Library.Extras
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
