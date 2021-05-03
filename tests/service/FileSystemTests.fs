@@ -17,6 +17,8 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 
+#nowarn "57"
+
 let fileName1 = @"c:\mycode\test1.fs" // note, the path doesn' exist
 let fileName2 = @"c:\mycode\test2.fs" // note, the path doesn' exist
 

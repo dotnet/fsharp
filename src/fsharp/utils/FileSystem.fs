@@ -36,6 +36,7 @@ module internal Bytes =
     let stringAsUnicodeNullTerminated (s:string) =
         Array.append (Encoding.Unicode.GetBytes s) (ofInt32Array [| 0x0;0x0 |])
 
+[<Experimental("This FCS API/Type is experimental and subject to change.")>]
 [<AbstractClass>]
 type ByteMemory() =
     abstract Item: int -> byte with get, set
@@ -52,6 +53,7 @@ type ByteMemory() =
     abstract AsStream: unit -> Stream
     abstract AsReadOnlyStream: unit -> Stream
 
+[<Experimental("This FCS API/Type is experimental and subject to change.")>]
 [<Sealed>]
 type ByteArrayMemory(bytes: byte[], offset, length) =
     inherit ByteMemory()
@@ -136,6 +138,7 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
         else
             new MemoryStream([||], 0, 0, false) :> Stream
 
+[<Experimental("This FCS API/Type is experimental and subject to change.")>]
 [<Sealed>]
 type SafeUnmanagedMemoryStream =
     inherit UnmanagedMemoryStream
@@ -161,6 +164,7 @@ type SafeUnmanagedMemoryStream =
         base.Dispose disposing
         x.holder <- null // Null out so it can be collected.
 
+[<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
     inherit ByteMemory ()
 
@@ -354,21 +358,22 @@ module internal FileSystemUtils =
 
     let isDll file = hasSuffixCaseInsensitive ".dll" file
 
+[<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type IAssemblyLoader =
     abstract AssemblyLoadFrom: fileName: string -> Assembly
     abstract AssemblyLoad: assemblyName: AssemblyName -> Assembly
 
+[<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type DefaultAssemblyLoader() =
     interface IAssemblyLoader with
         member _.AssemblyLoadFrom(fileName: string) = Assembly.UnsafeLoadFrom fileName
         member _.AssemblyLoad(assemblyName: AssemblyName) = Assembly.Load assemblyName
 
+[<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type IFileSystem =
     abstract AssemblyLoader: IAssemblyLoader
-
     abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> ByteMemory
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
-
     abstract GetFullPathShim: fileName: string -> string
     abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
     abstract IsPathRootedShim: path: string -> bool
@@ -388,9 +393,9 @@ type IFileSystem =
     abstract EnumerateDirectoriesShim: path: string -> string seq
     abstract IsStableFileHeuristic: fileName: string -> bool
 
+[<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type DefaultFileSystem() as this =
     interface IFileSystem with
-
         member _.AssemblyLoader = DefaultAssemblyLoader() :> IAssemblyLoader
 
         member this.OpenFileForReadShim(filePath: string, ?useMemoryMappedFile: bool, ?shouldShadowCopy: bool) : ByteMemory =
