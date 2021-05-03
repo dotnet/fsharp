@@ -375,8 +375,7 @@ type internal FsiToolWindow() as this =
         textView.SetSelection(line, endColumn, line, startColumn) |> throwOnFailure0
 
     /// Hanlde no-op, used to overwrite some standard command with an empty action.
-    let onNoAction (sender:obj) (e:EventArgs) = 
-        ()
+    let onNoAction (sender:obj) (e:EventArgs) = ()
     
     
     /// Handle "Clear Pane". Clear input and all but the last ReadOnly line (probably the prompt).    
