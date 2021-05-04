@@ -2018,6 +2018,17 @@ type ModuleOrNamespace = Entity
 /// Represents a type or exception definition in the typed AST
 type Tycon = Entity 
 
+let private isInternalCompPath x = 
+    match x with 
+    | CompPath(ILScopeRef.Local, []) -> true 
+    | _ -> false
+
+let private (|Public|Internal|Private|) (TAccess p) = 
+    match p with 
+    | [] -> Public 
+    | _ when List.forall isInternalCompPath p -> Internal 
+    | _ -> Private
+
 /// Represents the constraint on access for a construct
 [<StructuralEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type Accessibility = 
@@ -2027,6 +2038,12 @@ type Accessibility =
     
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
+
+    member x.IsPublic = match x with TAccess [] -> true | _ -> false
+
+    member x.IsPrivate = match x with Private -> true | _ -> false
+
+    member x.IsInternal = match x with Internal -> true | _ -> false
 
     override x.ToString() = "Accessibility(...)"
 

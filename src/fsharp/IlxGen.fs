@@ -262,6 +262,9 @@ type cenv =
 
       /// Delayed Method Generation - prevents stack overflows when we need to generate methods that are split into many methods by the optimizer.
       delayedGenMethods: Queue<cenv -> unit>
+
+      /// Indicates that the generating assembly will have an assembly-level attribute, System.Runtime.CompilerServices.InternalsVisibleToAttribute.
+      hasInternalsVisibleToAttr: bool
     }
 
     override x.ToString() = "<cenv>"
@@ -6139,6 +6142,13 @@ and GenMethodForBinding
          ctorThisValOpt, baseValOpt, methLambdaTypars, methLambdaVars, methLambdaBody, returnTy) =
     let g = cenv.g
     let m = v.Range
+
+    // When emitting a reference assembly, do not emit methods that are private unless they are virtual/abstract or provide an explicit interface implementation.
+    // Internal methods can be omitted only if the assembly does not contain a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
+    if cenv.opts.referenceAssemblyOnly && 
+       (v.Accessibility.IsPrivate || (v.Accessibility.IsInternal && not cenv.hasInternalsVisibleToAttr)) && 
+       not (v.IsOverrideOrExplicitImpl || v.IsDispatchSlot) then ()
+    else
     
     // If a method has a witness-passing version of the code, then suppress
     // the generation of any witness in the non-witness passing version of the code
@@ -8278,6 +8288,10 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
 
     /// Generate ILX code for an assembly fragment
     member _.GenerateCode (codeGenOpts, typedAssembly, assemAttribs, moduleAttribs) =
+        let hasInternalsVisibleToAttr =
+            TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute assemAttribs
+            |> Option.isSome
+
         let cenv: cenv =
             { g=tcGlobals
               tcVal = tcVal
@@ -8289,7 +8303,8 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
               opts = codeGenOpts
               optimizeDuringCodeGen = (fun _flag expr -> expr)
               exprRecursionDepth = 0
-              delayedGenMethods = Queue () }
+              delayedGenMethods = Queue ()
+              hasInternalsVisibleToAttr = hasInternalsVisibleToAttr }
         GenerateCode (cenv, anonTypeTable, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs)
 
     /// Invert the compilation of the given value and clear the storage of the value

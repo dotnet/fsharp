@@ -30,22 +30,11 @@ open FSharp.Compiler.AbstractIL
 type FSharpAccessibility(a:Accessibility, ?isProtected) = 
     let isProtected = defaultArg isProtected  false
 
-    let isInternalCompPath x = 
-        match x with 
-        | CompPath(ILScopeRef.Local, []) -> true 
-        | _ -> false
+    member _.IsPublic = not isProtected && a.IsPublic
 
-    let (|Public|Internal|Private|) (TAccess p) = 
-        match p with 
-        | [] -> Public 
-        | _ when List.forall isInternalCompPath p  -> Internal 
-        | _ -> Private
+    member _.IsPrivate = not isProtected && a.IsPrivate
 
-    member _.IsPublic = not isProtected && match a with TAccess [] -> true | _ -> false
-
-    member _.IsPrivate = not isProtected && match a with Private -> true | _ -> false
-
-    member _.IsInternal = not isProtected && match a with Internal -> true | _ -> false
+    member _.IsInternal = not isProtected && a.IsInternal
 
     member _.IsProtected = isProtected
 
