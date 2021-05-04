@@ -87,7 +87,7 @@ type SynConst =
 
     | UInt16 of uint16
 
-    | Int32 of int32
+    | Int32 of notation:string * value:int32
 
     | UInt32 of uint32
 

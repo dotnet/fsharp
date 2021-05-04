@@ -103,7 +103,7 @@ type SynConst =
     | UInt16 of uint16
 
     /// F# syntax: 13, 0x4000, 0o0777
-    | Int32 of int32
+    | Int32 of notation:string * value:int32
 
     /// F# syntax: 13u, 0x4000u, 0o0777u
     | UInt32 of uint32

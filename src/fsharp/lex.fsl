@@ -405,29 +405,31 @@ rule token args skip = parse
  | int '.' '.' 
      { let s = removeUnderscores (lexemeTrimRight lexbuf 2)
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
-       if Ranges.isInt32BadMax s then INT32_DOT_DOT(Int32.MinValue, true (* 'true' = 'bad'*) ) else
+       if Ranges.isInt32BadMax s then INT32_DOT_DOT(s, Int32.MinValue, true (* 'true' = 'bad'*) ) else
        let n = try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
-       INT32_DOT_DOT(n, false)
+       INT32_DOT_DOT(s, n, false)
      } 
 
  | xint 
  | int 
-     { let s = removeUnderscores (lexeme lexbuf)
+     { let buf = lexeme lexbuf
+       let s = removeUnderscores buf
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
-       if Ranges.isInt32BadMax s then INT32(Int32.MinValue, true (* 'true' = 'bad'*) ) else
+       if Ranges.isInt32BadMax s then INT32(buf, Int32.MinValue, true (* 'true' = 'bad'*) ) else
        let n =
            try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
-       INT32(n, false)
+       INT32(buf, n, false)
      } 
 
  | xint32 
  | int32 
-     { let s = removeUnderscores (lexemeTrimRight lexbuf 1)
+     { let buf = lexeme lexbuf
+       let s = removeUnderscores (lexemeTrimRight lexbuf 1)
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
-       if Ranges.isInt32BadMax s then INT32(Int32.MinValue, true (* 'true' = 'bad'*) ) else
+       if Ranges.isInt32BadMax s then INT32(buf, Int32.MinValue, true (* 'true' = 'bad'*) ) else
        let n =
            try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
-       INT32(n, false)
+       INT32(buf, n, false)
      } 
 
  | uint32
@@ -516,7 +518,7 @@ rule token args skip = parse
          BIGNUM (removeUnderscores (lexemeTrimRight lexbuf 1), s.[s.Length-1..s.Length-1]) }
 
  | (int | xint | float) ident_char+
-       { fail args lexbuf (FSComp.SR.lexInvalidNumericLiteral()) (INT32(0,false)) }
+       { fail args lexbuf (FSComp.SR.lexInvalidNumericLiteral()) (INT32("0", 0,false)) }
  
  | char
      { let s = lexeme lexbuf 

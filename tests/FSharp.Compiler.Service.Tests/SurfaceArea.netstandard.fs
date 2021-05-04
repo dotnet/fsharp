@@ -5776,8 +5776,10 @@ FSharp.Compiler.Syntax.SynConst+Double: System.String get_notation()
 FSharp.Compiler.Syntax.SynConst+Double: System.String notation
 FSharp.Compiler.Syntax.SynConst+Int16: Int16 Item
 FSharp.Compiler.Syntax.SynConst+Int16: Int16 get_Item()
-FSharp.Compiler.Syntax.SynConst+Int32: Int32 Item
-FSharp.Compiler.Syntax.SynConst+Int32: Int32 get_Item()
+FSharp.Compiler.Syntax.SynConst+Int32: Int32 get_value()
+FSharp.Compiler.Syntax.SynConst+Int32: Int32 value
+FSharp.Compiler.Syntax.SynConst+Int32: System.String get_notation()
+FSharp.Compiler.Syntax.SynConst+Int32: System.String notation
 FSharp.Compiler.Syntax.SynConst+Int64: Int64 Item
 FSharp.Compiler.Syntax.SynConst+Int64: Int64 get_Item()
 FSharp.Compiler.Syntax.SynConst+IntPtr: Int64 Item
@@ -5891,7 +5893,7 @@ FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewChar(System.
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewDecimal(System.Decimal)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewDouble(System.String, Double)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewInt16(Int16)
-FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewInt32(Int32)
+FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewInt32(System.String, Int32)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewInt64(Int64)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewIntPtr(Int64)
 FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Syntax.SynConst NewMeasure(FSharp.Compiler.Syntax.SynConst, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.SynMeasure)
