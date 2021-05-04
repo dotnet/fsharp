@@ -348,11 +348,10 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
                     | None -> ()
                     | Some provAssemStaticLinkInfo -> yield (importedBinary, provAssemStaticLinkInfo) ]
 #endif
-    if (not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty 
+    if not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty 
 #if !NO_EXTENSIONTYPING
-            && providerGeneratedAssemblies.IsEmpty) 
+            && providerGeneratedAssemblies.IsEmpty 
 #endif
-            || tcConfig.emitReferenceAssemblyOnly <> ReferenceAssemblyGeneration.None
             then 
         (fun ilxMainModule -> ilxMainModule)
     else 

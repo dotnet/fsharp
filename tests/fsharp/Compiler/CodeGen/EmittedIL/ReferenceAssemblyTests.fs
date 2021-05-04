@@ -27,7 +27,7 @@ let test() =
             """
 
         FSharp src
-        |> withOptions ["--test:RefOnlyWithoutOpt"]
+        |> withOptions ["--refonly"]
         |> compile
         |> shouldSucceed
         |> verifyIL [
@@ -70,7 +70,7 @@ let test() =
             """
 
         FSharp src
-        |> withOptions ["--test:RefOnlyWithoutOpt"]
+        |> withOptions ["--refonly"]
         |> compile
         |> shouldSucceed
         |> verifyIL [
