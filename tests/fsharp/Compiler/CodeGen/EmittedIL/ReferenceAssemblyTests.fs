@@ -96,4 +96,41 @@ let test() =
         ]
         |> ignore
 
+    [<Test>]
+    let ``Simple reference assembly should have expected IL with mock typed impl file``() =
+        let src =
+            """
+module ReferenceAssembly
 
+open System
+
+let test() =
+    Console.WriteLine("Hello World!")
+            """
+
+        FSharp src
+        |> withOptions ["--test:RefOnlyMockTypedImplFile"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """.class public abstract auto ansi sealed ReferenceAssembly
+           extends [runtime]System.Object
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+      .method public static void  test() cil managed
+      {
+      
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
+    
+    } 
+    
+    .class private abstract auto ansi sealed '<StartupCode$assembly>'.$ReferenceAssembly
+           extends [runtime]System.Object
+    {
+    }"""
+        ]
+        |> ignore

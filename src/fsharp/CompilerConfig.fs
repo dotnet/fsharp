@@ -322,6 +322,7 @@ type ReferenceAssemblyGeneration =
     | None
     | WithOptimizations
     | WithoutOptimizations
+    | TestMockTypedImplFile
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =

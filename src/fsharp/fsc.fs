@@ -782,7 +782,7 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
              | _ -> ""
         
     let optimizedImpls, optDataResources =
-        if tcConfig.emitReferenceAssemblyOnly = ReferenceAssemblyGeneration.WithoutOptimizations then
+        if tcConfig.emitReferenceAssemblyOnly = ReferenceAssemblyGeneration.WithoutOptimizations || tcConfig.emitReferenceAssemblyOnly = ReferenceAssemblyGeneration.TestMockTypedImplFile then
             let optimizedImpls =
                 typedImplFiles
                 |> List.map (fun x -> { ImplFile = x; OptimizeDuringCodeGen = (fun _ expr -> expr) })

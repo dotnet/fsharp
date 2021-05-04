@@ -755,6 +755,15 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
       tcsRootImpls = Zset.empty qnameOrder
       tcsCcuSig = Construct.NewEmptyModuleOrNamespaceType Namespace }
 
+let createMockModuleOrNamespaceExpr (_mty: ModuleOrNamespaceType) =
+    ModuleOrNamespaceExpr.TMDefs []
+
+let createMockModuleOrNamespaceExprWithSig (mty: ModuleOrNamespaceType) =
+    ModuleOrNamespaceExprWithSig(mty, createMockModuleOrNamespaceExpr(mty), range0)
+
+let createMockTypedImplFile (mty: ModuleOrNamespaceType, qualNameOfFile: QualifiedNameOfFile) =
+    TypedImplFile.TImplFile(qualNameOfFile, [], createMockModuleOrNamespaceExprWithSig(mty), false, false, StampMap.Empty)
+
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput, skipImplIfSigExists: bool) =
 
@@ -834,6 +843,12 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
               let! topAttrs, implFile, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = typeCheckOne
 
               let implFileSigType = SigTypeOfImplFile implFile
+
+              let implFile =
+                if tcConfig.emitReferenceAssemblyOnly = ReferenceAssemblyGeneration.TestMockTypedImplFile then
+                    createMockTypedImplFile(implFileSigType, qualNameOfFile)
+                else
+                    implFile
 
               let rootImpls = Zset.add qualNameOfFile tcState.tcsRootImpls
         
