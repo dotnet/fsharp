@@ -213,7 +213,10 @@ type IlxGenOptions =
       isInteractiveItExpr: bool
 
       /// Whenever possible, use callvirt instead of call
-      alwaysCallVirt: bool 
+      alwaysCallVirt: bool
+      
+      /// Indicates that we are only generating a reference assembly.
+      referenceAssemblyOnly: bool
     }
 
 /// Compilation environment for compiling a fragment of an assembly

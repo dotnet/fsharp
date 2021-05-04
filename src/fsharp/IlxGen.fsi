@@ -52,6 +52,9 @@ type internal IlxGenOptions =
 
       /// Indicates that, whenever possible, use callvirt instead of call
       alwaysCallVirt: bool
+
+      /// Indicates that we are only generating a reference assembly.
+      referenceAssemblyOnly: bool
     }
 
 /// The results of the ILX compilation of one fragment of an assembly
