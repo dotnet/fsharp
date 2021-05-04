@@ -74,6 +74,12 @@ let mkLdfldMethodDef (ilMethName, reprAccess, isStatic, ilTy, ilFieldName, ilPro
            mkILNonGenericInstanceMethod (ilMethName, reprAccess, [], ilReturn, mkMethodBody (true, [], 2, nonBranchingInstrsToCode [ mkLdarg0; mkNormalLdfld ilFieldSpec], None))
    ilMethodDef.WithSpecialName
 
+let ilThrowNullInstrs = [|ILInstr.AI_ldnull; ILInstr.I_throw|]
+let emptyDict = Dictionary()
+let mkILThrowNullMethodBody name =
+    let ilCode = IL.buildILCode name emptyDict ilThrowNullInstrs [] []
+    mkILMethodBody(false, ILLocals.Empty, 0, ilCode, None)
+
 /// Choose the constructor parameter names for fields
 let ChooseParamNames fieldNamesAndTypes =
     let takenFieldNames = fieldNamesAndTypes |> List.map p23 |> Set.ofList
@@ -6215,10 +6221,16 @@ and GenMethodForBinding
                 else
                     body
             
-            let ilCodeLazy = lazy CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
+            if cenv.opts.referenceAssemblyOnly then
+                // The reason for using 'throw null' bodies (as opposed to no bodies) is so 
+                // that PEVerify can run and pass (thus validating the completeness of the metadata).
+                let ilMethBody = mkILThrowNullMethodBody mspec.Name
+                false, MethodBody.IL(lazy ilMethBody), false
+            else
+                let ilCodeLazy = lazy CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
 
-            // This is the main code generation for most methods
-            false, MethodBody.IL(ilCodeLazy), false
+                // This is the main code generation for most methods
+                false, MethodBody.IL(ilCodeLazy), false
 
     match ilMethodBody with
     | MethodBody.IL(ilCodeLazy) ->
@@ -8067,6 +8079,20 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization impl
 
     // Generate the whole assembly
     CodegenAssembly cenv eenv mgbuf implFiles
+
+    let assemAttribs =
+        // Emit System.Runtime.CompilerServices.ReferenceAssemblyAttribute as an assembly-level when generating a reference assembly.
+        // Useful for the runtime to know that the assembly is a reference assembly.
+        if cenv.opts.referenceAssemblyOnly && g.attrib_ReferenceAssemblyAttribute.TyconRef.CanDeref then
+            let ilRefAsmAttribMethRef =
+                let ilTyRef = g.attrib_ReferenceAssemblyAttribute.TypeRef
+                let ilTySpec = mkILTySpec(ilTyRef, [])
+                let ilMethSpec = mkILCtorMethSpecForTy(mkILBoxedType ilTySpec, [])
+                ilMethSpec.MethodRef
+            let refAsmAttrib = Attrib(g.attrib_ReferenceAssemblyAttribute.TyconRef, AttribKind.ILAttrib ilRefAsmAttribMethRef, [], [], false, None, range0)
+            refAsmAttrib :: assemAttribs
+        else
+            assemAttribs
 
     let ilAssemAttrs = GenAttrs cenv eenv assemAttribs
 
