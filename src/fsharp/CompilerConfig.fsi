@@ -236,6 +236,7 @@ type TcConfigBuilder =
       mutable emitTailcalls: bool
       mutable deterministic: bool
       mutable concurrentBuild: bool
+      mutable emitReferenceAssemblyOnly: bool
       mutable preferredUiLang: string option
       mutable lcid        : int option
       mutable productNameForBannerText: string

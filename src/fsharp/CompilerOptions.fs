@@ -411,6 +411,9 @@ let SetTailcallSwitch (tcConfigB: TcConfigBuilder) switch =
 let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.deterministic <- (switch = OptionSwitch.On)
 
+let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
+    tcConfigB.emitReferenceAssemblyOnly <- (switch = OptionSwitch.On)
+
 let AddPathMapping (tcConfigB: TcConfigBuilder) (pathPair: string) =
     match pathPair.Split([|'='|], 2) with
     | [| oldPrefix; newPrefix |] ->
@@ -815,6 +818,11 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
            ("deterministic", tagNone,
             OptionSwitch (SetDeterministicSwitch tcConfigB), None,
             Some (FSComp.SR.optsDeterministic()))
+
+          CompilerOption
+           ("refonly", tagNone,
+            OptionSwitch (SetDeterministicSwitch tcConfigB), None,
+            Some (FSComp.SR.optsRefOnly()))
 
           CompilerOption
            ("pathmap", tagPathMap,

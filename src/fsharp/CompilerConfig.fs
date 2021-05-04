@@ -429,6 +429,7 @@ type TcConfigBuilder =
       mutable emitTailcalls: bool
       mutable deterministic: bool
       mutable concurrentBuild: bool
+      mutable emitReferenceAssemblyOnly: bool
       mutable preferredUiLang: string option
       mutable lcid: int option
       mutable productNameForBannerText: string
@@ -634,6 +635,7 @@ type TcConfigBuilder =
           emitTailcalls = true
           deterministic = false
           concurrentBuild = true
+          emitReferenceAssemblyOnly = false
           preferredUiLang = None
           lcid = None
           productNameForBannerText = FSharpProductName
@@ -1014,6 +1016,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.emitTailcalls = data.emitTailcalls
     member x.deterministic = data.deterministic
     member x.concurrentBuild = data.concurrentBuild
+    member x.emitReferenceAssemblyOnly = data.emitReferenceAssemblyOnly
     member x.pathMap = data.pathMap
     member x.langVersion = data.langVersion
     member x.preferredUiLang = data.preferredUiLang
