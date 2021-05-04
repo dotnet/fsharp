@@ -8288,9 +8288,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
 
     /// Generate ILX code for an assembly fragment
     member _.GenerateCode (codeGenOpts, typedAssembly, assemAttribs, moduleAttribs) =
-        let hasInternalsVisibleToAttr =
-            TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute assemAttribs
-            |> Option.isSome
+        let hasInternalsVisibleToAttr = HasFSharpAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute assemAttribs
 
         let cenv: cenv =
             { g=tcGlobals
