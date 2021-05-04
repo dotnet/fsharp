@@ -257,6 +257,11 @@
         <target state="translated">Zeigen Sie die zulässigen Werte für die Sprachversion an. Geben Sie die Sprachversion als "latest" oder "preview" an.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsRefOnly">
+        <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
+        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">Unterstützte Sprachversionen:</target>

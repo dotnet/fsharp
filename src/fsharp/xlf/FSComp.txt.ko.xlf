@@ -257,6 +257,11 @@
         <target state="translated">언어 버전의 허용된 값을 표시하고 '최신' 또는 '미리 보기'와 같은 언어 버전을 지정합니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsRefOnly">
+        <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
+        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">지원되는 언어 버전:</target>
