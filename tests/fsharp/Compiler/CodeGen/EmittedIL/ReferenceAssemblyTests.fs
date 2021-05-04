@@ -24,7 +24,7 @@ let test() =
             """
 
         FSharp src
-        |> withOptions ["--refonly"]
+        |> withOptions ["--test:RefOnlyWithoutOpt"]
         |> compile
         |> shouldSucceed
         |> verifyIL [
@@ -34,11 +34,6 @@ let test() =
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
       .method public static void  test() cil managed
       {
-        
-        .maxstack  8
-        IL_0000:  ldstr      "Hello World!"
-        IL_0005:  call       void [runtime]System.Console::WriteLine(string)
-        IL_000a:  ret
       } 
     
     } 

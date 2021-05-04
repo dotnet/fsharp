@@ -130,6 +130,12 @@ type PackageManagerLine =
     static member SetLinesAsProcessed: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
     static member StripDependencyManagerKey: string -> string -> string
 
+[<RequireQualifiedAccess>]
+type ReferenceAssemblyGeneration =
+    | None
+    | WithOptimizations
+    | WithoutOptimizations
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     { mutable primaryAssembly: PrimaryAssembly
@@ -236,7 +242,7 @@ type TcConfigBuilder =
       mutable emitTailcalls: bool
       mutable deterministic: bool
       mutable concurrentBuild: bool
-      mutable emitReferenceAssemblyOnly: bool
+      mutable emitReferenceAssemblyOnly: ReferenceAssemblyGeneration
       mutable preferredUiLang: string option
       mutable lcid        : int option
       mutable productNameForBannerText: string
@@ -427,6 +433,7 @@ type TcConfig =
     member emitTailcalls: bool
     member deterministic: bool
     member concurrentBuild: bool
+    member emitReferenceAssemblyOnly: ReferenceAssemblyGeneration
     member pathMap: PathMap
     member preferredUiLang: string option
     member optsOn       : bool 

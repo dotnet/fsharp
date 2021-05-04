@@ -317,6 +317,12 @@ type PackageManagerLine =
     static member StripDependencyManagerKey (packageKey: string) (line: string): string =
         line.Substring(packageKey.Length + 1).Trim()
 
+[<RequireQualifiedAccess>]
+type ReferenceAssemblyGeneration =
+    | None
+    | WithOptimizations
+    | WithoutOptimizations
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -429,7 +435,7 @@ type TcConfigBuilder =
       mutable emitTailcalls: bool
       mutable deterministic: bool
       mutable concurrentBuild: bool
-      mutable emitReferenceAssemblyOnly: bool
+      mutable emitReferenceAssemblyOnly: ReferenceAssemblyGeneration
       mutable preferredUiLang: string option
       mutable lcid: int option
       mutable productNameForBannerText: string
@@ -635,7 +641,7 @@ type TcConfigBuilder =
           emitTailcalls = true
           deterministic = false
           concurrentBuild = true
-          emitReferenceAssemblyOnly = false
+          emitReferenceAssemblyOnly = ReferenceAssemblyGeneration.None
           preferredUiLang = None
           lcid = None
           productNameForBannerText = FSharpProductName

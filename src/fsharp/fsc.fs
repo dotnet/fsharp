@@ -772,13 +772,6 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
         with e -> 
             errorRecoveryNoRange e
             exiter.Exit 1
-        
-    // Perform optimization
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Optimize
-    
-    let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
-
-    let importMap = tcImports.GetImportMap()
 
     let metadataVersion = 
         match tcConfig.metadataVersion with
@@ -787,18 +780,33 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
             match frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name with 
              | Some ib -> ib.RawMetadata.TryGetILModuleDef().Value.MetadataVersion 
              | _ -> ""
-
-    let optimizedImpls, optimizationData, _ = 
-        ApplyAllOptimizations 
-            (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, 
-             importMap, false, optEnv0, generatedCcu, typedImplFiles)
-
-    AbortOnError(errorLogger, exiter)
         
-    // Encode the optimization data
-    ReportTime tcConfig ("Encoding OptData")
+    let optimizedImpls, optDataResources =
+        if tcConfig.emitReferenceAssemblyOnly = ReferenceAssemblyGeneration.WithoutOptimizations then
+            let optimizedImpls =
+                typedImplFiles
+                |> List.map (fun x -> { ImplFile = x; OptimizeDuringCodeGen = (fun _ expr -> expr) })
+                |> TypedAssemblyAfterOptimization
+            optimizedImpls, []
+        else
+            // Perform optimization
+            use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Optimize
+    
+            let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
 
-    let optDataResources = EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
+            let importMap = tcImports.GetImportMap()
+
+            let optimizedImpls, optimizationData, _ = 
+                ApplyAllOptimizations 
+                    (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, 
+                     importMap, false, optEnv0, generatedCcu, typedImplFiles)
+
+            AbortOnError(errorLogger, exiter)
+        
+            // Encode the optimization data
+            ReportTime tcConfig ("Encoding OptData")
+
+            optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
     // Pass on only the minimum information required for the next phase
     Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger, 

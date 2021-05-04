@@ -412,7 +412,7 @@ let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.deterministic <- (switch = OptionSwitch.On)
 
 let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
-    tcConfigB.emitReferenceAssemblyOnly <- (switch = OptionSwitch.On)
+    tcConfigB.emitReferenceAssemblyOnly <- if (switch = OptionSwitch.On) then ReferenceAssemblyGeneration.WithOptimizations else ReferenceAssemblyGeneration.None
 
 let AddPathMapping (tcConfigB: TcConfigBuilder) (pathPair: string) =
     match pathPair.Split([|'='|], 2) with
@@ -821,7 +821,7 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
 
           CompilerOption
            ("refonly", tagNone,
-            OptionSwitch (SetDeterministicSwitch tcConfigB), None,
+            OptionSwitch (SetReferenceAssemblyOnlySwitch tcConfigB), None,
             Some (FSComp.SR.optsRefOnly()))
 
           CompilerOption
@@ -1054,6 +1054,7 @@ let testFlag tcConfigB =
                 | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
                 | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
                 | "ParallelOff" -> tcConfigB.concurrentBuild <- false
+                | "RefOnlyWithoutOpt" -> tcConfigB.emitReferenceAssemblyOnly <- ReferenceAssemblyGeneration.WithoutOptimizations
 #if DEBUG
                 | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
