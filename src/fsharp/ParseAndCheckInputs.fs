@@ -755,14 +755,64 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
       tcsRootImpls = Zset.empty qnameOrder
       tcsCcuSig = Construct.NewEmptyModuleOrNamespaceType Namespace }
 
-let createMockModuleOrNamespaceExpr (_mty: ModuleOrNamespaceType) =
-    ModuleOrNamespaceExpr.TMDefs []
+let rec createMockModuleOrNamespaceExpr g (mty: ModuleOrNamespaceType) =
 
-let createMockModuleOrNamespaceExprWithSig (mty: ModuleOrNamespaceType) =
-    ModuleOrNamespaceExprWithSig(mty, createMockModuleOrNamespaceExpr(mty), range0)
+    let mockValAsBinding (v: Val) =
+        let expr =
+            let retExpr = Expr.Op(TOp.Return, [], [], range0)
+            if isFunTy g v.Type || isForallFunctionTy g v.Type then
+                match tryDestForallTy g v.Type with
+                | [], _ ->
+                    Expr.Lambda(newUnique(), None, None, [], retExpr, range0, v.Type)
+                | typars, _ ->
+                    let innerExpr = Expr.Lambda(newUnique(), None, None, [], retExpr, range0, v.Type)
+                    Expr.TyLambda(newUnique(), typars, innerExpr, range0, v.Type)
+            else
+                retExpr
+        Binding.TBind(v, expr, DebugPointAtBinding.NoneAtLet)
+    
+    let mockValAsModuleOrNamespaceExpr (v: Val) =
+        let binding = mockValAsBinding v
+        ModuleOrNamespaceExpr.TMDefLet(binding, range0)
 
-let createMockTypedImplFile (mty: ModuleOrNamespaceType, qualNameOfFile: QualifiedNameOfFile) =
-    TypedImplFile.TImplFile(qualNameOfFile, [], createMockModuleOrNamespaceExprWithSig(mty), false, false, StampMap.Empty)
+    let mockValAsModuleOrNamespaceExprs (vs: Val seq) =
+        vs
+        |> Seq.map mockValAsModuleOrNamespaceExpr
+        |> List.ofSeq
+
+    let mockEntityAsModuleOrNamespaceBinding (ent: Entity) =
+        ModuleOrNamespaceBinding.Module(ent, createMockModuleOrNamespaceExpr g ent.ModuleOrNamespaceType)
+
+    let mockEntitiesAsModuleOrNamespaceBindings (ents: Entity seq) =
+        ents
+        |> Seq.map mockEntityAsModuleOrNamespaceBinding
+        |> List.ofSeq
+
+    let entBindings =
+        mty.ModuleAndNamespaceDefinitions
+        |> mockEntitiesAsModuleOrNamespaceBindings
+
+    let tycons = mty.TypeAndExceptionDefinitions
+
+    let exprs = mockValAsModuleOrNamespaceExprs mty.AllValsAndMembers
+    let exprs =
+        if entBindings.IsEmpty && tycons.IsEmpty then
+            exprs
+        else
+            ModuleOrNamespaceExpr.TMDefRec(false, tycons, entBindings, range0) :: exprs
+
+    ModuleOrNamespaceExpr.TMDefs exprs
+
+let createMockModuleOrNamespaceExprWithSig g (mty: ModuleOrNamespaceType) =
+    let expr =
+        ModuleOrNamespaceExpr.TMDefs
+            [
+                createMockModuleOrNamespaceExpr g mty
+            ]
+    ModuleOrNamespaceExprWithSig(mty, expr, range0)
+
+let createMockTypedImplFile g (mty: ModuleOrNamespaceType, qualNameOfFile: QualifiedNameOfFile) =
+    TypedImplFile.TImplFile(qualNameOfFile, [], createMockModuleOrNamespaceExprWithSig g mty, false, false, StampMap.Empty)
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput, skipImplIfSigExists: bool) =
@@ -840,15 +890,15 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
                   else
                     TypeCheckOneImplFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
 
-              let! topAttrs, implFile, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = typeCheckOne
+              let! topAttrs, implFile0, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = typeCheckOne
 
-              let implFileSigType = SigTypeOfImplFile implFile
+              let implFileSigType = SigTypeOfImplFile implFile0
 
               let implFile =
                 if tcConfig.emitReferenceAssemblyOnly = ReferenceAssemblyGeneration.TestMockTypedImplFile then
-                    createMockTypedImplFile(implFileSigType, qualNameOfFile)
+                    createMockTypedImplFile tcGlobals (implFileSigType, qualNameOfFile)
                 else
-                    implFile
+                    implFile0
 
               let rootImpls = Zset.add qualNameOfFile tcState.tcsRootImpls
         

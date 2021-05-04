@@ -54,23 +54,19 @@ let test() =
         |> ignore
 
     [<Test>]
-    let ``Simple reference assembly should have expected IL without a private function``() =
+    let ``Simple reference assembly should have expected IL with mock typed impl file``() =
         let src =
             """
 module ReferenceAssembly
 
 open System
 
-let private privTest() =
-    Console.WriteLine("Private Hello World!")
-
 let test() =
-    privTest()
     Console.WriteLine("Hello World!")
             """
 
         FSharp src
-        |> withOptions ["--refonly"]
+        |> withOptions ["--test:RefOnlyMockTypedImplFile"]
         |> compile
         |> shouldSucceed
         |> verifyIL [
@@ -97,19 +93,23 @@ let test() =
         |> ignore
 
     [<Test>]
-    let ``Simple reference assembly should have expected IL with mock typed impl file``() =
+    let ``Simple reference assembly should have expected IL without a private function``() =
         let src =
             """
 module ReferenceAssembly
 
 open System
 
+let private privTest() =
+    Console.WriteLine("Private Hello World!")
+
 let test() =
+    privTest()
     Console.WriteLine("Hello World!")
             """
 
         FSharp src
-        |> withOptions ["--test:RefOnlyMockTypedImplFile"]
+        |> withOptions ["--refonly"]
         |> compile
         |> shouldSucceed
         |> verifyIL [
