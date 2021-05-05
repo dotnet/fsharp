@@ -6236,7 +6236,7 @@ and GenMethodForBinding
                 // The reason for using 'throw null' bodies (as opposed to no bodies) is so 
                 // that PEVerify can run and pass (thus validating the completeness of the metadata).
                 let ilMethBody = mkILThrowNullMethodBody mspec.Name
-                false, MethodBody.IL(lazy ilMethBody), false
+                false, MethodBody.IL(notlazy ilMethBody), false
             else
                 let ilCodeLazy = lazy CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
 
