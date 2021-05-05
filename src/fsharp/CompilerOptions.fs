@@ -412,7 +412,7 @@ let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.deterministic <- (switch = OptionSwitch.On)
 
 let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
-    tcConfigB.emitReferenceAssemblyOnly <- if (switch = OptionSwitch.On) then ReferenceAssemblyGeneration.WithOptimizations else ReferenceAssemblyGeneration.None
+    tcConfigB.emitReferenceAssemblyOnly <- if (switch = OptionSwitch.On) then ReferenceAssemblyGeneration.Complete else ReferenceAssemblyGeneration.None
 
 let AddPathMapping (tcConfigB: TcConfigBuilder) (pathPair: string) =
     match pathPair.Split([|'='|], 2) with
@@ -1054,8 +1054,8 @@ let testFlag tcConfigB =
                 | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
                 | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
                 | "ParallelOff" -> tcConfigB.concurrentBuild <- false
-                | "RefOnlyWithoutOpt" -> tcConfigB.emitReferenceAssemblyOnly <- ReferenceAssemblyGeneration.WithoutOptimizations
-                | "RefOnlyMockTypedImplFile" -> tcConfigB.emitReferenceAssemblyOnly <- ReferenceAssemblyGeneration.TestMockTypedImplFile
+                | "RefOnlyWithoutOpt" -> tcConfigB.emitReferenceAssemblyOnly <- ReferenceAssemblyGeneration.Partial
+                | "RefOnlyMockTypedImplFile" -> tcConfigB.emitReferenceAssemblyOnly <- ReferenceAssemblyGeneration.Test
 #if DEBUG
                 | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif

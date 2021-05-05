@@ -6146,7 +6146,8 @@ and GenMethodForBinding
     // When emitting a reference assembly, do not emit methods that are private unless they are virtual/abstract or provide an explicit interface implementation.
     // Internal methods can be omitted only if the assembly does not contain a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
     if cenv.opts.referenceAssemblyOnly && 
-       (v.Accessibility.IsPrivate || (v.Accessibility.IsInternal && not cenv.hasInternalsVisibleToAttr)) && 
+       (access = ILMemberAccess.Private || 
+        ((access = ILMemberAccess.Assembly || access = ILMemberAccess.FamilyAndAssembly) && not cenv.hasInternalsVisibleToAttr)) && 
        not (v.IsOverrideOrExplicitImpl || v.IsDispatchSlot) then ()
     else
     

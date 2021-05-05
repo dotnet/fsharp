@@ -320,9 +320,9 @@ type PackageManagerLine =
 [<RequireQualifiedAccess>]
 type ReferenceAssemblyGeneration =
     | None
-    | WithOptimizations
-    | WithoutOptimizations
-    | TestMockTypedImplFile
+    | Complete
+    | Partial
+    | Test
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =

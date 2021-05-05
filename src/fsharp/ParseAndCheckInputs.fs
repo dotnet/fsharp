@@ -756,10 +756,10 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
       tcsRootImpls = Zset.empty qnameOrder
       tcsCcuSig = Construct.NewEmptyModuleOrNamespaceType Namespace }
 
-let rec createMockModuleOrNamespaceExpr (g: TcGlobals) (anonRecdTypeInfos: StampMap<AnonRecdTypeInfo>) (mty: ModuleOrNamespaceType) =
+let rec createDummyModuleOrNamespaceExpr (g: TcGlobals) (mty: ModuleOrNamespaceType) =
 
-    let mockValAsBinding (anonRecdTypeInfos: StampMap<AnonRecdTypeInfo>) (v: Val) =
-        let expr, anonRecdTypeInfos =
+    let dummyValAsBinding (v: Val) =
+        let expr =
             let retExpr = Expr.Op(TOp.Return, [], [], range0)
             if isFunTy g v.Type || isForallFunctionTy g v.Type then
                 match v.ValReprInfo with
@@ -782,13 +782,6 @@ let rec createMockModuleOrNamespaceExpr (g: TcGlobals) (anonRecdTypeInfos: Stamp
                         retTy
                         |> Option.defaultValue g.unit_ty
 
-                    let anonRecdTypeInfos =
-                        match tryDestAnonRecdTy g retTy with
-                        | ValueSome(anonRecdTypeInfo, _) ->
-                            anonRecdTypeInfos.Add(anonRecdTypeInfo.Stamp, anonRecdTypeInfo)
-                        | _ ->
-                            anonRecdTypeInfos
-
                     let valParams =
                         curriedArgInfos
                         |> List.map (fun argInfos ->
@@ -805,38 +798,38 @@ let rec createMockModuleOrNamespaceExpr (g: TcGlobals) (anonRecdTypeInfos: Stamp
                             )
                         )
                     if valParams.IsEmpty || (valParams.Length = 1 && valParams.Head.IsEmpty) then
-                        Expr.Lambda(newUnique(), None, None, [], retExpr, range0, retTy), anonRecdTypeInfos 
+                        Expr.Lambda(newUnique(), None, None, [], retExpr, range0, retTy)
                     else
-                        mkMemberLambdas range0 typars None None valParams (retExpr, retTy), anonRecdTypeInfos 
+                        mkMemberLambdas range0 typars None None valParams (retExpr, retTy)
                 | _ ->
                     failwith "Expected top-level val"
             else
-                retExpr, anonRecdTypeInfos 
-        mkBind DebugPointAtBinding.NoneAtLet v expr, anonRecdTypeInfos
+                retExpr
+        mkBind DebugPointAtBinding.NoneAtLet v expr
     
-    let mockValAsModuleOrNamespaceExpr (anonRecdTypeInfos: StampMap<AnonRecdTypeInfo>) (v: Val) =
-        let binding, anonRecdTypeInfos = mockValAsBinding anonRecdTypeInfos v
-        ModuleOrNamespaceExpr.TMDefLet(binding, range0), anonRecdTypeInfos
+    let dummyValAsModuleOrNamespaceExpr (v: Val) =
+        let binding = dummyValAsBinding v
+        ModuleOrNamespaceExpr.TMDefLet(binding, range0)
 
-    let mockValAsModuleOrNamespaceExprs (anonRecdTypeInfos: StampMap<AnonRecdTypeInfo>) (vs: Val seq) =
-        (anonRecdTypeInfos, vs)
-        ||> Seq.mapFold mockValAsModuleOrNamespaceExpr
+    let dummyValAsModuleOrNamespaceExprs (vs: Val seq) =
+        vs
+        |> Seq.map dummyValAsModuleOrNamespaceExpr
 
-    let mockEntityAsModuleOrNamespaceBinding (anonRecdTypeInfos: StampMap<AnonRecdTypeInfo>) (ent: Entity) =
-        let expr, anonRecdTypeInfos = createMockModuleOrNamespaceExpr g anonRecdTypeInfos ent.ModuleOrNamespaceType
-        ModuleOrNamespaceBinding.Module(ent, expr), anonRecdTypeInfos
+    let dummyEntityAsModuleOrNamespaceBinding (ent: Entity) =
+        let expr = createDummyModuleOrNamespaceExpr g ent.ModuleOrNamespaceType
+        ModuleOrNamespaceBinding.Module(ent, expr)
 
-    let mockEntitiesAsModuleOrNamespaceBindings (anonRecdTypeInfos: StampMap<AnonRecdTypeInfo>) (ents: Entity seq) =
-        (anonRecdTypeInfos, ents)
-        ||> Seq.mapFold mockEntityAsModuleOrNamespaceBinding
+    let dummyEntitiesAsModuleOrNamespaceBindings (ents: Entity seq) =
+        ents
+        |> Seq.map dummyEntityAsModuleOrNamespaceBinding
 
-    let entBindings, anonRecdTypeInfos =
+    let entBindings =
         mty.ModuleAndNamespaceDefinitions
-        |> mockEntitiesAsModuleOrNamespaceBindings anonRecdTypeInfos
+        |> dummyEntitiesAsModuleOrNamespaceBindings
 
     let tycons = mty.TypeAndExceptionDefinitions
 
-    let exprs, anonRecdTypeInfos = mockValAsModuleOrNamespaceExprs anonRecdTypeInfos mty.AllValsAndMembers
+    let exprs = dummyValAsModuleOrNamespaceExprs mty.AllValsAndMembers
 
     let entBindings = entBindings |> List.ofSeq
     let exprs = exprs |> List.ofSeq
@@ -846,20 +839,22 @@ let rec createMockModuleOrNamespaceExpr (g: TcGlobals) (anonRecdTypeInfos: Stamp
         else
             ModuleOrNamespaceExpr.TMDefRec(false, tycons, entBindings, range0) :: exprs
 
-    (ModuleOrNamespaceExpr.TMDefs exprs), anonRecdTypeInfos
+    ModuleOrNamespaceExpr.TMDefs exprs
 
-let createMockModuleOrNamespaceExprWithSig g (anonRecdTypeInfos: StampMap<AnonRecdTypeInfo>) (mty: ModuleOrNamespaceType) =
-    let innerExpr, anonRecdTypeInfos = createMockModuleOrNamespaceExpr g anonRecdTypeInfos mty
+let createDummyModuleOrNamespaceExprWithSig g (mty: ModuleOrNamespaceType) =
+    let innerExpr = createDummyModuleOrNamespaceExpr g mty
     let expr =
         ModuleOrNamespaceExpr.TMDefs
             [
                 innerExpr
             ]
-    ModuleOrNamespaceExprWithSig(mty, expr, range0), anonRecdTypeInfos
+    ModuleOrNamespaceExprWithSig(mty, expr, range0)
 
-let createMockTypedImplFile g (mty: ModuleOrNamespaceType, qualNameOfFile: QualifiedNameOfFile) =
-    let exprWithSig, anonRecdTypeInfos = createMockModuleOrNamespaceExprWithSig g StampMap.Empty mty
-    TypedImplFile.TImplFile(qualNameOfFile, [], exprWithSig, false, false, anonRecdTypeInfos)
+/// 'dummy' in this context means it acts as a placeholder so other parts of the compiler will work with it
+///     but is not meant to be used for actual input for compiling a project, etc.
+let createDummyTypedImplFile g (mty: ModuleOrNamespaceType, qualNameOfFile: QualifiedNameOfFile) =
+    let exprWithSig = createDummyModuleOrNamespaceExprWithSig g mty
+    TypedImplFile.TImplFile(qualNameOfFile, [], exprWithSig, false, false, StampMap.Empty)
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput, skipImplIfSigExists: bool) =
@@ -942,8 +937,8 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
               let implFileSigType = SigTypeOfImplFile implFile0
 
               let implFile =
-                if tcConfig.emitReferenceAssemblyOnly = ReferenceAssemblyGeneration.TestMockTypedImplFile then
-                    createMockTypedImplFile tcGlobals (implFileSigType, qualNameOfFile)
+                if tcConfig.emitReferenceAssemblyOnly = ReferenceAssemblyGeneration.Test then
+                    createDummyTypedImplFile tcGlobals (implFileSigType, qualNameOfFile)
                 else
                     implFile0
 
