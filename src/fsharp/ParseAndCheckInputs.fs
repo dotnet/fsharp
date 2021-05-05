@@ -853,7 +853,7 @@ let createDummyModuleOrNamespaceExprWithSig g (mty: ModuleOrNamespaceType) =
             ]
     ModuleOrNamespaceExprWithSig(mty, expr, range0)
 
-/// Similar to 'createDummyTypedImplFile', only diffference is that there are no definitions and is not used to emit any kind of assembly.
+/// Similar to 'createDummyTypedImplFile', only diffference is that there are no definitions and is not used for emitting any kind of assembly.
 let createEmptyDummyTypedImplFile qualNameOfFile mty =
     let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(mty, ModuleOrNamespaceExpr.TMDefs [], range0)
     TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap.Empty)
