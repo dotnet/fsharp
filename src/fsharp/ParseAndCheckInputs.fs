@@ -853,11 +853,15 @@ let createDummyModuleOrNamespaceExprWithSig g (mty: ModuleOrNamespaceType) =
             ]
     ModuleOrNamespaceExprWithSig(mty, expr, range0)
 
-/// 'dummy' in this context means it acts as a placeholder so other parts of the compiler will work with it
-///     but is not meant to be used for actual input for compiling a project, etc.
+/// Similar to 'createDummyTypedImplFile', only diffference is that there are no definitions and is not used to emit any kind of assembly.
+let createEmptyDummyTypedImplFile qualNameOfFile mty =
+    let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(mty, ModuleOrNamespaceExpr.TMDefs [], range0)
+    TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap.Empty)
+
+/// 'dummy' in this context means it acts as a placeholder so other parts of the compiler will work with it.
 /// In this case, this is used to create a typed impl file based on a signature so we can emit a partial reference assembly
 ///     for tooling, IDEs, etc - without having to actually check an implementation file.
-let createDummyTypedImplFile g (mty: ModuleOrNamespaceType, qualNameOfFile: QualifiedNameOfFile) =
+let createDummyTypedImplFile g qualNameOfFile mty =
     let exprWithSig = createDummyModuleOrNamespaceExprWithSig g mty
     TypedImplFile.TImplFile(qualNameOfFile, [], exprWithSig, false, false, StampMap.Empty)
 
@@ -929,10 +933,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
               // Typecheck the implementation file 
               let typeCheckOne = 
                   if skipImplIfSigExists && hadSig then
-                    let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(rootSigOpt.Value, ModuleOrNamespaceExpr.TMDefs [], range.Zero)
-                    let dummyImplFile = TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap [])
-
-                    (EmptyTopAttrs, dummyImplFile, Unchecked.defaultof<_>, tcImplEnv, false)
+                    (EmptyTopAttrs, createEmptyDummyTypedImplFile qualNameOfFile rootSigOpt.Value, Unchecked.defaultof<_>, tcImplEnv, false)
                     |> Eventually.Done
                   else
                     TypeCheckOneImplFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
@@ -943,7 +944,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
 
               let implFile =
                 if tcConfig.emitReferenceAssemblyOnly = ReferenceAssemblyGeneration.Test then
-                    createDummyTypedImplFile tcGlobals (implFileSigType, qualNameOfFile)
+                    createDummyTypedImplFile tcGlobals qualNameOfFile implFileSigType
                 else
                     implFile0
 
