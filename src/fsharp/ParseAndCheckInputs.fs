@@ -765,8 +765,10 @@ let mkDummyParameterVal name attribs ty =
 let rec createDummyModuleOrNamespaceExpr (g: TcGlobals) (mty: ModuleOrNamespaceType) =
 
     let dummyValAsBinding (v: Val) =
-        let expr =
-            let retExpr = Expr.Op(TOp.Return, [], [], range0)
+        let dummyExpr =
+            // It does not matter what this expression is as it will never get checked or emitted.
+            let retDummyExpr = Expr.Op(TOp.Return, [], [], range0)
+
             if isFunTy g v.Type || isForallFunctionTy g v.Type then
                 match v.ValReprInfo with
                 | Some valReprInfo ->
@@ -800,27 +802,28 @@ let rec createDummyModuleOrNamespaceExpr (g: TcGlobals) (mty: ModuleOrNamespaceT
                                 mkDummyParameterVal name argInfo.Attribs ty
                             )
                         )
+                    
                     if valParams.IsEmpty || (valParams.Length = 1 && valParams.Head.IsEmpty) then
-                        Expr.Lambda(newUnique(), None, None, [], retExpr, range0, retTy)
+                        // We have to create a lambda like this as `mkMemberLambdas` will throw if it is passed
+                        // a single empty curried argument list.
+                        Expr.Lambda(newUnique(), None, None, [], retDummyExpr, range0, retTy)
                     else
-                        mkMemberLambdas range0 typars None None valParams (retExpr, retTy)
+                        mkMemberLambdas range0 typars None None valParams (retDummyExpr, retTy)
                 | _ ->
                     failwith "Expected top-level val"
             else
-                retExpr
-        mkBind DebugPointAtBinding.NoneAtLet v expr
+                retDummyExpr
+        mkBind DebugPointAtBinding.NoneAtLet v dummyExpr
     
     let dummyValAsModuleOrNamespaceExpr (v: Val) =
-        let binding = dummyValAsBinding v
-        ModuleOrNamespaceExpr.TMDefLet(binding, range0)
+        ModuleOrNamespaceExpr.TMDefLet(dummyValAsBinding v, range0)
 
     let dummyValAsModuleOrNamespaceExprs (vs: Val seq) =
         vs
         |> Seq.map dummyValAsModuleOrNamespaceExpr
 
     let dummyEntityAsModuleOrNamespaceBinding (ent: Entity) =
-        let expr = createDummyModuleOrNamespaceExpr g ent.ModuleOrNamespaceType
-        ModuleOrNamespaceBinding.Module(ent, expr)
+        ModuleOrNamespaceBinding.Module(ent, createDummyModuleOrNamespaceExpr g ent.ModuleOrNamespaceType)
 
     let dummyEntitiesAsModuleOrNamespaceBindings (ents: Entity seq) =
         ents
@@ -829,40 +832,37 @@ let rec createDummyModuleOrNamespaceExpr (g: TcGlobals) (mty: ModuleOrNamespaceT
     let entBindings =
         mty.ModuleAndNamespaceDefinitions
         |> dummyEntitiesAsModuleOrNamespaceBindings
+        |> List.ofSeq
 
     let tycons = mty.TypeAndExceptionDefinitions
 
-    let exprs = dummyValAsModuleOrNamespaceExprs mty.AllValsAndMembers
+    let dummyExprs = 
+        dummyValAsModuleOrNamespaceExprs mty.AllValsAndMembers 
+        |> List.ofSeq
 
-    let entBindings = entBindings |> List.ofSeq
-    let exprs = exprs |> List.ofSeq
-    let exprs =
+    let dummyExprs =
         if entBindings.IsEmpty && tycons.IsEmpty then
-            exprs
+            dummyExprs
         else
-            ModuleOrNamespaceExpr.TMDefRec(false, tycons, entBindings, range0) :: exprs
+            ModuleOrNamespaceExpr.TMDefRec(false, tycons, entBindings, range0) :: dummyExprs
 
-    ModuleOrNamespaceExpr.TMDefs exprs
+    ModuleOrNamespaceExpr.TMDefs dummyExprs
 
-let createDummyModuleOrNamespaceExprWithSig g (mty: ModuleOrNamespaceType) =
-    let innerExpr = createDummyModuleOrNamespaceExpr g mty
-    let expr =
-        ModuleOrNamespaceExpr.TMDefs
-            [
-                innerExpr
-            ]
-    ModuleOrNamespaceExprWithSig(mty, expr, range0)
+let createDummyModuleOrNamespaceExprWithSig g (sigTy: ModuleOrNamespaceType) =
+    let dummyExpr = createDummyModuleOrNamespaceExpr g sigTy
+    ModuleOrNamespaceExprWithSig(sigTy, ModuleOrNamespaceExpr.TMDefs [dummyExpr], range0)
 
 /// Similar to 'createDummyTypedImplFile', only diffference is that there are no definitions and is not used for emitting any kind of assembly.
-let createEmptyDummyTypedImplFile qualNameOfFile mty =
-    let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(mty, ModuleOrNamespaceExpr.TMDefs [], range0)
+let createEmptyDummyTypedImplFile qualNameOfFile sigTy =
+    let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(sigTy, ModuleOrNamespaceExpr.TMDefs [], range0)
     TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap.Empty)
 
 /// 'dummy' in this context means it acts as a placeholder so other parts of the compiler will work with it.
 /// In this case, this is used to create a typed impl file based on a signature so we can emit a partial reference assembly
 ///     for tooling, IDEs, etc - without having to actually check an implementation file.
-let createDummyTypedImplFile g qualNameOfFile mty =
-    let exprWithSig = createDummyModuleOrNamespaceExprWithSig g mty
+/// An example of this use would be for other .NET languages wanting cross-project referencing with F# as they require an assembly.
+let createDummyTypedImplFile g qualNameOfFile sigTy =
+    let exprWithSig = createDummyModuleOrNamespaceExprWithSig g sigTy
     TypedImplFile.TImplFile(qualNameOfFile, [], exprWithSig, false, false, StampMap.Empty)
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
