@@ -852,6 +852,8 @@ let createDummyModuleOrNamespaceExprWithSig g (mty: ModuleOrNamespaceType) =
 
 /// 'dummy' in this context means it acts as a placeholder so other parts of the compiler will work with it
 ///     but is not meant to be used for actual input for compiling a project, etc.
+/// In this case, this is used to create a typed impl file based on a signature so we can emit a partial reference assembly
+///     for tooling, IDEs, etc - without having to actually check an implementation file.
 let createDummyTypedImplFile g (mty: ModuleOrNamespaceType, qualNameOfFile: QualifiedNameOfFile) =
     let exprWithSig = createDummyModuleOrNamespaceExprWithSig g mty
     TypedImplFile.TImplFile(qualNameOfFile, [], exprWithSig, false, false, StampMap.Empty)
