@@ -758,7 +758,7 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
 
 let mkDummyParameterVal name attribs ty =
     Construct.NewVal(
-        name, range0, None, ty, ValMutability.Immutable, false, None, Accessibility.TAccess([]),
+        name, range0, None, ty, ValMutability.Immutable, false, None, taccessPublic,
         ValRecursiveScopeInfo.ValNotInRecScope, None, ValBaseOrThisInfo.NormalVal, attribs, ValInline.Never,
         XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone)
 
