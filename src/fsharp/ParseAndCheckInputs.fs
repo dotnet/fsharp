@@ -37,6 +37,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
 
 let CanonicalizeFilename filename = 
@@ -755,64 +756,110 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
       tcsRootImpls = Zset.empty qnameOrder
       tcsCcuSig = Construct.NewEmptyModuleOrNamespaceType Namespace }
 
-let rec createMockModuleOrNamespaceExpr g (mty: ModuleOrNamespaceType) =
+let rec createMockModuleOrNamespaceExpr (g: TcGlobals) (anonRecdTypeInfos: StampMap<AnonRecdTypeInfo>) (mty: ModuleOrNamespaceType) =
 
-    let mockValAsBinding (v: Val) =
-        let expr =
+    let mockValAsBinding (anonRecdTypeInfos: StampMap<AnonRecdTypeInfo>) (v: Val) =
+        let expr, anonRecdTypeInfos =
             let retExpr = Expr.Op(TOp.Return, [], [], range0)
             if isFunTy g v.Type || isForallFunctionTy g v.Type then
-                match tryDestForallTy g v.Type with
-                | [], _ ->
-                    Expr.Lambda(newUnique(), None, None, [], retExpr, range0, v.Type)
-                | typars, _ ->
-                    let innerExpr = Expr.Lambda(newUnique(), None, None, [], retExpr, range0, v.Type)
-                    Expr.TyLambda(newUnique(), typars, innerExpr, range0, v.Type)
+                match v.ValReprInfo with
+                | Some valReprInfo ->
+                    let memberFlags =
+                        match v.MemberInfo with
+                        | Some memberInfo -> memberInfo.MemberFlags
+                        | _ ->
+                            {
+                                SynMemberFlags.IsInstance = false
+                                IsDispatchSlot = false
+                                IsOverrideOrExplicitImpl = false
+                                IsFinal = false
+                                MemberKind = SynMemberKind.Member
+                            }
+
+                    let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
+                    let typars, _, curriedArgInfos, retTy, _retInfo = GetMemberTypeInMemberForm g memberFlags valReprInfo numEnclosingTypars v.Type v.Range
+                    let retTy =
+                        retTy
+                        |> Option.defaultValue g.unit_ty
+
+                    let anonRecdTypeInfos =
+                        match tryDestAnonRecdTy g retTy with
+                        | ValueSome(anonRecdTypeInfo, _) ->
+                            anonRecdTypeInfos.Add(anonRecdTypeInfo.Stamp, anonRecdTypeInfo)
+                        | _ ->
+                            anonRecdTypeInfos
+
+                    let valParams =
+                        curriedArgInfos
+                        |> List.map (fun argInfos ->
+                            argInfos
+                            |> List.map (fun (ty, argInfo) ->
+                                let name =
+                                    argInfo.Name
+                                    |> Option.map (fun x -> x.idText)
+                                    |> Option.defaultValue ""
+                                Construct.NewVal(
+                                    name, range0, None, ty, ValMutability.Immutable, false, None, Accessibility.TAccess([]),
+                                    ValRecursiveScopeInfo.ValNotInRecScope, None, ValBaseOrThisInfo.NormalVal, argInfo.Attribs, ValInline.Never,
+                                    XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone)
+                            )
+                        )
+                    if valParams.IsEmpty || (valParams.Length = 1 && valParams.Head.IsEmpty) then
+                        Expr.Lambda(newUnique(), None, None, [], retExpr, range0, retTy), anonRecdTypeInfos 
+                    else
+                        mkMemberLambdas range0 typars None None valParams (retExpr, retTy), anonRecdTypeInfos 
+                | _ ->
+                    failwith "Expected top-level val"
             else
-                retExpr
-        Binding.TBind(v, expr, DebugPointAtBinding.NoneAtLet)
+                retExpr, anonRecdTypeInfos 
+        mkBind DebugPointAtBinding.NoneAtLet v expr, anonRecdTypeInfos
     
-    let mockValAsModuleOrNamespaceExpr (v: Val) =
-        let binding = mockValAsBinding v
-        ModuleOrNamespaceExpr.TMDefLet(binding, range0)
+    let mockValAsModuleOrNamespaceExpr (anonRecdTypeInfos: StampMap<AnonRecdTypeInfo>) (v: Val) =
+        let binding, anonRecdTypeInfos = mockValAsBinding anonRecdTypeInfos v
+        ModuleOrNamespaceExpr.TMDefLet(binding, range0), anonRecdTypeInfos
 
-    let mockValAsModuleOrNamespaceExprs (vs: Val seq) =
-        vs
-        |> Seq.map mockValAsModuleOrNamespaceExpr
-        |> List.ofSeq
+    let mockValAsModuleOrNamespaceExprs (anonRecdTypeInfos: StampMap<AnonRecdTypeInfo>) (vs: Val seq) =
+        (anonRecdTypeInfos, vs)
+        ||> Seq.mapFold mockValAsModuleOrNamespaceExpr
 
-    let mockEntityAsModuleOrNamespaceBinding (ent: Entity) =
-        ModuleOrNamespaceBinding.Module(ent, createMockModuleOrNamespaceExpr g ent.ModuleOrNamespaceType)
+    let mockEntityAsModuleOrNamespaceBinding (anonRecdTypeInfos: StampMap<AnonRecdTypeInfo>) (ent: Entity) =
+        let expr, anonRecdTypeInfos = createMockModuleOrNamespaceExpr g anonRecdTypeInfos ent.ModuleOrNamespaceType
+        ModuleOrNamespaceBinding.Module(ent, expr), anonRecdTypeInfos
 
-    let mockEntitiesAsModuleOrNamespaceBindings (ents: Entity seq) =
-        ents
-        |> Seq.map mockEntityAsModuleOrNamespaceBinding
-        |> List.ofSeq
+    let mockEntitiesAsModuleOrNamespaceBindings (anonRecdTypeInfos: StampMap<AnonRecdTypeInfo>) (ents: Entity seq) =
+        (anonRecdTypeInfos, ents)
+        ||> Seq.mapFold mockEntityAsModuleOrNamespaceBinding
 
-    let entBindings =
+    let entBindings, anonRecdTypeInfos =
         mty.ModuleAndNamespaceDefinitions
-        |> mockEntitiesAsModuleOrNamespaceBindings
+        |> mockEntitiesAsModuleOrNamespaceBindings anonRecdTypeInfos
 
     let tycons = mty.TypeAndExceptionDefinitions
 
-    let exprs = mockValAsModuleOrNamespaceExprs mty.AllValsAndMembers
+    let exprs, anonRecdTypeInfos = mockValAsModuleOrNamespaceExprs anonRecdTypeInfos mty.AllValsAndMembers
+
+    let entBindings = entBindings |> List.ofSeq
+    let exprs = exprs |> List.ofSeq
     let exprs =
         if entBindings.IsEmpty && tycons.IsEmpty then
             exprs
         else
             ModuleOrNamespaceExpr.TMDefRec(false, tycons, entBindings, range0) :: exprs
 
-    ModuleOrNamespaceExpr.TMDefs exprs
+    (ModuleOrNamespaceExpr.TMDefs exprs), anonRecdTypeInfos
 
-let createMockModuleOrNamespaceExprWithSig g (mty: ModuleOrNamespaceType) =
+let createMockModuleOrNamespaceExprWithSig g (anonRecdTypeInfos: StampMap<AnonRecdTypeInfo>) (mty: ModuleOrNamespaceType) =
+    let innerExpr, anonRecdTypeInfos = createMockModuleOrNamespaceExpr g anonRecdTypeInfos mty
     let expr =
         ModuleOrNamespaceExpr.TMDefs
             [
-                createMockModuleOrNamespaceExpr g mty
+                innerExpr
             ]
-    ModuleOrNamespaceExprWithSig(mty, expr, range0)
+    ModuleOrNamespaceExprWithSig(mty, expr, range0), anonRecdTypeInfos
 
 let createMockTypedImplFile g (mty: ModuleOrNamespaceType, qualNameOfFile: QualifiedNameOfFile) =
-    TypedImplFile.TImplFile(qualNameOfFile, [], createMockModuleOrNamespaceExprWithSig g mty, false, false, StampMap.Empty)
+    let exprWithSig, anonRecdTypeInfos = createMockModuleOrNamespaceExprWithSig g StampMap.Empty mty
+    TypedImplFile.TImplFile(qualNameOfFile, [], exprWithSig, false, false, anonRecdTypeInfos)
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput, skipImplIfSigExists: bool) =

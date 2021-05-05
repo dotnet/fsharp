@@ -134,3 +134,67 @@ let test() =
     }"""
         ]
         |> ignore
+
+    [<Test>]
+    let ``Simple reference assembly should have expected IL with anonymous record``() =
+        let src =
+            """
+module ReferenceAssembly
+
+open System
+
+let test(_x: {| a: int32 |}) =
+    Console.WriteLine("Hello World!")
+            """
+
+        FSharp src
+        |> withOptions ["--refonly"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """.maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
+    
+    } 
+    
+    .class private abstract auto ansi sealed '<StartupCode$assembly>'.$ReferenceAssembly
+           extends [runtime]System.Object
+    {
+    }"""
+        ]
+        |> ignore
+
+    [<Test>]
+    let ``Simple reference assembly should have expected IL with anonymous record with mock typed impl file``() =
+        let src =
+            """
+module ReferenceAssembly
+
+open System
+
+let test(_x: {| a: int32 |}) =
+    Console.WriteLine("Hello World!")
+            """
+
+        FSharp src
+        |> withOptions ["--test:RefOnlyMockTypedImplFile"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """.maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
+    
+    } 
+    
+    .class private abstract auto ansi sealed '<StartupCode$assembly>'.$ReferenceAssembly
+           extends [runtime]System.Object
+    {
+    }"""
+        ]
+        |> ignore
