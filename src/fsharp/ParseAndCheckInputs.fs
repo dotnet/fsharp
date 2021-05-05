@@ -756,6 +756,12 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
       tcsRootImpls = Zset.empty qnameOrder
       tcsCcuSig = Construct.NewEmptyModuleOrNamespaceType Namespace }
 
+let mkDummyParameterVal name attribs ty =
+    Construct.NewVal(
+        name, range0, None, ty, ValMutability.Immutable, false, None, Accessibility.TAccess([]),
+        ValRecursiveScopeInfo.ValNotInRecScope, None, ValBaseOrThisInfo.NormalVal, attribs, ValInline.Never,
+        XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone)
+
 let rec createDummyModuleOrNamespaceExpr (g: TcGlobals) (mty: ModuleOrNamespaceType) =
 
     let dummyValAsBinding (v: Val) =
@@ -791,10 +797,7 @@ let rec createDummyModuleOrNamespaceExpr (g: TcGlobals) (mty: ModuleOrNamespaceT
                                     argInfo.Name
                                     |> Option.map (fun x -> x.idText)
                                     |> Option.defaultValue ""
-                                Construct.NewVal(
-                                    name, range0, None, ty, ValMutability.Immutable, false, None, Accessibility.TAccess([]),
-                                    ValRecursiveScopeInfo.ValNotInRecScope, None, ValBaseOrThisInfo.NormalVal, argInfo.Attribs, ValInline.Never,
-                                    XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone)
+                                mkDummyParameterVal name argInfo.Attribs ty
                             )
                         )
                     if valParams.IsEmpty || (valParams.Length = 1 && valParams.Head.IsEmpty) then
