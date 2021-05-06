@@ -362,3 +362,88 @@ module internal FSharpEnvironment =
     let getDefaultFSharpCoreLocation() = Path.Combine(getFSharpCompilerLocation(), getFSharpCoreLibraryName + ".dll")
     let getDefaultFsiLibraryLocation() = Path.Combine(getFSharpCompilerLocation(), fsiLibraryName + ".dll")
 
+    // Path to the directory containing the fsharp compilers
+    let fsharpCompilerPath = Path.Combine(Path.GetDirectoryName(typeof<TypeInThisAssembly>.GetTypeInfo().Assembly.Location), "Tools")
+
+    let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+
+    let dotnet = if isWindows then "dotnet.exe" else "dotnet"
+
+    let fileExists pathToFile =
+        try
+            if File.Exists(pathToFile) then
+                true
+            else
+                false
+        with | _ -> false
+
+    // Look for global install of dotnet sdk
+    let getDotnetGlobalHostPath() =
+        let pf = Environment.GetEnvironmentVariable("ProgramW6432")
+        let pf = if String.IsNullOrEmpty(pf) then Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) else pf
+        let candidate = Path.Combine(pf, "dotnet", dotnet)
+        if fileExists candidate then
+            Some candidate
+        else
+            // Can't find it --- give up
+            None
+
+    let getDotnetHostPath() =
+        // How to find dotnet.exe --- woe is me; probing rules make me sad.
+        // Algorithm:
+        // 1. Look for DOTNET_HOST_PATH environment variable
+        //    this is the main user programable override .. provided by user to find a specific dotnet.exe
+        // 2. Probe for are we part of an .NetSDK install
+        //    In an sdk install we are always installed in:   sdk\3.0.100-rc2-014234\FSharp
+        //    dotnet or dotnet.exe will be found in the directory that contains the sdk directory
+        // 3. We are loaded in-process to some other application ... Eg. try .net
+        //    See if the host is dotnet.exe ... from net5.0 on this is fairly unlikely
+        // 4. If it's none of the above we are going to have to rely on the path containing the way to find dotnet.exe
+        // Use the path to search for dotnet.exe
+        let probePathForDotnetHost() =
+            let paths =
+                let p = Environment.GetEnvironmentVariable("PATH")
+                if not(isNull p) then p.Split(Path.PathSeparator) 
+                else [||]
+            paths |> Array.tryFind (fun f -> fileExists (Path.Combine(f, dotnet)))
+
+        match (Environment.GetEnvironmentVariable("DOTNET_HOST_PATH")) with
+        // Value set externally
+        | value when not (String.IsNullOrEmpty(value)) && fileExists value -> Some value
+        | _ ->
+            // Probe for netsdk install, dotnet. and dotnet.exe is a constant offset from the location of System.Int32
+            let candidate =
+                let assemblyLocation = Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
+                Path.GetFullPath(Path.Combine(assemblyLocation, "..", "..", "..", dotnet))
+            if fileExists candidate then
+                Some candidate
+            else
+                match probePathForDotnetHost () with
+                | Some f -> Some (Path.Combine(f, dotnet))
+                | None -> getDotnetGlobalHostPath()
+
+    let getDotnetHostDirectories() =
+        let isDotnetMultilevelLookup = (Int32.TryParse(Environment.GetEnvironmentVariable("DOTNET_MULTILEVEL_LOOKUP")) |> snd) <> 0
+        [|
+            match getDotnetHostPath(), getDotnetGlobalHostPath() with
+            | Some hostPath, Some globalHostPath ->
+                yield Path.GetDirectoryName(hostPath)
+                if isDotnetMultilevelLookup && hostPath <> globalHostPath then
+                    yield Path.GetDirectoryName(globalHostPath)
+            | Some hostPath, None ->
+                yield Path.GetDirectoryName(hostPath)
+            | None, Some globalHostPath ->
+                yield Path.GetDirectoryName(globalHostPath)
+            | None, None ->
+                ()
+        |]
+
+    let getDotnetHostDirectory() = getDotnetHostDirectories() |> Array.tryHead
+
+    let getDotnetHostSubDirectories(path: string) =
+        [|
+            for directory in getDotnetHostDirectories() do
+                let subdirectory = Path.Combine(directory, path)
+                if Directory.Exists(subdirectory) then
+                    yield! DirectoryInfo(subdirectory).GetDirectories()
+        |]
