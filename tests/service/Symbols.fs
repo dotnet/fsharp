@@ -296,6 +296,48 @@ type Foo =
             assertRange (4, 12) (4, 13) r2
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``Range of attribute should be included in SynTypeDefn`` () =
+        let parseResults = 
+            getParseResults
+                """
+[<Foo>]
+type Bar =
+    class
+    end"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [t]) as types
+        ]) ])) ->
+            assertRange (2, 0) (5, 7) types.Range
+            assertRange (2, 0) (5, 7) t.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of attributes should be included in recursive types`` () =
+        let parseResults = 
+            getParseResults
+                """
+[<NoEquality ; NoComparison>]
+type Foo<'context, 'a> =
+    | Apply of ApplyCrate<'context, 'a>
+
+and [<CustomEquality ; NoComparison>] Bar<'context, 'a> =
+    internal {
+        Hash : int
+        Foo : Foo<'a, 'b>
+    }"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [t1;t2]) as types
+        ]) ])) ->
+            assertRange (2, 0) (10, 5) types.Range
+            assertRange (2, 0) (4, 39) t1.Range
+            assertRange (6, 4) (10, 5) t2.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SyntaxExpressions =
     [<Test>]
     let ``SynExpr.Do contains the range of the do keyword`` () =
@@ -596,11 +638,11 @@ type Meh =
         match parseResults with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(range = r)]) ])) ->
-            assertRange (3, 0) (5,11) r
+            assertRange (3, 5) (5,11) r
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
-    let ``Range of TypeDefnSig record should end at last member`` () =
+    let ``Range of SynTypeDefnSig record should end at last member`` () =
         let parseResults = 
             getParseResultsOfSignatureFile
                 """namespace X
@@ -615,7 +657,7 @@ type MyRecord =
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
-    let ``Range of TypeDefnSig object model should end at last member`` () =
+    let ``Range of SynTypeDefnSig object model should end at last member`` () =
         let parseResults = 
             getParseResultsOfSignatureFile
                 """namespace X
@@ -631,7 +673,7 @@ type MyRecord =
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
-    let ``Range of TypeDefnSig delegate of should start from name`` () =
+    let ``Range of SynTypeDefnSig delegate of should start from name`` () =
         let parseResults = 
             getParseResultsOfSignatureFile
                 """namespace Y
@@ -645,7 +687,7 @@ type MyFunction =
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
-    let ``Range of TypeDefnSig simple should end at last val`` () =
+    let ``Range of SynTypeDefnSig simple should end at last val`` () =
         let parseResults = 
             getParseResultsOfSignatureFile
                 """namespace Z
@@ -657,6 +699,79 @@ type SomeCollection with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [SynTypeDefnSig.SynTypeDefnSig(range = r)])]) ])) ->
             assertRange (2, 5) (4, 37) r
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of attribute should be included in SynTypeDefnSig`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace SomeNamespace
+
+[<Foo1>]
+type MyType =
+    class
+    end
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [SynTypeDefnSig.SynTypeDefnSig(range = r)]) as t]) ])) ->
+            assertRange (4, 0) (7, 7) r
+            assertRange (4, 0) (7, 7) t.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of attributes should be included in recursive types`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace SomeNamespace
+
+type Foo =
+    | Bar
+
+and [<CustomEquality>] Bang =
+    internal
+        {
+            LongNameBarBarBarBarBarBarBar: int
+        }
+        override GetHashCode : unit -> int
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [
+                SynTypeDefnSig.SynTypeDefnSig(range = r1)
+                SynTypeDefnSig.SynTypeDefnSig(range = r2)
+            ]) as t]) ])) ->
+            assertRange (4, 5) (5, 9) r1
+            assertRange (7, 4) (12, 42) r2
+            assertRange (4, 5) (12, 42) t.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of attribute should be included in SynValSpfn and Member`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace SomeNamespace
+
+type FooType =
+    [<Foo2>] // ValSpfn
+    abstract x : int
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig(decls =
+                [ SynModuleSigDecl.Types(types = [
+                    SynTypeDefnSig.SynTypeDefnSig(typeRepr =
+                        SynTypeDefnSigRepr.ObjectModel(memberSigs = [
+                            SynMemberSig.Member(range = mr; memberSig = SynValSig(range = mv)) ]))
+                ]) ]) ])) ->
+            assertRange (5, 4) (6, 20) mr
+            assertRange (5, 4) (6, 20) mv
         | _ -> Assert.Fail "Could not get valid AST"
 
 module SynMatchClause =
@@ -807,4 +922,235 @@ __SOURCE_FILE__"""
             SynModuleDecl.DoExpr(expr = SynExpr.Const(SynConst.SourceIdentifier("__SOURCE_FILE__", _, range), _))
         ]) ])) ->
             assertRange (2, 0) (2, 15) range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+module NestedModules =
+
+    [<Test>]
+    let ``Range of attribute should be included in SynModuleSigDecl.NestedModule`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace SomeNamespace
+
+[<Foo>]
+module Nested =
+    val x : int
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+            SynModuleSigDecl.NestedModule _ as nm
+        ]) as sigModule ])) ->
+            assertRange (4, 0) (6, 15) nm.Range
+            assertRange (2, 0) (6, 15) sigModule.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of attribute should be included in SynModuleDecl.NestedModule`` () =
+        let parseResults = 
+            getParseResults
+                """
+module TopLevel
+
+[<Foo>]
+module Nested =
+    ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.NestedModule _ as nm
+        ]) ])) ->
+            assertRange (4, 0) (6, 6) nm.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+module SynBindings =
+    [<Test>]
+    let ``Range of attribute should be included in SynModuleDecl.Let`` () =
+        let parseResults = 
+            getParseResults
+                """
+[<Foo>]
+let a = 0"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [SynBinding(range = mb)]) as lt
+        ]) ])) ->
+            assertRange (2, 0) (3, 5) mb
+            assertRange (2, 0) (3, 9) lt.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of attribute between let keyword and pattern should be included in SynModuleDecl.Let`` () =
+        let parseResults = 
+            getParseResults
+                """
+let [<Literal>] (A x) = 1"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [SynBinding(range = mb)]) as lt
+        ]) ])) ->
+            assertRange (2, 4) (2, 21) mb
+            assertRange (2, 0) (2, 25) lt.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+    
+    [<Test>]
+    let ``Range of attribute should be included in SynMemberDefn.LetBindings`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Bar =
+    [<Foo>]
+    let x = 8"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [SynMemberDefn.LetBindings(bindings = [SynBinding(range = mb)]) as m]))])
+        ]) ])) ->
+            assertRange (3, 4) (4, 9) mb
+            assertRange (3, 4) (4, 13) m.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of attribute should be included in SynMemberDefn.Member`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Bar =
+    [<Foo>]
+    member this.Something () = ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [SynMemberDefn.Member(memberDefn = SynBinding(range = mb)) as m]))])
+        ]) ])) ->
+            assertRange (3, 4) (4, 28) mb
+            assertRange (3, 4) (4, 33) m.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of attribute should be included in binding of SynExpr.ObjExpr`` () =
+        let parseResults = 
+            getParseResults
+                """
+{ new System.Object() with
+    [<Foo>]
+    member x.ToString() = "F#" }"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.ObjExpr(bindings = [SynBinding(range = mb)]))
+        ]) ])) ->
+            assertRange (3, 4) (4, 23) mb
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of attribute should be included in constructor SynMemberDefn.Member`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Tiger =
+    [<Foo>]
+    new () = ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [SynMemberDefn.Member(memberDefn = SynBinding(range = mb)) as m]))])
+        ]) ])) ->
+            assertRange (3, 4) (4, 10) mb
+            assertRange (3, 4) (4, 15) m.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of attribute should be included in constructor SynMemberDefn.Member, optAsSpec`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Tiger =
+    [<Foo>]
+    new () as tony = ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [SynMemberDefn.Member(memberDefn = SynBinding(range = mb)) as m]))])
+        ]) ])) ->
+            assertRange (3, 4) (4, 18) mb
+            assertRange (3, 4) (4, 23) m.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of attribute should be included in secondary constructor`` () =
+        let parseResults = 
+            getParseResults
+                """
+type T() =
+    new () =
+        T ()
+
+    internal new () =
+        T ()
+
+    [<Foo>]
+    new () =
+        T ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                SynMemberDefn.ImplicitCtor _
+                SynMemberDefn.Member(memberDefn = SynBinding(range = mb1)) as m1
+                SynMemberDefn.Member(memberDefn = SynBinding(range = mb2)) as m2
+                SynMemberDefn.Member(memberDefn = SynBinding(range = mb3)) as m3
+            ]))])
+        ]) ])) ->
+            assertRange (3, 4) (3, 10) mb1
+            assertRange (3, 4) (4, 12) m1.Range
+            assertRange (6, 4) (6, 19) mb2
+            assertRange (6, 4) (7, 12) m2.Range
+            assertRange (9, 4) (10, 10) mb3
+            assertRange (9, 4) (11, 12) m3.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    
+    [<Test>]
+    let ``Range of attribute should be included in write only SynMemberDefn.Member property`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Crane =
+    [<Foo>]
+    member this.MyWriteOnlyProperty with set (value) = myInternalValue <- value"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [SynMemberDefn.Member(memberDefn = SynBinding(range = mb)) as m]))])
+        ]) ])) ->
+            assertRange (3, 4) (4, 52) mb
+            assertRange (3, 4) (4, 79) m.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of attribute should be included in full SynMemberDefn.Member property`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Bird =
+    [<Foo>]
+    member this.TheWord
+        with get () = myInternalValue
+        and set (value) = myInternalValue <- value"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                SynMemberDefn.Member(memberDefn = SynBinding(range = mb1)) as getter
+                SynMemberDefn.Member(memberDefn = SynBinding(range = mb2)) as setter
+            ]))])
+        ]) ])) ->
+            assertRange (3, 4) (5, 19) mb1
+            assertRange (3, 4) (6, 50) getter.Range
+            assertRange (3, 4) (6, 23) mb2
+            assertRange (3, 4) (6, 50) setter.Range
         | _ -> Assert.Fail "Could not get valid AST"
