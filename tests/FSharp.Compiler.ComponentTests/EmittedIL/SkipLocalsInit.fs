@@ -5,6 +5,7 @@ namespace FSharp.Compiler.ComponentTests.EmittedIL
 open Xunit
 open FSharp.Test.Utilities.Compiler
 
+#if NETCOREAPP
 module ``SkipLocalsInit`` =
     [<Fact>]
     let ``Init in function and closure not emitted when applied on function``() =
@@ -129,3 +130,4 @@ type X () =
   .maxstack  6
   .locals (int32 V_0)
 """]
+#endif
