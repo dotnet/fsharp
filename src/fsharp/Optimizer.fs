@@ -1423,18 +1423,16 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
              when IsUniqueUse vspec2 [] -> 
                Some e1
 
-         // Immediate consumption of applied InlineIfLambda function value 'let part1 = e in part1(); rest'
-         // This doesn't rely on GetImmediateUseContext and is for the cases where an
-         // InlineIfLambda value is known to be a computed function (e.g. a match) and is immediately applied
+         // Immediate consumption of function in an application in a sequential, e.g. 'let part1 = e in part1 arg; rest'
+         // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
          | Expr.Sequential(Expr.App(Expr.Val (VRefLocal vspec2, _, _), f0ty, c, args, d), rest, NormalSeq, sp, m)  
-             when vspec1.InlineIfLambda && IsUniqueUse vspec2 (rest :: args) -> 
+             when IsUniqueUse vspec2 (rest :: args) -> 
                Some (Expr.Sequential(Expr.App(e1, f0ty, c, args, d), rest, NormalSeq, sp, m))
 
-         // Immediate consumption of applied InlineIfLambda delegate value 'let part1 = e in part1.Invoke(args); rest'
-         // This doesn't rely on GetImmediateUseContext and is for the cases where an
-         // InlineIfLambda value is known to be a computed function (e.g. a match) and is immediately applied
+         // Immediate consumption of delegate via an application in a sequential, e.g. 'let part1 = e in part1.Invoke(args); rest'
+         // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
          | Expr.Sequential(DelegateInvokeExpr cenv.g (invokeRef, f0ty, tyargs, Expr.Val (VRefLocal vspec2, _, _), args, _), rest, NormalSeq, sp, m)  
-             when vspec1.InlineIfLambda && IsUniqueUse vspec2 (rest :: args) -> 
+             when IsUniqueUse vspec2 (rest :: args) -> 
                let invoke = MakeFSharpDelegateInvokeAndTryBetaReduce cenv.g (invokeRef, e1, f0ty, tyargs, args, m)
                Some (Expr.Sequential(invoke, rest, NormalSeq, sp, m))
 
@@ -1447,7 +1445,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
               let spMatch = spBind.Combine spMatch
               Some (Expr.Match (spMatch, e1.Range, TDSwitch(e1, cases, dflt, m), targets, m, ty2))
                
-         // Immediate consumption of value as a function 'let f = e in f ...' and 'let x = e in f ... x ...'
+         // Immediate use of value as part of an application. 'let f = e in f ...' and 'let x = e in f ... x ...'
          // Note functions are evaluated before args 
          // Note: do not include functions with a single arg of unit type, introduced by abstractBigTargets 
          | Expr.App (f, f0ty, tyargs, args, m) ->
@@ -2902,6 +2900,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
     | _ -> None
 
 // Optimize the application of computed functions.
+// See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
 //
 // Always lift 'let', 'letrec', sequentials and 'match' off computed functions so
 //     (let x = 1 in fexpr) arg ---> let x = 1 in fexpr arg 
@@ -3070,9 +3069,6 @@ and OptimizeFSharpDelegateInvoke cenv env (invokeRef, f0, f0ty, tyargs, args, m)
     let g = cenv.g
     let optf0, finfo = OptimizeExpr cenv env f0
 
-    // Lift of any 'let', 'let rec', 'match', sequential in the computation of the delegate
-    // If there were any 'match' (e.g. conditionals) then rebuild and reoptimize the whole thing
-    // If there was only one function point, then optimize the arguments and proceed
     match StripPreComputationsFromComputedFunction g optf0 args (fun f argsR -> MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, f, f0ty, tyargs, argsR, m)) with
     | Choice1Of2 remade -> 
         OptimizeExpr cenv env remade
