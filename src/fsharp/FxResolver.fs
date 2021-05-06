@@ -837,7 +837,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                                 [ yield! Directory.GetFiles(path, "*.dll")
                                   yield getFSharpCoreImplementationReference()
                                   if useFsiAuxLib then yield getFsiLibraryImplementationReference()
-                                ]
+                                ] |> List.filter(fun f -> systemAssemblies.Contains(Path.GetFileName(f)))
                             sdkReferences, false
                         with e -> 
                             warning (Error(FSComp.SR.scriptSdkNotDeterminedUnexpected(e.Message), rangeForErrors))
