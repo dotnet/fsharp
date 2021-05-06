@@ -34,6 +34,9 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          F#-specific metadata
 --sig:<file>                             Print the inferred interface of the
                                          assembly to a file
+--allsigs                                Print the inferred interfaces of all
+                                         compilation files to associated
+                                         signature files
 --nocopyfsharpcore                       Don't copy FSharp.Core.dll along the
                                          produced binaries
 
@@ -47,6 +50,7 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 
 
 		- RESOURCES -
+--win32icon:<file>                       Specify a Win32 icon file (.ico)
 --win32res:<file>                        Specify a Win32 resource file (.res)
 --win32manifest:<file>                   Specify a Win32 manifest file
 --nowin32manifest                        Do not include the default Win32

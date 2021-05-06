@@ -33,6 +33,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.LayoutRender
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -672,12 +673,101 @@ let GenRecdFieldRef m cenv tyenv (rfref: RecdFieldRef) tyargs =
 
 let GenExnType amap m tyenv (ecref: TyconRef) = GenTyApp amap m tyenv ecref.CompiledRepresentation []
  
+type ArityInfo = int list
+
 //--------------------------------------------------------------------------
 // Closure summaries
-//--------------------------------------------------------------------------
+//
+// Function, Object, Delegate and State Machine Closures
+// =====================================================
+// 
+// For a normal expression closure, we generate:
+//
+//    class Implementation<cloFreeTyvars> : FSharpFunc<...> {
+//        override Invoke(..) { expr }
+//    }
+//
+// Local Type Functions
+// ====================
+//
+// The input expression is:
+//   let input-val : FORALL<directTypars>. body-type = LAM <directTypars>. body-expr : body-type 
+//   ...
+//
+// This is called at some point:
+//
+//   input-val<directTyargs>
+//
+// Note 'input-val' is never used without applying it to some type arguments.
+//
+// Basic examples - first define some functions that extract information from generic parameters, and which are constrained:
+//
+//    type TypeInfo<'T> = TypeInfo of System.Type 
+//    type TypeName = TypeName of string
+//
+//    let typeinfo<'T when 'T :> System.IComparable) = TypeInfo (typeof<'T>)
+//    let typename<'T when 'T :> System.IComparable) = TypeName (typeof<'T>.Name)
+//
+// Then here are examples:
+//
+//    LAM <'T>{addWitness}.  (typeinfo<'T>, typeinfo<'T[]>, (incr{ : 'T -> 'T)) :  TypeInfo<'T> * TypeInfo<'T[]> * ('T -> 'T)
+//    directTypars = 'T
+//    cloFreeTyvars = empty
+//
+// or
+//    LAM <'T>.  (typeinfo<'T>, typeinfo<'U>) :  TypeInfo<'T> * TypeInfo<'U>
+//    directTypars = 'T
+//    cloFreeTyvars = 'U
+// 
+// or
+//    LAM <'T>.  (typeinfo<'T>, typeinfo<'U>, typename<'V>) :  TypeInfo<'T> * TypeInfo<'U> * TypeName
+//    directTypars = 'T
+//    cloFreeTyvars = 'U,'V
+//
+// or, for witnesses:
+//
+//    let inline incr{addWitnessForT} (x: 'T) = x + GenericZero<'T> // has witness argment for '+'
+//
+//    LAM <'T when 'T :... op_Addition ...>{addWitnessForT}.  (incr<'T>{addWitnessForT}, incr<'U>{addWitnessForU}, incr<'V>{addWitnessForV}) :  ('T -> 'T) * ('U -> 'U) * ('V -> 'V)
+//    directTypars = 'T
+//    cloFreeTyvars = 'U,'V
+//    cloFreeTyvarsWitnesses = witnesses implied by cloFreeTyvars = {addWitnessForU, addWitnessForV}
+//    directTyparsWitnesses = witnesses implied by directTypars = {addWitnessForT}
+//
+// Define the free variable sets:
+//
+//    cloFreeTyvars = free-tyvars-of(input-expr)
+// 
+// where IsNamedLocalTypeFuncVal is true.
+//
+// The directTypars may have constraints that require some witnesses.  Making those explicit with "{ ... }" syntax for witnesses:
+//    input-expr = {LAM <directTypars>{directWitnessInfoArgs}. body-expr : body-type } 
+// 
+//    let x : FORALL<'T ... constrained ...> ... = clo<directTyargs>{directWitnessInfos}
+//
+// Given this, we generate this shape of code:
+// 
+//    type Implementation<cloFreeTyvars>(cloFreeTyvarsWitnesses) =   
+//        member DirectInvoke<directTypars>(directTyparsWitnesses) : body-type = 
+//             body-expr
+//
+//    local x : obj = new Implementation<cloFreeTyvars>(cloFreeTyvarsWitnesses)
+//    ....
+//    ldloc x
+//    unbox Implementation<cloFreeTyvars> 
+//    call Implementation<cloFreeTyvars>::DirectInvoke<directTypars>(directTyparsWitnesses)
+//
+// First-class Type Functions
+// ==========================
+//
+// If IsNamedLocalTypeFuncVal is false, we have a "non-local" or "first-class" type function closure
+// that implements FSharpTypeFunc, and we generate:
+//
+//    class Implementation<cloFreeTyvars> : FSharpTypeFunc {
+//        override Specialize<directTypars> : overall-type { expr }
+//    }
+//
 
-type ArityInfo = int list
-  
 [<NoEquality; NoComparison>]
 type IlxClosureInfo =
     { /// The whole expression for the closure
@@ -714,24 +804,6 @@ type IlxClosureInfo =
       /// ILX view of the lambdas for the closures
       ilCloLambdas: IlxClosureLambdas
 
-      /// The free type parameters occuring in the type of the closure (and not just its body)
-      /// This is used for local type functions, whose contract class must use these types
-      ///    type Contract<'fv> =
-      ///        abstract DirectInvoke: ty['fv]
-      ///    type Implementation<'fv, 'fv2> : Contract<'fv> =
-      ///        override DirectInvoke: ty['fv] = expr['fv, 'fv2]
-      ///
-      ///   At the callsite we generate
-      ///      unbox ty['fv]
-      ///      callvirt clo.DirectInvoke
-      localTypeFuncILGenericArgs: ILType list
-
-      /// The free type parameters for the local type function as F# TAST types
-      localTypeFuncContractFreeTypars: Typar list
-
-      localTypeFuncDirectILGenericParams: IL.ILGenericParameterDefs
-
-      localTypeFuncInternalFreeTypars: Typar list
     }
 
 
@@ -1557,8 +1629,8 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             tycon.entity_tycon_repr <-
                 TRecdRepr
                   (Construct.MakeRecdFieldsTable
-                    [ for (tp, (propName, _fldName, _fldTy)) in (List.zip tps flds) ->
-                            Construct.NewRecdField false None (mkSynId m propName) false (mkTyparTy tp) true false [] [] XmlDoc.Empty taccessPublic false ])
+                    ((tps, flds) ||> List.map2 (fun tp (propName, _fldName, _fldTy) ->
+                            Construct.NewRecdField false None (mkSynId m propName) false (mkTyparTy tp) true false [] [] XmlDoc.Empty taccessPublic false)))
 
             let tcref = mkLocalTyconRef tycon
             let _, typ = generalizeTyconRef tcref
@@ -3467,32 +3539,104 @@ and CanTailcall (hasStructObjArg, ccallInfo, withinSEH, hasByrefArg, mustGenerat
          | _ -> false)
     then Tailcall
     else Normalcall
-    
+
+/// Choose the names for TraitWitnessInfo representations in arguments and free variables
+and ChooseWitnessInfoNames takenNames (witnessInfos: TraitWitnessInfo list) =
+    witnessInfos 
+    |> List.map (fun w -> String.uncapitalize w.MemberName)
+    |> ChooseFreeVarNames takenNames
+
+/// Represent the TraitWitnessInfos as arguments, e.g. in local type functions
+and ArgStorageForWitnessInfos (cenv: cenv) (eenv: IlxGenEnv) takenNames pretakenArgs m (witnessInfos: TraitWitnessInfo list) =
+    let names = ChooseWitnessInfoNames takenNames witnessInfos 
+    (witnessInfos, List.indexed names) 
+    ||> List.map2 (fun w (i, nm) -> 
+        let ty = GenWitnessTy cenv.g w
+        let ilTy =  GenType cenv.amap m eenv.tyenv ty
+        let ilParam = mkILParam (Some nm, ilTy)
+        let storage =  Arg (i+pretakenArgs)
+        ilParam, (w, storage))
+    |> List.unzip
+
+/// Represent the TraitWitnessInfos as free variables, e.g. in closures
+and FreeVarStorageForWitnessInfos (cenv: cenv) (eenv: IlxGenEnv) takenNames ilCloTyInner m (witnessInfos: TraitWitnessInfo list) =
+    let names = ChooseWitnessInfoNames takenNames witnessInfos 
+    (witnessInfos, names) 
+    ||> List.map2 (fun w nm -> 
+        let ty = GenWitnessTy cenv.g w
+        let ilTy =  GenType cenv.amap m eenv.tyenv ty
+        let ilFv = mkILFreeVar (nm, true, ilTy)
+        let storage =
+            let ilField = mkILFieldSpecInTy (ilCloTyInner, ilFv.fvName, ilFv.fvType)
+            Env(ilCloTyInner, ilField, None)
+        ilFv, (w, storage))
+    |> List.unzip
+
+//--------------------------------------------------------------------------
+// Named local type functions
+//--------------------------------------------------------------------------
+
+and IsNamedLocalTypeFuncVal g (v: Val) expr =
+    not v.IsCompiledAsTopLevel &&
+    IsGenericValWithGenericConstraints g v &&
+    (match stripExpr expr with Expr.TyLambda _ -> true | _ -> false)
+
+and AddDirectTyparWitnessParams cenv eenv cloinfo m =
+    let directTypars =
+        match cloinfo.cloExpr with
+        | Expr.TyLambda (_, tvs, _, _, _) -> tvs
+        | _ -> []
+
+    let directWitnessInfos = 
+        let generateWitnesses = ComputeGenerateWitnesses cenv.g eenv
+        if generateWitnesses then 
+            // The 0 here represents that a closure doesn't reside within a generic class - there are no "enclosing class type parameters" to lop off.  
+            GetTraitWitnessInfosOfTypars cenv.g 0 directTypars
+        else
+            []
+
+    // Direct witnesses get passed as arguments to DirectInvoke
+    let ilDirectWitnessParams, ilDirectWitnessParamsStorage =
+        let pretakenArgs = 1
+        ArgStorageForWitnessInfos cenv eenv [] pretakenArgs m directWitnessInfos
+    let eenv = eenv |> AddStorageForLocalWitnesses ilDirectWitnessParamsStorage
+
+    directTypars, ilDirectWitnessParams, directWitnessInfos, eenv
+
 and GenNamedLocalTyFuncCall cenv (cgbuf: CodeGenBuffer) eenv ty cloinfo tyargs m =
     let g = cenv.g
-    let ilContractClassTyargs =
-        cloinfo.localTypeFuncContractFreeTypars
-            |> List.map mkTyparTy
-            |> GenTypeArgs cenv.amap m eenv.tyenv
 
     let ilTyArgs = tyargs |> GenTypeArgs cenv.amap m eenv.tyenv
 
-    let _, (ilContractMethTyargs: ILGenericParameterDefs), (ilContractCloTySpec: ILTypeSpec), ilContractFormalRetTy =
-        GenNamedLocalTypeFuncContractInfo cenv eenv m cloinfo
+    let ilCloTy = cloinfo.cloSpec.ILType
+    let ilDirectGenericParams, ilDirectWitnessParams, directWitnessInfos =
+        let eenvinner = EnvForTypars cloinfo.cloFreeTyvars eenv
+        let directTypars =
+            match cloinfo.cloExpr with
+            | Expr.TyLambda (_, tvs, _, _, _) -> tvs
+            | _ -> []
 
-    let ilContractTy = mkILBoxedTy ilContractCloTySpec.TypeRef ilContractClassTyargs
+        let eenvinner = AddTyparsToEnv directTypars eenvinner
 
-    if not (ilContractMethTyargs.Length = ilTyArgs.Length) then errorR(Error(FSComp.SR.ilIncorrectNumberOfTypeArguments(), m))
+        let ilDirectGenericParams = GenGenericParams cenv eenvinner directTypars
+        let _directTypars, ilDirectWitnessParams, directWitnessInfos, _eenv = AddDirectTyparWitnessParams cenv eenvinner cloinfo m
+        ilDirectGenericParams, ilDirectWitnessParams, directWitnessInfos
 
-    // Local TyFunc are represented as a $contract type. they currently get stored in a value of type object
+    if not (List.length ilDirectGenericParams = ilTyArgs.Length) then errorR(Error(FSComp.SR.ilIncorrectNumberOfTypeArguments(), m))
+
     // Recover result (value or reference types) via unbox_any.
-    CG.EmitInstrs cgbuf (pop 1) (Push [ilContractTy]) [I_unbox_any ilContractTy]
+    CG.EmitInstrs cgbuf (pop 1) (Push [ilCloTy]) [I_unbox_any ilCloTy]
+
     let actualRetTy = applyTys g ty (tyargs, [])
 
-    let ilDirectInvokeMethSpec = mkILInstanceMethSpecInTy(ilContractTy, "DirectInvoke", [], ilContractFormalRetTy, ilTyArgs)
+    let ilDirectWitnessParamsTys = ilDirectWitnessParams |> List.map (fun p -> p.Type)
+    let ilDirectInvokeMethSpec = mkILInstanceMethSpecInTy(ilCloTy, "DirectInvoke", ilDirectWitnessParamsTys, cloinfo.ilCloFormalReturnTy, ilTyArgs)
+    
+    GenWitnessArgsFromWitnessInfos cenv cgbuf eenv m directWitnessInfos
+    
     let ilActualRetTy = GenType cenv.amap m eenv.tyenv actualRetTy
     CountCallFuncInstructions()
-    CG.EmitInstr cgbuf (pop 1) (Push [ilActualRetTy]) (mkNormalCallvirt ilDirectInvokeMethSpec)
+    CG.EmitInstr cgbuf (pop (1+ilDirectWitnessParamsTys.Length)) (Push [ilActualRetTy]) (mkNormalCall ilDirectInvokeMethSpec)
     actualRetTy
 
     
@@ -4403,7 +4547,6 @@ and GenObjectExpr cenv cgbuf eenvouter expr (baseType, baseValOpt, basecall, ove
 
     let ilCloAllFreeVars = cloinfo.ilCloAllFreeVars
     let ilCloGenericFormals = cloinfo.cloILGenericParams
-    assert (isNil cloinfo.localTypeFuncDirectILGenericParams)
     let ilCloGenericActuals = cloinfo.cloSpec.GenericArgs
     let ilCloRetTy = cloinfo.ilCloFormalReturnTy
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
@@ -4454,7 +4597,7 @@ and GenSequenceExpr
         eenvouter |> AddStorageForLocalVals g (stateVars |> List.map (fun v -> v.Deref, Local(0, false, None)))
 
     // Get the free variables. Make a lambda to pretend that the 'nextEnumeratorValRef' is bound (it is an argument to GenerateNext)
-    let (cloAttribs, _, _, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef: ILTypeRef, ilCloAllFreeVars, eenvinner) =
+    let (cloAttribs, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef: ILTypeRef, ilCloAllFreeVars, eenvinner) =
          GetIlxClosureFreeVars cenv m [] eenvouter [] (mkLambda m nextEnumeratorValRef.Deref (generateNextExpr, g.int32_ty))
 
     let ilCloSeqElemTy = GenType cenv.amap m eenvinner.tyenv seqElemTy
@@ -4604,65 +4747,56 @@ and GenGenericParams cenv eenv tps =
 and GenGenericArgs m (tyenv: TypeReprEnv) tps =
     tps |> DropErasedTypars |> List.map (fun c -> (mkILTyvarTy tyenv.[c, m]))
 
+/// Generate a local type function contract class and implementation
+and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc thisVars expr m =
+    let g = cenv.g
+    let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m isLocalTypeFunc true thisVars eenv expr
+    let ilCloTypeRef = cloinfo.cloSpec.TypeRef
+    let entryPointInfo = thisVars |> List.map (fun v -> (v, BranchCallClosure (cloinfo.cloArityInfo)))
+    // Now generate the actual closure implementation w.r.t. eenvinner
+    let directTypars, ilDirectWitnessParams, _directWitnessInfos, eenvinner =
+        AddDirectTyparWitnessParams cenv eenvinner cloinfo m
+
+    let ilDirectGenericParams = GenGenericParams cenv eenvinner directTypars
+
+    // The type-lambdas are dealt with by the local type function
+    let ilCloFormalReturnTy, ilCloLambdas =
+        let rec strip lambdas =
+            match lambdas with
+            | Lambdas_forall(_, r) -> strip r
+            | Lambdas_return returnTy -> returnTy, lambdas
+            | _ -> failwith "AdjustNamedLocalTypeFuncIlxClosureInfo: local functions can currently only be type functions"
+        strip cloinfo.ilCloLambdas
+
+    let ilCloBody = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways, entryPointInfo, cloinfo.cloName, eenvinner, 1, body, Return)
+    let ilCtorBody = mkILMethodBody (true, [], 8, nonBranchingInstrsToCode (mkCallBaseConstructor(g.ilg.typ_Object, [])), None )
+    let cloMethods = [ mkILGenericVirtualMethod("DirectInvoke", ILMemberAccess.Assembly, ilDirectGenericParams, ilDirectWitnessParams, mkILReturn ilCloFormalReturnTy, MethodBody.IL(lazy ilCloBody)) ]
+                
+    let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, cloinfo.cloILGenericParams, [], cloinfo.ilCloAllFreeVars, ilCloLambdas, ilCtorBody, cloMethods, [], g.ilg.typ_Object, [], Some cloinfo.cloSpec)
+    cloinfo, ilCloTypeRef, cloTypeDefs
+
+and GenClosureAsFirstClassFunction cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc thisVars m expr =
+    let g = cenv.g
+    let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m isLocalTypeFunc true thisVars eenv expr
+    let entryPointInfo = thisVars |> List.map (fun v -> (v, BranchCallClosure (cloinfo.cloArityInfo)))
+    let ilCloTypeRef = cloinfo.cloSpec.TypeRef
+
+    let ilCloBody = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways, entryPointInfo, cloinfo.cloName, eenvinner, 1, body, Return)
+    let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, cloinfo.cloILGenericParams, [], cloinfo.ilCloAllFreeVars, cloinfo.ilCloLambdas, ilCloBody, [], [], g.ilg.typ_Object, [], Some cloinfo.cloSpec)
+    cloinfo, ilCloTypeRef, cloTypeDefs
+
 /// Generate the closure class for a function
 and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc thisVars expr =
-    let g = cenv.g
     match expr with
     | Expr.Lambda (_, _, _, _, _, m, _)
     | Expr.TyLambda (_, _, _, m, _) ->
       
-        let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m isLocalTypeFunc true thisVars eenv expr
-
-        let entryPointInfo = thisVars |> List.map (fun v -> (v, BranchCallClosure (cloinfo.cloArityInfo)))
-
-        let ilCloBody = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways, entryPointInfo, cloinfo.cloName, eenvinner, 1, body, Return)
-        let ilCloTypeRef = cloinfo.cloSpec.TypeRef
-        let cloTypeDefs =
+        let cloinfo, ilCloTypeRef, cloTypeDefs =
             if isLocalTypeFunc then
-
-                // Work out the contract type and generate a class with an abstract method for this type
-                let (ilContractGenericParams, ilContractMethTyargs, ilContractTySpec: ILTypeSpec, ilContractFormalRetTy) = GenNamedLocalTypeFuncContractInfo cenv eenv m cloinfo
-                let ilContractTypeRef = ilContractTySpec.TypeRef
-                let ilContractTy = mkILFormalBoxedTy ilContractTypeRef ilContractGenericParams
-                let ilContractCtor = mkILNonGenericEmptyCtor None g.ilg.typ_Object
-
-                let ilContractMeths = [ilContractCtor; mkILGenericVirtualMethod("DirectInvoke", ILMemberAccess.Assembly, ilContractMethTyargs, [], mkILReturn ilContractFormalRetTy, MethodBody.Abstract) ]
-                let ilContractTypeDef =
-                    ILTypeDef(name = ilContractTypeRef.Name,
-                              layout = ILTypeDefLayout.Auto,
-                              attributes = enum 0,
-                              genericParams = ilContractGenericParams,
-                              customAttrs = mkILCustomAttrs [mkCompilationMappingAttr g (int SourceConstructFlags.Closure) ],
-                              fields = emptyILFields,
-                              events= emptyILEvents,
-                              properties = emptyILProperties,
-                              methods= mkILMethods ilContractMeths,
-                              methodImpls= emptyILMethodImpls,
-                              nestedTypes=emptyILTypeDefs,
-                              implements = [],
-                              extends= Some g.ilg.typ_Object,
-                              securityDecls= emptyILSecurityDecls)
-
-                // the contract type is an abstract type and not sealed
-                let ilContractTypeDef =
-                    ilContractTypeDef
-                        .WithAbstract(true)
-                        .WithAccess(ComputeTypeAccess ilContractTypeRef true)
-                        .WithSerializable(true)
-                        .WithSpecialName(true)
-                        .WithLayout(ILTypeDefLayout.Auto)
-                        .WithInitSemantics(ILTypeInit.BeforeField)
-                        .WithEncoding(ILDefaultPInvokeEncoding.Auto)
-
-                cgbuf.mgbuf.AddTypeDef(ilContractTypeRef, ilContractTypeDef, false, false, None)
-
-                let ilCtorBody = mkILMethodBody (true, [], 8, nonBranchingInstrsToCode (mkCallBaseConstructor(ilContractTy, [])), None )
-                let cloMethods = [ mkILGenericVirtualMethod("DirectInvoke", ILMemberAccess.Assembly, cloinfo.localTypeFuncDirectILGenericParams, [], mkILReturn (cloinfo.ilCloFormalReturnTy), MethodBody.IL(lazy ilCloBody)) ]
-                let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, cloinfo.cloILGenericParams, [], cloinfo.ilCloAllFreeVars, cloinfo.ilCloLambdas, ilCtorBody, cloMethods, [], ilContractTy, [], Some cloinfo.cloSpec)
-                cloTypeDefs
-
+                GenClosureAsLocalTypeFunction cenv cgbuf eenv isLocalTypeFunc thisVars expr m
             else
-                GenClosureTypeDefs cenv (ilCloTypeRef, cloinfo.cloILGenericParams, [], cloinfo.ilCloAllFreeVars, cloinfo.ilCloLambdas, ilCloBody, [], [], g.ilg.typ_Object, [], Some cloinfo.cloSpec)
+                GenClosureAsFirstClassFunction cenv cgbuf eenv isLocalTypeFunc thisVars m expr
+
         CountClosure()
         for cloTypeDef in cloTypeDefs do
             cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
@@ -4750,22 +4884,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) eenvouter takenNames ex
              | (StaticField _ | StaticProperty _ | Method _ | Null) -> false
              | _ -> true))
 
-    // The general shape is:
-    //    {LAM <tyfunc-typars>. expr }[free-typars]: overall-type[contract-typars]
-    // Then
-    //    internal-typars = free-typars - contract-typars
-    //
-    // In other words, the free type variables get divided into two sets
-    //  -- "contract" ones, which are part of the return type. We separate these to enable use to
-    //     bake our own function base contracts for local type functions
-    //
-    //  -- "internal" ones, which get used internally in the implementation
-    let cloContractFreeTyvarSet = (freeInType CollectTypars (tyOfExpr g expr)).FreeTypars
-
-    let cloInternalFreeTyvars = Zset.diff cloFreeVarResults.FreeTyvars.FreeTypars cloContractFreeTyvarSet |> Zset.elements
-    let cloContractFreeTyvars = cloContractFreeTyvarSet |> Zset.elements
-
-    let cloFreeTyvars = cloContractFreeTyvars @ cloInternalFreeTyvars
+    let cloFreeTyvars = cloFreeVarResults.FreeTyvars.FreeTypars |> Zset.elements
 
     let cloAttribs = []
 
@@ -4789,21 +4908,9 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) eenvouter takenNames ex
         else
             []
 
+    // Captured witnesses get captured in free variable fields
     let ilCloWitnessFreeVars, ilCloWitnessStorage =
-        let names = 
-            cloWitnessInfos 
-            |> List.map (fun w -> String.uncapitalize w.MemberName)
-            |> ChooseFreeVarNames takenNames 
-        (cloWitnessInfos, names) 
-        ||> List.map2 (fun w nm -> 
-            let ty = GenWitnessTy cenv.g w
-            let ilTy =  GenType cenv.amap m eenvinner.tyenv ty
-            let ilFv = mkILFreeVar (nm, true, ilTy)
-            let storage =
-                let ilField = mkILFieldSpecInTy (ilCloTyInner, ilFv.fvName, ilFv.fvType)
-                Env(ilCloTyInner, ilField, None)
-            ilFv, (w, storage))
-        |> List.unzip
+        FreeVarStorageForWitnessInfos cenv eenvinner takenNames ilCloTyInner m cloWitnessInfos
 
     // Allocate storage in the environment for the witnesses
     let eenvinner = eenvinner |> AddStorageForLocalWitnesses ilCloWitnessStorage
@@ -4833,7 +4940,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) eenvouter takenNames ex
     let eenvinner = eenvinner |> AddStorageForLocalVals g ilCloFreeVarStorage
 
     // Return a various results
-    (cloAttribs, cloInternalFreeTyvars, cloContractFreeTyvars, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner)
+    (cloAttribs, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner)
 
 and GetIlxClosureInfo cenv m isLocalTypeFunc canUseStaticField thisVars eenvouter expr =
     let g = cenv.g
@@ -4862,7 +4969,7 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc canUseStaticField thisVars eenvoute
     let takenNames = vs |> List.map (fun v -> v.CompiledName g.CompilerGlobalState)
 
     // Get the free variables and the information about the closure, add the free variables to the environment
-    let (cloAttribs, cloInternalFreeTyvars, cloContractFreeTyvars, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner) =
+    let (cloAttribs, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner) =
         GetIlxClosureFreeVars cenv m thisVars eenvouter takenNames expr
 
     // Put the type and value arguments into the environment
@@ -4891,65 +4998,13 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc canUseStaticField thisVars eenvoute
     let narginfo = vs |> List.map (fun _ -> 1)
 
     // Generate the ILX view of the lambdas
-    let ilReturnTy = GenType cenv.amap m eenvinner.tyenv returnTy
-
-    // The general shape is:
-    //    {LAM <tyfunc-typars>. expr }[free-typars]: overall-type[contract-typars]
-    // Then
-    //    internal-typars = free-typars - contract-typars
-    //
-    // For a local type function closure, this becomes
-    //    class Contract<contract-typars> {
-    //        abstract DirectInvoke<tyfunc-typars> : overall-type
-    //    }
-    //
-    //    class ContractImplementation<contract-typars, internal-typars> : Contract<contract-typars> {
-    //        override DirectInvoke<tyfunc-typars> : overall-type { expr }
-    //    }
-    //
-    // For a non-local type function closure, this becomes
-    //
-    //    class FunctionImplementation<contract-typars, internal-typars> : FSharpTypeFunc {
-    //        override Specialize<tyfunc-typars> : overall-type { expr }
-    //    }
-    //
-    // For a normal function closure, <tyfunc-typars> is empty, and this becomes
-    //
-    //    class FunctionImplementation<contract-typars, internal-typars> : overall-type<contract-typars> {
-    //        override Invoke(..) { expr }
-    //    }
-
-    // In other words, the free type variables get divided into two sets
-    //  -- "contract" ones, which are part of the return type. We separate these to enable use to
-    //     bake our own function base contracts for local type functions
-    //
-    //  -- "internal" ones, which get used internally in the implementation
-    //
-    // There are also "direct" and "indirect" type variables, which are part of the lambdas of the type function.
-    // Direct type variables are only used for local type functions, and indirect type variables only used for first class
-    // function values.
+    let ilCloReturnTy = GenType cenv.amap m eenvinner.tyenv returnTy
 
     /// Compute the contract if it is a local type function
-    let ilContractGenericParams = GenGenericParams cenv eenvinner cloContractFreeTyvars
-    let ilContractGenericActuals = GenGenericArgs m eenvouter.tyenv cloContractFreeTyvars
-    let ilInternalGenericParams = GenGenericParams cenv eenvinner cloInternalFreeTyvars
-    let ilInternalGenericActuals = GenGenericArgs m eenvouter.tyenv cloInternalFreeTyvars
+    let ilCloGenericFormals = GenGenericParams cenv eenvinner cloFreeTyvars
+    let ilCloGenericActuals = GenGenericArgs m eenvouter.tyenv cloFreeTyvars
 
-    let ilCloGenericFormals = ilContractGenericParams @ ilInternalGenericParams
-    let ilCloGenericActuals = ilContractGenericActuals @ ilInternalGenericActuals
-
-    let ilDirectGenericParams, ilCloReturnTy, ilCloLambdas =
-        if isLocalTypeFunc then
-            let rec strip lambdas acc =
-                match lambdas with
-                | Lambdas_forall(gp, r) -> strip r (gp :: acc)
-                | Lambdas_return returnTy -> List.rev acc, returnTy, lambdas
-                | _ -> failwith "AdjustNamedLocalTypeFuncIlxClosureInfo: local functions can currently only be type functions"
-            strip ilCloLambdas []
-        else
-            [], ilReturnTy, ilCloLambdas
-    
-    let useStaticField = canUseStaticField && (ilCloAllFreeVars.Length = 0)      
+    let useStaticField = canUseStaticField && (ilCloAllFreeVars.Length = 0)
 
     let ilxCloSpec = IlxClosureSpec.Create(IlxClosureRef(ilCloTypeRef, ilCloLambdas, ilCloAllFreeVars), ilCloGenericActuals, useStaticField)
 
@@ -4965,36 +5020,8 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc canUseStaticField thisVars eenvoute
           cloFreeVars=cloFreeVars
           cloFreeTyvars=cloFreeTyvars
           cloWitnessInfos = cloWitnessInfos
-          cloAttribs=cloAttribs
-          localTypeFuncContractFreeTypars = cloContractFreeTyvars
-          localTypeFuncInternalFreeTypars = cloInternalFreeTyvars
-          localTypeFuncILGenericArgs = ilContractGenericActuals
-          localTypeFuncDirectILGenericParams = ilDirectGenericParams }
+          cloAttribs=cloAttribs }
     cloinfo, body, eenvinner
-
-//--------------------------------------------------------------------------
-// Named local type functions
-//--------------------------------------------------------------------------
-
-and IsNamedLocalTypeFuncVal g (v: Val) expr =
-    not v.IsCompiledAsTopLevel &&
-    IsGenericValWithGenericConstraints g v &&
-    (match stripExpr expr with Expr.TyLambda _ -> true | _ -> false)
-
-/// Generate the information relevant to the contract portion of a named local type function
-and GenNamedLocalTypeFuncContractInfo cenv eenv m cloinfo =
-    let ilCloTypeRef = cloinfo.cloSpec.TypeRef
-    let ilContractTypeRef = ILTypeRef.Create(scope=ilCloTypeRef.Scope, enclosing=ilCloTypeRef.Enclosing, name=ilCloTypeRef.Name + "$contract")
-    let eenvForContract = EnvForTypars cloinfo.localTypeFuncContractFreeTypars eenv
-    let ilContractGenericParams = GenGenericParams cenv eenv cloinfo.localTypeFuncContractFreeTypars
-    let tvs, contractRetTy =
-        match cloinfo.cloExpr with
-        | Expr.TyLambda (_, tvs, _, _, bty) -> tvs, bty
-        | e -> [], tyOfExpr cenv.g e
-    let eenvForContract = AddTyparsToEnv tvs eenvForContract
-    let ilContractMethTyargs = GenGenericParams cenv eenvForContract tvs
-    let ilContractFormalRetTy = GenType cenv.amap m eenvForContract.tyenv contractRetTy
-    ilContractGenericParams, ilContractMethTyargs, mkILTySpec(ilContractTypeRef, cloinfo.localTypeFuncILGenericArgs), ilContractFormalRetTy
 
 /// Generate a new delegate construction including a closure class if necessary. This is a lot like generating function closures
 /// and object expression closures, and most of the code is shared.
@@ -5024,7 +5051,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
 
     // Work out the free type variables for the morphing thunk
     let takenNames = List.map nameOfVal tmvs
-    let (cloAttribs, _, _, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilDelegeeTypeRef, ilCloAllFreeVars, eenvinner) =
+    let (cloAttribs, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilDelegeeTypeRef, ilCloAllFreeVars, eenvinner) =
         GetIlxClosureFreeVars cenv m [] eenvouter takenNames expr
 
     let ilDelegeeGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
@@ -6474,10 +6501,7 @@ and GenBindingRhs cenv cgbuf eenv sp (vspec: Val) e =
             (
                 tyargs |> List.forall (fun tp -> tp.IsErased) &&
                 (match StorageForVal g vspec.Range vspec eenv with Local _ -> true | _ -> false) &&
-                (isLocalTypeFunc ||
-                    (match ttype with
-                     TType_var typar -> match typar.Solution with Some(TType_app(t, _))-> t.IsStructOrEnumTycon | _ -> false
-                     | _ -> false))
+                (isLocalTypeFunc || isStructOrEnumTyconTy g ttype)
             ) ->
             // type lambda with erased type arguments that is stored as local variable (not method or property)- inline body
             GenExpr cenv cgbuf eenv sp body Continue

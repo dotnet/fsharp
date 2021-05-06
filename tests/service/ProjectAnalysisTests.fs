@@ -1559,7 +1559,7 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
     match oddActivePatternCase.XmlDoc with 
     | FSharpXmlDoc.FromXmlText t -> t.GetElaboratedXmlLines() |> shouldEqual [|"<summary>"; "Total active pattern for even/odd integers"; "</summary>" |]
     | _ -> failwith "wrong kind"
-    oddActivePatternCase.XmlDocSig |> shouldEqual ""
+    oddActivePatternCase.XmlDocSig |> shouldEqual "M:ActivePatterns.|Even|Odd|(System.Int32)"
     let oddGroup = oddActivePatternCase.Group
     oddGroup.IsTotal |> shouldEqual true
     oddGroup.Names |> Seq.toList |> shouldEqual ["Even"; "Odd"]
@@ -1577,7 +1577,7 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
         t.UnprocessedLines |> shouldEqual [| "Total active pattern for even/odd integers" |]
         t.GetElaboratedXmlLines() |> shouldEqual [| "<summary>"; "Total active pattern for even/odd integers"; "</summary>" |]
     | _ -> failwith "wrong kind"
-    evenActivePatternCase.XmlDocSig |> shouldEqual ""
+    evenActivePatternCase.XmlDocSig |> shouldEqual "M:ActivePatterns.|Even|Odd|(System.Int32)"
     let evenGroup = evenActivePatternCase.Group
     evenGroup.IsTotal |> shouldEqual true
     evenGroup.Names |> Seq.toList |> shouldEqual ["Even"; "Odd"]
@@ -1625,7 +1625,7 @@ let ``Test partial active patterns' exact ranges from uses of symbols`` () =
         t.UnprocessedLines |> shouldEqual [| "Partial active pattern for floats" |]
         t.GetElaboratedXmlLines() |> shouldEqual [| "<summary>"; "Partial active pattern for floats"; "</summary>" |]
     | _ -> failwith "wrong kind"
-    floatActivePatternCase.XmlDocSig |> shouldEqual ""
+    floatActivePatternCase.XmlDocSig |> shouldEqual "M:ActivePatterns.|Float|_|(System.String)"
     let floatGroup = floatActivePatternCase.Group
     floatGroup.IsTotal |> shouldEqual false
     floatGroup.Names |> Seq.toList |> shouldEqual ["Float"]
@@ -5138,6 +5138,52 @@ let ``Test project41 all symbols`` () =
            ("f3", ((18, 8), (18, 10)), ["val"], (18, 8));
            ("M", ((2, 7), (2, 8)), ["module"], (2, 7))]
 
+
+module internal Project42 = 
+
+    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let fileName2 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    // We need to us a stable name to keep the hashes stable
+    let base2 = Path.Combine(Path.GetDirectoryName(Path.GetTempFileName()), "stabletmp.tmp")
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1 = """
+module File1
+
+let test() = ()
+    """
+    File.WriteAllText(fileName1, fileSource1)
+    let fileSource2 = """
+module File2
+
+open File1
+
+let test2() = test()
+    """
+    File.WriteAllText(fileName2, fileSource2)
+    let fileNames = [fileName1;fileName2]
+    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+
+[<Test>]
+let ``Test project42 to ensure cached checked results are invalidated`` () = 
+    let text2 = SourceText.ofString(File.ReadAllText(Project42.fileName2))
+    let checkedFile2 = checker.ParseAndCheckFileInProject(Project42.fileName2, text2.GetHashCode(), text2, Project42.options) |> Async.RunSynchronously
+    match checkedFile2 with
+    | _, FSharpCheckFileAnswer.Succeeded(checkedFile2Results) ->
+        Assert.IsEmpty(checkedFile2Results.Diagnostics)
+        File.WriteAllText(Project42.fileName1, """module File1""")
+        try
+            let checkedFile2Again = checker.ParseAndCheckFileInProject(Project42.fileName2, text2.GetHashCode(), text2, Project42.options) |> Async.RunSynchronously
+            match checkedFile2Again with
+            | _, FSharpCheckFileAnswer.Succeeded(checkedFile2AgainResults) ->
+                Assert.IsNotEmpty(checkedFile2AgainResults.Diagnostics) // this should contain errors as File1 does not contain the function `test()`
+            | _ ->
+                failwith "Project42 failed to check."
+        finally
+            File.WriteAllText(Project42.fileName1, Project42.fileSource1) // Revert to the original state of the file
+    | _ ->
+        failwith "Project42 failed to check."
 
 module internal ProjectBig = 
 

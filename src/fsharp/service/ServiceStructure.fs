@@ -443,9 +443,8 @@ module Structure =
             | SynBindingKind.Normal ->
                 let collapse = Range.endToEnd binding.RangeOfBindingWithoutRhs binding.RangeOfBindingWithRhs
                 match memberFlags with
-                | Some ({MemberKind=SynMemberKind.Constructor}) ->
-                    let collapse = Range.startToEnd expr.Range br
-                    rcheck Scope.New Collapse.Below br collapse
+                | Some {MemberKind=SynMemberKind.Constructor} ->
+                    rcheck Scope.New Collapse.Below binding.RangeOfBindingWithRhs collapse
                 | Some _ ->
                     rcheck Scope.Member Collapse.Below binding.RangeOfBindingWithRhs collapse
                 | None ->
@@ -521,7 +520,7 @@ module Structure =
         and parseSimpleRepr simple =
             match simple with
             | SynTypeDefnSimpleRepr.Enum (cases, _er) ->
-                for SynEnumCase (attrs, _, _, _, cr) in cases do
+                for SynEnumCase (attrs, _, _, _, _, cr) in cases do
                     rcheck Scope.EnumCase Collapse.Below cr cr
                     parseAttributes attrs
             | SynTypeDefnSimpleRepr.Record (_, fields, rr) ->

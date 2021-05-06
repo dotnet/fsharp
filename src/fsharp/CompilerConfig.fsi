@@ -7,6 +7,7 @@ open System
 open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler
+open FSharp.Compiler.Xml
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
@@ -184,6 +185,7 @@ type TcConfigBuilder =
       mutable reportNumDecls: bool
       mutable printSignature: bool
       mutable printSignatureFile: string
+      mutable printAllSignatureFiles: bool
       mutable xmlDocOutputFile: string option
       mutable stats: bool
       mutable generateFilterBlocks: bool 
@@ -207,6 +209,7 @@ type TcConfigBuilder =
       mutable ignoreSymbolStoreSequencePoints: bool
       mutable internConstantStrings: bool
       mutable extraOptimizationIterations: int
+      mutable win32icon: string 
       mutable win32res: string 
       mutable win32manifest: string
       mutable includewin32manifest: bool
@@ -272,6 +275,8 @@ type TcConfigBuilder =
       mutable pathMap : PathMap
 
       mutable langVersion : LanguageVersion
+
+      mutable xmlDocInfoLoader : IXmlDocumentationInfoLoader option
     }
 
     static member CreateNew:
@@ -372,6 +377,7 @@ type TcConfig =
     member reportNumDecls: bool
     member printSignature: bool
     member printSignatureFile: string
+    member printAllSignatureFiles: bool
     member xmlDocOutputFile: string option
     member stats: bool
     member generateFilterBlocks: bool 
@@ -395,6 +401,7 @@ type TcConfig =
     member ignoreSymbolStoreSequencePoints: bool
     member internConstantStrings: bool
     member extraOptimizationIterations: int
+    member win32icon: string
     member win32res: string 
     member win32manifest: string
     member includewin32manifest: bool
@@ -437,6 +444,8 @@ type TcConfig =
     /// If true, indicates all type checking and code generation is in the context of fsi.exe
     member isInteractive: bool
     member isInvalidationSupported: bool 
+
+    member xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
     member FxResolver: FxResolver
 

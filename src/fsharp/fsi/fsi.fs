@@ -63,6 +63,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
+open FSharp.Compiler.Xml
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -470,9 +471,9 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
         Display.layout_to_string opts lay
     
     /// Fetch the saved value of an expression out of the 'it' register and show it.
-    member valuePrinter.InvokeExprPrinter (denv, emEnv, ilxGenerator: IlxAssemblyGenerator, vref) = 
+    member valuePrinter.InvokeExprPrinter (denv, infoReader, emEnv, ilxGenerator: IlxAssemblyGenerator, vref: ValRef) = 
         let opts        = valuePrinter.GetFsiPrintOptions()
-        let res    = ilxGenerator.LookupGeneratedValue (valuePrinter.GetEvaluationContext emEnv, vref)
+        let res    = ilxGenerator.LookupGeneratedValue (valuePrinter.GetEvaluationContext emEnv, vref.Deref)
         let rhsL = 
             match res with
                 | None             -> None
@@ -480,11 +481,12 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
                     let lay = valuePrinter.PrintValue (FsiValuePrinterMode.PrintExpr, opts, obj, objTy)
                     if isEmptyL lay then None else Some lay // suppress empty layout 
         let denv = { denv with suppressMutableKeyword = true } // suppress 'mutable' in 'val mutable it = ...'
+        let denv = { denv with suppressInlineKeyword = false } // dont' suppress 'inline' in 'val inline f = ...'
         let fullL = 
             if Option.isNone rhsL || isEmptyL rhsL.Value then
-                NicePrint.prettyLayoutOfValOrMemberNoInst denv vref (* the rhs was suppressed by the printer, so no value to print *)
+                NicePrint.prettyLayoutOfValOrMemberNoInst denv infoReader vref (* the rhs was suppressed by the printer, so no value to print *)
             else
-                (NicePrint.prettyLayoutOfValOrMemberNoInst denv vref ++ wordL (TaggedText.tagText "=")) --- rhsL.Value
+                (NicePrint.prettyLayoutOfValOrMemberNoInst denv infoReader vref ++ wordL (TaggedText.tagText "=")) --- rhsL.Value
 
         Utilities.colorPrintL outWriter opts fullL
 
@@ -1200,6 +1202,7 @@ type internal FsiDynamicCompiler
                 else
                   // With #load items, the vals in the inferred signature do not tie up with those generated. Disable printing.
                   denv 
+            let denv = { denv with suppressInlineKeyword = false } // dont' suppress 'inline' in 'val inline f = ...'
 
             // 'Open' the path for the fragment we just compiled for any future printing.
             let denv = denv.AddOpenPath (pathOfLid prefixPath) 
@@ -1405,7 +1408,8 @@ type internal FsiDynamicCompiler
         match istate.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem itName with 
         | NameResolution.Item.Value vref -> 
              if not tcConfig.noFeedback then 
-                 valuePrinter.InvokeExprPrinter (istate.tcState.TcEnvFromImpls.DisplayEnv, istate.emEnv, istate.ilxGenerator, vref.Deref)
+                 let infoReader = InfoReader(istate.tcGlobals, istate.tcImports.GetImportMap())
+                 valuePrinter.InvokeExprPrinter (istate.tcState.TcEnvFromImpls.DisplayEnv, infoReader, istate.emEnv, istate.ilxGenerator, vref)
 
              /// Clear the value held in the previous "it" binding, if any, as long as it has never been referenced.
              match prevIt with

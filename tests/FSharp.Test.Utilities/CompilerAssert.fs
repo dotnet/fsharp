@@ -460,6 +460,10 @@ let main argv = 0"""
         let exitCode, output, errors = Commands.executeProcess (Some filename) arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
 
+    static member Checker = checker
+
+    static member DefaultProjectOptions = defaultProjectOptions
+
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
         lock gate (fun () ->
@@ -648,6 +652,29 @@ let main argv = 0"""
                     | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
 
             errors
+
+    /// Parses and type checks the given source. Fails if type checker is aborted.
+    static member ParseAndTypeCheck(options, name, source: string) =
+        lock gate <| fun () ->
+            let parseResults, fileAnswer =
+                checker.ParseAndCheckFileInProject(
+                    name,
+                    0,
+                    SourceText.ofString source,
+                    { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
+                |> Async.RunSynchronously
+
+            match fileAnswer with
+            | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); failwith "Type Checker Aborted"
+            | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> parseResults, typeCheckResults
+
+    /// Parses and type checks the given source. Fails if the type checker is aborted or the parser returns any diagnostics.
+    static member TypeCheck(options, name, source: string) =
+        let parseResults, checkResults = CompilerAssert.ParseAndTypeCheck(options, name, source)
+
+        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
+
+        checkResults
 
     static member TypeCheckWithErrorsAndOptionsAndAdjust options libAdjust (source: string) expectedTypeErrors =
         lock gate <| fun () ->

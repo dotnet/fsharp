@@ -3,8 +3,8 @@
 module internal FSharp.Compiler.ParseHelpers
 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
 

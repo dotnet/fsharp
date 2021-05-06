@@ -359,6 +359,9 @@ type FSharpEntity =
     /// Safe version of `GetMembersFunctionsAndValues`.
     member TryGetMembersFunctionsAndValues: unit -> IList<FSharpMemberOrFunctionOrValue>
 
+    /// Get the source text of the entity's signature to be used as metadata.
+    member TryGetMetadataText: unit -> ISourceText option
+
 /// Represents a delegate signature in an F# symbol
 [<Class>] 
 type FSharpDelegateSignature =
@@ -900,6 +903,9 @@ type FSharpMemberOrFunctionOrValue =
 
     /// Indicated if this is a value compiled to a method
     member IsValCompiledAsMethod: bool
+
+    /// Indicates if this is a function
+    member IsFunction: bool
     
     /// Indicated if this is a value
     member IsValue: bool
@@ -1043,11 +1049,17 @@ type FSharpType =
     /// Get the generic parameter data for a generic parameter type
     member GenericParameter: FSharpGenericParameter
 
-    /// Format the type using the rules of the given display context
+    /// Format the type using the rules of the given display context, skipping type constraints
     member Format: context: FSharpDisplayContext -> string
+
+     /// Format the type using the rules of the given display context
+    member FormatWithConstraints: context: FSharpDisplayContext -> string
 
     /// Format the type using the rules of the given display context
     member FormatLayout: context: FSharpDisplayContext -> TaggedText[]
+
+    /// Format the type - with constraints - using the rules of the given display context
+    member FormatLayoutWithConstraints: context: FSharpDisplayContext -> TaggedText[]
 
     /// Instantiate generic type parameters in a type
     member Instantiate: (FSharpGenericParameter * FSharpType) list -> FSharpType
@@ -1138,4 +1150,3 @@ type FSharpOpenDeclaration =
       
     /// If it's `namespace Xxx.Yyy` declaration.
     member IsOwnNamespace: bool
-

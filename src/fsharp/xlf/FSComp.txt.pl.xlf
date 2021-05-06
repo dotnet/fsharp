@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
-        <target state="new">The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</target>
+        <target state="translated">Element „AssemblyKeyNameAttribute” jest przestarzały. Zamiast niego użyj elementu „AssemblyKeyFileAttribute”.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerSigningUnsupportedOnThisPlatform">
         <source>Key container signing is not supported on this platform.</source>
-        <target state="new">Key container signing is not supported on this platform.</target>
+        <target state="translated">Podpisywanie kontenerów kluczy nie jest obsługiwane na tej platformie.</target>
         <note />
       </trans-unit>
       <trans-unit id="csAvailableOverloads">
@@ -247,6 +247,11 @@
         <target state="translated">Nagłówek zasobu rozpoczynający się od przesunięcia {0} jest nieprawidłowo sformułowany.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAllSigs">
+        <source>Print the inferred interfaces of all compilation files to associated signature files</source>
+        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Wyświetl dozwolone wartości dla wersji językowej; określ wersję językową, np. „latest” lub „preview”</target>
@@ -265,6 +270,11 @@
       <trans-unit id="optsVersion">
         <source>Display compiler version banner and exit</source>
         <target state="translated">Wyświetl baner wersji kompilatora i zakończ</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsWin32icon">
+        <source>Specify a Win32 icon file (.ico)</source>
+        <target state="new">Specify a Win32 icon file (.ico)</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -329,7 +339,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
-        <target state="new">The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</target>
+        <target state="translated">Nie można określić zestawu .NET SDK dla tego skryptu. Jeśli skrypt znajduje się w katalogu korzystającym z pliku „global.json”, upewnij się, że zainstalowano odpowiedni zestaw .NET SDK. Nieoczekiwany błąd: „{0}”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -2774,7 +2784,7 @@
       </trans-unit>
       <trans-unit id="tcMemberKindPropertyGetSetNotExpected">
         <source>SynMemberKind.PropertyGetSet only expected in parse trees</source>
-        <target state="needs-review-translation">Element MemberKind.PropertyGetSet jest oczekiwany tylko w drzewach analizy</target>
+        <target state="translated">Element MemberKind.PropertyGetSet jest oczekiwany tylko w drzewach analizy</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainValues">

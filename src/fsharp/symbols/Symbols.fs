@@ -19,11 +19,13 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.AbstractIL
 
 type FSharpAccessibility(a:Accessibility, ?isProtected) = 
     let isProtected = defaultArg isProtected  false
@@ -195,7 +197,7 @@ module Impl =
             
 
     let getXmlDocSigForEntity (cenv: SymbolEnv) (ent:EntityRef)=
-        match SymbolHelpers.GetXmlDocSigOfEntityRef cenv.infoReader ent.Range ent with
+        match GetXmlDocSigOfEntityRef cenv.infoReader ent.Range ent with
         | Some (_, docsig) -> docsig
         | _ -> ""
 
@@ -806,6 +808,92 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member x.TryGetMembersFunctionsAndValues() = 
         try x.MembersFunctionsAndValues with _ -> [||] :> _
 
+    member this.TryGetMetadataText() =
+        match entity.TryDeref with
+        | ValueSome _ ->
+            if entity.IsNamespace then None
+            else
+
+            let denv = DisplayEnv.InitialForSigFileGeneration cenv.g
+
+            let extraOpenPath =
+                match entity.CompilationPathOpt with
+                | Some cpath ->
+                    let rec getOpenPath accessPath acc =
+                        match accessPath with
+                        | [] -> acc
+                        | (name, ModuleOrNamespaceKind.ModuleOrType) :: accessPath ->
+                            getOpenPath accessPath (name :: acc)
+                        | (name, ModuleOrNamespaceKind.Namespace) :: accessPath ->
+                            getOpenPath accessPath (name :: acc)
+                        | (name, ModuleOrNamespaceKind.FSharpModuleWithSuffix) :: accessPath ->
+                            getOpenPath accessPath (name :: acc)
+
+                    getOpenPath cpath.AccessPath []
+                | _ -> 
+                    []
+                |> List.rev
+
+            let needOpenType =
+                match entity.CompilationPathOpt with
+                | Some cpath ->
+                    match cpath.AccessPath with
+                    | (_, ModuleOrNamespaceKind.ModuleOrType) :: _ ->
+                        match this.DeclaringEntity with
+                        | Some (declaringEntity: FSharpEntity) -> not declaringEntity.IsFSharpModule
+                        | _ -> false
+                    | _ -> false
+                | _ ->
+                    false
+
+            let denv = denv.AddOpenPath extraOpenPath
+
+            let infoReader = cenv.infoReader
+
+            let openPathL =
+                extraOpenPath
+                |> List.map (fun x -> Layout.wordL (TaggedText.tagUnknownEntity x))
+
+            let pathL =
+                if List.isEmpty extraOpenPath then
+                    Layout.emptyL
+                else
+                    Layout.sepListL (Layout.sepL TaggedText.dot) openPathL
+                    
+            let headerL =
+                if List.isEmpty extraOpenPath then
+                    Layout.emptyL
+                else
+                    Layout.(^^)
+                        (Layout.wordL (TaggedText.tagKeyword "namespace"))
+                        pathL
+
+            let openL = 
+                if List.isEmpty openPathL then Layout.emptyL
+                else
+                    let openKeywordL =
+                        if needOpenType then
+                            Layout.(^^)
+                                (Layout.wordL (TaggedText.tagKeyword "open"))
+                                (Layout.wordL TaggedText.keywordType)
+                        else
+                            Layout.wordL (TaggedText.tagKeyword "open")                            
+                    Layout.(^^)
+                        openKeywordL
+                        pathL
+
+            Layout.aboveListL
+                [
+                    (Layout.(^^) headerL (Layout.sepL TaggedText.lineBreak))
+                    (Layout.(^^) openL (Layout.sepL TaggedText.lineBreak))
+                    (NicePrint.layoutEntityRef denv infoReader AccessibleFromSomewhere range0 entity)
+                ]
+            |> LayoutRender.showL
+            |> SourceText.ofString
+            |> Some
+        | _ ->
+            None
+
     override x.Equals(other: obj) =
         box x === other ||
         match other with
@@ -867,7 +955,7 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
     member _.XmlDocSig = 
         checkIsResolved()
         let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
-        match SymbolHelpers.GetXmlDocSigOfUnionCaseInfo unionCase with
+        match GetXmlDocSigOfUnionCaseRef unionCase.UnionCaseRef with
         | Some (_, docsig) -> docsig
         | _ -> ""
 
@@ -1042,12 +1130,12 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
             match d with 
             | RecdOrClass v -> 
                 let recd = RecdFieldInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
-                SymbolHelpers.GetXmlDocSigOfRecdFieldInfo recd
+                GetXmlDocSigOfRecdFieldRef recd.RecdFieldRef
             | Union (v, _) -> 
                 let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
-                SymbolHelpers.GetXmlDocSigOfUnionCaseInfo unionCase
+                GetXmlDocSigOfUnionCaseRef unionCase.UnionCaseRef
             | ILField f -> 
-                SymbolHelpers.GetXmlDocSigOfILFieldInfo cenv.infoReader range0 f
+                GetXmlDocSigOfILFieldInfo cenv.infoReader range0 f
             | AnonField _ -> None
         match xmlsig with
         | Some (_, docsig) -> docsig
@@ -1184,7 +1272,7 @@ type FSharpActivePatternCase(cenv, apinfo: PrettyNaming.ActivePatternInfo, ty, n
     member _.XmlDocSig = 
         let xmlsig = 
             match valOpt with
-            | Some valref -> SymbolHelpers.GetXmlDocSigOfValRef cenv.g valref
+            | Some valref -> GetXmlDocSigOfValRef cenv.g valref
             | None -> None
         match xmlsig with
         | Some (_, docsig) -> docsig
@@ -1873,23 +1961,23 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | E e ->
             let range = defaultArg sym.DeclarationLocationOpt range0
-            match SymbolHelpers.GetXmlDocSigOfEvent cenv.infoReader range e with
+            match GetXmlDocSigOfEvent cenv.infoReader range e with
             | Some (_, docsig) -> docsig
             | _ -> ""
         | P p ->
             let range = defaultArg sym.DeclarationLocationOpt range0
-            match SymbolHelpers.GetXmlDocSigOfProp cenv.infoReader range p with
+            match GetXmlDocSigOfProp cenv.infoReader range p with
             | Some (_, docsig) -> docsig
             | _ -> ""
         | M m | C m -> 
             let range = defaultArg sym.DeclarationLocationOpt range0
-            match SymbolHelpers.GetXmlDocSigOfMethInfo cenv.infoReader range m with
+            match GetXmlDocSigOfMethInfo cenv.infoReader range m with
             | Some (_, docsig) -> docsig
             | _ -> ""
         | V v ->
             match v.DeclaringEntity with 
             | Parent entityRef -> 
-                match SymbolHelpers.GetXmlDocSigOfScopedValRef cenv.g entityRef v with
+                match GetXmlDocSigOfScopedValRef cenv.g entityRef v with
                 | Some (_, docsig) -> docsig
                 | _ -> ""
             | ParentNone -> "" 
@@ -2099,6 +2187,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.IsValue =
         match d with
         | V valRef -> not (isForallFunctionTy cenv.g valRef.Type)
+        | _ -> false
+
+    member x.IsFunction =
+        match d with
+        | V valRef -> isForallFunctionTy cenv.g valRef.Type
         | _ -> false
 
     override x.Equals(other: obj) =
@@ -2347,12 +2440,21 @@ type FSharpType(cenv, ty:TType) =
 
     member _.Format(context: FSharpDisplayContext) = 
        protect <| fun () -> 
-        NicePrint.prettyStringOfTyNoCx (context.Contents cenv.g) ty 
+            NicePrint.prettyStringOfTyNoCx (context.Contents cenv.g) ty 
+
+    member _.FormatWithConstraints(context: FSharpDisplayContext) = 
+        protect <| fun () -> 
+            NicePrint.prettyStringOfTy (context.Contents cenv.g) ty 
 
     member _.FormatLayout(context: FSharpDisplayContext) =
        protect <| fun () -> 
-        NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
-        |> LayoutRender.toArray
+            NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
+            |> LayoutRender.toArray
+
+    member _.FormatLayoutWithConstraints(context: FSharpDisplayContext) =
+        protect <| fun () -> 
+            NicePrint.prettyLayoutOfType (context.Contents cenv.g) ty
+            |> LayoutRender.toArray
 
     override _.ToString() = 
        protect <| fun () -> 

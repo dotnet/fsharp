@@ -34,6 +34,7 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
@@ -426,7 +427,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompil
 let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, sourceFiles, errorLogger: ErrorLogger, exiter: Exiter, createErrorLogger: (Exiter -> CapturingErrorLogger), retryLocked) =
     try
         let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
-        let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofSeq
+        let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofList
 
         if tcConfig.concurrentBuild then
             let mutable exitCode = 0
@@ -738,7 +739,8 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
           ILScopeRef=ILScopeRef.Local
           Contents=ccuContents
           MemberSignatureEquality= typeEquivAux EraseAll tcGlobals
-          TypeForwarders=Map.empty }
+          TypeForwarders=Map.empty
+          XmlDocumentationInfo = None }
 
     let ccu = CcuThunk.Create(ccuName, ccuData)
 
@@ -861,8 +863,6 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
                   | Some prefixPath when not hadSig -> TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m tcSigEnv (prefixPath, m)
                   | _ -> tcSigEnv 
 
-              let ccuSig = CombineCcuContentFragments m [implFileSigType; tcState.tcsCcuSig ]
-
               let ccuSigForFile = CombineCcuContentFragments m [implFileSigType; tcState.tcsCcuSig]
 
               let tcState = 
@@ -870,7 +870,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
                         tcsTcSigEnv=tcSigEnv
                         tcsTcImplEnv=tcImplEnv
                         tcsRootImpls=rootImpls
-                        tcsCcuSig=ccuSig
+                        tcsCcuSig=ccuSigForFile
                         tcsCreatesGeneratedProvidedTypes=tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes }
               return (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), tcState
      

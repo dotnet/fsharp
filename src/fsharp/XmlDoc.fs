@@ -1,14 +1,18 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.Syntax
+namespace FSharp.Compiler.Xml
 
 open System
+open System.IO
+open System.Xml
 open System.Xml.Linq
 open Internal.Utilities.Library
+open Internal.Utilities.Collections
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.AbstractIL.IL
 
 /// Represents collected XmlDoc lines
 [<RequireQualifiedAccess>]
@@ -214,3 +218,61 @@ type PreXmlDoc =
 
     static member Merge a b = PreXmlMerge (a, b)
 
+[<Sealed>]
+type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option) =
+
+    // 2 and 4 are arbitrary but should be reasonable enough
+    [<Literal>]
+    static let cacheStrongSize = 2
+    [<Literal>]
+    static let cacheMaxSize = 4
+    static let cacheAreSimilar =
+        fun ((str1: string, dt1: DateTime), (str2: string, dt2: DateTime)) ->
+            str1.Equals(str2, StringComparison.OrdinalIgnoreCase) &&
+            dt1 = dt2
+    static let cache = AgedLookup<unit, string * DateTime, XmlDocument>(keepStrongly=cacheStrongSize, areSimilar=cacheAreSimilar, keepMax=cacheMaxSize)
+
+    let tryGetSummaryNode xmlDocSig =
+        tryGetXmlDocument()
+        |> Option.bind (fun doc ->
+            match doc.SelectSingleNode(sprintf "doc/members/member[@name='%s']" xmlDocSig) with
+            | null -> None
+            | node when node.HasChildNodes -> Some node
+            | _ -> None)
+
+    member _.TryGetXmlDocBySig(xmlDocSig: string) =
+        tryGetSummaryNode xmlDocSig
+        |> Option.map (fun node ->
+            let childNodes = node.ChildNodes
+            let lines = Array.zeroCreate childNodes.Count
+            for i = 0 to childNodes.Count - 1 do
+                let childNode = childNodes.[i]
+                lines.[i] <- childNode.OuterXml
+            XmlDoc(lines, range0)
+        )      
+
+    static member TryCreateFromFile(xmlFileName: string) =
+        if not (File.Exists(xmlFileName)) || not (String.Equals(Path.GetExtension(xmlFileName), ".xml", StringComparison.OrdinalIgnoreCase)) then
+            None
+        else
+            let tryGetXmlDocument =
+                fun () ->
+                    try
+                        let lastWriteTime = File.GetLastWriteTimeUtc(xmlFileName)
+                        let cacheKey = (xmlFileName, lastWriteTime)
+                        match cache.TryGet((), cacheKey) with
+                        | Some doc -> Some doc
+                        | _ ->
+                            let doc = XmlDocument()
+                            use xmlStream = File.OpenRead(xmlFileName)
+                            doc.Load(xmlStream)
+                            cache.Put((), cacheKey, doc)
+                            Some doc
+                    with
+                    | _ ->
+                        None
+            Some(XmlDocumentationInfo(tryGetXmlDocument))
+
+type IXmlDocumentationInfoLoader =
+
+    abstract TryLoad : assemblyFileName: string * ILModuleDef -> XmlDocumentationInfo option

@@ -66,8 +66,8 @@ type OptionSpec =
     | OptionHelp of (CompilerOptionBlock list -> unit)                      // like OptionUnit, but given the "options"
     | OptionGeneral of (string list -> bool) * (string list -> string list) // Applies? * (ApplyReturningResidualArgs)
 
-and  CompilerOption      = CompilerOption of string * string * OptionSpec * Option<exn> * string option
-and  CompilerOptionBlock = PublicOptions  of string * CompilerOption list | PrivateOptions of CompilerOption list
+and  CompilerOption      = CompilerOption of name: string * argumentDescriptionString: string * actionSpec: OptionSpec * deprecationError: Option<exn> * helpText: string option
+and  CompilerOptionBlock = PublicOptions  of heading: string * options: CompilerOption list | PrivateOptions of options: CompilerOption list
 
 let GetOptionsOfBlock block = 
     match block with 
@@ -279,7 +279,6 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
         processArg (responseFileOptions @ t)
 
     | opt :: t ->  
-
         let optToken, argString = parseOption opt
 
         let reportDeprecatedOption errOpt =
@@ -515,6 +514,9 @@ let setSignatureFile tcConfigB s =
     tcConfigB.printSignature <- true 
     tcConfigB.printSignatureFile <- s
 
+let setAllSignatureFiles tcConfigB () =
+    tcConfigB.printAllSignatureFiles <- true
+
 // option tags
 let tagString = "<string>"
 let tagExe = "exe"
@@ -594,11 +596,9 @@ let inputFileFlagsFsi (tcConfigB: TcConfigBuilder) =
 let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) = 
     let trimFS (s:string) = if s.StartsWithOrdinal "FS" then s.Substring 2 else s
     let trimFStoInt (s:string) =
-        try
-            Some (int32 (trimFS s))
-        with _ ->
-            errorR(Error(FSComp.SR.buildArgInvalidInt s, rangeCmdArgs))
-            None
+        match Int32.TryParse (trimFS s) with
+        | true, n ->  Some n
+        | false, _ -> None
     [
         CompilerOption("warnaserror", tagNone, OptionSwitch(fun switch ->
             tcConfigB.errorSeverityOptions <-
@@ -717,8 +717,13 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
         CompilerOption
            ("sig", tagFile,
             OptionString (setSignatureFile tcConfigB), None,
-            Some (FSComp.SR.optsSig()))    
-                           
+            Some (FSComp.SR.optsSig()))
+
+        CompilerOption
+           ("allsigs", tagNone,
+            OptionUnit (setAllSignatureFiles tcConfigB), None,
+            Some (FSComp.SR.optsAllSigs()))
+
         CompilerOption
            ("nocopyfsharpcore", tagNone,
             OptionUnit (fun () -> tcConfigB.copyFSharpCore <- CopyFSharpCoreFlag.No), None,
@@ -732,6 +737,10 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
 let resourcesFlagsFsi (_tcConfigB: TcConfigBuilder) = []
 let resourcesFlagsFsc (tcConfigB: TcConfigBuilder) =
     [
+        CompilerOption
+            ("win32icon", tagFile,
+             OptionString (fun s -> tcConfigB.win32icon <- s), None,
+             Some (FSComp.SR.optsWin32icon()))
         CompilerOption
            ("win32res", tagFile,
             OptionString (fun s -> tcConfigB.win32res <- s), None,
