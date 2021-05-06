@@ -140,17 +140,22 @@ module Examples =
 .method public static int32  testFunctionWithBind(int32 y) cil managed
 {
   
-  .maxstack  8
+  .maxstack  4
+  .locals init (class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0)
   IL_0000:  ldstr      "step"
   IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-  IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-  IL_000f:  pop
-  IL_0010:  ldc.i4.s   9
-  IL_0012:  ldarg.0
-  IL_0013:  add
-  IL_0014:  ldarg.0
-  IL_0015:  add
-  IL_0016:  ret
+  IL_000a:  stloc.0
+  IL_000b:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+  IL_0010:  ldloc.0
+  IL_0011:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+  IL_0016:  pop
+  IL_0017:  ldc.i4.s   9
+  IL_0019:  ldarg.0
+  IL_001a:  add
+  IL_001b:  ldarg.0
+  IL_001c:  add
+  IL_001d:  ret
 } 
             """
 
@@ -160,39 +165,48 @@ module Examples =
 {
   
   .maxstack  7
-  .locals init (int32 V_0)
+  .locals init (class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0,
+           int32 V_1)
   IL_0000:  ldstr      "step"
   IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-  IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-  IL_000f:  pop
-  IL_0010:  ldarg.0
-  IL_0011:  ldc.i4.0
-  IL_0012:  bge.s      IL_003f
+  IL_000a:  stloc.0
+  IL_000b:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+  IL_0010:  ldloc.0
+  IL_0011:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+  IL_0016:  pop
+  IL_0017:  ldarg.0
+  IL_0018:  ldc.i4.0
+  IL_0019:  bge.s      IL_004d
     
-  IL_0014:  ldc.i4.s   9
-  IL_0016:  ldarg.0
-  IL_0017:  add
-  IL_0018:  stloc.0
-  IL_0019:  ldstr      "step %P()"
-  IL_001e:  ldc.i4.1
-  IL_001f:  newarr     [runtime]System.Object
-  IL_0024:  dup
-  IL_0025:  ldc.i4.0
-  IL_0026:  ldloc.0
-  IL_0027:  box        [runtime]System.Int32
-  IL_002c:  stelem     [runtime]System.Object
-  IL_0031:  ldnull
-  IL_0032:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string,
+  IL_001b:  ldc.i4.s   9
+  IL_001d:  ldarg.0
+  IL_001e:  add
+  IL_001f:  stloc.1
+  IL_0020:  ldstr      "step %P()"
+  IL_0025:  ldc.i4.1
+  IL_0026:  newarr     [runtime]System.Object
+  IL_002b:  dup
+  IL_002c:  ldc.i4.0
+  IL_002d:  ldloc.1
+  IL_002e:  box        [runtime]System.Int32
+  IL_0033:  stelem     [runtime]System.Object
+  IL_0038:  ldnull
+  IL_0039:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string,
                                                                                                                                                                                                                                                                                           object[],
                                                                                                                                                                                                                                                                                           class [runtime]System.Type[])
-  IL_0037:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-  IL_003c:  pop
-  IL_003d:  br.s       IL_0010
+  IL_003e:  stloc.0
+  IL_003f:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+  IL_0044:  ldloc.0
+  IL_0045:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+  IL_004a:  pop
+  IL_004b:  br.s       IL_0017
     
-  IL_003f:  ldarg.0
-  IL_0040:  ldarg.0
-  IL_0041:  add
-  IL_0042:  ret
+  IL_004d:  ldarg.0
+  IL_004e:  ldarg.0
+  IL_004f:  add
+  IL_0050:  ret
 } 
             """
 
@@ -203,33 +217,38 @@ module Examples =
   
   .maxstack  4
   .locals init (int32 V_0,
-           class [runtime]System.Exception V_1)
+           class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_1,
+           class [runtime]System.Exception V_2)
   .try
   {
     IL_0000:  ldstr      "step"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_000f:  pop
-    IL_0010:  ldc.i4.s   9
-    IL_0012:  ldarg.0
-    IL_0013:  add
-    IL_0014:  ldarg.0
-    IL_0015:  add
-    IL_0016:  stloc.0
-    IL_0017:  leave.s    IL_0023
+    IL_000a:  stloc.1
+    IL_000b:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+    IL_0010:  ldloc.1
+    IL_0011:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_0016:  pop
+    IL_0017:  ldc.i4.s   9
+    IL_0019:  ldarg.0
+    IL_001a:  add
+    IL_001b:  ldarg.0
+    IL_001c:  add
+    IL_001d:  stloc.0
+    IL_001e:  leave.s    IL_002a
     
   }  
   catch [runtime]System.Object 
   {
-    IL_0019:  castclass  [runtime]System.Exception
-    IL_001e:  stloc.1
-    IL_001f:  ldc.i4.5
-    IL_0020:  stloc.0
-    IL_0021:  leave.s    IL_0023
+    IL_0020:  castclass  [runtime]System.Exception
+    IL_0025:  stloc.2
+    IL_0026:  ldc.i4.5
+    IL_0027:  stloc.0
+    IL_0028:  leave.s    IL_002a
     
   }  
-  IL_0023:  ldloc.0
-  IL_0024:  ret
+  IL_002a:  ldloc.0
+  IL_002b:  ret
 } 
             """
             // Check testFunctionWithFinally is flattened
@@ -240,45 +259,58 @@ module Examples =
   .maxstack  4
   .locals init (int32 V_0,
            int32 V_1,
-           class [runtime]System.Exception V_2)
+           class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_2,
+           class [runtime]System.Exception V_3)
   .try
   {
     IL_0000:  ldstr      "step"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_000f:  pop
-    IL_0010:  ldc.i4.s   9
-    IL_0012:  ldarg.0
-    IL_0013:  add
-    IL_0014:  ldarg.0
-    IL_0015:  add
-    IL_0016:  stloc.1
-    IL_0017:  leave.s    IL_003a
+    IL_000a:  stloc.2
+    IL_000b:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+    IL_0010:  ldloc.2
+    IL_0011:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_0016:  pop
+    IL_0017:  ldc.i4.s   9
+    IL_0019:  ldarg.0
+    IL_001a:  add
+    IL_001b:  ldarg.0
+    IL_001c:  add
+    IL_001d:  stloc.1
+    IL_001e:  leave.s    IL_0048
     
   }  
   catch [runtime]System.Object 
   {
-    IL_0019:  castclass  [runtime]System.Exception
-    IL_001e:  stloc.2
-    IL_001f:  ldstr      "step"
-    IL_0024:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_0029:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_002e:  pop
-    IL_002f:  rethrow
-    IL_0031:  ldnull
-    IL_0032:  unbox.any  [runtime]System.Int32
-    IL_0037:  stloc.1
-    IL_0038:  leave.s    IL_003a
+    IL_0020:  castclass  [runtime]System.Exception
+    IL_0025:  stloc.3
+    IL_0026:  ldstr      "step"
+    IL_002b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_0030:  stloc.2
+    IL_0031:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+    IL_0036:  ldloc.2
+    IL_0037:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_003c:  pop
+    IL_003d:  rethrow
+    IL_003f:  ldnull
+    IL_0040:  unbox.any  [runtime]System.Int32
+    IL_0045:  stloc.1
+    IL_0046:  leave.s    IL_0048
     
   }  
-  IL_003a:  ldloc.1
-  IL_003b:  stloc.0
-  IL_003c:  ldstr      "step"
-  IL_0041:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-  IL_0046:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-  IL_004b:  pop
-  IL_004c:  ldloc.0
-  IL_004d:  ret
+  IL_0048:  ldloc.1
+  IL_0049:  stloc.0
+  IL_004a:  ldstr      "step"
+  IL_004f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+  IL_0054:  stloc.2
+  IL_0055:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+  IL_005a:  ldloc.2
+  IL_005b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+  IL_0060:  pop
+  IL_0061:  ldloc.0
+  IL_0062:  ret
 } 
             """
             ])
