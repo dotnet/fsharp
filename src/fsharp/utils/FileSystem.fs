@@ -619,10 +619,6 @@ type ByteMemory with
         let accessor = mmf.CreateViewAccessor()
         RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int accessor.Capacity, (mmf, accessor))
 
-    (*static member FromFile(path, access, ?canShadowCopy: bool) =
-        let canShadowCopy = defaultArg canShadowCopy false
-        FileSystem.OpenFileShim(path, access, FileAccess.Read, FileShare.Read, canShadowCopy*)
-
     static member FromUnsafePointer(addr, length, holder: obj) =
         RawByteMemory(NativePtr.ofNativeInt addr, length, holder) :> ByteMemory
 
