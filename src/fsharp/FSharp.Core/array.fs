@@ -1091,7 +1091,7 @@ namespace Microsoft.FSharp.Collections
             acc
 
         [<CompiledName("SumBy")>]
-        let inline sumBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T[]) : ^U = 
+        let inline sumBy (projection: 'T -> ^U) (array: 'T[]) : ^U = 
             checkNonNull "array" array
             let mutable acc = LanguagePrimitives.GenericZero< ^U>
             for i = 0 to array.Length - 1 do
@@ -1158,7 +1158,7 @@ namespace Microsoft.FSharp.Collections
             LanguagePrimitives.DivideByInt< ^T> acc array.Length
 
         [<CompiledName("AverageBy")>]
-        let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T[]) : ^U = 
+        let inline averageBy (projection: 'T -> ^U) (array: 'T[]) : ^U = 
             checkNonNull "array" array
             if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
             let mutable acc = LanguagePrimitives.GenericZero< ^U>
