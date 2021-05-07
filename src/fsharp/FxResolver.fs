@@ -832,12 +832,12 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                     let sdkDir = tryGetSdkRefsPackDirectory() |> replayWarnings
                     match sdkDir with
                     | Some path ->
-                        try 
-                            let sdkReferences = 
+                        try
+                            let sdkReferences =
                                 [ yield! Directory.GetFiles(path, "*.dll")
                                   yield getFSharpCoreImplementationReference()
                                   if useFsiAuxLib then yield getFsiLibraryImplementationReference()
-                                ] |> List.filter(fun f -> systemAssemblies.Contains(Path.GetFileName(f)))
+                                ] |> List.filter(fun f -> systemAssemblies.Contains(Path.GetFileNameWithoutExtension(f)))
                             sdkReferences, false
                         with e -> 
                             warning (Error(FSComp.SR.scriptSdkNotDeterminedUnexpected(e.Message), rangeForErrors))
