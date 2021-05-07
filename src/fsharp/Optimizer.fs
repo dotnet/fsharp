@@ -1252,8 +1252,11 @@ let AbstractAndRemapModulInfo msg g m (repackage, hidden) info =
 // Misc helpers
 //------------------------------------------------------------------------- 
 
-// Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
+/// Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
 let [<Literal>] suffixForVariablesThatMayNotBeEliminated = "$cont"
+
+/// Indicates a ValRef generated to facilitate tuple eliminations
+let [<Literal>] suffixForTupleElementAssignmentTarget = "tupleElem"
 
 /// Type applications of F# "type functions" may cause side effects, e.g. 
 /// let x<'a> = printfn "hello"; typeof<'a> 
@@ -1274,6 +1277,8 @@ let ValueOfExpr expr =
     if IsSmallConstExpr expr then 
       ConstExprValue(0, expr)
     else UnknownValue
+
+let IsMutableStructuralBindingForTupleElement (vref: ValRef) = vref.DisplayName.EndsWith suffixForTupleElementAssignmentTarget
 
 //-------------------------------------------------------------------------
 // Dead binding elimination 
@@ -1577,7 +1582,7 @@ let MakeStructuralBindingTemp (v: Val) i (arg: Expr) argTy =
     ve, mkCompGenBind v arg
 
 let MakeMutableStructuralBindingForTupleElement (v: Val) i (arg: Expr) argTy =
-    let name = sprintf "%s_%d_%s" v.LogicalName i PrettyNaming.tempTupleElementAssignmentTargetName
+    let name = sprintf "%s_%d_%s" v.LogicalName i suffixForTupleElementAssignmentTarget
     let v, ve = mkMutableCompGenLocal arg.Range name argTy
     ve, mkCompGenBind v arg
 
@@ -1652,12 +1657,12 @@ let rec RearrangeTupleBindings expr fin =
 //        b <- 6
 //    in ...
 let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
-    let rec dive g m vrefs expr =
+    let rec dive g m (requisites: Lazy<_>) expr =
         match expr with
         | Expr.Match (sp, inputRange, decision, targets, fullRange, ty) ->
             // Recurse down every if/match branch
             let rewrittenTargets = targets |> Array.choose (fun (TTarget (vals, targetExpr, sp)) ->
-                match dive g m vrefs targetExpr with
+                match dive g m requisites targetExpr with
                 | Some rewritten -> TTarget (vals, rewritten, sp) |> Some
                 | _ -> None)
 
@@ -1668,26 +1673,30 @@ let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
                 Expr.Match (sp, inputRange, decision, rewrittenTargets, fullRange, ty) |> Some
         | Expr.Op (TOp.Tuple tupInfo, _, tupleElements, m) when not (evalTupInfoIsStruct tupInfo) ->
             // Replace tuple allocation with mutations of locals
+            let _, _, _, vrefs = requisites.Value
             List.map2 (mkValSet m) vrefs tupleElements
             |> mkSequentials DebugPointAtSequential.StmtOnly g m
             |> Some
         | Expr.Sequential (e1, e2, kind, sp, m) ->
-            match dive g m vrefs e2 with
+            match dive g m requisites e2 with
             | Some rewritten -> Expr.Sequential (e1, rewritten, kind, sp, m) |> Some
             | _ -> None
         | Expr.Let (bind, body, m, _) ->
-            match dive g m vrefs body with
+            match dive g m requisites body with
             | Some rewritten -> mkLetBind m bind rewritten |> Some
             | _ -> None
         | _ -> None
 
-    let argTys = destRefTupleTy g v.Type
-    let inits = argTys |> List.map (mkNull m)
-    let ves, binds = List.mapi2 (MakeMutableStructuralBindingForTupleElement v) inits argTys |> List.unzip
-    let vrefs = binds |> List.map (fun (TBind (v, _, _)) -> mkLocalValRef v)
+    let requisites = lazy (
+        let argTys = destRefTupleTy g v.Type
+        let inits = argTys |> List.map (mkNull m)
+        let ves, binds = List.mapi2 (MakeMutableStructuralBindingForTupleElement v) inits argTys |> List.unzip
+        let vrefs = binds |> List.map (fun (TBind (v, _, _)) -> mkLocalValRef v)
+        argTys, ves, binds, vrefs)
 
-    match dive g m vrefs rhs with
+    match dive g m requisites rhs with
     | Some rewrittenRhs ->
+        let argTys, ves, binds, _ = requisites.Value
         let rhsAndTupleBinding = mkCompGenSequential m rewrittenRhs (mkRefTupled g m ves argTys)
         mkLetsBind m binds (mkLet tgtSeqPtOpt m v rhsAndTupleBinding body) |> Some
     | _ -> None
@@ -2577,7 +2586,7 @@ and AddValEqualityInfo g m (v: ValRef) info =
     // when their address is passed to the method call. Another exception are mutable variables
     // created for tuple elimination in branching tuple bindings because they are assigned to
     // exactly once.
-    if v.IsMutable && not (v.IsCompilerGenerated && (v.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName) || v.DisplayName.EndsWith(PrettyNaming.tempTupleElementAssignmentTargetName))) then 
+    if v.IsMutable && not (v.IsCompilerGenerated && (v.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName) || IsMutableStructuralBindingForTupleElement v)) then 
         info 
     else 
         {info with Info= MakeValueInfoForValue g m v info.Info}

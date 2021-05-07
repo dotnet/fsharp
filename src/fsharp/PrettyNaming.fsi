@@ -145,8 +145,6 @@ val internal computeMangledNameWithoutDefaultArgValues: nm:string * staticArgs:'
 
 val internal outArgCompilerGeneratedName: string
 
-val internal tempTupleElementAssignmentTargetName: string
-
 val internal ExtraWitnessMethodName: nm:string -> string
 
 /// Reuses generated union case field name objects for common field numbers

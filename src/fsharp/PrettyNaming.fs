@@ -711,8 +711,6 @@ let computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues) 
 
 let outArgCompilerGeneratedName = "outArg"
 
-let tempTupleElementAssignmentTargetName = "tupleElem"
-
 let ExtraWitnessMethodName nm = nm + "$W"
 
 /// Reuses generated union case field name objects for common field numbers
