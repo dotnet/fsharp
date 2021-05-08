@@ -2798,7 +2798,10 @@ and ResolveOverloading
                 match bestMethods with 
                 | [(calledMeth, warns, t)] -> 
                   if pickedFuncIsBetter then
-                    failwithf "func is better shall not pass (just for now, may warn later, and then not pass even later)"
+                    if g.compilingFslib then
+                      ()
+                    else
+                      failwithf "func is better shall not pass (just for now, may warn later, and then not pass even later)"
                   Some calledMeth, OkResult (warns, ()), WithTrace t
                 | bestMethods -> 
                     let methods = 
