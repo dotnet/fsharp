@@ -2643,7 +2643,7 @@ and ResolveOverloading
                 /// Compare types under the feasibly-subsumes ordering
                 let compareTypes ty1 ty2 = 
                     (ty1, ty2) ||> compareCond (fun x1 x2 -> TypeFeasiblySubsumesType ndeep csenv.g csenv.amap m x2 CanCoerce x1) 
-                    
+                let mutable pickedFuncIsBetter = false
                 /// Compare arguments under the feasibly-subsumes ordering and the adhoc Func-is-better-than-other-delegates rule
                 let compareArg (calledArg1: CalledArg) (calledArg2: CalledArg) =
                     let c = compareTypes calledArg1.CalledArgumentType calledArg2.CalledArgumentType
@@ -2658,8 +2658,10 @@ and ResolveOverloading
                                 tcref1.DisplayName = "Func" &&  
                                 (match tcref1.PublicPath with Some p -> p.EnclosingPath = [| "System" |] | _ -> false) && 
                                 isDelegateTy g ty1 &&
-                                isDelegateTy g ty2 -> true
-
+                                isDelegateTy g ty2 ->
+                                  pickedFuncIsBetter <- true
+                                  true
+                            
                             // T is always better than inref<T>
                             | _ when isInByrefTy csenv.g ty2 && typeEquiv csenv.g ty1 (destByrefTy csenv.g ty2) -> 
                                 true
@@ -2794,7 +2796,10 @@ and ResolveOverloading
                         else 
                            None) 
                 match bestMethods with 
-                | [(calledMeth, warns, t)] -> Some calledMeth, OkResult (warns, ()), WithTrace t
+                | [(calledMeth, warns, t)] -> 
+                  if pickedFuncIsBetter then
+                    failwithf "func is better shall not pass (just for now, may warn later, and then not pass even later)"
+                  Some calledMeth, OkResult (warns, ()), WithTrace t
                 | bestMethods -> 
                     let methods = 
                         let getMethodSlotsAndErrors methodSlot errors =
