@@ -2654,14 +2654,13 @@ and ResolveOverloading
 
                             // Func<_> is always considered better than any other delegate type
                             match tryTcrefOfAppTy csenv.g ty1 with 
-                            | ValueSome tcref1 when 
-                                tcref1.DisplayName = "Func" &&  
-                                (match tcref1.PublicPath with Some p -> p.EnclosingPath = [| "System" |] | _ -> false) && 
-                                isDelegateTy g ty1 &&
-                                isDelegateTy g ty2 ->
-                                  pickedFuncIsBetter <- true
-                                  true
-                            
+                            //| ValueSome tcref1 when 
+                            //    tcref1.DisplayName = "Func" &&  
+                            //    (match tcref1.PublicPath with Some p -> p.EnclosingPath = [| "System" |] | _ -> false) && 
+                            //    isDelegateTy g ty1 &&
+                            //    isDelegateTy g ty2 ->
+                            //      pickedFuncIsBetter <- true
+                            //      true
                             // T is always better than inref<T>
                             | _ when isInByrefTy csenv.g ty2 && typeEquiv csenv.g ty1 (destByrefTy csenv.g ty2) -> 
                                 true
@@ -2800,8 +2799,8 @@ and ResolveOverloading
                   if pickedFuncIsBetter then
                     if g.compilingFslib then
                       ()
-                    else
-                      failwithf "func is better shall not pass (just for now, may warn later, and then not pass even later)"
+                    //else
+                    //  failwithf "func is better shall not pass (just for now, may warn later, and then not pass even later)"
                   Some calledMeth, OkResult (warns, ()), WithTrace t
                 | bestMethods -> 
                     let methods = 
