@@ -234,6 +234,8 @@ exception UnresolvedOverloading of displayEnv: DisplayEnv * callerArgs: CallerAr
 
 exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType * range
 
+exception FuncIsBetterOverloadResolutionDeprecation of display:DisplayEnv * method: MethInfo * m:range
+
 type TcValF = (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType)
 
 type ConstraintSolverState = 
@@ -2654,13 +2656,13 @@ and ResolveOverloading
 
                             // Func<_> is always considered better than any other delegate type
                             match tryTcrefOfAppTy csenv.g ty1 with 
-                            //| ValueSome tcref1 when 
-                            //    tcref1.DisplayName = "Func" &&  
-                            //    (match tcref1.PublicPath with Some p -> p.EnclosingPath = [| "System" |] | _ -> false) && 
-                            //    isDelegateTy g ty1 &&
-                            //    isDelegateTy g ty2 ->
-                            //      pickedFuncIsBetter <- true
-                            //      true
+                            | ValueSome tcref1 when 
+                                tcref1.DisplayName = "Func" &&  
+                                (match tcref1.PublicPath with Some p -> p.EnclosingPath = [| "System" |] | _ -> false) && 
+                                isDelegateTy g ty1 &&
+                                isDelegateTy g ty2 ->
+                                  pickedFuncIsBetter <- true
+                                  true
                             // T is always better than inref<T>
                             | _ when isInByrefTy csenv.g ty2 && typeEquiv csenv.g ty1 (destByrefTy csenv.g ty2) -> 
                                 true
@@ -2797,6 +2799,7 @@ and ResolveOverloading
                 match bestMethods with 
                 | [(calledMeth, warns, t)] -> 
                   if pickedFuncIsBetter then
+                    warning (FuncIsBetterOverloadResolutionDeprecation(denv,calledMeth.Method,m))
                     if g.compilingFslib then
                       ()
                     //else
