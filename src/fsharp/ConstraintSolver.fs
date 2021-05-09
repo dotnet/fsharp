@@ -234,7 +234,7 @@ exception UnresolvedOverloading of displayEnv: DisplayEnv * callerArgs: CallerAr
 
 exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType * range
 
-exception FuncIsBetterOverloadResolutionDeprecation of display:DisplayEnv * method: MethInfo * m:range
+exception FuncIsBetterOverloadResolutionDeprecation of displayEnv: DisplayEnv * method: MethInfo * m:range
 
 type TcValF = (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType)
 
