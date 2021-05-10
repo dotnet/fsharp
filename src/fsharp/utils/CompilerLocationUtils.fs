@@ -10,7 +10,7 @@ open System.Runtime.InteropServices
 open Microsoft.Win32
 open Microsoft.FSharp.Core
 
-#nowarn "44" // ConfigurationSettings is obsolete but the new stuff is horribly complicated. 
+#nowarn "44" // ConfigurationSettings is obsolete but the new stuff is horribly complicated.
 
 module internal FSharpEnvironment =
 
@@ -31,7 +31,7 @@ module internal FSharpEnvironment =
             | s  -> Some(s)
         with _ -> None
 
-    // The F# binary format revision number. The first three digits of this form the significant part of the 
+    // The F# binary format revision number. The first three digits of this form the significant part of the
     // format revision number for F# binary signature and optimization metadata. The last digit is not significant.
     //
     // WARNING: Do not change this revision number unless you absolutely know what you're doing.
@@ -50,13 +50,13 @@ module internal FSharpEnvironment =
     [<DllImport("Advapi32.dll")>]
     extern uint32 RegCloseKey(UIntPtr _hKey)
 #endif
-    module Option = 
+    module Option =
         /// Convert string into Option string where null and String.Empty result in None
-        let ofString s = 
+        let ofString s =
             if String.IsNullOrEmpty(s) then None
             else Some(s)
 
-    // MaxPath accounts for the null-terminating character, for example, the maximum path on the D drive is "D:\<256 chars>\0". 
+    // MaxPath accounts for the null-terminating character, for example, the maximum path on the D drive is "D:\<256 chars>\0".
     // See: ndp\clr\src\BCL\System\IO\Path.cs
     let maxPath = 260;
     let maxDataLength = (new System.Text.UTF32Encoding()).GetMaxByteCount(maxPath)
@@ -78,11 +78,11 @@ module internal FSharpEnvironment =
 #endif
                 null)
 
-    let Get32BitRegistryStringValueViaPInvoke(subKey:string) = 
+    let Get32BitRegistryStringValueViaPInvoke(subKey:string) =
         Option.ofString
-            (try 
+            (try
                 // 64 bit flag is not available <= Win2k
-                let options = 
+                let options =
                     let hasWow6432Node =
                         use x = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Wow6432Node")
                         x <> null
@@ -106,14 +106,14 @@ module internal FSharpEnvironment =
 
                         if (res = 0u && cbData > 0 && cbData <= maxDataLength) then
                             Marshal.PtrToStringUni(pathResult, (cbData - 2)/2);
-                        else 
+                        else
                             null
                     else
                         null
                 finally
                     if hkey <> UIntPtr.Zero then
                         RegCloseKey(hkey) |> ignore
-                
+
                     if pathResult <> IntPtr.Zero then
                         Marshal.FreeCoTaskMem(pathResult)
              with e->
@@ -126,10 +126,10 @@ module internal FSharpEnvironment =
 
     let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e-> false
 
-    let tryRegKey(subKey:string) = 
+    let tryRegKey(subKey:string) =
 
         //if we are running on mono simply return None
-        // GetDefaultRegistryStringValueViaDotNet will result in an access denied by default, 
+        // GetDefaultRegistryStringValueViaDotNet will result in an access denied by default,
         // and Get32BitRegistryStringValueViaPInvoke will fail due to Advapi32.dll not existing
         if runningOnMono then None else
         if is32Bit then
@@ -142,7 +142,7 @@ module internal FSharpEnvironment =
 #endif
             s
         else
-            Get32BitRegistryStringValueViaPInvoke(subKey) 
+            Get32BitRegistryStringValueViaPInvoke(subKey)
 #endif
 
     let internal tryCurrentDomain() =
@@ -156,12 +156,12 @@ module internal FSharpEnvironment =
 #if FX_NO_SYSTEM_CONFIGURATION
     let internal tryAppConfig (_appConfigKey:string) = None
 #else
-    let internal tryAppConfig (_appConfigKey:string) = 
+    let internal tryAppConfig (_appConfigKey:string) =
         let locationFromAppConfig = System.Configuration.ConfigurationSettings.AppSettings.[_appConfigKey]
 #if DEBUG
-        Debug.Print(sprintf "Considering _appConfigKey %s which has value '%s'" _appConfigKey locationFromAppConfig) 
+        Debug.Print(sprintf "Considering _appConfigKey %s which has value '%s'" _appConfigKey locationFromAppConfig)
 #endif
-        if String.IsNullOrEmpty(locationFromAppConfig) then 
+        if String.IsNullOrEmpty(locationFromAppConfig) then
             None
         else
             let exeAssemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
@@ -196,8 +196,8 @@ module internal FSharpEnvironment =
             let safeExists f = (try File.Exists(f) with _ -> false)
 
             // Look in the probePoint if given, e.g. look for a compiler alongside of FSharp.Build.dll
-            match probePoint with 
-            | Some p when safeExists (Path.Combine(p,"FSharp.Core.dll")) -> Some p 
+            match probePoint with
+            | Some p when safeExists (Path.Combine(p,"FSharp.Core.dll")) -> Some p
             | _ ->
                     // For the prototype compiler, we can just use the current domain
                     tryCurrentDomain()
@@ -208,13 +208,13 @@ module internal FSharpEnvironment =
     // The reg key is disposed at the end of the scope.
     let useKey subKey f =
         let key = Registry.LocalMachine.OpenSubKey subKey
-        try f key 
-        finally 
-            match key with 
-            | null -> () 
+        try f key
+        finally
+            match key with
+            | null -> ()
             | _ -> key.Dispose()
 
-    // Check if the framework version 4.5 or above is installed at the given key entry 
+    // Check if the framework version 4.5 or above is installed at the given key entry
     let IsNetFx45OrAboveInstalledAt subKey =
       try
         useKey subKey (fun regKey ->
@@ -222,17 +222,17 @@ module internal FSharpEnvironment =
             | null -> false
             | _ -> regKey.GetValue("Release", 0) :?> int |> (fun s -> s >= 0x50000)) // 0x50000 implies 4.5.0
       with _ -> false
- 
+
     // Check if the framework version 4.5 or above is installed
     let IsNetFx45OrAboveInstalled =
         IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Client" ||
         IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" ||
         runningOnMono
-    
+
     // Check if the running framework version is 4.5 or above.
     // Use the presence of v4.5.x in the registry to distinguish between 4.0 and 4.5
     let IsRunningOnNetFx45OrAbove =
-            let version = new Version(versionOf<System.Int32>) 
+            let version = new Version(versionOf<System.Int32>)
             let major = version.Major
             major > 4 || (major = 4 && IsNetFx45OrAboveInstalled)
 
@@ -326,7 +326,7 @@ module internal FSharpEnvironment =
             // string specification.  The Name=FullName comparison is particularly strange, and was there to support
             // design-time DLLs specified using "x.DesignTIme, Version= ..." long assembly names and GAC loads.
             // These kind of design-time assembly specifications are no longer used to our knowledge so that comparison is basically legacy
-            // and will always succeed.  
+            // and will always succeed.
             let name = AssemblyName (Path.GetFileNameWithoutExtension designTimeAssemblyName)
             if name.Name.Equals(name.FullName, StringComparison.OrdinalIgnoreCase) then
                 let designTimeFileName = designTimeAssemblyName + ".dll"
@@ -340,7 +340,7 @@ module internal FSharpEnvironment =
                 with e ->
                     raiseError None e
 
-    let getCompilerToolsDesignTimeAssemblyPaths compilerToolPaths = 
+    let getCompilerToolsDesignTimeAssemblyPaths compilerToolPaths =
         searchToolPaths None compilerToolPaths
 
     let getFSharpCoreLibraryName = "FSharp.Core"
