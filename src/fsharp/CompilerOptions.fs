@@ -1054,7 +1054,7 @@ let testFlag tcConfigB =
                 | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
                 | "ParallelOff" -> tcConfigB.concurrentBuild <- false
                 | "RefOnlyPartial" -> tcConfigB.emitReferenceAssemblyOnly <- ReferenceAssemblyGeneration.Partial
-                | "RefOnlyTest" -> tcConfigB.emitReferenceAssemblyOnly <- ReferenceAssemblyGeneration.Test
+                | "RefOnlyTestSigOfImpl" -> tcConfigB.emitReferenceAssemblyOnly <- ReferenceAssemblyGeneration.TestSigOfImpl
 #if DEBUG
                 | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif

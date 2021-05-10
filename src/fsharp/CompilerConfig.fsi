@@ -139,7 +139,7 @@ type ReferenceAssemblyGeneration =
     /// Partial means we do not include F# optimization metadata as a resource in the emitting assembly.
     | Partial
     /// This is only for used for testing.
-    | Test
+    | TestSigOfImpl
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =

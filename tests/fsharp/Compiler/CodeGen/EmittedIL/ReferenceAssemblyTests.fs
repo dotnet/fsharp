@@ -66,7 +66,7 @@ let test() =
             """
 
         FSharp src
-        |> withOptions ["--test:RefOnlyTest"]
+        |> withOptions ["--test:RefOnlyTestSigOfImpl"]
         |> compile
         |> shouldSucceed
         |> verifyIL [
@@ -180,7 +180,7 @@ let test(_x: {| a: int32 |}) =
             """
 
         FSharp src
-        |> withOptions ["--test:RefOnlyTest"]
+        |> withOptions ["--test:RefOnlyTestSigOfImpl"]
         |> compile
         |> shouldSucceed
         |> verifyIL [

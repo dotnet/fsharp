@@ -321,7 +321,7 @@ type ReferenceAssemblyGeneration =
     | None
     | Complete
     | Partial
-    | Test
+    | TestSigOfImpl
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
