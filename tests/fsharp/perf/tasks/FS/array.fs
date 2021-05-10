@@ -101,16 +101,20 @@ module UsingStateMachines =
         member inline b.Run(code : ResizeArrayBuilderCode<'T>) : ResizeArray<'T> = 
             if __useResumableCode then
                 __structStateMachine<ResizeArrayBuilderStateMachine<'T>, _>
+                   // IAsyncStateMachine.MoveNext
                     (MoveNextMethod<ResizeArrayBuilderStateMachine<'T>>(fun sm -> 
                            code.Invoke(&sm)
                            ))
 
-                    // SetStateMachine
-                    (SetMachineStateMethod<_>(fun sm state -> 
+                    // IAsyncStateMachine.SetStateMachine
+                    (SetStateMachineMethod<_>(fun sm state -> 
                         ()))
 
+                    // Other interfaces
+                    [| |]
+
                     // Start
-                    (AfterMethod<_,_>(fun sm -> 
+                    (AfterCode<_,_>(fun sm -> 
                         ResizeArrayBuilderStateMachine<_>.Run(&sm)
                         sm.ToResizeArray()))
             else
@@ -131,11 +135,14 @@ module UsingStateMachines =
                            ))
 
                     // SetStateMachine
-                    (SetMachineStateMethod<_>(fun sm state -> 
+                    (SetStateMachineMethod<_>(fun sm state -> 
                         ()))
 
+                    // Other interfaces
+                    [| |]
+
                     // Start
-                    (AfterMethod<_,_>(fun sm -> 
+                    (AfterCode<_,_>(fun sm -> 
                         ResizeArrayBuilderStateMachine<_>.Run(&sm)
                         sm.ToArray()))
             else

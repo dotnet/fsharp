@@ -3069,6 +3069,7 @@ let IsMatchingFSharpAttributeOpt g attrOpt (Attrib(tcref2, _, _, _, _, _, _)) = 
 let (|ExtractAttribNamedArg|_|) nm args = 
     args |> List.tryPick (function (AttribNamedArg(nm2, _, _, v)) when nm = nm2 -> Some v | _ -> None) 
 
+let (|StringExpr|_|) = function Expr.Const (Const.String n, _, _) -> Some n | _ -> None
 let (|AttribInt32Arg|_|) = function AttribExpr(_, Expr.Const (Const.Int32 n, _, _)) -> Some n | _ -> None
 let (|AttribInt16Arg|_|) = function AttribExpr(_, Expr.Const (Const.Int16 n, _, _)) -> Some n | _ -> None
 let (|AttribBoolArg|_|) = function AttribExpr(_, Expr.Const (Const.Bool n, _, _)) -> Some n | _ -> None
@@ -9547,12 +9548,30 @@ let (|ResumableEntryMatchExpr|_|) g expr =
         | _ -> None
     | _ -> None
 
+let (|PossiblyCompiledTypeOfExpr|_|) g expr =
+    match expr with 
+    | TypeOfExpr g ty -> Some ty
+    | Expr.Op(TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, _, _, _), [],[Expr.Op (TOp.ILAsm ([ I_ldtoken (ILToken.ILType _) ], _), [ty], _, _)], _)
+              when ilMethRef.DeclaringTypeRef.Name = "System.Type" && ilMethRef.Name = "GetTypeFromHandle" -> 
+        Some ty
+    | _ -> None
+
 let (|StructStateMachineExpr|_|) g expr =
     match expr with
-    | ValApp g g.cgh__structStateMachine_vref ([templateStructTy; _resultTy], [moveNextExpr; setMachineStateExpr; afterMethodExpr], _m) ->
-        match moveNextExpr, setMachineStateExpr, afterMethodExpr with 
-        | NewDelegateExpr g (_, [[moveNextMethodThisVar]], moveNextMethodBodyExpr, m, _), setMachineStateExpr, NewDelegateExpr g (_, [[afterMethodThisVar]], afterMethodBodyExpr, _, _) ->
-           Some (templateStructTy, moveNextMethodThisVar, moveNextMethodBodyExpr, m, setMachineStateExpr, afterMethodThisVar, afterMethodBodyExpr)
+    | ValApp g g.cgh__structStateMachine_vref ([templateStructTy; _resultTy], [moveNextExpr; setStateMachineExpr; Expr.Op (TOp.Array, _, methodExprs, _); afterMethodExpr], _m) ->
+        match moveNextExpr, afterMethodExpr with 
+        | NewDelegateExpr g (_, [[moveNextMethodThisVar]], moveNextMethodBodyExpr, methodBodyRange, _), NewDelegateExpr g (_, [[afterMethodThisVar]], afterMethodBodyExpr, _, _) ->
+            let methods = 
+                methodExprs |> List.map (fun methodExpr -> 
+                    match methodExpr with
+                    | RefTuple [ PossiblyCompiledTypeOfExpr g ity; StringExpr name; Expr.Op (TOp.Coerce, _, [NewDelegateExpr g (_, methodVars, methodBody, m, _)], _)]  -> 
+                        Some (ity, name, List.concat methodVars, methodBody, m)
+                    | _ -> None)
+            if methods |> List.forall (fun x -> x.IsSome) then
+                let methods = methods |> List.map (fun x -> x.Value) 
+                Some (templateStructTy, moveNextMethodThisVar, moveNextMethodBodyExpr, methodBodyRange, setStateMachineExpr, methods, afterMethodThisVar, afterMethodBodyExpr)
+            else
+                None
         | _ -> None
     | _ -> None
 

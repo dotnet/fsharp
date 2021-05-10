@@ -108,7 +108,7 @@ type TaskBuilder() =
     member inline _.Run(code : TaskCode<'TOverall, 'TOverall>) : Task<'TOverall> = 
         if __useResumableCode then 
             __structStateMachine<TaskStateMachine<'TOverall>, Task<'TOverall>>
-                // MoveNext
+                // IAsyncStateMachine.MoveNext
                 (MoveNextMethod<_>(fun sm -> 
                     if __useResumableCode then 
                         //-- RESUMABLE CODE START
@@ -123,15 +123,18 @@ type TaskBuilder() =
                     else
                         failwith "unreachable"))
 
-                    // SetStateMachine
-                    (SetMachineStateMethod<_>(fun sm state -> 
-                        sm.MethodBuilder.SetStateMachine(state)))
+                // IAsyncStateMachine.SetStateMachine
+                (SetStateMachineMethod<_>(fun sm state -> 
+                    sm.MethodBuilder.SetStateMachine(state)))
 
-                    // Start
-                    (AfterMethod<_,_>(fun sm -> 
-                        sm.MethodBuilder <- AsyncTaskMethodBuilder<'TOverall>.Create()
-                        sm.MethodBuilder.Start(&sm)
-                        sm.MethodBuilder.Task))
+                // Other interfaces
+                [| |]
+
+                // After code
+                (AfterCode<_,_>(fun sm -> 
+                    sm.MethodBuilder <- AsyncTaskMethodBuilder<'TOverall>.Create()
+                    sm.MethodBuilder.Start(&sm)
+                    sm.MethodBuilder.Task))
         else
             TaskBuilder.RunDynamic(code)
 

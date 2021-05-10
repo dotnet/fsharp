@@ -107,11 +107,14 @@ module UsingStateMachines =
                            ))
 
                     // SetStateMachine
-                    (SetMachineStateMethod<_>(fun sm state -> 
+                    (SetStateMachineMethod<_>(fun sm state -> 
                         ()))
 
+                    // Other interfaces
+                    [| |]
+
                     // Start
-                    (AfterMethod<_,_>(fun sm -> 
+                    (AfterCode<_,_>(fun sm -> 
                         ListBuilderStateMachine<_>.Run(&sm)
                         sm.ToList()))
             else

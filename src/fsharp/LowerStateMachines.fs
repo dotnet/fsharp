@@ -8,6 +8,7 @@ open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Text
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TypedTree
@@ -153,6 +154,19 @@ let rec IsPossibleStateMachineExpr g overallExpr =
     | RefStateMachineExpr g _ -> true
     | StructStateMachineExpr g _ -> true
     | _ -> false
+
+type LoweredStateMachine =
+    | RefStateMachine of Expr
+    | StructStateMachine of 
+         templateStructTy: TType *
+         stateVars: ValRef list *
+         thisVars: ValRef list *
+         moveNextMethodThisVar: Val *
+         moveNextExprWithJumpTable: Expr * 
+         setStateMachineExpr: Expr *
+         otherMethods: (TType * string * Val list * Expr * range) list *
+         afterMethodThisVar: Val * 
+         afterMethodExpr: Expr
 
 let ConvertStateMachineExprToObject g overallExpr =
 
@@ -379,30 +393,34 @@ let ConvertStateMachineExprToObject g overallExpr =
                         printfn "----------- AFTER REWRITE ----------------------"
                         printfn "%s" (DebugPrint.showExpr g overallExprR)
 
-                    Choice1Of2 overallExprR
+                    RefStateMachine overallExprR
 
                 Some (env, remake3, pcExprOpt, codeExprR, m)
 
-            | StructStateMachineExpr g (templateStructTy, moveNextMethodThisVar, moveNextMethodBodyExpr, m, setMachineStateExpr, afterMethodThisVar, afterMethodBodyExpr) ->
+            | StructStateMachineExpr g (templateStructTy, moveNextMethodThisVar, moveNextMethodBodyExpr, moveNextBodyRange, setStateMachineExpr, otherMethods, afterMethodThisVar, afterMethodBodyExpr) ->
                 let env = { env with TemplateStructTy = Some templateStructTy }
                 if sm_verbose then printfn "Found struct machine..."
+                let otherMethodsR =
+                    [ for (imethTy, imethName, imethVals, imethBody, imethRange) in otherMethods ->
+                        let imethBodyR = ConvertStateMachineLeafExpression env imethBody
+                        (imethTy, imethName, imethVals, imethBodyR, imethRange) ]
                 match moveNextMethodBodyExpr with 
                 | OptionalResumeAtExpr g (pcExprOpt, codeExpr) ->
                     if sm_verbose then printfn "Found struct machine jump table call..."
                     let env, codeExprR = RepeatBindAndApplyOuterMacros env codeExpr
-                    let setMachineStateExprR = ConvertStateMachineLeafExpression env setMachineStateExpr
+                    let setStateMachineExprR = ConvertStateMachineLeafExpression env setStateMachineExpr
                     let afterMethodBodyExprR = ConvertStateMachineLeafExpression env afterMethodBodyExpr
                     //let afterMethodBodyExprR = ConvertStateMachineLeafExpression { env with MachineAddrExpr = Some machineAddrExpr } startExpr
                     let remake2 (moveNextExprWithJumpTable, stateVars, thisVars) = 
                         if sm_verbose then 
                             printfn "----------- AFTER REWRITE moveNextExprWithJumpTable ----------------------"
                             printfn "%s" (DebugPrint.showExpr g moveNextExprWithJumpTable)
-                            printfn "----------- AFTER REWRITE setMachineStateExprR ----------------------"
-                            printfn "%s" (DebugPrint.showExpr g setMachineStateExprR)
+                            printfn "----------- AFTER REWRITE setStateMachineExprR ----------------------"
+                            printfn "%s" (DebugPrint.showExpr g setStateMachineExprR)
                             printfn "----------- AFTER REWRITE afterMethodBodyExprR ----------------------"
                             printfn "%s" (DebugPrint.showExpr g afterMethodBodyExprR)
-                        Choice2Of2 (templateStructTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setMachineStateExprR, afterMethodThisVar, afterMethodBodyExprR)
-                    Some (env, remake2, pcExprOpt, codeExprR, m)
+                        StructStateMachine (templateStructTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setStateMachineExprR, otherMethodsR, afterMethodThisVar, afterMethodBodyExprR)
+                    Some (env, remake2, pcExprOpt, codeExprR, moveNextBodyRange)
             | _ -> 
                 None
         else

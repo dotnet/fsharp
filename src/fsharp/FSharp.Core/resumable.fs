@@ -25,9 +25,9 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
     type MoveNextMethod<'Template> = delegate of byref<'Template> -> unit
 
-    type SetMachineStateMethod<'Template> = delegate of byref<'Template> * IAsyncStateMachine -> unit
+    type SetStateMachineMethod<'Template> = delegate of byref<'Template> * IAsyncStateMachine -> unit
 
-    type AfterMethod<'Template, 'Result> = delegate of byref<'Template> -> 'Result
+    type AfterCode<'Template, 'Result> = delegate of byref<'Template> -> 'Result
 
     [<AttributeUsage (AttributeTargets.Delegate ||| AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
@@ -50,10 +50,11 @@ namespace Microsoft.FSharp.Core.CompilerServices
             failwith "__resumeAt should always be guarded by __useResumableCode and only used in valid state machine implementations"
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __structStateMachine<'Template, 'Result> (moveNextMethod: MoveNextMethod<'Template>) (setMachineStateMethod: SetMachineStateMethod<'Template>) (afterMethod: AfterMethod<'Template, 'Result>): 'Result =
+        let __structStateMachine<'Template, 'Result> (moveNextMethod: MoveNextMethod<'Template>) (setStateMachineMethod: SetStateMachineMethod<'Template>) (otherMethodImpls: (Type * string * Delegate)[]) (afterCode: AfterCode<'Template, 'Result>): 'Result =
             ignore moveNextMethod
-            ignore setMachineStateMethod
-            ignore afterMethod
+            ignore setStateMachineMethod
+            ignore otherMethodImpls
+            ignore afterCode
             failwith "__structStateMachine should always be guarded by __useResumableCode and only used in valid state machine implementations"
        
 #endif

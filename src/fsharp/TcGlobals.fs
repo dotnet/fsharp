@@ -723,7 +723,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty --> (varbTy --> v_unit_ty)) --> varaTy]], TType_app (v_fslib_IEvent2_tcr, [varaTy;varbTy])))
   let v_cgh__useResumableCode_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,          "__useResumableCode"                   , None                 , None          , [vara],     ([[]], v_bool_ty))
   let v_cgh__resumeAt_info         = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumeAt"                           , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
-  let v_cgh__resumableStateMachine_info  = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,             "__resumableStateMachine"                    , None                 , None          , [vara],     ([[varaTy]], varaTy))
   let v_cgh__structStateMachine_info  = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                "__structStateMachine"                    , None                 , None          , [vara; varb],     ([[varbTy; varcTy; (v_unit_ty --> vardTy)]], vardTy))
   let v_cgh__resumableEntry_info   = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumableEntry"                     , None                 , None          , [vara],     ([[v_int_ty --> varaTy]; [v_unit_ty --> varaTy]], varaTy))
   let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))  
@@ -1489,7 +1488,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
 
   member val cgh__structStateMachine_vref = ValRefForIntrinsic v_cgh__structStateMachine_info
-  member val cgh__resumableStateMachine_vref = ValRefForIntrinsic v_cgh__resumableStateMachine_info
   member val cgh__useResumableCode_vref = ValRefForIntrinsic v_cgh__useResumableCode_info
   member val cgh__resumeAt_vref = ValRefForIntrinsic v_cgh__resumeAt_info
   member val cgh__resumableEntry_vref = ValRefForIntrinsic v_cgh__resumableEntry_info

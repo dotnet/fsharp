@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <!-- Turn off "This function is for use by compiled F# code and should not be used directly" -->
@@ -11,15 +11,21 @@
   <ItemGroup>
 	  <!--
     <Compile Include="empty.fs"  />
-    <Compile Include="avalue.fs" />
-    <Compile Include="seq2.fs" />
 -->
-	<Compile Include="sync.fs"  />
+	<Compile Include="sync.fs" />
 	<Compile Include="list.fs" />
 	<Compile Include="array.fs" />
 	<Compile Include="option.fs" />
-	<Compile Include="taskSeq.fs" />
-	<!--	<Compile Include="taskSeq2.fs" /> -->
+	  <!--
+    <Compile Include="seq2.fs" />
+-->
+	<Compile Include="coroutine.fs" />
+	<Compile Include="tasksUsingCoroutines.fs" />
+    <Compile Include="taskSeq.fs" />
+<!--
+ 	<Compile Include="taskSeqUsingTasks.fs" />
+	<Compile Include="taskSeqUsingCoroutines.fs" />
+-->	
 	<Compile Include="TaskBuilder.fs" />
 	<Compile Include="TaskPerf.fs" />
 	<ProjectReference Include="..\CS\TaskPerfCSharp.csproj" />

@@ -358,18 +358,18 @@
         <note />
       </trans-unit>
       <trans-unit id="stateMachineMacroInvalidExpansion">
-        <source>Invalid resumable code - invalid macro expansion</source>
-        <target state="new">Invalid resumable code - invalid macro expansion</target>
+        <source>Invalid resumable code - invalid delegate or function expansion</source>
+        <target state="new">Invalid resumable code - invalid delegate or function expansion</target>
         <note />
       </trans-unit>
       <trans-unit id="stateMachineMacroTypars">
-        <source>Invalid resumable code. A macro in a state machine has type parameters</source>
-        <target state="new">Invalid resumable code. A macro in a state machine has type parameters</target>
+        <source>Invalid resumable code. A delegate or function producing resumable code in a state machine has type parameters</source>
+        <target state="new">Invalid resumable code. A delegate or function producing resumable code in a state machine has type parameters</target>
         <note />
       </trans-unit>
       <trans-unit id="stateMachineMacroUnderapplied">
-        <source>Invalid resumable code. A macro in a state machine is under-applied</source>
-        <target state="new">Invalid resumable code. A macro in a state machine is under-applied</target>
+        <source>Invalid resumable code. A delegate or function producing resumable code in a state machine is under-applied</source>
+        <target state="new">Invalid resumable code. A delegate or function producing resumable code in a state machine is under-applied</target>
         <note />
       </trans-unit>
       <trans-unit id="stateMachineNotSupported">
@@ -402,11 +402,6 @@
         <target state="new">Invalid resumable code. The 'with' block of a try/with may not contain resumption points</target>
         <note />
       </trans-unit>
-      <trans-unit id="structTemplateMustImplementOneInterface">
-        <source>Invalid resumable code. A template struct type used with __structStateMachine must implement precisely one interface 'System.Runtime.CompilerServices.IAsyncStateMachine'. If necessary mark the struct type with [&lt;NoEquality; NoComparison&gt;].</source>
-        <target state="new">Invalid resumable code. A template struct type used with __structStateMachine must implement precisely one interface 'System.Runtime.CompilerServices.IAsyncStateMachine'. If necessary mark the struct type with [&lt;NoEquality; NoComparison&gt;].</target>
-        <note />
-      </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
         <target state="translated">このスクリプトの .NET SDK を特定できませんでした。このスクリプトが、'global.json' が使用されているディレクトリにある場合は、関連する .NET SDK がインストールされていることを確認してください。ディレクトリ '{1}' の '{0} --version' からの出力は '{2}' で、終了コードは '{3}' でした。</target>
@@ -415,6 +410,31 @@
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
         <target state="translated">このスクリプトの .NET SDK を特定できませんでした。このスクリプトが、'global.json' が使用されているディレクトリにある場合は、関連する .NET SDK がインストールされていることを確認してください。予期しないエラー '{0}'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="structStateMachineInvalidIncorrectInterfacesImplemented">
+        <source>Invalid struct state machine. The interfaces implemented did not match those on the template type.</source>
+        <target state="new">Invalid struct state machine. The interfaces implemented did not match those on the template type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="structStateMachineInvalidIncorrectSignature">
+        <source>Invalid struct state machine. The method '{0}' has the incorrect signature.</source>
+        <target state="new">Invalid struct state machine. The method '{0}' has the incorrect signature.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="structStateMachineInvalidMethodNotFound">
+        <source>Invalid struct state machine. The method '{0}' was not found on the corresponding interface type.</source>
+        <target state="new">Invalid struct state machine. The method '{0}' was not found on the corresponding interface type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="structStateMachineInvalidNoIAsyncStateMachine">
+        <source>Invalid struct state machine. A template struct type used with __structStateMachine must implement System.Runtime.CompilerServices.IAsyncStateMachine.</source>
+        <target state="new">Invalid struct state machine. A template struct type used with __structStateMachine must implement System.Runtime.CompilerServices.IAsyncStateMachine.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="structStateMachineInvalidWrongArgCount">
+        <source>Invalid struct state machine. The method '{0}' did not have the correct number of arguments. '{1}' were expected and '{2}' were present, including the 'this' parameter.</source>
+        <target state="new">Invalid struct state machine. The method '{0}' did not have the correct number of arguments. '{1}' were expected and '{2}' were present, including the 'this' parameter.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">

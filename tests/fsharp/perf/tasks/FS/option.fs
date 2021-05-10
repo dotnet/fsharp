@@ -94,14 +94,18 @@ type OptionBuilder() =
     member inline _.Run(code : OptionCode<'T>) : 'T option = 
         if __useResumableCode then
             __structStateMachine<OptionStateMachine<'T>, 'T option>
+                // IAsyncStateMachine.MoveNext
                 (MoveNextMethod<_>(fun sm -> 
                        code.Invoke(&sm)))
 
-                // SetStateMachine
-                (SetMachineStateMethod<_>(fun sm state -> ()))
+                // IAsyncStateMachine.SetStateMachine
+                (SetStateMachineMethod<_>(fun sm state -> ()))
 
-                // Start
-                (AfterMethod<_,_>(fun sm -> 
+                // Other interfaces
+                [| |]
+
+                // Start code
+                (AfterCode<_,_>(fun sm -> 
                     OptionStateMachine<_>.Run(&sm)
                     sm.ToOption()))
         else
@@ -116,16 +120,20 @@ type ValueOptionBuilder() =
     member inline _.Run(code : OptionCode<'T>) : 'T voption = 
         if __useResumableCode then
             __structStateMachine<OptionStateMachine<'T>, 'T voption>
+                // IAsyncStateMachine.MoveNext
                 (MoveNextMethod<OptionStateMachine<'T>>(fun sm -> 
                        code.Invoke(&sm)
                        ))
 
-                // SetStateMachine
-                (SetMachineStateMethod<_>(fun sm state -> 
+                // IAsyncStateMachine.SetStateMachine
+                (SetStateMachineMethod<_>(fun sm state -> 
                     ()))
 
+                // Other Methods
+                [| |]
+
                 // Start
-                (AfterMethod<_,_>(fun sm -> 
+                (AfterCode<_,_>(fun sm -> 
                     OptionStateMachine<_>.Run(&sm)
                     sm.ToValueOption()))
         else

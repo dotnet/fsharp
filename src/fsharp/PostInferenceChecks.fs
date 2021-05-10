@@ -1232,13 +1232,17 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
         CheckTypeNoByrefs cenv env m ty
         NoLimit
 
-    | StructStateMachineExpr g (templateStructTy, moveNextMethodThisVar, moveNextMethodBodyExpr, _m, setMachineStateExpr, afterMethodThisVar, afterMethodBodyExpr) ->
+    | StructStateMachineExpr g (templateStructTy, moveNextMethodThisVar, moveNextMethodBodyExpr, _m, setStateMachineExpr, otherMethods, afterMethodThisVar, afterMethodBodyExpr) ->
         if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
             error(Error(FSComp.SR.stateMachineNotSupported(), expr.Range))
         let m = expr.Range
-        match GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m templateStructTy with 
-        | [ity] when typeEquiv g ity g.mk_IAsyncStateMachine_ty ->  ()
-        | _ -> errorR(Error(FSComp.SR.structTemplateMustImplementOneInterface(), m))
+        let templateStructTyInterfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m templateStructTy
+        let otherInterfaces =
+            match templateStructTyInterfaces |> List.partition (typeEquiv g g.mk_IAsyncStateMachine_ty) with
+            | [_], otherInterfaces -> otherInterfaces
+            | _, otherInterfaces -> 
+                errorR(Error(FSComp.SR.structStateMachineInvalidNoIAsyncStateMachine(), m))
+                otherInterfaces
 
         let meths = 
             GetIntrinsicMethInfosOfType cenv.infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m templateStructTy 
@@ -1252,10 +1256,41 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
                 if not vref.MustInline || meth.IsDispatchSlot || meth.IsDefiniteFSharpOverride then 
                     errorR(Error(FSComp.SR.tcStructTemplateMethodsMustBeInline(), m))
 
+        //| _ -> errorR(Error(FSComp.SR.structTemplateMustImplementOneInterface(), m))
+
+        let meths = 
+            GetIntrinsicMethInfosOfType cenv.infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m templateStructTy 
+            // filter out the interface implementations
+            |> List.filter (function (FSMeth _) as minfo -> isNil minfo.ImplementedSlotSignatures | _ -> true)
+
+        for meth in meths do
+            match meth.ArbitraryValRef with 
+            | None -> ()
+            | Some vref -> 
+                if not vref.MustInline || meth.IsDispatchSlot || meth.IsDefiniteFSharpOverride then 
+                    errorR(Error(FSComp.SR.tcStructTemplateMethodsMustBeInline(), m))
+
+        let implementedOtherInterfaces = ListSet.setify (typeEquiv g) (List.map p15 otherMethods)
+        if not (ListSet.equals (typeEquiv g) implementedOtherInterfaces otherInterfaces) then
+           errorR(Error(FSComp.SR.structStateMachineInvalidIncorrectInterfacesImplemented(), m))
+
+        for (imethTy, imethName, imethVals, imethBody, imethRange) in otherMethods do
+            imethVals |> List.iter (BindVal cenv env)
+            CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (false, false) } imethBody
+            match InfoReader.TryFindIntrinsicMethInfo cenv.infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere imethName imethTy with
+            | [meth] -> 
+                let argTys = meth.GetParamTypes(cenv.amap, m, []) |> List.concat 
+                if argTys.Length + 1 <> imethVals.Length then
+                    errorR(Error(FSComp.SR.structStateMachineInvalidWrongArgCount(imethName, imethVals.Length, argTys.Length + 1), imethRange))
+                let arg0Ty = imethVals.[0].Type
+                if not (isByrefTy g arg0Ty) || not (typeEquiv g (destByrefTy g arg0Ty) templateStructTy) then
+                    errorR(Error(FSComp.SR.structStateMachineInvalidIncorrectSignature(imethName), imethVals.[0].Range))
+            | _ -> errorR(Error(FSComp.SR.structStateMachineInvalidMethodNotFound(imethName), imethRange))
+        
         BindVal cenv env moveNextMethodThisVar
         BindVal cenv env afterMethodThisVar
         CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (false, false) } moveNextMethodBodyExpr
-        CheckExprNoByrefs cenv env setMachineStateExpr
+        CheckExprNoByrefs cenv env setStateMachineExpr
         CheckExprNoByrefs cenv env afterMethodBodyExpr
         NoLimit
 
