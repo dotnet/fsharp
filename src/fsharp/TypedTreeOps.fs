@@ -1957,11 +1957,22 @@ let unionFreeTypars s1 s2 =
     elif s2 === emptyFreeTypars then s1
     else Zset.union s1 s2
 
+let anonRecdTypeInfoOrder = 
+    { new System.Collections.Generic.IComparer<AnonRecdTypeInfo> with 
+        member x.Compare (v1: AnonRecdTypeInfo, v2: AnonRecdTypeInfo) = compare v1.Stamp v2.Stamp } 
+
+let emptyFreeAnonRecdTypeInfos = Zset.empty anonRecdTypeInfoOrder
+let unionFreeAnonRecdTypeInfos s1 s2 =
+    if s1 === emptyFreeAnonRecdTypeInfos then s2
+    elif s2 === emptyFreeAnonRecdTypeInfos then s1
+    else Zset.union s1 s2
+
 let emptyFreeTyvars =  
     { FreeTycons = emptyFreeTycons
       /// The summary of values used as trait solutions
       FreeTraitSolutions = emptyFreeLocals
-      FreeTypars = emptyFreeTypars}
+      FreeTypars = emptyFreeTypars
+      FreeAnonRecdTypeInfos = emptyFreeAnonRecdTypeInfos }
 
 let isEmptyFreeTyvars ftyvs = 
     Zset.isEmpty ftyvs.FreeTypars &&
@@ -1972,7 +1983,8 @@ let unionFreeTyvars fvs1 fvs2 =
     if fvs2 === emptyFreeTyvars then fvs1 else
     { FreeTycons = unionFreeTycons fvs1.FreeTycons fvs2.FreeTycons
       FreeTraitSolutions = unionFreeLocals fvs1.FreeTraitSolutions fvs2.FreeTraitSolutions
-      FreeTypars = unionFreeTypars fvs1.FreeTypars fvs2.FreeTypars }
+      FreeTypars = unionFreeTypars fvs1.FreeTypars fvs2.FreeTypars
+      FreeAnonRecdTypeInfos = unionFreeAnonRecdTypeInfos fvs1.FreeAnonRecdTypeInfos fvs2.FreeAnonRecdTypeInfos }
 
 type FreeVarOptions = 
     { canCache: bool
