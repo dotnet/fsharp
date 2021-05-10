@@ -1278,7 +1278,7 @@ let ValueOfExpr expr =
       ConstExprValue(0, expr)
     else UnknownValue
 
-let IsMutableStructuralBindingForTupleElement (vref: ValRef) = vref.DisplayName.EndsWith suffixForTupleElementAssignmentTarget
+let IsMutableStructuralBindingForTupleElement (vref: ValRef) = vref.IsCompilerGenerated && vref.DisplayName.EndsWith suffixForTupleElementAssignmentTarget
 
 //-------------------------------------------------------------------------
 // Dead binding elimination 
@@ -2586,7 +2586,7 @@ and AddValEqualityInfo g m (v: ValRef) info =
     // when their address is passed to the method call. Another exception are mutable variables
     // created for tuple elimination in branching tuple bindings because they are assigned to
     // exactly once.
-    if v.IsMutable && not (v.IsCompilerGenerated && (v.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName) || IsMutableStructuralBindingForTupleElement v)) then 
+    if v.IsMutable && not (IsMutableStructuralBindingForTupleElement v) && not (v.IsCompilerGenerated && v.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)) then 
         info 
     else 
         {info with Info= MakeValueInfoForValue g m v info.Info}
