@@ -118,10 +118,12 @@ type FSharpValueTests() =
     let tuple1 = ( 1, "tuple1")
     let tuple2 = ( 2, "tuple2", (fun x -> x + 1))
     let tuple3 = ( 1, ( 2, "tuple"))
+    let longTuple = (("yup", 1s), 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, Some 12, 13, "nope", struct (15, 16), 17, 18, ValueSome 19)
     
     let structTuple1 = struct ( 1, "tuple1")
     let structTuple2 = struct ( 2, "tuple2", (fun x -> x + 1))
     let structTuple3 = struct ( 1, struct ( 2, "tuple"))
+    let longStructTuple = struct (("yup", 1s), 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, Some 12, 13, "nope", struct (15, 16), 17, 18, ValueSome 19)
     
     let func1  param  = param + 1
     let func2  param  = param + ""
@@ -550,6 +552,9 @@ type FSharpValueTests() =
         // Tuple
         let tupleCtor = FSharpValue.PreComputeTupleConstructor(tuple1.GetType())    
         Assert.AreEqual( tupleCtor([| box 1; box "tuple1" |]) , box(tuple1))
+
+        let tupleCtor = FSharpValue.PreComputeTupleConstructor(longTuple.GetType())    
+        Assert.AreEqual( tupleCtor([| box ("yup", 1s); box 2; box 3; box 4; box 5; box 6; box 7; box 8; box 9; box 10; box 11; box (Some 12); box 13; box "nope"; box (struct (15, 16)); box 17; box 18; box (ValueSome 19) |]) , box(longTuple))
         
         // Tuple with function member
         let tuplewithFuncCtor = FSharpValue.PreComputeTupleConstructor(tuple2.GetType())  
@@ -573,6 +578,9 @@ type FSharpValueTests() =
         let tupleCtor = FSharpValue.PreComputeTupleConstructor(structTuple1.GetType())    
         Assert.AreEqual( tupleCtor([| box 1; box "tuple1" |]) , box(structTuple1))
         
+        let tupleCtor = FSharpValue.PreComputeTupleConstructor(longStructTuple.GetType())    
+        Assert.AreEqual( tupleCtor([| box ("yup", 1s); box 2; box 3; box 4; box 5; box 6; box 7; box 8; box 9; box 10; box 11; box (Some 12); box 13; box "nope"; box (struct (15, 16)); box 17; box 18; box (ValueSome 19) |]) , box(longStructTuple))
+ 
         // Tuple with function member
         let tuplewithFuncCtor = FSharpValue.PreComputeTupleConstructor(structTuple2.GetType())  
         let resultTuplewithFunc = tuplewithFuncCtor([| box 2; box "tuple2"; box (fun x -> x + 1) |])
@@ -657,6 +665,9 @@ type FSharpValueTests() =
         // Nested 
         let nestedtuplereader = FSharpValue.PreComputeTupleReader(typeof<Tuple<int, Tuple<int, string>>>)    
         Assert.AreEqual(nestedtuplereader(tuple3).[1], box(2, "tuple"))
+
+        let longTupleReader = FSharpValue.PreComputeTupleReader (longTuple.GetType ())
+        Assert.AreEqual (longTupleReader longTuple, [| box ("yup", 1s); box 2; box 3; box 4; box 5; box 6; box 7; box 8; box 9; box 10; box 11; box (Some 12); box 13; box "nope"; box (struct (15, 16)); box 17; box 18; box (ValueSome 19) |])
         
         // null value
         CheckThrowsArgumentException(fun () ->FSharpValue.PreComputeTupleReader(null)|> ignore)
@@ -675,6 +686,9 @@ type FSharpValueTests() =
         let nestedtuplereader = FSharpValue.PreComputeTupleReader(typeof<struct (int * struct (int * string))>)    
         Assert.AreEqual(nestedtuplereader(structTuple3).[1], box (struct (2, "tuple")))
         
+        let longTupleReader = FSharpValue.PreComputeTupleReader (longStructTuple.GetType ())
+        Assert.AreEqual (longTupleReader longStructTuple, [| box ("yup", 1s); box 2; box 3; box 4; box 5; box 6; box 7; box 8; box 9; box 10; box 11; box (Some 12); box 13; box "nope"; box (struct (15, 16)); box 17; box 18; box (ValueSome 19) |])
+
         // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeTupleReader(typeof<StructRecordType>) |> ignore)        
         

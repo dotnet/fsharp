@@ -32,9 +32,10 @@ type SemanticClassificationServiceTests() =
     let perfOptions = { LanguageServicePerformanceOptions.Default with AllowStaleCompletionResults = false }
 
     let getRanges (source: string) : SemanticClassificationItem list =
+        let projectOptions = { projectOptions with ProjectId = Some(Guid.NewGuid().ToString()) }
         asyncMaybe {
-
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0, SourceText.From(source), projectOptions, perfOptions, "")
+            let document, _ = RoslynTestHelpers.CreateDocument(filePath, source)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, perfOptions, "")
             return checkFileResults.GetSemanticClassification(None)
         } 
         |> Async.RunSynchronously

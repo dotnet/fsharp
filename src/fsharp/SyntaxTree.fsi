@@ -4,6 +4,7 @@ namespace rec FSharp.Compiler.Syntax
 
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 
 /// Represents an identifier in F# code
 [<Struct; NoEquality; NoComparison>]
@@ -150,7 +151,11 @@ type SynConst =
     | UInt16s of uint16[]
 
     /// Old comment: "we never iterate, so the const here is not another SynConst.Measure"
-    | Measure of constant: SynConst * SynMeasure
+    | Measure of constant: SynConst * constantRange: range * SynMeasure
+    
+    /// Source Line, File, and Path Identifiers
+    /// Containing both the original value as the evaluated value.
+    | SourceIdentifier of constant: string * value: string * range: Range
 
     /// Gets the syntax range of this construct
     member Range: dflt: range -> range
@@ -1407,6 +1412,9 @@ type SynMemberSig =
         nestedType: SynTypeDefnSig *
         range: range
 
+    /// Gets the syntax range of this construct
+    member Range: range
+
 /// Represents the kind of a type definition whether explicit or inferred
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeDefnKind =
@@ -1488,6 +1496,7 @@ type SynEnumCase =
         attributes: SynAttributes *
         ident: Ident * 
         value: SynConst *
+        valueRange: range *
         xmlDoc: PreXmlDoc *
         range: range
 
@@ -1556,6 +1565,9 @@ type SynTypeDefnSig =
         typeRepr: SynTypeDefnSigRepr *
         members: SynMemberSig list *
         range: range
+
+    /// Gets the syntax range of this construct
+    member Range: range
 
 /// Represents the syntax tree for a field declaration in a record or class
 [<NoEquality; NoComparison>]
@@ -1977,6 +1989,9 @@ type SynModuleOrNamespaceSig =
         attribs: SynAttributes *
         accessibility: SynAccess option *
         range: range
+
+    /// Gets the syntax range of this construct
+    member Range: range
 
 /// Represents a parsed hash directive
 [<NoEquality; NoComparison>]

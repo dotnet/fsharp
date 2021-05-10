@@ -1087,6 +1087,8 @@ and ConvDecisionTree cenv env tgs typR x =
                       | _ ->
                           let ty = tyOfExpr cenv.g e1
                           let eq = mkCallEqualsOperator cenv.g m ty e1 (Expr.Const (Const.Zero, m, ty))
+                          // no need to generate witnesses for generated equality operation calls, see https://github.com/dotnet/fsharp/issues/10389 
+                          let env = { env with suppressWitnesses = true }
                           let eqR = ConvExpr cenv env eq
                           QP.mkCond (eqR, ConvDecisionTree cenv env tgs typR dtree, acc)
 

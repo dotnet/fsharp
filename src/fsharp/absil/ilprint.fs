@@ -5,6 +5,7 @@ module internal FSharp.Compiler.AbstractIL.ILAsciiWriter
 open System.IO
 open System.Reflection
 
+open FSharp.Compiler.IO
 open Internal.Utilities
 open Internal.Utilities.Library
 
