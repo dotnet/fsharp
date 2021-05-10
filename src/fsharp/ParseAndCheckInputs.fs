@@ -854,7 +854,13 @@ let createDummyModuleOrNamespaceExprWithSig g (sigTy: ModuleOrNamespaceType) =
 /// Similar to 'createDummyTypedImplFile', only diffference is that there are no definitions and is not used for emitting any kind of assembly.
 let createEmptyDummyTypedImplFile qualNameOfFile sigTy =
     let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(sigTy, ModuleOrNamespaceExpr.TMDefs [], range0)
-    TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap.Empty)
+
+    let anonRecdTypeInfos = 
+        let s = freeAnonRecdTypeInfosInModuleTy sigTy
+        StampMap.Empty
+        |> s.Fold (fun x stamps -> stamps.Add(x.Stamp, x))
+
+    TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, anonRecdTypeInfos)
 
 /// 'dummy' in this context means it acts as a placeholder so other parts of the compiler will work with it.
 /// In this case, this is used to create a typed impl file based on a signature so we can emit a partial reference assembly

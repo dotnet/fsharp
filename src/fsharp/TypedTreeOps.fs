@@ -2198,11 +2198,13 @@ let freeInVal opts v = accFreeInVal opts v emptyFreeTyvars
 let freeInTyparConstraints opts v = accFreeInTyparConstraints opts v emptyFreeTyvars
 let accFreeInTypars opts tps acc = List.foldBack (accFreeTyparRef opts) tps acc
         
-let rec addFreeInModuleTy (mtyp: ModuleOrNamespaceType) acc =
-    QueueList.foldBack (typeOfVal >> accFreeInType CollectAllNoCaching) mtyp.AllValsAndMembers
-      (QueueList.foldBack (fun (mspec: ModuleOrNamespace) acc -> addFreeInModuleTy mspec.ModuleOrNamespaceType acc) mtyp.AllEntities acc)
+let rec addFreeInModuleTy (mtyp: ModuleOrNamespaceType) opts acc =
+    QueueList.foldBack (typeOfVal >> accFreeInType opts) mtyp.AllValsAndMembers
+      (QueueList.foldBack (fun (mspec: ModuleOrNamespace) acc -> addFreeInModuleTy mspec.ModuleOrNamespaceType opts acc) mtyp.AllEntities acc)
 
-let freeInModuleTy mtyp = addFreeInModuleTy mtyp emptyFreeTyvars
+let freeInModuleTy mtyp = addFreeInModuleTy mtyp CollectAllNoCaching emptyFreeTyvars
+
+let freeAnonRecdTypeInfosInModuleTy mtyp = addFreeInModuleTy mtyp CollectAnonRecdTypeInfosNoCaching emptyFreeTyvars
 
 
 //--------------------------------------------------------------------------

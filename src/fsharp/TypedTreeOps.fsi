@@ -800,6 +800,8 @@ val freeInTypesLeftToRightSkippingConstraints: TcGlobals -> TType list -> Typars
 
 val freeInModuleTy: ModuleOrNamespaceType -> FreeTyvars
 
+val freeAnonRecdTypeInfosInModuleTy: ModuleOrNamespaceType -> FreeAnonRecdTypeInfos
+
 val isDimensionless: TcGlobals -> TType -> bool
 
 //---------------------------------------------------------------------------
