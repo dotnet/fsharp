@@ -94,7 +94,7 @@ module internal Utilities =
         // 4. If it's none of the above we are going to have to rely on the path containing the way to find dotnet.exe
         let fileExists pathToFile =
             try
-                if File.Exists(pathToFile) then 
+                if File.Exists(pathToFile) then
                     true
                 else
                     false
@@ -103,7 +103,7 @@ module internal Utilities =
         let probePathForDotnetHost () =
             let paths =
                 let p = Environment.GetEnvironmentVariable("PATH")
-                if not(isNull p) then p.Split(Path.PathSeparator) 
+                if not(isNull p) then p.Split(Path.PathSeparator)
                 else [||]
             paths |> Array.tryFind (fun f -> fileExists (Path.Combine(f, dotnet)))
 
