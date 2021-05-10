@@ -1994,7 +1994,8 @@ type FreeVarOptions =
       includeLocalTyconReprs: bool
       includeRecdFields: bool
       includeUnionCases: bool
-      includeLocals: bool }
+      includeLocals: bool
+      includeAnonRecdTypeInfos: bool }
       
 let CollectAllNoCaching = 
     { canCache = false
@@ -2004,7 +2005,11 @@ let CollectAllNoCaching =
       includeRecdFields = true
       includeUnionCases = true
       includeTypars = true
-      includeLocals = true }
+      includeLocals = true
+
+      // REVIEW: While this options dictates that we collect all the information,
+      //         we only want to collect anonymous record information when building a dummy typed implementation file.
+      includeAnonRecdTypeInfos = false }
 
 let CollectTyparsNoCaching = 
     { canCache = false
@@ -2014,7 +2019,8 @@ let CollectTyparsNoCaching =
       includeLocalTyconReprs = false
       includeRecdFields = false
       includeUnionCases = false
-      includeLocals = false }
+      includeLocals = false
+      includeAnonRecdTypeInfos = false }
 
 let CollectLocalsNoCaching = 
     { canCache = false
@@ -2024,7 +2030,8 @@ let CollectLocalsNoCaching =
       includeLocalTyconReprs = false
       includeRecdFields = false 
       includeUnionCases = false
-      includeLocals = true }
+      includeLocals = true
+      includeAnonRecdTypeInfos = false }
 
 let CollectTyparsAndLocalsNoCaching = 
     { canCache = false
@@ -2034,7 +2041,8 @@ let CollectTyparsAndLocalsNoCaching =
       includeRecdFields = false 
       includeUnionCases = false
       includeTypars = true
-      includeLocals = true }
+      includeLocals = true
+      includeAnonRecdTypeInfos = false }
 
 let CollectAll =
     { canCache = false
@@ -2044,7 +2052,8 @@ let CollectAll =
       includeRecdFields = true 
       includeUnionCases = true
       includeTypars = true
-      includeLocals = true }
+      includeLocals = true
+      includeAnonRecdTypeInfos = false }
     
 let CollectTyparsAndLocals = // CollectAll
     { canCache = true // only cache for this one
@@ -2054,8 +2063,22 @@ let CollectTyparsAndLocals = // CollectAll
       includeLocalTycons = false
       includeLocalTyconReprs = false
       includeRecdFields = false
-      includeUnionCases = false }
+      includeUnionCases = false
 
+      // REVIEW: While this options dictates that we collect all the information,
+      //         we only want to collect anonymous record information when building a dummy typed implementation file.
+      includeAnonRecdTypeInfos = false }
+
+let CollectAnonRecdTypeInfosNoCaching =
+    { canCache = false
+      collectInTypes = true
+      includeTypars = true
+      includeLocals = true
+      includeLocalTycons = false
+      includeLocalTyconReprs = false
+      includeRecdFields = false
+      includeUnionCases = false
+      includeAnonRecdTypeInfos = true }
   
 let CollectTypars = CollectTyparsAndLocals
 
