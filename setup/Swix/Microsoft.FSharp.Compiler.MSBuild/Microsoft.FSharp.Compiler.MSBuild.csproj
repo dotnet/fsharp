@@ -68,6 +68,7 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\%(_XlfLan
 
 package name=Microsoft.FSharp.Compiler
         version=$(VsixVersion)
+        vs.package.productArch=neutral
 
 vs.dependencies
   vs.dependency id=Microsoft.FSharp.Dependencies

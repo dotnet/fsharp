@@ -17,10 +17,13 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 
+
 let fileName1 = @"c:\mycode\test1.fs" // note, the path doesn' exist
 let fileName2 = @"c:\mycode\test2.fs" // note, the path doesn' exist
 
-type internal MyFileSystem(defaultFileSystem:IFileSystem) = 
+#nowarn "57"
+
+type internal MyFileSystem(defaultFileSystem:IFileSystem) =
     let file1 = """
 module File1
 
@@ -31,25 +34,27 @@ let B = File1.A + File1.A"""
     let files = dict [(fileName1, file1); (fileName2, file2)]
 
     interface IFileSystem with
-        // Implement the service to open files for reading and writing
-        member _.FileStreamReadShim(fileName) = 
-            match files.TryGetValue fileName with
-            | true, text -> new MemoryStream(Encoding.UTF8.GetBytes(text)) :> Stream
-            | _ -> defaultFileSystem.FileStreamReadShim(fileName)
-            
-        member _.FileStreamCreateShim(fileName) = 
-            defaultFileSystem.FileStreamCreateShim(fileName)
 
-        member _.IsStableFileHeuristic(fileName) = 
+        member _.AssemblyLoader = DefaultAssemblyLoader() :> IAssemblyLoader
+        // Implement the service to open files for reading and writing
+        member _.OpenFileForReadShim(filePath, ?useMemoryMappedFile: bool, ?shouldShadowCopy: bool) =
+            let shouldShadowCopy = defaultArg shouldShadowCopy false
+            let useMemoryMappedFile = defaultArg useMemoryMappedFile false
+            match files.TryGetValue filePath with
+            | true, text ->
+                let bytes = Encoding.UTF8.GetBytes(text)
+                ByteArrayMemory(bytes, 0, bytes.Length) :> ByteMemory
+            | _ -> defaultFileSystem.OpenFileForReadShim(filePath, useMemoryMappedFile, shouldShadowCopy)
+
+        member _.OpenFileForWriteShim(filePath, ?fileMode: FileMode, ?fileAccess: FileAccess, ?fileShare: FileShare) =
+            let fileMode = defaultArg fileMode FileMode.OpenOrCreate
+            let fileAccess = defaultArg fileAccess FileAccess.ReadWrite
+            let fileShare = defaultArg fileShare FileShare.Read
+            defaultFileSystem.OpenFileForWriteShim(filePath, fileMode, fileAccess, fileShare)
+
+        member _.IsStableFileHeuristic(fileName) =
             defaultFileSystem.IsStableFileHeuristic(fileName)
 
-        member _.FileStreamWriteExistingShim(fileName) = 
-            defaultFileSystem.FileStreamWriteExistingShim(fileName)
-
-        member _.ReadAllBytesShim(fileName) = 
-            match files.TryGetValue fileName with
-            | true, text -> Encoding.UTF8.GetBytes(text)
-            | _ -> defaultFileSystem.ReadAllBytesShim(fileName)
 
         // Implement the service related to temporary paths and file time stamps
         member _.GetTempPathShim() = defaultFileSystem.GetTempPathShim()
@@ -58,16 +63,23 @@ let B = File1.A + File1.A"""
         member _.IsInvalidPathShim(fileName) = defaultFileSystem.IsInvalidPathShim(fileName)
         member _.IsPathRootedShim(fileName) = defaultFileSystem.IsPathRootedShim(fileName)
 
-        // Implement the service related to file existence and deletion
-        member _.SafeExists(fileName) = files.ContainsKey(fileName) || defaultFileSystem.SafeExists(fileName)
-        member _.FileDelete(fileName) = defaultFileSystem.FileDelete(fileName)
+        member _.CopyShim(src, dest, overwrite) = defaultFileSystem.CopyShim(src, dest, overwrite)
+        member _.DirectoryCreateShim(path) = defaultFileSystem.DirectoryCreateShim(path)
+        member _.DirectoryDeleteShim(path) = defaultFileSystem.DirectoryDeleteShim(path)
+        member _.DirectoryExistsShim(path) = defaultFileSystem.DirectoryExistsShim(path)
+        member _.EnumerateDirectoriesShim(path) = defaultFileSystem.EnumerateDirectoriesShim(path)
+        member _.EnumerateFilesShim(path, pattern) = defaultFileSystem.EnumerateFilesShim(path, pattern)
+        member _.FileDeleteShim(fileName) = defaultFileSystem.FileDeleteShim(fileName)
+        member _.FileExistsShim(fileName) = files.ContainsKey(fileName) || defaultFileSystem.FileExistsShim(fileName)
+        member _.GetCreationTimeShim(path) = defaultFileSystem.GetCreationTimeShim(path)
+        member _.GetDirectoryNameShim(path) = defaultFileSystem.GetDirectoryNameShim(path)
+        member _.GetFullFilePathInDirectoryShim(dir) (fileName) = defaultFileSystem.GetFullFilePathInDirectoryShim dir fileName
+        member _.NormalizePathShim(path) = defaultFileSystem.NormalizePathShim(path)
 
-        // Implement the service related to assembly loading, used to load type providers
-        // and for F# interactive.
-        member _.AssemblyLoadFrom(fileName) = defaultFileSystem.AssemblyLoadFrom fileName
-        member _.AssemblyLoad(assemblyName) = defaultFileSystem.AssemblyLoad assemblyName 
 
-let UseMyFileSystem() = 
+
+
+let UseMyFileSystem() =
     let myFileSystem = MyFileSystem(FileSystemAutoOpens.FileSystem)
     FileSystemAutoOpens.FileSystem <- myFileSystem
     { new IDisposable with member x.Dispose() = FileSystemAutoOpens.FileSystem <- myFileSystem }
@@ -77,35 +89,35 @@ let UseMyFileSystem() =
 #if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
-let ``FileSystem compilation test``() = 
-  if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows 
+let ``FileSystem compilation test``() =
+  if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows
     use myFileSystem =  UseMyFileSystem()
     let programFilesx86Folder = System.Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
 
-    let projectOptions = 
-        let allFlags = 
-            [| yield "--simpleresolution"; 
-               yield "--noframework"; 
-               yield "--debug:full"; 
-               yield "--define:DEBUG"; 
-               yield "--optimize-"; 
-               yield "--doc:test.xml"; 
-               yield "--warn:3"; 
-               yield "--fullpaths"; 
-               yield "--flaterrors"; 
-               yield "--target:library"; 
-               for r in [ sysLib "mscorlib"; sysLib "System"; sysLib "System.Core"; fsCoreDefaultReference() ] do 
+    let projectOptions =
+        let allFlags =
+            [| yield "--simpleresolution";
+               yield "--noframework";
+               yield "--debug:full";
+               yield "--define:DEBUG";
+               yield "--optimize-";
+               yield "--doc:test.xml";
+               yield "--warn:3";
+               yield "--fullpaths";
+               yield "--flaterrors";
+               yield "--target:library";
+               for r in [ sysLib "mscorlib"; sysLib "System"; sysLib "System.Core"; fsCoreDefaultReference() ] do
                    yield "-r:" + r |]
- 
+
         { ProjectFileName = @"c:\mycode\compilation.fsproj" // Make a name that is unique in this directory.
           ProjectId = None
           SourceFiles = [| fileName1; fileName2 |]
-          OtherOptions = allFlags 
+          OtherOptions = allFlags
           ReferencedProjects = [| |];
           IsIncompleteTypeCheckEnvironment = false
-          UseScriptResolutionRules = true 
+          UseScriptResolutionRules = true
           LoadTime = System.DateTime.Now // Not 'now', we don't want to force reloading
-          UnresolvedReferences = None 
+          UnresolvedReferences = None
           OriginalLoadReferences = []
           Stamp = None }
 
@@ -115,4 +127,3 @@ let ``FileSystem compilation test``() =
     results.AssemblySignature.Entities.Count |> shouldEqual 2
     results.AssemblySignature.Entities.[0].MembersFunctionsAndValues.Count |> shouldEqual 1
     results.AssemblySignature.Entities.[0].MembersFunctionsAndValues.[0].DisplayName |> shouldEqual "B"
-
