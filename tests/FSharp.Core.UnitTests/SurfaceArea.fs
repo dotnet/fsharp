@@ -814,7 +814,7 @@ Microsoft.FSharp.Core.CompilerServices.SetStateMachineMethod`1[TTemplate]: Void 
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Boolean __useResumableCode[T]()
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] __resumableEntry()
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: T __resumeAt[T](Int32)
-Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: TResult __structStateMachine[TTemplate,TResult](Microsoft.FSharp.Core.CompilerServices.MoveNextMethod`1[TTemplate], Microsoft.FSharp.Core.CompilerServices.SetStateMachineMethod`1[TTemplate], Microsoft.FSharp.Core.CompilerServices.AfterCode`2[TTemplate,TResult])
+Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: TResult __structStateMachine[TTemplate,TResult](Microsoft.FSharp.Core.CompilerServices.MoveNextMethod`1[TTemplate], Microsoft.FSharp.Core.CompilerServices.SetStateMachineMethod`1[TTemplate], System.Tuple`3[System.Type,System.String,System.Delegate][], Microsoft.FSharp.Core.CompilerServices.AfterCode`2[TTemplate,TResult])
 Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute: System.String AssemblyName
 Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute: System.String get_AssemblyName()
 Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute: Void .ctor()
