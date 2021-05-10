@@ -2204,7 +2204,8 @@ let rec addFreeInModuleTy (mtyp: ModuleOrNamespaceType) opts acc =
 
 let freeInModuleTy mtyp = addFreeInModuleTy mtyp CollectAllNoCaching emptyFreeTyvars
 
-let freeAnonRecdTypeInfosInModuleTy mtyp = addFreeInModuleTy mtyp CollectAnonRecdTypeInfosNoCaching emptyFreeTyvars
+let freeAnonRecdTypeInfosInModuleTy mtyp = 
+    (addFreeInModuleTy mtyp CollectAnonRecdTypeInfosNoCaching emptyFreeTyvars).FreeAnonRecdTypeInfos
 
 
 //--------------------------------------------------------------------------
