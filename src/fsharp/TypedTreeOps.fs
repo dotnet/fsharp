@@ -2168,7 +2168,14 @@ and accFreeTyparRef opts (tp: Typar) acc =
 and accFreeInType opts ty acc = 
     match stripTyparEqns ty with 
     | TType_tuple (tupInfo, l) -> accFreeInTypes opts l (accFreeInTupInfo opts tupInfo acc)
-    | TType_anon (anonInfo, l) -> accFreeInTypes opts l (accFreeInTupInfo opts anonInfo.TupInfo acc)
+    | TType_anon (anonInfo, l) ->
+        let acc =
+            if opts.includeAnonRecdTypeInfos then
+                if Zset.contains anonInfo acc.FreeAnonRecdTypeInfos then acc
+                else { acc with FreeAnonRecdTypeInfos = Zset.add anonInfo acc.FreeAnonRecdTypeInfos }
+            else
+                acc
+        accFreeInTypes opts l (accFreeInTupInfo opts anonInfo.TupInfo acc)
     | TType_app (tc, tinst) -> 
         let acc = accFreeTycon opts tc acc
         match tinst with 
