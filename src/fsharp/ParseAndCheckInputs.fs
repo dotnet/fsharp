@@ -761,7 +761,7 @@ let mkDummyParameterVal name attribs ty =
         ValRecursiveScopeInfo.ValNotInRecScope, None, ValBaseOrThisInfo.NormalVal, attribs, ValInline.Never,
         XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone)
 
-let rec createDummyModuleOrNamespaceExpr (g: TcGlobals) (mty: ModuleOrNamespaceType) =
+let rec CreateDummyModuleOrNamespaceExpr (g: TcGlobals) (mty: ModuleOrNamespaceType) =
 
     let dummyValAsBinding (v: Val) =
         let dummyExpr =
@@ -842,7 +842,7 @@ let rec createDummyModuleOrNamespaceExpr (g: TcGlobals) (mty: ModuleOrNamespaceT
         |> Seq.map dummyValAsModuleOrNamespaceExpr
 
     let dummyEntityAsModuleOrNamespaceBinding (ent: Entity) =
-        ModuleOrNamespaceBinding.Module(ent, createDummyModuleOrNamespaceExpr g ent.ModuleOrNamespaceType)
+        ModuleOrNamespaceBinding.Module(ent, CreateDummyModuleOrNamespaceExpr g ent.ModuleOrNamespaceType)
 
     let dummyEntitiesAsModuleOrNamespaceBindings (ents: Entity seq) =
         ents
@@ -867,12 +867,12 @@ let rec createDummyModuleOrNamespaceExpr (g: TcGlobals) (mty: ModuleOrNamespaceT
 
     ModuleOrNamespaceExpr.TMDefs dummyExprs
 
-let createDummyModuleOrNamespaceExprWithSig g (sigTy: ModuleOrNamespaceType) =
-    let dummyExpr = createDummyModuleOrNamespaceExpr g sigTy
+let CreateDummyModuleOrNamespaceExprWithSig g (sigTy: ModuleOrNamespaceType) =
+    let dummyExpr = CreateDummyModuleOrNamespaceExpr g sigTy
     ModuleOrNamespaceExprWithSig(sigTy, ModuleOrNamespaceExpr.TMDefs [dummyExpr], range0)
 
 /// Similar to 'createDummyTypedImplFile', only diffference is that there are no definitions and is not used for emitting any kind of assembly.
-let createEmptyDummyTypedImplFile qualNameOfFile sigTy =
+let CreateEmptyDummyTypedImplFile qualNameOfFile sigTy =
     let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(sigTy, ModuleOrNamespaceExpr.TMDefs [], range0)
     TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap.Empty)
 
@@ -880,8 +880,8 @@ let createEmptyDummyTypedImplFile qualNameOfFile sigTy =
 /// In this case, this is used to create a typed impl file based on a signature so we can emit a partial reference assembly
 ///     for tooling, IDEs, etc - without having to actually check an implementation file.
 /// An example of this use would be for other .NET languages wanting cross-project referencing with F# as they require an assembly.
-let createDummyTypedImplFile g qualNameOfFile sigTy =
-    let exprWithSig = createDummyModuleOrNamespaceExprWithSig g sigTy
+let CreateDummyTypedImplFile g qualNameOfFile sigTy =
+    let exprWithSig = CreateDummyModuleOrNamespaceExprWithSig g sigTy
     
     let anonRecdTypeInfos = 
         let s = freeAnonRecdTypeInfosInModuleTy sigTy
@@ -958,7 +958,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
               // Typecheck the implementation file
               let typeCheckOne =
                   if skipImplIfSigExists && hadSig then
-                    (EmptyTopAttrs, createEmptyDummyTypedImplFile qualNameOfFile rootSigOpt.Value, Unchecked.defaultof<_>, tcImplEnv, false)
+                    (EmptyTopAttrs, CreateEmptyDummyTypedImplFile qualNameOfFile rootSigOpt.Value, Unchecked.defaultof<_>, tcImplEnv, false)
                     |> Eventually.Done
                   else
                     TypeCheckOneImplFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
@@ -969,7 +969,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
 
               let implFile =
                 if tcConfig.emitReferenceAssemblyOnly = ReferenceAssemblyGeneration.TestSigOfImpl then
-                    createDummyTypedImplFile tcGlobals qualNameOfFile implFileSigType
+                    CreateDummyTypedImplFile tcGlobals qualNameOfFile implFileSigType
                 else
                     implFile0
 
