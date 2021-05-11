@@ -772,16 +772,49 @@ let rec createDummyModuleOrNamespaceExpr (g: TcGlobals) (mty: ModuleOrNamespaceT
                 match v.ValReprInfo with
                 | Some valReprInfo ->
                     let typars, curriedArgInfos, retTy, _retInfo = GetTopValTypeInFSharpForm g valReprInfo v.Type v.Range
-
+                    
                     let valParams =
+                        let defaultParamNames =
+                            match
+                                v.MemberInfo
+                                |> Option.bind (fun x -> x.ImplementedSlotSigs |> List.tryExactlyOne)
+                             with
+                             | Some slotSig when v.IsCompilerGenerated ->
+                                let paramNames =
+                                    slotSig.FormalParams
+                                    |> List.map (fun slotParams ->
+                                        slotParams
+                                        |> List.map (fun slotParam ->
+                                            match slotParam with
+                                            | TSlotParam(paramName=paramName) ->
+                                                paramName
+                                                |> Option.defaultValue ""
+                                        )
+                                        |> Array.ofList
+                                    )
+
+                                if v.IsInstanceMember then
+                                    [|""|] :: paramNames |> Array.ofList
+                                else
+                                    paramNames |> Array.ofList
+                             | _ ->
+                                curriedArgInfos
+                                |> List.map (fun x -> Array.init x.Length (fun _ -> ""))
+                                |> Array.ofSeq
+
                         curriedArgInfos
-                        |> List.map (fun argInfos ->
+                        |> List.mapi (fun i argInfos ->
                             argInfos
-                            |> List.map (fun (ty, argInfo) ->
+                            |> List.mapi (fun j (ty, argInfo) ->
+                                let defaultParamName =
+                                    if i >= defaultParamNames.Length || j >= defaultParamNames.[i].Length then
+                                        ""
+                                    else
+                                        defaultParamNames.[i].[j]
                                 let name =
                                     argInfo.Name
                                     |> Option.map (fun x -> x.idText)
-                                    |> Option.defaultValue ""
+                                    |> Option.defaultValue defaultParamName
                                 mkDummyParameterVal name argInfo.Attribs ty
                             )
                         )
