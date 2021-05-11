@@ -3454,10 +3454,53 @@ let writeDirectory os dict =
 
 let writeBytes (os: BinaryWriter) (chunk: byte[]) = os.Write(chunk, 0, chunk.Length)
 
-let writeBinaryAndReportMappings (outfile,
-                                  ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB,
-                                  embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, emitTailcalls, deterministic, showTimes, dumpDebugInfo, pathMap)
-                                  modul normalizeAssemblyRefs =
+let rec writeBinaryAndReportMappings (outfile,
+                                        ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB,
+                                        embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, emitTailcalls, deterministic, showTimes, dumpDebugInfo, pathMap)
+                                        modul normalizeAssemblyRefs =
+
+    let stream =
+        try
+            // Ensure the output directory exists otherwise it will fail
+            let dir = FileSystem.GetDirectoryNameShim outfile
+            if not (FileSystem.DirectoryExistsShim dir) then FileSystem.DirectoryCreateShim dir |> ignore
+            FileSystem.OpenFileForWriteShim(outfile, FileMode.Create, FileAccess.Write, FileShare.Read)
+        with _ ->
+            failwith ("Could not open file for writing (binary mode): " + outfile)
+
+    let pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
+        try
+            let res = writeBinaryAndReportMappingsAux(stream, false, ilg, pdbfile, signer, portablePDB, embeddedPDB, embedAllSource, embedSourceList, sourceLink,
+                                                   checksumAlgorithm, emitTailcalls, deterministic, showTimes, pathMap) modul normalizeAssemblyRefs
+
+            try
+                FileSystemUtilities.setExecutablePermission outfile
+            with _ ->
+                ()
+
+            res
+        with
+        | _ ->
+            try FileSystem.FileDeleteShim outfile with | _ -> ()
+            reraise()
+
+    writePdb
+        (dumpDebugInfo, showTimes, portablePDB, embeddedPDB, pdbfile, outfile, signer, deterministic, pathMap)
+        (pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings)
+
+and writeBinaryWithNoPdb (stream: Stream,
+                            ilg: ILGlobals, signer: ILStrongNameSigner option, portablePDB, embeddedPDB,
+                            embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, emitTailcalls, deterministic, showTimes, pathMap)
+                            modul normalizeAssemblyRefs =
+
+    writeBinaryAndReportMappingsAux(stream, true, ilg, None, signer, portablePDB, embeddedPDB, embedAllSource, embedSourceList, sourceLink,
+                                            checksumAlgorithm, emitTailcalls, deterministic, showTimes, pathMap) modul normalizeAssemblyRefs
+    |> ignore
+
+and writeBinaryAndReportMappingsAux (stream: Stream, leaveStreamOpen: bool,
+                                        ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB,
+                                        embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, emitTailcalls, deterministic, showTimes, pathMap)
+                                        modul normalizeAssemblyRefs =
     // Store the public key from the signer into the manifest. This means it will be written
     // to the binary and also acts as an indicator to leave space for delay sign
 
@@ -3496,15 +3539,7 @@ let writeBinaryAndReportMappings (outfile,
         end
         { modul with Manifest = match modul.Manifest with None -> None | Some m -> Some {m with PublicKey = pubkey} }
 
-    let os =
-        try
-            // Ensure the output directory exists otherwise it will fail
-            let dir = FileSystem.GetDirectoryNameShim outfile
-            if not (FileSystem.DirectoryExistsShim dir) then FileSystem.DirectoryCreateShim dir |> ignore
-            let stream = FileSystem.OpenFileForWriteShim(outfile, FileMode.Create, FileAccess.Write, FileShare.Read)
-            new BinaryWriter(stream)
-        with e ->
-            failwith ("Could not open file for writing (binary mode): " + outfile)
+    let os = new BinaryWriter(stream, System.Text.Encoding.UTF8, leaveOpen=leaveStreamOpen)
 
     let pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
         try
@@ -4133,22 +4168,19 @@ let writeBinaryAndReportMappings (outfile,
 
           os.Dispose()
 
-          try
-              FileSystemUtilities.setExecutablePermission outfile
-          with _ ->
-              ()
           pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings
 
         // Looks like a finally
         with e ->
             (try
                 os.Dispose()
-                FileSystem.FileDeleteShim outfile
              with _ -> ())
             reraise()
 
     reportTime showTimes "Writing Image"
+    pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings
 
+and writePdb (dumpDebugInfo, showTimes, portablePDB, embeddedPDB, pdbfile, outfile, signer, deterministic, pathMap) (pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings) =
     if dumpDebugInfo then logDebugInfo outfile pdbData
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary.
@@ -4246,4 +4278,10 @@ let WriteILBinary (filename, (options: options), inputModule, normalizeAssemblyR
     writeBinaryAndReportMappings (filename,
                                   options.ilg, options.pdbfile, options.signer, options.portablePDB, options.embeddedPDB, options.embedAllSource,
                                   options.embedSourceList, options.sourceLink, options.checksumAlgorithm, options.emitTailcalls, options.deterministic, options.showTimes, options.dumpDebugInfo, options.pathMap) inputModule normalizeAssemblyRefs
+    |> ignore
+
+let WriteILBinaryStreamWithNoPDB (stream, (options: options), inputModule, normalizeAssemblyRefs) =
+    writeBinaryWithNoPdb (stream,
+                            options.ilg, options.signer, options.portablePDB, options.embeddedPDB, options.embedAllSource,
+                            options.embedSourceList, options.sourceLink, options.checksumAlgorithm, options.emitTailcalls, options.deterministic, options.showTimes, options.pathMap) inputModule normalizeAssemblyRefs
     |> ignore
