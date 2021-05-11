@@ -102,12 +102,12 @@ module UsingStateMachines =
         member inline _.Run(code : ListBuilderStateMachineCode<'T>) : 'T list = 
             if __useResumableCode then
                 __structStateMachine<ListBuilderStateMachine<'T>, _>
-                    (MoveNextMethod<ListBuilderStateMachine<'T>>(fun sm -> 
+                    (MoveNextMethodImpl<ListBuilderStateMachine<'T>>(fun sm -> 
                            code.Invoke(&sm)
                            ))
 
                     // SetStateMachine
-                    (SetStateMachineMethod<_>(fun sm state -> 
+                    (SetStateMachineMethodImpl<_>(fun sm state -> 
                         ()))
 
                     // Other interfaces

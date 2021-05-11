@@ -20,12 +20,9 @@
     <Compile Include="seq2.fs" />
 -->
 	<Compile Include="coroutine.fs" />
-	<Compile Include="tasksUsingCoroutines.fs" />
+	<Compile Include="tasksUsingResumableCodeCombinators.fs" />
     <Compile Include="taskSeq.fs" />
-<!--
- 	<Compile Include="taskSeqUsingTasks.fs" />
-	<Compile Include="taskSeqUsingCoroutines.fs" />
--->	
+	<Compile Include="taskSeqUsingResumableCodeCombinators.fs" />
 	<Compile Include="TaskBuilder.fs" />
 	<Compile Include="TaskPerf.fs" />
 	<ProjectReference Include="..\CS\TaskPerfCSharp.csproj" />

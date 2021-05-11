@@ -25,11 +25,6 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 
-[<AutoOpen>]
-module Utils2 = 
-
-    let inline hashq x = Microsoft.FSharp.Core.LanguagePrimitives.PhysicalHash x
-
 /// Acts as a template for struct state machines introduced by __structStateMachine, and also as a reflective implementation
 [<Struct; NoComparison; NoEquality>]
 type TaskStateMachine<'TOverall> =
@@ -109,7 +104,7 @@ type TaskBuilder() =
         if __useResumableCode then 
             __structStateMachine<TaskStateMachine<'TOverall>, Task<'TOverall>>
                 // IAsyncStateMachine.MoveNext
-                (MoveNextMethod<_>(fun sm -> 
+                (MoveNextMethodImpl<_>(fun sm -> 
                     if __useResumableCode then 
                         //-- RESUMABLE CODE START
                         __resumeAt sm.ResumptionPoint 
@@ -124,7 +119,7 @@ type TaskBuilder() =
                         failwith "unreachable"))
 
                 // IAsyncStateMachine.SetStateMachine
-                (SetStateMachineMethod<_>(fun sm state -> 
+                (SetStateMachineMethodImpl<_>(fun sm state -> 
                     sm.MethodBuilder.SetStateMachine(state)))
 
                 // Other interfaces

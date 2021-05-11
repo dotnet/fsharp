@@ -19,14 +19,10 @@ open System.Threading.Tasks
 open Tests.Coroutines
 open FSharp.Core.CompilerServices
 open FSharp.Core.CompilerServices.StateMachineHelpers
-open System.Diagnostics
-open System.Threading
-open System.Collections
-open System.Collections.Generic
 
-/// Acts as a template for struct state machines introduced by __structStateMachine, and also as a reflective implementation
+/// The extra data stored in ResumableStateMachine for tasks
 [<Struct; NoComparison; NoEquality>]
-type TaskStateMachineData<'TOverall> =
+type TaskStateMachineData2<'TOverall> =
 
     /// Holds the final result of the state machine (between the 'return' and the execution of the finally clauses, after which we we eventually call SetResult)
     [<DefaultValue(false)>]
@@ -39,16 +35,15 @@ type TaskStateMachineData<'TOverall> =
     [<DefaultValue(false)>]
     val mutable MethodBuilder : AsyncTaskMethodBuilder<'TOverall>
 
-and TaskStateMachine2<'TOverall> = CoroutineStateMachine<TaskStateMachineData<'TOverall>>
+and TaskStateMachine2<'TOverall> = ResumableStateMachine<TaskStateMachineData2<'TOverall>>
 
-and TaskStateMachineResumption2<'TOverall> = CoroutineResumption<TaskStateMachineData<'TOverall>>
+and TaskStateMachineResumption2<'TOverall> = ResumptionFunc<TaskStateMachineData2<'TOverall>>
 
-type TaskCode2<'TOverall, 'T> = CoroutineCode<TaskStateMachineData<'TOverall>, 'T>
+type TaskCode2<'TOverall, 'T> = ResumableCode<TaskStateMachineData2<'TOverall>, 'T>
 
 [<AutoOpen>]
 module TaskMethodRequire = 
 
-    
     let inline RequireCanBind< ^Priority, ^TaskLike, ^TResult1, 'TResult2, 'TOverall 
                                 when (^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike * (^TResult1 -> TaskCode2<'TOverall, 'TResult2>) -> TaskCode2<'TOverall, 'TResult2>) > 
                              (priority: ^Priority)
@@ -73,7 +68,7 @@ type TaskBuilderCoroutines() =
         if __useResumableCode then 
             __structStateMachine<TaskStateMachine2<'TOverall>, Task<'TOverall>>
                 // IAsyncStateMachine.MoveNext
-                (MoveNextMethod<_>(fun sm -> 
+                (MoveNextMethodImpl<_>(fun sm -> 
                     if __useResumableCode then 
                         //-- RESUMABLE CODE START
                         __resumeAt sm.ResumptionPoint 
@@ -91,13 +86,17 @@ type TaskBuilderCoroutines() =
                         failwith "Run: non-resumable - unreachable"))
 
                 // IAsyncStateMachine.SetStateMachine
-                (SetStateMachineMethod<_>(fun sm state -> 
+                (SetStateMachineMethodImpl<_>(fun sm state -> 
                     sm.Data.MethodBuilder.SetStateMachine(state)))
 
-                // Other interfaces (ICoroutineStateMachine)
+                // Other interfaces (IResumableStateMachine)
                 [| 
-                   (typeof<ICoroutineStateMachine<TaskStateMachineData<'TOverall>>>, "GetResumptionPoint", GetResumptionPointMethodImpl<TaskStateMachine2<'TOverall>>(fun sm -> 
+                   (typeof<IResumableStateMachine<TaskStateMachineData2<'TOverall>>>, "get_ResumptionPoint", GetResumptionPointMethodImpl<TaskStateMachine2<'TOverall>>(fun sm -> 
                         sm.ResumptionPoint) :> _);
+                   (typeof<IResumableStateMachine<TaskStateMachineData2<'TOverall>>>, "get_Data", GetResumableStateMachineDataMethodImpl<TaskStateMachine2<'TOverall>, TaskStateMachineData2<'TOverall>>(fun sm -> 
+                        sm.Data) :> _);
+                   (typeof<IResumableStateMachine<TaskStateMachineData2<'TOverall>>>, "set_Data", SetResumableStateMachineDataMethodImpl<TaskStateMachine2<'TOverall>, TaskStateMachineData2<'TOverall>>(fun sm data -> 
+                        sm.Data <- data) :> _);
                  |]
 
                 // Start
@@ -109,7 +108,7 @@ type TaskBuilderCoroutines() =
             TaskBuilderCoroutines.RunDynamic(code)
 
     static member RunDynamic(code : TaskCode2<'TOverall, 'T>) : Task<'TOverall> = 
-        // TODO: the MoveNxt on TaskStateMachine2 (CoroutineStateMachine) is not adequate
+        // TODO: the MoveNxt on TaskStateMachine2 (ResumableStateMachine) is not adequate
         // It djust does MoveNext and not this:
         //
         //try
@@ -129,7 +128,7 @@ type TaskBuilderCoroutines() =
 
     /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
     [<DefaultValue>]
-    member inline _.Zero() : TaskCode2<'TOverall, unit> = Coroutine.Zero()
+    member inline _.Zero() : TaskCode2<'TOverall, unit> = ResumableCode.Zero()
 
     member inline _.Return (value: 'TOverall) : TaskCode2<'TOverall, 'T> = 
         TaskCode2<'TOverall, _>(fun sm -> 
@@ -140,33 +139,27 @@ type TaskBuilderCoroutines() =
     /// Note that this requires that the first step has no result.
     /// This prevents constructs like `task { return 1; return 2; }`.
     member inline _.Combine(task1: TaskCode2<'TOverall, unit>, task2: TaskCode2<'TOverall, 'T>) : TaskCode2<'TOverall, 'T> =
-        Coroutine.Combine(task1, task2)
+        ResumableCode.Combine(task1, task2)
 
     /// Builds a step that executes the body while the condition predicate is true.
     member inline _.While ([<InlineIfLambda>] condition : unit -> bool, body : TaskCode2<'TOverall, unit>) : TaskCode2<'TOverall, unit> =
-        Coroutine.While(condition, body)
+        ResumableCode.While(condition, body)
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline _.TryWith (body: TaskCode2<'TOverall, 'T>, catch: exn -> TaskCode2<'TOverall, 'T>) : TaskCode2<'TOverall, 'T> =
-        Coroutine.TryWith(body, catch)
+        ResumableCode.TryWith(body, catch)
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline _.TryFinally (body: TaskCode2<'TOverall, 'T>, [<InlineIfLambda>] compensation : unit -> unit) : TaskCode2<'TOverall, 'T> =
-        Coroutine.TryFinally(body, compensation)
+        ResumableCode.TryFinally(body, NonResumableCode<_,_>(fun _ -> compensation()))
 
-    member inline builder.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (resource : 'Resource, body : 'Resource -> TaskCode2<'TOverall, 'T>) : TaskCode2<'TOverall, 'T> = 
-        // A using statement is just a try/finally with the finally block disposing if non-null.
-        builder.TryFinally(
-            TaskCode2<'TOverall, _>(fun sm -> (body resource).Invoke(&sm)),
-            (fun () -> if not (isNull (box resource)) then resource.Dispose()))
+    member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (resource : 'Resource, body : 'Resource -> TaskCode2<'TOverall, 'T>) : TaskCode2<'TOverall, 'T> = 
+        ResumableCode.Using(resource, body)
 
-    member inline builder.For (sequence : seq<'T>, body : 'T -> TaskCode2<'TOverall, unit>) : TaskCode2<'TOverall, unit> =
-        // A for loop is just a using statement on the sequence's enumerator...
-        builder.Using (sequence.GetEnumerator(), 
-            // ... and its body is a while loop that advances the enumerator and runs the body on each element.
-            (fun e -> builder.While((fun () -> e.MoveNext()), TaskCode2<'TOverall, _>(fun sm -> (body e.Current).Invoke(&sm)))))
+    member inline _.For (sequence : seq<'T>, body : 'T -> TaskCode2<'TOverall, unit>) : TaskCode2<'TOverall, unit> =
+        ResumableCode.For(sequence, body)
 
     member inline _.ReturnFrom (task: Task<'TOverall>) : TaskCode2<'TOverall, 'T> = 
         TaskCode2<'TOverall, _>(fun sm -> 
@@ -176,10 +169,10 @@ type TaskBuilderCoroutines() =
 
             let mutable __stack_fin = true
             if not task.IsCompleted then
-                // This will yield with __stack_fin2 = false
-                // This will resume with __stack_fin2 = true
-                let __stack_fin2 = Coroutine.Yield().Invoke(&sm)
-                __stack_fin <- __stack_fin2
+                // This will yield with __stack_yield_fin = false
+                // This will resume with __stack_yield_fin = true
+                let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
+                __stack_fin <- __stack_yield_fin
             if __stack_fin then 
                 sm.Data.Result <- awaiter.GetResult()
                 true
@@ -218,10 +211,10 @@ module ContextSensitiveTasks =
 
                 let mutable __stack_fin = true
                 if not (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
-                    // This will yield with __stack_fin2 = false
-                    // This will resume with __stack_fin2 = true
-                    let __stack_fin2 = Coroutine.Yield().Invoke(&sm)
-                    __stack_fin <- __stack_fin2
+                    // This will yield with __stack_yield_fin = false
+                    // This will resume with __stack_yield_fin = true
+                    let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
+                    __stack_fin <- __stack_yield_fin
                     
                 if __stack_fin then 
                     let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
@@ -242,10 +235,10 @@ module ContextSensitiveTasks =
 
                 let mutable __stack_fin = true
                 if not awaiter.IsCompleted then
-                    // This will yield with __stack_fin2 = false
-                    // This will resume with __stack_fin2 = true
-                    let __stack_fin2 = Coroutine.Yield().Invoke(&sm)
-                    __stack_fin <- __stack_fin2
+                    // This will yield with __stack_yield_fin = false
+                    // This will resume with __stack_yield_fin = true
+                    let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
+                    __stack_fin <- __stack_yield_fin
                 if __stack_fin then 
                     let result = awaiter.GetResult()
                     (continuation result).Invoke(&sm)
@@ -273,10 +266,10 @@ module ContextSensitiveTasks =
 
                 let mutable __stack_fin = true
                 if not (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
-                    // This will yield with __stack_fin2 = false
-                    // This will resume with __stack_fin2 = true
-                    let __stack_fin2 = Coroutine.Yield().Invoke(&sm)
-                    __stack_fin <- __stack_fin2
+                    // This will yield with __stack_yield_fin = false
+                    // This will resume with __stack_yield_fin = true
+                    let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
+                    __stack_fin <- __stack_yield_fin
                 if __stack_fin then 
                     sm.Data.Result <- (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
                     true
@@ -294,10 +287,10 @@ module ContextSensitiveTasks =
                 let mutable awaiter = task.GetAwaiter()
                 let mutable __stack_fin = true
                 if not task.IsCompleted then
-                    // This will yield with __stack_fin2 = false
-                    // This will resume with __stack_fin2 = true
-                    let __stack_fin2 = Coroutine.Yield().Invoke(&sm)
-                    __stack_fin <- __stack_fin2
+                    // This will yield with __stack_yield_fin = false
+                    // This will resume with __stack_yield_fin = true
+                    let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
+                    __stack_fin <- __stack_yield_fin
                 if __stack_fin then 
                     sm.Data.Result <- awaiter.GetResult()
                     true

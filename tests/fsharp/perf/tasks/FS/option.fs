@@ -95,11 +95,11 @@ type OptionBuilder() =
         if __useResumableCode then
             __structStateMachine<OptionStateMachine<'T>, 'T option>
                 // IAsyncStateMachine.MoveNext
-                (MoveNextMethod<_>(fun sm -> 
+                (MoveNextMethodImpl<_>(fun sm -> 
                        code.Invoke(&sm)))
 
                 // IAsyncStateMachine.SetStateMachine
-                (SetStateMachineMethod<_>(fun sm state -> ()))
+                (SetStateMachineMethodImpl<_>(fun sm state -> ()))
 
                 // Other interfaces
                 [| |]
@@ -121,12 +121,12 @@ type ValueOptionBuilder() =
         if __useResumableCode then
             __structStateMachine<OptionStateMachine<'T>, 'T voption>
                 // IAsyncStateMachine.MoveNext
-                (MoveNextMethod<OptionStateMachine<'T>>(fun sm -> 
+                (MoveNextMethodImpl<OptionStateMachine<'T>>(fun sm -> 
                        code.Invoke(&sm)
                        ))
 
                 // IAsyncStateMachine.SetStateMachine
-                (SetStateMachineMethod<_>(fun sm state -> 
+                (SetStateMachineMethodImpl<_>(fun sm state -> 
                     ()))
 
                 // Other Methods
