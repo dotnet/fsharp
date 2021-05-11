@@ -56,8 +56,6 @@ variables:
     value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
-  - name: DotNetSdkVersion
-    value: '6.0.100-preview.3.21202.5'
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
@@ -370,7 +368,7 @@ stages:
         #       displayName: install SDK
         #       inputs:
         #         packageType: sdk
-        #         version: $(DotNetSdkVersion)
+        #         useGlobalJson: true
         #         installationPath: $(Agent.ToolsDirectory)/dotnet
         #   - script: dotnet build .\FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
         #     displayName: Regular rebuild
@@ -393,7 +391,7 @@ stages:
             displayName: install SDK
             inputs:
               packageType: sdk
-              version: $(DotNetSdkVersion)
+              useGlobalJson: true
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild
@@ -416,7 +414,7 @@ stages:
             displayName: install SDK
             inputs:
               packageType: sdk
-              version: $(DotNetSdkVersion)
+              useGlobalJson: true
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild
