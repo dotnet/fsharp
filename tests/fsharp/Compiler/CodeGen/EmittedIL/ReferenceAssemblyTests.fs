@@ -54,7 +54,7 @@ let test() =
         |> ignore
 
     [<Test>]
-    let ``Simple reference assembly should have expected IL with mock typed impl file``() =
+    let ``Simple reference assembly should have expected IL with dummy typed impl file``() =
         let src =
             """
 module ReferenceAssembly
@@ -168,7 +168,7 @@ let test(_x: {| a: int32 |}) =
         |> ignore
 
     [<Test>]
-    let ``Simple reference assembly should have expected IL with anonymous record with mock typed impl file``() =
+    let ``Simple reference assembly should have expected IL with anonymous record with dummy typed impl file``() =
         let src =
             """
 module ReferenceAssembly
@@ -194,6 +194,149 @@ let test(_x: {| a: int32 |}) =
     
     .class private abstract auto ansi sealed '<StartupCode$assembly>'.$ReferenceAssembly
            extends [runtime]System.Object
+    {
+    }"""
+        ]
+        |> ignore
+
+    [<Test>]
+    let ``Simple reference assembly with nested module should have expected IL``() =
+        let src =
+            """
+module ReferenceAssembly
+
+open System
+
+module Nested =
+
+    let test() =
+        Console.WriteLine("Hello World!")
+            """
+
+        FSharp src
+        |> withOptions ["--refonly"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """.class public abstract auto ansi sealed ReferenceAssembly
+            extends [runtime]System.Object
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+      .class abstract auto ansi sealed nested public Nested
+              extends [runtime]System.Object
+      {
+        .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+        .method public static void  test() cil managed
+        {
+          
+          .maxstack  8
+          IL_0000:  ldnull
+          IL_0001:  throw
+        } 
+    
+      } 
+    
+    } 
+    
+    .class private abstract auto ansi sealed '<StartupCode$assembly>'.$ReferenceAssembly
+            extends [runtime]System.Object
+    {
+    }"""
+        ]
+        |> ignore
+
+    [<Test>]
+    let ``Simple reference assembly with nested module should have expected IL with dummy typed impl``() =
+        let src =
+            """
+module ReferenceAssembly
+
+open System
+
+module Nested =
+
+    let test() =
+        Console.WriteLine("Hello World!")
+            """
+
+        FSharp src
+        |> withOptions ["--test:RefOnlyTestSigOfImpl"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """.class public abstract auto ansi sealed ReferenceAssembly
+            extends [runtime]System.Object
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+      .class abstract auto ansi sealed nested public Nested
+              extends [runtime]System.Object
+      {
+        .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+        .method public static void  test() cil managed
+        {
+          
+          .maxstack  8
+          IL_0000:  ldnull
+          IL_0001:  throw
+        } 
+    
+      } 
+    
+    } 
+    
+    .class private abstract auto ansi sealed '<StartupCode$assembly>'.$ReferenceAssembly
+            extends [runtime]System.Object
+    {
+    }"""
+        ]
+        |> ignore
+
+    [<Test>]
+    let ``Simple reference assembly with nested module with type should have expected IL``() =
+        let src =
+            """
+module ReferenceAssembly
+
+open System
+
+module Nested =
+
+    type Test = { x: int }
+
+    let test(_x: Test) =
+        Console.WriteLine("Hello World!")
+            """
+
+        FSharp src
+        |> withOptions ["--refonly"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """.class public abstract auto ansi sealed ReferenceAssembly
+            extends [runtime]System.Object
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+      .class abstract auto ansi sealed nested public Nested
+              extends [runtime]System.Object
+      {
+        .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+        .method public static void  test() cil managed
+        {
+          
+          .maxstack  8
+          IL_0000:  ldnull
+          IL_0001:  throw
+        } 
+    
+      } 
+    
+    } 
+    
+    .class private abstract auto ansi sealed '<StartupCode$assembly>'.$ReferenceAssembly
+            extends [runtime]System.Object
     {
     }"""
         ]

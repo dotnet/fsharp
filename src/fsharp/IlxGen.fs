@@ -265,7 +265,7 @@ type cenv =
       delayedGenMethods: Queue<cenv -> unit>
 
       /// Indicates that the generating assembly will have an assembly-level attribute, System.Runtime.CompilerServices.InternalsVisibleToAttribute.
-      hasInternalsVisibleToAttr: bool
+      hasInternalsVisibleToAttrib: bool
     }
 
     override x.ToString() = "<cenv>"
@@ -6148,7 +6148,7 @@ and GenMethodForBinding
     // Internal methods can be omitted only if the assembly does not contain a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
     if cenv.opts.referenceAssemblyOnly && 
        (access = ILMemberAccess.Private || 
-        ((access = ILMemberAccess.Assembly || access = ILMemberAccess.FamilyAndAssembly) && not cenv.hasInternalsVisibleToAttr)) && 
+        ((access = ILMemberAccess.Assembly || access = ILMemberAccess.FamilyAndAssembly) && not cenv.hasInternalsVisibleToAttrib)) && 
        not (v.IsOverrideOrExplicitImpl || v.IsDispatchSlot) then ()
     else
     
@@ -7057,16 +7057,17 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
     let topInstrs, topCode =
         CodeGenMethod cenv mgbuf
             ([], methodName, eenv, 0,
-             (fun cgbuf eenv ->
-                  GenModuleExpr cenv cgbuf qname lazyInitInfo eenv mexpr
-                  CG.EmitInstr cgbuf (pop 0) Push0 I_ret), m)
+                (fun cgbuf eenv ->
+                    GenModuleExpr cenv cgbuf qname lazyInitInfo eenv mexpr
+                    CG.EmitInstr cgbuf (pop 0) Push0 I_ret), m)
 
     // The code generation for the initialization is now complete and the IL code is in topCode.
     // Make a .cctor and/or main method to contain the code. This initializes all modules.
     //   Library file (mainInfoOpt = None) : optional .cctor if topCode has initialization effect
     //   Final file, explicit entry point (mainInfoOpt = Some _, GetExplicitEntryPointInfo() = Some) : main + optional .cctor if topCode has initialization effect
     //   Final file, implicit entry point (mainInfoOpt = Some _, GetExplicitEntryPointInfo() = None) : main + initialize + optional .cctor calling initialize
-    let doesSomething = CheckCodeDoesSomething topCode.Code
+    // The .cctor that gets created has an access of ILMemberAccess.Internal - therefore, we should emit when ref assemblies are enabled and assembly has an InternalsVisibleToAttribute.
+    let doesSomething = (not cenv.opts.referenceAssemblyOnly || cenv.hasInternalsVisibleToAttrib) && CheckCodeDoesSomething topCode.Code
 
     // Make a FEEFEE instruction to mark hidden code regions
     // We expect the first instruction to be a sequence point when generating debug symbols
@@ -8290,7 +8291,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
 
     /// Generate ILX code for an assembly fragment
     member _.GenerateCode (codeGenOpts, typedAssembly, assemAttribs, moduleAttribs) =
-        let hasInternalsVisibleToAttr = HasFSharpAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute assemAttribs
+        let hasInternalsVisibleToAttrib = HasFSharpAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute assemAttribs
 
         let cenv: cenv =
             { g=tcGlobals
@@ -8304,7 +8305,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
               optimizeDuringCodeGen = (fun _flag expr -> expr)
               exprRecursionDepth = 0
               delayedGenMethods = Queue ()
-              hasInternalsVisibleToAttr = hasInternalsVisibleToAttr }
+              hasInternalsVisibleToAttrib = hasInternalsVisibleToAttrib }
         GenerateCode (cenv, anonTypeTable, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs)
 
     /// Invert the compilation of the given value and clear the storage of the value
