@@ -147,8 +147,11 @@
     <Compile Include="..\utils\TaggedCollections.fs">
       <Link>Utilities\TaggedCollections.fs</Link>
     </Compile>
-    <Compile Include="..\utils\FileSystem.fsi">
-      <Link>Utilities\FileSystem.fsi</Link>
+    <Compile Include="..\absil\illib.fsi">
+      <Link>Utilities\illib.fsi</Link>
+    </Compile>
+    <Compile Include="..\absil\illib.fs">
+      <Link>Utilities\illib.fs</Link>
     </Compile>
     <Compile Include="..\utils\FileSystem.fs">
       <Link>Utilities\FileSystem.fs</Link>
@@ -158,18 +161,6 @@
     </Compile>
     <Compile Include="..\absil\ildiag.fs">
       <Link>Utilities\ildiag.fs</Link>
-    </Compile>
-    <Compile Include="..\absil\illib.fsi">
-      <Link>Utilities\illib.fsi</Link>
-    </Compile>
-    <Compile Include="..\absil\illib.fs">
-      <Link>Utilities\illib.fs</Link>
-    </Compile>
-    <Compile Include="..\utils\filename.fsi">
-      <Link>Utilities\filename.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\filename.fs">
-      <Link>Utilities\filename.fs</Link>
     </Compile>
     <Compile Include="..\absil\zmap.fsi">
       <Link>Utilities\zmap.fsi</Link>
@@ -182,12 +173,6 @@
     </Compile>
     <Compile Include="..\absil\zset.fs">
       <Link>Utilities\zset.fs</Link>
-    </Compile>
-    <Compile Include="..\absil\bytes.fsi">
-      <Link>Utilities\bytes.fsi</Link>
-    </Compile>
-    <Compile Include="..\absil\bytes.fs">
-      <Link>Utilities\bytes.fs</Link>
     </Compile>
     <Compile Include="..\XmlAdapters.fsi">
       <Link>Utilities\XmlAdapters.fsi</Link>

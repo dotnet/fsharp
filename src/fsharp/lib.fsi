@@ -42,14 +42,6 @@ module Bits =
 
     val mask64: m:int32 -> n:int -> int64
 
-module Filename =
-
-    val fullpath: cwd:string -> nm:string -> string
-
-    val hasSuffixCaseInsensitive: suffix:string -> filename:string -> bool
-
-    val isDll: file:string -> bool
-
 module Bool =
     val order: IComparer<bool>
 
@@ -126,7 +118,7 @@ module ListAssoc =
 module ListSet =
     val inline contains: f:('a -> 'b -> bool) -> x:'a -> l:'b list -> bool
 
-    /// NOTE: O(n)! 
+    /// NOTE: O(n)!
     val insert: f:('a -> 'a -> bool) -> x:'a -> l:'a list -> 'a list
 
     val unionFavourRight : f:('a -> 'a -> bool) -> l1:'a list -> l2:'a list -> 'a list
@@ -147,7 +139,7 @@ module ListSet =
 
     val unionFavourLeft : f:('a -> 'a -> bool) -> l1:'a list -> l2:'a list -> 'a list
 
-    /// NOTE: not tail recursive! 
+    /// NOTE: not tail recursive!
     val intersect : f:('a -> 'b -> bool) -> l1:'b list -> l2:'a list -> 'a list
 
     /// Note: if duplicates appear, keep the ones toward the _front_ of the list
@@ -239,7 +231,7 @@ type Graph<'Data,'Id when 'Id: comparison> =
             edges:('Data * 'Data) list -> Graph<'Data,'Id>
       member GetNodeData: nodeId:'Id -> 'Data
       member IterateCycles: f:('Data list -> unit) -> unit
-  
+
 /// In some cases we play games where we use 'null' as a more efficient representation
 /// in F#. The functions below are used to give initial values to mutable fields.
 /// This is an unsafe trick, as it relies on the fact that the type of values
@@ -273,15 +265,15 @@ module AsyncUtil =
         | AsyncException of exn
         | AsyncCanceled of System.OperationCanceledException
         static member Commit: res:AsyncResult<'T> -> Async<'T>
-    
+
     /// When using .NET 4.0 you can replace this type by <see cref="Task{T}"/>
     [<SealedAttribute>]
     type AsyncResultCell<'T> =
-  
+
         new: unit -> AsyncResultCell<'T>
         member RegisterResult: res:AsyncResult<'T> -> unit
         member AsyncResult: Async<'T>
-    
+
 module UnmanagedProcessExecutionOptions =
     val EnableHeapTerminationOnCorruption: unit -> unit
 
@@ -294,7 +286,7 @@ type MaybeLazy<'T> =
     | Lazy of System.Lazy<'T>
     member Force: unit -> 'T
     member Value: 'T
-  
+
 val inline vsnd: struct ('T * 'T) -> 'T
 
 /// Track a set of resources to cleanup

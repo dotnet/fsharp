@@ -277,9 +277,9 @@ module ResumableCode =
                 __stack_fin <- __stack_fin || __stack_fin
                 try
                     // The try block may contain await points.
-                    let __stack_fin2 = body.Invoke(&sm)
+                    let __stack_body_fin = body.Invoke(&sm)
                     // If we make it to the assignment we prove we've made a step
-                    __stack_fin <- __stack_fin
+                    __stack_fin <- __stack_body_fin
                 with exn -> 
                     // Note, remarkExpr in the F# compiler detects this pattern as the code
                     // is inlined and elides the debug sequence point on either the 'compensation'
@@ -304,28 +304,28 @@ module ResumableCode =
 
     let TryFinallyAsyncDynamic (body: ResumableCode<'Data, 'T>, compensation: ResumableCode<'Data,unit>) : ResumableCode<'Data, 'T> =
         ResumableCode<'Data, 'T>(fun sm ->
-            let mutable completed = false
+            let mutable fin = false
             let mutable savedExn = None
             let rec compensate (mf: ResumptionFunc<'Data>) =
                 ResumptionFunc<'Data>(fun sm -> 
-                    completed <- mf.Invoke(&sm)
-                    if not completed then 
+                    fin <- mf.Invoke(&sm)
+                    if not fin then 
                         sm.ResumptionFunc <- compensate sm.ResumptionFunc
-                    if completed then
+                    if fin then
                         match savedExn with 
                         | None -> ()
                         | Some exn -> raise exn
-                    completed)
+                    fin)
             let rec resume (mf: ResumptionFunc<'Data>) =
                 ResumptionFunc<'Data>(fun sm -> 
                     try
-                        completed <- mf.Invoke(&sm)
-                        if not completed then 
+                        fin <- mf.Invoke(&sm)
+                        if not fin then 
                             sm.ResumptionFunc <- resume sm.ResumptionFunc
                     with exn ->
                         savedExn <- Some exn 
-                        completed <- true
-                    if completed then 
+                        fin <- true
+                    if fin then 
                         compensate(ResumptionFunc<'Data>(fun sm -> compensation.Invoke(&sm))).Invoke(&sm)
                     else
                         false)
@@ -375,7 +375,7 @@ module ResumableCode =
             if __useResumableCode then 
                 //-- RESUMABLE CODE START
                 let mutable __stack_fin = false
-                let mutable savedExn = ValueNone
+                let mutable savedExn = None
                 // This is a meaningless assignment but ensures a debug point gets laid down
                 // at the 'try' in the try/finally. The 'try' is used as the range for the
                 // F# computation expression desugaring to 'TryFinally' and this range in turn gets applied
@@ -387,11 +387,16 @@ module ResumableCode =
                     // may skip this step.
                     __stack_fin <- __stack_body_fin
                 with exn ->
-                    savedExn <- ValueSome exn
+                    savedExn <- Some exn
                     __stack_fin <- true
 
                 if __stack_fin then 
-                    __stack_fin <- compensation.Invoke(&sm)
+                    let __stack_compensation_fin = compensation.Invoke(&sm)
+                    __stack_fin <- __stack_compensation_fin
+                if __stack_fin then 
+                    match savedExn with 
+                    | None -> ()
+                    | Some exn -> raise exn
                 __stack_fin
                 //-- RESUMABLE CODE END
             else

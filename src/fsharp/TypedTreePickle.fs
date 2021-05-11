@@ -5,6 +5,7 @@ module internal FSharp.Compiler.TypedTreePickle
 open System.Collections.Generic
 open System.Text
 
+open FSharp.Compiler.IO
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -942,7 +943,7 @@ let u_ILPublicKey st =
     | 1 -> u_bytes st |> PublicKeyToken
     | _ -> ufailwith st "u_ILPublicKey"
 
-let u_ILVersion st = 
+let u_ILVersion st =
     let (major, minor, build, revision) = u_tup4 u_uint16 u_uint16 u_uint16 u_uint16 st
     ILVersionInfo(major, minor, build, revision)
 
@@ -1332,7 +1333,7 @@ let p_namemap p = p_Map p_string p
 let u_Map_core uk uv n st =
     Map.ofSeq (seq { for _ in 1..n -> (uk st, uv st) })
 
-let u_Map uk uv st = 
+let u_Map uk uv st =
     let n = u_int st
     u_Map_core uk uv n st
 
@@ -2638,7 +2639,7 @@ and u_expr st =
     | 14 ->
         let traitInfo = u_trait st
         let m = u_dummy_range st
-        Expr.WitnessArg (traitInfo, m) 
+        Expr.WitnessArg (traitInfo, m)
     | _ -> ufailwith st "u_expr"
 
 and p_static_optimization_constraint x st =
