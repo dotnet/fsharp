@@ -771,23 +771,7 @@ let rec createDummyModuleOrNamespaceExpr (g: TcGlobals) (mty: ModuleOrNamespaceT
             if isFunTy g v.Type || isForallFunctionTy g v.Type then
                 match v.ValReprInfo with
                 | Some valReprInfo ->
-                    let memberFlags =
-                        match v.MemberInfo with
-                        | Some memberInfo -> memberInfo.MemberFlags
-                        | _ ->
-                            {
-                                SynMemberFlags.IsInstance = false
-                                IsDispatchSlot = false
-                                IsOverrideOrExplicitImpl = false
-                                IsFinal = false
-                                MemberKind = SynMemberKind.Member
-                            }
-
-                    let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
-                    let typars, _, curriedArgInfos, retTy, _retInfo = GetMemberTypeInMemberForm g memberFlags valReprInfo numEnclosingTypars v.Type v.Range
-                    let retTy =
-                        retTy
-                        |> Option.defaultValue g.unit_ty
+                    let typars, curriedArgInfos, retTy, _retInfo = GetTopValTypeInFSharpForm g valReprInfo v.Type v.Range
 
                     let valParams =
                         curriedArgInfos
@@ -801,11 +785,14 @@ let rec createDummyModuleOrNamespaceExpr (g: TcGlobals) (mty: ModuleOrNamespaceT
                                 mkDummyParameterVal name argInfo.Attribs ty
                             )
                         )
-                    
+
                     if valParams.IsEmpty || (valParams.Length = 1 && valParams.Head.IsEmpty) then
                         // We have to create a lambda like this as `mkMemberLambdas` will throw if it is passed
                         // a single empty curried argument list.
-                        Expr.Lambda(newUnique(), None, None, [], retDummyExpr, range0, retTy)
+                        if typars.IsEmpty then
+                            Expr.Lambda(newUnique(), None, None, [], retDummyExpr, range0, retTy)
+                        else
+                            Expr.TyLambda(newUnique(), typars, retDummyExpr, range0, retTy)
                     else
                         mkMemberLambdas range0 typars None None valParams (retDummyExpr, retTy)
                 | _ ->
