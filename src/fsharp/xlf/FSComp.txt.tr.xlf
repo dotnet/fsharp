@@ -337,6 +337,11 @@
         <target state="translated">Bu betik için .NET SDK belirlenemedi. Betik 'global.json' kullanan bir dizindeyse, ilgili .NET SDK'nın yüklü olduğundan emin olun. '{1}' dizinindeki '{0} --version' çıkışı: '{2}' ve çıkış kodu: '{3}'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedNoHost">
+        <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
+        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
         <target state="translated">Bu betik için .NET SDK belirlenemedi. Betik 'global.json' kullanan bir dizindeyse, ilgili .NET SDK'nın yüklü olduğundan emin olun. Beklenmeyen hata '{0}'.</target>
