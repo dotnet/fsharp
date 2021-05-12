@@ -18,7 +18,6 @@ open Microsoft.FSharp.Collections
 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 [<CompilerMessage("This construct  is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
 /// The extra data stored in ResumableStateMachine for tasks
-[<Struct; NoComparison; NoEquality>]
 type TaskStateMachineData<'TOverall> =
 
     /// Holds the final result of the state machine
