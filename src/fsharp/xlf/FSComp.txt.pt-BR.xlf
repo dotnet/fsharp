@@ -247,6 +247,11 @@
         <target state="translated">O cabeçalho do recurso que começa no deslocamento {0} está malformado.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAllSigs">
+        <source>Print the inferred interfaces of all compilation files to associated signature files</source>
+        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Exibe os valores permitidos para a versão do idioma, especifica a versão do idioma, como 'mais recente ' ou 'prévia'</target>
@@ -330,6 +335,11 @@
       <trans-unit id="scriptSdkNotDetermined">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
         <target state="translated">Não foi possível determinar o SDK do .NET para esse script. Se o script estiver em um diretório usando um 'global.json', verifique se o SDK relevante do .NET está instalado. A saída de '{0} --version' no diretório '{1}' foi: '{2}' e o código de saída foi '{3}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedNoHost">
+        <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
+        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">

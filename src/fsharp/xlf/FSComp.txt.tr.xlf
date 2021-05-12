@@ -247,6 +247,11 @@
         <target state="translated">{0} uzaklığında başlayan kaynak üst bilgisi hatalı biçimlendirilmiş.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAllSigs">
+        <source>Print the inferred interfaces of all compilation files to associated signature files</source>
+        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Dil sürümü için izin verilen değerleri görüntüleyin, dil sürümünü 'en son' veya 'önizleme' örneklerindeki gibi belirtin</target>
@@ -330,6 +335,11 @@
       <trans-unit id="scriptSdkNotDetermined">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
         <target state="translated">Bu betik için .NET SDK belirlenemedi. Betik 'global.json' kullanan bir dizindeyse, ilgili .NET SDK'nın yüklü olduğundan emin olun. '{1}' dizinindeki '{0} --version' çıkışı: '{2}' ve çıkış kodu: '{3}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedNoHost">
+        <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
+        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">

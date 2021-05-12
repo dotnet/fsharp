@@ -1,15 +1,15 @@
 {
   "sdk": {
-    "version": "6.0.100-preview.3.21202.5",
+    "version": "5.0.100",
     "rollForward": "minor"
   },
   "tools": {
-    "dotnet": "6.0.100-preview.3.21202.5",
+    "dotnet": "5.0.100",
     "vs": {
-      "version": "16.8",
-      "components": [
-        "Microsoft.VisualStudio.Component.FSharp"
-      ]
+        "version": "16.8",
+        "components": [
+            "Microsoft.VisualStudio.Component.FSharp"
+        ]
     }
   },
   "msbuild-sdks": {

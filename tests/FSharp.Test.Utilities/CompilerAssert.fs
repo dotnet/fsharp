@@ -3,24 +3,18 @@
 namespace FSharp.Test.Utilities
 
 open System
-open System.Diagnostics
 open System.IO
 open System.Text
-open System.Diagnostics
-open System.Collections.Generic
 open System.Reflection
 open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 #if FX_NO_APP_DOMAINS
 open System.Runtime.Loader
 #endif
 open NUnit.Framework
-open System.Reflection.Emit
-open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.CSharp
 open FSharp.Test.Utilities.Utilities
 open TestFramework
 
@@ -43,7 +37,7 @@ type Worker () =
         AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
             deps
             |> Array.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = args.Name)
-            |> Option.bind (fun x -> if File.Exists x then Some x else None)
+            |> Option.bind (fun x -> if FileSystem.FileExistsShim x then Some x else None)
             |> Option.map Assembly.LoadFile
             |> Option.defaultValue null))
         let asm = Assembly.LoadFrom(assemblyPath)
@@ -508,8 +502,8 @@ let main argv = 0"""
         let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then "exe" else ".dll")
         let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
 
-        let parseResults = 
-            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions) 
+        let parseResults =
+            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions)
             |> Async.RunSynchronously
 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
@@ -521,8 +515,8 @@ let main argv = 0"""
             []
         #endif
 
-        let compileErrors, statusCode = 
-            checker.Compile([parseResults.ParseTree], "test", outputFilePath, dependencies, executable = isExe, noframework = true) 
+        let compileErrors, statusCode =
+            checker.Compile([parseResults.ParseTree], "test", outputFilePath, dependencies, executable = isExe, noframework = true)
             |> Async.RunSynchronously
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
@@ -532,10 +526,10 @@ let main argv = 0"""
     static member CompileOfAstToDynamicAssembly source =
         let assemblyName = sprintf "test-%O" (Guid.NewGuid())
         let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
-        let parseResults = 
-            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions) 
+        let parseResults =
+            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions)
             |> Async.RunSynchronously
-    
+
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         let dependencies =
@@ -545,8 +539,8 @@ let main argv = 0"""
                 []
             #endif
 
-        let compileErrors, statusCode, assembly = 
-            checker.CompileToDynamicAssembly([parseResults.ParseTree], assemblyName, dependencies, None, noframework = true) 
+        let compileErrors, statusCode, assembly =
+            checker.CompileToDynamicAssembly([parseResults.ParseTree], assemblyName, dependencies, None, noframework = true)
             |> Async.RunSynchronously
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
@@ -599,7 +593,7 @@ let main argv = 0"""
 
             let errorsExpectedBaseLine =
                 let bslFile = Path.ChangeExtension(absoluteSourceFile, "bsl")
-                if not (File.Exists bslFile) then
+                if not (FileSystem.FileExistsShim bslFile) then
                     // new test likely initialized, create empty baseline file
                     File.WriteAllText(bslFile, "")
                 File.ReadAllText(Path.ChangeExtension(absoluteSourceFile, "bsl"))
