@@ -5777,11 +5777,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) star
         | _ ->
             GenBindingRhs cenv cgbuf eenv SPSuppress vspec rhsExpr
             CommitStartScope cgbuf startScopeMarkOpt
-            if vspec.IsCompilerGenerated && vspec.LogicalName = "$__bridge" then
-                //let ilTy = GenType cenv.amap m eenv.tyenv vspec.Type
-                CG.EmitInstr cgbuf (pop 0) Push0 AI_dup
-            else
-                GenStoreVal cenv cgbuf eenv vspec.Range vspec
+            GenStoreVal cenv cgbuf eenv vspec.Range vspec
 
 //-------------------------------------------------------------------------
 // Generate method bindings
@@ -6472,27 +6468,23 @@ and GenBindings cenv cgbuf eenv binds = List.iter (GenBinding cenv cgbuf eenv) b
 //-------------------------------------------------------------------------
 
 and GenSetVal cenv cgbuf eenv (vref: ValRef, e, m) sequel =
-    if vref.IsCompilerGenerated && vref.LogicalName = "$__bridge" then ()
-    else
-        let storage = StorageForValRef cenv.g m vref eenv
-        match storage with
-        | Env (ilCloTy, _, _) ->
-            CG.EmitInstr cgbuf (pop 0) (Push [ilCloTy]) mkLdarg0
-        | _ ->
-            ()
-        GenExpr cenv cgbuf eenv SPSuppress e Continue
-        GenSetStorage vref.Range cgbuf storage
-        GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
+    let storage = StorageForValRef cenv.g m vref eenv
+    match storage with
+    | Env (ilCloTy, _, _) ->
+        CG.EmitInstr cgbuf (pop 0) (Push [ilCloTy]) mkLdarg0
+    | _ ->
+        ()
+    GenExpr cenv cgbuf eenv SPSuppress e Continue
+    GenSetStorage vref.Range cgbuf storage
+    GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
 and GenGetValRefAndSequel cenv cgbuf eenv m (v: ValRef) storeSequel =
     let ty = v.Type
     GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv.amap m eenv.tyenv ty) (StorageForValRef cenv.g m v eenv) storeSequel
 
 and GenGetVal cenv cgbuf eenv (v: ValRef, m) sequel =
-    if v.IsCompilerGenerated && v.LogicalName = "$__bridge" then ()
-    else
-        GenGetValRefAndSequel cenv cgbuf eenv m v None
-        GenSequel cenv eenv.cloc cgbuf sequel
+    GenGetValRefAndSequel cenv cgbuf eenv m v None
+    GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenBindingRhs cenv cgbuf eenv sp (vspec: Val) e =
     let g = cenv.g
