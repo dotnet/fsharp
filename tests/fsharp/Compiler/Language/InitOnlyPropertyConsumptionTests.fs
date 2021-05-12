@@ -40,7 +40,7 @@ let test() =
 [<EntryPoint>]
 let main _ =
     let x = test()
-    Console.Write(x)
+    Console.Write(x.X)
     0
             """
 
