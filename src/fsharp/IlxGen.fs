@@ -471,7 +471,7 @@ let GenReadOnlyModReqIfNecessary (g: TcGlobals) ty ilTy =
     if add then
         ILType.Modified(true, g.attrib_InAttribute.TypeRef, ilTy)
     else
-        ilTy   
+        ilTy
 
 let rec GenTypeArgAux amap m tyenv tyarg =
     GenTypeAux amap m tyenv VoidNotOK PtrTypesNotOK tyarg
