@@ -8871,7 +8871,7 @@ and TcMethodApplication
             [], expr
         else
             // This holds the result of the call
-            let objv, objExpr = mkMutableCompGenLocal mMethExpr "returnVal" exprty // mutable in case it's a struct
+            let objv, objExpr = mkMutableCompGenLocal mMethExpr "$__bridge" exprty // mutable in case it's a struct
 
             // Build the expression that mutates the properties on the result of the call
             let setterExprPrebinders, propSetExpr =

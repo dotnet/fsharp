@@ -35,8 +35,7 @@ open CSharpTest
 
 [<EntryPoint>]
 let main _ =
-    let test = Test(X = 123)
-    Console.Write(test.X)
+    Test(X = 123) |> ignore
     0
             """
 
