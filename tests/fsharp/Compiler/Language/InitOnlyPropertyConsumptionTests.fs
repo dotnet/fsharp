@@ -34,14 +34,13 @@ open System
 open System.Runtime.CompilerServices
 open CSharpTest
 
-[<MethodImpl(MethodImplOptions.NoInlining)>]
 let test() =
-    Test(X = 1)
+    Test(X = 123)
 
 [<EntryPoint>]
 let main _ =
-    let _x = test()
-    Console.Write("123")
+    let x = test()
+    Console.Write(x)
     0
             """
 
