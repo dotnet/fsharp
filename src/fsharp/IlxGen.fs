@@ -5778,8 +5778,8 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) star
             GenBindingRhs cenv cgbuf eenv SPSuppress vspec rhsExpr
             CommitStartScope cgbuf startScopeMarkOpt
             if vspec.IsCompilerGenerated && vspec.LogicalName = "$__bridge" then
-                let ilTy = GenType cenv.amap m eenv.tyenv vspec.Type
-                CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) AI_dup
+                //let ilTy = GenType cenv.amap m eenv.tyenv vspec.Type
+                CG.EmitInstr cgbuf (pop 0) Push0 AI_dup
             else
                 GenStoreVal cenv cgbuf eenv vspec.Range vspec
 

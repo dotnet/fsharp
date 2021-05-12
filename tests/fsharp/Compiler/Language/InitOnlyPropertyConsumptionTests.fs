@@ -31,11 +31,17 @@ namespace CSharpTest
         let fsharpSource =
             """
 open System
+open System.Runtime.CompilerServices
 open CSharpTest
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let test() =
+    Test(X = 1)
 
 [<EntryPoint>]
 let main _ =
-    Test(X = 123) |> ignore
+    let _x = test()
+    Console.Write("123")
     0
             """
 
