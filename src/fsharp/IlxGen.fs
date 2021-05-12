@@ -473,6 +473,12 @@ let GenReadOnlyModReqIfNecessary (g: TcGlobals) ty ilTy =
     else
         ilTy
 
+let GenIsExternalInitModReq (g: TcGlobals) ilTy =
+    if g.tcref_System_Runtime_CompilerServices_IsExternalInit.CanDeref && g.tcref_System_Runtime_CompilerServices_IsExternalInit.IsILTycon then
+        ILType.Modified(true, g.tcref_System_Runtime_CompilerServices_IsExternalInit.CompiledRepresentationForNamedType, ilTy)
+    else
+        ilTy      
+
 let rec GenTypeArgAux amap m tyenv tyarg =
     GenTypeAux amap m tyenv VoidNotOK PtrTypesNotOK tyarg
 
