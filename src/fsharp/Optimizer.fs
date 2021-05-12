@@ -2586,15 +2586,10 @@ and AddValEqualityInfo g m (v: ValRef) info =
     // when their address is passed to the method call. Another exception are mutable variables
     // created for tuple elimination in branching tuple bindings because they are assigned to
     // exactly once.
-
-    // No equality info for a mutable variable that is not a compiler generated local for tuple elimination
-    if v.IsMutable && not (IsMutableStructuralBindingForTupleElement v) then
-        info
-    // No equality info for a mutable variable that is not a compiler generated out arg
-    elif v.IsMutable && not (v.IsCompilerGenerated && v.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)) then 
-        info
-    else 
+    if not v.IsMutable || IsMutableStructuralBindingForTupleElement v || (v.IsCompilerGenerated && v.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)) then 
         { info with Info = MakeValueInfoForValue g m v info.Info }
+    else
+        info 
 
 /// Optimize/analyze a use of a value
 and OptimizeVal cenv env expr (v: ValRef, m) =
