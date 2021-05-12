@@ -77,29 +77,6 @@ module Utilities =
             let systemDynamicRuntimeRef = lazy AssemblyMetadata.CreateFromImage(NetCoreApp31Refs.System_Dynamic_Runtime ()).GetReference(display = "System.Dynamic.Runtime.dll (netcoreapp 3.1 ref)")
             let systemConsoleRef = lazy AssemblyMetadata.CreateFromImage(NetCoreApp31Refs.System_Console ()).GetReference(display = "System.Console.dll (netcoreapp 3.1 ref)")
 
-        module private Net5Refs =
-            let mutable (_mscorlib: byte[]) = Unchecked.defaultof<byte[]>
-            let mutable (_netstandard: byte[]) = Unchecked.defaultof<byte[]>
-            let mutable (_System_Console: byte[]) = Unchecked.defaultof<byte[]>
-            let mutable (_System_Core: byte[]) = Unchecked.defaultof<byte[]>
-            let mutable (_System_Dynamic_Runtime: byte[]) = Unchecked.defaultof<byte[]>
-            let mutable (_System_Runtime: byte[]) = Unchecked.defaultof<byte[]>
-            let mscorlib () = getOrCreateResource &_mscorlib "mscorlib.dll"
-            let netstandard () = getOrCreateResource &_netstandard "netstandard.dll"
-            let System_Core () = getOrCreateResource &_System_Core "System.Core.dll"
-            let System_Console () = getOrCreateResource &_System_Console "System.Console.dll"
-            let System_Runtime () = getOrCreateResource &_System_Runtime "System.Runtime.dll"
-            let System_Dynamic_Runtime () = getOrCreateResource &_System_Dynamic_Runtime "System.Dynamic.Runtime.dll"
-
-        [<RequireQualifiedAccess>]
-        module Net5 =
-            let netStandard = lazy AssemblyMetadata.CreateFromImage(Net5Refs.netstandard ()).GetReference(display = "netstandard.dll (net5 ref)")
-            let mscorlibRef = lazy AssemblyMetadata.CreateFromImage(Net5Refs.mscorlib ()).GetReference(display = "mscorlib.dll (net5 ref)")
-            let systemRuntimeRef = lazy AssemblyMetadata.CreateFromImage(Net5Refs.System_Runtime ()).GetReference(display = "System.Runtime.dll (net5 ref)")
-            let systemCoreRef = lazy AssemblyMetadata.CreateFromImage(Net5Refs.System_Core ()).GetReference(display = "System.Core.dll (net5 ref)")
-            let systemDynamicRuntimeRef = lazy AssemblyMetadata.CreateFromImage(Net5Refs.System_Dynamic_Runtime ()).GetReference(display = "System.Dynamic.Runtime.dll (net5 ref)")
-            let systemConsoleRef = lazy AssemblyMetadata.CreateFromImage(Net5Refs.System_Console ()).GetReference(display = "System.Console.dll (net5 ref)")
-
     [<RequireQualifiedAccess>]
     module TargetFrameworkUtil =
 
@@ -210,8 +187,6 @@ let main argv = 0"""
             lazy ImmutableArray.Create(NetStandard20.netStandard.Value, NetStandard20.mscorlibRef.Value, NetStandard20.systemRuntimeRef.Value, NetStandard20.systemCoreRef.Value, NetStandard20.systemDynamicRuntimeRef.Value)
         let private netCoreApp31References =
             lazy ImmutableArray.Create(NetCoreApp31.netStandard.Value, NetCoreApp31.mscorlibRef.Value, NetCoreApp31.systemRuntimeRef.Value, NetCoreApp31.systemCoreRef.Value, NetCoreApp31.systemDynamicRuntimeRef.Value, NetCoreApp31.systemConsoleRef.Value)
-        let private net5References =
-            lazy ImmutableArray.Create(Net5.netStandard.Value, Net5.mscorlibRef.Value, Net5.systemRuntimeRef.Value, Net5.systemCoreRef.Value, Net5.systemDynamicRuntimeRef.Value, Net5.systemConsoleRef.Value)
 
         let currentReferences =
             getNetCoreAppReferences

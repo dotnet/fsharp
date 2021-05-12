@@ -1139,8 +1139,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member _.tcref_System_Attribute = v_System_Attribute_tcr
 
-  member val tcref_System_Runtime_CompilerServices_IsExternalInit = findSysTyconRef sysCompilerServices "System.Runtime.CompilerServices.IsExternalInit"
-
   // Review: Does this need to be an option type?
   member val System_Runtime_CompilerServices_RuntimeFeature_ty = tryFindSysTyconRef sysCompilerServices "RuntimeFeature" |> Option.map mkNonGenericTy
 

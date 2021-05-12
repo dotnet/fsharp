@@ -471,13 +471,7 @@ let GenReadOnlyModReqIfNecessary (g: TcGlobals) ty ilTy =
     if add then
         ILType.Modified(true, g.attrib_InAttribute.TypeRef, ilTy)
     else
-        ilTy
-
-let GenIsExternalInitModReq (g: TcGlobals) ilTy =
-    if g.tcref_System_Runtime_CompilerServices_IsExternalInit.CanDeref && g.tcref_System_Runtime_CompilerServices_IsExternalInit.IsILTycon then
-        ILType.Modified(true, g.tcref_System_Runtime_CompilerServices_IsExternalInit.CompiledRepresentationForNamedType, ilTy)
-    else
-        ilTy      
+        ilTy   
 
 let rec GenTypeArgAux amap m tyenv tyarg =
     GenTypeAux amap m tyenv VoidNotOK PtrTypesNotOK tyarg
@@ -6467,7 +6461,7 @@ and GenBindings cenv cgbuf eenv binds = List.iter (GenBinding cenv cgbuf eenv) b
 // Generate locals and other storage of values
 //-------------------------------------------------------------------------
 
-and GenSetVal cenv cgbuf eenv (vref: ValRef, e, m) sequel =
+and GenSetVal cenv cgbuf eenv (vref, e, m) sequel =
     let storage = StorageForValRef cenv.g m vref eenv
     match storage with
     | Env (ilCloTy, _, _) ->
