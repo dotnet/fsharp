@@ -518,6 +518,7 @@ type internal FSharpSignatureHelpProvider
             let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(document, options, perfOptions, userOpName = userOpName)
 
             let adjustedColumnInSource =
+
                 let rec loop ch pos =
                     if Char.IsWhiteSpace(ch) then
                         loop sourceText.[pos - 1] (pos - 1)
