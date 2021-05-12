@@ -15,6 +15,14 @@ let verbose = true
 let inline MoveNext(x: byref<'T> when 'T :> IAsyncStateMachine) = x.MoveNext()
 let inline SetStateMachine(x: byref<'T> when 'T :> IAsyncStateMachine, state) = x.SetStateMachine(state)
 let inline GetResumptionPoint(x: byref<'T> when 'T :> IResumableStateMachine<'Data>) = x.ResumptionPoint
+let inline SetResumptionFunc (sm: byref<ResumableStateMachine<'Data>>) f =
+    let (_, e) = sm.ResumptionFuncData
+    sm.ResumptionFuncData <- (f, e)
+
+let inline GetResumptionFunc (sm: byref<ResumableStateMachine<'Data>>) =
+    let (f, _) = sm.ResumptionFuncData
+    f
+
 
 /// The extra data stored in ResumableStateMachine for coroutines
 [<Struct; NoComparison; NoEquality>]
@@ -32,6 +40,8 @@ type CoroutineStateMachineData =
         x.Data <- newData
 
 and CoroutineStateMachine = ResumableStateMachine<CoroutineStateMachineData>
+and CoroutineResumption = ResumptionFunc<CoroutineStateMachineData>
+and CoroutineResumptionExecutor = ResumptionFuncExecutor<CoroutineStateMachineData>
 
 and CoroutineCode = ResumableCode<CoroutineStateMachineData, unit>
 
@@ -120,11 +130,15 @@ type CoroutineBuilder() =
                     cr :> Coroutine))
         else 
             let mutable cr = Coroutine<CoroutineStateMachine>()
-            cr.Machine.ResumptionFunc <- ResumptionFunc(fun sm -> code.Invoke(&sm))
+            let initialResumptionFunc = CoroutineResumption(fun sm -> code.Invoke(&sm))
+            let resumptionFuncExecutor = 
+                CoroutineResumptionExecutor(fun sm f -> 
+                    if f.Invoke(&sm) then
+                        sm.ResumptionPoint <- -1)
+            cr.Machine.ResumptionFuncData <- (initialResumptionFunc, resumptionFuncExecutor)
             //cr.Machine.Id <- cr.Id
             //if verbose then printfn $"[{cr.Id}] dynamic create"
             cr :> Coroutine
-
 
     /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
     [<DefaultValue>]
@@ -144,9 +158,6 @@ type CoroutineBuilder() =
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline _.TryWith (body: CoroutineCode, catch: exn -> CoroutineCode) : CoroutineCode =
         ResumableCode.TryWith(body, catch)
-
-    static member TryWithDynamic (body: CoroutineCode, handler: exn -> CoroutineCode) : CoroutineCode =
-        ResumableCode.TryWithDynamic(body, handler)
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).

@@ -1,5 +1,5 @@
 
-module Tests.TaskSeqBuilder
+module Tests.TaskSeqUsingRawResumableCode
 
 open System.Threading.Tasks.Sources
 

@@ -4,12 +4,11 @@ module internal FSharp.Compiler.LowerStateMachines
 
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Import
 open FSharp.Compiler.Text
 
-
+[<RequireQualifiedAccess>]
 type LoweredStateMachine =
-    | RefStateMachine of Expr
+    | LoweredExpr of Expr
     | StructStateMachine of 
          templateStructTy: TType *
          stateVars: ValRef list *
@@ -26,6 +25,6 @@ type LoweredStateMachine =
 val ConvertStateMachineExprToObject:
     g: TcGlobals -> 
     overallExpr: Expr -> 
-    LoweredStateMachine option
+        LoweredStateMachine option
 
 val IsPossibleStateMachineExpr: g: TcGlobals -> overallExpr: Expr -> bool

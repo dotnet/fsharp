@@ -14,6 +14,8 @@ open FSharp.Core.CompilerServices.StateMachineHelpers
 
 let verbose = false
 
+let inline MoveNext(x: byref<'T> when 'T :> IAsyncStateMachine) = x.MoveNext()
+
 type TaskSeqStatus =  DONE = 0 | YIELD = 1 | AWAIT = 2
 
 type taskSeq<'T> = IAsyncEnumerable<'T>
@@ -54,6 +56,7 @@ type TaskSeqStateMachineData<'T> =
         if verbose then printfn "calling AwaitUnsafeOnCompleted"
         rsm.Data.builder.AwaitUnsafeOnCompleted(&awaiter, &rsm)
         false
+
 [<AbstractClass; NoComparison; NoEquality>]
 type TaskSeqStateMachine<'T>() =
     let initialThreadId = Environment.CurrentManagedThreadId
@@ -62,7 +65,6 @@ type TaskSeqStateMachine<'T>() =
 
     member sm.Awaiter with get() = sm.Machine.Data.awaiter and set v = sm.Machine.Data.awaiter <- v
     member sm.ResumptionPoint with get() = sm.Machine.ResumptionPoint and set v = sm.Machine.ResumptionPoint <- v
-    member sm.ResumptionFunc with get() = sm.Machine.ResumptionFunc and set v = sm.Machine.ResumptionFunc <- v
     member sm.CancellationToken = sm.Machine.Data.cancellationToken
     member sm.MethodBuilder = sm.Machine.Data.builder
 
@@ -180,6 +182,9 @@ type TaskSeqStateMachine<'T>() =
     member sm.Start() = (sm :> IAsyncEnumerable<'T>)
 
 type TaskSeqCode<'T> = ResumableCode<TaskSeqStateMachineData<'T>, unit>
+and TaskSeqResumption<'T> = ResumptionFunc<TaskSeqStateMachineData<'T>>
+and TaskSeqResumptionExecutor<'T> = ResumptionFuncExecutor<TaskSeqStateMachineData<'T>>
+
 
 type TaskSeqBuilder() =
 
@@ -203,20 +208,26 @@ type TaskSeqBuilder() =
                                 TaskSeqStatus.DONE
                         else
                             TaskSeqStatus.AWAIT
+                        //-- RESUMABLE CODE END
                     else 
-                        let fin = sm.ResumptionFunc.Invoke(&sm.Machine)
-                        if fin then
-                            if sm.Machine.Data.current.IsSome then
-                                TaskSeqStatus.YIELD
-                            else
-                                TaskSeqStatus.DONE
+                        // The MoveNext will call resumptionFuncExecutor which in turn calls the resumptionFunc
+                        MoveNext(&sm.Machine)
+                        if sm.ResumptionPoint = -2 then
+                            TaskSeqStatus.DONE
+                        elif sm.Machine.Data.current.IsSome then
+                            TaskSeqStatus.YIELD
                         else
                             sm.Awaiter.UnsafeOnCompleted(Action(fun () -> sm.MoveNext()))
                             TaskSeqStatus.AWAIT
-                    //-- RESUMABLE CODE END
             }
         if not __useResumableCode then
-            sm.ResumptionFunc <- (fun sm -> code.Invoke(&sm))
+            let initialResumptionFunc = TaskSeqResumption<'T>(fun sm -> code.Invoke(&sm))
+            let resumptionFuncExecutor = TaskSeqResumptionExecutor<'T>(fun sm f -> 
+                    // TODO: add exception handling?
+                    if f.Invoke(&sm) then 
+                        sm.ResumptionPoint <- -2)
+            let setStateMachine = SetStateMachineMethodImpl<_>(fun sm f -> ())
+            sm.Machine.ResumptionFuncData <- (initialResumptionFunc, resumptionFuncExecutor, setStateMachine)
         sm.Start()
 
 
@@ -227,27 +238,36 @@ type TaskSeqBuilder() =
         ResumableCode.Combine(task1, task2)
             
     member inline _.WhileAsync([<InlineIfLambda>] condition : unit -> ValueTask<bool>, body : TaskSeqCode<'T>) : TaskSeqCode<'T> =
-        ResumableCode.WhileAsync(
+        let mutable condition_res = true
+        ResumableCode.While((fun () -> condition_res), 
             ResumableCode<_,_>(fun sm -> 
-                let vtask = condition()
-                if vtask.IsCompleted then
-                    sm.ResumptionPoint <- if vtask.Result then -1000 else -1001
-                    true
+                let mutable __stack_condition_fin = true
+                let __stack_vtask = condition()
+                if __stack_vtask.IsCompleted then
+                    __stack_condition_fin <- true
+                    condition_res <- __stack_vtask.Result
                 else
-                    let task = vtask.AsTask()
+                    let task = __stack_vtask.AsTask()
                     let mutable awaiter = task.GetAwaiter()
                     // This will yield with __stack_fin = false
                     // This will resume with __stack_fin = true
-                    let __stack_fin = ResumableCode.Yield().Invoke(&sm)
+                    let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
+                    __stack_condition_fin <- __stack_yield_fin
 
-                    if __stack_fin then 
-                        sm.ResumptionPoint <- if task.Result then -1000 else -1001
-                        true
+                    if __stack_condition_fin then 
+                        condition_res <- task.Result
                     else
                         //if verbose then printfn "calling AwaitUnsafeOnCompleted"
                         sm.Data.builder.AwaitUnsafeOnCompleted(&awaiter, &sm)
-                        false),
-            body)
+
+                if __stack_condition_fin then 
+                    if condition_res then 
+                        body.Invoke(&sm)
+                    else
+                        true
+                else
+                    false
+                ))
 
     member inline b.While([<InlineIfLambda>] condition : unit -> bool, body : TaskSeqCode<'T>) : TaskSeqCode<'T> =
         b.WhileAsync((fun () -> ValueTask<bool>(condition())), body)

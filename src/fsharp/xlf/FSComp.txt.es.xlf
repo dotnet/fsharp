@@ -347,54 +347,59 @@
         <target state="translated">No se admite el algoritmo '{0}'</target>
         <note />
       </trans-unit>
-      <trans-unit id="stateMachineLetRec">
-        <source>Invalid resumable code. Recursive bindings are not allowed. Please lift to a top-level recursive function definition</source>
-        <target state="new">Invalid resumable code. Recursive bindings are not allowed. Please lift to a top-level recursive function definition</target>
+      <trans-unit id="reprResumableCodeCapturesByref">
+        <source>A byref may only be used in resumptions if it is precisely the 'this' pointer of the enclosing struct state machine</source>
+        <target state="new">A byref may only be used in resumptions if it is precisely the 'this' pointer of the enclosing struct state machine</target>
         <note />
       </trans-unit>
-      <trans-unit id="stateMachineMacroInvalidExpansion">
-        <source>Invalid resumable code - invalid delegate or function expansion</source>
-        <target state="new">Invalid resumable code - invalid delegate or function expansion</target>
+      <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
+        <source>A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
+        <target state="new">A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</target>
         <note />
       </trans-unit>
-      <trans-unit id="stateMachineMacroTypars">
-        <source>Invalid resumable code. A delegate or function producing resumable code in a state machine has type parameters</source>
-        <target state="new">Invalid resumable code. A delegate or function producing resumable code in a state machine has type parameters</target>
+      <trans-unit id="reprResumableCodeContainsFastIntegerForLoop">
+        <source>A fast integer for loop may not contain resumption points</source>
+        <target state="new">A fast integer for loop may not contain resumption points</target>
         <note />
       </trans-unit>
-      <trans-unit id="stateMachineMacroUnderapplied">
-        <source>Invalid resumable code. A delegate or function producing resumable code in a state machine is under-applied</source>
-        <target state="new">Invalid resumable code. A delegate or function producing resumable code in a state machine is under-applied</target>
+      <trans-unit id="reprResumableCodeContainsLetRec">
+        <source>A 'let rec' occured in the resumable code specification</source>
+        <target state="new">A 'let rec' occured in the resumable code specification</target>
         <note />
       </trans-unit>
-      <trans-unit id="stateMachineNotSupported">
-        <source>Using tasks and resumable state machines requires /langversion:preview</source>
-        <target state="new">Using tasks and resumable state machines requires /langversion:preview</target>
+      <trans-unit id="reprResumableCodeContainsResumptionInHandlerOrFilter">
+        <source>The 'with' block of a try/with may not contain resumption points</source>
+        <target state="new">The 'with' block of a try/with may not contain resumption points</target>
         <note />
       </trans-unit>
-      <trans-unit id="stateMachineResumeAtTargetNotStatic">
-        <source>Invalid resumable code. A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
-        <target state="new">Invalid resumable code. A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</target>
+      <trans-unit id="reprResumableCodeContainsResumptionInTryFinally">
+        <source>A try/finally may not contain resumption points</source>
+        <target state="new">A try/finally may not contain resumption points</target>
         <note />
       </trans-unit>
-      <trans-unit id="stateMachineResumptionByrefInStructMachine">
-        <source>Invalid resumable code. A byref may only be used in resumptions if it is precisely the 'this' pointer of the enclosing struct state machine</source>
-        <target state="new">Invalid resumable code. A byref may only be used in resumptions if it is precisely the 'this' pointer of the enclosing struct state machine</target>
+      <trans-unit id="reprResumableCodeDefinitionWasGeneric">
+        <source>A delegate or function producing resumable code in a state machine has type parameters</source>
+        <target state="new">A delegate or function producing resumable code in a state machine has type parameters</target>
         <note />
       </trans-unit>
-      <trans-unit id="stateMachineResumptionForLoop">
-        <source>Invalid resumable code. A fast integer for loops may not contain resumption points</source>
-        <target state="new">Invalid resumable code. A fast integer for loops may not contain resumption points</target>
+      <trans-unit id="reprResumableCodeInvokeNotReduced">
+        <source>A resumable code invocation at '{0}' could not be reduced</source>
+        <target state="new">A resumable code invocation at '{0}' could not be reduced</target>
         <note />
       </trans-unit>
-      <trans-unit id="stateMachineResumptionInTryFinally">
-        <source>Invalid resumable code. A try/finally may not contain resumption points</source>
-        <target state="new">Invalid resumable code. A try/finally may not contain resumption points</target>
+      <trans-unit id="reprResumableCodeNotStaticallyUsed">
+        <source>Resumable code could not be used. {0}. The non-resumable code implementation will be used. This is expected if defining new resumable code combinators. Consider suppressing this warning if this is intentional.</source>
+        <target state="new">Resumable code could not be used. {0}. The non-resumable code implementation will be used. This is expected if defining new resumable code combinators. Consider suppressing this warning if this is intentional.</target>
         <note />
       </trans-unit>
-      <trans-unit id="stateMachineResumptionInTryWithHandlerOrFilter">
-        <source>Invalid resumable code. The 'with' block of a try/with may not contain resumption points</source>
-        <target state="new">Invalid resumable code. The 'with' block of a try/with may not contain resumption points</target>
+      <trans-unit id="reprResumableCodeNotStaticallyUsedNoAlternative">
+        <source>Resumable code could not be used. {0}. If defining new resumable code combinators then provide a dynamic implementation with 'if __useResumableCode then ... else ...'.</source>
+        <target state="new">Resumable code could not be used. {0}. If defining new resumable code combinators then provide a dynamic implementation with 'if __useResumableCode then ... else ...'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeValueHasNoDefinition">
+        <source>The resumable code value(s) '{0}' does not have a definition. If defining resumable code and this is a parameter to an inlined function or method, this is expected, as the resumable code will have a definition when this code is inlined</source>
+        <target state="new">The resumable code value(s) '{0}' does not have a definition. If defining resumable code and this is a parameter to an inlined function or method, this is expected, as the resumable code will have a definition when this code is inlined</target>
         <note />
       </trans-unit>
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
@@ -415,31 +420,6 @@
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
         <target state="translated">No se pudo determinar el SDK de .NET para este script. Si el script está en un directorio que usa una instancia de "global.json", asegúrese de que el SDK de .NET pertinente esté instalado. Error inesperado: "{0}".</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="structStateMachineInvalidIncorrectInterfacesImplemented">
-        <source>Invalid struct state machine. The interfaces implemented did not match those on the template type.</source>
-        <target state="new">Invalid struct state machine. The interfaces implemented did not match those on the template type.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="structStateMachineInvalidIncorrectSignature">
-        <source>Invalid struct state machine. The method '{0}' has the incorrect signature.</source>
-        <target state="new">Invalid struct state machine. The method '{0}' has the incorrect signature.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="structStateMachineInvalidMethodNotFound">
-        <source>Invalid struct state machine. The method '{0}' was not found on the corresponding interface type.</source>
-        <target state="new">Invalid struct state machine. The method '{0}' was not found on the corresponding interface type.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="structStateMachineInvalidNoIAsyncStateMachine">
-        <source>Invalid struct state machine. A template struct type used with __structStateMachine must implement System.Runtime.CompilerServices.IAsyncStateMachine.</source>
-        <target state="new">Invalid struct state machine. A template struct type used with __structStateMachine must implement System.Runtime.CompilerServices.IAsyncStateMachine.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="structStateMachineInvalidWrongArgCount">
-        <source>Invalid struct state machine. The method '{0}' did not have the correct number of arguments. '{1}' were expected and '{2}' were present, including the 'this' parameter.</source>
-        <target state="new">Invalid struct state machine. The method '{0}' did not have the correct number of arguments. '{1}' were expected and '{2}' were present, including the 'this' parameter.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -532,14 +512,44 @@
         <target state="new">Invalid resumable code. Resumable code parameter must have name beginning with '__expand'</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcResumableCodeExpected">
-        <source>Resumable code expected. This expression is expected to be resumable code, but this could not be statically determined. As a result this construct might not compile to an optimized state machine. Consider suppressing this warning if this is intentional.</source>
-        <target state="new">Resumable code expected. This expression is expected to be resumable code, but this could not be statically determined. As a result this construct might not compile to an optimized state machine. Consider suppressing this warning if this is intentional.</target>
+      <trans-unit id="tcResumableCodeContainsLetRec">
+        <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
+        <target state="new">Invalid resumable code. A 'let rec' occured in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeFunctionMustBeInline">
         <source>Invalid resumable code. Any method of function accepting or returning resumable code must be marked 'inline'</source>
         <target state="new">Invalid resumable code. Any method of function accepting or returning resumable code must be marked 'inline'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStateMachineNotSupported">
+        <source>Using tasks and resumable state machines requires /langversion:preview</source>
+        <target state="new">Using tasks and resumable state machines requires /langversion:preview</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructStateMachineInvalidIncorrectInterfacesImplemented">
+        <source>Invalid struct state machine. The interfaces implemented did not match those on the template type.</source>
+        <target state="new">Invalid struct state machine. The interfaces implemented did not match those on the template type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructStateMachineInvalidIncorrectSignature">
+        <source>Invalid struct state machine. The method '{0}' has the incorrect signature.</source>
+        <target state="new">Invalid struct state machine. The method '{0}' has the incorrect signature.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructStateMachineInvalidMethodNotFound">
+        <source>Invalid struct state machine. The method '{0}' was not found on the corresponding interface type.</source>
+        <target state="new">Invalid struct state machine. The method '{0}' was not found on the corresponding interface type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructStateMachineInvalidNoIAsyncStateMachine">
+        <source>Invalid struct state machine. A template struct type used with __structStateMachine must implement System.Runtime.CompilerServices.IAsyncStateMachine.</source>
+        <target state="new">Invalid struct state machine. A template struct type used with __structStateMachine must implement System.Runtime.CompilerServices.IAsyncStateMachine.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructStateMachineInvalidWrongArgCount">
+        <source>Invalid struct state machine. The method '{0}' did not have the correct number of arguments. '{1}' were expected and '{2}' were present, including the 'this' parameter.</source>
+        <target state="new">Invalid struct state machine. The method '{0}' did not have the correct number of arguments. '{1}' were expected and '{2}' were present, including the 'this' parameter.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructTemplateMethodsMustBeInline">

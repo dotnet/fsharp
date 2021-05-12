@@ -41,7 +41,9 @@ type SmokeTestsForCompilation() =
         task {
             return 1
         }
-        |> ignore
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 1 then failwith "failed"
 
     [<Fact>]
     member __.tbind() =
@@ -49,7 +51,9 @@ type SmokeTestsForCompilation() =
             let! x = Task.FromResult(1)
             return 1 + x
         }
-        |> ignore
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 2 then failwith "failed"
 
     [<Fact>]
     member __.tnested() =
@@ -57,7 +61,9 @@ type SmokeTestsForCompilation() =
             let! x = task { return 1 }
             return x
         }
-        |> ignore
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 1 then failwith "failed"
 
     [<Fact>]
     member __.tcatch0() =
@@ -67,7 +73,9 @@ type SmokeTestsForCompilation() =
             with e -> 
                return 2
         }
-        |> ignore
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 1 then failwith "failed"
 
     [<Fact>]
     member __.tcatch1() =
@@ -78,8 +86,9 @@ type SmokeTestsForCompilation() =
             with e -> 
                return 2
         }
-    
-        |> ignore
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 1 then failwith "failed"
 
 
     [<Fact>]
@@ -95,7 +104,9 @@ type SmokeTestsForCompilation() =
             System.Console.WriteLine("world")
             return 1 + x
         }
-        |> ignore
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 2 then failwith "failed"
 
     [<Fact>]
     member __.t3b() =
@@ -105,7 +116,9 @@ type SmokeTestsForCompilation() =
             System.Console.WriteLine("world")
             return 1 + x
         }
-        |> ignore
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 2 then failwith "failed"
 
     [<Fact>]
     member __.t3c() =
@@ -115,7 +128,9 @@ type SmokeTestsForCompilation() =
             System.Console.WriteLine("world")
             return 1 
         }
-        |> ignore
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 1 then failwith "failed"
 
     [<Fact>]
     // This tests an exception match
@@ -129,7 +144,9 @@ type SmokeTestsForCompilation() =
             | _ -> 
                 ()
         }
-        |> ignore
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> () then failwith "failed"
 
     [<Fact>]
     // This tests compiling an incomplete exception match
@@ -141,18 +158,22 @@ type SmokeTestsForCompilation() =
             | :? ArgumentException -> 
                 ()
         }
-        |> ignore
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> () then failwith "failed"
 
     [<Fact>]
     member __.testCompileAsyncWhileLoop() =
         task {
             let mutable i = 0
-            while i < 1 do
+            while i < 5 do
                 i <- i + 1
                 do! Task.Yield()
             return i
         }
-        |> ignore
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 5 then failwith "failed"
 
 
 exception TestException of string

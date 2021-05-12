@@ -138,7 +138,7 @@ type ResumableStateMachine<'Data> =
 
     /// When interpreted, holds the continuation for the further execution of the state machine
     [<DefaultValue(false)>]
-    val mutable ResumptionFunc: ResumptionFunc<'Data>
+    val mutable ResumptionFuncData: ResumptionFunc<'Data> * ResumptionFuncExecutor<'Data> * SetStateMachineMethodImpl<ResumableStateMachine<'Data>>
 
     interface IResumableStateMachine<'Data>
 
@@ -146,6 +146,9 @@ type ResumableStateMachine<'Data> =
 
 /// Represents the runtime continuation of a resumable state machine created dynamically
 and ResumptionFunc<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> bool
+
+/// Represents the runtime executor of a resumable state machine created dynamically
+and ResumptionFuncExecutor<'Data> = delegate of byref<ResumableStateMachine<'Data>> * ResumptionFunc<'Data> -> unit
 
 /// A special compiler-recognised delegate type for specifying blocks of resumable code
 /// with access to the state machine.
@@ -197,13 +200,7 @@ module ResumableCode =
 
     /// Specifies resumable code which executes a loop
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    val inline While: condition: (unit -> bool) * body: ResumableCode<'Data, unit> -> ResumableCode<'Data, unit>
-
-    /// Specifies resumable code which executes a loop, where the condition may be resumable code.
-    /// On completion of the condition the ResumptionPoint must be set to -1000 for a true
-    /// condition or -1001 for a false condition.
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    val inline WhileAsync: condition: ResumableCode<'Data, bool> * body: ResumableCode<'Data, unit> -> ResumableCode<'Data, unit>
+    val inline While: [<InlineIfLambda>] condition: (unit -> bool) * body: ResumableCode<'Data, unit> -> ResumableCode<'Data, unit>
 
     /// Specifies resumable code which does nothing
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
@@ -211,22 +208,22 @@ module ResumableCode =
 
     /// The dynamic implementation of the corresponding operation. This operation should not be used directly.
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    val CombineDynamic: code1: ResumableCode<'Data, unit> * code2: ResumableCode<'Data, 'T> -> ResumableCode<'Data, 'T>
+    val CombineDynamic: sm: byref<ResumableStateMachine<'Data>> * code1: ResumableCode<'Data, unit> * code2: ResumableCode<'Data, 'T> -> bool
 
     /// The dynamic implementation of the corresponding operation. This operation should not be used directly.
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    val WhileAsyncDynamic: condition: ResumableCode<'Data, bool> * body: ResumableCode<'Data, unit> -> ResumableCode<'Data, unit>
+    val WhileDynamic: sm: byref<ResumableStateMachine<'Data>> * condition: (unit -> bool) * body: ResumableCode<'Data, unit> -> bool
 
     /// The dynamic implementation of the corresponding operation. This operation should not be used directly.
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    val TryFinallyAsyncDynamic: body: ResumableCode<'Data, 'T> * compensation: ResumableCode<'Data,unit> -> ResumableCode<'Data, 'T>
+    val TryFinallyAsyncDynamic: sm: byref<ResumableStateMachine<'Data>> * body: ResumableCode<'Data, 'T> * compensation: ResumableCode<'Data,unit> -> bool
 
     /// The dynamic implementation of the corresponding operation. This operation should not be used directly.
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    val TryWithDynamic: body: ResumableCode<'Data, 'T> * handler: (exn -> ResumableCode<'Data, 'T>) -> ResumableCode<'Data, 'T>
+    val TryWithDynamic: sm: byref<ResumableStateMachine<'Data>> * body: ResumableCode<'Data, 'T> * handler: (exn -> ResumableCode<'Data, 'T>) -> bool
 
     /// The dynamic implementation of the corresponding operation. This operation should not be used directly.
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    val YieldDynamic: unit -> ResumableCode<'Data, unit>
+    val YieldDynamic: sm: byref<ResumableStateMachine<'Data>> -> bool
 
 #endif

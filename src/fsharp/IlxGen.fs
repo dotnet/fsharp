@@ -2391,14 +2391,14 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
     | Some res ->
         if g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines then
             match res with 
-            | LoweredStateMachine.RefStateMachine objExpr ->
+            | LoweredStateMachine.LoweredExpr objExpr ->
                 GenExpr cenv cgbuf eenv sp objExpr sequel
                 true
             | LoweredStateMachine.StructStateMachine (structTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setStateMachineBodyExpr, otherMethods, afterMethodThisVar, afterMethodBodyExpr) -> 
-                GenStructStateMachine cenv cgbuf eenv (structTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setStateMachineBodyExpr, otherMethods, afterMethodThisVar, afterMethodBodyExpr) sequel
+                GenStructStateMachine cenv cgbuf eenv (expr, structTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setStateMachineBodyExpr, otherMethods, afterMethodThisVar, afterMethodBodyExpr) sequel
                 true
         else
-            error(Error(FSComp.SR.stateMachineNotSupported(), expr.Range))
+            error(Error(FSComp.SR.tcStateMachineNotSupported(), expr.Range))
            
     | None ->
     // This part of the GenExprAux may apply because a 'match' expression can be a 'if __useResumableCode ...' expression
@@ -4486,16 +4486,25 @@ and GenFormalSlotsig m cenv eenv (TSlotSig(_, ty, ctps, mtps, paraml, returnTy))
     let ilTy = GenType cenv.amap m eenv.tyenv ty
     let eenvForSlotSig = EnvForTypars (ctps @ mtps) eenv
     let ilParams = paraml |> List.map (GenSlotParam m cenv eenvForSlotSig)
-    let ilRetTy = GenReturnType cenv.amap m eenvForSlotSig.tyenv returnTy
-    let ilRet = mkILReturn ilRetTy
-    let ilRet =
-        match returnTy with
-        | None -> ilRet
-        | Some ty ->
-        match GenReadOnlyAttributeIfNecessary cenv.g ty with
-        | Some attr -> ilRet.WithCustomAttrs (mkILCustomAttrs (ilRet.CustomAttrs.AsList @ [attr]))
-        | None -> ilRet
+    let ilRet = GenFormalReturnType m cenv eenvForSlotSig returnTy
     ilTy, ilParams, ilRet
+
+and GenOverridesSpec cenv eenv slotsig m =
+    let (TSlotSig(nameOfOverridenMethod, _, _, methodTypars, _, _)) = slotsig
+    let ilOverrideTy, ilOverrideParams, ilOverrideRet = GenFormalSlotsig m cenv eenv slotsig
+    let ilOverrideTyRef = ilOverrideTy.TypeRef
+    let ilOverrideMethRef = mkILMethRef(ilOverrideTyRef, ILCallingConv.Instance, nameOfOverridenMethod, List.length (DropErasedTypars methodTypars), typesOfILParams ilOverrideParams, ilOverrideRet.Type)
+    OverridesSpec(ilOverrideMethRef, ilOverrideTy)
+
+and GenFormalReturnType m cenv eenvFormal returnTy : ILReturn =
+    let ilRetTy = GenReturnType cenv.amap m eenvFormal.tyenv returnTy
+    let ilRet = mkILReturn ilRetTy
+    match returnTy with
+    | None -> ilRet
+    | Some ty ->
+    match GenReadOnlyAttributeIfNecessary cenv.g ty with
+    | Some attr -> ilRet.WithCustomAttrs (mkILCustomAttrs (ilRet.CustomAttrs.AsList @ [attr]))
+    | None -> ilRet
 
 and instSlotParam inst (TSlotParam(nm, ty, inFlag, fl2, fl3, attrs)) =
     TSlotParam(nm, instType inst ty, inFlag, fl2, fl3, attrs)
@@ -4522,20 +4531,18 @@ and GenNameOfOverridingMethod cenv (useMethodImpl, slotsig) =
     else
         nameOfOverridenMethod
 
-and GenMethodImpl cenv eenv (useMethodImpl, (TSlotSig(nameOfOverridenMethod, _, _, _, _, _) as slotsig)) m =
-    let ilOverrideTy, ilOverrideParams, ilOverrideRet = GenFormalSlotsig m cenv eenv slotsig
+and GenMethodImpl cenv eenv (useMethodImpl, slotsig) m =
+    let ilOverridesSpec = GenOverridesSpec cenv eenv slotsig m
 
     let nameOfOverridingMethod = GenNameOfOverridingMethod cenv (useMethodImpl, slotsig)
     nameOfOverridingMethod,
     (fun (ilTyForOverriding, methTyparsOfOverridingMethod) ->
-        let ilOverrideTyRef = ilOverrideTy.TypeRef
-        let ilOverrideMethRef = mkILMethRef(ilOverrideTyRef, ILCallingConv.Instance, nameOfOverridenMethod, List.length (DropErasedTypars methTyparsOfOverridingMethod), typesOfILParams ilOverrideParams, ilOverrideRet.Type)
         let eenvForOverrideBy = AddTyparsToEnv methTyparsOfOverridingMethod eenv
         let ilParamsOfOverridingMethod, ilReturnOfOverridingMethod = GenActualSlotsig m cenv eenvForOverrideBy slotsig methTyparsOfOverridingMethod []
         let ilOverrideMethGenericParams = GenGenericParams cenv eenvForOverrideBy methTyparsOfOverridingMethod
         let ilOverrideMethGenericArgs = mkILFormalGenericArgs 0 ilOverrideMethGenericParams
         let ilOverrideBy = mkILInstanceMethSpecInTy(ilTyForOverriding, nameOfOverridingMethod, typesOfILParams ilParamsOfOverridingMethod, ilReturnOfOverridingMethod.Type, ilOverrideMethGenericArgs)
-        { Overrides = OverridesSpec(ilOverrideMethRef, ilOverrideTy)
+        { Overrides = ilOverridesSpec
           OverrideBy = ilOverrideBy })
 
 and bindBaseOrThisVarOpt cenv eenv baseValOpt =
@@ -4590,10 +4597,11 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
         let mdef = mdef.With(customAttrs = mkILCustomAttrs ilAttribs)
         [(useMethodImpl, methodImplGenerator, methTyparsOfOverridingMethod), mdef]
 
-and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExpr, setStateMachineBodyExpr, otherMethods, afterMethodThisVar, afterMethodBodyExpr) sequel =
+and GenStructStateMachine cenv cgbuf eenvouter (_overallExpr, templateStructTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExpr, setStateMachineBodyExpr, otherMethods, afterMethodThisVar, afterMethodBodyExpr) sequel =
 
     let m = afterMethodBodyExpr.Range
     let g = cenv.g
+    let amap = cenv.amap
 
     let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
 
@@ -4625,7 +4633,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, stateVars, thi
         match GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m templateStructTy 
               |> List.partition (fun ity -> typeEquiv cenv.g ity cenv.g.mk_IAsyncStateMachine_ty) with 
         | [ity], others -> ity, others
-        | _ -> error(Error(FSComp.SR.structStateMachineInvalidNoIAsyncStateMachine(), m))
+        | _ -> error(Error(FSComp.SR.tcStructStateMachineInvalidNoIAsyncStateMachine(), m))
 
     let ilPrimaryInterfaceTy = GenType cenv.amap m eenvinner.tyenv interfaceTy
     let ilOtherInterfaceTys = List.map (GenType cenv.amap m eenvinner.tyenv) otherInterfaceTys
@@ -4653,7 +4661,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, stateVars, thi
         let meth = 
             match InfoReader.TryFindIntrinsicMethInfo infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere imethName interfaceTy with
             | [meth] when meth.IsInstance && meth.NumArgs = [1] -> meth
-            | _ -> error(Error(FSComp.SR.structStateMachineInvalidMethodNotFound(imethName), m))
+            | _ -> error(Error(FSComp.SR.tcStructStateMachineInvalidMethodNotFound(imethName), m))
         let argTys = meth.GetParamTypes(cenv.amap, m, []) |> List.concat
         let ilArgTys = argTys  |> GenTypes cenv.amap m eenvinner.tyenv
         let eenvinner = eenvinner |> AddStorageForLocalVals g [(v0, Arg 0); (v1, Arg 1)] 
@@ -4663,16 +4671,17 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, stateVars, thi
 
     let otherMethodDefs =
         [ for (imethTy, imethName, imethVals, imethBody, imethRange) in otherMethods do
-            let meth = 
+            let implementedMeth = 
                 match InfoReader.TryFindIntrinsicMethInfo infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere imethName imethTy with
                 | [meth] when meth.IsInstance -> meth
-                | _ -> error(Error(FSComp.SR.structStateMachineInvalidMethodNotFound(imethName), imethRange))
-            let argTys = meth.GetParamTypes(cenv.amap, m, []) |> List.concat 
-            let retTy = meth.GetCompiledReturnTy(cenv.amap, m, [])
+                | _ -> error(Error(FSComp.SR.tcStructStateMachineInvalidMethodNotFound(imethName), imethRange))
+            let argTys = implementedMeth.GetParamTypes(cenv.amap, m, []) |> List.concat 
+            let retTy = implementedMeth.GetCompiledReturnTy(cenv.amap, m, [])
+
             let ilRetTy = GenReturnType cenv.amap m eenvinner.tyenv retTy
             let ilArgTys = argTys |> GenTypes cenv.amap m eenvinner.tyenv
             if ilArgTys.Length + 1 <> imethVals.Length then
-                errorR(Error(FSComp.SR.structStateMachineInvalidWrongArgCount(imethName, imethVals.Length, ilArgTys.Length + 1), imethRange))
+                errorR(Error(FSComp.SR.tcStructStateMachineInvalidWrongArgCount(imethName, imethVals.Length, ilArgTys.Length + 1), imethRange))
             
             let eenvinner = eenvinner |> AddStorageForLocalVals g (imethVals |> List.mapi (fun i v -> (v, Arg i)))
             let sequel = if retTy.IsNone then discardAndReturnVoid else Return
@@ -4695,11 +4704,16 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, stateVars, thi
           OverrideBy = ilOverrideBy }
 
     let otherMethodImpls =
-        [ for ((imethTy, imethName, _imethVals, _imethBody, _imethRange), otherMethod) in (List.zip otherMethods otherMethodDefs) do
-            let ilOtherInterfaceTy = GenType cenv.amap m eenvinner.tyenv imethTy
-            let ilOverrideMethRef = mkILMethRef(ilOtherInterfaceTy.TypeRef, ILCallingConv.Instance, imethName, 0, otherMethod.ParameterTypes, otherMethod.Return.Type)
+        [ for ((imethTy, imethName, _imethVals, _imethBody, imethRange), otherMethod) in (List.zip otherMethods otherMethodDefs) do
+            let implementedMeth = 
+                match InfoReader.TryFindIntrinsicMethInfo infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere imethName imethTy with
+                | [meth] when meth.IsInstance -> meth
+                | _ -> error(Error(FSComp.SR.tcStructStateMachineInvalidMethodNotFound(imethName), imethRange))
+
+            let slotsig = implementedMeth.GetSlotSig(amap, m)
+            let ilOverridesSpec = GenOverridesSpec cenv eenvinner slotsig m
             let ilOverrideBy = mkILInstanceMethSpecInTy(ilCloTy, imethName, otherMethod.ParameterTypes, otherMethod.Return.Type, [])
-            { Overrides = OverridesSpec(ilOverrideMethRef, ilOtherInterfaceTy)
+            { Overrides = ilOverridesSpec
               OverrideBy = ilOverrideBy } ]
 
     let mimpls = [moveNextMethImpl; setStateMachineMethImpl] @ otherMethodImpls
