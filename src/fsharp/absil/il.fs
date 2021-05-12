@@ -2722,6 +2722,11 @@ let isILBoxedTy = function ILType.Boxed _ -> true | _ -> false
 
 let isILValueTy = function ILType.Value _ -> true | _ -> false
 
+let rec stripILModifiedFromTy (ty: ILType) =
+    match ty with
+    | ILType.Modified(_, _, ty) -> stripILModifiedFromTy ty
+    | _ -> ty
+
 let isBuiltInTySpec (ilg: ILGlobals) (tspec: ILTypeSpec) n =
     let tref = tspec.TypeRef
     let scoref = tref.Scope

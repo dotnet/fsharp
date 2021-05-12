@@ -122,8 +122,8 @@ module rec Compiler =
         | null -> failwith "Source cannot be null"
         | _ ->
             { Source          = Text source
-              LangVersion     = CSharpLanguageVersion.CSharp8
-              TargetFramework = TargetFramework.NetCoreApp31
+              LangVersion     = CSharpLanguageVersion.CSharp9
+              TargetFramework = TargetFramework.Current
               Name            = None
               References      = [] }
 

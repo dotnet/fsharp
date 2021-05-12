@@ -76,109 +76,6 @@ type CompilerAssert private () =
 
     static let checker = FSharpChecker.Create(suggestNamesForErrors=true)
 
-    static let config = TestFramework.initializeSuite ()
-
-    static let _ = config |> ignore
-
-// Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
-    static let projectFile = """
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>$TARGETFRAMEWORK</TargetFramework>
-    <UseFSharpPreview>true</UseFSharpPreview>
-    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-  </PropertyGroup>
-
-  <ItemGroup><Compile Include="Program.fs" /></ItemGroup>
-  <ItemGroup><Reference Include="$FSHARPCORELOCATION" /></ItemGroup>
-  <ItemGroup Condition="'$(TARGETFRAMEWORK)'=='net472'">
-    <Reference Include="System" />
-    <Reference Include="System.Runtime" />
-    <Reference Include="System.Core.dll" />
-    <Reference Include="System.Xml.Linq.dll" />
-    <Reference Include="System.Data.DataSetExtensions.dll" />
-    <Reference Include="Microsoft.CSharp.dll" />
-    <Reference Include="System.Data.dll" />
-    <Reference Include="System.Deployment.dll" />
-    <Reference Include="System.Drawing.dll" />
-    <Reference Include="System.Net.Http.dll" />
-    <Reference Include="System.Windows.Forms.dll" />
-    <Reference Include="System.Xml.dll" />
-  </ItemGroup>
-
-  <Target Name="WriteFrameworkReferences" AfterTargets="AfterBuild">
-    <WriteLinesToFile File="FrameworkReferences.txt" Lines="@(ReferencePath)" Overwrite="true" WriteOnlyWhenDifferent="true" />
-  </Target>
-
-</Project>"""
-
-    static let directoryBuildProps = """
-<Project>
-</Project>
-"""
-
-    static let directoryBuildTargets = """
-<Project>
-</Project>
-"""
-
-    static let programFs = """
-open System
-
-[<EntryPoint>]
-let main argv = 0"""
-
-    static let getNetCoreAppReferences =
-        let mutable output = ""
-        let mutable errors = ""
-        let mutable cleanUp = true
-        let pathToArtifacts = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../.."))
-        if Path.GetFileName(pathToArtifacts) <> "artifacts" then failwith "CompilerAssert did not find artifacts directory --- has the location changed????"
-        let pathToTemp = Path.Combine(pathToArtifacts, "Temp")
-        let projectDirectory = Path.Combine(pathToTemp, "CompilerAssert", Path.GetRandomFileName())
-        let pathToFSharpCore = typeof<RequireQualifiedAccessAttribute>.Assembly.Location
-        try
-            try
-                Directory.CreateDirectory(projectDirectory) |> ignore
-                let projectFileName = Path.Combine(projectDirectory, "ProjectFile.fsproj")
-                let programFsFileName = Path.Combine(projectDirectory, "Program.fs")
-                let directoryBuildPropsFileName = Path.Combine(projectDirectory, "Directory.Build.props")
-                let directoryBuildTargetsFileName = Path.Combine(projectDirectory, "Directory.Build.targets")
-                let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
-#if NETCOREAPP
-                File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net5.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
-#else
-                File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
-#endif
-                File.WriteAllText(programFsFileName, programFs)
-                File.WriteAllText(directoryBuildPropsFileName, directoryBuildProps)
-                File.WriteAllText(directoryBuildTargetsFileName, directoryBuildTargets)
-
-                let timeout = 30000
-                let exitCode, output, errors = Commands.executeProcess (Some config.DotNetExe) "build" projectDirectory timeout
-
-                if exitCode <> 0 || errors.Length > 0 then
-                    printfn "Output:\n=======\n"
-                    output |> Seq.iter(fun line -> printfn "STDOUT:%s\n" line)
-                    printfn "Errors:\n=======\n"
-                    errors  |> Seq.iter(fun line -> printfn "STDERR:%s\n" line)
-                    Assert.True(false, "Errors produced generating References")
-
-                File.ReadLines(frameworkReferencesFileName) |> Seq.toArray
-            with | e ->
-                cleanUp <- false
-                printfn "Project directory: %s" projectDirectory
-                printfn "STDOUT: %s" output
-                File.WriteAllText(Path.Combine(projectDirectory, "project.stdout"), output)
-                printfn "STDERR: %s" errors
-                File.WriteAllText(Path.Combine(projectDirectory, "project.stderror"), errors)
-                raise (new Exception (sprintf "An error occurred getting netcoreapp references: %A" e))
-        finally
-            if cleanUp then
-                try Directory.Delete(projectDirectory, recursive=true) with | _ -> ()
-
 #if FX_NO_APP_DOMAINS
     static let executeBuiltApp assembly deps =
         let ctxt = AssemblyLoadContext("ContextName", true)
@@ -214,7 +111,7 @@ let main argv = 0"""
             ProjectId = None
             SourceFiles = [|"test.fs"|]
             OtherOptions =
-                let assemblies = getNetCoreAppReferences |> Array.map (fun x -> sprintf "-r:%s" x)
+                let assemblies = TargetFrameworkUtil.currentReferences |> Array.map (fun x -> sprintf "-r:%s" x)
 #if NETCOREAPP
                 Array.append [|"--preferreduilang:en-US"; "--targetprofile:netcore"; "--noframework"; "--simpleresolution"; "--warn:5"|] assemblies
 #else
@@ -510,7 +407,7 @@ let main argv = 0"""
 
         let dependencies =
         #if NETCOREAPP
-            Array.toList getNetCoreAppReferences
+            Array.toList TargetFrameworkUtil.currentReferences
         #else
             []
         #endif
@@ -534,7 +431,7 @@ let main argv = 0"""
 
         let dependencies =
             #if NETCOREAPP
-                Array.toList getNetCoreAppReferences
+                Array.toList TargetFrameworkUtil.currentReferences
             #else
                 []
             #endif
