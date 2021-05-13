@@ -786,7 +786,7 @@ namespace Microsoft.FSharp.Core
         inherit Attribute
 
         /// <summary>Creates an instance of the attribute</summary>
-        /// <returns>ResumableCodeAttribute</returns>
+        /// <returns>InlineIfLambdaAttribute</returns>
         new : unit -> InlineIfLambdaAttribute
 
     /// <summary>This attribute is generated automatically by the F# compiler to tag functions and members 

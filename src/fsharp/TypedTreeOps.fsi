@@ -2443,14 +2443,11 @@ val CombineCcuContentFragments: range -> ModuleOrNamespaceType list -> ModuleOrN
 /// Recognise a 'match __resumableEntry() with ...' expression
 val (|ResumableEntryMatchExpr|_|): g: TcGlobals -> Expr -> (Expr * Val * Expr * (Expr * Expr -> Expr)) option
 
-// Detect an object expression that uses ResumableCode on a single method, representing a RefStateMachine
-val (|RefStateMachineExpr|_|): g: TcGlobals ->  Expr -> (Expr * (Expr * ValRef list -> Expr) * range) option
-
-/// Recognise a '__structStateMachine' expression
+/// Recognise a '__stateMachine' expression
 val (|StructStateMachineExpr|_|): 
     g: TcGlobals -> 
-    Expr -> 
-        (TType * Val * Expr * range * Expr * (TType * string * Val list * Expr * range) list * Val * Expr) option
+    expr: Expr -> 
+        (TType * (Val * Expr) * (Val * Val * Expr) *  (Val * Expr) *  (Val * Expr) *  (Val * Val * Expr) *  (Val * Expr)) option
 
 /// Recognise a sequential or binding construct in a resumable code
 val (|SequentialResumableCode|_|): g: TcGlobals -> Expr -> (Expr * Expr * range * (Expr -> Expr -> Expr)) option
@@ -2475,6 +2472,9 @@ val mkLabelled: range -> ILCodeLabel -> Expr -> Expr
 
 /// Any delegate type with ResumableCode attribute, or any function returning such a delegate type
 val isResumableCodeTy: TcGlobals -> TType -> bool
+
+/// The delegate type ResumableCode, or any function returning this a delegate type
+val isReturnsResumableCodeTy: TcGlobals -> TType -> bool
 
 /// Shared helper for binding attributes
 val TryBindTyconRefAttribute:

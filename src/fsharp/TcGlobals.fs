@@ -555,9 +555,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mk_MFCore_attrib nm : BuiltinAttribInfo = 
       AttribInfo(mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), FSharpLib.Core + "." + nm), mk_MFCore_tcref fslibCcu nm) 
     
-  let mk_MFCompilerServices_attrib nm : BuiltinAttribInfo = 
-      AttribInfo(mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), FSharpLib.Core + "." + nm), mk_MFCompilerServices_tcref fslibCcu nm) 
-    
   let mk_doc filename = ILSourceDocument.Create(language=None, vendor=None, documentType=None, file=filename)
   // Build the memoization table for files
   let v_memoize_file = new MemoizationTable<int, ILSourceDocument> ((fileOfFileIndex >> FileSystem.GetFullFilePathInDirectoryShim directoryToResolveRelativePaths >> mk_doc), keyComparer=HashIdentity.Structural)
@@ -723,7 +720,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty --> (varbTy --> v_unit_ty)) --> varaTy]], TType_app (v_fslib_IEvent2_tcr, [varaTy;varbTy])))
   let v_cgh__useResumableCode_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,          "__useResumableCode"                   , None                 , None          , [vara],     ([[]], v_bool_ty))
   let v_cgh__resumeAt_info         = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumeAt"                           , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
-  let v_cgh__structStateMachine_info  = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                "__structStateMachine"                    , None                 , None          , [vara; varb],     ([[varbTy; varcTy; (v_unit_ty --> vardTy)]], vardTy))
+  let v_cgh__stateMachine_info  = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                "__stateMachine"                 , None                 , None          , [vara; varb],     ([[varaTy]], varbTy)) // inaccurate type but it doesn't matter for linking
   let v_cgh__resumableEntry_info   = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumableEntry"                     , None                 , None          , [vara],     ([[v_int_ty --> varaTy]; [v_unit_ty --> varaTy]], varaTy))
   let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))  
   let v_seq_to_list_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toList"                               , None                 , Some "ToList" , [varb],     ([[mkSeqTy varbTy]], mkListTy varbTy))
@@ -1004,12 +1001,19 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.fslib_IDelegateEvent_tcr      = v_fslib_IDelegateEvent_tcr
   member _.seq_tcr        = v_seq_tcr
   member val seq_base_tcr = mk_MFCompilerServices_tcref fslibCcu "GeneratedSequenceBase`1"
+  member g.mk_GeneratedSequenceBase_ty seqElemTy = TType_app(g.seq_base_tcr,[seqElemTy])
+  member val ResumableStateMachine_tcr = mk_MFCompilerServices_tcref fslibCcu "ResumableStateMachine`1"
+  member g.mk_ResumableStateMachine_ty dataTy = TType_app(g.ResumableStateMachine_tcr,[dataTy])
+  member val IResumableStateMachine_tcr = mk_MFCompilerServices_tcref fslibCcu "IResumableStateMachine`1"
+  member g.mk_IResumableStateMachine_ty dataTy = TType_app(g.IResumableStateMachine_tcr,[dataTy])
   member val byrefkind_In_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "In"
   member val byrefkind_Out_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "Out"
   member val byrefkind_InOut_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "InOut"
   member val measureproduct_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureProduct`2"
   member val measureinverse_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureInverse`1"
   member val measureone_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureOne"
+  member val ResumableCode_tcr = mk_MFCompilerServices_tcref fslibCcu "ResumableCode`2"
+
   member _.il_arr_tcr_map = v_il_arr_tcr_map
   member _.ref_tuple1_tcr     = v_ref_tuple1_tcr
   member _.ref_tuple2_tcr     = v_ref_tuple2_tcr
@@ -1229,7 +1233,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_CompilationArgumentCountsAttribute     = mk_MFCore_attrib "CompilationArgumentCountsAttribute"
   member val attrib_CompilationMappingAttribute            = mk_MFCore_attrib "CompilationMappingAttribute"
   member val attrib_CLIEventAttribute                      = mk_MFCore_attrib "CLIEventAttribute"
-  member val attrib_ResumableCodeAttribute                 = mk_MFCompilerServices_attrib "ResumableCodeAttribute"
   member val attrib_InlineIfLambdaAttribute                = mk_MFCore_attrib "InlineIfLambdaAttribute"
   member val attrib_CLIMutableAttribute                    = mk_MFCore_attrib "CLIMutableAttribute"
   member val attrib_AllowNullLiteralAttribute              = mk_MFCore_attrib "AllowNullLiteralAttribute"
@@ -1487,7 +1490,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.quote_to_linq_lambda_info        = v_quote_to_linq_lambda_info
 
 
-  member val cgh__structStateMachine_vref = ValRefForIntrinsic v_cgh__structStateMachine_info
+  member val cgh__stateMachine_vref = ValRefForIntrinsic v_cgh__stateMachine_info
   member val cgh__useResumableCode_vref = ValRefForIntrinsic v_cgh__useResumableCode_info
   member val cgh__resumeAt_vref = ValRefForIntrinsic v_cgh__resumeAt_info
   member val cgh__resumableEntry_vref = ValRefForIntrinsic v_cgh__resumableEntry_info

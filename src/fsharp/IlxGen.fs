@@ -2390,12 +2390,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
     match (if IsPossibleStateMachineExpr g expr then ConvertStateMachineExprToObject cenv.g expr else None) with
     | Some res ->
         if g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines then
-            match res with 
-            | LoweredStateMachine.LoweredExpr objExpr ->
-                GenExpr cenv cgbuf eenv sp objExpr sequel
-                true
-            | LoweredStateMachine.StructStateMachine (structTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setStateMachineBodyExpr, otherMethods, afterMethodThisVar, afterMethodBodyExpr) -> 
-                GenStructStateMachine cenv cgbuf eenv (expr, structTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setStateMachineBodyExpr, otherMethods, afterMethodThisVar, afterMethodBodyExpr) sequel
+                GenStructStateMachine cenv cgbuf eenv res sequel
                 true
         else
             error(Error(FSComp.SR.tcStateMachineNotSupported(), expr.Range))
@@ -3386,7 +3381,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
   | Expr.Val (v, _, m), _, _ 
       when valRefEq g v g.cgh__resumeAt_vref || 
            valRefEq g v g.cgh__resumableEntry_vref || 
-           valRefEq g v g.cgh__structStateMachine_vref
+           valRefEq g v g.cgh__stateMachine_vref
            ->
         error(Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen(v.DisplayName), m))
 
@@ -4597,27 +4592,35 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
         let mdef = mdef.With(customAttrs = mkILCustomAttrs ilAttribs)
         [(useMethodImpl, methodImplGenerator, methTyparsOfOverridingMethod), mdef]
 
-and GenStructStateMachine cenv cgbuf eenvouter (_overallExpr, templateStructTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExpr, setStateMachineBodyExpr, otherMethods, afterMethodThisVar, afterMethodBodyExpr) sequel =
+and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel =
 
-    let m = afterMethodBodyExpr.Range
+    let (LoweredStateMachine 
+            (templateStructTy, dataTy, stateVars, thisVars, 
+                (moveNextThisVar, moveNextBody), 
+                (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody), 
+                (getResumptionPointThisVar, getResumptionPointBody),
+                (getDataThisVar, getDataBody),
+                (setDataThisVar, setDataValueVar, setDataBody),
+                (afterCodeThisVar, afterCodeBody))) = res
+    let m = moveNextBody.Range
     let g = cenv.g
     let amap = cenv.amap
 
     let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
 
-    // State vars are only populated for state machine objects 
-    //
-    // Like in GenSequenceExpression we pretend any stateVars and the stateMachineVar are bound in the outer environment. This prevents the being
-    // considered true free variables that need to be passed to the constructor.
-    let eenvouter = eenvouter |> AddStorageForLocalVals g (stateVars |> List.map (fun v -> v.Deref, Local(0, false, None)))
-    let eenvouter = eenvouter |> AddStorageForLocalVals g (thisVars |> List.map (fun v -> v.Deref, Local(0, false, None)))
-    let eenvouter = eenvouter |> AddStorageForLocalVals g [ (moveNextMethodThisVar, Local(0, false, None)) ]
-    
     // Find the free variables of the closure, to make them further fields of the object.
-    //
-    // Note, the 'let' bindings for the stateVars have already been transformed to 'set' expressions, and thus the stateVars are now
-    // free variables of the expression.
-    let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsValue false false (mkLocalValRef moveNextMethodThisVar :: thisVars) eenvouter moveNextExpr
+    let cloinfo, _, eenvinner = 
+        // State vars are only populated for state machine objects 
+        //
+        // Like in GenSequenceExpression we pretend any stateVars and the stateMachineVar are bound in the outer environment. This prevents the being
+        // considered true free variables that need to be passed to the constructor.
+        //
+        // Note, the 'let' bindings for the stateVars have already been transformed to 'set' expressions, and thus the stateVars are now
+        // free variables of the expression.
+        let eenvouter = eenvouter |> AddStorageForLocalVals g (stateVars |> List.map (fun v -> v.Deref, Local(0, false, None)))
+        let eenvouter = eenvouter |> AddStorageForLocalVals g (thisVars |> List.map (fun v -> v.Deref, Local(0, false, None)))
+        let eenvouter = eenvouter |> AddStorageForLocalVals g [ (moveNextThisVar, Local(0, false, None)) ]
+        GetIlxClosureInfo cenv m ILBoxity.AsValue false false (mkLocalValRef moveNextThisVar :: thisVars) eenvouter moveNextBody
 
     let cloAttribs = cloinfo.cloAttribs
     let cloFreeVars = cloinfo.cloFreeVars
@@ -4629,14 +4632,9 @@ and GenStructStateMachine cenv cgbuf eenvouter (_overallExpr, templateStructTy, 
     let ilCloTy = mkILValueTy ilCloTypeRef ilCloGenericActuals
 
     // The closure implements what ever interfaces the template implements. 
-    let interfaceTy, otherInterfaceTys =
-        match GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m templateStructTy 
-              |> List.partition (fun ity -> typeEquiv cenv.g ity cenv.g.mk_IAsyncStateMachine_ty) with 
-        | [ity], others -> ity, others
-        | _ -> error(Error(FSComp.SR.tcStructStateMachineInvalidNoIAsyncStateMachine(), m))
+    let interfaceTys = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m templateStructTy 
 
-    let ilPrimaryInterfaceTy = GenType cenv.amap m eenvinner.tyenv interfaceTy
-    let ilOtherInterfaceTys = List.map (GenType cenv.amap m eenvinner.tyenv) otherInterfaceTys
+    let ilInterfaceTys = List.map (GenType cenv.amap m eenvinner.tyenv) interfaceTys
     let attrs = GenAttrs cenv eenvinner cloAttribs
 
     let super = g.iltyp_ValueType
@@ -4646,77 +4644,47 @@ and GenStructStateMachine cenv cgbuf eenvouter (_overallExpr, templateStructTy, 
     let eenvinner = AddTemplateReplacement eenvinner (templateTyconRef, ilCloTy, templateTypeInst)
 
     let infoReader = InfoReader.InfoReader(g, cenv.amap)
-    let moveNextMethod =
-        let eenvinner = eenvinner |> AddStorageForLocalVals g [(moveNextMethodThisVar, Arg 0) ] 
-        let eenvinner = eenvinner |> AddStorageForLocalVals g (thisVars |> List.map (fun v -> (v.Deref, Arg 0)))
-        let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], "MoveNext", eenvinner, 1, moveNextExpr, discardAndReturnVoid)
-        mkILNonGenericVirtualMethod("MoveNext", ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL (notlazy ilCode))
+    let methods =
+        [ ((mkLocalValRef moveNextThisVar::thisVars), [], g.mk_IAsyncStateMachine_ty, "MoveNext", moveNextBody); 
+          ([mkLocalValRef setStateMachineThisVar], [setStateMachineStateVar], g.mk_IAsyncStateMachine_ty, "SetStateMachine", setStateMachineBody); 
+          ([mkLocalValRef getResumptionPointThisVar], [], g.mk_IResumableStateMachine_ty dataTy, "get_ResumptionPoint", getResumptionPointBody); 
+          ([mkLocalValRef getDataThisVar], [], g.mk_IResumableStateMachine_ty dataTy, "get_Data", getDataBody); 
+          ([mkLocalValRef setDataThisVar], [setDataValueVar], g.mk_IResumableStateMachine_ty dataTy, "set_Data", setDataBody); ]
 
-    let setStateMachineMethod =
-        let v0, v1, bodyExpr =
-            match setStateMachineBodyExpr with
-            | NewDelegateExpr g (_, [[v0; v1]], e, _, _) -> v0, v1, e
-            | _ -> failwith "invalid setStateMachineExpr, expected a new delegate of two vars"
-        let imethName = "SetStateMachine"
-        let meth = 
-            match InfoReader.TryFindIntrinsicMethInfo infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere imethName interfaceTy with
-            | [meth] when meth.IsInstance && meth.NumArgs = [1] -> meth
-            | _ -> error(Error(FSComp.SR.tcStructStateMachineInvalidMethodNotFound(imethName), m))
-        let argTys = meth.GetParamTypes(cenv.amap, m, []) |> List.concat
-        let ilArgTys = argTys  |> GenTypes cenv.amap m eenvinner.tyenv
-        let eenvinner = eenvinner |> AddStorageForLocalVals g [(v0, Arg 0); (v1, Arg 1)] 
-        let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], imethName, eenvinner, 2, bodyExpr, discardAndReturnVoid)
-        let ilParams = ilArgTys |> List.map (fun ty -> mkILParamNamed(v1.LogicalName, ty))
-        mkILNonGenericVirtualMethod(imethName, ILMemberAccess.Public, ilParams, mkILReturn ILType.Void, MethodBody.IL (notlazy ilCode))
-
-    let otherMethodDefs =
-        [ for (imethTy, imethName, imethVals, imethBody, imethRange) in otherMethods do
+    let mdefs =
+        [ for (thisVals, argVals, interfaceTy, imethName, bodyR) in methods do
+            let eenvinner = eenvinner |> AddStorageForLocalVals g [(moveNextThisVar, Arg 0) ] 
+            let m = bodyR.Range
             let implementedMeth = 
-                match InfoReader.TryFindIntrinsicMethInfo infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere imethName imethTy with
+                match InfoReader.TryFindIntrinsicMethInfo infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere imethName interfaceTy with
                 | [meth] when meth.IsInstance -> meth
-                | _ -> error(Error(FSComp.SR.tcStructStateMachineInvalidMethodNotFound(imethName), imethRange))
-            let argTys = implementedMeth.GetParamTypes(cenv.amap, m, []) |> List.concat 
+                | _ -> error(InternalError(sprintf "expected method %s not found" imethName, m))
+            let argTys = implementedMeth.GetParamTypes(cenv.amap, m, []) |> List.concat
             let retTy = implementedMeth.GetCompiledReturnTy(cenv.amap, m, [])
-
             let ilRetTy = GenReturnType cenv.amap m eenvinner.tyenv retTy
-            let ilArgTys = argTys |> GenTypes cenv.amap m eenvinner.tyenv
-            if ilArgTys.Length + 1 <> imethVals.Length then
-                errorR(Error(FSComp.SR.tcStructStateMachineInvalidWrongArgCount(imethName, imethVals.Length, ilArgTys.Length + 1), imethRange))
-            
-            let eenvinner = eenvinner |> AddStorageForLocalVals g (imethVals |> List.mapi (fun i v -> (v, Arg i)))
+            let ilArgTys = argTys  |> GenTypes cenv.amap m eenvinner.tyenv
+            if ilArgTys.Length  <> argVals.Length then
+                error(InternalError(sprintf "expected method arg count of %d, got %d for method %s" argVals.Length ilArgTys.Length imethName, m))
+            let eenvinner = eenvinner |> AddStorageForLocalVals g (thisVals |> List.map (fun v -> (v.Deref, Arg 0)))
+            let eenvinner = eenvinner |> AddStorageForLocalVals g (argVals |> List.mapi (fun i v -> v, Arg (i+1)))
             let sequel = if retTy.IsNone then discardAndReturnVoid else Return
-            let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], imethName, eenvinner, imethVals.Length, imethBody, sequel)
-            let ilParams = (ilArgTys, imethVals.[1..]) ||> List.map2 (fun ty v -> mkILParamNamed(v.LogicalName, ty))
+            let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], imethName, eenvinner, 1+argVals.Length, bodyR, sequel)
+            let ilParams = (ilArgTys,argVals) ||> List.map2 (fun ty v -> mkILParamNamed(v.LogicalName, ty))
             mkILNonGenericVirtualMethod(imethName, ILMemberAccess.Public, ilParams, mkILReturn ilRetTy, MethodBody.IL (notlazy ilCode)) ]
 
-    let mdefs = [moveNextMethod; setStateMachineMethod] @ otherMethodDefs
-
-    let moveNextMethImpl =
-        let ilOverrideMethRef = mkILMethRef(ilPrimaryInterfaceTy.TypeRef, ILCallingConv.Instance, "MoveNext", 0, [], ILType.Void)
-        let ilOverrideBy = mkILInstanceMethSpecInTy(ilCloTy, "MoveNext", [], ILType.Void, [])
-        { Overrides = OverridesSpec(ilOverrideMethRef, ilPrimaryInterfaceTy)
-          OverrideBy = ilOverrideBy }
-
-    let setStateMachineMethImpl =
-        let ilOverrideMethRef = mkILMethRef(ilPrimaryInterfaceTy.TypeRef, ILCallingConv.Instance, "SetStateMachine", 0, setStateMachineMethod.ParameterTypes, setStateMachineMethod.Return.Type)
-        let ilOverrideBy = mkILInstanceMethSpecInTy(ilCloTy, "SetStateMachine", setStateMachineMethod.ParameterTypes, setStateMachineMethod.Return.Type, [])
-        { Overrides = OverridesSpec(ilOverrideMethRef, ilPrimaryInterfaceTy)
-          OverrideBy = ilOverrideBy }
-
-    let otherMethodImpls =
-        [ for ((imethTy, imethName, _imethVals, _imethBody, imethRange), otherMethod) in (List.zip otherMethods otherMethodDefs) do
+    let mimpls =
+        [ for ((_thisVals, _argVals, interfaceTy, imethName, bodyR), mdef) in (List.zip methods mdefs) do
+            let m = bodyR.Range
             let implementedMeth = 
-                match InfoReader.TryFindIntrinsicMethInfo infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere imethName imethTy with
+                match InfoReader.TryFindIntrinsicMethInfo infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere imethName interfaceTy with
                 | [meth] when meth.IsInstance -> meth
-                | _ -> error(Error(FSComp.SR.tcStructStateMachineInvalidMethodNotFound(imethName), imethRange))
+                | _ -> error(InternalError(sprintf "expected method %s not found" imethName, m))
 
             let slotsig = implementedMeth.GetSlotSig(amap, m)
             let ilOverridesSpec = GenOverridesSpec cenv eenvinner slotsig m
-            let ilOverrideBy = mkILInstanceMethSpecInTy(ilCloTy, imethName, otherMethod.ParameterTypes, otherMethod.Return.Type, [])
+            let ilOverrideBy = mkILInstanceMethSpecInTy(ilCloTy, imethName, mdef.ParameterTypes, mdef.Return.Type, [])
             { Overrides = ilOverridesSpec
               OverrideBy = ilOverrideBy } ]
-
-    let mimpls = [moveNextMethImpl; setStateMachineMethImpl] @ otherMethodImpls
 
     let fdefs =
         [ // Fields copied from the template struct
@@ -4738,8 +4706,6 @@ and GenStructStateMachine cenv cgbuf eenvouter (_overallExpr, templateStructTy, 
                       .WithAccess(access)
                       .WithStatic(false)
               yield fdef ]
-
-    let ilInterfaceTys = [ilPrimaryInterfaceTy] @ ilOtherInterfaceTys
 
     let cloTypeDef =
         ILTypeDef(name = ilCloTypeRef.Name,
@@ -4773,7 +4739,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (_overallExpr, templateStructTy, 
         let locIdx, realloc, _ = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName ("machine", m), ilCloTy, false) scopeMarks
 
         // The local for the state machine address
-        let locIdx2, _realloc2, _ = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName (afterMethodThisVar.DisplayName, m), ilMachineAddrTy, false) scopeMarks
+        let locIdx2, _realloc2, _ = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName (afterCodeThisVar.DisplayName, m), ilMachineAddrTy, false) scopeMarks
 
         // Zero-initialize the machine 
         EmitInitLocal cgbuf ilCloTy locIdx
@@ -4782,7 +4748,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (_overallExpr, templateStructTy, 
         CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloca (uint16 locIdx) )
         CG.EmitInstr cgbuf (pop 1) (Push [ ]) (I_stloc (uint16 locIdx2) )
 
-        let eenvinner = eenvinner |> AddStorageForLocalVals g [(afterMethodThisVar, Local (locIdx2, realloc, None)) ] 
+        let eenvinner = eenvinner |> AddStorageForLocalVals g [(afterCodeThisVar, Local (locIdx2, realloc, None)) ] 
 
         // Initialize the closure variables
         for (fv, ilv) in Seq.zip cloFreeVars cloinfo.ilCloAllFreeVars do
@@ -4799,7 +4765,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (_overallExpr, templateStructTy, 
                 CG.EmitInstr cgbuf (pop 2) (Push [ ]) (mkNormalStfld (mkILFieldSpecInTy (ilCloTy, ilv.fvName, ilv.fvType)))
 
         // Generate the start expression - eenvinner is used as it contains the binding for machineAddrVar
-        GenExpr cenv cgbuf eenvinner SPSuppress afterMethodBodyExpr sequel
+        GenExpr cenv cgbuf eenvinner SPSuppress afterCodeBody sequel
    
     )
 
@@ -4896,7 +4862,7 @@ and GenSequenceExpr
     let ilCloRetTyOuter = GenType cenv.amap m eenvouter.tyenv cloRetTy
     let ilCloEnumeratorTy = GenType cenv.amap m eenvinner.tyenv (mkIEnumeratorTy g seqElemTy)
     let ilCloEnumerableTy = GenType cenv.amap m eenvinner.tyenv (mkSeqTy g seqElemTy)
-    let ilCloBaseTy = GenType cenv.amap m eenvinner.tyenv (mkAppTy g.seq_base_tcr [seqElemTy])
+    let ilCloBaseTy = GenType cenv.amap m eenvinner.tyenv (g.mk_GeneratedSequenceBase_ty seqElemTy)
     let ilCloGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
 
     // Create a new closure class with a single "MoveNext" method that implements the iterator.

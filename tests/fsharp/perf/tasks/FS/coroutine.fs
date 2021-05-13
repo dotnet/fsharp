@@ -15,14 +15,6 @@ let verbose = true
 let inline MoveNext(x: byref<'T> when 'T :> IAsyncStateMachine) = x.MoveNext()
 let inline SetStateMachine(x: byref<'T> when 'T :> IAsyncStateMachine, state) = x.SetStateMachine(state)
 let inline GetResumptionPoint(x: byref<'T> when 'T :> IResumableStateMachine<'Data>) = x.ResumptionPoint
-let inline SetResumptionFunc (sm: byref<ResumableStateMachine<'Data>>) f =
-    let (_, executor, sme) = sm.ResumptionFuncData
-    sm.ResumptionFuncData <- (f, executor, sme)
-
-let inline GetResumptionFunc (sm: byref<ResumableStateMachine<'Data>>) =
-    let (f, _, _) = sm.ResumptionFuncData
-    f
-
 
 /// The extra data stored in ResumableStateMachine for coroutines
 [<Struct; NoComparison; NoEquality>]
@@ -40,8 +32,8 @@ type CoroutineStateMachineData =
         x.Data <- newData
 
 and CoroutineStateMachine = ResumableStateMachine<CoroutineStateMachineData>
-and CoroutineResumption = ResumptionFunc<CoroutineStateMachineData>
-and CoroutineResumptionExecutor = ResumptionFuncExecutor<CoroutineStateMachineData>
+and CoroutineResumptionFunc = ResumptionFunc<CoroutineStateMachineData>
+and CoroutineResumptionDynamicInfo = ResumptionDynamicInfo<CoroutineStateMachineData>
 
 and CoroutineCode = ResumableCode<CoroutineStateMachineData, unit>
 
@@ -91,52 +83,45 @@ type CoroutineBuilder() =
 
     member inline _.Run(code : CoroutineCode) : Coroutine = 
         if __useResumableCode then 
-            __structStateMachine<CoroutineStateMachine, Coroutine>
+            __stateMachine<CoroutineStateMachineData, Coroutine>
                 // IAsyncStateMachine.MoveNext
-                (MoveNextMethodImpl<CoroutineStateMachine>(fun sm -> 
+                (MoveNextMethodImpl<_>(fun sm -> 
                     if __useResumableCode then 
                         //-- RESUMABLE CODE START
                         __resumeAt sm.ResumptionPoint 
-                        //if verbose then printfn $"[{sm.Id}] Run: resumable code, sm.ResumptionPoint = {sm.ResumptionPoint}"
                         let __stack_code_fin = code.Invoke(&sm)
                         if __stack_code_fin then
-                            //if verbose then printfn $"[{sm.Id}] terminate"
-                            sm.ResumptionPoint  <- -1
-                        //if verbose then printfn $"[{sm.Id}] done MoveNext, sm.ResumptionPoint = {sm.ResumptionPoint}"
+                            sm.ResumptionPoint  <- -1 // indicates complete
+                        else
+                            // Goto request
+                            match sm.Data.HijackTarget with 
+                            | Some tg -> tg.MoveNext()
+                            | None -> ()
                         //-- RESUMABLE CODE END
                     else
                         failwith "Run: non-resumable - unreachable"))
 
-                // IAsyncStateMachine.SetStateMachine
-                (SetStateMachineMethodImpl<CoroutineStateMachine>(fun sm state -> 
-                    SetStateMachine(&sm, state)))
-
-                // Other interfaces (IResumableStateMachine)
-                [| 
-                   (typeof<IResumableStateMachine<CoroutineStateMachineData>>, "get_ResumptionPoint", GetResumptionPointMethodImpl<CoroutineStateMachine>(fun sm -> 
-                        sm.ResumptionPoint) :> _);
-                   (typeof<IResumableStateMachine<CoroutineStateMachineData>>, "get_Data", GetResumableStateMachineDataMethodImpl<CoroutineStateMachine, CoroutineStateMachineData>(fun sm -> 
-                        sm.Data) :> _);
-                   (typeof<IResumableStateMachine<CoroutineStateMachineData>>, "set_Data", SetResumableStateMachineDataMethodImpl<CoroutineStateMachine, CoroutineStateMachineData>(fun sm data -> 
-                        sm.Data <- data) :> _);
-                 |]
-
-                // Start
-                (AfterCode<CoroutineStateMachine,_>(fun sm -> 
+                (SetStateMachineMethodImpl<_>(fun sm state -> SetStateMachine(&sm, state)))
+                (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+                (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+                (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+                (AfterCode<_,_>(fun sm -> 
                     let mutable cr = Coroutine<CoroutineStateMachine>()
                     cr.Machine <- sm
                     //cr.Machine.Id <- cr.Id
                     //if verbose then printfn $"[{cr.Id}] static create"
                     cr :> Coroutine))
         else 
+            let initialResumptionFunc = CoroutineResumptionFunc(fun sm -> code.Invoke(&sm))
+            let resumptionInfo =
+                { new CoroutineResumptionDynamicInfo(initialResumptionFunc) with 
+                    member info.MoveNext(sm) = 
+                        if info.ResumptionFunc.Invoke(&sm) then
+                            sm.ResumptionPoint <- -1
+                    member info.SetStateMachine(sm, state) = ()
+                 }
             let mutable cr = Coroutine<CoroutineStateMachine>()
-            let initialResumptionFunc = CoroutineResumption(fun sm -> code.Invoke(&sm))
-            let resumptionFuncExecutor = 
-                CoroutineResumptionExecutor(fun sm f -> 
-                    if f.Invoke(&sm) then
-                        sm.ResumptionPoint <- -1)
-            let setStateMachine = SetStateMachineMethodImpl<_>(fun sm f -> ())
-            cr.Machine.ResumptionFuncData <- (initialResumptionFunc, resumptionFuncExecutor, setStateMachine)
+            cr.Machine.ResumptionDynamicInfo <- resumptionInfo
             //cr.Machine.Id <- cr.Id
             //if verbose then printfn $"[{cr.Id}] dynamic create"
             cr :> Coroutine
@@ -163,7 +148,7 @@ type CoroutineBuilder() =
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline _.TryFinally (body: CoroutineCode, [<InlineIfLambda>] compensation : unit -> unit) : CoroutineCode =
-        ResumableCode.TryFinally(body, NonResumableCode<_,_>(fun _ -> compensation()))
+        ResumableCode.TryFinally(body, ResumableCode<_,_>(fun _ -> compensation(); true))
 
     member inline _.Using (resource : 'Resource, body : 'Resource -> CoroutineCode) : CoroutineCode when 'Resource :> IDisposable = 
         ResumableCode.Using(resource, body)

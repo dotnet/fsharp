@@ -6,173 +6,34 @@ open System.Runtime.CompilerServices
 open FSharp.Core.CompilerServices
 open FSharp.Core.CompilerServices.StateMachineHelpers
 
-[<Struct; NoEquality; NoComparison>]
-type OptionStateMachine<'T> =
-    [<DefaultValue(false)>]
-    val mutable Result : 'T voption
-
-    member inline sm.ToOption() = match sm.Result with ValueNone -> None | ValueSome x -> Some x
-
-    member inline sm.ToValueOption() = sm.Result 
-
-    static member inline Run(sm: byref<'K> when 'K :> IAsyncStateMachine) = sm.MoveNext()
-
-    interface IAsyncStateMachine with 
-        member sm.MoveNext() = failwith "no dynamic impl"
-        member sm.SetStateMachine(state: IAsyncStateMachine) = failwith "no dynamic impl"
-
-[<ResumableCode>]
-type OptionCode<'T> = delegate of byref<OptionStateMachine<'T>> -> unit
-
-type OptionBuilderBase() =
-
-    member inline _.Delay(f : unit -> OptionCode<'T>) : OptionCode<'T> =
-        OptionCode (fun sm -> (f()).Invoke &sm)
-
-    member inline _.Combine(task1: OptionCode<unit>, task2: OptionCode<'T>) : OptionCode<'T> =
-        OptionCode<_>(fun sm -> 
-            let mutable sm2 = OptionStateMachine<unit>()
-            task1.Invoke &sm2
-            task2.Invoke &sm)
-
-    member inline _.Bind(res1: 'T1 option, task2: ('T1 -> OptionCode<'T>)) : OptionCode<'T> =
-        OptionCode<_>(fun sm -> 
-            match res1 with 
-            | None -> ()
-            | Some v -> (task2 v).Invoke &sm)
-
-    member inline _.Bind(res1: 'T1 voption, task2: ('T1 -> OptionCode<'T>)) : OptionCode<'T> =
-        OptionCode<_>(fun sm -> 
-            match res1 with 
-            | ValueNone -> ()
-            | ValueSome v -> (task2 v).Invoke &sm)
-            
-    member inline _.While(condition : unit -> bool, body : OptionCode<unit>) : OptionCode<unit> =
-        OptionCode<_>(fun sm -> 
-            while condition() do
-                body.Invoke &sm)
-
-    member inline _.TryWith(body : OptionCode<'T>, catch : exn -> OptionCode<'T>) : OptionCode<'T> =
-        OptionCode<_>(fun sm -> 
-            try
-                body.Invoke &sm
-            with exn -> 
-                (catch exn).Invoke &sm)
-
-    member inline _.TryFinally(body: OptionCode<'T>, compensation : unit -> unit) : OptionCode<'T> =
-        OptionCode<_>(fun sm -> 
-            try
-                body.Invoke &sm
-            with _ ->
-                compensation()
-                reraise()
-
-            compensation())
-
-    member inline this.Using(disp : #IDisposable, body : #IDisposable -> OptionCode<'T>) : OptionCode<'T> = 
-        // A using statement is just a try/finally with the finally block disposing if non-null.
-        this.TryFinally(
-            (fun sm -> (body disp).Invoke &sm),
-            (fun () -> if not (isNull (box disp)) then disp.Dispose()))
-
-    member inline this.For(sequence : seq<'TElement>, body : 'TElement -> OptionCode<unit>) : OptionCode<unit> =
-        this.Using (sequence.GetEnumerator(), 
-            (fun e -> this.While((fun () -> e.MoveNext()), (fun sm -> (body e.Current).Invoke &sm))))
-
-    member inline _.Return (value: 'T) : OptionCode<'T> =
-        OptionCode<_>(fun sm ->
-            sm.Result <- ValueSome value)
-
-    member inline this.ReturnFrom (source: option<'T>) : OptionCode<'T> =
-        OptionCode<_>(fun sm ->
-            sm.Result <- match source with Some x -> ValueOption.Some x | None -> ValueOption.None)
-
-type OptionBuilder() =
-    inherit OptionBuilderBase()
-    
-
-    member inline _.Run(code : OptionCode<'T>) : 'T option = 
-        if __useResumableCode then
-            __structStateMachine<OptionStateMachine<'T>, 'T option>
-                // IAsyncStateMachine.MoveNext
-                (MoveNextMethodImpl<_>(fun sm -> 
-                       code.Invoke(&sm)))
-
-                // IAsyncStateMachine.SetStateMachine
-                (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-
-                // Other interfaces
-                [| |]
-
-                // Start code
-                (AfterCode<_,_>(fun sm -> 
-                    OptionStateMachine<_>.Run(&sm)
-                    sm.ToOption()))
-        else
-            let mutable sm = OptionStateMachine<'T>()
-            code.Invoke(&sm)
-            sm.ToOption()
-
-type ValueOptionBuilder() =
-    inherit OptionBuilderBase()
-    
-
-    member inline _.Run(code : OptionCode<'T>) : 'T voption = 
-        if __useResumableCode then
-            __structStateMachine<OptionStateMachine<'T>, 'T voption>
-                // IAsyncStateMachine.MoveNext
-                (MoveNextMethodImpl<OptionStateMachine<'T>>(fun sm -> 
-                       code.Invoke(&sm)
-                       ))
-
-                // IAsyncStateMachine.SetStateMachine
-                (SetStateMachineMethodImpl<_>(fun sm state -> 
-                    ()))
-
-                // Other Methods
-                [| |]
-
-                // Start
-                (AfterCode<_,_>(fun sm -> 
-                    OptionStateMachine<_>.Run(&sm)
-                    sm.ToValueOption()))
-        else
-            let mutable sm = OptionStateMachine<'T>()
-            code.Invoke(&sm)
-            sm.ToValueOption()
-
-let option = OptionBuilder()
-let voption = ValueOptionBuilder()
-
-#nowarn "57"
-type OptionCodeI<'T> = unit -> 'T voption
+type OptionCode<'T> = unit -> 'T voption
 
 type OptionBuilderUsingInlineIfLambdaBase() =
 
-    member inline _.Delay([<InlineIfLambda>] f : unit -> OptionCodeI<'T>) : OptionCodeI<'T> =
+    member inline _.Delay([<InlineIfLambda>] f : unit -> OptionCode<'T>) : OptionCode<'T> =
         (fun () -> (f())())
         // Note, not "f()()" - the F# compiler optimzier likes arguments to match lamdas in order to preserve
         // argument evaluation order, so for "(f())()" the optimizer reduces one lambda then another, while "f()()" doesn't
 
-    member inline _.Combine([<InlineIfLambda>] task1: OptionCodeI<unit>, [<InlineIfLambda>] task2: OptionCodeI<'T>) : OptionCodeI<'T> =
+    member inline _.Combine([<InlineIfLambda>] task1: OptionCode<unit>, [<InlineIfLambda>] task2: OptionCode<'T>) : OptionCode<'T> =
         (fun () -> 
             match task1() with
             | ValueNone -> ValueNone
             | ValueSome() -> task2())
 
-    member inline _.Bind(res1: 'T1 option, [<InlineIfLambda>] task2: ('T1 -> OptionCodeI<'T>)) : OptionCodeI<'T> =
+    member inline _.Bind(res1: 'T1 option, [<InlineIfLambda>] task2: ('T1 -> OptionCode<'T>)) : OptionCode<'T> =
         (fun () -> 
             match res1 with 
             | None -> ValueNone
             | Some v -> (task2 v)())
 
-    member inline _.Bind(res1: 'T1 voption, [<InlineIfLambda>] task2: ('T1 -> OptionCodeI<'T>)) : OptionCodeI<'T> =
+    member inline _.Bind(res1: 'T1 voption, [<InlineIfLambda>] task2: ('T1 -> OptionCode<'T>)) : OptionCode<'T> =
         (fun () -> 
             match res1 with 
             | ValueNone -> ValueNone
             | ValueSome v -> (task2 v)())
             
-    member inline _.While([<InlineIfLambda>] condition : unit -> bool, [<InlineIfLambda>] body : OptionCodeI<unit>) : OptionCodeI<unit> =
+    member inline _.While([<InlineIfLambda>] condition : unit -> bool, [<InlineIfLambda>] body : OptionCode<unit>) : OptionCode<unit> =
         (fun () -> 
             let mutable proceed = true
             while proceed && condition() do
@@ -181,14 +42,14 @@ type OptionBuilderUsingInlineIfLambdaBase() =
                 | ValueSome () -> ()
             ValueSome(()))
 
-    member inline _.TryWith([<InlineIfLambda>] body : OptionCodeI<'T>, [<InlineIfLambda>] catch : exn -> OptionCodeI<'T>) : OptionCodeI<'T> =
+    member inline _.TryWith([<InlineIfLambda>] body : OptionCode<'T>, [<InlineIfLambda>] catch : exn -> OptionCode<'T>) : OptionCode<'T> =
         (fun () -> 
             try
                 body()
             with exn -> 
                 (catch exn)())
 
-    member inline _.TryFinally([<InlineIfLambda>] body: OptionCodeI<'T>, [<InlineIfLambda>] compensation : unit -> unit) : OptionCodeI<'T> =
+    member inline _.TryFinally([<InlineIfLambda>] body: OptionCode<'T>, [<InlineIfLambda>] compensation : unit -> unit) : OptionCode<'T> =
         (fun () -> 
             let res =
                 try
@@ -200,31 +61,31 @@ type OptionBuilderUsingInlineIfLambdaBase() =
             compensation()
             res)
 
-    member inline this.Using(disp: #IDisposable, [<InlineIfLambda>] body: #IDisposable -> OptionCodeI<'T>) : OptionCodeI<'T> = 
+    member inline this.Using(disp: #IDisposable, [<InlineIfLambda>] body: #IDisposable -> OptionCode<'T>) : OptionCode<'T> = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinally(
             (fun () -> (body disp)()),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
-    member inline this.For(sequence : seq<'TElement>, [<InlineIfLambda>] body : 'TElement -> OptionCodeI<unit>) : OptionCodeI<unit> =
+    member inline this.For(sequence : seq<'TElement>, [<InlineIfLambda>] body : 'TElement -> OptionCode<unit>) : OptionCode<unit> =
         this.Using (sequence.GetEnumerator(), 
             (fun e -> this.While((fun () -> e.MoveNext()), (fun () -> (body e.Current)()))))
 
-    member inline _.Return (value: 'T) : OptionCodeI<'T> =
+    member inline _.Return (value: 'T) : OptionCode<'T> =
         (fun () ->
             ValueSome value)
 
-    member inline this.ReturnFrom (source: option<'T>) : OptionCodeI<'T> =
+    member inline this.ReturnFrom (source: option<'T>) : OptionCode<'T> =
         (fun () ->
             match source with Some x -> ValueOption.Some x | None -> ValueOption.None)
 
-    member inline this.ReturnFrom (source: voption<'T>) : OptionCodeI<'T> =
+    member inline this.ReturnFrom (source: voption<'T>) : OptionCode<'T> =
         (fun () -> source)
 
 type OptionBuilderUsingInlineIfLambda() =
     inherit OptionBuilderUsingInlineIfLambdaBase()
    
-    member inline _.Run([<InlineIfLambda>] code : OptionCodeI<'T>) : 'T option = 
+    member inline _.Run([<InlineIfLambda>] code : OptionCode<'T>) : 'T option = 
          match code () with 
          | ValueNone -> None
          | ValueSome v -> Some v
@@ -232,7 +93,7 @@ type OptionBuilderUsingInlineIfLambda() =
 type ValueOptionBuilderUsingInlineIfLambda() =
     inherit OptionBuilderUsingInlineIfLambdaBase()
 
-    member inline _.Run([<InlineIfLambda>] code : OptionCodeI<'T>) : 'T voption = 
+    member inline _.Run([<InlineIfLambda>] code : OptionCode<'T>) : 'T voption = 
         code()
 
 let optioni = OptionBuilderUsingInlineIfLambda()
@@ -293,56 +154,6 @@ let voptionSlow = SlowValueOptionBuilder()
 
 module Examples =
 
-    let t1 () = 
-        option {
-           printfn "in t1"
-           return "a"
-        }
-
-    let t2 () = 
-        option {
-           printfn "in t2"
-           let! x = t1 ()
-           return "f"
-        }
-    printfn "t1() = %A" (t1())
-    printfn "t2() = %A" (t2())
-    let multiStepStateMachineBuilder () = 
-        let mutable res = 0
-        for i in 1 .. 1000000 do
-            let v = 
-                option {
-                   try 
-                      let! x1 = (if i % 5 <> 2 then Some i else None)
-                      let! x2 = (if i % 3 <> 1 then Some i else None)
-                      let! x3 = (if i % 3 <> 1 then Some i else None)
-                      let! x4 = (if i % 3 <> 1 then Some i else None)
-                      res <- res + 1 
-                      return x1 + x2 + x3 + x4
-                   with e -> 
-                      return failwith "unexpected"
-                } 
-            v |> ignore
-        res
-
-
-    let multiStepStateMachineBuilderV () = 
-        let mutable res = 0
-        for i in 1 .. 1000000 do
-            let v = 
-                voption {
-                   try 
-                      let! x1 = (if i % 5 <> 2 then ValueSome i else ValueNone)
-                      let! x2 = (if i % 3 <> 1 then ValueSome i else ValueNone)
-                      let! x3 = (if i % 3 <> 1 then ValueSome i else ValueNone)
-                      let! x4 = (if i % 3 <> 1 then ValueSome i else ValueNone)
-                      res <- res + 1 
-                      return x1 + x2 + x3 + x4
-                   with e -> 
-                      return failwith "unexpected"
-                } 
-            v |> ignore
-        res
 
     let multiStepOldBuilder () = 
         let mutable res = 0

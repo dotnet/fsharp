@@ -1916,10 +1916,6 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | Expr.Op (op, tyargs, args, m) -> 
         OptimizeExprOp cenv env (op, tyargs, args, m)
 
-    | Expr.App ((Expr.Val (invokeRef, _, _)) as iref, fty, tyargs, (f :: args), m) 
-            when invokeRef.LogicalName = "Invoke" && isFSharpDelegateTy cenv.g (tyOfExpr cenv.g f) -> 
-        OptimizeFSharpDelegateInvoke cenv env (iref, f, fty, tyargs, args, m) 
-
     | Expr.App (f, fty, tyargs, argsl, m) -> 
         match expr with
         | DelegateInvokeExpr cenv.g (iref, fty, tyargs, delegatef, args, m) ->

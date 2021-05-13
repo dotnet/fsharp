@@ -9372,7 +9372,6 @@ let mkUnitDelayLambda (g: TcGlobals) m e =
 
 let (|ValApp|_|) g vref expr =
     match expr with
-    // use 'seq { ... }' as an indicator
     | Expr.App (Expr.Val (vref2, _, _), _f0ty, tyargs, args, m) when valRefEq g vref vref2 ->  Some (tyargs, args, m)
     | _ -> None
 
@@ -9558,20 +9557,21 @@ let (|PossiblyCompiledTypeOfExpr|_|) g expr =
 
 let (|StructStateMachineExpr|_|) g expr =
     match expr with
-    | ValApp g g.cgh__structStateMachine_vref ([templateStructTy; _resultTy], [moveNextExpr; setStateMachineExpr; Expr.Op (TOp.Array, _, methodExprs, _); afterMethodExpr], _m) ->
-        match moveNextExpr, afterMethodExpr with 
-        | NewDelegateExpr g (_, [[moveNextMethodThisVar]], moveNextMethodBodyExpr, methodBodyRange, _), NewDelegateExpr g (_, [[afterMethodThisVar]], afterMethodBodyExpr, _, _) ->
-            let methods = 
-                methodExprs |> List.map (fun methodExpr -> 
-                    match methodExpr with
-                    | RefTuple [ PossiblyCompiledTypeOfExpr g ity; StringExpr name; Expr.Op (TOp.Coerce, _, [NewDelegateExpr g (_, methodVars, methodBody, m, _)], _)]  -> 
-                        Some (ity, name, List.concat methodVars, methodBody, m)
-                    | _ -> None)
-            if methods |> List.forall (fun x -> x.IsSome) then
-                let methods = methods |> List.map (fun x -> x.Value) 
-                Some (templateStructTy, moveNextMethodThisVar, moveNextMethodBodyExpr, methodBodyRange, setStateMachineExpr, methods, afterMethodThisVar, afterMethodBodyExpr)
-            else
-                None
+    | ValApp g g.cgh__stateMachine_vref ([dataTy; _resultTy], [moveNext; setStateMachine; getResumptionPoint; getData; setData; afterCode], _m) ->
+        match moveNext, setStateMachine, getResumptionPoint, getData, setData, afterCode with 
+        | NewDelegateExpr g (_, [[moveNextThisVar]], moveNextBody, _, _),
+          NewDelegateExpr g (_, [[setStateMachineThisVar;setStateMachineStateVar]], setStateMachineBody, _, _),
+          NewDelegateExpr g (_, [[getResumptionPointThisVar]], getResumptionPointBody, _, _),
+          NewDelegateExpr g (_, [[getDataThisVar]], getDataBody, _, _),
+          NewDelegateExpr g (_, [[setDataThisVar;setDataValueVar]], setDataBody, _, _),
+          NewDelegateExpr g (_, [[afterCodeThisVar]], afterCodeBody, _, _) ->
+              Some (dataTy, 
+                    (moveNextThisVar, moveNextBody), 
+                    (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody), 
+                    (getResumptionPointThisVar, getResumptionPointBody),
+                    (getDataThisVar, getDataBody),
+                    (setDataThisVar, setDataValueVar, setDataBody),
+                    (afterCodeThisVar, afterCodeBody))
         | _ -> None
     | _ -> None
 
@@ -9594,29 +9594,11 @@ let (|SequentialResumableCode|_|) (g: TcGlobals) expr =
 
     | _ -> None
 
-// Detect an object expression that is a RefStateMachine
-let (|RefStateMachineExpr|_|) (g: TcGlobals) expr =
-    match expr with
-    | Expr.Obj (objExprStamp, ty, basev, basecall, [ (TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, codeExpr, m)) ], iimpls, stateVars, objExprRange) ->
-        if HasFSharpAttribute g g.attrib_ResumableCodeAttribute attribs then
-            let remake2 (moveNextExprWithJumpTable, furtherStateVars) = 
-                // Remove the ResumableCode attribute so the rebuilt expression isn't recognised as
-                // a RefStateMachine again.
-                let attribs2 = attribs |> List.filter (IsMatchingFSharpAttribute g g.attrib_ResumableCodeAttribute >> not)
-                let overrideR = TObjExprMethod(slotsig, attribs2, methTyparsOfOverridingMethod, methodParams, moveNextExprWithJumpTable, m) 
-                let objExprR = Expr.Obj (objExprStamp, ty, basev, basecall, [overrideR], iimpls, stateVars @ furtherStateVars, objExprRange)
-                objExprR
-            let info = (codeExpr, remake2, m)
-            Some info
-        else
-            None
-    //| ValApp g g.cgh__resumableStateMachine_vref (_, [e], _m) -> Some e
-    | _ -> None
-
 let mkLabelled m l e = mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e
 
-let rec isResumableCodeTy g ty = 
-    isDelegateTy g ty && HasFSharpAttribute g g.attrib_ResumableCodeAttribute (tcrefOfAppTy g ty).Attribs
-    || 
-    isFunTy g ty && isResumableCodeTy g (rangeOfFunTy g ty)
+let isResumableCodeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g tcref g.ResumableCode_tcr | _ -> false)
+
+let rec isReturnsResumableCodeTy g ty = 
+    if isFunTy g ty then isReturnsResumableCodeTy g (rangeOfFunTy g ty)
+    else isResumableCodeTy g ty
 

@@ -43,12 +43,7 @@ and [<Experimental("Experimental library feature, requires '--langversion:previe
 
 and [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<CompilerMessage("This construct  is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-    TaskResumptionFuncExecutor<'TOverall> = ResumptionFuncExecutor<TaskStateMachineData<'TOverall>>
-
-and [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    [<CompilerMessage("This construct  is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
     TaskCode<'TOverall, 'T> = ResumableCode<TaskStateMachineData<'TOverall>, 'T>
-
 
 [<Class>]
 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]

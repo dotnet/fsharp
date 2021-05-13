@@ -16,20 +16,22 @@
   <ItemGroup>
 	  <!--
     <Compile Include="empty.fs"  />
--->
 	<Compile Include="sync.fs" />
 	<Compile Include="list.fs" />
 	<Compile Include="array.fs" />
 	<Compile Include="option.fs" />
-	  <!--
-    <Compile Include="seq2.fs" />
--->
 	<Compile Include="coroutine.fs" />
-	<Compile Include="tasksUsingRawResumableCode.fs" />
-    <Compile Include="taskSeqUsingRawResumableCode.fs" />
-	<Compile Include="taskSeqUsingResumableCodeCombinators.fs" />
+	-->
+	  <Compile Include="taskSeq.fs" />
+	  <!--
 	<Compile Include="TaskBuilder.fs" />
 	<Compile Include="TaskPerf.fs" />
+-->
+	  <!--
+    <Compile Include="seq2.fs" />
+    <Compile Include="tasksUsingRawResumableCode.fs" />
+    <Compile Include="taskSeqUsingRawResumableCode.fs" />
+-->	
 	<ProjectReference Include="..\CS\TaskPerfCSharp.csproj" />
     <ProjectReference Include="..\..\..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />

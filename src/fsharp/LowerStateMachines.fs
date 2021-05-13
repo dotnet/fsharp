@@ -51,7 +51,7 @@ let (|ResumableCodeInvoke|_|) g expr =
     match expr with
     // defn.Invoke x --> let arg = x in [defn][arg/x]
     | Expr.App ((Expr.Val (invokeRef, _, _) as iref), a, b, (f :: args2), m) 
-            when invokeRef.LogicalName = "Invoke" && isResumableCodeTy g (tyOfExpr g f) -> 
+            when invokeRef.LogicalName = "Invoke" && isReturnsResumableCodeTy g (tyOfExpr g f) -> 
         Some (iref, a, b, f, args2, m)
     | _ -> None
 
@@ -133,7 +133,7 @@ let isExpandVar g (v: Val) =
      nm.StartsWith "builder@" 
      || (v.BaseOrThisInfo = MemberThisVal)
      // Anything of [<ResumableCode>] type or any function returning [<ResumableCode>] type
-     || isResumableCodeTy g v.Type) &&
+     || isReturnsResumableCodeTy g v.Type) &&
     not v.IsCompiledAsTopLevel
 
 type env = 
@@ -157,24 +157,21 @@ let rec IsPossibleStateMachineExpr g overallExpr =
     | Expr.Let (macroBind, bodyExpr, _, _) when isExpandVar g macroBind.Var -> IsPossibleStateMachineExpr g bodyExpr
     // Recognise 'if useResumableCode ...'
     | IfUseResumableStateMachinesExpr g _ -> true
-    | Expr.App (_, _, _, (RefStateMachineExpr g _ :: _), _) -> true
-    | RefStateMachineExpr g _ -> true
     | StructStateMachineExpr g _ -> true
     | _ -> false
 
-[<RequireQualifiedAccess>]
 type LoweredStateMachine =
-    | LoweredExpr of Expr
-    | StructStateMachine of 
+    LoweredStateMachine of 
          templateStructTy: TType *
+         dataTy: TType *
          stateVars: ValRef list *
          thisVars: ValRef list *
-         moveNextMethodThisVar: Val *
-         moveNextExprWithJumpTable: Expr * 
-         setStateMachineExpr: Expr *
-         otherMethods: (TType * string * Val list * Expr * range) list *
-         afterMethodThisVar: Val * 
-         afterMethodExpr: Expr
+         moveNext: (Val * Expr) * 
+         setStateMachine: (Val * Val * Expr) *
+         getResumptionPoint: (Val * Expr) *
+         getData: (Val * Expr) *
+         setData: (Val * Val * Expr) *
+         afterCode: (Val * Expr)
 
 let ConvertStateMachineExprToObject g overallExpr =
 
@@ -373,56 +370,46 @@ let ConvertStateMachineExprToObject g overallExpr =
         | Some res -> RepeatBindAndApplyOuterDefinitions env2 res
         | None -> env2, expr2
 
-    // Detect a reference-type state machine (or an application of a reference type state machine to a method)
-    let (|RefStateMachineWithCall|_|) (env: env) expr = 
-        match expr with
-        | Expr.App (f0, f0ty, tyargsl, (RefStateMachineExpr g info :: args), mApp) ->
-            Some (env, info, (fun objExprR -> Expr.App (f0, f0ty, tyargsl, (objExprR :: args), mApp)))
-        | RefStateMachineExpr g info -> 
-            if sm_verbose then printfn "Found ref state machine object expression..."
-            Some (env, info, id)
-        | _ -> None
-
     // Detect a state machine with a single method override
     let (|ExpandedStateMachineInContext|_|) inputExpr = 
         // All expanded resumable code state machines e.g. 'task { .. }' begin with a bind of @builder or 'defn' (as opposed to the library definitions of 'Run' etc. which do not)
         if IsPossibleStateMachineExpr g inputExpr then 
             let env, expr = BindResumableCodeDefinitions env.Empty inputExpr 
             match expr with
-            | RefStateMachineWithCall env (env, (moveNextExpr, remake2, m), remake) ->
-                if sm_verbose then printfn "Found ref state machine jump table code lambda..."
-                let remake3 (moveNextExprR, furtherStateVars, _thisVars) = 
-                    let objExprR = remake2 (moveNextExprR, furtherStateVars)
-                    let overallExprR = remake objExprR
-                    if sm_verbose then 
-                        printfn "----------- AFTER REWRITE ----------------------"
-                        printfn "%s" (DebugPrint.showExpr g overallExprR)
-
-                    LoweredStateMachine.LoweredExpr overallExprR
-
-                Some (env, remake3, moveNextExpr, m)
-
-            | StructStateMachineExpr g (templateStructTy, moveNextMethodThisVar, moveNextExpr, moveNextBodyRange, setStateMachineExpr, otherMethods, afterMethodThisVar, afterMethodBodyExpr) ->
+            | StructStateMachineExpr g 
+                   (dataTy, 
+                    (moveNextThisVar, moveNextBody), 
+                    (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody), 
+                    (getResumptionPointThisVar, getResumptionPointBody),
+                    (getDataThisVar, getDataBody),
+                    (setDataThisVar, setDataValueVar, setDataBody),
+                    (afterCodeThisVar, afterCodeBody)) ->
+                let templateStructTy = g.mk_ResumableStateMachine_ty dataTy
                 let env = { env with TemplateStructTy = Some templateStructTy }
                 if sm_verbose then printfn "Found struct machine..."
-                let otherMethodsR =
-                    [ for (imethTy, imethName, imethVals, imethBody, imethRange) in otherMethods ->
-                        let imethBodyR = ConvertStateMachineLeafExpression env imethBody
-                        (imethTy, imethName, imethVals, imethBodyR, imethRange) ]
                 if sm_verbose then printfn "Found struct machine jump table call..."
-                let setStateMachineExprR = ConvertStateMachineLeafExpression env setStateMachineExpr
-                let afterMethodBodyExprR = ConvertStateMachineLeafExpression env afterMethodBodyExpr
-                //let afterMethodBodyExprR = ConvertStateMachineLeafExpression { env with MachineAddrExpr = Some machineAddrExpr } startExpr
+                let setStateMachineBodyR = ConvertStateMachineLeafExpression env setStateMachineBody
+                let getResumptionPointBodyR = ConvertStateMachineLeafExpression env getResumptionPointBody
+                let getDataBodyR = ConvertStateMachineLeafExpression env getDataBody
+                let setDataBodyR = ConvertStateMachineLeafExpression env setDataBody
+                let afterCodeBodyR = ConvertStateMachineLeafExpression env afterCodeBody
                 let remake2 (moveNextExprR, stateVars, thisVars) = 
                     if sm_verbose then 
                         printfn "----------- AFTER REWRITE moveNextExprWithJumpTable ----------------------"
                         printfn "%s" (DebugPrint.showExpr g moveNextExprR)
-                        printfn "----------- AFTER REWRITE setStateMachineExprR ----------------------"
-                        printfn "%s" (DebugPrint.showExpr g setStateMachineExprR)
-                        printfn "----------- AFTER REWRITE afterMethodBodyExprR ----------------------"
-                        printfn "%s" (DebugPrint.showExpr g afterMethodBodyExprR)
-                    LoweredStateMachine.StructStateMachine (templateStructTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprR, setStateMachineExprR, otherMethodsR, afterMethodThisVar, afterMethodBodyExprR)
-                Some (env, remake2, moveNextExpr, moveNextBodyRange)
+                        printfn "----------- AFTER REWRITE setStateMachineBodyR ----------------------"
+                        printfn "%s" (DebugPrint.showExpr g setStateMachineBodyR)
+                        printfn "----------- AFTER REWRITE afterCodeBodyR ----------------------"
+                        printfn "%s" (DebugPrint.showExpr g afterCodeBodyR)
+                    LoweredStateMachine 
+                        (templateStructTy, dataTy, stateVars, thisVars, 
+                            (moveNextThisVar, moveNextExprR), 
+                            (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBodyR), 
+                            (getResumptionPointThisVar, getResumptionPointBodyR),
+                            (getDataThisVar, getDataBodyR),
+                            (setDataThisVar, setDataValueVar, setDataBodyR),
+                            (afterCodeThisVar, afterCodeBodyR))
+                Some (env, remake2, moveNextBody)
             | _ -> 
                 None
         else
@@ -817,7 +804,8 @@ let ConvertStateMachineExprToObject g overallExpr =
 
     // Detect a state machine and convert it
     match overallExpr with
-    | ExpandedStateMachineInContext (env, remake, moveNextExpr, m) ->
+    | ExpandedStateMachineInContext (env, remake, moveNextExpr) ->
+        let m = moveNextExpr.Range
         match moveNextExpr with 
         | OptionalResumeAtExpr g (pcExprOpt, codeExpr) ->
         let env, codeExprR = RepeatBindAndApplyOuterDefinitions env codeExpr

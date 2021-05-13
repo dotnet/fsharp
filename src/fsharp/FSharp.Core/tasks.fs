@@ -39,7 +39,7 @@ type TaskStateMachineData<'TOverall> =
 
 and TaskStateMachine<'TOverall> = ResumableStateMachine<TaskStateMachineData<'TOverall>>
 and TaskResumptionFunc<'TOverall> = ResumptionFunc<TaskStateMachineData<'TOverall>>
-and TaskResumptionFuncExecutor<'TOverall> = ResumptionFuncExecutor<TaskStateMachineData<'TOverall>>
+and TaskResumptionDynamicInfo<'TOverall> = ResumptionDynamicInfo<TaskStateMachineData<'TOverall>>
 and TaskCode<'TOverall, 'T> = ResumableCode<TaskStateMachineData<'TOverall>, 'T>
 
 [<AutoOpen>]
@@ -60,14 +60,6 @@ module TaskMethodRequire =
                              : TaskCode<'T, 'T> = 
         ((^Priority or ^TaskLike): (static member CanReturnFrom : ^Priority * ^TaskLike -> TaskCode<'T, 'T>) (priority, task))
 
-    let inline SetResumptionFunc (sm: byref<ResumableStateMachine<'Data>>) f =
-        let (_, e, ssm) = sm.ResumptionFuncData
-        sm.ResumptionFuncData <- (f, e, ssm)
-
-    let inline GetResumptionFunc (sm: byref<ResumableStateMachine<'Data>>) =
-        let (f, _, _) = sm.ResumptionFuncData
-        f
-
 type TaskBuilder() =
 
     member inline _.Delay(f : unit -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
@@ -82,38 +74,36 @@ type TaskBuilder() =
     static member RunDynamic(code: TaskCode<'T, 'T>) : Task<'T> = 
         let mutable sm = TaskStateMachine<'T>()
         let initialResumptionFunc = TaskResumptionFunc<'T>(fun sm -> code.Invoke(&sm))
-        let resumptionFuncExecutor = 
-            TaskResumptionFuncExecutor<'T>(fun sm f -> 
-                //let addr =  sm.Data.Id
-                //let addr = NativeInterop.NativePtr.toNativeInt &&sm.ResumptionPoint
-                //printfn "[%d][%d] in executor, salt = %d" System.Threading.Thread.CurrentThread.ManagedThreadId addr sm.Data.Salt
-                // The alternative if resumable code could not be used
-                try
-                    sm.Data.Awaiter <- null
-                    //printfn "[%d][%d] in executor: Invoke" System.Threading.Thread.CurrentThread.ManagedThreadId addr
-                    let step = f.Invoke(&sm) 
-                    if step then 
-                        //printfn "[%d][%d] in executor: SetResult %A" System.Threading.Thread.CurrentThread.ManagedThreadId addr sm.Data.Result
-                        sm.Data.MethodBuilder.SetResult(sm.Data.Result)
-                    else
-                        //printfn "[%d][%d] in executor: Await" System.Threading.Thread.CurrentThread.ManagedThreadId addr
-                        // In the dynamic implementation the AwaitUnsafeOnCompleted must be called after the
-                        // return to the trampoline. This is because the ResumbleCode.*Dynamic adjust
-                        // the continuation by mutation as we come back down the stack.  The Awaiter
-                        // is always set before each return of 'false'.
-                        assert not (isNull sm.Data.Awaiter)
-                        sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&sm.Data.Awaiter, &sm)
+        let resumptionInfo =
+            { new TaskResumptionDynamicInfo<'T>(initialResumptionFunc) with 
+                member info.MoveNext(sm) = 
+                        //let addr =  sm.Data.Id
+                    //let addr = NativeInterop.NativePtr.toNativeInt &&sm.ResumptionPoint
+                    //printfn "[%d][%d] in executor, salt = %d" System.Threading.Thread.CurrentThread.ManagedThreadId addr sm.Data.Salt
+                    // The alternative if resumable code could not be used
+                    try
+                        sm.Data.Awaiter <- null
+                        //printfn "[%d][%d] in executor: Invoke" System.Threading.Thread.CurrentThread.ManagedThreadId addr
+                        let step = info.ResumptionFunc.Invoke(&sm) 
+                        if step then 
+                            //printfn "[%d][%d] in executor: SetResult %A" System.Threading.Thread.CurrentThread.ManagedThreadId addr sm.Data.Result
+                            sm.Data.MethodBuilder.SetResult(sm.Data.Result)
+                        else
+                            //printfn "[%d][%d] in executor: Await" System.Threading.Thread.CurrentThread.ManagedThreadId addr
+                            // In the dynamic implementation the AwaitUnsafeOnCompleted must be called after the
+                            // return to the trampoline. This is because the ResumbleCode.*Dynamic adjust
+                            // the continuation by mutation as we come back down the stack.  The Awaiter
+                            // is always set before each return of 'false'.
+                            assert not (isNull sm.Data.Awaiter)
+                            sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&sm.Data.Awaiter, &sm)
 
-                with exn ->
-                    //printfn "[%d][%d] in executor: SetException" System.Threading.Thread.CurrentThread.ManagedThreadId  addr
-                    sm.Data.MethodBuilder.SetException exn)
-        let setStateMachine =
-            SetStateMachineMethodImpl<TaskStateMachine<'T>>(fun sm state -> 
-                //let addr =  NativeInterop.NativePtr.toNativeInt &&sm.ResumptionPoint
-                //let addr =  sm.Data.Id
-                //printfn "[%d][%d] SetStateMachine" System.Threading.Thread.CurrentThread.ManagedThreadId  addr
-                sm.Data.MethodBuilder.SetStateMachine(state))
-        sm.ResumptionFuncData <- (initialResumptionFunc, resumptionFuncExecutor, setStateMachine)
+                    with exn ->
+                        //printfn "[%d][%d] in executor: SetException" System.Threading.Thread.CurrentThread.ManagedThreadId  addr
+                        sm.Data.MethodBuilder.SetException exn
+                member info.SetStateMachine(sm, state) =
+                    sm.Data.MethodBuilder.SetStateMachine(state)
+             }
+        sm.ResumptionDynamicInfo <- resumptionInfo
         sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
         sm.Data.MethodBuilder.Start(&sm)
         sm.Data.MethodBuilder.Task
@@ -122,41 +112,25 @@ type TaskBuilder() =
          if __useResumableCode then 
 
             // This is the static implementation.  A new struct type is created.
-            __structStateMachine<TaskStateMachine<'T>, Task<'T>>
+            __stateMachine<TaskStateMachineData<'T>, Task<'T>>
                 // IAsyncStateMachine.MoveNext
                 (MoveNextMethodImpl<_>(fun sm -> 
                     if __useResumableCode then 
                         //-- RESUMABLE CODE START
                         __resumeAt sm.ResumptionPoint 
-                        //if verbose then printfn $"[{sm.Id}] Run: resumable code, sm.ResumptionPoint = {sm.ResumptionPoint}"
                         try
                             let __stack_code_fin = code.Invoke(&sm)
                             if __stack_code_fin then
-                                //if verbose then printfn $"[{sm.Id}] terminate"
                                 sm.Data.MethodBuilder.SetResult(sm.Data.Result)
                         with exn ->
                             sm.Data.MethodBuilder.SetException exn
-                        //if verbose then printfn $"[{sm.Id}] done MoveNext, sm.ResumptionPoint = {sm.ResumptionPoint}"
-                        //-- RESUMABLE CODE END
                     else
                         failwith "unreachable"))
-
-                // IAsyncStateMachine.SetStateMachine
-                (SetStateMachineMethodImpl<_>(fun sm state -> 
-                    sm.Data.MethodBuilder.SetStateMachine(state)))
-
-                // Other interfaces (IResumableStateMachine)
-                [| 
-                   (typeof<IResumableStateMachine<TaskStateMachineData<'T>>>, "get_ResumptionPoint", GetResumptionPointMethodImpl<TaskStateMachine<'T>>(fun sm -> 
-                        sm.ResumptionPoint) :> _);
-                   (typeof<IResumableStateMachine<TaskStateMachineData<'T>>>, "get_Data", GetResumableStateMachineDataMethodImpl<TaskStateMachine<'T>, TaskStateMachineData<'T>>(fun sm -> 
-                        sm.Data) :> _);
-                   (typeof<IResumableStateMachine<TaskStateMachineData<'T>>>, "set_Data", SetResumableStateMachineDataMethodImpl<TaskStateMachine<'T>, TaskStateMachineData<'T>>(fun sm data -> 
-                        sm.Data <- data) :> _);
-                 |]
-
-                // Start
-                (AfterCode<TaskStateMachine<'T>,_>(fun sm -> 
+                (SetStateMachineMethodImpl<_>(fun sm state -> sm.Data.MethodBuilder.SetStateMachine(state)))
+                (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+                (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+                (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+                (AfterCode<_,_>(fun sm -> 
                     sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
                     sm.Data.MethodBuilder.Start(&sm)
                     sm.Data.MethodBuilder.Task))
@@ -190,7 +164,7 @@ type TaskBuilder() =
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline _.TryFinally (body: TaskCode<'TOverall, 'T>, [<InlineIfLambda>] compensation : unit -> unit) : TaskCode<'TOverall, 'T> =
-        ResumableCode.TryFinally(body, NonResumableCode<_,_>(fun _ -> compensation()))
+        ResumableCode.TryFinally(body, ResumableCode<_,_>(fun _ -> compensation(); true))
 
     member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (resource : 'Resource, body : 'Resource -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> = 
         ResumableCode.Using(resource, body)
@@ -211,7 +185,7 @@ type TaskBuilder() =
             cont.Invoke(&sm)
         else
             // If the task definition has not been converted to a state machine then a continuation function is used
-            SetResumptionFunc &sm cont
+            sm.ResumptionDynamicInfo.ResumptionFunc <- cont
             sm.Data.Awaiter <- awaiter
             false
 
@@ -273,7 +247,7 @@ module ContextSensitiveTasks =
                     cont.Invoke(&sm)
                 else
                     sm.Data.Awaiter <- awaiter
-                    SetResumptionFunc &sm cont
+                    sm.ResumptionDynamicInfo.ResumptionFunc <- cont
                     false
 
         static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall
@@ -323,7 +297,7 @@ module ContextSensitiveTasks =
                 cont.Invoke(&sm)
             else
                 sm.Data.Awaiter <- awaiter
-                SetResumptionFunc &sm cont
+                sm.ResumptionDynamicInfo.ResumptionFunc <- cont
                 false
 
         static member inline CanBind (priority: IPriority1, task: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
@@ -375,7 +349,7 @@ module ContextSensitiveTasks =
                 cont.Invoke(&sm)
             else
                 sm.Data.Awaiter <- awaiter
-                SetResumptionFunc &sm cont
+                sm.ResumptionDynamicInfo.ResumptionFunc <- cont
                 false
 
         static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T
@@ -424,7 +398,7 @@ module ContextSensitiveTasks =
             else
                 // If the task definition has not been converted to a state machine then a continuation function is used
                 sm.Data.Awaiter <- awaiter
-                SetResumptionFunc &sm cont
+                sm.ResumptionDynamicInfo.ResumptionFunc <- cont
                 false
 
         static member inline CanReturnFrom (priority: IPriority1, task: Task<'T>) : TaskCode<'T, 'T> =

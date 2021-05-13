@@ -29,357 +29,328 @@ let check s v1 v2 =
        stderr.WriteLine "" 
        report_failure s
 
-[<AbstractClass>]
-type SyncMachine<'T>() =
+let inline MoveNext(x: byref<'T> when 'T :> IAsyncStateMachine) = x.MoveNext()
+let inline MoveOnce(x: byref<'T> when 'T :> IAsyncStateMachine and 'T :> IResumableStateMachine<'Data>) = 
+    MoveNext(&x)
+    x.Data
 
-    [<DefaultValue(false)>]
-    val mutable PC : int
-
-    [<DefaultValue(false)>]
-    val mutable Result : 'T
-
-    abstract Step : unit -> 'T
-
-    member this.Start() = this.Step()
-
-[<Struct; NoEquality; NoComparison>]
-type SyncMachineStruct<'T> =
-
-    [<DefaultValue(false)>]
-    val mutable PC : int
-
-    [<DefaultValue(false)>]
-    val mutable Result : 'T
-
-    member inline sm.GetAddress() =
-        let addr = &&sm.PC
-        Microsoft.FSharp.NativeInterop.NativePtr.toNativeInt addr
-
-    // MoveNext without boxing
-    static member inline MoveNext(sm: byref<'Machine> when 'Machine :> IAsyncStateMachine) = sm.MoveNext()
-
-    interface IAsyncStateMachine with 
-        member sm.MoveNext() = failwith "no dynamic impl"
-        member sm.SetStateMachine(state: IAsyncStateMachine) = failwith "no dynamic impl"
-
-module ``Check resumable ref state machine can contain outer if`` =
-
-    let makeStateMachine() = 
-        if __useResumableCode then
-            (
-                { new SyncMachine<int>() with 
-                    [<ResumableCode>]
-                    member _.Step ()  = 
-                        if __useResumableCode then
-                            1 // we expect this result for successful resumable code compilation
-                        else
-                            0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-                }
-            ).Start()
-        else
-            0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-    check "ResumableObject_OuterConditional" (makeStateMachine()) 1
-
-module ``Check simple ref state machine`` =
+module ``Check simple state machine`` =
     let makeStateMachine()  = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =
-                // TEST: resumable code may contain simple expressions
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
                 if __useResumableCode then
-                    1 // we expect this result for successful resumable code compilation
+                    sm.Data <- 1 // we expect this result for successful resumable code compilation
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-        }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "ResumableObject_SimpleImmediateExpression" (makeStateMachine()) 1
+
 
 module ``Check resumable code can capture variables`` =
     let makeStateMachine x = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
                 // TEST: resumable code may contain free variables
                 if __useResumableCode then
-                    1 + x // we expect this result for successful resumable code compilation
+                    sm.Data <- 1 + x // we expect this result for successful resumable code compilation
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-        }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     let sm3 = makeStateMachine 3
     check "vwervwkhevh" (makeStateMachine 3) 4
 
-module ``Check resumable code doesn't need a Start invocation`` =
-    let makeStateMachine x = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =
-                // TEST: resumable code may contain free variables
-                if __useResumableCode then
-                    1 + x // we expect this result for successful resumable code compilation
-                else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-                }
-    let sm3 = makeStateMachine 3
-    check "vwvwekwevl" (sm3.Start()) 4
 
 module ``Check resumable code may be preceeded by value definitions`` =
     let makeStateMachine x = 
         // TEST: resumable code may be just after a non-function 'let'
         let rnd = System.Random().Next(4)
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
+                // TEST: resumable code may contain free variables
                 if __useResumableCode then
-                    x + rnd - rnd // we expect this result for successful resumable code compilation
+                    sm.Data <- x + rnd - rnd // we expect this result for successful resumable code compilation
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-                       
-        }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "cvwvweewvhjkv" (makeStateMachine 4) 4
 
 module ``Check resumable code may contain local function definitions`` =
     let makeStateMachine y = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
+                // TEST: resumable code may contain free variables
                 if __useResumableCode then
                     // TEST: resumable object may declare functions
                     let someFunction x = x + 1
                     // TEST: resumable code may invoke functions
-                    someFunction y
+                    sm.Data <- someFunction y + someFunction y
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-        }.Start()
-    check "vewwevbrklbre" (makeStateMachine 3) 4
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
+    check "vewwevbrklbre" (makeStateMachine 3) 8
 
 module ``Check resumable code may be preceeded by function definitions`` =
     let makeStateMachine y = 
         // TEST: resumable object may declare functions
         let someFunction1 x = x + 1
         let someFunction2 x = someFunction1 x + 2
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
+                // TEST: resumable code may contain free variables
                 if __useResumableCode then
-                    someFunction2 y
+                    sm.Data <- someFunction2 y
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-        }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "vwekvewkhvew" (makeStateMachine 3) 6
 
 module ``Check resumable code may contain let statements without resumption points`` =
     let makeStateMachine x = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
-                // TEST: resumable code may let statements
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
+                // TEST: resumable code may let statements and conditionals
                 if __useResumableCode then
                     let y = 1 - x
-                    if x > 3 then 1 + x else y
+                    if x > 3 then 
+                        sm.Data <- 1 + x 
+                    else 
+                        sm.Data <- y
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-        }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "vwelvewl" (makeStateMachine 3) -2
 
 module ``Check resumable code may contain sequential statements without resumption points`` =
     let makeStateMachine y = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
+                // TEST: resumable code may contain sequential statements without resumption points
                 if __useResumableCode then
-                        // TEST: resumable code may sequentially do one thing then another
-                        printfn "step1" 
-                        y + 2
+                    printfn "step1" 
+                    sm.Data <- y + 2
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-        }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "ewvkwekvwevwvek" (makeStateMachine 3) 5
 
 module ``Check resuming at start of method`` =
     let makeStateMachine y = 
-        // TEST: resumable object may declare functions
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
+                
                 if __useResumableCode then
-                    // TEST: resumable code may have __resumeAt at the start of the code
                     __resumeAt 0
-                    // Label 0 goes here
-                    // Specify a resumption point
-                    match __resumableEntry() with
-                    | Some contID ->
-                        // This is the suspension path. This gets executed as we start at label 0
-                        printfn "contID = %d" contID
-                        10+y
-                    | None -> 
-                        // This is the resumption path
-                        // Label 1 goes here
-                        20+y 
-                else 
-                    failwith "no" }.Start()
+                    let __stack_fin = ResumableCode.Yield().Invoke(&sm) // label 1
+                    if __stack_fin then 
+                        sm.Data <- 20+y 
+                    else
+                        sm.Data <- 10+y // we should end up here
+                else
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "vwrvwlkelwe" (makeStateMachine 3) 13
 
 module ``Check resuming at drop through`` =
     let makeStateMachine y = 
-        // TEST: resumable object may declare functions
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
                 if __useResumableCode then
-                    // TEST: resumable code may have __resumeAt at the start of the code
                     __resumeAt 100
-                    // Label 0 goes here
-                    // Specify a resumption point
-                    match __resumableEntry() with
-                    | Some contID ->
-                        // This is the suspension path. This gets executed as we start at label 0
-                        printfn "contID = %d" contID
-                        10+y
-                    | None -> 
-                        // This is the resumption path
-                        // Label 1 goes here
-                        20+y 
-                else 
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-        }.Start()
+                    let __stack_fin = ResumableCode.Yield().Invoke(&sm) // label 1
+                    if __stack_fin then 
+                        sm.Data <- 20+y 
+                    else
+                        sm.Data <- 10+y // we should end up here
+                else
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "cvqelekckeq" (makeStateMachine 3) 13
 
 module ``Check resuming at a resumption point`` =
     let makeStateMachine y = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
+                
                 if __useResumableCode then
-                    // TEST: resumable code may have __resumeAt at the start of the code
                     __resumeAt 1
-                    // Specify a resumption point
-                    match __resumableEntry() with
-                    | Some contID ->
-                        // This is the suspension path. It is not executed in this test because we jump straight to label 1
-                        printfn "contID = %d" contID
-                        10+y
-                    | None -> 
-                        // This is the resumption path
-                        // Label 1 goes here
-                        20+y
+                    let __stack_fin = ResumableCode.Yield().Invoke(&sm) // label 1
+                    if __stack_fin then 
+                        sm.Data <- 20+y // we should end up here
+                    else
+                        sm.Data <- 10+y 
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-        }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "vwlvkjlewjwevj" (makeStateMachine 3) 23
-
-module ``Check resumable code may contain conditionals`` =
-    let makeStateMachine x = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
-                if __useResumableCode then
-                    // TEST: resumable code may contain conditionals
-                    if x > 3 then 1 + x else 1 - x
-                else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-                      
-        }.Start()
-    check "vwwevwejvlj" (makeStateMachine 3) -2
 
 
 module ``Check resumable code may contain try-with without resumption points`` =
     let makeStateMachine inputValue = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member sm.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
+                
                 if __useResumableCode then
                     try 
-                        inputValue + 10
-                    with e -> 12
+                        sm.Data <- inputValue + 10
+                    with e -> 
+                        sm.Data <- 12
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-                       
-            }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "fvwewejkhkwe" (makeStateMachine 13) 23
 
 module ``Check resuming at resumption point in try block`` =
     let makeStateMachine inputValue = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
                 if __useResumableCode then
                     __resumeAt 1 // this goes straight to label 1
                     try 
-                        failwith "unreachable #1"
-                        match __resumableEntry() with
-                        | Some contID ->
-                            // This is the suspension path. It is not executed in this test because we jump straight to label 1
-                            check "vwehewvhk" contID 1
-                            failwith "unreachable #2"
-                        | None -> 
+                        failwith "unreachable #1" // this is skipped  because we jump straight to label 1
+                        let __stack_fin = ResumableCode.Yield().Invoke(&sm) // label 1 is resumption of this
+                        if __stack_fin  then 
                             // This is the resumption path
-                            // Label 1 goes here
-                            20+inputValue // this is the result
+                            sm.Data <- 20+inputValue // this is the result
+                        else
+                            // This is the suspension path. It is not executed in this test because we jump straight to label 1
+                            failwith "unreachable #2"
                     with e -> 
-                        12 
+                        sm.Data <- 12 
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-                           
-           }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "ResumableCode_TryWithResumption" (makeStateMachine 13) 33
 
-
 module ``Check exception thrown in try block after resumption is caught`` =
     let makeStateMachine inputValue = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
                 if __useResumableCode then
                     __resumeAt 1 // this goes straight to label 1
                     try 
                         // Specify a resumption point
-                        match __resumableEntry() with
-                        | Some contID ->
+                        let __stack_fin = ResumableCode.Yield().Invoke(&sm) // label 1 is resumption of this
+                        if not __stack_fin then 
                             // This is the suspension path. It is not executed in this test because we jump straight to label 1
-                            10+inputValue
-                        | None -> 
+                            sm.Data <- 10+inputValue
+                        else
                             // This is the resumption path
-                            // Label 1 goes here
                             failwith "raise"
-                            inputValue + 15
+                            sm.Data <- inputValue + 15
                     with e -> 
-                        inputValue + 12  // this is the result
+                        sm.Data <- inputValue + 12  // this is the result
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-        }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "ResumableCode_TryWithResumptionException" (makeStateMachine 13) 25
 
 module ``Check exception thrown in try block with no resumption points is caught`` =
     let makeStateMachine inputValue = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
                 if __useResumableCode then
-                    // TEST: resumable code may contain try-with statements with no resumption
                     try 
                         failwith "fail"
-                    with e -> inputValue + 12 
-                else 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-        }.Start()
+                    with e -> 
+                        sm.Data <- inputValue + 12 
+                else
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "ResumableCode_TryWithExceptionNoResumption" (makeStateMachine 13) 25
 
 module ``Check resumable code may contain try-finally without resumption points`` =
     let makeStateMachine inputValue = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
                 if __useResumableCode then
                     let mutable res = 0
                     try 
                         res <- inputValue + 10
                     finally 
                         res <- inputValue + 40 
-                    res 
-                else 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-        }.Start()
+                    sm.Data <- res
+                else
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "ResumableCode_TryFinallyNoResumption" (makeStateMachine 13) 53
 
@@ -388,9 +359,8 @@ module ``Check resumable code may contain try-finally without resumption points`
 // See also tasks.fs.
 module ``Check can simulate try-finally via try-with`` =
     let makeStateMachine inputValue = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
                 if __useResumableCode then
                     __resumeAt 1 // this goes straight to label 1
                     let mutable res = 0 // note, this initialization doesn't actually happen since we go straight to label 1. However this is the zero-init value.
@@ -399,13 +369,13 @@ module ``Check can simulate try-finally via try-with`` =
                         failwith "unreachable" // this code is not executed as the __resumeAt goes straight to resumption label 1
 
                         // Specify a resumption point
-                        match __resumableEntry() with
-                        | Some contID ->
+                        let __stack_fin = ResumableCode.Yield().Invoke(&sm)
+                        if not __stack_fin then
                             // This is the suspension path. It is not executed in this test because we jump straight to label 1
                             failwith "unreachable"
                             res <- 0
                             __stack_completed <- false
-                        | None -> 
+                        else
                             // This is the resumption path
                             // Label 1 goes here
                             res <- res + + inputValue + 10 // this gets executed and contributes to the result
@@ -415,335 +385,179 @@ module ``Check can simulate try-finally via try-with`` =
                         reraise()
                     if __stack_completed then 
                         res <- res + 20 
-                    res 
-                else 
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-           }.Start()
+                    sm.Data <- res
+                else
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "vwevewewlvjve" (makeStateMachine 13) 43
 
 module ``Check resumable code may contain try-finally without resumption points and raising exception`` =
     let mutable res = 0
     let makeStateMachine inputValue = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
                 if __useResumableCode then
-                   // TEST: resumable code may contain try-finally statements with no resumption
                     try 
                         failwith "fail"
                     finally 
                         res <- inputValue + 10 
+                    sm.Data <- res
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-        }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "cvwekjwejkl" (try makeStateMachine 13 with _ -> res ) 23
 
 module ``Check resumable code may contain while loop without resumption`` =
     let makeStateMachine inputValue = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
                 if __useResumableCode then
-                    // TEST: resumable code may contain while loops (here with no resumption point in the loop)
                     let mutable count = 0
                     while count < 10 do 
                         count <- count + 1
-                    inputValue + 12 + count 
+                    sm.Data <- inputValue + 12 + count 
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-            }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "fvewhjkvekwhk" (makeStateMachine 13) 35
 
 module ``Check resumable code may contain while loop with resumption`` =
     let makeStateMachine inputValue = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
                 if __useResumableCode then
                     __resumeAt 1 // this goes straight to label 1
                     let mutable count = 0 // note, this initialization doesn't actually happen since we go straight to label 1. However this is the zero-init value.
                     let mutable res = 0 // note, this initialization doesn't actually happen since we go straight to label 1. However this is the zero-init value.
                     while count < 10 do 
                         // Specify a resumption point in the loop
-                        match __resumableEntry() with
-                        | Some contID ->
+                        let __stack_fin = ResumableCode.Yield().Invoke(&sm)
+                        if not __stack_fin then
                             // This is the suspension path. It is executed in this test for subsequent iterations in this loop
                             count <- count + 1
                             res <- res + 20 // gets executed 9 times
-                        | None -> 
+                        else
                             // This is the resumption path
                             // Label 1 goes here
                             count <- count + 1
                             res <- res + 10 // gets executed once
                     // res ends up as 190
-                    inputValue + res 
+                    sm.Data <- inputValue + res 
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-            }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "wejlcewjllkjwce" (makeStateMachine 13) 203
 
 
 module ``Check resumable code may contain integer for loop without resumption`` =
     let makeStateMachine inputValue = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
                 if __useResumableCode then
                     let mutable count = 0
                     for i = 0 to 9 do 
                         count <- count + 1
-                    inputValue + 12 + count 
+                    sm.Data <- inputValue + 12 + count 
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-            }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "celjkcwljeljwecl" (makeStateMachine 13) 35
 
 module ``Check resumable code can contain a conditional with a resumption point`` =
     let makeStateMachine y = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
                 if __useResumableCode then
-                    // TEST: resumable code may have __resumeAt at the start of the code
                     __resumeAt 1
                     failwith "fail"
                     if y > 10 then 
-                        match __resumableEntry() with
-                        | Some contID ->
+                        let __stack_fin = ResumableCode.Yield().Invoke(&sm)
+                        if not __stack_fin then
                             // This is the suspension path. It is not executed in this test as we go straight to label 1
                             failwith "fail"
-                        | None -> 
+                        else
                             // This is the resumption path
                             // Label 1 goes here
-                            20+y  // this is the answer
+                            sm.Data <- 20+y  // this is the answer
                     else
-                        30 + y 
+                        sm.Data <- 30 + y 
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-            }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
+
     check "vewowevewoi" (makeStateMachine 13) 33
 
 module ``Check resumable code can contain a conditional with a resumption point in else branch`` =
     let makeStateMachine y = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member _.Step ()  =  
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
                 if __useResumableCode then
-                    // TEST: resumable code may have __resumeAt at the start of the code
                     __resumeAt 1
                     failwith "fail"
                     if y <= 10 then 
-                        30 + y 
+                        sm.Data <- 30 + y 
                     else
-                        match __resumableEntry() with
-                        | Some contID ->
+                        let __stack_fin = ResumableCode.Yield().Invoke(&sm)
+                        if not __stack_fin then
                             // This is the suspension path. It is not executed in this test as we go straight to label 1
                             failwith "fail"
-                        | None -> 
+                        else
                             // This is the resumption path
                             // Label 1 goes here
-                            20+y  // this is the answer
+                            sm.Data <- 20+y  // this is the answer
                 else
-                    0xdeadbeef // if we get this result it means we've failed to compile as resumable code
-            }.Start()
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
+            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
+            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
+                    
     check "vewowevewoi" (makeStateMachine 13) 33
 
-
-module ``Check delegate accepting byref parameter doesn't copy struct`` =
-    [<Struct; NoEquality; NoComparison>]
-    type SyncStruct =
-
-        [<DefaultValue(false)>]
-        val mutable PC : int
-
-        [<DefaultValue(false)>]
-        val mutable Result : int
-
-        [<DefaultValue(false)>]
-        val mutable someFunction: CodeSpec
-
-        member inline sm.GetAddress() =
-            let addr = &&sm.PC
-            Microsoft.FSharp.NativeInterop.NativePtr.toNativeInt addr
-
-        // MoveNext without boxing
-        static member inline MoveNext(sm: byref<'T> when 'T :> IAsyncStateMachine) = sm.MoveNext()
-        interface IAsyncStateMachine with 
-            member sm.MoveNext() = 
-                    sm.someFunction.Invoke(&sm)
-            member sm.SetStateMachine(state: IAsyncStateMachine) = failwith "no dynamic impl"
-
-    and CodeSpec = delegate of byref<SyncStruct> -> unit
-    let runDelegateCode () = 
-        
-        let mutable sm = Unchecked.defaultof<SyncStruct>
-        sm.someFunction <-
-            CodeSpec(fun sm -> 
-                
-                printfn "before set, sm.GetAddress() = %d, sm.Result = %d" (sm.GetAddress()) sm.Result
-                sm.Result <- 420
-                printfn "after set, sm.GetAddress() = %d, sm.Result = %d" (sm.GetAddress()) sm.Result
-            )
-
-        printfn "before invoke, sm.GetAddress() = %d, sm.Result = %d" (sm.GetAddress()) sm.Result
-        SyncStruct.MoveNext(&sm)
-
-        printfn "after invoke, sm.GetAddress() = %d, sm.Result = %d" (sm.GetAddress()) sm.Result
-        sm.Result
-
-    check "DelegateCode_StructFunction0" (runDelegateCode()) 420
-
-module ``Check struct machine with explicit ResumableCode`` =
-    let makeStateMachine inputValue = 
-        __structStateMachine<SyncMachineStruct<int>, int>
-            (MoveNextMethod<SyncMachineStruct<int>>(fun sm -> 
-                if __useResumableCode then
-                    //printfn "resuming %d" sm.Address
-                    __resumeAt 1
-                    failwith "unreachable in this test"
-                    match __resumableEntry() with
-                    | Some contID ->
-                        // This is the suspension path. It is not executed in this test because we jump straight to label 1
-                        failwith "unreachable in this test"
-                    | None -> 
-                        // This is the resumption path
-                        // Label 1 goes here.
-                        // This gets executed once in this test.
-                        // The answer is 20 + 400
-                        let res = 20 + inputValue
-                        //printfn "setting result for %d to %d" sm.Address res 
-                        sm.Result <- 20 + inputValue
-                else failwith "dynamic"
-                ))
-
-            // SetStateMachine
-            (SetMachineStateMethod<_>(fun sm state -> 
-                ()))
-
-            // Start
-            (AfterMethod<_,_>(fun sm -> 
-                SyncMachineStruct<_>.MoveNext(&sm)
-                //printfn "after method for %d = %d" sm.Address sm.Result
-                sm.Result))
-
-    check "ResumableCode_Struct" (makeStateMachine 400) 420
-
-
-module ``Check struct machine where code is given by a ResumableCode delegate implementation`` =
-    [<ResumableCode>]
-    type CodeSpec = delegate of byref<SyncMachineStruct<int>> -> unit
-
-    let makeStateMachine () = 
-        
-        // Note, this delegate is *not* labelled 'inline'.  However the state machine compilation knows
-        // how to reduce this delegate
-        let someFunction = 
-            CodeSpec(fun sm -> 
-                
-                printfn "before set, sm.GetAddress() = %d, sm.Result = %d" (sm.GetAddress()) sm.Result
-                // check code is flattened
-                check "vewohevroerhn1" (System.Reflection.MethodBase.GetCurrentMethod().Name) "MoveNext"
-                sm.Result <- 420
-                printfn "after set, sm.GetAddress() = %d, sm.Result = %d" (sm.GetAddress()) sm.Result
-            )
-
-        __structStateMachine<SyncMachineStruct<int>, int>
-            (MoveNextMethod<SyncMachineStruct<int>>(fun sm -> 
-                printfn "before invoke, sm.GetAddress() = %d, sm.Result = %d" (sm.GetAddress()) sm.Result
-                someFunction.Invoke(&sm)))
-
-            // SetStateMachine
-            (SetMachineStateMethod<_>(fun sm state -> 
-                ()))
-
-            // Start
-            (AfterMethod<_,_>(fun sm -> 
-                SyncMachineStruct<_>.MoveNext(&sm)
-                printfn "after invoke, sm.GetAddress() = %d, sm.Result = %d" (sm.GetAddress()) sm.Result
-                sm.Result))
-
-    check "ResumableCode_StructMachine_CodeSpec_Reduction" (makeStateMachine()) 420
-
-
-module ``Check ref state machine where code is given by a ResumableCode delegate implementation`` =
-    [<ResumableCode>]
-    type CodeSpec = delegate of SyncMachine<int> -> unit
-
-    let makeStateMachine () = 
-
-        // Note, this delegate is *not* labelled 'inline'.  However the state machine compilation knows
-        // how to reduce this delegate
-        let someFunction = 
-            CodeSpec(fun sm -> 
-                // check code is flattened
-                check "vewohevbvwern1" (System.Reflection.MethodBase.GetCurrentMethod().Name) "Step"
-                sm.Result <- 420
-            )
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member sm.Step ()  =  
-                // TEST: resumable code may contain a beta-reduction of a delegate
-                if __useResumableCode then
-                    someFunction.Invoke(sm)
-                    sm.Result
-                else
-                    100
-        }.Start()
-
-    check "ResumableCode_RefMachine_CodeSpec_Reduction" (makeStateMachine ()) 420
-
-
-module ``Check code is not flattened because missing ResumableCode attribute`` =
-    //[<ResumableCode>]
-    type CodeSpec = delegate of SyncMachine<int> -> unit
-    let makeStateMachine x = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member sm.Step ()  =  
-                (new CodeSpec(fun sm -> 
-                    // Check the code has NOT been flattened since '[<ResumableCode>]' wasn't specified on 'CodeSpec'
-                    check "vewohevroerhn1" (System.Reflection.MethodBase.GetCurrentMethod().Name) "Invoke"
-                    sm.Result <- sm.Result + 3 + x)).Invoke sm
-                (new CodeSpec(fun sm -> 
-                    check "vewohevroerhn2" (System.Reflection.MethodBase.GetCurrentMethod().Name) "Invoke"
-                    sm.Result <- sm.Result + 4)).Invoke sm
-                sm.Result
-        }.Start()
-
-    check "fvewleewcljwecl" (makeStateMachine 3) 10
-
-module ``Check code is flattened because ResumableCode attribute`` =
-    [<ResumableCode>]
-    type CodeSpec = delegate of SyncMachine<int> -> unit
-    let makeStateMachine x = 
-        { new SyncMachine<int>() with 
-            [<ResumableCode>]
-            member sm.Step ()  =  
-                // TEST: resumable code may contain a beta-reduction of a ResumableCode delegate
-                (new CodeSpec(fun sm -> 
-                    // Check the code HAS been flattened since '[<ResumableCode>]' was specified on 'CodeSpec'
-                    check "vewohevroerhn12" (System.Reflection.MethodBase.GetCurrentMethod().Name) "Step"
-                    sm.Result <- sm.Result + 3 + x)).Invoke sm
-
-                // TEST: resumable code may contain a beta-reduction of a ResumableCode delegate
-                (new CodeSpec(fun sm -> 
-                    check "vewohevroerhn22" (System.Reflection.MethodBase.GetCurrentMethod().Name) "Step"
-                    sm.Result <- sm.Result + 4)).Invoke sm
-                sm.Result
-        }.Start()
-
-    check "evcwewcjlkwejfvlj" (makeStateMachine 3) 10
 
 
 let inline checkStateMachine nm = 
     check nm (System.Reflection.MethodBase.GetCurrentMethod().Name) "MoveNext"
 
 // The main tests for tasks are in tests\FSharp.Core.UnitTests\FSharp.Core\Microsoft.FSharp.Control\Tasks.fs
+// These simply detect state machine compilation
 module ``Check simple task compiles to state machine`` =
 
     let test1() = 

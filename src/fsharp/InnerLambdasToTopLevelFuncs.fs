@@ -157,7 +157,7 @@ let IsRefusedTLR g (f: Val) =
     // Special values are instance methods etc. on .NET types.  For now leave these alone
     let specialVal = f.MemberInfo.IsSome
     let alreadyChosen = f.ValReprInfo.IsSome
-    let isResumableCode = isResumableCodeTy g f.Type
+    let isResumableCode = isReturnsResumableCodeTy g f.Type
     let isInlineIfLambda = f.InlineIfLambda
     let refuseTest = alreadyChosen || mutableVal || byrefVal || specialVal || dllImportStubOrOtherNeverInline || isResumableCode || isInlineIfLambda
     refuseTest

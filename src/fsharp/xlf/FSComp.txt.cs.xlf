@@ -468,8 +468,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
-        <source>The construct '{0}' may only be used in valid resumable code. For example, 'if __useResumableCode then ...' and the `[&lt;ResumableCode&gt;]' attribute must be used.</source>
-        <target state="new">The construct '{0}' may only be used in valid resumable code. For example, 'if __useResumableCode then ...' and the `[&lt;ResumableCode&gt;]' attribute must be used.</target>
+        <source>The construct '{0}' may only be used in valid resumable code.</source>
+        <target state="new">The construct '{0}' may only be used in valid resumable code.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
@@ -520,41 +520,6 @@
       <trans-unit id="tcStateMachineNotSupported">
         <source>Using tasks and resumable state machines requires /langversion:preview</source>
         <target state="new">Using tasks and resumable state machines requires /langversion:preview</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcStructStateMachineInvalidIncorrectInterfacesImplemented">
-        <source>Invalid struct state machine. The interfaces implemented did not match those on the template type.</source>
-        <target state="new">Invalid struct state machine. The interfaces implemented did not match those on the template type.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcStructStateMachineInvalidIncorrectSignature">
-        <source>Invalid struct state machine. The method '{0}' has the incorrect signature.</source>
-        <target state="new">Invalid struct state machine. The method '{0}' has the incorrect signature.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcStructStateMachineInvalidMethodNotFound">
-        <source>Invalid struct state machine. The method '{0}' was not found on the corresponding interface type.</source>
-        <target state="new">Invalid struct state machine. The method '{0}' was not found on the corresponding interface type.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcStructStateMachineInvalidNoIAsyncStateMachine">
-        <source>Invalid struct state machine. A template struct type used with __structStateMachine must implement System.Runtime.CompilerServices.IAsyncStateMachine.</source>
-        <target state="new">Invalid struct state machine. A template struct type used with __structStateMachine must implement System.Runtime.CompilerServices.IAsyncStateMachine.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcStructStateMachineInvalidWrongArgCount">
-        <source>Invalid struct state machine. The method '{0}' did not have the correct number of arguments. '{1}' were expected and '{2}' were present, including the 'this' parameter.</source>
-        <target state="new">Invalid struct state machine. The method '{0}' did not have the correct number of arguments. '{1}' were expected and '{2}' were present, including the 'this' parameter.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcStructTemplateMethodsMustBeInline">
-        <source>All methods on a template struct type used with __structStateMachine must be marked 'inline'.</source>
-        <target state="new">All methods on a template struct type used with __structStateMachine must be marked 'inline'.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcTraitCallAssumedToReturnResumableCode">
-        <source>The validity of this resumble code has not been fully checked. This trait call must always statically resolve to a method that returns resumable code. If this is not the case, the construct will not compile to an optimized state machine. Suppress this warning if you have checked that all trait resolutions are correctly marked with [&lt;ResumableCode&gt;].</source>
-        <target state="new">The validity of this resumble code has not been fully checked. This trait call must always statically resolve to a method that returns resumable code. If this is not the case, the construct will not compile to an optimized state machine. Suppress this warning if you have checked that all trait resolutions are correctly marked with [&lt;ResumableCode&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">

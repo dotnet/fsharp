@@ -26,28 +26,72 @@ type IPriority2 = interface inherit IPriority3 end
 
 type IPriority1 = interface inherit IPriority2 end
 
-type MoveNextMethodImpl<'Template> = delegate of byref<'Template> -> unit
-
-type SetStateMachineMethodImpl<'Template> = delegate of byref<'Template> * IAsyncStateMachine -> unit
-
-type AfterCode<'Template, 'Result> = delegate of byref<'Template> -> 'Result
-
-type GetResumptionPointMethodImpl<'Template> = delegate of byref<'Template> -> int
-
-type SetResumableStateMachineDataMethodImpl<'Template, 'Data> = delegate of byref<'Template> * 'Data -> unit
-
-type GetResumableStateMachineDataMethodImpl<'Template, 'Data> = delegate of byref<'Template> -> 'Data
-
 type IResumableStateMachine<'Data> =
     abstract ResumptionPoint: int
     abstract Data: 'Data with get, set
 
+/// Acts as a template for struct state machines introduced by __stateMachine, and also as a reflective implementation
+[<Struct; NoComparison; NoEquality>]
+type ResumableStateMachine<'Data> =
 
-[<AttributeUsage (AttributeTargets.Delegate ||| AttributeTargets.Method,AllowMultiple=false)>]  
-[<Sealed>]
-type ResumableCodeAttribute() = 
-    inherit System.Attribute()
+    [<DefaultValue(false)>]
+    val mutable Data: 'Data
 
+    [<DefaultValue(false)>]
+    val mutable ResumptionPoint: int
+
+    /// Represents the delegated runtime continuation of a resumable state machine created dynamically
+    [<DefaultValue(false)>]
+    val mutable ResumptionDynamicInfo: ResumptionDynamicInfo<'Data>
+
+    interface IResumableStateMachine<'Data> with 
+        member sm.ResumptionPoint = sm.ResumptionPoint
+        member sm.Data with get() = sm.Data and set v = sm.Data <- v
+
+    interface IAsyncStateMachine with 
+        
+        // Used for dynamic execution.  For "__stateMachine" it is replaced.
+        member sm.MoveNext() = 
+            sm.ResumptionDynamicInfo.MoveNext(&sm)
+
+        // Used when dynamic execution.  For "__stateMachine" it is replaced.
+        member sm.SetStateMachine(state) = 
+            sm.ResumptionDynamicInfo.SetStateMachine(&sm, state)
+
+and ResumptionFunc<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> bool
+
+and [<AbstractClass>]
+    ResumptionDynamicInfo<'Data>(initial: ResumptionFunc<'Data>) =
+    member val ResumptionFunc: ResumptionFunc<'Data> = initial with get, set 
+    abstract MoveNext: machine: byref<ResumableStateMachine<'Data>> -> unit
+    abstract SetStateMachine: machine: byref<ResumableStateMachine<'Data>> * machineState: IAsyncStateMachine -> unit
+
+type ResumableCode<'Data, 'T> = delegate of byref<ResumableStateMachine<'Data>> -> bool
+
+/// Defines the implementation of the MoveNext method for a struct state machine.
+[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+type MoveNextMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> unit
+
+/// Defines the implementation of the SetStateMachine method for a struct state machine.
+[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+type SetStateMachineMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> * IAsyncStateMachine -> unit
+
+/// Defines the implementation of the code reun after the creation of a struct state machine.
+[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>> -> 'Result
+
+/// Defines the implementation of the corresponding method on IResumableStateMachine for a struct state machine.
+[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+type GetResumptionPointMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> int
+
+[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+type SetResumableStateMachineDataMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> * 'Data -> unit
+
+/// Defines the implementation of the corresponding method on IResumableStateMachine for a struct state machine.
+[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+type GetResumableStateMachineDataMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> 'Data
+
+[<AutoOpen>]
 module StateMachineHelpers = 
 
     /// Statically determines whether resumable code is being used
@@ -64,61 +108,28 @@ module StateMachineHelpers =
         failwith "__resumeAt should always be guarded by __useResumableCode and only used in valid state machine implementations"
 
     [<MethodImpl(MethodImplOptions.NoInlining)>]
-    let __structStateMachine<'Template, 'Result> (moveNextMethod: MoveNextMethodImpl<'Template>) (setStateMachineMethod: SetStateMachineMethodImpl<'Template>) (otherMethodImpls: (Type * string * Delegate)[]) (afterCode: AfterCode<'Template, 'Result>): 'Result =
+    let __stateMachine<'Data, 'Result> 
+           (moveNextMethod: MoveNextMethodImpl<'Data>) 
+           (setStateMachineMethod: SetStateMachineMethodImpl<'Data>) 
+           (getResumptionPointMethod: GetResumptionPointMethodImpl<'Data>) 
+           (getDataMethod: GetResumableStateMachineDataMethodImpl<'Data>) 
+           (setDataMethod: SetResumableStateMachineDataMethodImpl<'Data>) 
+           (afterCode: AfterCode<'Data, 'Result>): 'Result =
         ignore moveNextMethod
         ignore setStateMachineMethod
-        ignore otherMethodImpls
+        ignore getResumptionPointMethod
+        ignore getDataMethod
+        ignore setDataMethod
         ignore afterCode
-        failwith "__structStateMachine should always be guarded by __useResumableCode and only used in valid state machine implementations"
+        failwith "__stateMachine should always be guarded by __useResumableCode and only used in valid state machine implementations"
 
-/// Acts as a template for struct state machines introduced by __structStateMachine, and also as a reflective implementation
-[<Struct; NoComparison; NoEquality>]
-type ResumableStateMachine<'Data> =
-
-    [<DefaultValue(false)>]
-    val mutable Data: 'Data
-
-    [<DefaultValue(false)>]
-    val mutable ResumptionPoint: int
-
-    // Always null for static task implementations
-    [<DefaultValue(false)>]
-    val mutable ResumptionFuncData: ResumptionFunc<'Data> * ResumptionFuncExecutor<'Data> * SetStateMachineMethodImpl<ResumableStateMachine<'Data>>
-
-    interface IResumableStateMachine<'Data> with 
-        member sm.ResumptionPoint = sm.ResumptionPoint
-        member sm.Data with get() = sm.Data and set v = sm.Data <- v
-
-    interface IAsyncStateMachine with 
-        
-        // Used for dynamic execution.  For "__structStateMachine" it is replaced.
-        member sm.MoveNext() = 
-            let (resumption, executor, _setStateMachine) = sm.ResumptionFuncData
-            executor.Invoke(&sm, resumption)
-
-        // Used when dynamic execution.  For "__structStateMachine" it is replaced.
-        member sm.SetStateMachine(state) = 
-            let (_resumption, _executor, setStateMachine) = sm.ResumptionFuncData
-            setStateMachine.Invoke(&sm, state)
-
-and ResumptionFunc<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> bool
-and ResumptionFuncExecutor<'Data> = delegate of byref<ResumableStateMachine<'Data>> * ResumptionFunc<'Data> -> unit
-
-[<ResumableCodeAttribute>]
-type ResumableCode<'Data, 'T> = delegate of byref<ResumableStateMachine<'Data>> -> bool
-
-type NonResumableCode<'Data, 'T> = delegate of byref<ResumableStateMachine<'Data>> -> 'T
-
-open StateMachineHelpers
 module ResumableCode =
 
     let inline SetResumptionFunc (sm: byref<ResumableStateMachine<'Data>>) f =
-        let (_, executor, ssm) = sm.ResumptionFuncData
-        sm.ResumptionFuncData <- (f, executor, ssm)
+        sm.ResumptionDynamicInfo.ResumptionFunc <- f
 
     let inline GetResumptionFunc (sm: byref<ResumableStateMachine<'Data>>) =
-        let (f, _, _) = sm.ResumptionFuncData
-        f
+        sm.ResumptionDynamicInfo.ResumptionFunc
 
     let inline Delay(f : unit -> ResumableCode<'Data, 'T>) : ResumableCode<'Data, 'T> =
         ResumableCode<'Data, 'T>(fun sm -> (f()).Invoke(&sm))
@@ -130,7 +141,7 @@ module ResumableCode =
     /// Chains together a step with its following step.
     /// Note that this requires that the first step has no result.
     /// This prevents constructs like `task { return 1; return 2; }`.
-    let CombineDynamic(sm: byref<_>, code1: ResumableCode<'Data, unit>, code2: ResumableCode<'Data, 'T>) : bool =
+    let CombineDynamic(sm: byref<ResumableStateMachine<'Data>>, code1: ResumableCode<'Data, unit>, code2: ResumableCode<'Data, 'T>) : bool =
         if code1.Invoke(&sm) then 
             code2.Invoke(&sm)
         else
@@ -139,10 +150,10 @@ module ResumableCode =
                     if mf.Invoke(&sm) then 
                         code2.Invoke(&sm)
                     else
-                        SetResumptionFunc &sm (resume (GetResumptionFunc &sm))
+                        sm.ResumptionDynamicInfo.ResumptionFunc <- (resume (GetResumptionFunc &sm))
                         false)
 
-            SetResumptionFunc &sm (resume (GetResumptionFunc &sm))
+            sm.ResumptionDynamicInfo.ResumptionFunc <- (resume (GetResumptionFunc &sm))
             false
 
     /// Chains together a step with its following step.
@@ -163,22 +174,22 @@ module ResumableCode =
             else
                 CombineDynamic(&sm, code1, code2))
 
-    let rec WhileDynamic (sm: byref<_>, condition: unit -> bool, body: ResumableCode<'Data,unit>) : bool =
+    let rec WhileDynamic (sm: byref<ResumableStateMachine<'Data>>, condition: unit -> bool, body: ResumableCode<'Data,unit>) : bool =
         if condition() then 
             if body.Invoke (&sm) then
                 WhileDynamic (&sm, condition, body)
             else
                 let rf = GetResumptionFunc &sm
-                SetResumptionFunc &sm (ResumptionFunc<'Data>(fun sm -> WhileBodyDynamicAux(&sm, condition, body, rf)))
+                sm.ResumptionDynamicInfo.ResumptionFunc <- (ResumptionFunc<'Data>(fun sm -> WhileBodyDynamicAux(&sm, condition, body, rf)))
                 false
         else
             true
-    and WhileBodyDynamicAux (sm: byref<_>, condition: unit -> bool, body: ResumableCode<'Data,unit>, rf: ResumptionFunc<_>) : bool =
+    and WhileBodyDynamicAux (sm: byref<ResumableStateMachine<'Data>>, condition: unit -> bool, body: ResumableCode<'Data,unit>, rf: ResumptionFunc<_>) : bool =
         if rf.Invoke (&sm) then
             WhileDynamic (&sm, condition, body)
         else
             let rf = GetResumptionFunc &sm
-            SetResumptionFunc &sm (ResumptionFunc<'Data>(fun sm -> WhileBodyDynamicAux(&sm, condition, body, rf)))
+            sm.ResumptionDynamicInfo.ResumptionFunc <- (ResumptionFunc<'Data>(fun sm -> WhileBodyDynamicAux(&sm, condition, body, rf)))
             false
 
     /// Builds a step that executes the body while the condition predicate is true.
@@ -199,13 +210,13 @@ module ResumableCode =
             else
                 WhileDynamic(&sm, condition, body))
 
-    let rec TryWithDynamic (sm: byref<_>, body: ResumableCode<'Data, 'T>, handler: exn -> ResumableCode<'Data, 'T>) : bool =
+    let rec TryWithDynamic (sm: byref<ResumableStateMachine<'Data>>, body: ResumableCode<'Data, 'T>, handler: exn -> ResumableCode<'Data, 'T>) : bool =
         try
             if body.Invoke(&sm) then 
                 true
             else
                 let rf = GetResumptionFunc &sm
-                SetResumptionFunc &sm (ResumptionFunc<'Data>(fun sm -> TryWithDynamic(&sm, ResumableCode<'Data,'T>(fun sm -> rf.Invoke(&sm)), handler)))
+                sm.ResumptionDynamicInfo.ResumptionFunc <- (ResumptionFunc<'Data>(fun sm -> TryWithDynamic(&sm, ResumableCode<'Data,'T>(fun sm -> rf.Invoke(&sm)), handler)))
                 false
         with exn -> 
             (handler exn).Invoke(&sm)
@@ -249,7 +260,7 @@ module ResumableCode =
             else
                 TryWithDynamic(&sm, body, catch))
 
-    let rec TryFinallyCompensateDynamic (sm: byref<_>, mf: ResumptionFunc<'Data>, savedExn: exn option) : bool =
+    let rec TryFinallyCompensateDynamic (sm: byref<ResumableStateMachine<'Data>>, mf: ResumptionFunc<'Data>, savedExn: exn option) : bool =
         let mutable fin = false
         fin <- mf.Invoke(&sm)
         if fin then
@@ -259,10 +270,10 @@ module ResumableCode =
             | Some exn -> raise exn
         else 
             let rf = GetResumptionFunc &sm
-            SetResumptionFunc &sm (ResumptionFunc<'Data>(fun sm -> TryFinallyCompensateDynamic(&sm, rf, savedExn)))
+            sm.ResumptionDynamicInfo.ResumptionFunc <- (ResumptionFunc<'Data>(fun sm -> TryFinallyCompensateDynamic(&sm, rf, savedExn)))
             false
 
-    let rec TryFinallyAsyncDynamic (sm: byref<_>, body: ResumableCode<'Data, 'T>, compensation: ResumableCode<'Data,unit>) : bool =
+    let rec TryFinallyAsyncDynamic (sm: byref<ResumableStateMachine<'Data>>, body: ResumableCode<'Data, 'T>, compensation: ResumableCode<'Data,unit>) : bool =
         let mutable fin = false
         let mutable savedExn = None
         try
@@ -274,12 +285,12 @@ module ResumableCode =
             TryFinallyCompensateDynamic(&sm, ResumptionFunc<'Data>(fun sm -> compensation.Invoke(&sm)), savedExn)
         else
             let rf = GetResumptionFunc &sm
-            SetResumptionFunc &sm (ResumptionFunc<'Data>(fun sm -> TryFinallyAsyncDynamic(&sm, ResumableCode<'Data,'T>(fun sm -> rf.Invoke(&sm)), compensation)))
+            sm.ResumptionDynamicInfo.ResumptionFunc <- (ResumptionFunc<'Data>(fun sm -> TryFinallyAsyncDynamic(&sm, ResumableCode<'Data,'T>(fun sm -> rf.Invoke(&sm)), compensation)))
             false
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
-    let inline TryFinally (body: ResumableCode<'Data, 'T>, [<InlineIfLambda>] compensation: NonResumableCode<'Data,unit>) =
+    let inline TryFinally (body: ResumableCode<'Data, 'T>, [<InlineIfLambda>] compensation: ResumableCode<'Data,unit>) =
         ResumableCode<'Data, 'T>(fun sm ->
             if __useResumableCode then 
                 //-- RESUMABLE CODE START
@@ -303,15 +314,16 @@ module ResumableCode =
                     //      task.TryFinally(....) 
                     // If you change this code you should check debug sequence points and the generated
                     // code tests for try/finally in tasks.
-                    compensation.Invoke(&sm)
+                    let __stack_ignore = compensation.Invoke(&sm)
                     reraise()
 
                 if __stack_fin then 
-                    compensation.Invoke(&sm)
+                    let __stack_ignore = compensation.Invoke(&sm)
+                    ()
                 __stack_fin
                 //-- RESUMABLE CODE END
             else
-                TryFinallyAsyncDynamic(&sm, body, ResumableCode<_,_>(fun sm -> compensation.Invoke(&sm); true)))
+                TryFinallyAsyncDynamic(&sm, body, ResumableCode<_,_>(fun sm -> compensation.Invoke(&sm))))
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
@@ -351,7 +363,10 @@ module ResumableCode =
         // A using statement is just a try/finally with the finally block disposing if non-null.
         TryFinally(
             ResumableCode<'Data, 'T>(fun sm -> (body resource).Invoke(&sm)),
-            NonResumableCode<'Data,unit>(fun sm -> if not (isNull (box resource)) then resource.Dispose()))
+            ResumableCode<'Data,unit>(fun sm -> 
+                if not (isNull (box resource)) then 
+                    resource.Dispose()
+                true))
 
     let inline For (sequence : seq<'T>, body : 'T -> ResumableCode<'Data, unit>) : ResumableCode<'Data, unit> =
         // A for loop is just a using statement on the sequence's enumerator...
@@ -359,9 +374,9 @@ module ResumableCode =
             // ... and its body is a while loop that advances the enumerator and runs the body on each element.
             (fun e -> While((fun () -> e.MoveNext()), ResumableCode<'Data, unit>(fun sm -> (body e.Current).Invoke(&sm)))))
 
-    let YieldDynamic (sm: byref<_>) : bool = 
+    let YieldDynamic (sm: byref<ResumableStateMachine<'Data>>) : bool = 
         let cont = ResumptionFunc<'Data>(fun _sm -> true)
-        SetResumptionFunc &sm cont
+        sm.ResumptionDynamicInfo.ResumptionFunc <- cont
         false
 
     let inline Yield () : ResumableCode<'Data, unit> = 

@@ -1075,13 +1075,13 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
             strip env expr
             true
 
-        | Expr.Op (TOp.TraitCall _, _tyargs, args, _) -> 
-            // Trait calls do not retain attribute information for [<ResumableCode>]
-            // so can't be checked.  This is used in FSharp.Core.  We issue a generic warning 
-            // which can be suppressed.
-            warning(Error(FSComp.SR.tcTraitCallAssumedToReturnResumableCode(), expr.Range))
-            CheckExprsPermitByRefLike cenv { env with resumableCode = Resumable.None } args |> ignore
-            true
+        // | Expr.Op (TOp.TraitCall _, _tyargs, args, _) -> 
+        //     // Trait calls do not retain attribute information for [<ResumableCode>]
+        //     // so can't be checked.  This is used in FSharp.Core.  We issue a generic warning 
+        //     // which can be suppressed.
+        //     warning(Error(FSComp.SR.tcTraitCallAssumedToReturnResumableCode(), expr.Range))
+        //     CheckExprsPermitByRefLike cenv { env with resumableCode = Resumable.None } args |> ignore
+        //     true
 
         //| QuotationTranslator.ModuleValueOrMemberUse g (vref, _vFlags, _f, _fty, _tyargs, curriedArgs)  
         //    when HasResumableCodeArgOrReturn cenv vref.Deref ->
@@ -1232,71 +1232,28 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
         CheckTypeNoByrefs cenv env m ty
         NoLimit
 
-    | StructStateMachineExpr g (templateStructTy, moveNextMethodThisVar, moveNextMethodBodyExpr, _m, setStateMachineExpr, otherMethods, afterMethodThisVar, afterMethodBodyExpr) ->
+    | StructStateMachineExpr g (_dataTy,  
+                                    (moveNextThisVar, moveNextExpr), 
+                                    (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody), 
+                                    (getResumptionPointThisVar, getResumptionPointBody),
+                                    (getDataThisVar, getDataBody),
+                                    (setDataThisVar, setDataValueVar, setDataBody),
+                                    (afterCodeThisVar, afterCodeBody)) ->
         if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
             error(Error(FSComp.SR.tcStateMachineNotSupported(), expr.Range))
-        let m = expr.Range
-        let templateStructTyInterfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m templateStructTy
-        let otherInterfaces =
-            match templateStructTyInterfaces |> List.partition (typeEquiv g g.mk_IAsyncStateMachine_ty) with
-            | [_], otherInterfaces -> otherInterfaces
-            | _, otherInterfaces -> 
-                errorR(Error(FSComp.SR.tcStructStateMachineInvalidNoIAsyncStateMachine(), m))
-                otherInterfaces
 
-        let meths = 
-            GetIntrinsicMethInfosOfType cenv.infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m templateStructTy 
-            // filter out the interface implementations
-            |> List.filter (function (FSMeth _) as minfo -> isNil minfo.ImplementedSlotSignatures | _ -> true)
-
-        for meth in meths do
-            match meth.ArbitraryValRef with 
-            | None -> ()
-            | Some vref -> 
-                if not vref.MustInline || meth.IsDispatchSlot || meth.IsDefiniteFSharpOverride then 
-                    errorR(Error(FSComp.SR.tcStructTemplateMethodsMustBeInline(), m))
-
-        //| _ -> errorR(Error(FSComp.SR.structTemplateMustImplementOneInterface(), m))
-
-        let meths = 
-            GetIntrinsicMethInfosOfType cenv.infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m templateStructTy 
-            // filter out the interface implementations
-            |> List.filter (function (FSMeth _) as minfo -> isNil minfo.ImplementedSlotSignatures | _ -> true)
-
-        for meth in meths do
-            match meth.ArbitraryValRef with 
-            | None -> ()
-            | Some vref -> 
-                if not vref.MustInline || meth.IsDispatchSlot || meth.IsDefiniteFSharpOverride then 
-                    errorR(Error(FSComp.SR.tcStructTemplateMethodsMustBeInline(), m))
-
-        let implementedOtherInterfaces = ListSet.setify (typeEquiv g) (List.map p15 otherMethods)
-        if not (ListSet.equals (typeEquiv g) implementedOtherInterfaces otherInterfaces) then
-           errorR(Error(FSComp.SR.tcStructStateMachineInvalidIncorrectInterfacesImplemented(), m))
-
-        for (imethTy, imethName, imethVals, imethBody, imethRange) in otherMethods do
-            imethVals |> List.iter (BindVal cenv env)
-            CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (false, false) } imethBody
-            match InfoReader.TryFindIntrinsicMethInfo cenv.infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere imethName imethTy with
-            | [meth] -> 
-                let argTys = meth.GetParamTypes(cenv.amap, m, []) |> List.concat 
-                if argTys.Length + 1 <> imethVals.Length then
-                    errorR(Error(FSComp.SR.tcStructStateMachineInvalidWrongArgCount(imethName, imethVals.Length, argTys.Length + 1), imethRange))
-                let arg0Ty = imethVals.[0].Type
-                if not (isByrefTy g arg0Ty) || not (typeEquiv g (destByrefTy g arg0Ty) templateStructTy) then
-                    errorR(Error(FSComp.SR.tcStructStateMachineInvalidIncorrectSignature(imethName), imethVals.[0].Range))
-            | _ -> errorR(Error(FSComp.SR.tcStructStateMachineInvalidMethodNotFound(imethName), imethRange))
-        
-        BindVal cenv env moveNextMethodThisVar
-        BindVal cenv env afterMethodThisVar
-        CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (false, false) } moveNextMethodBodyExpr
-        CheckExprNoByrefs cenv env setStateMachineExpr
-        CheckExprNoByrefs cenv env afterMethodBodyExpr
+        BindVals cenv env [moveNextThisVar; setStateMachineThisVar; setStateMachineStateVar; getResumptionPointThisVar; getDataThisVar; setDataThisVar; setDataValueVar; afterCodeThisVar]
+        CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (false, false) } moveNextExpr
+        CheckExprNoByrefs cenv env setStateMachineBody
+        CheckExprNoByrefs cenv env getResumptionPointBody
+        CheckExprNoByrefs cenv env getDataBody
+        CheckExprNoByrefs cenv env setDataBody
+        CheckExprNoByrefs cenv env afterCodeBody
         NoLimit
 
     | Expr.Obj (_, ty, basev, superInitCall, overrides, iimpls, _stateVars, m) -> 
         CheckExprNoByrefs cenv env superInitCall
-        CheckMethods cenv env basev ty overrides 
+        CheckMethods cenv env basev (ty, overrides)
         CheckInterfaceImpls cenv env basev iimpls
         CheckTypeNoByrefs cenv env m ty
 
@@ -1371,28 +1328,6 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
           CheckExprNoByrefs cenv env arg
           NoLimit
 
-    //// Any call to a method which consumes resumable code means the corresponding parameter
-    //// expressions are checked as potentially resumable code
-    //| QuotationTranslator.ModuleValueOrMemberUse g (vref, _vFlags, _f, _fty, _tyargs, curriedArgs)  
-    //    when HasResumableCodeArg cenv vref.Deref ->
-    //        let resumableCodeArgFlagsCurried, _hasResumableCodeReturn = GetResumableCodeInfo cenv vref.Deref
-            
-    //        // Use Resumable.ResumableCodeBlock for all the arguments that have ResumableCodeAttribute
-    //        (resumableCodeArgFlagsCurried, curriedArgs) ||> Seq.iter2 (fun resumableCodeArgFlags arg -> 
-    //            if List.exists p23 resumableCodeArgFlags && resumableCodeArgFlags.Length > 1 && not (isRefTupleExpr arg) then
-    //                  warning(Error(FSComp.SR.reprResumableCodeNotStaticallyUsed(), expr.Range))
-
-    //            let args = tryDestRefTupleExpr arg
-    //            (resumableCodeArgFlags, args) ||> Seq.iter2 (fun resumableCodeArgFlag arg -> 
-    //                if p23 resumableCodeArgFlag then
-    //                    // continue checking the argument as resumable code
-    //                    CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (true, false) } arg 
-    //                else
-    //                    // check the argument as non-resumable code
-    //                    CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } arg))
-
-    //        NoLimit
-
     // Check an application
     | Expr.App (f, _fty, tyargs, argsl, m) ->
         let returnTy = tyOfExpr g expr
@@ -1460,25 +1395,21 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
     | Expr.Link _ -> 
         failwith "Unexpected reclink"
 
-and CheckMethods cenv env baseValOpt ty methods = 
+and CheckMethods cenv env baseValOpt (ty, methods) = 
     methods |> List.iter (CheckMethod cenv env baseValOpt ty) 
 
 and CheckMethod cenv env baseValOpt ty (TObjExprMethod(_, attribs, tps, vs, body, m)) = 
-    let g = cenv.g
     let env = BindTypars cenv.g env tps 
     let vs = List.concat vs
     let env = BindArgVals env vs
-    let env = 
-        if // Body of state machine
-           HasFSharpAttribute cenv.g cenv.g.attrib_ResumableCodeAttribute attribs ||
-           // Body of delegate
-           (isAppTy g ty && HasFSharpAttribute cenv.g cenv.g.attrib_ResumableCodeAttribute (tcrefOfAppTy g ty).Attribs)
-           then 
+    let env =
+        // Body of ResumableCode delegate
+        if isResumableCodeTy cenv.g ty then
            if not (cenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
                error(Error(FSComp.SR.tcStateMachineNotSupported(), m))
-           { env with resumableCode = Resumable.ResumableExpr (false, false) } 
+           { env with resumableCode = Resumable.ResumableExpr (false, false) }
         else
-           { env with resumableCode = Resumable.None } 
+           { env with resumableCode = Resumable.None }
     CheckAttribs cenv env attribs
     CheckNoReraise cenv None body
     CheckEscapes cenv true m (match baseValOpt with Some x -> x :: vs | None -> vs) body |> ignore
@@ -1487,8 +1418,8 @@ and CheckMethod cenv env baseValOpt ty (TObjExprMethod(_, attribs, tps, vs, body
 and CheckInterfaceImpls cenv env baseValOpt l = 
     l |> List.iter (CheckInterfaceImpl cenv env baseValOpt)
     
-and CheckInterfaceImpl cenv env baseValOpt (ty, overrides) = 
-    CheckMethods cenv env baseValOpt ty overrides 
+and CheckInterfaceImpl cenv env baseValOpt overrides = 
+    CheckMethods cenv env baseValOpt overrides 
 
 and CheckNoResumableStmtConstructs cenv _env expr =
     let g = cenv.g
@@ -1496,7 +1427,7 @@ and CheckNoResumableStmtConstructs cenv _env expr =
     | Expr.Val (v, _, m) 
         when valRefEq g v g.cgh__resumeAt_vref || 
              valRefEq g v g.cgh__resumableEntry_vref || 
-             valRefEq g v g.cgh__structStateMachine_vref ->
+             valRefEq g v g.cgh__stateMachine_vref ->
         errorR(Error(FSComp.SR.tcInvalidResumableConstruct(v.DisplayName), m))
     | _ -> ()
 
