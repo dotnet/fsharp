@@ -533,6 +533,12 @@ type cenv =
       strings: MetadataTable<string>
       userStrings: MetadataTable<string>
       normalizeAssemblyRefs: ILAssemblyRef -> ILAssemblyRef
+
+      /// Indicates that the writing assembly will have an assembly-level attribute, System.Runtime.CompilerServices.InternalsVisibleToAttribute.
+      hasInternalsVisibleToAttrib: bool
+
+      /// Indicates that the writing assembly will be a reference assembly. Method bodies will be replaced with a `throw null` if there are any.
+      referenceAssemblyOnly: bool
     }
     member cenv.GetTable (tab: TableName) = cenv.tables.[tab.Index]
 
@@ -2436,6 +2442,10 @@ let GetMethodDefSigAsBytes cenv env (mdef: ILMethodDef) =
 let GenMethodDefSigAsBlobIdx cenv env mdef =
     GetBytesAsBlobIdx cenv (GetMethodDefSigAsBytes cenv env mdef)
 
+let ilMethodBodyThrowNull =
+    let ilCode = IL.buildILCode "" (Dictionary()) [|ILInstr.AI_ldnull; ILInstr.I_throw|] [] []
+    mkILMethodBody(false, ILLocals.Empty, 0, ilCode, None)
+
 let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
     let flags = md.Attributes
 
@@ -2447,7 +2457,11 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
     let codeAddr =
       (match md.Body with
       | MethodBody.IL ilmbodyLazy ->
-          let ilmbody = ilmbodyLazy.Value
+          let ilmbody = 
+            if cenv.referenceAssemblyOnly then
+                ilMethodBodyThrowNull
+            else
+                ilmbodyLazy.Value
           let addr = cenv.nextCodeAddr
           let (localToken, code, seqpoints, rootScope) = GenILMethodBody md.Name cenv env ilmbody
 
@@ -2510,6 +2524,15 @@ let GenMethodImplPass3 cenv env _tgparams tidx mimpl =
                 MethodDefOrRef (midx2Tag, midx2Row) |]) |> ignore
 
 let GenMethodDefPass3 cenv env (md: ILMethodDef) =
+
+    // When emitting a reference assembly, do not emit methods that are private unless they are virtual/abstract or provide an explicit interface implementation.
+    // Internal methods can be omitted only if the assembly does not contain a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
+    if cenv.referenceAssemblyOnly &&
+        (md.Access = ILMemberAccess.Private ||
+         ((md.Access = ILMemberAccess.Assembly || md.Access = ILMemberAccess.FamilyAndAssembly) && not cenv.hasInternalsVisibleToAttrib)) &&
+        not (md.IsVirtual || md.IsAbstract || md.IsNewSlot || md.IsFinal) then ()
+    else
+
     let midx = GetMethodDefIdx cenv md
     let idx2 = AddUnsharedRow cenv TableNames.Method (GenMethodDefAsRow cenv env midx md)
     if midx <> idx2 then failwith "index of method def on pass 3 does not match index on pass 2"
@@ -2859,8 +2882,26 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     GenTypeDefsPass4 [] cenv tds
     reportTime cenv.showTimes "Module Generation Pass 4"
 
-let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes) (m : ILModuleDef) cilStartAddress normalizeAssemblyRefs =
+let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes, referenceAssemblyOnly, referenceAssemblyAttribOpt: ILAttribute option) (m : ILModuleDef) cilStartAddress normalizeAssemblyRefs =
     let isDll = m.IsDLL
+
+    let hasInternalsVisibleToAttrib =
+        m.CustomAttrs.AsArray
+        |> Array.exists (fun x ->
+            x.Method.MethodRef.Name = "InternalsVisibleToAttribute" &&
+            x.Method.MethodRef.DeclaringTypeRef.FullName = "System.Runtime.CompilerServices"
+        )
+
+    let m =
+        // Emit System.Runtime.CompilerServices.ReferenceAssemblyAttribute as an assembly-level when generating a reference assembly.
+        // Useful for the runtime to know that the assembly is a reference assembly.
+        match referenceAssemblyAttribOpt with
+        | Some referenceAssemblyAttrib when referenceAssemblyOnly ->
+            { m with 
+                CustomAttrsStored = 
+                    mkILCustomAttrsReader (fun _ -> Array.append [|referenceAssemblyAttrib|] m.CustomAttrs.AsArray) }
+        | _ ->
+            m
 
     let cenv =
         { emitTailcalls=emitTailcalls
@@ -2908,7 +2949,9 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
           blobs= MetadataTable<_>.New("blobs", HashIdentity.Structural)
           strings= MetadataTable<_>.New("strings", EqualityComparer.Default)
           userStrings= MetadataTable<_>.New("user strings", EqualityComparer.Default)
-          normalizeAssemblyRefs = normalizeAssemblyRefs }
+          normalizeAssemblyRefs = normalizeAssemblyRefs
+          hasInternalsVisibleToAttrib = hasInternalsVisibleToAttrib
+          referenceAssemblyOnly = referenceAssemblyOnly }
 
     // Now the main compilation step
     GenModule cenv m
@@ -3003,7 +3046,7 @@ module FileSystemUtilities =
 #endif
         ()
 
-let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes) modul cilStartAddress normalizeAssemblyRefs =
+let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes, referenceAssemblyOnly, referenceAssemblyAttribOpt) modul cilStartAddress normalizeAssemblyRefs =
 
     // When we know the real RVAs of the data section we fixup the references for the FieldRVA table.
     // These references are stored as offsets into the metadata we return from this function
@@ -3012,7 +3055,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
     let next = cilStartAddress
 
     let strings, userStrings, blobs, guids, tables, entryPointToken, code, requiredStringFixups, data, resources, pdbData, mappings =
-      generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg, emitTailcalls, deterministic, showTimes) modul cilStartAddress normalizeAssemblyRefs
+      generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg, emitTailcalls, deterministic, showTimes, referenceAssemblyOnly, referenceAssemblyAttribOpt) modul cilStartAddress normalizeAssemblyRefs
 
     reportTime showTimes "Generated Tables and Code"
     let tableSize (tab: TableName) = tables.[tab.Index].Count
@@ -3471,7 +3514,7 @@ let rec writeBinaryAndReportMappings (outfile,
     let pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
         try
             let res = writeBinaryAndReportMappingsAux(stream, false, ilg, pdbfile, signer, portablePDB, embeddedPDB, embedAllSource, embedSourceList, sourceLink,
-                                                   checksumAlgorithm, emitTailcalls, deterministic, showTimes, pathMap) modul normalizeAssemblyRefs
+                                                   checksumAlgorithm, emitTailcalls, deterministic, showTimes, false, None, pathMap) modul normalizeAssemblyRefs
 
             try
                 FileSystemUtilities.setExecutablePermission outfile
@@ -3490,16 +3533,16 @@ let rec writeBinaryAndReportMappings (outfile,
 
 and writeBinaryWithNoPdb (stream: Stream,
                             ilg: ILGlobals, signer: ILStrongNameSigner option, portablePDB, embeddedPDB,
-                            embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, emitTailcalls, deterministic, showTimes, pathMap)
+                            embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, emitTailcalls, deterministic, showTimes, referenceAssemblyOnly, referenceAssemblyAttribOpt, pathMap)
                             modul normalizeAssemblyRefs =
 
     writeBinaryAndReportMappingsAux(stream, true, ilg, None, signer, portablePDB, embeddedPDB, embedAllSource, embedSourceList, sourceLink,
-                                            checksumAlgorithm, emitTailcalls, deterministic, showTimes, pathMap) modul normalizeAssemblyRefs
+                                            checksumAlgorithm, emitTailcalls, deterministic, showTimes, referenceAssemblyOnly, referenceAssemblyAttribOpt, pathMap) modul normalizeAssemblyRefs
     |> ignore
 
 and writeBinaryAndReportMappingsAux (stream: Stream, leaveStreamOpen: bool,
                                         ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB,
-                                        embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, emitTailcalls, deterministic, showTimes, pathMap)
+                                        embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, emitTailcalls, deterministic, showTimes, referenceAssemblyOnly, referenceAssemblyAttribOpt, pathMap)
                                         modul normalizeAssemblyRefs =
     // Store the public key from the signer into the manifest. This means it will be written
     // to the binary and also acts as an indicator to leave space for delay sign
@@ -3611,7 +3654,7 @@ and writeBinaryAndReportMappingsAux (stream: Stream, leaveStreamOpen: bool,
                     | None -> failwith "Expected mscorlib to have a version number"
 
           let entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups, pdbData, mappings, guidStart =
-            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes) modul next normalizeAssemblyRefs
+            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes, referenceAssemblyOnly, referenceAssemblyAttribOpt) modul next normalizeAssemblyRefs
 
           reportTime showTimes "Generated IL and metadata"
           let _codeChunk, next = chunk code.Length next
@@ -4280,8 +4323,8 @@ let WriteILBinary (filename, (options: options), inputModule, normalizeAssemblyR
                                   options.embedSourceList, options.sourceLink, options.checksumAlgorithm, options.emitTailcalls, options.deterministic, options.showTimes, options.dumpDebugInfo, options.pathMap) inputModule normalizeAssemblyRefs
     |> ignore
 
-let WriteILBinaryStreamWithNoPDB (stream, (options: options), inputModule, normalizeAssemblyRefs) =
+let WriteILBinaryStreamWithNoPDB (stream, (options: options), referenceAssemblyOnly, referenceAssemblyAttribOpt, inputModule, normalizeAssemblyRefs) =
     writeBinaryWithNoPdb (stream,
                             options.ilg, options.signer, options.portablePDB, options.embeddedPDB, options.embedAllSource,
-                            options.embedSourceList, options.sourceLink, options.checksumAlgorithm, options.emitTailcalls, options.deterministic, options.showTimes, options.pathMap) inputModule normalizeAssemblyRefs
+                            options.embedSourceList, options.sourceLink, options.checksumAlgorithm, options.emitTailcalls, options.deterministic, options.showTimes, referenceAssemblyOnly, referenceAssemblyAttribOpt, options.pathMap) inputModule normalizeAssemblyRefs
     |> ignore

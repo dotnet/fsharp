@@ -317,10 +317,10 @@ type PackageManagerLine =
         line.Substring(packageKey.Length + 1).Trim()
 
 [<RequireQualifiedAccess>]
-type ReferenceAssemblyGeneration =
+type MetadataAssemblyGeneration =
     | None
     | Complete
-    | Partial
+    | MetadataOnly
     | TestSigOfImpl
 
 [<NoEquality; NoComparison>]
@@ -435,7 +435,7 @@ type TcConfigBuilder =
       mutable emitTailcalls: bool
       mutable deterministic: bool
       mutable concurrentBuild: bool
-      mutable emitReferenceAssemblyOnly: ReferenceAssemblyGeneration
+      mutable emitMetadataAssembly: MetadataAssemblyGeneration
       mutable preferredUiLang: string option
       mutable lcid: int option
       mutable productNameForBannerText: string
@@ -641,7 +641,7 @@ type TcConfigBuilder =
           emitTailcalls = true
           deterministic = false
           concurrentBuild = true
-          emitReferenceAssemblyOnly = ReferenceAssemblyGeneration.None
+          emitMetadataAssembly = MetadataAssemblyGeneration.None
           preferredUiLang = None
           lcid = None
           productNameForBannerText = FSharpProductName
@@ -1022,7 +1022,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.emitTailcalls = data.emitTailcalls
     member x.deterministic = data.deterministic
     member x.concurrentBuild = data.concurrentBuild
-    member x.emitReferenceAssemblyOnly = data.emitReferenceAssemblyOnly
+    member x.emitMetadataAssembly = data.emitMetadataAssembly
     member x.pathMap = data.pathMap
     member x.langVersion = data.langVersion
     member x.preferredUiLang = data.preferredUiLang

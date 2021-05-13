@@ -2236,7 +2236,7 @@ type FSharpCheckProjectResults
 
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
 
-    member _.TryEmitReferenceAssembly(_stream: Stream) =
+    member _.TryEmitMetadataOnlyAssembly(stream: Stream) =
         match tcConfigOption with
         | Some tcConfig ->
             let ctok = CompilationThreadToken()
@@ -2326,8 +2326,6 @@ type FSharpCheckProjectResults
 
             // Binary Writer
 
-            let outfile = tcConfig.MakePathAbsolute outfile
-
             let normalizeAssemblyRefs (aref: ILAssemblyRef) =
                 match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, aref.Name, lookupOnly=false) with
                 | Some dllInfo ->
@@ -2336,9 +2334,15 @@ type FSharpCheckProjectResults
                     | _ -> aref
                 | None -> aref
 
+            let referenceAssemblyAttribOpt =
+                tcGlobals.iltyp_ReferenceAssemblyAttributeOpt
+                |> Option.map (fun ilTy ->
+                    mkILCustomAttribute tcGlobals.ilg (ilTy.TypeRef, [], [], [])
+                )
+
             try
-                ILBinaryWriter.WriteILBinary
-                    (outfile,
+                ILBinaryWriter.WriteILBinaryStreamWithNoPDB
+                    (stream,
                     { ilg = tcGlobals.ilg
                       pdbfile=None
                       emitTailcalls = tcConfig.emitTailcalls
@@ -2353,6 +2357,8 @@ type FSharpCheckProjectResults
                       signer = GetStrongNameSigner signingInfo
                       dumpDebugInfo = tcConfig.dumpDebugInfo
                       pathMap = tcConfig.pathMap },
+                    true,
+                    referenceAssemblyAttribOpt,
                     ilxMainModule,
                     normalizeAssemblyRefs
                     )

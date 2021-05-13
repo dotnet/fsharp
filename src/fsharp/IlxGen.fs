@@ -246,8 +246,8 @@ type IlxGenOptions =
       /// Whenever possible, use callvirt instead of call
       alwaysCallVirt: bool
       
-      /// Indicates that we are only generating a reference assembly.
-      referenceAssemblyOnly: bool
+      /// Indicates that we are not generating method bodies.
+      metadataOnly: bool
     }
 
 /// Compilation environment for compiling a fragment of an assembly
@@ -287,9 +287,6 @@ type cenv =
 
       /// Delayed Method Generation - prevents stack overflows when we need to generate methods that are split into many methods by the optimizer.
       delayedGenMethods: Queue<cenv -> unit>
-
-      /// Indicates that the generating assembly will have an assembly-level attribute, System.Runtime.CompilerServices.InternalsVisibleToAttribute.
-      hasInternalsVisibleToAttrib: bool
     }
 
     override x.ToString() = "<cenv>"
@@ -1636,13 +1633,13 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
             let ilMethods =
                 [ for (propName, fldName, fldTy) in flds ->
-                        mkLdfldMethodDef cenv.opts.referenceAssemblyOnly ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy)
+                        mkLdfldMethodDef cenv.opts.metadataOnly ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy)
                   yield! genToStringMethod ilTy ]
 
             let ilBaseTy = (if isStruct then g.iltyp_ValueType else g.ilg.typ_Object)
 
             let ilCtorDef = 
-                if cenv.opts.referenceAssemblyOnly then
+                if cenv.opts.metadataOnly then
                     mkILThrowNullStorageCtorWithParamNames([], flds, ILMemberAccess.Public)
                 else
                     mkILSimpleStorageCtorWithParamNames(None, (if isStruct then None else Some ilBaseTy.TypeSpec), ilTy, [], flds, ILMemberAccess.Public)
@@ -1789,7 +1786,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             explicitEntryPointInfo <- Some tref
 
     member _.AddExplicitInitToSpecificMethodDef (cond, tref, fspec, sourceOpt, feefee, seqpt) =
-        if not cenv.opts.referenceAssemblyOnly then
+        if not cenv.opts.metadataOnly then
             // Authoring a .cctor with effects forces the cctor for the 'initialization' module by doing a dummy store & load of a field
             // Doing both a store and load keeps FxCop happier because it thinks the field is useful
             let instrs =
@@ -5784,7 +5781,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) star
 
             let getterMethod =
                 let methBody =
-                    if cenv.opts.referenceAssemblyOnly then
+                    if cenv.opts.metadataOnly then
                         mkILThrowNullMethodBody ilGetterMethRef.Name
                         |> notlazy
                         |> MethodBody.IL
@@ -5796,7 +5793,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) star
             if mut || cenv.opts.isInteractiveItExpr then
                 let setterMethod =
                     let methBody =
-                        if cenv.opts.referenceAssemblyOnly then
+                        if cenv.opts.metadataOnly then
                             mkILThrowNullMethodBody ilGetterMethRef.Name
                             |> notlazy
                             |> MethodBody.IL
@@ -6186,14 +6183,6 @@ and GenMethodForBinding
          ctorThisValOpt, baseValOpt, methLambdaTypars, methLambdaVars, methLambdaBody, returnTy) =
     let g = cenv.g
     let m = v.Range
-
-    // When emitting a reference assembly, do not emit methods that are private unless they are virtual/abstract or provide an explicit interface implementation.
-    // Internal methods can be omitted only if the assembly does not contain a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
-    if cenv.opts.referenceAssemblyOnly && 
-       (access = ILMemberAccess.Private || 
-        ((access = ILMemberAccess.Assembly || access = ILMemberAccess.FamilyAndAssembly) && not cenv.hasInternalsVisibleToAttrib)) && 
-       not (v.IsOverrideOrExplicitImpl || v.IsDispatchSlot) then ()
-    else
     
     // If a method has a witness-passing version of the code, then suppress
     // the generation of any witness in the non-witness passing version of the code
@@ -6276,7 +6265,7 @@ and GenMethodForBinding
                 else
                     body
             
-            if cenv.opts.referenceAssemblyOnly then
+            if cenv.opts.metadataOnly then
                 // The reason for using 'throw null' bodies (as opposed to no bodies) is so 
                 // that PEVerify can run and pass (thus validating the completeness of the metadata).
                 let ilMethBody = mkILThrowNullMethodBody mspec.Name
@@ -7109,8 +7098,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
     //   Library file (mainInfoOpt = None) : optional .cctor if topCode has initialization effect
     //   Final file, explicit entry point (mainInfoOpt = Some _, GetExplicitEntryPointInfo() = Some) : main + optional .cctor if topCode has initialization effect
     //   Final file, implicit entry point (mainInfoOpt = Some _, GetExplicitEntryPointInfo() = None) : main + initialize + optional .cctor calling initialize
-    // The .cctor that gets created has an access of ILMemberAccess.Internal - therefore, we should emit when ref assemblies are enabled and assembly has an InternalsVisibleToAttribute.
-    let doesSomething = (not cenv.opts.referenceAssemblyOnly || cenv.hasInternalsVisibleToAttrib) && CheckCodeDoesSomething topCode.Code
+    let doesSomething = CheckCodeDoesSomething topCode.Code
 
     // Make a FEEFEE instruction to mark hidden code regions
     // We expect the first instruction to be a sequence point when generating debug symbols
@@ -7207,7 +7195,7 @@ and GenEqualsOverrideCallingIComparable cenv (tcref: TyconRef, ilThisTy, _ilThat
     let mspec = mkILNonGenericInstanceMethSpecInTy (g.iltyp_IComparable, "CompareTo", [g.ilg.typ_Object], g.ilg.typ_Int32)
 
     let methBody =
-        if cenv.opts.referenceAssemblyOnly then
+        if cenv.opts.metadataOnly then
             mkILThrowNullMethodBody "Equals"
             |> notlazy
             |> MethodBody.IL
@@ -7347,7 +7335,7 @@ and GenToStringMethod cenv eenv ilThisTy m =
                let callInstrs = EraseClosures.mkCallFunc g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done g.ilg.typ_String))
                let mdef =
                    let methBody =
-                       if cenv.opts.referenceAssemblyOnly then
+                       if cenv.opts.metadataOnly then
                            mkILThrowNullMethodBody "ToString"
                            |> notlazy
                            |> MethodBody.IL
@@ -7640,7 +7628,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                     let ilPropName = fspec.Name
                     let ilMethName = "get_" + ilPropName
                     let access = ComputeMemberAccess isPropHidden
-                    yield mkLdfldMethodDef cenv.opts.referenceAssemblyOnly (ilMethName, access, isStatic, ilThisTy, ilFieldName, ilPropType)
+                    yield mkLdfldMethodDef cenv.opts.metadataOnly (ilMethName, access, isStatic, ilThisTy, ilFieldName, ilPropType)
 
               // Generate property setter methods for the mutable fields
               for (useGenuineField, ilFieldName, isFSharpMutable, isStatic, _, ilPropType, isPropHidden, fspec) in fieldSummaries do
@@ -7655,7 +7643,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                     let ilMethodDef =
                          if isStatic then
                              let methBody =
-                                if cenv.opts.referenceAssemblyOnly then
+                                if cenv.opts.metadataOnly then
                                     mkILThrowNullMethodBody ilMethName
                                     |> notlazy
                                     |> MethodBody.IL
@@ -7666,7 +7654,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                   methBody)
                          else
                              let methBody =
-                                 if cenv.opts.referenceAssemblyOnly then
+                                 if cenv.opts.metadataOnly then
                                      mkILThrowNullMethodBody ilMethName
                                      |> notlazy
                                      |> MethodBody.IL
@@ -7699,7 +7687,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                       let callInstrs = EraseClosures.mkCallFunc g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done g.ilg.typ_String))
                       let ilMethodDef = 
                             let methBody =
-                                if cenv.opts.referenceAssemblyOnly then
+                                if cenv.opts.metadataOnly then
                                     mkILThrowNullMethodBody debugDisplayMethodName
                                     |> notlazy
                                     |> MethodBody.IL
@@ -7752,7 +7740,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                  // No type spec if the record is a value type
                  let spec = if isStructRecord then None else Some(g.ilg.typ_Object.TypeSpec)
                  let ilMethodDef = 
-                    if cenv.opts.referenceAssemblyOnly then
+                    if cenv.opts.metadataOnly then
                         mkILThrowNullStorageCtorWithParamNames([], ChooseParamNames fieldNamesAndTypes, reprAccess)
                     else
                         mkILSimpleStorageCtorWithParamNames(None, spec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess)
@@ -7762,7 +7750,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                  // FSharp 3.0 feature: adding CLIMutable to a record type causes emit of default constructor, and all fields get property setters
                  // Records that are value types do not create a default constructor with CLIMutable or ComVisible
                  if not isStructRecord && (isCLIMutable || (TryFindFSharpBoolAttribute g g.attrib_ComVisibleAttribute tycon.Attribs = Some true)) then
-                     if cenv.opts.referenceAssemblyOnly then
+                     if cenv.opts.metadataOnly then
                         yield mkILThrowNullStorageCtor([], [], reprAccess)
                      else
                         yield mkILSimpleStorageCtor(None, Some g.ilg.typ_Object.TypeSpec, ilThisTy, [], [], reprAccess)
@@ -8022,7 +8010,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                let ilPropType = GenType cenv.amap m eenv.tyenv fld.FormalType
                let ilMethName = "get_" + fld.Name
                let ilFieldName = ComputeFieldName exnc fld
-               let ilMethodDef = mkLdfldMethodDef cenv.opts.referenceAssemblyOnly (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType)
+               let ilMethodDef = mkLdfldMethodDef cenv.opts.metadataOnly (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType)
                let ilFieldDef = IL.mkILInstanceField(ilFieldName, ilPropType, None, ILMemberAccess.Assembly)
                let ilPropDef =
                    ILPropertyDef(name = ilPropName,
@@ -8038,7 +8026,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
              |> List.unzip4
 
         let ilCtorDef =
-            if cenv.opts.referenceAssemblyOnly then
+            if cenv.opts.metadataOnly then
                 mkILThrowNullStorageCtorWithParamNames([], ChooseParamNames fieldNamesAndTypes, reprAccess)
             else
                 mkILSimpleStorageCtorWithParamNames(None, Some g.iltyp_Exception.TypeSpec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess)
@@ -8047,7 +8035,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
         // This does default-initialization of all fields
         let ilCtorDefNoArgs =
             if not (isNil fieldNamesAndTypes) then
-                if cenv.opts.referenceAssemblyOnly then
+                if cenv.opts.metadataOnly then
                     [ mkILThrowNullStorageCtor([], [], reprAccess) ]
                 else
                     [ mkILSimpleStorageCtor(None, Some g.iltyp_Exception.TypeSpec, ilThisTy, [], [], reprAccess) ]
@@ -8060,7 +8048,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
           | Some serializationInfoType, Some streamingContextType ->
             let ilCtorDefForSerialization =
                 let methBody =
-                    if cenv.opts.referenceAssemblyOnly then
+                    if cenv.opts.metadataOnly then
                         mkILThrowNullMethodBody "info"
                         |> notlazy
                         |> MethodBody.IL
@@ -8192,20 +8180,6 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization impl
 
     // Generate the whole assembly
     CodegenAssembly cenv eenv mgbuf implFiles
-
-    let assemAttribs =
-        // Emit System.Runtime.CompilerServices.ReferenceAssemblyAttribute as an assembly-level when generating a reference assembly.
-        // Useful for the runtime to know that the assembly is a reference assembly.
-        if cenv.opts.referenceAssemblyOnly && g.attrib_ReferenceAssemblyAttribute.TyconRef.CanDeref then
-            let ilRefAsmAttribMethRef =
-                let ilTyRef = g.attrib_ReferenceAssemblyAttribute.TypeRef
-                let ilTySpec = mkILTySpec(ilTyRef, [])
-                let ilMethSpec = mkILCtorMethSpecForTy(mkILBoxedType ilTySpec, [])
-                ilMethSpec.MethodRef
-            let refAsmAttrib = Attrib(g.attrib_ReferenceAssemblyAttribute.TyconRef, AttribKind.ILAttrib ilRefAsmAttribMethRef, [], [], false, None, range0)
-            refAsmAttrib :: assemAttribs
-        else
-            assemAttribs
 
     let ilAssemAttrs = GenAttrs cenv eenv assemAttribs
 
@@ -8391,8 +8365,6 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
 
     /// Generate ILX code for an assembly fragment
     member _.GenerateCode (codeGenOpts, typedAssembly, assemAttribs, moduleAttribs) =
-        let hasInternalsVisibleToAttrib = HasFSharpAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute assemAttribs
-
         let cenv: cenv =
             { g=tcGlobals
               tcVal = tcVal
@@ -8404,8 +8376,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
               opts = codeGenOpts
               optimizeDuringCodeGen = (fun _flag expr -> expr)
               exprRecursionDepth = 0
-              delayedGenMethods = Queue ()
-              hasInternalsVisibleToAttrib = hasInternalsVisibleToAttrib }
+              delayedGenMethods = Queue () }
         GenerateCode (cenv, anonTypeTable, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs)
 
     /// Invert the compilation of the given value and clear the storage of the value

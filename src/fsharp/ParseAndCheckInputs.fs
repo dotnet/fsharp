@@ -968,7 +968,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
               let implFileSigType = SigTypeOfImplFile implFile0
 
               let implFile =
-                if tcConfig.emitReferenceAssemblyOnly = ReferenceAssemblyGeneration.TestSigOfImpl then
+                if tcConfig.emitMetadataAssembly = MetadataAssemblyGeneration.TestSigOfImpl then
                     CreateDummyTypedImplFile tcGlobals qualNameOfFile implFileSigType
                 else
                     implFile0

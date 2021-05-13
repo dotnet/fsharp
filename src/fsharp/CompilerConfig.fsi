@@ -132,12 +132,12 @@ type PackageManagerLine =
     static member StripDependencyManagerKey: string -> string -> string
 
 [<RequireQualifiedAccess>]
-type ReferenceAssemblyGeneration =
+type MetadataAssemblyGeneration =
     | None
     /// Complete means we include F# signature and optimization metadata as resources in the emitting assembly.
     | Complete
     /// Partial means we do not include F# optimization metadata as a resource in the emitting assembly.
-    | Partial
+    | MetadataOnly
     /// This is only for used for testing.
     | TestSigOfImpl
 
@@ -247,7 +247,7 @@ type TcConfigBuilder =
       mutable emitTailcalls: bool
       mutable deterministic: bool
       mutable concurrentBuild: bool
-      mutable emitReferenceAssemblyOnly: ReferenceAssemblyGeneration
+      mutable emitMetadataAssembly: MetadataAssemblyGeneration
       mutable preferredUiLang: string option
       mutable lcid        : int option
       mutable productNameForBannerText: string
@@ -438,7 +438,7 @@ type TcConfig =
     member emitTailcalls: bool
     member deterministic: bool
     member concurrentBuild: bool
-    member emitReferenceAssemblyOnly: ReferenceAssemblyGeneration
+    member emitMetadataAssembly: MetadataAssemblyGeneration
     member pathMap: PathMap
     member preferredUiLang: string option
     member optsOn       : bool
