@@ -463,7 +463,7 @@ try {
     $script:BuildCategory = "Test"
     $script:BuildMessage = "Failure running tests"
     $desktopTargetFramework = "net472"
-    $coreclrTargetFramework = "net6.0"
+    $coreclrTargetFramework = "net5.0"
 
     if ($testDesktop) {
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true
