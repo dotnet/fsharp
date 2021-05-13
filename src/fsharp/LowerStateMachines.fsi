@@ -13,9 +13,6 @@ type LoweredStateMachine =
          thisVars: ValRef list *
          moveNext: (Val * Expr) * 
          setStateMachine: (Val * Val * Expr) *
-         getResumptionPoint: (Val * Expr) *
-         getData: (Val * Expr) *
-         setData: (Val * Val * Expr) *
          afterCode: (Val * Expr)
 
 /// Analyze a TAST expression to detect the elaborated form of a state machine expression, a special kind

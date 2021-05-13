@@ -268,9 +268,6 @@ type TaskSeqBuilder() =
                     else
                         failwith "unreachable"))
                 (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-                (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-                (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-                (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
                 (AfterCode<_,_>(fun sm -> 
                     let ts = TaskSeq<TaskSeqStateMachine<'T>, 'T>()
                     ts.Machine <- sm

@@ -44,9 +44,6 @@ module ``Check simple state machine`` =
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "ResumableObject_SimpleImmediateExpression" (makeStateMachine()) 1
 
@@ -62,9 +59,6 @@ module ``Check resumable code can capture variables`` =
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     let sm3 = makeStateMachine 3
     check "vwervwkhevh" (makeStateMachine 3) 4
@@ -83,9 +77,6 @@ module ``Check resumable code may be preceeded by value definitions`` =
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "cvwvweewvhjkv" (makeStateMachine 4) 4
 
@@ -103,9 +94,6 @@ module ``Check resumable code may contain local function definitions`` =
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "vewwevbrklbre" (makeStateMachine 3) 8
 
@@ -123,9 +111,6 @@ module ``Check resumable code may be preceeded by function definitions`` =
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "vwekvewkhvew" (makeStateMachine 3) 6
 
@@ -144,9 +129,6 @@ module ``Check resumable code may contain let statements without resumption poin
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "vwelvewl" (makeStateMachine 3) -2
 
@@ -162,9 +144,6 @@ module ``Check resumable code may contain sequential statements without resumpti
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "ewvkwekvwevwvek" (makeStateMachine 3) 5
 
@@ -184,9 +163,6 @@ module ``Check resuming at start of method`` =
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "vwrvwlkelwe" (makeStateMachine 3) 13
 
@@ -205,9 +181,6 @@ module ``Check resuming at drop through`` =
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "cvqelekckeq" (makeStateMachine 3) 13
 
@@ -227,9 +200,6 @@ module ``Check resuming at a resumption point`` =
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "vwlvkjlewjwevj" (makeStateMachine 3) 23
 
@@ -248,9 +218,6 @@ module ``Check resumable code may contain try-with without resumption points`` =
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "fvwewejkhkwe" (makeStateMachine 13) 23
@@ -276,9 +243,6 @@ module ``Check resuming at resumption point in try block`` =
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "ResumableCode_TryWithResumption" (makeStateMachine 13) 33
@@ -305,9 +269,6 @@ module ``Check exception thrown in try block after resumption is caught`` =
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "ResumableCode_TryWithResumptionException" (makeStateMachine 13) 25
@@ -325,9 +286,6 @@ module ``Check exception thrown in try block with no resumption points is caught
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "ResumableCode_TryWithExceptionNoResumption" (makeStateMachine 13) 25
@@ -347,9 +305,6 @@ module ``Check resumable code may contain try-finally without resumption points`
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "ResumableCode_TryFinallyNoResumption" (makeStateMachine 13) 53
@@ -390,9 +345,6 @@ module ``Check can simulate try-finally via try-with`` =
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "vwevewewlvjve" (makeStateMachine 13) 43
@@ -412,9 +364,6 @@ module ``Check resumable code may contain try-finally without resumption points 
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "cvwekjwejkl" (try makeStateMachine 13 with _ -> res ) 23
@@ -432,9 +381,6 @@ module ``Check resumable code may contain while loop without resumption`` =
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "fvewhjkvekwhk" (makeStateMachine 13) 35
@@ -465,9 +411,6 @@ module ``Check resumable code may contain while loop with resumption`` =
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "wejlcewjllkjwce" (makeStateMachine 13) 203
@@ -486,9 +429,6 @@ module ``Check resumable code may contain integer for loop without resumption`` 
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "celjkcwljeljwecl" (makeStateMachine 13) 35
@@ -515,9 +455,6 @@ module ``Check resumable code can contain a conditional with a resumption point`
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
 
     check "vewowevewoi" (makeStateMachine 13) 33
@@ -544,9 +481,6 @@ module ``Check resumable code can contain a conditional with a resumption point 
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
-            (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-            (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-            (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
                     
     check "vewowevewoi" (makeStateMachine 13) 33

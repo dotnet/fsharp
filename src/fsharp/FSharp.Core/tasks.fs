@@ -110,10 +110,7 @@ type TaskBuilder() =
 
     member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
          if __useResumableCode then 
-
-            // This is the static implementation.  A new struct type is created.
             __stateMachine<TaskStateMachineData<'T>, Task<'T>>
-                // IAsyncStateMachine.MoveNext
                 (MoveNextMethodImpl<_>(fun sm -> 
                     if __useResumableCode then 
                         //-- RESUMABLE CODE START
@@ -124,12 +121,10 @@ type TaskBuilder() =
                                 sm.Data.MethodBuilder.SetResult(sm.Data.Result)
                         with exn ->
                             sm.Data.MethodBuilder.SetException exn
+                        //-- RESUMABLE CODE END
                     else
                         failwith "unreachable"))
                 (SetStateMachineMethodImpl<_>(fun sm state -> sm.Data.MethodBuilder.SetStateMachine(state)))
-                (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-                (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-                (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
                 (AfterCode<_,_>(fun sm -> 
                     sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
                     sm.Data.MethodBuilder.Start(&sm)

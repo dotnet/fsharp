@@ -102,9 +102,6 @@ type CoroutineBuilder() =
                         failwith "Run: non-resumable - unreachable"))
 
                 (SetStateMachineMethodImpl<_>(fun sm state -> SetStateMachine(&sm, state)))
-                (GetResumptionPointMethodImpl<_>(fun sm -> sm.ResumptionPoint))
-                (GetResumableStateMachineDataMethodImpl<_>(fun sm -> sm.Data))
-                (SetResumableStateMachineDataMethodImpl<_>(fun sm data -> sm.Data <- data))
                 (AfterCode<_,_>(fun sm -> 
                     let mutable cr = Coroutine<CoroutineStateMachine>()
                     cr.Machine <- sm

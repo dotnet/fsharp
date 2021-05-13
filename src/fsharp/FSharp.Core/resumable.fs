@@ -80,17 +80,6 @@ type SetStateMachineMethodImpl<'Data> = delegate of byref<ResumableStateMachine<
 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>> -> 'Result
 
-/// Defines the implementation of the corresponding method on IResumableStateMachine for a struct state machine.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-type GetResumptionPointMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> int
-
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-type SetResumableStateMachineDataMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> * 'Data -> unit
-
-/// Defines the implementation of the corresponding method on IResumableStateMachine for a struct state machine.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-type GetResumableStateMachineDataMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> 'Data
-
 [<AutoOpen>]
 module StateMachineHelpers = 
 
@@ -111,15 +100,9 @@ module StateMachineHelpers =
     let __stateMachine<'Data, 'Result> 
            (moveNextMethod: MoveNextMethodImpl<'Data>) 
            (setStateMachineMethod: SetStateMachineMethodImpl<'Data>) 
-           (getResumptionPointMethod: GetResumptionPointMethodImpl<'Data>) 
-           (getDataMethod: GetResumableStateMachineDataMethodImpl<'Data>) 
-           (setDataMethod: SetResumableStateMachineDataMethodImpl<'Data>) 
            (afterCode: AfterCode<'Data, 'Result>): 'Result =
         ignore moveNextMethod
         ignore setStateMachineMethod
-        ignore getResumptionPointMethod
-        ignore getDataMethod
-        ignore setDataMethod
         ignore afterCode
         failwith "__stateMachine should always be guarded by __useResumableCode and only used in valid state machine implementations"
 

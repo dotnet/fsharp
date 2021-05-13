@@ -1235,19 +1235,13 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
     | StructStateMachineExpr g (_dataTy,  
                                     (moveNextThisVar, moveNextExpr), 
                                     (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody), 
-                                    (getResumptionPointThisVar, getResumptionPointBody),
-                                    (getDataThisVar, getDataBody),
-                                    (setDataThisVar, setDataValueVar, setDataBody),
                                     (afterCodeThisVar, afterCodeBody)) ->
         if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
             error(Error(FSComp.SR.tcStateMachineNotSupported(), expr.Range))
 
-        BindVals cenv env [moveNextThisVar; setStateMachineThisVar; setStateMachineStateVar; getResumptionPointThisVar; getDataThisVar; setDataThisVar; setDataValueVar; afterCodeThisVar]
+        BindVals cenv env [moveNextThisVar; setStateMachineThisVar; setStateMachineStateVar; afterCodeThisVar]
         CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (false, false) } moveNextExpr
         CheckExprNoByrefs cenv env setStateMachineBody
-        CheckExprNoByrefs cenv env getResumptionPointBody
-        CheckExprNoByrefs cenv env getDataBody
-        CheckExprNoByrefs cenv env setDataBody
         CheckExprNoByrefs cenv env afterCodeBody
         NoLimit
 

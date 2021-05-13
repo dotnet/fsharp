@@ -8,7 +8,6 @@ open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Text
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TypedTree
@@ -168,9 +167,6 @@ type LoweredStateMachine =
          thisVars: ValRef list *
          moveNext: (Val * Expr) * 
          setStateMachine: (Val * Val * Expr) *
-         getResumptionPoint: (Val * Expr) *
-         getData: (Val * Expr) *
-         setData: (Val * Val * Expr) *
          afterCode: (Val * Expr)
 
 let ConvertStateMachineExprToObject g overallExpr =
@@ -380,18 +376,12 @@ let ConvertStateMachineExprToObject g overallExpr =
                    (dataTy, 
                     (moveNextThisVar, moveNextBody), 
                     (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody), 
-                    (getResumptionPointThisVar, getResumptionPointBody),
-                    (getDataThisVar, getDataBody),
-                    (setDataThisVar, setDataValueVar, setDataBody),
                     (afterCodeThisVar, afterCodeBody)) ->
                 let templateStructTy = g.mk_ResumableStateMachine_ty dataTy
                 let env = { env with TemplateStructTy = Some templateStructTy }
                 if sm_verbose then printfn "Found struct machine..."
                 if sm_verbose then printfn "Found struct machine jump table call..."
                 let setStateMachineBodyR = ConvertStateMachineLeafExpression env setStateMachineBody
-                let getResumptionPointBodyR = ConvertStateMachineLeafExpression env getResumptionPointBody
-                let getDataBodyR = ConvertStateMachineLeafExpression env getDataBody
-                let setDataBodyR = ConvertStateMachineLeafExpression env setDataBody
                 let afterCodeBodyR = ConvertStateMachineLeafExpression env afterCodeBody
                 let remake2 (moveNextExprR, stateVars, thisVars) = 
                     if sm_verbose then 
@@ -405,9 +395,6 @@ let ConvertStateMachineExprToObject g overallExpr =
                         (templateStructTy, dataTy, stateVars, thisVars, 
                             (moveNextThisVar, moveNextExprR), 
                             (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBodyR), 
-                            (getResumptionPointThisVar, getResumptionPointBodyR),
-                            (getDataThisVar, getDataBodyR),
-                            (setDataThisVar, setDataValueVar, setDataBodyR),
                             (afterCodeThisVar, afterCodeBodyR))
                 Some (env, remake2, moveNextBody)
             | _ -> 

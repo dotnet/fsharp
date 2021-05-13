@@ -147,17 +147,6 @@ type SetStateMachineMethodImpl<'Data> = delegate of byref<ResumableStateMachine<
 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>> -> 'Result
 
-/// Defines the implementation of the corresponding method on IResumableStateMachine for a struct state machine.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-type GetResumptionPointMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> int
-
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-type SetResumableStateMachineDataMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> * 'Data -> unit
-
-/// Defines the implementation of the corresponding method on IResumableStateMachine for a struct state machine.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-type GetResumableStateMachineDataMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> 'Data
-
 /// Contains compiler intrinsics related to the definition of state machines.
 [<Microsoft.FSharp.Core.Experimental("Experimental library feature, requires '--langversion:preview'")>]
 module StateMachineHelpers = 
@@ -199,23 +188,17 @@ module StateMachineHelpers =
     /// with closure-capture fields in a way similar to an object expression. 
     /// Any mention of the ResumableStateMachine type in any the 'methods' is rewritten to this
     /// fresh struct type.  The 'methods' are used to implement the interfaces on ResumableStateMachine and are also rewritten.
-    /// The 'after' method is executed after the state machine has been created and must eliminate ResumableStateMachine,
-    /// it's return type should not include ResumableStateMachine.
+    /// The 'after' method is then executed and must eliminate the ResumableStateMachine. For example,
+    /// its return type must not include ResumableStateMachine.
     /// </remarks>
     /// <param name="moveNextMethod">Gives the implementation of the MoveNext method on IAsyncStateMachine.</param>
     /// <param name="setStateMachineMethod">Gives the implementation of the SetStateMachine method on IAsyncStateMachine.</param>
-    /// <param name="getResumptionPointMethod">Gives the fresh implementations of interfaces implemented by the template.</param>
-    /// <param name="getDataMethod">Gives the fresh implementations of interfaces implemented by the template.</param>
-    /// <param name="setDataMethod">Gives the fresh implementations of interfaces implemented by the template.</param>
     /// <param name="afterCode">Gives code to execute after the generation of the state machine and to produce the final result.</param>
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val __stateMachine<'Data, 'Result> :
         moveNextMethod: MoveNextMethodImpl<'Data> -> 
         setStateMachineMethod: SetStateMachineMethodImpl<'Data> -> 
-        getResumptionPointMethod: GetResumptionPointMethodImpl<'Data> ->
-        getDataMethod: GetResumableStateMachineDataMethodImpl<'Data> ->
-        setDataMethod: SetResumableStateMachineDataMethodImpl<'Data> ->
         afterCode: AfterCode<'Data, 'Result> 
             -> 'Result
 

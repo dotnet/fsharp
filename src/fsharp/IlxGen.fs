@@ -4598,9 +4598,6 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             (templateStructTy, dataTy, stateVars, thisVars, 
                 (moveNextThisVar, moveNextBody), 
                 (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody), 
-                (getResumptionPointThisVar, getResumptionPointBody),
-                (getDataThisVar, getDataBody),
-                (setDataThisVar, setDataValueVar, setDataBody),
                 (afterCodeThisVar, afterCodeBody))) = res
     let m = moveNextBody.Range
     let g = cenv.g
@@ -4644,6 +4641,28 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     let eenvinner = AddTemplateReplacement eenvinner (templateTyconRef, ilCloTy, templateTypeInst)
 
     let infoReader = InfoReader.InfoReader(g, cenv.amap)
+
+    // We codegen the IResumableStateMachine implementation for each generated struct type
+    let getResumptionPointThisVar, getResumptionPointBody = 
+        let fieldName = "ResumptionPoint"
+        let thisVar = moveNextThisVar // reusing the this var from the MoveNext implementation
+        let finfo = 
+            match infoReader.GetRecordOrClassFieldsOfType(Some fieldName, AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere, m, templateStructTy) with
+            | [finfo] -> finfo
+            | _ -> error(InternalError(sprintf "expected class field %s not found" fieldName, m))
+        thisVar, mkRecdFieldGetViaExprAddr (exprForVal m thisVar, finfo.RecdFieldRef, finfo.TypeInst, m)
+
+    let (getDataThisVar, getDataBody), (setDataThisVar, setDataValueVar, setDataBody) = 
+        let fieldName = "Data"
+        let thisVar = moveNextThisVar // reusing the this var from the MoveNext implementation
+        let setDataValueVar, setDataValueExpr = mkCompGenLocal m "value" dataTy 
+        let finfo = 
+            match infoReader.GetRecordOrClassFieldsOfType(Some fieldName, AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere, m, templateStructTy) with
+            | [finfo] -> finfo
+            | _ -> error(InternalError(sprintf "expected class field %s not found" fieldName, m))
+        (thisVar, mkRecdFieldGetViaExprAddr (exprForVal m thisVar, finfo.RecdFieldRef, finfo.TypeInst, m)),
+        (thisVar, setDataValueVar, mkRecdFieldSetViaExprAddr (exprForVal m thisVar, finfo.RecdFieldRef, finfo.TypeInst, setDataValueExpr, m))
+
     let methods =
         [ ((mkLocalValRef moveNextThisVar::thisVars), [], g.mk_IAsyncStateMachine_ty, "MoveNext", moveNextBody); 
           ([mkLocalValRef setStateMachineThisVar], [setStateMachineStateVar], g.mk_IAsyncStateMachine_ty, "SetStateMachine", setStateMachineBody); 

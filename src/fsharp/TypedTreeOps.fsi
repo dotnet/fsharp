@@ -2447,7 +2447,7 @@ val (|ResumableEntryMatchExpr|_|): g: TcGlobals -> Expr -> (Expr * Val * Expr * 
 val (|StructStateMachineExpr|_|): 
     g: TcGlobals -> 
     expr: Expr -> 
-        (TType * (Val * Expr) * (Val * Val * Expr) *  (Val * Expr) *  (Val * Expr) *  (Val * Val * Expr) *  (Val * Expr)) option
+        (TType * (Val * Expr) * (Val * Val * Expr) *  (Val * Expr)) option
 
 /// Recognise a sequential or binding construct in a resumable code
 val (|SequentialResumableCode|_|): g: TcGlobals -> Expr -> (Expr * Expr * range * (Expr -> Expr -> Expr)) option

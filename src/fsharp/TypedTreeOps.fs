@@ -9557,20 +9557,14 @@ let (|PossiblyCompiledTypeOfExpr|_|) g expr =
 
 let (|StructStateMachineExpr|_|) g expr =
     match expr with
-    | ValApp g g.cgh__stateMachine_vref ([dataTy; _resultTy], [moveNext; setStateMachine; getResumptionPoint; getData; setData; afterCode], _m) ->
-        match moveNext, setStateMachine, getResumptionPoint, getData, setData, afterCode with 
+    | ValApp g g.cgh__stateMachine_vref ([dataTy; _resultTy], [moveNext; setStateMachine; afterCode], _m) ->
+        match moveNext, setStateMachine, afterCode with 
         | NewDelegateExpr g (_, [[moveNextThisVar]], moveNextBody, _, _),
           NewDelegateExpr g (_, [[setStateMachineThisVar;setStateMachineStateVar]], setStateMachineBody, _, _),
-          NewDelegateExpr g (_, [[getResumptionPointThisVar]], getResumptionPointBody, _, _),
-          NewDelegateExpr g (_, [[getDataThisVar]], getDataBody, _, _),
-          NewDelegateExpr g (_, [[setDataThisVar;setDataValueVar]], setDataBody, _, _),
           NewDelegateExpr g (_, [[afterCodeThisVar]], afterCodeBody, _, _) ->
               Some (dataTy, 
                     (moveNextThisVar, moveNextBody), 
                     (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody), 
-                    (getResumptionPointThisVar, getResumptionPointBody),
-                    (getDataThisVar, getDataBody),
-                    (setDataThisVar, setDataValueVar, setDataBody),
                     (afterCodeThisVar, afterCodeBody))
         | _ -> None
     | _ -> None
