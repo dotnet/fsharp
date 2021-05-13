@@ -252,11 +252,6 @@
         <target state="translated">Используйте "&lt;-", чтобы изменить значение</target>
         <note />
       </trans-unit>
-      <trans-unit id="UseNameof">
-        <source>Use 'nameof'</source>
-        <target state="new">Use 'nameof'</target>
-        <note />
-      </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
         <target state="translated">Используйте "upcast"</target>

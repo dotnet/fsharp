@@ -252,11 +252,6 @@
         <target state="translated">使用 '&lt;-' 來變動值</target>
         <note />
       </trans-unit>
-      <trans-unit id="UseNameof">
-        <source>Use 'nameof'</source>
-        <target state="new">Use 'nameof'</target>
-        <note />
-      </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
         <target state="translated">使用「向上轉型」</target>

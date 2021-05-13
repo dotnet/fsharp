@@ -252,11 +252,6 @@
         <target state="translated">Utiliser '&lt;-' pour muter la valeur</target>
         <note />
       </trans-unit>
-      <trans-unit id="UseNameof">
-        <source>Use 'nameof'</source>
-        <target state="new">Use 'nameof'</target>
-        <note />
-      </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
         <target state="translated">Utiliser 'upcast'</target>
