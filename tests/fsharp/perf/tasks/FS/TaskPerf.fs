@@ -15,8 +15,7 @@ open TaskBuilderTasks //.ContextSensitive // TaskBuilder.fs extension members
 //open FSharp.Control.ContextSensitiveTasks // the default
 open FSharp.Control // AsyncSeq
 open Tests.SyncBuilder
-open Tests.TaskSeqUsingRawResumableCode
-open Tests.TasksUsingRawResumableCode
+open Tests.TaskSeq
 open BenchmarkDotNet.Configs
 
 [<AutoOpen>]
@@ -42,20 +41,6 @@ module Helpers =
             return res1 + res2 + res3 + res4 + res5 + res6 + res7 + res8 + res9 + res10
          }
 
-    let tenBindSync_taskUsingRawResumableCode() =
-        taskUsingRawResumableCode {
-            let! res1 = syncTask()
-            let! res2 = syncTask()
-            let! res3 = syncTask()
-            let! res4 = syncTask()
-            let! res5 = syncTask()
-            let! res6 = syncTask()
-            let! res7 = syncTask()
-            let! res8 = syncTask()
-            let! res9 = syncTask()
-            let! res10 = syncTask()
-            return res1 + res2 + res3 + res4 + res5 + res6 + res7 + res8 + res9 + res10
-         }
 
     let tenBindSync_taskBuilder() =
         taskBuilder {
@@ -101,20 +86,6 @@ module Helpers =
             do! asyncTask()
          }
 
-    let tenBindAsync_taskUsingRawResumableCode() =
-        taskUsingRawResumableCode {
-            do! asyncTask()
-            do! asyncTask()
-            do! asyncTask()
-            do! asyncTask()
-            do! asyncTask()
-            do! asyncTask()
-            do! asyncTask()
-            do! asyncTask()
-            do! asyncTask()
-            do! asyncTask()
-         }
-
     let tenBindAsync_taskBuilder() =
         taskBuilder {
             do! asyncTask()
@@ -132,8 +103,6 @@ module Helpers =
     let singleTask_task() =
         task { return 1 }
 
-    let singleTask_taskUsingRawResumableCode() =
-        task { return 1 }
 
     let singleTask_taskBuilder() =
         taskBuilder { return 1 }
@@ -162,17 +131,6 @@ type Benchmarks() =
         |> fun t -> t.Wait()
         File.Delete(path)
 
-    [<BenchmarkCategory("ManyWriteFile");Benchmark>]
-    member _.ManyWriteFile_TaskUsingRawResumableCode () =
-        let path = Path.GetTempFileName()
-        taskUsingRawResumableCode {
-            let junk = Array.zeroCreate bufferSize
-            use file = File.Create(path)
-            for i = 1 to manyIterations do
-                do! file.WriteAsync(junk, 0, junk.Length)
-        }
-        |> fun t -> t.Wait()
-        File.Delete(path)
 
     [<BenchmarkCategory("ManyWriteFile");Benchmark>]
     member _.ManyWriteFile_TaskUsingTaskBuilder () =
@@ -209,10 +167,6 @@ type Benchmarks() =
         for i in 1 .. manyIterations*100 do 
              tenBindSync_task().Wait() 
 
-    [<BenchmarkCategory("NonAsyncBinds"); Benchmark>]
-    member _.NonAsyncBinds_TaskUsingRawResumableCode() = 
-        for i in 1 .. manyIterations*100 do 
-             tenBindSync_taskUsingRawResumableCode().Wait() 
 
     [<BenchmarkCategory("NonAsyncBinds"); Benchmark>]
     member _.NonAsyncBinds_TaskUsingTaskBuilder() = 
@@ -234,10 +188,6 @@ type Benchmarks() =
          for i in 1 .. manyIterations do 
              tenBindAsync_task().Wait() 
 
-    [<BenchmarkCategory("AsyncBinds"); Benchmark>]
-    member _.AsyncBinds_TaskUsingRawResumableCode() = 
-         for i in 1 .. manyIterations do 
-             tenBindAsync_taskUsingRawResumableCode().Wait() 
 
     [<BenchmarkCategory("AsyncBinds"); Benchmark>]
     member _.AsyncBinds_TaskUsingTaskBuilder() = 
@@ -259,10 +209,6 @@ type Benchmarks() =
          for i in 1 .. manyIterations*500 do 
              singleTask_task().Wait() 
 
-    [<BenchmarkCategory("SingleSyncTask"); Benchmark>]
-    member _.SingleSyncTask_TaskUsingRawResumableCode() = 
-         for i in 1 .. manyIterations*500 do 
-             singleTask_taskUsingRawResumableCode().Wait() 
 
     [<BenchmarkCategory("SingleSyncTask"); Benchmark>]
     member _.SingleSyncTask_TaskUsingTaskBuilder() = 
@@ -291,8 +237,6 @@ type Benchmarks() =
     [<BenchmarkCategory("TinyVariableSizedList"); Benchmark(Baseline=true)>]
     member _.TinyVariableSizedList_Builder() = Tests.ListBuilders.Examples.tinyVariableSizeBase()
 
-    [<BenchmarkCategory("TinyVariableSizedList"); Benchmark()>]
-    member _.TinyVariableSizedList_RawResumableCode() = Tests.ListBuilders.Examples.tinyVariableSizeSM()
 
     [<BenchmarkCategory("TinyVariableSizedList"); Benchmark()>]
     member _.TinyVariableSizedList_InlinedCode() = Tests.ListBuilders.Examples.tinyVariableSizeC()
@@ -302,17 +246,12 @@ type Benchmarks() =
     member _.VariableSizedList_Builder() = Tests.ListBuilders.Examples.variableSizeBase()
 
     [<BenchmarkCategory("VariableSizedList"); Benchmark>]
-    member _.VariableSizedList_RawResumableCode() = Tests.ListBuilders.Examples.variableSizeSM()
-
-    [<BenchmarkCategory("VariableSizedList"); Benchmark>]
     member _.VariableSizedList_InlinedCode() = Tests.ListBuilders.Examples.variableSizeC()
 
 
     [<BenchmarkCategory("FixedSizedList"); Benchmark(Baseline=true)>]
     member _.FixedSizeList_Builder() = Tests.ListBuilders.Examples.fixedSizeBase()
 
-    [<BenchmarkCategory("FixedSizedList"); Benchmark>]
-    member _.FixedSizeList_RawResumableCode() = Tests.ListBuilders.Examples.fixedSizeSM()
 
     [<BenchmarkCategory("FixedSizedList"); Benchmark>]
     member _.FixedSizeList_InlinedCode() = Tests.ListBuilders.Examples.fixedSizeC()
@@ -322,17 +261,11 @@ type Benchmarks() =
     member _.TinyVariableSizedArray_Builder() = Tests.ArrayBuilders.Examples.tinyVariableSizeBase()
 
     [<BenchmarkCategory("TinyVariableSizedArray"); Benchmark>]
-    member _.TinyVariableSizedArray_RawResumableCode() = Tests.ArrayBuilders.Examples.tinyVariableSizeSM()
-
-    [<BenchmarkCategory("TinyVariableSizedArray"); Benchmark>]
     member _.TinyVariableSizedArray_InlinedCode() = Tests.ArrayBuilders.Examples.tinyVariableSizeC()
 
 
     [<BenchmarkCategory("VariableSizedArray"); Benchmark(Baseline=true)>]
     member _.VariableSizedArray_Builder() = Tests.ArrayBuilders.Examples.variableSizeBase()
-
-    [<BenchmarkCategory("VariableSizedArray"); Benchmark>]
-    member _.VariableSizedArray_RawResumableCode() = Tests.ArrayBuilders.Examples.variableSizeSM()
 
     [<BenchmarkCategory("VariableSizedArray"); Benchmark>]
     member _.VariableSizedArray_InlinedCode() = Tests.ArrayBuilders.Examples.variableSizeC()
@@ -341,8 +274,6 @@ type Benchmarks() =
     [<BenchmarkCategory("FixedSizedArray"); Benchmark(Baseline=true)>]
     member _.FixedSizeArray_Builder() = Tests.ArrayBuilders.Examples.fixedSizeBase()
 
-    [<BenchmarkCategory("FixedSizedArray"); Benchmark>]
-    member _.FixedSizeArray_RawResumableCode() = Tests.ArrayBuilders.Examples.fixedSizeSM()
 
     [<BenchmarkCategory("FixedSizedArray"); Benchmark>]
     member _.FixedSizeArray_InlinedCode() = Tests.ArrayBuilders.Examples.fixedSizeC()
@@ -350,9 +281,6 @@ type Benchmarks() =
 
     [<BenchmarkCategory("MultiStepOption"); Benchmark(Baseline=true)>]
     member _.MultiStepOption_OldBuilder() = Tests.OptionBuilders.Examples.multiStepOldBuilder()
-
-    [<BenchmarkCategory("MultiStepOption"); Benchmark>]
-    member _.MultiStepOption_RawResumableCode() = Tests.OptionBuilders.Examples.multiStepStateMachineBuilder()
 
     [<BenchmarkCategory("MultiStepOption"); Benchmark>]
     member _.MultiStepOption_InlineIfLambda() = Tests.OptionBuilders.Examples.multiStepInlineIfLambdaBuilder()
@@ -365,18 +293,11 @@ type Benchmarks() =
     member _.MultiStepValueOption_OldBuilder() = Tests.OptionBuilders.Examples.multiStepOldBuilderV()
 
     [<BenchmarkCategory("MultiStepValueOption"); Benchmark>]
-    member _.MultiStepValueOption_RawResumableCode() = Tests.OptionBuilders.Examples.multiStepStateMachineBuilderV()
-
-    [<BenchmarkCategory("MultiStepValueOption"); Benchmark>]
     member _.MultiStepValueOption_InlineIfLambda() = Tests.OptionBuilders.Examples.multiStepInlineIfLambdaBuilderV()
 
     [<BenchmarkCategory("MultiStepValueOption"); Benchmark>]
     member _.MultiStepValueOption_NoBuilder() = Tests.OptionBuilders.Examples.multiStepNoBuilderV()
 
-
-    [<BenchmarkCategory("taskSeq"); Benchmark>]
-    member _.NestedForLoops_TaskSeqUsingRawResumableCode() = 
-        Tests.TaskSeqUsingRawResumableCode.Examples.perf2() |> TaskSeq.iter ignore
 
     //[<BenchmarkCategory("taskSeq"); Benchmark>]
     //member _.AsyncSeq_NestedForLoops() = 

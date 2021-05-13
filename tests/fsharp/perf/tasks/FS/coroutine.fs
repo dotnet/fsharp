@@ -86,10 +86,10 @@ and [<Struct; NoComparison; NoEquality>]
     [<DefaultValue(false)>]
     val mutable HijackTarget: Coroutine option
 
-    static member GetHijackTarget(x: byref<'T> when 'T :> IResumableStateMachine<CoroutineStateMachineData>) = 
+    static member GetHijackTarget(x: byref<'Machine> when 'Machine :> IResumableStateMachine<CoroutineStateMachineData>) = 
         x.Data.HijackTarget
 
-    static member SetHijackTarget(x: byref<'T>, tg: Coroutine) : unit when 'T :> IResumableStateMachine<CoroutineStateMachineData> = 
+    static member SetHijackTarget(x: byref<'Machine>, tg: Coroutine) : unit when 'Machine :> IResumableStateMachine<CoroutineStateMachineData> = 
         let mutable newData = CoroutineStateMachineData()
         newData.HijackTarget <- Some tg
         x.Data <- newData
@@ -265,43 +265,6 @@ module Examples =
            yield ()
         }
 
-    let perf1 (x: int) = 
-        coroutine {
-           yield ()
-           yield ()
-           if x >= 2 then 
-               yield ()
-               yield ()
-        }
-
-    let perf2 () = 
-        coroutine {
-           for i1 in perf1 3 do
-             for i2 in perf1 3 do
-               for i3 in perf1 3 do
-                 for i4 in perf1 3 do
-                   for i5 in perf1 3 do
-                      yield! perf1 i5
-        }
-
-    let perf1_AsyncSeq (x: int) = 
-        FSharp.Control.AsyncSeqExtensions.asyncSeq {
-           yield 1
-           yield 2
-           if x >= 2 then 
-               yield 3
-               yield 4
-        }
-
-    let perf2_AsyncSeq () = 
-        FSharp.Control.AsyncSeqExtensions.asyncSeq {
-           for i1 in perf1_AsyncSeq 3 do
-             for i2 in perf1_AsyncSeq 3 do
-               for i3 in perf1_AsyncSeq 3 do
-                 for i4 in perf1_AsyncSeq 3 do
-                   for i5 in perf1_AsyncSeq 3 do
-                     yield! perf1_AsyncSeq i5
-        }
 
     let dumpCoroutine (t: Coroutine) = 
         printfn "-----"
