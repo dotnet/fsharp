@@ -28,7 +28,7 @@ type IPriority1 = interface inherit IPriority2 end
 [<Struct; NoComparison; NoEquality>]
 type ResumableStateMachine<'Data> =
 
-    /// When statically compiled, holds the continuation goto-label further execution of the state machine
+    /// When statically compiled, holds the data for the state machine
     [<DefaultValue(false)>]
     val mutable Data: 'Data
 

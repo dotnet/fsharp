@@ -1,5 +1,18 @@
 
-// Coroutines with tailcall support
+
+// This is a sample and test showing how to use resumable code to implement
+// coroutines with tailcall support
+//
+// A coroutine is a value of type Coroutine normally constructed using this form:
+//
+//    coroutine {
+//       printfn "in t1"
+//       yield ()
+//       printfn "hey"
+//    }
+//
+// We also support `yield!` and tailcalls using the (non-standard) syntac of `return!`
+
 module Tests.Coroutines
 
 open System
@@ -9,55 +22,43 @@ open FSharp.Core.CompilerServices.StateMachineHelpers
 open FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open FSharp.Collections
 
-let verbose = true 
+let verbose = false
 
-// Call interface methods on structs
-let inline MoveNext(x: byref<'T> when 'T :> IAsyncStateMachine) = x.MoveNext()
-let inline SetStateMachine(x: byref<'T> when 'T :> IAsyncStateMachine, state) = x.SetStateMachine(state)
-let inline GetResumptionPoint(x: byref<'T> when 'T :> IResumableStateMachine<'Data>) = x.ResumptionPoint
+/// Helpers to do zero-allocation call to interface methods on structs
+[<AutoOpen>]
+module internal Helpers =
+    let inline MoveNext(x: byref<'T> when 'T :> IAsyncStateMachine) = x.MoveNext()
+    let inline SetStateMachine(x: byref<'T> when 'T :> IAsyncStateMachine, state) = x.SetStateMachine(state)
+    let inline GetResumptionPoint(x: byref<'T> when 'T :> IResumableStateMachine<'Data>) = x.ResumptionPoint
 
-/// The extra data stored in ResumableStateMachine for coroutines
-[<Struct; NoComparison; NoEquality>]
-type CoroutineStateMachineData =
-
-    // For tailcalls using 'return!'
-    [<DefaultValue(false)>]
-    val mutable HijackTarget: Coroutine option
-
-    static member GetHijackTarget(x: byref<'T> when 'T :> IResumableStateMachine<CoroutineStateMachineData>) = 
-        x.Data.HijackTarget
-    static member SetHijackTarget(x: byref<'T>, tg: Coroutine) : unit when 'T :> IResumableStateMachine<CoroutineStateMachineData> = 
-        let mutable newData = CoroutineStateMachineData()
-        newData.HijackTarget <- Some tg
-        x.Data <- newData
-
-and CoroutineStateMachine = ResumableStateMachine<CoroutineStateMachineData>
-and CoroutineResumptionFunc = ResumptionFunc<CoroutineStateMachineData>
-and CoroutineResumptionDynamicInfo = ResumptionDynamicInfo<CoroutineStateMachineData>
-
-and CoroutineCode = ResumableCode<CoroutineStateMachineData, unit>
-
-and [<AbstractClass; NoEquality; NoComparison>] 
-    Coroutine() =
+/// This is the type of coroutines
+[<AbstractClass; NoEquality; NoComparison>] 
+type Coroutine() =
     static let mutable x = 1000
-    //do x <- x + 1
-    //let id = x
-    ////do printfn $"[{id}] created"
-    //member _.Id = id
+    
+    /// Checks if the coroutine is completed
     abstract IsCompleted: bool
+
+    /// Executes the coroutine until the next 'yield'
     abstract MoveNext: unit -> unit
+
+    /// Gets the tailcall target if the coroutine has executed a `return!`
     abstract HijackTarget: Coroutine option
     
+/// This is the implementation of Coroutine with respect to a particular struct state machine type.
 and [<NoEquality; NoComparison>] 
-    Coroutine<'Machine when 'Machine :> IAsyncStateMachine and 'Machine :> IResumableStateMachine<CoroutineStateMachineData>>() =
+    Coroutine<'Machine when 'Machine : struct
+                        and 'Machine :> IAsyncStateMachine 
+                        and 'Machine :> ICoroutineStateMachine>() =
     inherit Coroutine()
 
+    // The state machine struct
     [<DefaultValue(false)>]
     val mutable Machine: 'Machine
 
     override cr.IsCompleted =
         match cr.HijackTarget with 
-        | None -> //if verbose then printfn $"[{cr.Id}] move"
+        | None -> 
             GetResumptionPoint(&cr.Machine) = -1
         | Some tg -> 
             tg.IsCompleted
@@ -76,14 +77,41 @@ and [<NoEquality; NoComparison>]
                 // Cut out chains of tailcalls
                 CoroutineStateMachineData.SetHijackTarget(&cr.Machine, tg2)
                 tg2.MoveNext()
+/// This extra data stored in ResumableStateMachine (and it's templated copies using __stateMachine) 
+/// It only contains one field, the hijack target for tailcalls.
+and [<Struct; NoComparison; NoEquality>]
+    CoroutineStateMachineData =
 
+    /// This is used for tailcalls using 'return!'
+    [<DefaultValue(false)>]
+    val mutable HijackTarget: Coroutine option
+
+    static member GetHijackTarget(x: byref<'T> when 'T :> IResumableStateMachine<CoroutineStateMachineData>) = 
+        x.Data.HijackTarget
+
+    static member SetHijackTarget(x: byref<'T>, tg: Coroutine) : unit when 'T :> IResumableStateMachine<CoroutineStateMachineData> = 
+        let mutable newData = CoroutineStateMachineData()
+        newData.HijackTarget <- Some tg
+        x.Data <- newData
+
+/// These are standard definitions filling in the 'Data' parameter of each
+and ICoroutineStateMachine = IResumableStateMachine<CoroutineStateMachineData>
+and CoroutineStateMachine = ResumableStateMachine<CoroutineStateMachineData>
+and CoroutineResumptionFunc = ResumptionFunc<CoroutineStateMachineData>
+and CoroutineResumptionDynamicInfo = ResumptionDynamicInfo<CoroutineStateMachineData>
+and CoroutineCode = ResumableCode<CoroutineStateMachineData, unit>
+
+
+/// The builder for tailcalls, defined using resumable code combinators
 type CoroutineBuilder() =
     
     member inline _.Delay(f : unit -> CoroutineCode) : CoroutineCode = ResumableCode.Delay(f)
 
+    /// Create the state machine and outer execution logic
     member inline _.Run(code : CoroutineCode) : Coroutine = 
         if __useResumableCode then 
             __stateMachine<CoroutineStateMachineData, Coroutine>
+
                 // IAsyncStateMachine.MoveNext
                 (MoveNextMethodImpl<_>(fun sm -> 
                     if __useResumableCode then 
@@ -95,20 +123,22 @@ type CoroutineBuilder() =
                         else
                             // Goto request
                             match sm.Data.HijackTarget with 
-                            | Some tg -> tg.MoveNext()
+                            | Some tg -> tg.MoveNext() // recurse
                             | None -> ()
                         //-- RESUMABLE CODE END
                     else
                         failwith "Run: non-resumable - unreachable"))
 
+                // IAsyncStateMachine.SetStateMachine
                 (SetStateMachineMethodImpl<_>(fun sm state -> SetStateMachine(&sm, state)))
+
+                // Box the coroutine.  In this example we don't start execution of the coroutine.
                 (AfterCode<_,_>(fun sm -> 
                     let mutable cr = Coroutine<CoroutineStateMachine>()
                     cr.Machine <- sm
-                    //cr.Machine.Id <- cr.Id
-                    //if verbose then printfn $"[{cr.Id}] static create"
                     cr :> Coroutine))
         else 
+            // The dynamic implementation
             let initialResumptionFunc = CoroutineResumptionFunc(fun sm -> code.Invoke(&sm))
             let resumptionInfo =
                 { new CoroutineResumptionDynamicInfo(initialResumptionFunc) with 
@@ -119,8 +149,6 @@ type CoroutineBuilder() =
                  }
             let mutable cr = Coroutine<CoroutineStateMachine>()
             cr.Machine.ResumptionDynamicInfo <- resumptionInfo
-            //cr.Machine.Id <- cr.Id
-            //if verbose then printfn $"[{cr.Id}] dynamic create"
             cr :> Coroutine
 
     /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
@@ -156,9 +184,9 @@ type CoroutineBuilder() =
     member inline _.Yield (_dummy: unit) : CoroutineCode = 
         ResumableCode.Yield()
 
+    // The implementation of `yield!`
     member inline _.YieldFrom (other: Coroutine) : CoroutineCode = 
         ResumableCode.While((fun () -> not other.IsCompleted), CoroutineCode(fun sm -> 
-            //if verbose then printfn $"[{sm.Id}] calling [{other.Id}].MoveNext, it will resume at {other.ResumptionPoint}";
             other.MoveNext()
             let __stack_other_fin = other.IsCompleted
             if not __stack_other_fin then
@@ -169,6 +197,7 @@ type CoroutineBuilder() =
             else
                true))
 
+    // The implementation of `return!`, non-standard for tailcalls
     member inline _.ReturnFrom (other: Coroutine) : CoroutineCode = 
         ResumableCode<_,_>(fun sm -> 
             sm.Data.HijackTarget <- Some other
@@ -191,18 +220,14 @@ module Examples =
         coroutine {
            printfn "in t1"
            yield ()
-           //let x = 1
-           printfn "hey"
+           printfn "hey ho"
            yield ()
            yield! 
                coroutine{ 
                    printfn "hey yo"
                    yield ()
                    printfn "hey go"
-
                }
-           //yied! t1()
-           //yield ()
         }
 
     let testTailcallTiny () = 
@@ -215,69 +240,68 @@ module Examples =
            yield ()
            if n > 0 then
                return! testTailcall(n-1)
-           //yield ()
         }
 
 
-    //let t2 () = 
-    //    coroutine {
-    //       printfn "in t2"
-    //       yield ()
-    //       printfn "in t2 b"
-    //       yield! t1()
-    //       //for x in t1 () do 
-    //       //    printfn "t2 - got %A" x
-    //       //    yield ()
-    //       //    yield! 
-    //       //        coroutine {
-    //       //            printfn "hey yo"
-    //       //        }
-    //       //    yield "[T1]" + x
-    //       yield!
-    //           coroutine {
-    //               printfn "hey yo"
-    //               //do! Task.Delay(10)
-    //           }
-    //       yield ()
-    //    }
+    let t2 () = 
+        coroutine {
+           printfn "in t2"
+           yield ()
+           printfn "in t2 b"
+           yield! t1()
+           //for x in t1 () do 
+           //    printfn "t2 - got %A" x
+           //    yield ()
+           //    yield! 
+           //        coroutine {
+           //            printfn "hey yo"
+           //        }
+           //    yield "[T1]" + x
+           yield!
+               coroutine {
+                   printfn "hey yo"
+                   //do! Task.Delay(10)
+               }
+           yield ()
+        }
 
-    //let perf1 (x: int) = 
-    //    coroutine {
-    //       yield ()
-    //       yield ()
-    //       if x >= 2 then 
-    //           yield ()
-    //           yield ()
-    //    }
+    let perf1 (x: int) = 
+        coroutine {
+           yield ()
+           yield ()
+           if x >= 2 then 
+               yield ()
+               yield ()
+        }
 
-    //let perf2 () = 
-    //    coroutine {
-    //       for i1 in perf1 3 do
-    //         for i2 in perf1 3 do
-    //           for i3 in perf1 3 do
-    //             for i4 in perf1 3 do
-    //               for i5 in perf1 3 do
-    //                  yield! perf1 i5
-    //    }
+    let perf2 () = 
+        coroutine {
+           for i1 in perf1 3 do
+             for i2 in perf1 3 do
+               for i3 in perf1 3 do
+                 for i4 in perf1 3 do
+                   for i5 in perf1 3 do
+                      yield! perf1 i5
+        }
 
-    //let perf1_AsyncSeq (x: int) = 
-    //    FSharp.Control.AsyncSeqExtensions.asyncSeq {
-    //       yield 1
-    //       yield 2
-    //       if x >= 2 then 
-    //           yield 3
-    //           yield 4
-    //    }
+    let perf1_AsyncSeq (x: int) = 
+        FSharp.Control.AsyncSeqExtensions.asyncSeq {
+           yield 1
+           yield 2
+           if x >= 2 then 
+               yield 3
+               yield 4
+        }
 
-    //let perf2_AsyncSeq () = 
-    //    FSharp.Control.AsyncSeqExtensions.asyncSeq {
-    //       for i1 in perf1_AsyncSeq 3 do
-    //         for i2 in perf1_AsyncSeq 3 do
-    //           for i3 in perf1_AsyncSeq 3 do
-    //             for i4 in perf1_AsyncSeq 3 do
-    //               for i5 in perf1_AsyncSeq 3 do
-    //                 yield! perf1_AsyncSeq i5
-    //    }
+    let perf2_AsyncSeq () = 
+        FSharp.Control.AsyncSeqExtensions.asyncSeq {
+           for i1 in perf1_AsyncSeq 3 do
+             for i2 in perf1_AsyncSeq 3 do
+               for i3 in perf1_AsyncSeq 3 do
+                 for i4 in perf1_AsyncSeq 3 do
+                   for i5 in perf1_AsyncSeq 3 do
+                     yield! perf1_AsyncSeq i5
+        }
 
     let dumpCoroutine (t: Coroutine) = 
         printfn "-----"
@@ -286,14 +310,10 @@ module Examples =
                 not t.IsCompleted) do 
             () // printfn "yield"
 
-    //dumpCoroutine (t1())
-    //dumpCoroutine (testTailcallTiny())
+    dumpCoroutine (t1())
+    dumpCoroutine (testTailcallTiny())
     dumpCoroutine (testTailcall(1000000))
-    //dumpCoroutine (t2())
+    dumpCoroutine (t2())
 
-    //if verbose then printfn "t1() = %A" (TaskSeq.toArray (t1()))
-    //if verbose then printfn "t2() = %A" (TaskSeq.toArray (t2()))
-
-    //if verbose then printfn "perf2() = %A" (TaskSeq.toArray (perf2()))
 
 
