@@ -6,6 +6,7 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <!-- Turn off "This function is for use by compiled F# code and should not be used directly" -->
 	<OtherFlags>$(OtherFlags) --nowarn:1204</OtherFlags>
+    <!-- Turn off "Experimental" -->
 	<OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
     <!-- Turn off "Resumable code could not be used" -->
 	<OtherFlags>$(OtherFlags) --nowarn:3512</OtherFlags>
