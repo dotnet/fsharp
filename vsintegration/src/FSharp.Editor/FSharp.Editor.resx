@@ -282,4 +282,7 @@
   <data name="RemoveUnusedBinding" xml:space="preserve">
     <value>Remove unused binding</value>
   </data>
+  <data name="UseNameof" xml:space="preserve">
+    <value>Use 'nameof'</value>
+  </data>
 </root>
