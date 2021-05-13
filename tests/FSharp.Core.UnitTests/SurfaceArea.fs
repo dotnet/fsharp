@@ -3025,7 +3025,8 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String Name
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.String ToString()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
-Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()"
+Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
+"
 #if DEBUG
         let expected =
             expected +
