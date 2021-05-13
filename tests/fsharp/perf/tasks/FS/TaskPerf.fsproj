@@ -5,7 +5,11 @@
     <OutputType>Exe</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <!-- Turn off "This function is for use by compiled F# code and should not be used directly" -->
-	<OtherFlags>$(OtherFlags) --nowarn:1204 --langversion:preview</OtherFlags>
+	<OtherFlags>$(OtherFlags) --nowarn:1204</OtherFlags>
+	<OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
+    <!-- Turn off "Resumable code could not be used" -->
+	<OtherFlags>$(OtherFlags) --nowarn:3512</OtherFlags>
+	<OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>
