@@ -2002,6 +2002,9 @@ val internal instILType: ILGenericArgs -> ILType -> ILType
 /// This is a 'vendor neutral' way of referencing mscorlib.
 val internal ecmaPublicKey: PublicKey
 
+/// Strips ILType.Modified from the ILType.
+val internal stripILModifiedFromTy: ILType -> ILType
+
 /// Discriminating different important built-in types.
 val internal isILObjectTy: ILGlobals -> ILType -> bool
 val internal isILStringTy: ILGlobals -> ILType -> bool
