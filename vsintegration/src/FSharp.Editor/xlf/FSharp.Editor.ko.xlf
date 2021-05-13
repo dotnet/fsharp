@@ -252,6 +252,11 @@
         <target state="translated">'&lt;-'를 사용하여 값 변경</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseNameof">
+        <source>Use 'nameof'</source>
+        <target state="new">Use 'nameof'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
         <target state="translated">'upcast' 사용</target>
