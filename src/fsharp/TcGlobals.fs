@@ -1219,6 +1219,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_ReflectedDefinitionAttribute           = mk_MFCore_attrib "ReflectedDefinitionAttribute"
   member val attrib_CompiledNameAttribute                  = mk_MFCore_attrib "CompiledNameAttribute"
   member val attrib_AutoOpenAttribute                      = mk_MFCore_attrib "AutoOpenAttribute"
+  member val attrib_InternalsVisibleToAttribute            = findSysAttrib "System.Runtime.CompilerServices.InternalsVisibleToAttribute"
   member val attrib_CompilationRepresentationAttribute     = mk_MFCore_attrib "CompilationRepresentationAttribute"
   member val attrib_CompilationArgumentCountsAttribute     = mk_MFCore_attrib "CompilationArgumentCountsAttribute"
   member val attrib_CompilationMappingAttribute            = mk_MFCore_attrib "CompilationMappingAttribute"
