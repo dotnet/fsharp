@@ -16,11 +16,11 @@ let inline MoveNext(x: byref<'T> when 'T :> IAsyncStateMachine) = x.MoveNext()
 let inline SetStateMachine(x: byref<'T> when 'T :> IAsyncStateMachine, state) = x.SetStateMachine(state)
 let inline GetResumptionPoint(x: byref<'T> when 'T :> IResumableStateMachine<'Data>) = x.ResumptionPoint
 let inline SetResumptionFunc (sm: byref<ResumableStateMachine<'Data>>) f =
-    let (_, e) = sm.ResumptionFuncData
-    sm.ResumptionFuncData <- (f, e)
+    let (_, executor, sme) = sm.ResumptionFuncData
+    sm.ResumptionFuncData <- (f, executor, sme)
 
 let inline GetResumptionFunc (sm: byref<ResumableStateMachine<'Data>>) =
-    let (f, _) = sm.ResumptionFuncData
+    let (f, _, _) = sm.ResumptionFuncData
     f
 
 
@@ -135,7 +135,8 @@ type CoroutineBuilder() =
                 CoroutineResumptionExecutor(fun sm f -> 
                     if f.Invoke(&sm) then
                         sm.ResumptionPoint <- -1)
-            cr.Machine.ResumptionFuncData <- (initialResumptionFunc, resumptionFuncExecutor)
+            let setStateMachine = SetStateMachineMethodImpl<_>(fun sm f -> ())
+            cr.Machine.ResumptionFuncData <- (initialResumptionFunc, resumptionFuncExecutor, setStateMachine)
             //cr.Machine.Id <- cr.Id
             //if verbose then printfn $"[{cr.Id}] dynamic create"
             cr :> Coroutine
@@ -189,7 +190,7 @@ type CoroutineBuilder() =
     member inline _.ReturnFrom (other: Coroutine) : CoroutineCode = 
         ResumableCode<_,_>(fun sm -> 
             sm.Data.HijackTarget <- Some other
-            // We return 'false' and re-run from the entry (trampoline)
+            // For tailcalls we return 'false' and re-run from the entry (trampoline)
             false 
             // We could do this immediately with future cut-out, though this will stack-dive on sync code.
             // We could also trampoline less frequently via a counter

@@ -392,19 +392,14 @@
         <target state="new">A resumable code invocation at '{0}' could not be reduced</target>
         <note />
       </trans-unit>
-      <trans-unit id="reprResumableCodeNotStaticallyUsed">
-        <source>Resumable code could not be used. {0}. The non-resumable code implementation will be used. This is expected if defining new resumable code combinators. Consider suppressing this warning if this is intentional.</source>
-        <target state="new">Resumable code could not be used. {0}. The non-resumable code implementation will be used. This is expected if defining new resumable code combinators. Consider suppressing this warning if this is intentional.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="reprResumableCodeNotStaticallyUsedNoAlternative">
-        <source>Resumable code could not be used. {0}. If defining new resumable code combinators then provide a dynamic implementation with 'if __useResumableCode then ... else ...'.</source>
-        <target state="new">Resumable code could not be used. {0}. If defining new resumable code combinators then provide a dynamic implementation with 'if __useResumableCode then ... else ...'.</target>
+        <source>Resumable code could not be used. {0}. Note that if you are defining a resumable code combinator this is expected, as resumable code parameters will only have a definition when this code is inlined. If this is the case then consider suppressing this warning.</source>
+        <target state="new">Resumable code could not be used. {0}. Note that if you are defining a resumable code combinator this is expected, as resumable code parameters will only have a definition when this code is inlined. If this is the case then consider suppressing this warning.</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeValueHasNoDefinition">
-        <source>The resumable code value(s) '{0}' does not have a definition. If defining resumable code and this is a parameter to an inlined function or method, this is expected, as the resumable code will have a definition when this code is inlined</source>
-        <target state="new">The resumable code value(s) '{0}' does not have a definition. If defining resumable code and this is a parameter to an inlined function or method, this is expected, as the resumable code will have a definition when this code is inlined</target>
+        <source>The resumable code value(s) '{0}' does not have a definition.</source>
+        <target state="new">The resumable code value(s) '{0}' does not have a definition.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
