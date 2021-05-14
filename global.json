@@ -6,14 +6,14 @@
   "tools": {
     "dotnet": "5.0.100",
     "vs": {
-      "version": "16.8",
-      "components": [
-        "Microsoft.VisualStudio.Component.FSharp"
-      ]
+        "version": "16.8",
+        "components": [
+            "Microsoft.VisualStudio.Component.FSharp"
+        ]
     }
   },
   "msbuild-sdks": {
-    "Microsoft.DotNet.Arcade.Sdk": "6.0.0-beta.21220.2",
+    "Microsoft.DotNet.Arcade.Sdk": "6.0.0-beta.21261.6",
     "Microsoft.DotNet.Helix.Sdk": "2.0.0-beta.19069.2"
   }
 }
