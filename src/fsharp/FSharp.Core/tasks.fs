@@ -77,28 +77,20 @@ type TaskBuilder() =
         let resumptionInfo =
             { new TaskResumptionDynamicInfo<'T>(initialResumptionFunc) with 
                 member info.MoveNext(sm) = 
-                        //let addr =  sm.Data.Id
-                    //let addr = NativeInterop.NativePtr.toNativeInt &&sm.ResumptionPoint
-                    //printfn "[%d][%d] in executor, salt = %d" System.Threading.Thread.CurrentThread.ManagedThreadId addr sm.Data.Salt
-                    // The alternative if resumable code could not be used
                     try
                         sm.Data.Awaiter <- null
-                        //printfn "[%d][%d] in executor: Invoke" System.Threading.Thread.CurrentThread.ManagedThreadId addr
                         let step = info.ResumptionFunc.Invoke(&sm) 
                         if step then 
-                            //printfn "[%d][%d] in executor: SetResult %A" System.Threading.Thread.CurrentThread.ManagedThreadId addr sm.Data.Result
                             sm.Data.MethodBuilder.SetResult(sm.Data.Result)
                         else
-                            //printfn "[%d][%d] in executor: Await" System.Threading.Thread.CurrentThread.ManagedThreadId addr
                             // In the dynamic implementation the AwaitUnsafeOnCompleted must be called after the
                             // return to the trampoline. This is because the ResumbleCode.*Dynamic adjust
-                            // the continuation by mutation as we come back down the stack.  The Awaiter
+                            // the continuation by mutation as we come back down the stack.  Note the Awaiter
                             // is always set before each return of 'false'.
                             assert not (isNull sm.Data.Awaiter)
                             sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&sm.Data.Awaiter, &sm)
 
                     with exn ->
-                        //printfn "[%d][%d] in executor: SetException" System.Threading.Thread.CurrentThread.ManagedThreadId  addr
                         sm.Data.MethodBuilder.SetException exn
                 member info.SetStateMachine(sm, state) =
                     sm.Data.MethodBuilder.SetStateMachine(state)
@@ -438,142 +430,5 @@ module ContextSensitiveTasks =
                         (task: ^TaskLike)  : TaskCode<'T, 'T> =
 
                 RequireCanReturnFrom< TaskWitnesses, ^TaskLike, 'T> Unchecked.defaultof<TaskWitnesses> task
-
-(*
-
-module ContextInsensitiveTasks =
-
-    let task = TaskBuilder()
-
-    [<Sealed; NoComparison; NoEquality>]
-    type TaskWitnesses() = 
-        interface IPriority1
-        interface IPriority2
-        interface IPriority3
-
-        
-        static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter, 'TOverall
-                                            when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
-                                            and ^Awaiter :> ICriticalNotifyCompletion
-                                            and ^Awaiter: (member get_IsCompleted:  unit -> bool)
-                                            and ^Awaiter: (member GetResult:  unit ->  ^TResult1)> 
-                     (priority: IPriority3, sm: TaskStateMachine<'TOverall>, task: ^TaskLike, continuation: (^TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> =
-
-            // get an awaiter from the task
-            ignore priority
-            let mutable awaiter = (^TaskLike : (member GetAwaiter : unit -> ^Awaiter)(task))
-            match __resumableEntry() with 
-            | Some contID -> 
-                // shortcut to continue immediately
-                if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
-                    __resumeAt contID
-                else
-                    sm.Await (&awaiter, contID)
-                    TaskStep<'TResult2>(false)
-            | None ->
-                continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
-
-        
-        static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaitable, ^Awaiter , 'TOverall
-                                            when  ^TaskLike: (member ConfigureAwait:  bool ->  ^Awaitable)
-                                            and ^Awaitable: (member GetAwaiter: unit ->  ^Awaiter)
-                                            and ^Awaiter :> ICriticalNotifyCompletion
-                                            and ^Awaiter: (member get_IsCompleted: unit -> bool)
-                                            and ^Awaiter: (member GetResult: unit -> ^TResult1)> 
-                     (priority: IPriority2, sm: TaskStateMachine<'TOverall>, task: ^TaskLike, continuation: (^TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> =
-
-            ignore priority
-            let awaitable = (^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)(task, false))
-            // get an awaiter from the task
-            let mutable awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(awaitable))
-            let CONT = __resumableEntry (fun () -> continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))) 
-            // shortcut to continue immediately
-            if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
-                CONT.Invoke(&sm)
-            else
-                sm.Await (&awaiter, CONT)
-                TaskStep<'TResult2>(false)
-
-        
-        static member inline CanBind (priority :IPriority1, sm: TaskStateMachine<'TOverall>, task: Task<'TResult1>, continuation: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> =
-            ignore priority
-            let mutable awaiter = task.ConfigureAwait(false).GetAwaiter()
-            let CONT = __resumableEntry (fun () -> continuation (awaiter.GetResult()))
-            if awaiter.IsCompleted then
-                CONT.Invoke(&sm)
-            else
-                sm.Await (&awaiter, CONT)
-                TaskStep<'TResult2>(false)
-
-        
-        static member inline CanBind (priority: IPriority1, sm: TaskStateMachine<'TOverall>, computation : Async<'TResult1>, continuation: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> =
-            TaskWitnesses.CanBind (priority, sm, Async.StartAsTask computation, continuation)
-
-        
-        static member inline CanReturnFrom< ^Awaitable, ^Awaiter, ^T
-                                    when ^Awaitable : (member GetAwaiter : unit -> ^Awaiter)
-                                    and ^Awaiter :> ICriticalNotifyCompletion 
-                                    and ^Awaiter : (member get_IsCompleted : unit -> bool)
-                                    and ^Awaiter : (member GetResult : unit -> ^T) >
-               (priority: IPriority3, sm: TaskStateMachine< ^T >, task: ^Awaitable) =
-
-            // get an awaiter from the task
-            ignore priority
-            let mutable awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(task))
-            let CONT = __resumableEntry (fun () -> sm.SetResult (^Awaiter : (member GetResult : unit -> ^T)(awaiter)); TaskStep<'T>(true))
-
-            // shortcut to continue immediately
-            if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
-                CONT.Invoke(&sm)
-            else
-                sm.Await (&awaiter, CONT)
-                TaskStep< ^T >(false)
-        
-        
-        static member inline CanReturnFrom< ^TaskLike, ^Awaitable, ^Awaiter, ^T
-                                                        when ^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)
-                                                        and ^Awaitable : (member GetAwaiter : unit -> ^Awaiter)
-                                                        and ^Awaiter :> ICriticalNotifyCompletion 
-                                                        and ^Awaiter : (member get_IsCompleted : unit -> bool)
-                                                        and ^Awaiter : (member GetResult : unit -> ^T ) > (_: IPriority2, sm: TaskStateMachine< ^T >, task: ^TaskLike) =
-
-            let awaitable = (^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)(task, false))
-            // get an awaiter from the task
-            let mutable awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(awaitable))
-            let CONT = __resumableEntry (fun () -> sm.SetResult (^Awaiter : (member GetResult : unit -> ^T)(awaiter)); TaskStep<'T>(true))
-
-            // shortcut to continue immediately
-            if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
-                CONT.Invoke(&sm)
-            else
-                sm.Await (&awaiter, CONT)
-                TaskStep< ^T >(false)
-
-        
-        static member inline CanReturnFrom (priority: IPriority1, sm: TaskStateMachine<'T>, task: Task<'T>) : TaskStep<'T> =
-            ignore priority
-            let mutable awaiter = task.ConfigureAwait(false).GetAwaiter()
-            let CONT = __resumableEntry (fun () -> sm.SetResult (awaiter.GetResult()); TaskStep<'T>(true))
-            if task.IsCompleted then
-                CONT.Invoke(&sm)
-            else
-                sm.Await (&awaiter, CONT)
-                TaskStep<'T>(false)
-
-        
-        static member inline CanReturnFrom (priority: IPriority1, sm: TaskStateMachine<'T>, computation: Async<'T>) =
-            TaskWitnesses.CanReturnFrom (priority, sm, Async.StartAsTask computation)
-
-    type TaskStateMachine<'TOverall> with
-        
-        member inline _.Bind< ^TaskLike, ^TResult1, 'TResult2 
-                                           when (TaskWitnesses or  ^TaskLike): (static member CanBind: TaskWitnesses * TaskStateMachine<'TOverall> * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>)> 
-                    (task: ^TaskLike, continuation: ^TResult1 -> TaskStep<'TResult2>) : TaskStep<'TResult2> =
-            RequireCanBind< TaskWitnesses, ^TaskLike, ^TResult1, 'TResult2, 'TOverall> Unchecked.defaultof<TaskWitnesses> sm task continuation
-
-        
-        member inline _.ReturnFrom< ^TaskLike, 'T  when (TaskWitnesses or ^TaskLike): (static member CanReturnFrom: TaskWitnesses * TaskStateMachine<'T> * ^TaskLike -> TaskStep<'T>) > (task: ^TaskLike) : TaskStep<'T> 
-                  = RequireCanReturnFrom< TaskWitnesses, ^TaskLike, 'T> Unchecked.defaultof<TaskWitnesses> sm task
-*)
 
 #endif

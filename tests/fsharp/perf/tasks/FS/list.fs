@@ -120,21 +120,21 @@ module Examples =
            yield "f"
         }
 
-    let tinyVariableSizeC () = 
+    let tinyVariableSizeNew () = 
         for i in 1 .. 1000000 do
             listc {
                if i % 3 = 0 then 
                    yield "b"
             } |> List.length |> ignore
 
-    let tinyVariableSizeBase () = 
+    let tinyVariableSizeBuiltin () = 
         for i in 1 .. 1000000 do
             [
                if i % 3 = 0 then 
                    yield "b"
             ] |> List.length |> ignore
 
-    let variableSizeC () = 
+    let variableSizeNew () = 
         for i in 1 .. 1000000 do
             listc {
                yield "a"
@@ -150,7 +150,7 @@ module Examples =
                yield "c"
             } |> List.length |> ignore
 
-    let variableSizeBase () = 
+    let variableSizeBuiltin () = 
         for i in 1 .. 1000000 do
             [
                yield "a"
@@ -203,11 +203,11 @@ module Examples =
         t.Stop()
         printfn "PERF: %s : %d" s t.ElapsedMilliseconds
 
-    perf "tinyVariableSizeBase" tinyVariableSizeBase
-    perf "tinyVariableSizeC " tinyVariableSizeC
+    perf "tinyVariableSizeBuiltin" tinyVariableSizeBuiltin
+    perf "tinyVariableSizeNew " tinyVariableSizeNew
 
-    perf "variableSizeBase" variableSizeBase
-    perf "variableSizeC" variableSizeC
+    perf "variableSizeBuiltin" variableSizeBuiltin
+    perf "variableSizeNew" variableSizeNew
 
     perf "fixedSizeBase" fixedSizeBase
     perf "fixedSizeC" fixedSizeC

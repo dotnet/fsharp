@@ -2487,3 +2487,8 @@ val TryBindTyconRefAttribute:
     f3:(obj option list * (string * obj option) list -> 'a option) 
     -> 'a option
 
+val (|ResumableCodeInvoke|_|):
+    g:TcGlobals ->
+    expr: Expr -> 
+       (Expr * Expr * Expr list * range * (Expr * Expr list -> Expr)) option    
+       

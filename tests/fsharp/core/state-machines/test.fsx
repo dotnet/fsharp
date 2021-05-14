@@ -52,7 +52,6 @@ module ``Check resumable code can capture variables`` =
     let makeStateMachine x = 
         __stateMachine<int, int>
             (MoveNextMethodImpl<_>(fun sm -> 
-                // TEST: resumable code may contain free variables
                 if __useResumableCode then
                     sm.Data <- 1 + x // we expect this result for successful resumable code compilation
                 else
@@ -66,11 +65,9 @@ module ``Check resumable code can capture variables`` =
 
 module ``Check resumable code may be preceeded by value definitions`` =
     let makeStateMachine x = 
-        // TEST: resumable code may be just after a non-function 'let'
         let rnd = System.Random().Next(4)
         __stateMachine<int, int>
             (MoveNextMethodImpl<_>(fun sm -> 
-                // TEST: resumable code may contain free variables
                 if __useResumableCode then
                     sm.Data <- x + rnd - rnd // we expect this result for successful resumable code compilation
                 else
@@ -84,11 +81,8 @@ module ``Check resumable code may contain local function definitions`` =
     let makeStateMachine y = 
         __stateMachine<int, int>
             (MoveNextMethodImpl<_>(fun sm -> 
-                // TEST: resumable code may contain free variables
                 if __useResumableCode then
-                    // TEST: resumable object may declare functions
                     let someFunction x = x + 1
-                    // TEST: resumable code may invoke functions
                     sm.Data <- someFunction y + someFunction y
                 else
                     sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
@@ -99,12 +93,10 @@ module ``Check resumable code may contain local function definitions`` =
 
 module ``Check resumable code may be preceeded by function definitions`` =
     let makeStateMachine y = 
-        // TEST: resumable object may declare functions
         let someFunction1 x = x + 1
         let someFunction2 x = someFunction1 x + 2
         __stateMachine<int, int>
             (MoveNextMethodImpl<_>(fun sm -> 
-                // TEST: resumable code may contain free variables
                 if __useResumableCode then
                     sm.Data <- someFunction2 y
                 else
@@ -118,7 +110,6 @@ module ``Check resumable code may contain let statements without resumption poin
     let makeStateMachine x = 
         __stateMachine<int, int>
             (MoveNextMethodImpl<_>(fun sm -> 
-                // TEST: resumable code may let statements and conditionals
                 if __useResumableCode then
                     let y = 1 - x
                     if x > 3 then 
@@ -136,7 +127,6 @@ module ``Check resumable code may contain sequential statements without resumpti
     let makeStateMachine y = 
         __stateMachine<int, int>
             (MoveNextMethodImpl<_>(fun sm -> 
-                // TEST: resumable code may contain sequential statements without resumption points
                 if __useResumableCode then
                     printfn "step1" 
                     sm.Data <- y + 2

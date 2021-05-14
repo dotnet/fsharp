@@ -216,7 +216,7 @@ type TcEnv =
 
       eCallerMemberName: string option
 
-      // Active arg infos in iterated lambdas 
+      // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
       eLambdaArgInfos: ArgReprInfo list list
     }
 

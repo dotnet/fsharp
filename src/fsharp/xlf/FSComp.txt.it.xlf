@@ -387,19 +387,29 @@
         <target state="new">A resumable code invocation at '{0}' could not be reduced</target>
         <note />
       </trans-unit>
-      <trans-unit id="reprResumableCodeNotStaticallyUsedNoAlternative">
-        <source>Resumable code could not be used. {0}. Note that if you are defining a resumable code combinator this is expected, as resumable code parameters will only have a definition when this code is inlined. If this is the case then consider suppressing this warning.</source>
-        <target state="new">Resumable code could not be used. {0}. Note that if you are defining a resumable code combinator this is expected, as resumable code parameters will only have a definition when this code is inlined. If this is the case then consider suppressing this warning.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="reprResumableCodeValueHasNoDefinition">
-        <source>The resumable code value(s) '{0}' does not have a definition.</source>
-        <target state="new">The resumable code value(s) '{0}' does not have a definition.</target>
+        <source>The resumable code value(s) '{0}' does not have a definition</source>
+        <target state="new">The resumable code value(s) '{0}' does not have a definition</target>
         <note />
       </trans-unit>
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
         <source>#i is not supported by the registered PackageManagers</source>
         <target state="translated">#i non è supportato dagli elementi PackageManager registrati</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprStateMachineInvalidForm">
+        <source>The state machine has an unexpected form</source>
+        <target state="new">The state machine has an unexpected form</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprStateMachineNotCompilable">
+        <source>This state machine is not statically compilable. {0}. An alternative dynamic implementation will be used, which may be slower. Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning.</source>
+        <target state="new">This state machine is not statically compilable. {0}. An alternative dynamic implementation will be used, which may be slower. Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprStateMachineNotCompilableNoAlternative">
+        <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
+        <target state="new">This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
@@ -517,9 +527,14 @@
         <target state="new">Invalid resumable code. Any method of function accepting or returning resumable code must be marked 'inline'</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcStateMachineNotSupported">
-        <source>Using tasks and resumable state machines requires /langversion:preview</source>
-        <target state="new">Using tasks and resumable state machines requires /langversion:preview</target>
+      <trans-unit id="tcResumableCodeInvocation">
+        <source>Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code.</source>
+        <target state="new">Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeNotSupported">
+        <source>Using resumable code or resumable state machines requires /langversion:preview</source>
+        <target state="new">Using resumable code or resumable state machines requires /langversion:preview</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">

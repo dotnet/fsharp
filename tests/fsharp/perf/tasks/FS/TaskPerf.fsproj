@@ -8,8 +8,9 @@
 	<OtherFlags>$(OtherFlags) --nowarn:1204</OtherFlags>
     <!-- Turn off "Experimental" -->
 	<OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
-    <!-- Turn off "Resumable code could not be used" -->
-	<OtherFlags>$(OtherFlags) --nowarn:3512</OtherFlags>
+    <!-- Turn off 3511: state machine not compilable - expected for inlined functions defining state machine generators -->
+    <!-- Turn off 3513: resumable code invocation' - expected for resumable code combinators -->
+	<OtherFlags>$(OtherFlags) --nowarn:3511 --nowarn:3513</OtherFlags>
 	<OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
   </PropertyGroup>
 
@@ -27,13 +28,11 @@
 	<Compile Include="TaskPerf.fs" />
 	  <!--
     <Compile Include="seq2.fs" />
-    <Compile Include="tasksUsingRawResumableCode.fs" />
-    <Compile Include="taskSeqUsingRawResumableCode.fs" />
 -->	
 	<ProjectReference Include="..\CS\TaskPerfCSharp.csproj" />
     <ProjectReference Include="..\..\..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
-    <!-- <PackageReference Include="FSharp.Control.AsyncSeq" Version="2.0.23" /> --> 
+    <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.3" /> 
     <PackageReference Include="System.Interactive.Async" Version="4.1.1" />
   </ItemGroup>
 

@@ -390,6 +390,12 @@ module CoreTests =
         let cfg = testConfig "core/state-machines"
         singleVersionedNegTest cfg "preview" "neg-resumable-01"
 
+
+    [<Test>]
+    let ``state-machines neg-resumable-02`` () =
+        let cfg = testConfig "core/state-machines"
+        singleVersionedNegTest cfg "preview" "neg-resumable-02"
+
     [<Test>]
     let ``lots-of-conditionals``() =
         let cfg = testConfig "core/large/conditionals"

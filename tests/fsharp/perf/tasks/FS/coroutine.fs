@@ -11,7 +11,7 @@
 //       printfn "hey"
 //    }
 //
-// We also support `yield!` and tailcalls using the (non-standard) syntac of `return!`
+// We also support `yield!` and tailcalls using the (non-standard) syntax of `return!`/ReturnFrom
 
 module Tests.Coroutines
 

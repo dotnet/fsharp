@@ -526,43 +526,43 @@ module Examples =
     //       yield "f"
     //    }
 
-    //let perf1 (x: int) = 
-    //    taskSeq {
-    //       yield 1
-    //       yield 2
-    //       if x >= 2 then 
-    //           yield 3
-    //           yield 4
-    //    }
+    let perf1 (x: int) = 
+        taskSeq {
+           yield 1
+           yield 2
+           if x >= 2 then 
+               yield 3
+               yield 4
+        }
 
-    //let perf2 () = 
-    //    taskSeq {
-    //       for i1 in perf1 3 do
-    //         for i2 in perf1 3 do
-    //           for i3 in perf1 3 do
-    //             for i4 in perf1 3 do
-    //               for i5 in perf1 3 do
-    //                  yield! perf1 i5
-    //    }
+    let perf2 () = 
+        taskSeq {
+           for i1 in perf1 3 do
+             for i2 in perf1 3 do
+               for i3 in perf1 3 do
+                 for i4 in perf1 3 do
+                   for i5 in perf1 3 do
+                      yield! perf1 i5
+        }
 
-    //let perf1_AsyncSeq (x: int) = 
-    //    FSharp.Control.AsyncSeqExtensions.asyncSeq {
-    //       yield 1
-    //       yield 2
-    //       if x >= 2 then 
-    //           yield 3
-    //           yield 4
-    //    }
+    let perf1_AsyncSeq (x: int) = 
+        FSharp.Control.AsyncSeqExtensions.asyncSeq {
+           yield 1
+           yield 2
+           if x >= 2 then 
+               yield 3
+               yield 4
+        }
 
-    //let perf2_AsyncSeq () = 
-    //    FSharp.Control.AsyncSeqExtensions.asyncSeq {
-    //       for i1 in perf1_AsyncSeq 3 do
-    //         for i2 in perf1_AsyncSeq 3 do
-    //           for i3 in perf1_AsyncSeq 3 do
-    //             for i4 in perf1_AsyncSeq 3 do
-    //               for i5 in perf1_AsyncSeq 3 do
-    //                 yield! perf1_AsyncSeq i5
-    //    }
+    let perf2_AsyncSeq () = 
+        FSharp.Control.AsyncSeqExtensions.asyncSeq {
+           for i1 in perf1_AsyncSeq 3 do
+             for i2 in perf1_AsyncSeq 3 do
+               for i3 in perf1_AsyncSeq 3 do
+                 for i4 in perf1_AsyncSeq 3 do
+                   for i5 in perf1_AsyncSeq 3 do
+                     yield! perf1_AsyncSeq i5
+        }
 
     let dumpTaskSeq (t: IAsyncEnumerable<_>) = 
         printfn "-----"
@@ -570,14 +570,14 @@ module Examples =
         while (let vt = e.MoveNextAsync() in if vt.IsCompleted then vt.Result else vt.AsTask().Result) do 
             printfn "yield %A" e.Current
 
-    dumpTaskSeq (t1())
-    dumpTaskSeq (testTailcallTiny())
-    //dumpTaskSeq (t2())
+    //dumpTaskSeq (t1())
+    //dumpTaskSeq (testTailcallTiny())
+    ////dumpTaskSeq (t2())
 
-    printfn "t1() = %A" (TaskSeq.toArray (t1()))
-    printfn "testTailcallTiny() = %A" (TaskSeq.toArray (testTailcallTiny()))
-    dumpTaskSeq (testTailcall(100000))
+    //printfn "t1() = %A" (TaskSeq.toArray (t1()))
+    //printfn "testTailcallTiny() = %A" (TaskSeq.toArray (testTailcallTiny()))
+    //dumpTaskSeq (testTailcall(100000))
     //printfn "t2() = %A" (TaskSeq.toArray (t2()))
 
-    //printfn "perf2() = %A" (TaskSeq.toArray (perf2()))
+    printfn "perf2() = %A" (TaskSeq.toArray (perf2()) |> Array.sum)
 

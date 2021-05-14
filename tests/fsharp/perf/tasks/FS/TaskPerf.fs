@@ -235,55 +235,54 @@ type Benchmarks() =
                        res <- i + res }
 
     [<BenchmarkCategory("TinyVariableSizedList"); Benchmark(Baseline=true)>]
-    member _.TinyVariableSizedList_Builder() = Tests.ListBuilders.Examples.tinyVariableSizeBase()
+    member _.TinyVariableSizedList_Builtin() = Tests.ListBuilders.Examples.tinyVariableSizeBuiltin()
 
 
     [<BenchmarkCategory("TinyVariableSizedList"); Benchmark()>]
-    member _.TinyVariableSizedList_InlinedCode() = Tests.ListBuilders.Examples.tinyVariableSizeC()
+    member _.TinyVariableSizedList_NewBuilder() = Tests.ListBuilders.Examples.tinyVariableSizeNew()
 
 
     [<BenchmarkCategory("VariableSizedList"); Benchmark(Baseline=true)>]
-    member _.VariableSizedList_Builder() = Tests.ListBuilders.Examples.variableSizeBase()
+    member _.VariableSizedList_Builtin() = Tests.ListBuilders.Examples.variableSizeBuiltin()
 
     [<BenchmarkCategory("VariableSizedList"); Benchmark>]
-    member _.VariableSizedList_InlinedCode() = Tests.ListBuilders.Examples.variableSizeC()
+    member _.VariableSizedList_NewBuilder() = Tests.ListBuilders.Examples.variableSizeNew()
 
 
     [<BenchmarkCategory("FixedSizedList"); Benchmark(Baseline=true)>]
-    member _.FixedSizeList_Builder() = Tests.ListBuilders.Examples.fixedSizeBase()
-
+    member _.FixedSizeList_Builtin() = Tests.ListBuilders.Examples.fixedSizeBase()
 
     [<BenchmarkCategory("FixedSizedList"); Benchmark>]
-    member _.FixedSizeList_InlinedCode() = Tests.ListBuilders.Examples.fixedSizeC()
+    member _.FixedSizeList_NewBuilder() = Tests.ListBuilders.Examples.fixedSizeC()
 
 
     [<BenchmarkCategory("TinyVariableSizedArray"); Benchmark(Baseline=true)>]
-    member _.TinyVariableSizedArray_Builder() = Tests.ArrayBuilders.Examples.tinyVariableSizeBase()
+    member _.TinyVariableSizedArray_Builtin() = Tests.ArrayBuilders.Examples.tinyVariableSizeBuiltin()
 
     [<BenchmarkCategory("TinyVariableSizedArray"); Benchmark>]
-    member _.TinyVariableSizedArray_InlinedCode() = Tests.ArrayBuilders.Examples.tinyVariableSizeC()
+    member _.TinyVariableSizedArray_NewBuilder() = Tests.ArrayBuilders.Examples.tinyVariableSizeNew()
 
 
     [<BenchmarkCategory("VariableSizedArray"); Benchmark(Baseline=true)>]
-    member _.VariableSizedArray_Builder() = Tests.ArrayBuilders.Examples.variableSizeBase()
+    member _.VariableSizedArray_Builtin() = Tests.ArrayBuilders.Examples.variableSizeBuiltin()
 
     [<BenchmarkCategory("VariableSizedArray"); Benchmark>]
-    member _.VariableSizedArray_InlinedCode() = Tests.ArrayBuilders.Examples.variableSizeC()
+    member _.VariableSizedArray_NewBuilder() = Tests.ArrayBuilders.Examples.variableSizeNew()
 
 
     [<BenchmarkCategory("FixedSizedArray"); Benchmark(Baseline=true)>]
-    member _.FixedSizeArray_Builder() = Tests.ArrayBuilders.Examples.fixedSizeBase()
+    member _.FixedSizeArray_Builtin() = Tests.ArrayBuilders.Examples.fixedSizeBase()
 
 
     [<BenchmarkCategory("FixedSizedArray"); Benchmark>]
-    member _.FixedSizeArray_InlinedCode() = Tests.ArrayBuilders.Examples.fixedSizeC()
+    member _.FixedSizeArray_NewBuilder() = Tests.ArrayBuilders.Examples.fixedSizeC()
 
 
     [<BenchmarkCategory("MultiStepOption"); Benchmark(Baseline=true)>]
     member _.MultiStepOption_OldBuilder() = Tests.OptionBuilders.Examples.multiStepOldBuilder()
 
     [<BenchmarkCategory("MultiStepOption"); Benchmark>]
-    member _.MultiStepOption_InlineIfLambda() = Tests.OptionBuilders.Examples.multiStepInlineIfLambdaBuilder()
+    member _.MultiStepOption_NewBuilder() = Tests.OptionBuilders.Examples.multiStepNewBuilder()
 
     [<BenchmarkCategory("MultiStepOption"); Benchmark>]
     member _.MultiStepOption_NoBuilder() = Tests.OptionBuilders.Examples.multiStepNoBuilder()
@@ -293,15 +292,19 @@ type Benchmarks() =
     member _.MultiStepValueOption_OldBuilder() = Tests.OptionBuilders.Examples.multiStepOldBuilderV()
 
     [<BenchmarkCategory("MultiStepValueOption"); Benchmark>]
-    member _.MultiStepValueOption_InlineIfLambda() = Tests.OptionBuilders.Examples.multiStepInlineIfLambdaBuilderV()
+    member _.MultiStepValueOption_NewBuilder() = Tests.OptionBuilders.Examples.multiStepNewBuilderV()
 
     [<BenchmarkCategory("MultiStepValueOption"); Benchmark>]
     member _.MultiStepValueOption_NoBuilder() = Tests.OptionBuilders.Examples.multiStepNoBuilderV()
 
 
-    //[<BenchmarkCategory("taskSeq"); Benchmark>]
-    //member _.AsyncSeq_NestedForLoops() = 
-    //    Tests.TaskSeqBuilder.Examples.perf2_AsyncSeq() |> AsyncSeq.iter ignore |> Async.RunSynchronously
+    [<BenchmarkCategory("taskSeq"); Benchmark>]
+    member _.NestedForLoops_TaskSeqUsingRawResumableCode() = 
+        Tests.TaskSeq.Examples.perf2() |> TaskSeq.iter ignore
+
+    [<BenchmarkCategory("taskSeq"); Benchmark>]
+    member _.AsyncSeq_NestedForLoops() = 
+        Tests.TaskSeq.Examples.perf2_AsyncSeq() |> AsyncSeq.iter ignore |> Async.RunSynchronously
 
     [<BenchmarkCategory("taskSeq"); Benchmark(Baseline=true)>]
     member _.NestedForLoops_CSharpAsyncEnumerable() = 
@@ -341,8 +344,9 @@ module Main =
         //printfn "Sample perf2..."
         //Tests.TaskSeqBuilder.Examples.perf2() |> TaskSeq.iter (printfn "perf2: %d")
 
-        // Tests.TaskSeqBuilder.Examples.perf2_AsyncSeq() |> AsyncSeq.iter (printf "%d.") |> Async.RunSynchronously; printfn ""
-        // TaskPerfCSharp.perf2_AsyncEnumerable() |> TaskSeq.iter (printf "%d."); printfn ""
+        Tests.TaskSeq.Examples.perf2_AsyncSeq() |> AsyncSeq.toArrayAsync |> Async.RunSynchronously |> Array.sum |> (printf "%d."); printfn ""
+        Tests.TaskSeq.Examples.perf2() |> TaskSeq.toArray |> Array.sum |> (printfn "%d.")
+        TaskPerfCSharp.perf2_AsyncEnumerable() |> TaskSeq.toArray |> Array.sum |> (printfn "%d.")
         
         printfn "Running benchmarks..."
         let results = BenchmarkRunner.Run<Benchmarks>()

@@ -96,8 +96,8 @@ type ValueOptionBuilderUsingInlineIfLambda() =
     member inline _.Run([<InlineIfLambda>] code : OptionCode<'T>) : 'T voption = 
         code()
 
-let optioni = OptionBuilderUsingInlineIfLambda()
-let voptioni = ValueOptionBuilderUsingInlineIfLambda()
+let optionNew = OptionBuilderUsingInlineIfLambda()
+let voptionNew = ValueOptionBuilderUsingInlineIfLambda()
 
 
 type SlowOptionBuilder() =
@@ -124,7 +124,7 @@ type SlowOptionBuilder() =
     member this.Using(resource:#IDisposable, body) =
         this.TryFinally(this.Delay(fun ()->body resource), fun () -> match box resource with null -> () | _ -> resource.Dispose())
 
-let optionSlow = SlowOptionBuilder()
+let optionOld = SlowOptionBuilder()
 
 type SlowValueOptionBuilder() =
     member inline _.Zero() = ValueNone
@@ -150,7 +150,7 @@ type SlowValueOptionBuilder() =
     member inline this.Using(resource:#IDisposable, body) =
         this.TryFinally(this.Delay(fun ()->body resource), fun () -> match box resource with null -> () | _ -> resource.Dispose())
 
-let voptionSlow = SlowValueOptionBuilder()
+let voptionOld = SlowValueOptionBuilder()
 
 module Examples =
 
@@ -159,7 +159,7 @@ module Examples =
         let mutable res = 0
         for i in 1 .. 1000000 do
             let v = 
-                optionSlow {
+                optionOld {
                    try 
                       let! x1 = (if i % 5 <> 2 then Some i else None)
                       let! x2 = (if i % 3 <> 1 then Some i else None)
@@ -177,7 +177,7 @@ module Examples =
         let mutable res = 0
         for i in 1 .. 1000000 do
             let v = 
-                voptionSlow {
+                voptionOld {
                    try 
                       let! x1 = (if i % 5 <> 2 then ValueSome i else ValueNone)
                       let! x2 = (if i % 3 <> 1 then ValueSome i else ValueNone)
@@ -239,11 +239,11 @@ module Examples =
             v |> ignore
         res
 
-    let multiStepInlineIfLambdaBuilder () = 
+    let multiStepNewBuilder () = 
         let mutable res = 0
         for i in 1 .. 1000000 do
             let v = 
-                optioni {
+                optionNew {
                    try 
                       let! x1 = (if i % 5 <> 2 then Some i else None)
                       let! x2 = (if i % 3 <> 1 then Some i else None)
@@ -258,11 +258,11 @@ module Examples =
         res
 
 
-    let multiStepInlineIfLambdaBuilderV () = 
+    let multiStepNewBuilderV () = 
         let mutable res = 0
         for i in 1 .. 1000000 do
             let v = 
-                voptioni {
+                voptionNew {
                    try 
                       let! x1 = (if i % 5 <> 2 then ValueSome i else ValueNone)
                       let! x2 = (if i % 3 <> 1 then ValueSome i else ValueNone)
@@ -297,9 +297,9 @@ module Examples =
 
 module A =
 
-    let multiStepInlineIfLambdaBuilder (i) = 
+    let multiStepNewBuilder (i) = 
         let mutable res = 0
-        optioni {
+        optionNew {
             try 
                 let! x1 = (if i % 5 <> 2 then Some i else None)
                 let! x2 = (if i % 3 <> 1 then Some i else None)
@@ -311,17 +311,3 @@ module A =
                 return failwith "unexpected"
         } 
 
-
-    //let multiStepInlineIfLambdaBuilderV (i) = 
-    //    let mutable res = 0
-    //    voptioni {
-    //        try 
-    //            let! x1 = (if i % 5 <> 2 then ValueSome i else ValueNone)
-    //            let! x2 = (if i % 3 <> 1 then ValueSome i else ValueNone)
-    //            let! x3 = (if i % 3 <> 1 then ValueSome i else ValueNone)
-    //            let! x4 = (if i % 3 <> 1 then ValueSome i else ValueNone)
-    //            res <- res + 1 
-    //            return x1 + x2 + x3 + x4
-    //        with e -> 
-    //            return failwith "unexpected"
-    //    } 

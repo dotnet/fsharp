@@ -2157,7 +2157,8 @@ let LocalScope nm cgbuf (f: (Mark * Mark) -> 'a) : 'a =
     CG.SetMarkToHere cgbuf endScope
     res
 
-let compileSequenceExpressions = true // try (System.Environment.GetEnvironmentVariable("COMPILED_SEQ") <> null) with _ -> false
+let compileSequenceExpressions = true // try (System.Environment.GetEnvironmentVariable("FSHARP_COMPILED_SEQ") <> null) with _ -> false
+let compileStateMachineExpressions = true // try (System.Environment.GetEnvironmentVariable("FSHARP_COMPILED_STATEMACHINES") <> null) with _ -> false
 
 //-------------------------------------------------------------------------
 // Sequence Point Logic
@@ -2386,23 +2387,26 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
         GenSequenceExpr cenv cgbuf eenv info sequel
         true
     | None ->
-    // This part of the GenExprAux may apply because a 'let' expression can be a state machine expressions.
-    match (if IsPossibleStateMachineExpr g expr then ConvertStateMachineExprToObject cenv.g expr else None) with
-    | Some res ->
-        if g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines then
-                GenStructStateMachine cenv cgbuf eenv res sequel
-                true
-        else
-            error(Error(FSComp.SR.tcStateMachineNotSupported(), expr.Range))
-           
-    | None ->
-    // This part of the GenExprAux may apply because a 'match' expression can be a 'if __useResumableCode ...' expression
-    match expr with
-    | IfUseResumableStateMachinesExpr g (_, elseExpr) -> 
-        GenExpr cenv cgbuf eenv sp elseExpr sequel
+
+    match (LowerStateMachineExpr cenv.g expr) with
+    | LoweredStateMachineResult.Lowered res ->
+        GenStructStateMachine cenv cgbuf eenv res sequel
         true
-    | _ ->
-        false
+    | LoweredStateMachineResult.UseAlternative (msg, altExpr) ->
+        warning(Error(FSComp.SR.reprStateMachineNotCompilable(msg), expr.Range))
+        GenExpr cenv cgbuf eenv sp altExpr sequel
+        true
+    | LoweredStateMachineResult.NoAlternative msg ->
+        errorR(Error(FSComp.SR.reprStateMachineNotCompilableNoAlternative(msg), expr.Range))
+        GenDefaultValue cenv cgbuf eenv (tyOfExpr cenv.g expr, expr.Range)
+        true
+    | LoweredStateMachineResult.NotAStateMachine ->
+        match expr with 
+        | IfUseResumableStateMachinesExpr g (_thenExpr, elseExpr) ->
+            GenExpr cenv cgbuf eenv sp elseExpr sequel
+            true
+        | _ -> 
+            false
 
 and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
     let g = cenv.g
@@ -3383,7 +3387,9 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
            valRefEq g v g.cgh__resumableEntry_vref || 
            valRefEq g v g.cgh__stateMachine_vref
            ->
-        error(Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen(v.DisplayName), m))
+        errorR(Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen(v.DisplayName), m))
+        CG.EmitInstr cgbuf (pop 0) (Push [g.ilg.typ_Object]) AI_ldnull
+        GenSequel cenv eenv.cloc cgbuf sequel
 
   // Emit "methodhandleof" calls as ldtoken instructions
   //

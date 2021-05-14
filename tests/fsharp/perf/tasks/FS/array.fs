@@ -94,27 +94,27 @@ module UsingInlinedCodeAndCollector =
             code.Invoke &sm
             sm.ToArray()
 
-    let arrayc = ArrayBuilderViaCollector()
+    let arrayNew = ArrayBuilderViaCollector()
 
 module Examples =
 
-    let tinyVariableSizeC () = 
+    let tinyVariableSizeNew () = 
         for i in 1 .. 1000000 do
-            arrayc {
+            arrayNew {
                if i % 3 = 0 then 
                    yield "b"
             } |> Array.length |> ignore
 
-    let tinyVariableSizeBase () = 
+    let tinyVariableSizeBuiltin () = 
         for i in 1 .. 1000000 do
             [|
                if i % 3 = 0 then 
                    yield "b"
             |] |> Array.length |> ignore
 
-    let variableSizeC () = 
+    let variableSizeNew () = 
         for i in 1 .. 1000000 do
-            arrayc {
+            arrayNew {
                yield "a"
                yield "b"
                yield "b"
@@ -128,7 +128,7 @@ module Examples =
                yield "c"
             } |> Array.length |> ignore
 
-    let variableSizeBase () = 
+    let variableSizeBuiltin () = 
         for i in 1 .. 1000000 do
             [|
                yield "a"
@@ -146,7 +146,7 @@ module Examples =
 
     let fixedSizeC () = 
         for i in 1 .. 1000000 do
-            arrayc {
+            arrayNew {
                "a"
                "b"
                "b"
@@ -181,11 +181,11 @@ module Examples =
         t.Stop()
         printfn "PERF: %s : %d" s t.ElapsedMilliseconds
 
-    perf "tinyVariableSizeBase" tinyVariableSizeBase
-    perf "tinyVariableSizeC " tinyVariableSizeC
+    perf "tinyVariableSizeBuiltin" tinyVariableSizeBuiltin
+    perf "tinyVariableSizeNew " tinyVariableSizeNew
 
-    perf "variableSizeBase" variableSizeBase
-    perf "variableSizeC" variableSizeC
+    perf "variableSizeBuiltin" variableSizeBuiltin
+    perf "variableSizeNew" variableSizeNew
 
     perf "fixedSizeBase" fixedSizeBase
     perf "fixedSizeC" fixedSizeC
