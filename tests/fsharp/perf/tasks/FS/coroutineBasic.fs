@@ -152,3 +152,18 @@ type CoroutineBuilder() =
 module CoroutineBuilder = 
 
     let coroutine = CoroutineBuilder()
+
+module Examples =
+    let t1 () = 
+        coroutine {
+           printfn "in t1"
+           yield ()
+           printfn "hey ho"
+           yield ()
+        }
+    let dumpCoroutine (t: Coroutine) = 
+        printfn "-----"
+        while ( t.MoveNext()
+                not t.IsCompleted) do 
+            printfn "yield"
+
