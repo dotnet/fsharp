@@ -34,7 +34,6 @@ module internal Helpers =
 /// This is the type of coroutines
 [<AbstractClass; NoEquality; NoComparison>] 
 type Coroutine() =
-    static let mutable x = 1000
     
     /// Checks if the coroutine is completed
     abstract IsCompleted: bool
