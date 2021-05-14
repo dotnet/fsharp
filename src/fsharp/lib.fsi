@@ -290,3 +290,12 @@ module ArrayParallel =
     val inline map : ('T -> 'U) -> 'T [] -> 'U []
 
     val inline mapi : (int -> 'T -> 'U) -> 'T [] -> 'U []
+
+[<Sealed>]
+type AsyncLazy<'T> =
+
+    new : computation: Async<'T> -> AsyncLazy<'T>
+
+    member GetValueAsync: unit -> Async<'T>
+
+    member TryGetValue: unit -> 'T voption
