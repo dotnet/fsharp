@@ -4519,7 +4519,6 @@ type Expr =
         ctorCall:  Expr * 
         overrides: ObjExprMethod list * 
         interfaceImpls: (TType * ObjExprMethod list) list *                   
-        stateVars: ValRef list *                   
         range: range
 
     /// Matches are a more complicated form of "let" with multiple possible destinations 
@@ -4613,7 +4612,7 @@ type Expr =
         | App (f, _, _, args, _) -> "App(" + f.ToDebugString(depth) + ", [" + String.concat ", " (args |> List.map (fun e -> e.ToDebugString(depth))) + "])"
         | LetRec _ -> "LetRec(..)"
         | Let (bind, body, _, _) -> "Let(" + bind.Var.DisplayName + ", " + bind.Expr.ToDebugString(depth) + ", " + body.ToDebugString(depth) + ")"
-        | Obj (_, _objTy, _, _, _, _, _, _) -> "Obj(..)"
+        | Obj (_, _objTy, _, _, _, _, _) -> "Obj(..)"
         | Match (_, _, _dt, _tgs, _, _) -> "Match(..)"
         | StaticOptimization (_, _, _, _) -> "StaticOptimization(..)"
         | Op (op, _, args, _) -> "Op(" + op.ToString() + ", " + String.concat ", " (args |> List.map (fun e -> e.ToDebugString(depth))) + ")"

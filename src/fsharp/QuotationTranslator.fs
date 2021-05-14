@@ -485,7 +485,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     | Expr.Sequential (x0, x1, NormalSeq, _, _)  ->
         QP.mkSequential(ConvExpr cenv env x0, ConvExpr cenv env x1)
 
-    | Expr.Obj (_, ty, _, _, [TObjExprMethod(TSlotSig(_, ctyp, _, _, _, _), _, tps, [tmvs], e, _) as tmethod], _, _, m) when isDelegateTy g ty ->
+    | Expr.Obj (_, ty, _, _, [TObjExprMethod(TSlotSig(_, ctyp, _, _, _, _), _, tps, [tmvs], e, _) as tmethod], _, m) when isDelegateTy g ty ->
         let f = mkLambdas m tps tmvs (e, GetFSharpViewOfReturnType g (returnTyOfMethod g tmethod))
         let fR = ConvExpr cenv env f
         let tyargR = ConvType cenv env m ctyp
@@ -500,7 +500,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     | Expr.Sequential  (x0, x1, ThenDoSeq, _, _) ->
         QP.mkSequential(ConvExpr cenv env x0, ConvExpr cenv env x1)
 
-    | Expr.Obj (_lambdaId, _typ, _basev, _basecall, _overrides, _iimpls, _, m) ->
+    | Expr.Obj (_lambdaId, _typ, _basev, _basecall, _overrides, _iimpls, m) ->
         wfail(Error(FSComp.SR.crefQuotationsCantContainObjExprs(), m))
 
     | Expr.Op (op, tyargs, args, m) ->

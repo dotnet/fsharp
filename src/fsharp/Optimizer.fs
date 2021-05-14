@@ -1906,7 +1906,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
             MightMakeCriticalTailcall=false
             Info=UnknownValue }
 
-    | Expr.Obj (_, ty, basev, createExpr, overrides, iimpls, _stateVars, m) -> 
+    | Expr.Obj (_, ty, basev, createExpr, overrides, iimpls, m) -> 
         match expr with 
         | NewDelegateExpr cenv.g (lambdaId, vsl, body, _, remake) -> 
             OptimizeNewDelegateExpr cenv env (lambdaId, vsl, body, remake)

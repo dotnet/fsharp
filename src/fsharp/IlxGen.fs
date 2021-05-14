@@ -395,13 +395,6 @@ let ComputeTypeAccess (tref: ILTypeRef) hidden =
 type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int, templateReplacement: (TyconRef * ILType * TyparInst) option) =
 
     /// Get the template replacement information used when using struct types for state machines based on a "template" struct
-    ///
-    /// When generating code for tasks, the mapping is
-    ///     TaskStateMachineTemplate<int32> --> NewStructClosureType<clo-typars>
-    /// When processing the copied metadata of TaskStateMachineTemplate:
-    ///    TaskStateMachineTemplate<...> --> NewStructClosureType<clo-typars>
-    ///    T --> int32
-    ///    AsyncTaskMethodBuilder<T> --> AsyncTaskMethodBuilder<int32>
     member __.TemplateReplacement = templateReplacement
 
     member __.WithTemplateReplacement(tcref, ilty, tpinst) = TypeReprEnv(reprs, count, Some (tcref, ilty, tpinst)) 
@@ -2388,7 +2381,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
         true
     | None ->
 
-    match (LowerStateMachineExpr cenv.g expr) with
+    match LowerStateMachineExpr cenv.g expr with
     | LoweredStateMachineResult.Lowered res ->
         GenStructStateMachine cenv cgbuf eenv res sequel
         true
@@ -2546,11 +2539,11 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
     | Expr.StaticOptimization (constraints, e2, e3, m) ->
         GenStaticOptimization cenv cgbuf eenv (constraints, e2, e3, m) sequel
 
-    | Expr.Obj (_, ty, _, _, [meth], [], [], m) when isDelegateTy g ty ->
+    | Expr.Obj (_, ty, _, _, [meth], [], m) when isDelegateTy g ty ->
         GenDelegateExpr cenv cgbuf eenv expr (meth, m) sequel
 
-    | Expr.Obj (_, ty, basev, basecall, overrides, interfaceImpls, stateVars, m) ->
-        GenObjectExpr cenv cgbuf eenv expr (ty, basev, basecall, overrides, interfaceImpls, stateVars, m) sequel
+    | Expr.Obj (_, ty, basev, basecall, overrides, interfaceImpls, m) ->
+        GenObjectExpr cenv cgbuf eenv expr (ty, basev, basecall, overrides, interfaceImpls, m) sequel
 
     | Expr.Quote (ast, conv, _, m, ty) ->
         GenQuotation cenv cgbuf eenv (ast, conv, m, ty) sequel
@@ -4794,17 +4787,9 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
    
     )
 
-and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, overrides, interfaceImpls, stateVars: ValRef list, m) sequel =
+and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, overrides, interfaceImpls, m) sequel =
     let g = cenv.g
 
-    let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
-
-    // State vars are only populated for state machine objects 
-    //
-    // Like in GenSequenceExpression we pretend any stateVars are bound in the outer environment. This prevents the being
-    // considered true free variables that need to be passed to the constructor.
-    let eenvouter = eenvouter |> AddStorageForLocalVals g (stateVars |> List.map (fun v -> v.Deref, Local(0, false, None)))
-    
     // Find the free variables of the closure, to make them further fields of the object.
     //
     // Note, the 'let' bindings for the stateVars have already been transformed to 'set' expressions, and thus the stateVars are now
@@ -4854,11 +4839,7 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
     CountClosure()
     GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloinfo.cloWitnessInfos
     for fv in cloinfo.cloFreeVars do
-       // State variables always get zero-initialized
-       if stateVarsSet.Contains fv then
-           GenDefaultValue cenv cgbuf eenvouter (fv.Type, m)
-       else
-           GenGetLocalVal cenv cgbuf eenvouter m fv None
+       GenGetLocalVal cenv cgbuf eenvouter m fv None
    
     CG.EmitInstr cgbuf (pop ilCloAllFreeVars.Length) (Push [ EraseClosures.mkTyOfLambdas g.ilxPubCloEnv ilCloLambdas]) (I_newobj (cloSpec.Constructor, None))
     GenSequel cenv eenvouter.cloc cgbuf sequel
@@ -5134,7 +5115,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
     // Get a unique stamp for the closure. This must be stable for things that can be part of a let rec.
     let uniq =
         match expr with
-        | Expr.Obj (uniq, _, _, _, _, _, _, _)
+        | Expr.Obj (uniq, _, _, _, _, _, _)
         | Expr.Lambda (uniq, _, _, _, _, _, _)
         | Expr.TyLambda (uniq, _, _, _, _) -> uniq
         | _ -> newUnique()
@@ -5229,7 +5210,7 @@ and GetIlxClosureInfo cenv m boxity isLocalTypeFunc canUseStaticField thisVars e
     let returnTy =
       match expr with
       | Expr.Lambda (_, _, _, _, _, _, returnTy) | Expr.TyLambda (_, _, _, _, returnTy) -> returnTy
-      | Expr.Obj (_, ty, _, _, _, _, _, _) -> ty
+      | Expr.Obj (_, ty, _, _, _, _, _) -> ty
       | _ -> tyOfExpr g expr //failwith "GetIlxClosureInfo: not a lambda expression"
 
     // Determine the structure of the closure. We do this before analyzing free variables to

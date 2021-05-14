@@ -1180,7 +1180,7 @@ let tryDestRefTupleExpr e = match e with Expr.Op (TOp.Tuple tupInfo, _, es, _) w
 let rec rangeOfExpr x = 
     match x with
     | Expr.Val (_, _, m) | Expr.Op (_, _, _, m) | Expr.Const (_, m, _) | Expr.Quote (_, _, _, m, _)
-    | Expr.Obj (_, _, _, _, _, _, _, m) | Expr.App (_, _, _, _, m) | Expr.Sequential (_, _, _, _, m) 
+    | Expr.Obj (_, _, _, _, _, _, m) | Expr.App (_, _, _, _, m) | Expr.Sequential (_, _, _, _, m) 
     | Expr.StaticOptimization (_, _, _, m) | Expr.Lambda (_, _, _, _, _, m, _) 
     | Expr.WitnessArg (_, m)
     | Expr.TyLambda (_, _, _, m, _)| Expr.TyChoose (_, _, m) | Expr.LetRec (_, _, m, _) | Expr.Let (_, _, m, _) | Expr.Match (_, _, _, _, m, _) -> m
@@ -1243,7 +1243,7 @@ let mkTypeLambda m vs (b, tau_ty) = match vs with [] -> b | _ -> Expr.TyLambda (
 let mkTypeChoose m vs b = match vs with [] -> b | _ -> Expr.TyChoose (vs, b, m)
 
 let mkObjExpr (ty, basev, basecall, overrides, iimpls, m) = 
-    Expr.Obj (newUnique(), ty, basev, basecall, overrides, iimpls, [], m) 
+    Expr.Obj (newUnique(), ty, basev, basecall, overrides, iimpls, m) 
 
 let mkLambdas m tps (vs: Val list) (b, rty) = 
     mkTypeLambda m tps (List.foldBack (fun v (e, ty) -> mkLambda m v (e, ty), v.Type --> ty) vs (b, rty))
@@ -4014,7 +4014,7 @@ module DebugPrint =
             | Expr.Op (TOp.Label l, _tys, args, _) -> wordL(tagText ("Expr.Label " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Op (_, _tys, args, _) -> wordL(tagText "Expr.Op ...") ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Quote (a, _, _, _, _) -> leftL(tagText "<@") ^^ atomL a ^^ rightL(tagText "@>")
-            | Expr.Obj (_lambdaId, ty, basev, ccall, overrides, iimpls, _stateVars, _) -> 
+            | Expr.Obj (_lambdaId, ty, basev, ccall, overrides, iimpls, _) -> 
                 (leftL (tagText "{") 
                  @@--
                   ((wordL(tagText "new ") ++ typeL ty) 
@@ -4700,7 +4700,7 @@ and accFreeInExprNonLinear opts x acc =
     | Expr.Let _ -> 
         failwith "unreachable - linear expr"
 
-    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _stateVars, _) ->  
+    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _) ->  
         unionFreeVars 
            (boundProtect
               (Option.foldBack (boundLocalVal opts) basev
@@ -5243,7 +5243,7 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
     | Expr.Quote (a, dataCell, isFromQueryExpression, m, ty) ->  
         remapQuoteExpr g compgen tmenv (a, dataCell, isFromQueryExpression, m, ty)
 
-    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _stateVars, m) -> 
+    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) -> 
         let basev', tmenvinner = Option.mapFold (copyAndRemapAndBindVal g compgen) tmenv basev 
         mkObjExpr (remapType tmenv ty, basev', 
                    remapExpr g compgen tmenv basecall, 
@@ -5749,10 +5749,10 @@ let rec remarkExpr m x =
     | Expr.Quote (a, conv, isFromQueryExpression, _, ty) ->
         Expr.Quote (remarkExpr m a, conv, isFromQueryExpression, m, ty)
 
-    | Expr.Obj (n, ty, basev, basecall, overrides, iimpls, stateVars, _) -> 
+    | Expr.Obj (n, ty, basev, basecall, overrides, iimpls, _) -> 
         Expr.Obj (n, ty, basev, remarkExpr m basecall, 
                   List.map (remarkObjExprMethod m) overrides, 
-                  List.map (remarkInterfaceImpl m) iimpls, stateVars, m)
+                  List.map (remarkInterfaceImpl m) iimpls, m)
 
     | Expr.Op (op, tinst, args, _) -> 
         let op = 
@@ -5947,7 +5947,7 @@ let GenWitnessTys (g: TcGlobals) (cxs: TraitWitnessInfos) =
 let rec tyOfExpr g e = 
     match e with 
     | Expr.App (_, fty, tyargs, args, _) -> applyTys g fty (tyargs, args)
-    | Expr.Obj (_, ty, _, _, _, _, _, _)  
+    | Expr.Obj (_, ty, _, _, _, _, _)  
     | Expr.Match (_, _, _, _, _, ty) 
     | Expr.Quote (_, _, _, _, ty) 
     | Expr.Const (_, _, ty) -> (ty)
@@ -6669,7 +6669,7 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
             | None -> z
             | Some ((_typeDefs, _argTypes, argExprs, _), _) -> exprsF z argExprs
 
-        | Expr.Obj (_n, _typ, _basev, basecall, overrides, iimpls, _stateVars, _m) -> 
+        | Expr.Obj (_n, _typ, _basev, basecall, overrides, iimpls, _m) -> 
             let z = exprF z basecall
             let z = List.fold tmethodF z overrides
             List.fold (foldOn snd (List.fold tmethodF)) z iimpls
@@ -7622,8 +7622,8 @@ let MakeApplicationAndBetaReduce g (f, fty, tyargsl, argl, m) =
 
 let (|NewDelegateExpr|_|) g expr =
     match expr with
-    | Expr.Obj (lambdaId, ty, a, b, [TObjExprMethod(c, d, e, tmvs, body, f)], [], [], m) when isDelegateTy g ty ->
-        Some (lambdaId, tmvs, body, m, (fun bodyR -> Expr.Obj (lambdaId, ty, a, b, [TObjExprMethod(c, d, e, tmvs, bodyR, f)], [], [], m)))
+    | Expr.Obj (lambdaId, ty, a, b, [TObjExprMethod(c, d, e, tmvs, body, f)], [], m) when isDelegateTy g ty ->
+        Some (lambdaId, tmvs, body, m, (fun bodyR -> Expr.Obj (lambdaId, ty, a, b, [TObjExprMethod(c, d, e, tmvs, bodyR, f)], [], m)))
     | _ -> None
 
 let (|DelegateInvokeExpr|_|) g expr =
@@ -8675,7 +8675,7 @@ and rewriteExprStructure env expr =
           | Some (data1, data2) -> Some(map3Of4 (rewriteExprs env) data1, map3Of4 (rewriteExprs env) data2)
       Expr.Quote ((if env.IsUnderQuotations then RewriteExpr env ast else ast), ref data, isFromQueryExpression, m, ty)
 
-  | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _stateVars, m) -> 
+  | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) -> 
       mkObjExpr(ty, basev, RewriteExpr env basecall, List.map (rewriteObjExprOverride env) overrides, 
                   List.map (rewriteObjExprInterfaceImpl env) iimpls, m)
   | Expr.Link eref -> 
