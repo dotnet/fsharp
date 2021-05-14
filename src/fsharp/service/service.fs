@@ -409,7 +409,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     /// Holds keys for files being currently checked. It's used to prevent checking same file in parallel (interleaving chunk queued to Reactor).
     let beingCheckedFileTable = 
-        ConcurrentDictionary<FilePath * FSharpProjectOptions * FileVersion, MailboxProcessor<unit>>
+        ConcurrentDictionary<FilePath * FSharpProjectOptions * FileVersion, unit>
             (HashIdentity.FromFunctions
                 hash
                 (fun (f1, o1, v1) (f2, o2, v2) -> f1 = f2 && v1 = v2 && FSharpProjectOptions.AreSameForChecking(o1, o2)))
