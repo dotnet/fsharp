@@ -1183,7 +1183,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
             error(Error(FSComp.SR.tcResumableCodeNotSupported(), expr.Range))
 
         BindVals cenv env [moveNextThisVar; setStateMachineThisVar; setStateMachineStateVar; afterCodeThisVar]
-        CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (false, false) } moveNextExpr
+        CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (false, true) } moveNextExpr
         CheckExprNoByrefs cenv env setStateMachineBody
         CheckExprNoByrefs cenv env afterCodeBody
         NoLimit

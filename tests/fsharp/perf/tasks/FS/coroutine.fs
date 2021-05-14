@@ -113,7 +113,6 @@ type CoroutineBuilder() =
 
                 // IAsyncStateMachine.MoveNext
                 (MoveNextMethodImpl<_>(fun sm -> 
-                    if __useResumableCode then 
                         //-- RESUMABLE CODE START
                         __resumeAt sm.ResumptionPoint 
                         let __stack_code_fin = code.Invoke(&sm)
@@ -125,8 +124,7 @@ type CoroutineBuilder() =
                             | Some tg -> tg.MoveNext() // recurse
                             | None -> ()
                         //-- RESUMABLE CODE END
-                    else
-                        failwith "Run: non-resumable - unreachable"))
+                    ))
 
                 // IAsyncStateMachine.SetStateMachine
                 (SetStateMachineMethodImpl<_>(fun sm state -> SetStateMachine(&sm, state)))

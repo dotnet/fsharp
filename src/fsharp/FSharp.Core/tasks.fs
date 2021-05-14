@@ -104,18 +104,16 @@ type TaskBuilder() =
          if __useResumableCode then 
             __stateMachine<TaskStateMachineData<'T>, Task<'T>>
                 (MoveNextMethodImpl<_>(fun sm -> 
-                    if __useResumableCode then 
-                        //-- RESUMABLE CODE START
-                        __resumeAt sm.ResumptionPoint 
-                        try
-                            let __stack_code_fin = code.Invoke(&sm)
-                            if __stack_code_fin then
-                                sm.Data.MethodBuilder.SetResult(sm.Data.Result)
-                        with exn ->
-                            sm.Data.MethodBuilder.SetException exn
-                        //-- RESUMABLE CODE END
-                    else
-                        failwith "unreachable"))
+                    //-- RESUMABLE CODE START
+                    __resumeAt sm.ResumptionPoint 
+                    try
+                        let __stack_code_fin = code.Invoke(&sm)
+                        if __stack_code_fin then
+                            sm.Data.MethodBuilder.SetResult(sm.Data.Result)
+                    with exn ->
+                        sm.Data.MethodBuilder.SetException exn
+                    //-- RESUMABLE CODE END
+                ))
                 (SetStateMachineMethodImpl<_>(fun sm state -> sm.Data.MethodBuilder.SetStateMachine(state)))
                 (AfterCode<_,_>(fun sm -> 
                     sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()

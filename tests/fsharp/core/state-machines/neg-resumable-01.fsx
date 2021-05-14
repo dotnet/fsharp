@@ -59,11 +59,8 @@ module ``Error on let rec in resumable code`` =
         __stateMachine<int, int>
             (MoveNextMethodImpl<_>(fun sm -> 
                
-                if __useResumableCode then
-                    let rec f x = if x > 0 then f (x-1) else inputValue + 13
-                    f 10 + f 2 |> ignore
-                else
-                    failwith "should have been compiled to resumable code, no interpretation available"
+                let rec f x = if x > 0 then f (x-1) else inputValue + 13
+                f 10 + f 2 |> ignore
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
@@ -102,7 +99,6 @@ module ``let bound function can't use resumable code constructs`` =
         __stateMachine<int, int>
             (MoveNextMethodImpl<_>(fun sm -> 
                
-                if __useResumableCode then
                     __resumeAt 1
                     let f () =
                         match __resumableEntry() with // we expect an error here - this is not in resumable code 
@@ -111,8 +107,6 @@ module ``let bound function can't use resumable code constructs`` =
                         | None -> 
                             20+inputValue
                     f()  |> ignore
-                else
-                    failwith "should have been compiled to resumable code, no interpretation available"
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
@@ -121,8 +115,6 @@ module ``Check no resumption point in try-finally `` =
     let makeStateMachine inputValue = 
         __stateMachine<int, int>
             (MoveNextMethodImpl<_>(fun sm -> 
-               
-                if __useResumableCode then
                     __resumeAt 1 
                     let mutable res = inputValue
                     try 
@@ -135,8 +127,6 @@ module ``Check no resumption point in try-finally `` =
                             res <- res + 10
                     finally 
                         res <- res + 20 
-                else
-                    failwith "should have been compiled to resumable code, no interpretation available"
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
@@ -145,8 +135,6 @@ module ``Check no resumption point in fast integer for loop`` =
     let makeStateMachine inputValue = 
         __stateMachine<int, int>
             (MoveNextMethodImpl<_>(fun sm -> 
-               
-                if __useResumableCode then
                     __resumeAt 1 
                     let mutable res = inputValue
                     let mutable count = 0
@@ -159,8 +147,6 @@ module ``Check no resumption point in fast integer for loop`` =
                             res <- 0
                         | None -> 
                             res <- res + 10
-                else
-                    failwith "should have been compiled to resumable code, no interpretation available"
                 )) 
             (SetStateMachineMethodImpl<_>(fun sm state -> ()))
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))

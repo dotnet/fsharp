@@ -23,6 +23,7 @@
 	<Compile Include="array.fs" />
 	<Compile Include="option.fs" />
 	<Compile Include="coroutine.fs" />
+	<Compile Include="coroutineBasic.fs" />
 	<Compile Include="taskSeq.fs" />
 	<Compile Include="TaskBuilder.fs" />
 	<Compile Include="TaskPerf.fs" />
@@ -32,7 +33,8 @@
 	<ProjectReference Include="..\CS\TaskPerfCSharp.csproj" />
     <ProjectReference Include="..\..\..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
-    <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.3" /> 
+     <!-- this must be manually enabled because CI fails because some post-build checks don't like the DLL-->
+	  <!-- <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.3" />  -->
     <PackageReference Include="System.Interactive.Async" Version="4.1.1" />
   </ItemGroup>
 

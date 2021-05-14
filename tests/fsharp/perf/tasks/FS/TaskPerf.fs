@@ -302,9 +302,9 @@ type Benchmarks() =
     member _.NestedForLoops_TaskSeqUsingRawResumableCode() = 
         Tests.TaskSeq.Examples.perf2() |> TaskSeq.iter ignore
 
-    [<BenchmarkCategory("taskSeq"); Benchmark>]
-    member _.AsyncSeq_NestedForLoops() = 
-        Tests.TaskSeq.Examples.perf2_AsyncSeq() |> AsyncSeq.iter ignore |> Async.RunSynchronously
+    //[<BenchmarkCategory("taskSeq"); Benchmark>]
+    //member _.AsyncSeq_NestedForLoops() = 
+    //    Tests.TaskSeq.Examples.perf2_AsyncSeq() |> AsyncSeq.iter ignore |> Async.RunSynchronously
 
     [<BenchmarkCategory("taskSeq"); Benchmark(Baseline=true)>]
     member _.NestedForLoops_CSharpAsyncEnumerable() = 

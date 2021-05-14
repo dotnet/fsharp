@@ -232,7 +232,6 @@ type TaskSeqBuilder() =
             __stateMachine<TaskSeqStateMachineData<'T>, IAsyncEnumerable<'T>>
                 // IAsyncStateMachine.MoveNext
                 (MoveNextMethodImpl<_>(fun sm -> 
-                    if __useResumableCode then 
                         //-- RESUMABLE CODE START
                         __resumeAt sm.ResumptionPoint
                         try
@@ -265,8 +264,8 @@ type TaskSeqBuilder() =
                             //Console.WriteLine("[{0}] SetException {1}", sm.MethodBuilder.Task.Id, exn)
                             sm.Data.promiseOfValueOrEnd.SetException(exn)
                             sm.Data.builder.Complete()
-                    else
-                        failwith "unreachable"))
+                        //-- RESUMABLE CODE END
+                    ))
                 (SetStateMachineMethodImpl<_>(fun sm state -> ()))
                 (AfterCode<_,_>(fun sm -> 
                     let ts = TaskSeq<TaskSeqStateMachine<'T>, 'T>()
@@ -545,24 +544,24 @@ module Examples =
                       yield! perf1 i5
         }
 
-    let perf1_AsyncSeq (x: int) = 
-        FSharp.Control.AsyncSeqExtensions.asyncSeq {
-           yield 1
-           yield 2
-           if x >= 2 then 
-               yield 3
-               yield 4
-        }
+    //let perf1_AsyncSeq (x: int) = 
+    //    FSharp.Control.AsyncSeqExtensions.asyncSeq {
+    //       yield 1
+    //       yield 2
+    //       if x >= 2 then 
+    //           yield 3
+    //           yield 4
+    //    }
 
-    let perf2_AsyncSeq () = 
-        FSharp.Control.AsyncSeqExtensions.asyncSeq {
-           for i1 in perf1_AsyncSeq 3 do
-             for i2 in perf1_AsyncSeq 3 do
-               for i3 in perf1_AsyncSeq 3 do
-                 for i4 in perf1_AsyncSeq 3 do
-                   for i5 in perf1_AsyncSeq 3 do
-                     yield! perf1_AsyncSeq i5
-        }
+    //let perf2_AsyncSeq () = 
+    //    FSharp.Control.AsyncSeqExtensions.asyncSeq {
+    //       for i1 in perf1_AsyncSeq 3 do
+    //         for i2 in perf1_AsyncSeq 3 do
+    //           for i3 in perf1_AsyncSeq 3 do
+    //             for i4 in perf1_AsyncSeq 3 do
+    //               for i5 in perf1_AsyncSeq 3 do
+    //                 yield! perf1_AsyncSeq i5
+    //    }
 
     let dumpTaskSeq (t: IAsyncEnumerable<_>) = 
         printfn "-----"
