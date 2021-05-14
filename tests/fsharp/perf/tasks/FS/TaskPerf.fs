@@ -344,7 +344,7 @@ module Main =
         //printfn "Sample perf2..."
         //Tests.TaskSeqBuilder.Examples.perf2() |> TaskSeq.iter (printfn "perf2: %d")
 
-        Tests.TaskSeq.Examples.perf2_AsyncSeq() |> AsyncSeq.toArrayAsync |> Async.RunSynchronously |> Array.sum |> (printf "%d."); printfn ""
+        //Tests.TaskSeq.Examples.perf2_AsyncSeq() |> AsyncSeq.toArrayAsync |> Async.RunSynchronously |> Array.sum |> (printf "%d."); printfn ""
         Tests.TaskSeq.Examples.perf2() |> TaskSeq.toArray |> Array.sum |> (printfn "%d.")
         TaskPerfCSharp.perf2_AsyncEnumerable() |> TaskSeq.toArray |> Array.sum |> (printfn "%d.")
         
