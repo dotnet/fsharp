@@ -282,4 +282,7 @@
   <data name="RemoveUnusedBinding" xml:space="preserve">
     <value>Remove unused binding</value>
   </data>
+  <data name="AddMissingInstanceMemberParameter" xml:space="preserve">
+    <value>Add missing instance member parameter</value>
+  </data>
 </root>

@@ -91,6 +91,7 @@
     <Compile Include="Refactor\AddExplicitTypeToParameter.fs" />
     <Compile Include="Refactor\ChangeDerefToValueRefactoring.fs" />
     <Compile Include="CodeFix\CodeFixHelpers.fs" />
+    <Compile Include="CodeFix\AddInstanceMemberParameter.fs" />
     <Compile Include="CodeFix\AddTypeAnnotationToObjectOfIndeterminateType.fs" />
     <Compile Include="CodeFix\AddMissingRecToMutuallyRecFunctions.fs" />
     <Compile Include="CodeFix\ConvertCSharpLambdaToFSharpLambda.fs" />
