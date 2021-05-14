@@ -107,7 +107,7 @@ type AssignedItemSetterTarget =
     | AssignedRecdFieldSetter of RecdFieldInfo 
 
 /// Represents the resolution of a caller argument as a named-setter argument
-type AssignedItemSetter<'T> = AssignedItemSetter of Ident * AssignedItemSetterTarget * CallerArg<'T> 
+type AssignedItemSetter<'T> = AssignedItemSetter of name: Ident * setterTarget: AssignedItemSetterTarget * callerArg: CallerArg<'T> 
 
 type CallerNamedArg<'T> = 
     | CallerNamedArg of Ident * CallerArg<'T>  

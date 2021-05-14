@@ -1890,6 +1890,16 @@ type ILPropInfo =
     /// Indicates if the IL property has a 'set' method
     member x.HasSetter = Option.isSome x.RawMetadata.SetMethod
 
+    member x.SetterIsInitOnly =
+        // todo: move to a constant once we understand why the attribute from TcGlobals is None and string based check is the alternate way
+        let attributeName = "System.Runtime.CompilerServices.IsExternalInit"
+        match x.SetterMethod.ILMethodRef.ReturnType, x.TcGlobals.attrib_IsExternalInit with
+        | ILType.Modified(modifierClass=modifierClass), None when modifierClass.BasicQualifiedName = attributeName -> 
+          true
+        | ILType.Modified(modifierClass=modifierClass), Some isExternalInitAttribute ->
+          modifierClass = isExternalInitAttribute.TypeRef
+        | _ -> false
+    
     /// Indicates if the IL property is static
     member x.IsStatic = (x.RawMetadata.CallingConv = ILThisConvention.Static)
 
@@ -2014,6 +2024,14 @@ type PropInfo =
         | FSProp(_, _, _, x) -> Option.isSome x
 #if !NO_EXTENSIONTYPING
         | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> pi.CanWrite), m)
+#endif
+
+    member x.SetterIsInitOnly =
+        match x with
+        | ILProp ilpinfo -> ilpinfo.SetterIsInitOnly
+        | FSProp _ -> false // F# doesn't support this
+#if !NO_EXTENSIONTYPING
+        | ProvidedProp _ -> false
 #endif
 
     /// Indicates if this is an extension member
