@@ -109,21 +109,21 @@ type internal PartialCheckResults =
 
     /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
     /// extras will also be available.
-    member GetTcInfo: unit -> Eventually<TcInfo>
+    member GetTcInfo: unit -> Async<TcInfo>
 
     /// Compute both the "TcInfo" and "TcInfoExtras" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetTcInfoWithExtras: unit -> Eventually<TcInfo * TcInfoExtras>
+    member GetTcInfoWithExtras: unit -> Async<TcInfo * TcInfoExtras>
 
     /// Compute the "ItemKeyStore" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member TryGetItemKeyStore: unit -> Eventually<ItemKeyStore option>
+    member TryGetItemKeyStore: unit -> Async<ItemKeyStore option>
 
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetSemanticClassification: unit -> Eventually<SemanticClassificationKeyStore option>
+    member GetSemanticClassification: unit -> Async<SemanticClassificationKeyStore option>
 
     member TimeStamp: DateTime 
 
@@ -161,7 +161,7 @@ type internal IncrementalBuilder =
       member AllDependenciesDeprecated : string[]
 
       /// The project build. Return true if the background work is finished.
-      member PopulatePartialCheckingResults: CompilationThreadToken -> Eventually<unit>
+      member PopulatePartialCheckingResults: CompilationThreadToken -> Async<unit>
 
       /// Get the preceding typecheck state of a slot, without checking if it is up-to-date w.r.t.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
@@ -187,39 +187,39 @@ type internal IncrementalBuilder =
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string -> Cancellable<PartialCheckResults>
+      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string -> Async<PartialCheckResults>
 
       /// Get the typecheck state after checking a file. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string -> Cancellable<PartialCheckResults>
+      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string -> Async<PartialCheckResults>
 
       /// Get the typecheck state after checking a file. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       /// This will get full type-check info for the file, meaning no partial type-checking.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetFullCheckResultsAfterFileInProject : CompilationThreadToken * filename:string -> Cancellable<PartialCheckResults>
+      member GetFullCheckResultsAfterFileInProject : CompilationThreadToken * filename:string -> Async<PartialCheckResults>
 
       /// Get the typecheck result after the end of the last file. The typecheck of the project is not 'completed'.
       /// This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterLastFileInProject : CompilationThreadToken -> Cancellable<PartialCheckResults>
+      member GetCheckResultsAfterLastFileInProject : CompilationThreadToken -> Async<PartialCheckResults>
 
       /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
       /// This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Cancellable<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
+      member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Async<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
 
       /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
       /// This may be a long-running operation.
       /// This will get full type-check info for the project, meaning no partial type-checking.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetFullCheckResultsAndImplementationsForProject : CompilationThreadToken -> Cancellable<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
+      member GetFullCheckResultsAndImplementationsForProject : CompilationThreadToken -> Async<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
       member GetLogicalTimeStampForProject: TimeStampCache -> DateTime

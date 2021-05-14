@@ -785,8 +785,10 @@ type IncrementalBuilder(tcGlobals,
     let StampReferencedAssemblyTask (cache: TimeStampCache) (_ref, timeStamper) =
         timeStamper cache
 
+    let dummyCtok = CompilationThreadToken()
+
     // Link all the assemblies together and produce the input typecheck accumulator
-    let CombineImportedAssembliesTask ctok : Cancellable<BoundModel> =
+    let CombineImportedAssembliesTask : Cancellable<BoundModel> =
       cancellable {
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
         // Return the disposable object that cleans up
@@ -795,7 +797,7 @@ type IncrementalBuilder(tcGlobals,
         let! tcImports =
           cancellable {
             try
-                let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
+                let! tcImports = TcImports.BuildNonFrameworkTcImports(dummyCtok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
 #if !NO_EXTENSIONTYPING
                 tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu ->
                     // When a CCU reports an invalidation, merge them together and just report a
@@ -1068,14 +1070,14 @@ type IncrementalBuilder(tcGlobals,
         else
             state
 
-    let computeInitialBoundModel (state: IncrementalBuilderState) (ctok: CompilationThreadToken) =
+    let computeInitialBoundModel (state: IncrementalBuilderState) =
         async {
             let work =
                 cancellable {
                     match state.initialBoundModel with
                     | None ->
                         // Note this is not time-sliced
-                        let! result = CombineImportedAssembliesTask ctok
+                        let! result = CombineImportedAssembliesTask
                         return { state with initialBoundModel = Some result }, result
                     | Some result ->
                         return state, result
@@ -1086,7 +1088,7 @@ type IncrementalBuilder(tcGlobals,
             | ValueOrCancelled.Value res -> return res
         }
 
-    let computeBoundModel state (cache: TimeStampCache) (ctok: CompilationThreadToken) (slot: int) =
+    let computeBoundModel state (cache: TimeStampCache) (slot: int) =
         if IncrementalBuild.injectCancellationFault then (raise(OperationCanceledException())) else
         async {
 
@@ -1095,7 +1097,7 @@ type IncrementalBuilder(tcGlobals,
             let state = computeStampedFileName state cache slot fileInfo
 
             if state.boundModels.[slot].IsNone then
-                let! (state, initial) = computeInitialBoundModel state ctok
+                let! (state, initial) = computeInitialBoundModel state
 
                 let prevBoundModel =
                     match slot with
@@ -1119,20 +1121,20 @@ type IncrementalBuilder(tcGlobals,
                 return state
         }
 
-    let computeBoundModels state (cache: TimeStampCache) (ctok: CompilationThreadToken) =
+    let computeBoundModels state (cache: TimeStampCache) =
         async {
             let! ct = Async.CancellationToken
             return
                 (state, [0..fileNames.Length-1]) 
                 ||> Seq.fold (fun state slot -> 
-                    let work = computeBoundModel state cache ctok slot
+                    let work = computeBoundModel state cache slot
                     let res = Async.RunSynchronously(work, cancellationToken=ct)
                     res)
         }
 
-    let computeFinalizedBoundModel state (cache: TimeStampCache) (ctok: CompilationThreadToken) =
+    let computeFinalizedBoundModel state (cache: TimeStampCache) =
         async {
-            let! state = computeBoundModels state cache ctok
+            let! state = computeBoundModels state cache
 
             match state.finalizedBoundModel with
             | Some result -> return state, result
@@ -1164,18 +1166,18 @@ type IncrementalBuilder(tcGlobals,
         | _ ->
             tryGetSlot state (slot - 1)
 
-    let evalUpToTargetSlot state (cache: TimeStampCache) ctok targetSlot =
+    let evalUpToTargetSlot state (cache: TimeStampCache) targetSlot =
         async {
             let state = computeStampedReferencedAssemblies state cache
             if targetSlot < 0 then
-                let! state, result = computeInitialBoundModel state ctok
+                let! state, result = computeInitialBoundModel state
                 return state, Some(result, DateTime.MinValue)
             else
                 let! ct = Async.CancellationToken
                 let state = 
                     (state, [0..targetSlot]) 
                     ||> Seq.fold (fun state slot -> 
-                        let work = computeBoundModel state cache ctok slot
+                        let work = computeBoundModel state cache slot
                         Async.RunSynchronously(work, cancellationToken=ct))
 
                 let result =
@@ -1187,11 +1189,11 @@ type IncrementalBuilder(tcGlobals,
                 return state, result
         }
 
-    let tryGetFinalized state cache ctok =
+    let tryGetFinalized state cache =
         async {
             let state = computeStampedReferencedAssemblies state cache
 
-            let! state, res = computeFinalizedBoundModel state cache ctok
+            let! state, res = computeFinalizedBoundModel state cache
             return state, Some res
         }
 
@@ -1225,19 +1227,7 @@ type IncrementalBuilder(tcGlobals,
     let setCurrentState (_ctok: CompilationThreadToken) state =
         currentState <- state
 
-    let agentCtok = CompilationThreadToken()
-
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
-
-    member this.GetCheckResultsForFileInProjectAsync (filename: string) : Async<PartialCheckResults> =
-        let work: Async<PartialCheckResults> =
-            async {
-                let! ct = Async.CancellationToken
-                match this.GetCheckResultsAfterFileInProject(agentCtok, filename) |> Cancellable.run ct with
-                | ValueOrCancelled.Cancelled ex -> return raise ex
-                | ValueOrCancelled.Value res -> return res
-            }
-        work
 
     member _.TcConfig = tcConfig
 
@@ -1266,7 +1256,7 @@ type IncrementalBuilder(tcGlobals,
         let state = computeStampedReferencedAssemblies state cache
         setCurrentState ctok state
         ct.ThrowIfCancellationRequested()
-        let! state, _res = computeFinalizedBoundModel state cache ctok
+        let! state, _res = computeFinalizedBoundModel state cache
         setCurrentState ctok state
         projectChecked.Trigger()
       }
@@ -1296,7 +1286,7 @@ type IncrementalBuilder(tcGlobals,
     member private _.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile, enablePartialTypeChecking) =
       async {
         let cache = TimeStampCache defaultTimeStamp
-        let! state, result = evalUpToTargetSlot { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache ctok (slotOfFile - 1)
+        let! state, result = evalUpToTargetSlot { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache (slotOfFile - 1)
         setCurrentState ctok { state with enablePartialTypeChecking = defaultPartialTypeChecking }
         match result with
         | Some (boundModel, timestamp) -> return PartialCheckResults(boundModel, timestamp)
@@ -1329,7 +1319,7 @@ type IncrementalBuilder(tcGlobals,
       async {
         let cache = TimeStampCache defaultTimeStamp
 
-        let! state, result = tryGetFinalized { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache ctok
+        let! state, result = tryGetFinalized { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache
         setCurrentState ctok { state with enablePartialTypeChecking = defaultPartialTypeChecking }
         match result with
         | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp) ->
