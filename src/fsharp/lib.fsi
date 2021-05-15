@@ -304,7 +304,8 @@ type AsyncLazyWeak<'T> =
     member TryGetValue: unit -> 'T voption
 
 /// Similar to AsyncLazyWeak, but will always strongly cache the result of the computation.
-/// Once the result has been cached, the computation function will also be removed or 'null'ed out.
+/// Once the result has been cached, the computation function will also be removed, or 'null'ed out, 
+///     as to prevent any references captured by the computation from being strongly held.
 [<Sealed>]
 type AsyncLazy<'T> =
 
