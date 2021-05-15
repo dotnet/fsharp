@@ -262,7 +262,7 @@ type BoundModel private (tcConfig: TcConfig,
             return! this.GetState(false)
         })
 
-    let resetLazyAsyncs() =
+    let resetAsyncLazyComputations() =
         lazyAsyncTcInfo <-
             AsyncLazy(async {
                 return! this.GetTcInfo()
@@ -306,10 +306,10 @@ type BoundModel private (tcConfig: TcConfig,
             // If partial checking is enabled and we have a backing sig file, then use the partial state. The partial state contains the sig state.
             | Some(FullState(tcInfo, _)) when enablePartialTypeChecking && hasSig -> 
                 lazyTcInfoState <- Some(PartialState tcInfo)
-                resetLazyAsyncs()
+                resetAsyncLazyComputations()
             | _ ->
                 lazyTcInfoState <- None
-                resetLazyAsyncs()
+                resetAsyncLazyComputations()
 
             // Always invalidate the syntax tree cache.
             syntaxTreeOpt
