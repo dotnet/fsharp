@@ -252,6 +252,11 @@
         <target state="translated">Değeri değiştirmek için '&lt;-' kullan</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseNameof">
+        <source>Use 'nameof'</source>
+        <target state="new">Use 'nameof'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
         <target state="translated">'upcast' kullan</target>
