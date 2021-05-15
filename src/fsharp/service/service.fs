@@ -368,7 +368,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         else
             getSimilarOrCreateBuilder (options, userOpName)
 
-    let getAnyBuilder (reactor: Reactor) (options, userOpName, opName, opArg) =
+    let getAnyBuilder (options, userOpName) =
         match tryGetAnyBuilder options with
         | Some (builderOpt,creationDiags) -> 
             Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
@@ -376,7 +376,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         | _ ->
             getOrCreateBuilder (options, userOpName)
 
-    let getBuilder (reactor: Reactor) (options, userOpName, opName, opArg) =
+    let getBuilder (options, userOpName) =
         match tryGetBuilder options with
         | Some (builderOpt,creationDiags) -> 
             Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
@@ -448,7 +448,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     /// Fetch the parse information from the background compiler (which checks w.r.t. the FileSystem API)
     member _.GetBackgroundParseResultsForFileInProject(filename, options, userOpName) =
         async {
-            let! builderOpt, creationDiags = getBuilder reactor (options, userOpName, "GetBackgroundParseResultsForFileInProject ", filename)
+            let! builderOpt, creationDiags = getBuilder (options, userOpName)
             match builderOpt with
             | None ->
                 let parseTree = EmptyParsedInput(filename, (false, false))
@@ -510,7 +510,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         let cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) 
         // fast path
         match cachedResults with
-        | Some(_, checkResults) -> FSharpCheckFileAnswer.Succeeded checkResults
+        | Some(_, checkResults) -> async { return FSharpCheckFileAnswer.Succeeded checkResults }
         | _ ->
    
         let work =
@@ -565,7 +565,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
                 let! cachedResults = 
                     async {
-                        let! builderOpt, creationDiags = getAnyBuilder reactor (options, userOpName, "CheckFileInProjectAllowingStaleCachedResults ", filename) 
+                        let! builderOpt, creationDiags = getAnyBuilder (options, userOpName) 
 
                         match builderOpt with
                         | Some builder ->
@@ -604,7 +604,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             try 
                 if implicitlyStartBackgroundWork then 
                     reactor.CancelBackgroundOp() // cancel the background work, since we will start new work after we're done
-                let! builderOpt,creationDiags = getBuilder reactor (options, userOpName, "CheckFileInProject", filename)
+                let! builderOpt,creationDiags = getBuilder (options, userOpName)
                 match builderOpt with
                 | None -> return FSharpCheckFileAnswer.Succeeded (FSharpCheckFileResults.MakeEmpty(filename, creationDiags, keepAssemblyContents))
                 | Some builder -> 
@@ -643,7 +643,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     Logger.LogMessage (filename + strGuid + "-Cancelling background work") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
                     reactor.CancelBackgroundOp() // cancel the background work, since we will start new work after we're done
 
-                let! builderOpt,creationDiags = getBuilder reactor (options, userOpName, "ParseAndCheckFileInProject", filename)
+                let! builderOpt,creationDiags = getBuilder (options, userOpName)
                 match builderOpt with
                 | None -> 
                     Logger.LogBlockMessageStop (filename + strGuid + "-Failed_Aborted") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
@@ -945,14 +945,20 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             })
 
     member _.CheckProjectInBackground (options, userOpName) =
-        async {
-            let! builderOpt,_ = getOrCreateBuilder (options, userOpName)
-            match builderOpt with 
-            | None -> return ()
-            | Some builder -> 
-                return! builder.PopulatePartialCheckingResults ()
-        }
-        |> Async.Start
+        reactor.SetBackgroundOp(Some(userOpName, "", "", fun _ ->
+            eventually {
+                let! ct = Eventually.token()
+                let work =
+                    async {
+                        let! builderOpt,_ = getOrCreateBuilder (options, userOpName)
+                        match builderOpt with 
+                        | None -> return ()
+                        | Some builder -> 
+                            return! builder.PopulatePartialCheckingResults ()
+                    }
+                Async.Start(work, cancellationToken=ct)
+            }
+        ))
         
 
     member _.StopBackgroundCompile   () =
