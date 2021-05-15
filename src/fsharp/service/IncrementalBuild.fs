@@ -1310,7 +1310,7 @@ type IncrementalBuilder(tcGlobals,
         let! result = evalUpToTargetSlotPartial currentState (slotOfFile - 1)
         match result with
         | Some (boundModel, timestamp) -> return PartialCheckResults(boundModel, timestamp)
-        | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsBeforeSlotInProject)."
+        | None -> return! failwith "Expected results to be ready. (GetCheckResultsBeforeSlotInProject)."
       }
 
     member _.GetFullCheckResultsBeforeSlotInProject (slotOfFile) =
@@ -1320,7 +1320,7 @@ type IncrementalBuilder(tcGlobals,
         let! result = evalUpToTargetSlotFull currentState (slotOfFile - 1)
         match result with
         | Some (boundModel, timestamp) -> return PartialCheckResults(boundModel, timestamp)
-        | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsBeforeSlotInProject)."
+        | None -> return! failwith "Expected results to be ready. (GetFullCheckResultsBeforeSlotInProject)."
       }
 
     member builder.GetCheckResultsBeforeFileInProject (filename) =
