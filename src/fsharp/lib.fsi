@@ -295,7 +295,7 @@ module ArrayParallel =
 /// If the result has been cleaned up by the GC, then the computation will be re-evaluated.
 /// The computation will only be canceled if there are no outstanding requests awaiting a response.
 [<Sealed>]
-type AsyncLazyWeak<'T> =
+type AsyncLazyWeak<'T when 'T : not struct> =
 
     new : computation: Async<'T> -> AsyncLazyWeak<'T>
 
