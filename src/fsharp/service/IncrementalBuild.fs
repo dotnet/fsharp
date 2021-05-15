@@ -701,6 +701,20 @@ type IncrementalBuilderState =
         enablePartialTypeChecking: bool
     }
 
+[<RequireQualifiedAccess>]
+module Seq =
+
+    let foldAsync (compute: 'State -> 'T -> Async<'State>) (state: 'State) (items: 'T seq)  =
+        let rec loop (state: 'State) (items: 'T list) =
+            async {
+                match items with
+                | [] -> return state
+                | item :: tailItems ->
+                    let! newState = compute state item
+                    return! loop newState tailItems
+            }
+        loop state (items |> List.ofSeq)
+
 /// Manages an incremental build graph for the build of a single F# project
 type IncrementalBuilder(tcGlobals,
         frameworkTcImports,
@@ -1117,13 +1131,9 @@ type IncrementalBuilder(tcGlobals,
 
     let computeBoundModels state (cache: TimeStampCache) =
         async {
-            let! ct = Async.CancellationToken
-            return
+            return!
                 (state, [0..fileNames.Length-1]) 
-                ||> Seq.fold (fun state slot -> 
-                    let work = computeBoundModel state cache slot
-                    let res = Async.RunSynchronously(work, cancellationToken=ct)
-                    res)
+                ||> Seq.foldAsync (fun state slot -> computeBoundModel state cache slot)
         }
 
     let computeFinalizedBoundModel state (cache: TimeStampCache) =
@@ -1167,12 +1177,9 @@ type IncrementalBuilder(tcGlobals,
                 let! state, result = computeInitialBoundModel state
                 return state, Some(result, DateTime.MinValue)
             else
-                let! ct = Async.CancellationToken
-                let state = 
+                let! state = 
                     (state, [0..targetSlot]) 
-                    ||> Seq.fold (fun state slot -> 
-                        let work = computeBoundModel state cache slot
-                        Async.RunSynchronously(work, cancellationToken=ct))
+                    ||> Seq.foldAsync (fun state slot -> computeBoundModel state cache slot)
 
                 let result =
                     state.boundModels.[targetSlot]
