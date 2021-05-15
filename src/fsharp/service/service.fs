@@ -205,7 +205,6 @@ type ScriptClosureCacheToken() = interface LockToken
 
 [<AutoOpen>]
 module IncrementalBuilderExtensions =
-    open FSharp.Compiler.CodeAnalysis
 
     type IncrementalBuilder with
 
