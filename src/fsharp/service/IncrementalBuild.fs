@@ -247,7 +247,9 @@ type BoundModel private (tcConfig: TcConfig,
         }
 
     let lazyAsyncTcInfo =
-        AsyncLazy(this.GetTcInfo())
+        AsyncLazy(async {
+            return! this.GetTcInfo()
+        })
 
     let lazyAsyncTcInfoExtras =
         AsyncLazy(async {
@@ -314,14 +316,6 @@ type BoundModel private (tcConfig: TcConfig,
                 let! tcInfoState = this.TypeCheck(partialCheck)
                 lazyTcInfoState <- Some tcInfoState
                 return tcInfoState
-        }
-
-    member private this.TryOptionalExtras() =
-        async {
-            let! prevState = this.GetState(false)
-            match prevState with
-            | FullState(_, prevTcInfoExtras) -> return Some prevTcInfoExtras
-            | _ -> return None
         }
 
     member this.Next(syntaxTree, tcInfo) =
