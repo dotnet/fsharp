@@ -1217,7 +1217,7 @@ type IncrementalBuilder(tcGlobals,
         state
 
     let agent = 
-        // States change only happen here when referecned assemblies' or files' timestamps have changed.
+        // States change only happen here when referenced assemblies' or files' timestamps have changed.
         // Handled the state changes in a thread safe manner.
         let rec loop (agent: MailboxProcessor<AsyncReplyChannel<unit> * TimeStampCache * CancellationToken>) = 
             async {
