@@ -1211,6 +1211,8 @@ type IncrementalBuilder(tcGlobals,
         state
 
     let agent = 
+        // States change only happen here when referecned assemblies' or files' timestamps have changed.
+        // Handled the state changes in a thread safe manner.
         let rec loop (agent: MailboxProcessor<AsyncReplyChannel<unit> * TimeStampCache * CancellationToken>) = 
             async {
                 let! replyChannel, cache, ct = agent.Receive()
@@ -1221,9 +1223,10 @@ type IncrementalBuilder(tcGlobals,
                 else
 
                 let state = currentState
-                let state = computeStampedFileNames state cache
+                // Compute stamped referenced assemblies first as a single reference assembly change will invalidate the files.
                 let state = computeStampedReferencedAssemblies state cache
-                currentState <- state
+                let state = computeStampedFileNames state cache
+                currentState <- state3
                 replyChannel.Reply()
                 return! loop agent
             }
@@ -1275,8 +1278,9 @@ type IncrementalBuilder(tcGlobals,
     member builder.TryGetCheckResultsBeforeFileInProject (filename) =
         let cache = TimeStampCache defaultTimeStamp
         let state = currentState
-        let state = computeStampedFileNames state cache
+        // Compute stamped referenced assemblies first as a single reference assembly change will invalidate the files.
         let state = computeStampedReferencedAssemblies state cache
+        let state = computeStampedFileNames state cache
 
         let slotOfFile = builder.GetSlotOfFileName filename
         match tryGetBeforeSlot state slotOfFile with
@@ -1341,8 +1345,9 @@ type IncrementalBuilder(tcGlobals,
 
     member _.GetLogicalTimeStampForProject(cache) =
         let state = currentState
-        let state = computeStampedFileNames state cache
+        // Compute stamped referenced assemblies first as a single reference assembly change will invalidate the files.
         let state = computeStampedReferencedAssemblies state cache
+        let state = computeStampedFileNames state cache
         let t1 = MaxTimeStampInDependencies state.stampedReferencedAssemblies
         let t2 = MaxTimeStampInDependencies state.stampedFileNames
         max t1 t2
