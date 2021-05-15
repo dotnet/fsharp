@@ -1891,13 +1891,9 @@ type ILPropInfo =
     member x.HasSetter = Option.isSome x.RawMetadata.SetMethod
 
     member x.SetterIsInitOnly =
-        // todo: move to a constant once we understand why the attribute from TcGlobals is None and string based check is the alternate way
-        let attributeName = "System.Runtime.CompilerServices.IsExternalInit"
-        match x.SetterMethod.ILMethodRef.ReturnType, x.TcGlobals.attrib_IsExternalInit with
-        | ILType.Modified(modifierClass=modifierClass), None when modifierClass.BasicQualifiedName = attributeName -> 
-          true
-        | ILType.Modified(modifierClass=modifierClass), Some isExternalInitAttribute ->
-          modifierClass = isExternalInitAttribute.TypeRef
+        match x.SetterMethod.ILMethodRef.ReturnType with
+        | ILType.Modified(modifierClass=modifierClass) -> 
+            modifierClass.BasicQualifiedName = "System.Runtime.CompilerServices.IsExternalInit"
         | _ -> false
     
     /// Indicates if the IL property is static
