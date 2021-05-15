@@ -345,19 +345,22 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     let tryGetAnyBuilder options =
         incrementalBuildersCache.TryGetAny (AnyCallerThread, options)
 
+    let getOrCreateBuilderRequireCtok (ctok, options, userOpName) =
+        cancellable {
+            match tryGetBuilder options with
+            | Some (builderOpt,creationDiags) -> 
+                Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
+                return builderOpt,creationDiags
+            | None -> 
+                Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_BuildingNewCache
+                let! (builderOpt,creationDiags) as info = CreateOneIncrementalBuilder (ctok, options, userOpName)
+                incrementalBuildersCache.Set (AnyCallerThread, options, info)
+                return builderOpt, creationDiags
+        }
+
     let getOrCreateBuilder (options, userOpName) =
       Reactor.Singleton.EnqueueAndAwaitOpAsync(userOpName, "getOrCreateBuilder", "options", fun ctok ->
-          cancellable {
-              match tryGetBuilder options with
-              | Some (builderOpt,creationDiags) -> 
-                  Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
-                  return builderOpt,creationDiags
-              | None -> 
-                  Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_BuildingNewCache
-                  let! (builderOpt,creationDiags) as info = CreateOneIncrementalBuilder (ctok, options, userOpName)
-                  incrementalBuildersCache.Set (AnyCallerThread, options, info)
-                  return builderOpt, creationDiags
-          }
+            getOrCreateBuilderRequireCtok(ctok, options, userOpName)
       )
 
     let getSimilarOrCreateBuilder (options, userOpName) =
@@ -987,25 +990,25 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     incrementalBuildersCache.Set(AnyCallerThread, options, newBuilderInfo)
             })
 
-    member _.CheckProjectInBackground (options, userOpName) =
-        reactor.SetBackgroundOp(Some(userOpName, "", "", fun _ ->
+    member _.CheckProjectInBackground (options, userOpName) = 
+        reactor.SetBackgroundOp(Some(userOpName, "", "", fun ctok ->
             eventually {
-                let work =
-                    async {
-                        try
-                            let! builderOpt,_ = getOrCreateBuilder (options, userOpName)
+                try
+                    let! ct = Eventually.token()
+                    let! builderOpt,_ = getOrCreateBuilderRequireCtok (ctok, options, userOpName) |> Eventually.ofCancellable
+                    let work =
+                        async {
                             match builderOpt with 
                             | None -> return ()
                             | Some builder -> 
                                 return! builder.PopulatePartialCheckingResults ()
-                        with
-                        | :? OperationCanceledException ->
-                            ()
-                    }
-                Async.Start(work)
+                        }
+                    Async.RunSynchronously(work, cancellationToken=ct)
+                with
+                | :? OperationCanceledException ->
+                    ()
             }
-        ))
-        
+        ))        
 
     member _.StopBackgroundCompile   () =
         reactor.SetBackgroundOp(None)
