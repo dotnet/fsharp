@@ -44,13 +44,16 @@ type FSharpChecker with
 
             let parseAndCheckFile =
                 async {
-                    let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToFSharpSourceText(), options, userOpName=userOpName)
-                    return
-                        match checkFileAnswer with
-                        | FSharpCheckFileAnswer.Aborted -> 
-                            None
-                        | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
-                            Some (parseResults, checkFileResults)
+                    let! resOpt = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToFSharpSourceText(), options, userOpName=userOpName)
+                    match resOpt with
+                    | None -> return None
+                    | Some (parseResults, checkFileAnswer) ->
+                        return
+                            match checkFileAnswer with
+                            | FSharpCheckFileAnswer.Aborted -> 
+                                None
+                            | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
+                                Some (parseResults, checkFileResults)
                 }
 
             let tryGetFreshResultsWithTimeout() =

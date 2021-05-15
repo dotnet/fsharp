@@ -140,7 +140,7 @@ type public FSharpChecker =
     /// <param name="sourceText">The source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member ParseAndCheckFileInProject: filename: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpParseFileResults * FSharpCheckFileAnswer>
+    member ParseAndCheckFileInProject: filename: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<(FSharpParseFileResults * FSharpCheckFileAnswer) option>
 
     /// <summary>
     /// <para>Parse and typecheck all files in a project.</para>
@@ -150,7 +150,7 @@ type public FSharpChecker =
     ///
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member ParseAndCheckProject: options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckProjectResults>
+    member ParseAndCheckProject: options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckProjectResults option>
 
     /// <summary>
     /// <para>For a given script file, get the FSharpProjectOptions implied by the #load closure.</para>
@@ -246,7 +246,7 @@ type public FSharpChecker =
     /// <param name="filename">The filename for the file.</param>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetBackgroundParseResultsForFileInProject: filename: string * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpParseFileResults>
+    member GetBackgroundParseResultsForFileInProject: filename: string * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpParseFileResults option>
 
     /// <summary>
     /// <para>Like CheckFileInProject, but uses the existing results from the background builder.</para>
@@ -257,7 +257,7 @@ type public FSharpChecker =
     /// <param name="filename">The filename for the file.</param>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetBackgroundCheckResultsForFileInProject: filename: string * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpParseFileResults * FSharpCheckFileResults>
+    member GetBackgroundCheckResultsForFileInProject: filename: string * options: FSharpProjectOptions * ?userOpName: string -> Async<(FSharpParseFileResults * FSharpCheckFileResults) option>
 
     /// <summary>
     /// <para>Optimized find references for a given symbol in a file of project.</para>
