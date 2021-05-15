@@ -567,6 +567,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     return FSharpCheckFileAnswer.Aborted
             }
 
+        // TODO: Figure out a better way to handle this that is not on the main reactor queue.
         Reactor.Singleton.EnqueueAndAwaitOpAsync("", "CheckOneFileImpl", "", fun _ ->
             work
         )

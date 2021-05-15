@@ -1149,6 +1149,12 @@ type IncrementalBuilder(tcGlobals,
         else
             state
 
+    let computeTimeStamps state cache =
+        // Compute stamped referenced assemblies first as a single reference assembly change will invalidate the files.
+        let state = computeStampedReferencedAssemblies state cache
+        let state = computeStampedFileNames state cache
+        state
+
     let tryGetSlot (state: IncrementalBuilderState) slot =
         match state.boundModels.[slot].TryGetValue() with
         | ValueSome boundModel ->
@@ -1222,11 +1228,7 @@ type IncrementalBuilder(tcGlobals,
                     return! loop agent
                 else
 
-                let state = currentState
-                // Compute stamped referenced assemblies first as a single reference assembly change will invalidate the files.
-                let state = computeStampedReferencedAssemblies state cache
-                let state = computeStampedFileNames state cache
-                currentState <- state3
+                currentState <- computeTimeStamps currentState cache
                 replyChannel.Reply()
                 return! loop agent
             }
@@ -1277,13 +1279,10 @@ type IncrementalBuilder(tcGlobals,
 
     member builder.TryGetCheckResultsBeforeFileInProject (filename) =
         let cache = TimeStampCache defaultTimeStamp
-        let state = currentState
-        // Compute stamped referenced assemblies first as a single reference assembly change will invalidate the files.
-        let state = computeStampedReferencedAssemblies state cache
-        let state = computeStampedFileNames state cache
+        let tmpState = computeTimeStamps currentState cache
 
         let slotOfFile = builder.GetSlotOfFileName filename
-        match tryGetBeforeSlot state slotOfFile with
+        match tryGetBeforeSlot tmpState slotOfFile with
         | Some(boundModel, timestamp) -> PartialCheckResults(boundModel, timestamp) |> Some
         | _ -> None
 
@@ -1344,12 +1343,9 @@ type IncrementalBuilder(tcGlobals,
         }
 
     member _.GetLogicalTimeStampForProject(cache) =
-        let state = currentState
-        // Compute stamped referenced assemblies first as a single reference assembly change will invalidate the files.
-        let state = computeStampedReferencedAssemblies state cache
-        let state = computeStampedFileNames state cache
-        let t1 = MaxTimeStampInDependencies state.stampedReferencedAssemblies
-        let t2 = MaxTimeStampInDependencies state.stampedFileNames
+        let tmpState = computeTimeStamps currentState cache
+        let t1 = MaxTimeStampInDependencies tmpState.stampedReferencedAssemblies
+        let t2 = MaxTimeStampInDependencies tmpState.stampedFileNames
         max t1 t2
 
     member _.TryGetSlotOfFileName(filename: string) =
