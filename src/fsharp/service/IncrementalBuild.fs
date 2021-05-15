@@ -479,16 +479,17 @@ type BoundModel private (tcConfig: TcConfig,
                     let (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
                         let res =
                             eventually {
-                            return!
-                                TypeCheckOneInputEventually
-                                    ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0),
-                                        tcConfig, tcImports,
-                                        tcGlobals,
-                                        None,
-                                        (if partialCheck then TcResultsSink.NoSink else TcResultsSink.WithSink sink),
-                                        prevTcState, input,
-                                        partialCheck)
+                                return!
+                                    TypeCheckOneInputEventually
+                                        ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0),
+                                            tcConfig, tcImports,
+                                            tcGlobals,
+                                            None,
+                                            (if partialCheck then TcResultsSink.NoSink else TcResultsSink.WithSink sink),
+                                            prevTcState, input,
+                                            partialCheck)
                             } 
+                            |> Eventually.reusing (fun () -> new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) :> IDisposable)
                             |> Eventually.force ct
                         match res with
                         | ValueOrCancelled.Cancelled ex -> raise ex
@@ -840,19 +841,23 @@ type IncrementalBuilder(tcGlobals,
     let StampReferencedAssemblyTask (cache: TimeStampCache) (_ref, timeStamper) =
         timeStamper cache
 
-    let dummyCtok = CompilationThreadToken()
-
     // Link all the assemblies together and produce the input typecheck accumulator
-    let CombineImportedAssembliesTask() : Cancellable<BoundModel> =
-      cancellable {
+    let CombineImportedAssembliesTask() : Async<BoundModel> =
+      async {
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
         // Return the disposable object that cleans up
         use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
 
         let! tcImports =
-          cancellable {
+          async {
             try
-                let! tcImports = TcImports.BuildNonFrameworkTcImports(dummyCtok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
+                let! tcImports = 
+                    Reactor.Singleton.EnqueueAndAwaitOpAsync("", "CombineImportedAssembliesTask", "", fun ctok ->
+                        // This should be safe to re-use the errorLogger here as the errorLogger will not be concurrently accessed,
+                        //     but we need to set the current running thread with this scope.
+                        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
+                        TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
+                    )
 #if !NO_EXTENSIONTYPING
                 tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu ->
                     // When a CCU reports an invalidation, merge them together and just report a
@@ -931,7 +936,8 @@ type IncrementalBuilder(tcGlobals,
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
     let FinalizeTypeCheckTask (boundModels: ImmutableArray<BoundModel>) =
       async {
-        let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
+        let errorLogger = CompilationErrorLogger("FinalizeTypeCheckTask", tcConfig.errorSeverityOptions)
+        use _ = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck)
 
         let! results =
             boundModels 
@@ -1036,12 +1042,7 @@ type IncrementalBuilder(tcGlobals,
     let referencedAssemblies =  nonFrameworkAssemblyInputs |> Array.ofList // TODO: This should be an immutable array.
 
     let createInitialBoundModelAsyncLazy () =
-        AsyncLazy(async { 
-            let! ct = Async.CancellationToken
-            match CombineImportedAssembliesTask() |> Cancellable.run ct with
-            | ValueOrCancelled.Cancelled ex -> return raise ex
-            | ValueOrCancelled.Value res -> return res
-        })
+        AsyncLazy(CombineImportedAssembliesTask())
 
     let createBoundModelAsyncLazy (refState: IncrementalBuilderState ref) i =
         let fileInfo = fileNames.[i]
