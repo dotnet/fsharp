@@ -246,21 +246,38 @@ type BoundModel private (tcConfig: TcConfig,
                 return PartialState prevTcInfo
         }
 
-    let lazyAsyncTcInfo =
+    let mutable lazyAsyncTcInfo =
         AsyncLazy(async {
             return! this.GetTcInfo()
         })
 
-    let lazyAsyncTcInfoExtras =
+    let mutable lazyAsyncTcInfoExtras =
         AsyncLazy(async {
             let! res = this.GetTcInfoExtras()
             return Some res
         })
 
-    let lazyAsyncFullState =
+    let mutable lazyAsyncFullState =
         AsyncLazy(async {
             return! this.GetState(false)
         })
+
+    let resetLazyAsyncs() =
+        lazyAsyncTcInfo <-
+            AsyncLazy(async {
+                return! this.GetTcInfo()
+            })
+
+        lazyAsyncTcInfoExtras <-
+            AsyncLazy(async {
+                let! res = this.GetTcInfoExtras()
+                return Some res
+            })
+
+        lazyAsyncFullState <-
+            AsyncLazy(async {
+                return! this.GetState(false)
+            })
 
     member _.TcConfig = tcConfig
 
@@ -287,9 +304,12 @@ type BoundModel private (tcConfig: TcConfig,
             // If partial checking is enabled and we have a backing sig file, then do nothing. The partial state contains the sig state.
             | Some(PartialState _) when enablePartialTypeChecking && hasSig -> ()
             // If partial checking is enabled and we have a backing sig file, then use the partial state. The partial state contains the sig state.
-            | Some(FullState(tcInfo, _)) when enablePartialTypeChecking && hasSig -> lazyTcInfoState <- Some(PartialState tcInfo)
+            | Some(FullState(tcInfo, _)) when enablePartialTypeChecking && hasSig -> 
+                lazyTcInfoState <- Some(PartialState tcInfo)
+                resetLazyAsyncs()
             | _ ->
                 lazyTcInfoState <- None
+                resetLazyAsyncs()
 
             // Always invalidate the syntax tree cache.
             syntaxTreeOpt
