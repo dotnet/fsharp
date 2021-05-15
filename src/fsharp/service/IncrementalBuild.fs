@@ -788,7 +788,7 @@ type IncrementalBuilder(tcGlobals,
     let dummyCtok = CompilationThreadToken()
 
     // Link all the assemblies together and produce the input typecheck accumulator
-    let CombineImportedAssembliesTask : Cancellable<BoundModel> =
+    let CombineImportedAssembliesTask() : Cancellable<BoundModel> =
       cancellable {
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
         // Return the disposable object that cleans up
@@ -1077,7 +1077,7 @@ type IncrementalBuilder(tcGlobals,
                     match state.initialBoundModel with
                     | None ->
                         // Note this is not time-sliced
-                        let! result = CombineImportedAssembliesTask
+                        let! result = CombineImportedAssembliesTask()
                         return { state with initialBoundModel = Some result }, result
                     | Some result ->
                         return state, result
