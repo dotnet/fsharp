@@ -506,10 +506,15 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
          tcPrior: PartialCheckResults,
          tcInfo: TcInfo,
          creationDiags: FSharpDiagnostic[]) = 
+
+        let cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) 
+        // fast path
+        match cachedResults with
+        | Some(_, checkResults) -> FSharpCheckFileAnswer.Succeeded checkResults
+        | _ ->
    
         let work =
             cancellable {
-                // results may appear while we were waiting for the lock, let's recheck if it's the case
                 let cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) 
             
                 match cachedResults with
