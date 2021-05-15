@@ -1245,6 +1245,9 @@ type IncrementalBuilder(tcGlobals,
 
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
 
+    override this.Finalize() =
+        (agent :> IDisposable).Dispose()
+
     member _.TcConfig = tcConfig
 
     member _.FileParsed = fileParsed.Publish
