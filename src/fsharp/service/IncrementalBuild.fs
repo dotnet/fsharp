@@ -1253,7 +1253,10 @@ type IncrementalBuilder(tcGlobals,
                 replyChannel.Reply()
                 return! loop agent
             }
-        new MailboxProcessor<_>(loop)
+        let agent =
+            new MailboxProcessor<_>(loop)
+        agent.Start()
+        agent
 
     let checkFileTimeStamps (cache: TimeStampCache) =
         async {

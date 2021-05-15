@@ -990,7 +990,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     member _.CheckProjectInBackground (options, userOpName) =
         reactor.SetBackgroundOp(Some(userOpName, "", "", fun _ ->
             eventually {
-                let! ct = Eventually.token()
                 let work =
                     async {
                         try
@@ -1003,7 +1002,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                         | :? OperationCanceledException ->
                             ()
                     }
-                Async.Start(work, cancellationToken=ct)
+                Async.Start(work)
             }
         ))
         
