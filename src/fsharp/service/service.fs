@@ -608,6 +608,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                         keepAssemblyContents,
                                         suggestNamesForErrors)
                             let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
+                            AsyncLazy.SetPreferredUILang tcConfig.preferredUiLang
                             reactor.SetPreferredUILang tcConfig.preferredUiLang
                             bc.RecordCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, hash) 
                             return FSharpCheckFileAnswer.Succeeded checkAnswer
@@ -750,6 +751,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     
                             // Do the parsing.
                             let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList (builder.SourceFiles), options.UseScriptResolutionRules)
+                            AsyncLazy.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
                             reactor.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
                             let parseDiags, parseTree, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName, suggestNamesForErrors)
                             let parseResults = FSharpParseFileResults(parseDiags, parseTree, anyErrors, builder.AllDependenciesDeprecated)

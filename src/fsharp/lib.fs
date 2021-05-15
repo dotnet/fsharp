@@ -7,6 +7,7 @@ open System.IO
 open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
+open System.Globalization
 open System.Runtime.InteropServices
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -630,6 +631,24 @@ type private AgentAction<'T> =
     | GetValue of AgentInstance<'T>
     | CachedValue of 'T
 
+[<RequireQualifiedAccess>]
+module AsyncLazy =
+
+    // We need to store the culture for the VS thread that is executing now, 
+    // so that when the agent in the async lazy object picks up thread from the thread pool we can set the culture
+    let mutable culture = CultureInfo(CultureInfo.CurrentUICulture.Name)
+
+    let SetPreferredUILang (preferredUiLang: string option) = 
+        match preferredUiLang with
+        | Some s -> 
+            culture <- CultureInfo s
+#if FX_RESHAPED_GLOBALIZATION
+            CultureInfo.CurrentUICulture <- culture
+#else
+            Thread.CurrentThread.CurrentUICulture <- culture
+#endif
+        | None -> ()
+
 [<Sealed>]
 type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
 
@@ -650,6 +669,7 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
             while true do
                 match! agent.Receive() with
                 | GetValue (replyChannel, ct) ->
+                    Thread.CurrentThread.CurrentUICulture <- AsyncLazy.culture
                     try
                         use _reg = 
                             // When a cancellation has occured, notify the reply channel to let the requester stop waiting for a response.

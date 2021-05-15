@@ -2,9 +2,10 @@
 
 module internal Internal.Utilities.Library.Extras
 
-open System.Collections.Generic
 open System.IO
 open System.Text
+open System.Globalization
+open System.Collections.Generic
 open Internal.Utilities.Collections
 
 val debug: bool
@@ -290,6 +291,12 @@ module ArrayParallel =
     val inline map : ('T -> 'U) -> 'T [] -> 'U []
 
     val inline mapi : (int -> 'T -> 'U) -> 'T [] -> 'U []
+
+[<RequireQualifiedAccess>]
+module AsyncLazy =
+
+    /// Allows to specify the language for error messages
+    val SetPreferredUILang : preferredUiLang: string option -> unit
 
 /// Lazily evaluate the computation asynchronously, then cache the result in a weak reference.
 /// If the result has been cleaned up by the GC, then the computation will be re-evaluated.
