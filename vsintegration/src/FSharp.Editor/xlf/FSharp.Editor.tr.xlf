@@ -12,6 +12,11 @@
         <target state="translated">Eksik 'fun' anahtar sözcüğünü ekle</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingInstanceMemberParameter">
+        <source>Add missing instance member parameter</source>
+        <target state="new">Add missing instance member parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">'new' anahtar sözcüğünü ekleme</target>
