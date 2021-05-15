@@ -1224,7 +1224,16 @@ type IncrementalBuilder(tcGlobals,
             enablePartialTypeChecking = enablePartialTypeChecking
         }
 
-    let setCurrentState (_ctok: CompilationThreadToken) state =
+    //let agentState = 
+    //    let rec loop (agent: MailboxProcessor<AsyncReplyChannel<IncrementalBuilderState> * IncrementalBuilderState>) = 
+    //        async {
+    //            let! replyChannel, state = agent.Receive()
+    //            currentState <- state
+    //            return! loop agent
+    //        }
+    //    new MailboxProcessor(loop)
+
+    let setCurrentState state =
         currentState <- state
 
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
@@ -1245,19 +1254,19 @@ type IncrementalBuilder(tcGlobals,
 
     member _.AllDependenciesDeprecated = allDependencies
 
-    member _.PopulatePartialCheckingResults (ctok: CompilationThreadToken) =
+    member _.PopulatePartialCheckingResults () =
       async {
         let! ct = Async.CancellationToken
         let cache = TimeStampCache defaultTimeStamp // One per step
         let state = currentState
         let state = computeStampedFileNames state cache
-        setCurrentState ctok state
+        setCurrentState state
         ct.ThrowIfCancellationRequested()
         let state = computeStampedReferencedAssemblies state cache
-        setCurrentState ctok state
+        setCurrentState state
         ct.ThrowIfCancellationRequested()
         let! state, _res = computeFinalizedBoundModel state cache
-        setCurrentState ctok state
+        setCurrentState state
         projectChecked.Trigger()
       }
 
@@ -1283,44 +1292,44 @@ type IncrementalBuilder(tcGlobals,
     member builder.AreCheckResultsBeforeFileInProjectReady filename =
         (builder.TryGetCheckResultsBeforeFileInProject filename).IsSome
 
-    member private _.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile, enablePartialTypeChecking) =
+    member private _.GetCheckResultsBeforeSlotInProject (slotOfFile, enablePartialTypeChecking) =
       async {
         let cache = TimeStampCache defaultTimeStamp
         let! state, result = evalUpToTargetSlot { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache (slotOfFile - 1)
-        setCurrentState ctok { state with enablePartialTypeChecking = defaultPartialTypeChecking }
+        setCurrentState { state with enablePartialTypeChecking = defaultPartialTypeChecking }
         match result with
         | Some (boundModel, timestamp) -> return PartialCheckResults(boundModel, timestamp)
         | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsBeforeSlotInProject)."
       }
 
-    member builder.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile) =
-        builder.GetCheckResultsBeforeSlotInProject(ctok, slotOfFile, defaultPartialTypeChecking)
+    member builder.GetCheckResultsBeforeSlotInProject (slotOfFile) =
+        builder.GetCheckResultsBeforeSlotInProject(slotOfFile, defaultPartialTypeChecking)
 
-    member builder.GetCheckResultsBeforeFileInProject (ctok: CompilationThreadToken, filename) =
+    member builder.GetCheckResultsBeforeFileInProject (filename) =
         let slotOfFile = builder.GetSlotOfFileName filename
-        builder.GetCheckResultsBeforeSlotInProject (ctok, slotOfFile)
+        builder.GetCheckResultsBeforeSlotInProject (slotOfFile)
 
-    member builder.GetCheckResultsAfterFileInProject (ctok: CompilationThreadToken, filename) =
+    member builder.GetCheckResultsAfterFileInProject (filename) =
         let slotOfFile = builder.GetSlotOfFileName filename + 1
-        builder.GetCheckResultsBeforeSlotInProject (ctok, slotOfFile)
+        builder.GetCheckResultsBeforeSlotInProject (slotOfFile)
 
-    member builder.GetFullCheckResultsAfterFileInProject (ctok: CompilationThreadToken, filename) =
+    member builder.GetFullCheckResultsAfterFileInProject (filename) =
         async {
             let slotOfFile = builder.GetSlotOfFileName filename + 1
-            let! result = builder.GetCheckResultsBeforeSlotInProject(ctok, slotOfFile, false)
+            let! result = builder.GetCheckResultsBeforeSlotInProject(slotOfFile, false)
             let! _ = result.GetTcInfoWithExtras() // Make sure we forcefully evaluate the info
             return result
         }
 
-    member builder.GetCheckResultsAfterLastFileInProject (ctok: CompilationThreadToken) =
-        builder.GetCheckResultsBeforeSlotInProject(ctok, builder.GetSlotsCount())
+    member builder.GetCheckResultsAfterLastFileInProject () =
+        builder.GetCheckResultsBeforeSlotInProject(builder.GetSlotsCount())
 
-    member private _.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken, enablePartialTypeChecking) =
+    member private _.GetCheckResultsAndImplementationsForProject(enablePartialTypeChecking) =
       async {
         let cache = TimeStampCache defaultTimeStamp
 
         let! state, result = tryGetFinalized { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache
-        setCurrentState ctok { state with enablePartialTypeChecking = defaultPartialTypeChecking }
+        setCurrentState { state with enablePartialTypeChecking = defaultPartialTypeChecking }
         match result with
         | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp) ->
             return PartialCheckResults (boundModel, timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
@@ -1329,12 +1338,12 @@ type IncrementalBuilder(tcGlobals,
             return! failwith msg
       }
 
-    member builder.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) =
-        builder.GetCheckResultsAndImplementationsForProject(ctok, defaultPartialTypeChecking)
+    member builder.GetCheckResultsAndImplementationsForProject() =
+        builder.GetCheckResultsAndImplementationsForProject(defaultPartialTypeChecking)
 
-    member builder.GetFullCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) =
+    member builder.GetFullCheckResultsAndImplementationsForProject() =
         async {
-            let! result = builder.GetCheckResultsAndImplementationsForProject(ctok, false)
+            let! result = builder.GetCheckResultsAndImplementationsForProject(false)
             let results, _, _, _ = result
             let! _ = results.GetTcInfoWithExtras() // Make sure we forcefully evaluate the info
             return result

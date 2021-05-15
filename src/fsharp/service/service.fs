@@ -634,12 +634,11 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             | Some(tcPrior) when tcPrior.TryTcInfo.IsSome -> 
                                 async { return (tcPrior, tcPrior.TryTcInfo.Value) }
                             | _ ->
-                                execWithReactorAsync <| fun ctok -> 
-                                    cancellable {
-                                        let! tcPrior = builder.GetCheckResultsBeforeFileInProject (ctok, filename)
-                                        let! tcInfo = tcPrior.GetTcInfo() |> Eventually.toCancellable
-                                        return (tcPrior, tcInfo)
-                                    } 
+                                async {
+                                    let! tcPrior = builder.GetCheckResultsBeforeFileInProject (filename)
+                                    let! tcInfo = tcPrior.GetTcInfo()
+                                    return (tcPrior, tcInfo)
+                                } 
                         let! checkAnswer = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
                         return checkAnswer
             finally 
@@ -684,12 +683,11 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             | Some(tcPrior) when tcPrior.TryTcInfo.IsSome -> 
                                 async { return (tcPrior, tcPrior.TryTcInfo.Value) }
                             | _ ->
-                                execWithReactorAsync <| fun ctok -> 
-                                    cancellable {
-                                        let! tcPrior = builder.GetCheckResultsBeforeFileInProject (ctok, filename)
-                                        let! tcInfo = tcPrior.GetTcInfo() |> Eventually.toCancellable
-                                        return (tcPrior, tcInfo)
-                                    } 
+                                async {
+                                    let! tcPrior = builder.GetCheckResultsBeforeFileInProject (filename)
+                                    let! tcInfo = tcPrior.GetTcInfo()
+                                    return (tcPrior, tcInfo)
+                                } 
                     
                         // Do the parsing.
                         let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList (builder.SourceFiles), options.UseScriptResolutionRules)
@@ -707,9 +705,14 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     /// Fetch the check information from the background compiler (which checks w.r.t. the FileSystem API)
     member _.GetBackgroundCheckResultsForFileInProject(filename, options, userOpName) =
-        reactor.EnqueueAndAwaitOpAsync(userOpName, "GetBackgroundCheckResultsForFileInProject", filename, fun ctok -> 
-          cancellable {
-            let! builderOpt, creationDiags = getOrCreateBuilder (ctok, options, userOpName)
+        async {
+            let! builderOpt, creationDiags =
+                reactor.EnqueueAndAwaitOpAsync(userOpName, "GetBackgroundCheckResultsForFileInProject", filename, fun ctok -> 
+                  cancellable {
+                    return! getOrCreateBuilder (ctok, options, userOpName)
+                  }
+                )
+
             match builderOpt with
             | None ->
                 let parseTree = EmptyParsedInput(filename, (false, false))
@@ -718,9 +721,9 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 return (parseResults, typedResults)
             | Some builder -> 
                 let (parseTree, _, _, parseDiags) = builder.GetParseResultsForFile (filename)
-                let! tcProj = builder.GetFullCheckResultsAfterFileInProject (ctok, filename)
+                let! tcProj = builder.GetFullCheckResultsAfterFileInProject (filename)
 
-                let! tcInfo, tcInfoExtras = tcProj.GetTcInfoWithExtras() |> Eventually.toCancellable
+                let! tcInfo, tcInfoExtras = tcProj.GetTcInfoWithExtras()
 
                 let tcResolutionsRev = tcInfoExtras.tcResolutionsRev
                 let tcSymbolUsesRev = tcInfoExtras.tcSymbolUsesRev
@@ -762,38 +765,48 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             List.head tcOpenDeclarationsRev) 
                 return (parseResults, typedResults)
           }
-        )
 
     member _.FindReferencesInFile(filename: string, options: FSharpProjectOptions, symbol: FSharpSymbol, canInvalidateProject: bool, userOpName: string) =
-        reactor.EnqueueAndAwaitOpAsync(userOpName, "FindReferencesInFile", filename, fun ctok -> 
-            cancellable {
-                let! builderOpt, _ = getOrCreateBuilderWithInvalidationFlag (ctok, options, canInvalidateProject, userOpName)
-                match builderOpt with
-                | None -> return Seq.empty
-                | Some builder -> 
-                    if builder.ContainsFile filename then
-                        let! checkResults = builder.GetFullCheckResultsAfterFileInProject (ctok, filename)
-                        let! keyStoreOpt = checkResults.TryGetItemKeyStore() |> Eventually.toCancellable
-                        match keyStoreOpt with
-                        | None -> return Seq.empty
-                        | Some reader -> return reader.FindAll symbol.Item
-                    else
-                        return Seq.empty
-            })
+        async {
+            let! builderOpt, _ =
+                reactor.EnqueueAndAwaitOpAsync(userOpName, "FindReferencesInFile", filename, fun ctok -> 
+                    cancellable {
+                        return! getOrCreateBuilderWithInvalidationFlag (ctok, options, canInvalidateProject, userOpName)
+                    }
+                )
+
+            match builderOpt with
+            | None -> return Seq.empty
+            | Some builder -> 
+                if builder.ContainsFile filename then
+                    let! checkResults = builder.GetFullCheckResultsAfterFileInProject (filename)
+                    let! keyStoreOpt = checkResults.TryGetItemKeyStore()
+                    match keyStoreOpt with
+                    | None -> return Seq.empty
+                    | Some reader -> return reader.FindAll symbol.Item
+                else
+                    return Seq.empty
+        }
 
 
     member _.GetSemanticClassificationForFile(filename: string, options: FSharpProjectOptions, userOpName: string) =
-        reactor.EnqueueAndAwaitOpAsync(userOpName, "GetSemanticClassificationForFile", filename, fun ctok -> 
-            cancellable {
-                let! builderOpt, _ = getOrCreateBuilder (ctok, options, userOpName)
-                match builderOpt with
+        async {
+            let! builderOpt, _ =
+                reactor.EnqueueAndAwaitOpAsync(userOpName, "GetSemanticClassificationForFile", filename, fun ctok -> 
+                    cancellable {
+                        return! getOrCreateBuilder (ctok, options, userOpName)
+                    }
+                )
+
+            match builderOpt with
+            | None -> return None
+            | Some builder -> 
+                let! checkResults = builder.GetFullCheckResultsAfterFileInProject (filename)
+                let! scopt = checkResults.GetSemanticClassification()
+                match scopt with
                 | None -> return None
-                | Some builder -> 
-                    let! checkResults = builder.GetFullCheckResultsAfterFileInProject (ctok, filename)
-                    let! scopt = checkResults.GetSemanticClassification() |> Eventually.toCancellable
-                    match scopt with
-                    | None -> return None
-                    | Some sc -> return Some (sc.GetView ()) })
+                | Some sc -> return Some (sc.GetView ())
+        }
 
     /// Try to get recent approximate type check results for a file. 
     member _.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, sourceText: ISourceText option, _userOpName: string) =
