@@ -337,49 +337,48 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     let tryGetAnyBuilder options =
         incrementalBuildersCache.TryGetAny (AnyCallerThread, options)
 
-    let getOrCreateBuilder (ctok, options, userOpName) =
-      cancellable {
-          match tryGetBuilder options with
-          | Some (builderOpt,creationDiags) -> 
-              Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
-              return builderOpt,creationDiags
-          | None -> 
-              Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_BuildingNewCache
-              let! (builderOpt,creationDiags) as info = CreateOneIncrementalBuilder (ctok, options, userOpName)
-              incrementalBuildersCache.Set (AnyCallerThread, options, info)
-              return builderOpt, creationDiags
-      }
+    let getOrCreateBuilder (options, userOpName) =
+      Reactor.Singleton.EnqueueAndAwaitOpAsync(userOpName, "getOrCreateBuilder", "options", fun ctok ->
+          cancellable {
+              match tryGetBuilder options with
+              | Some (builderOpt,creationDiags) -> 
+                  Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
+                  return builderOpt,creationDiags
+              | None -> 
+                  Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_BuildingNewCache
+                  let! (builderOpt,creationDiags) as info = CreateOneIncrementalBuilder (ctok, options, userOpName)
+                  incrementalBuildersCache.Set (AnyCallerThread, options, info)
+                  return builderOpt, creationDiags
+          }
+      )
 
-    let getSimilarOrCreateBuilder (ctok, options, userOpName) =
-        RequireCompilationThread ctok
+    let getSimilarOrCreateBuilder (options, userOpName) =
         match tryGetSimilarBuilder options with
-        | Some res -> Cancellable.ret res
+        | Some res -> async { return res }
         // The builder does not exist at all. Create it.
-        | None -> getOrCreateBuilder (ctok, options, userOpName)
+        | None -> getOrCreateBuilder (options, userOpName)
 
-    let getOrCreateBuilderWithInvalidationFlag (ctok, options, canInvalidateProject, userOpName) =
+    let getOrCreateBuilderWithInvalidationFlag (options, canInvalidateProject, userOpName) =
         if canInvalidateProject then
-            getOrCreateBuilder (ctok, options, userOpName)
+            getOrCreateBuilder (options, userOpName)
         else
-            getSimilarOrCreateBuilder (ctok, options, userOpName)
+            getSimilarOrCreateBuilder (options, userOpName)
 
     let getAnyBuilder (reactor: Reactor) (options, userOpName, opName, opArg) =
-        let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, opName, opArg, action)
         match tryGetAnyBuilder options with
         | Some (builderOpt,creationDiags) -> 
             Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
             async { return builderOpt,creationDiags }
         | _ ->
-            execWithReactorAsync (fun ctok -> getOrCreateBuilder (ctok, options, userOpName))
+            getOrCreateBuilder (options, userOpName)
 
     let getBuilder (reactor: Reactor) (options, userOpName, opName, opArg) =
-        let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, opName, opArg, action)
         match tryGetBuilder options with
         | Some (builderOpt,creationDiags) -> 
             Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
             async { return builderOpt,creationDiags }
         | _ ->
-            execWithReactorAsync (fun ctok -> getOrCreateBuilder (ctok, options, userOpName))
+            getOrCreateBuilder (options, userOpName)
 
     let parseCacheLock = Lock<ParseCacheLockToken>()
     
@@ -706,13 +705,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     /// Fetch the check information from the background compiler (which checks w.r.t. the FileSystem API)
     member _.GetBackgroundCheckResultsForFileInProject(filename, options, userOpName) =
         async {
-            let! builderOpt, creationDiags =
-                reactor.EnqueueAndAwaitOpAsync(userOpName, "GetBackgroundCheckResultsForFileInProject", filename, fun ctok -> 
-                  cancellable {
-                    return! getOrCreateBuilder (ctok, options, userOpName)
-                  }
-                )
-
+            let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
             match builderOpt with
             | None ->
                 let parseTree = EmptyParsedInput(filename, (false, false))
@@ -768,13 +761,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     member _.FindReferencesInFile(filename: string, options: FSharpProjectOptions, symbol: FSharpSymbol, canInvalidateProject: bool, userOpName: string) =
         async {
-            let! builderOpt, _ =
-                reactor.EnqueueAndAwaitOpAsync(userOpName, "FindReferencesInFile", filename, fun ctok -> 
-                    cancellable {
-                        return! getOrCreateBuilderWithInvalidationFlag (ctok, options, canInvalidateProject, userOpName)
-                    }
-                )
-
+            let! builderOpt, _ = getOrCreateBuilderWithInvalidationFlag (options, canInvalidateProject, userOpName)
             match builderOpt with
             | None -> return Seq.empty
             | Some builder -> 
@@ -791,13 +778,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     member _.GetSemanticClassificationForFile(filename: string, options: FSharpProjectOptions, userOpName: string) =
         async {
-            let! builderOpt, _ =
-                reactor.EnqueueAndAwaitOpAsync(userOpName, "GetSemanticClassificationForFile", filename, fun ctok -> 
-                    cancellable {
-                        return! getOrCreateBuilder (ctok, options, userOpName)
-                    }
-                )
-
+            let! builderOpt, _ =getOrCreateBuilder (options, userOpName)
             match builderOpt with
             | None -> return None
             | Some builder -> 
@@ -820,18 +801,18 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             | None -> checkFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options)))
 
     /// Parse and typecheck the whole project (the implementation, called recursively as project graph is evaluated)
-    member private _.ParseAndCheckProjectImpl(options, ctok, userOpName) =
-      cancellable {
-          let! builderOpt,creationDiags = getOrCreateBuilder (ctok, options, userOpName)
+    member private _.ParseAndCheckProjectImpl(options, userOpName) =
+      async {
+          let! builderOpt,creationDiags = getOrCreateBuilder (options, userOpName)
           match builderOpt with 
           | None -> 
               return FSharpCheckProjectResults (options.ProjectFileName, None, keepAssemblyContents, creationDiags, None)
           | Some builder -> 
-              let! (tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt) = builder.GetFullCheckResultsAndImplementationsForProject(ctok)
+              let! (tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt) = builder.GetFullCheckResultsAndImplementationsForProject()
               let errorOptions = tcProj.TcConfig.errorSeverityOptions
               let fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation
 
-              let! tcInfo, tcInfoExtras = tcProj.GetTcInfoWithExtras() |> Eventually.toCancellable
+              let! tcInfo, tcInfoExtras = tcProj.GetTcInfoWithExtras()
 
               let tcSymbolUses = tcInfoExtras.TcSymbolUses
               let topAttribs = tcInfo.topAttribs
@@ -856,14 +837,14 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
               return results
       }
 
-    member _.GetAssemblyData(options, ctok, userOpName) =
-        cancellable {
-            let! builderOpt,_ = getOrCreateBuilder (ctok, options, userOpName)
+    member _.GetAssemblyData(options, userOpName) =
+        async {
+            let! builderOpt,_ = getOrCreateBuilder (options, userOpName)
             match builderOpt with 
             | None -> 
                 return None
             | Some builder -> 
-                let! (_, _, tcAssemblyDataOpt, _) = builder.GetCheckResultsAndImplementationsForProject(ctok)
+                let! (_, _, tcAssemblyDataOpt, _) = builder.GetCheckResultsAndImplementationsForProject()
                 return tcAssemblyDataOpt
         }
 
@@ -876,7 +857,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     /// Parse and typecheck the whole project.
     member bc.ParseAndCheckProject(options, userOpName) =
-        reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckProject", options.ProjectFileName, fun ctok -> bc.ParseAndCheckProjectImpl(options, ctok, userOpName))
+        bc.ParseAndCheckProjectImpl(options, userOpName)
 
     member _.GetProjectOptionsFromScript(filename, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, sdkDirOverride: string option, assumeDotNetFramework: bool option, optionsStamp: int64 option, userOpName) = 
 
@@ -978,17 +959,15 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             })
 
     member _.CheckProjectInBackground (options, userOpName) =
-        reactor.SetBackgroundOp 
-           (Some(userOpName, "CheckProjectInBackground", options.ProjectFileName, 
-                 (fun ctok -> 
-                      eventually { 
-                           // Builder creation is not yet time-sliced.
-                           let! builderOpt,_ = getOrCreateBuilder (ctok, options, userOpName) |> Eventually.ofCancellable
-                           match builderOpt with 
-                           | None -> return ()
-                           | Some builder -> 
-                               return! builder.PopulatePartialCheckingResults (ctok)
-                       })))
+        async {
+            let! builderOpt,_ = getOrCreateBuilder (options, userOpName)
+            match builderOpt with 
+            | None -> return ()
+            | Some builder -> 
+                return! builder.PopulatePartialCheckingResults ()
+        }
+        |> Async.Start
+        
 
     member _.StopBackgroundCompile   () =
         reactor.SetBackgroundOp(None)
