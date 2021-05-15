@@ -662,7 +662,7 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
                         | ValueSome result ->
                             replyChannel.Reply (Ok result)
                         | _ ->
-                            let! result = computation
+                            let result = Async.RunSynchronously(computation, cancellationToken=ct)
                             cachedResult <- ValueSome (WeakReference<_> result)
 
                             if not ct.IsCancellationRequested then
