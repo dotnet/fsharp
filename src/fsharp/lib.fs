@@ -651,15 +651,24 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
                 match! agent.Receive() with
                 | GetValue (replyChannel, ct) ->
                     try
+                        use _reg = 
+                            // When a cancellation has occured, notify the reply channel to let the requester stop waiting for a response.
+                            ct.Register (fun () -> 
+                                let ex = OperationCanceledException() :> exn
+                                replyChannel.Reply (Error ex)
+                            )
+
                         ct.ThrowIfCancellationRequested ()
 
                         match tryGetResult () with
                         | ValueSome result ->
                             replyChannel.Reply (Ok result)
                         | _ ->
-                            let result = Async.RunSynchronously(computation, cancellationToken=ct)
+                            // This computation can only be canceled if the requestCount reaches zero.
+                            let! result = computation
                             cachedResult <- ValueSome (WeakReference<_> result)
-                            replyChannel.Reply (Ok result)
+                            if not ct.IsCancellationRequested then
+                                replyChannel.Reply (Ok result)
                     with 
                     | ex ->
                         replyChannel.Reply (Error ex)

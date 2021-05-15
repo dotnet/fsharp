@@ -203,6 +203,55 @@ type FileVersion = int
 type ParseCacheLockToken() = interface LockToken
 type ScriptClosureCacheToken() = interface LockToken
 
+[<AutoOpen>]
+module IncrementalBuilderExtensions =
+    open FSharp.Compiler.CodeAnalysis
+
+    type IncrementalBuilder with
+
+        member this.FullCheckFile(parseResults: FSharpParseFileResults, sourceText: ISourceText, fileName: string, options: FSharpProjectOptions, loadClosure, creationDiags, keepAssemblyContents, suggestNamesForErrors) : Async<FSharpCheckFileResults> =
+            async {
+                let! checkResults = this.GetCheckResultsAfterFileInProject(fileName)
+                let! tcInfo, tcInfoExtras = checkResults.GetTcInfoWithExtras()
+                let tcConfig = checkResults.TcConfig
+
+                // We'll need number of lines for adjusting error messages at EOF
+                let fileInfo = sourceText.GetLastCharacterPosition()
+
+                let tcErrors =
+                    tcInfo.TcErrors
+                    |> Seq.map (fun (exn, sev) ->
+                        DiagnosticHelpers.ReportDiagnostic (tcConfig.errorSeverityOptions, false, fileName, fileInfo, (exn, sev), suggestNamesForErrors)
+                    )
+                    |> Seq.concat
+                    |> Array.ofSeq
+
+                return
+                    FSharpCheckFileResults.Make(
+                        fileName,
+                        options.ProjectFileName,
+                        tcConfig,
+                        checkResults.TcGlobals,
+                        options.IsIncompleteTypeCheckEnvironment,
+                        this,
+                        options,
+                        tcInfo.tcDependencyFiles |> Seq.rev |> Array.ofSeq,
+                        creationDiags,
+                        parseResults.Diagnostics,
+                        tcErrors,
+                        keepAssemblyContents,
+                        tcInfo.tcState.CcuSig,
+                        tcInfo.tcState.Ccu,
+                        checkResults.TcImports,
+                        tcInfo.tcState.TcEnvFromImpls.AccessRights,
+                        tcInfoExtras.tcResolutionsRev |> List.tryHead |> Option.defaultValue (NameResolution.TcResolutions.Empty),
+                        tcInfoExtras.TcSymbolUses |> List.tryHead |> Option.defaultValue (NameResolution.TcSymbolUses.Empty),
+                        tcInfo.tcState.TcEnvFromImpls.eNameResEnv,
+                        loadClosure,
+                        tcInfoExtras.latestImplFile,
+                        tcInfoExtras.tcOpenDeclarationsRev |> List.tryHead |> Option.defaultValue ([||])
+                    )
+            }
 
 // There is only one instance of this type, held in FSharpChecker
 type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification, enablePartialTypeChecking) as self =
@@ -537,6 +586,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             // For scripts, this will have been recorded by GetProjectOptionsFromScript.
                             let tcConfig = tcPrior.TcConfig
                             let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
+
                             let! checkAnswer = 
                                 FSharpCheckFileResults.CheckOneFile
                                     (parseResults,

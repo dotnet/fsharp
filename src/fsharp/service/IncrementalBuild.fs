@@ -716,24 +716,55 @@ type IncrementalBuilderState =
         logicalStampedFileNames: ImmutableArray<DateTime>
         stampedReferencedAssemblies: ImmutableArray<DateTime>
         initialBoundModel: AsyncLazy<BoundModel>
-        boundModels: ImmutableArray<AsyncLazy<BoundModel>>
+        boundModels: ImmutableArray<BoundModelLazy>
         finalizedBoundModel: AsyncLazy<((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime)>
-        enablePartialTypeChecking: bool
     }
 
-[<RequireQualifiedAccess>]
-module Seq =
+and BoundModelLazy (refState: IncrementalBuilderState ref, i, syntaxTree: SyntaxTree, enablePartialTypeChecking) =
 
-    let foldAsync (compute: 'State -> 'T -> Async<'State>) (state: 'State) (items: 'T seq)  =
-        let rec loop (state: 'State) (items: 'T list) =
-            async {
-                match items with
-                | [] -> return state
-                | item :: tailItems ->
-                    let! newState = compute state item
-                    return! loop newState tailItems
-            }
-        loop state (items |> List.ofSeq)
+    /// Type check all files eagerly.
+    let TypeCheckTask partialCheck (prevBoundModel: BoundModel) syntaxTree: Async<BoundModel> =
+        async {
+            let! tcInfo = prevBoundModel.GetTcInfoAsync()
+            let boundModel = prevBoundModel.Next(syntaxTree, tcInfo)
+
+            // Eagerly type check
+            // We need to do this to keep the expected behavior of events (namely fileChecked) when checking a file/project.
+            if partialCheck then
+                let! _ = boundModel.GetTcInfoAsync()
+                ()
+            else
+                let! _ = boundModel.GetTcInfoWithExtrasAsync()
+                ()
+
+            return boundModel
+        }
+
+    let mkLazy partialCheck =
+        AsyncLazy(async {
+            let state = !refState
+
+            let initial = state.initialBoundModel.GetValueAsync()
+            let! prevBoundModel =
+                match i with
+                | 0 (* first file *) -> initial
+                | _ -> state.boundModels.[i - 1].GetPartial()
+            return! TypeCheckTask partialCheck prevBoundModel syntaxTree
+        })
+
+    let lazyFull = mkLazy false
+    // If partial type checking is not enabled, GetPartial will always return an eager evaluation of the full check.
+    let lazyPartial =
+        if enablePartialTypeChecking then
+            mkLazy true
+        else
+            lazyFull
+     
+    member this.GetPartial() : Async<BoundModel> = lazyPartial.GetValueAsync()
+    member this.TryGetPartial() = lazyPartial.TryGetValue()
+
+    member this.GetFull() : Async<BoundModel> = lazyFull.GetValueAsync()
+    member this.TryGetFull() = lazyFull.TryGetValue()
 
 /// Manages an incremental build graph for the build of a single F# project
 type IncrementalBuilder(tcGlobals,
@@ -804,10 +835,6 @@ type IncrementalBuilder(tcGlobals,
     /// Get the timestamp of the given file name.
     let StampFileNameTask (cache: TimeStampCache) (_m: range, filename: string, _isLastCompiland) =
         cache.GetFileTimeStamp filename
-
-    /// Parse the given file and return the given input.
-    let ParseTask (sourceRange: range, filename: string, isLastCompiland) =
-        SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, filename, isLastCompiland)
 
     /// Timestamps of referenced assemblies are taken from the file's timestamp.
     let StampReferencedAssemblyTask (cache: TimeStampCache) (_ref, timeStamper) =
@@ -901,26 +928,8 @@ type IncrementalBuilder(tcGlobals,
                 async { return Some tcInfoExtras },
                 None) }
 
-    /// Type check all files.
-    let TypeCheckTask enablePartialTypeChecking (prevBoundModel: BoundModel) syntaxTree: Async<BoundModel> =
-        async {
-            let! tcInfo = prevBoundModel.GetTcInfoAsync()
-            let boundModel = prevBoundModel.Next(syntaxTree, tcInfo)
-
-            // Eagerly type check
-            // We need to do this to keep the expected behavior of events (namely fileChecked) when checking a file/project.
-            if enablePartialTypeChecking then
-                let! _ = boundModel.GetTcInfoAsync()
-                ()
-            else
-                let! _ = boundModel.GetTcInfoWithExtrasAsync()
-                ()
-
-            return boundModel
-        }
-
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask enablePartialTypeChecking (boundModels: ImmutableArray<BoundModel>) =
+    let FinalizeTypeCheckTask (boundModels: ImmutableArray<BoundModel>) =
       async {
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
 
@@ -1019,6 +1028,9 @@ type IncrementalBuilder(tcGlobals,
     // ---------------------------------------------------------------------------------------------
     // START OF BUILD DESCRIPTION
 
+    let GetSyntaxTree (sourceRange: range, filename: string, isLastCompiland) =
+        SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, filename, isLastCompiland)
+
     // Inputs
     let fileNames = sourceFiles |> Array.ofList // TODO: This should be an immutable array.
     let referencedAssemblies =  nonFrameworkAssemblyInputs |> Array.ofList // TODO: This should be an immutable array.
@@ -1032,19 +1044,9 @@ type IncrementalBuilder(tcGlobals,
         })
 
     let createBoundModelAsyncLazy (refState: IncrementalBuilderState ref) i =
-        AsyncLazy(async {
-            let state = !refState
-            let fileInfo = fileNames.[i]
-
-            let initial = state.initialBoundModel.GetValueAsync()
-
-            let! prevBoundModel =
-                match i with
-                | 0 (* first file *) -> initial
-                | _ -> state.boundModels.[i - 1].GetValueAsync()
-
-            return! TypeCheckTask enablePartialTypeChecking prevBoundModel (ParseTask fileInfo)
-        })
+        let fileInfo = fileNames.[i]
+        let syntaxTree = GetSyntaxTree fileInfo
+        BoundModelLazy(refState, i, syntaxTree, enablePartialTypeChecking)
 
     let createBoundModelsAsyncLazy refState count =
         Array.init count (createBoundModelAsyncLazy refState)
@@ -1054,13 +1056,13 @@ type IncrementalBuilder(tcGlobals,
         AsyncLazy(async {
             let state = !state
             // Compute last bound model then get all the evaluated models.
-            let! _ = state.boundModels.[state.boundModels.Length - 1].GetValueAsync()
+            let! _ = state.boundModels.[state.boundModels.Length - 1].GetPartial()
             let boundModels =
                 state.boundModels
-                |> Seq.map (fun x -> x.TryGetValue().Value)
+                |> Seq.map (fun x -> x.TryGetPartial().Value)
                 |> ImmutableArray.CreateRange
 
-            let! result = FinalizeTypeCheckTask state.enablePartialTypeChecking boundModels
+            let! result = FinalizeTypeCheckTask boundModels
             let result = (result, DateTime.UtcNow)
             return result
         })
@@ -1070,9 +1072,9 @@ type IncrementalBuilder(tcGlobals,
         let stamp = StampFileNameTask cache fileInfo
 
         if currentStamp <> stamp then
-            match state.boundModels.[slot].TryGetValue() with
+            match state.boundModels.[slot].TryGetPartial() with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
-            | ValueSome(boundModel) when state.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
+            | ValueSome(boundModel) when enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
                 boundModel.Invalidate()
                 { state with
                     stampedFileNames = state.stampedFileNames.SetItem(slot, StampFileNameTask cache fileInfo)
@@ -1155,15 +1157,15 @@ type IncrementalBuilder(tcGlobals,
         let state = computeStampedFileNames state cache
         state
 
-    let tryGetSlot (state: IncrementalBuilderState) slot =
-        match state.boundModels.[slot].TryGetValue() with
+    let tryGetSlotPartial (state: IncrementalBuilderState) slot =
+        match state.boundModels.[slot].TryGetPartial() with
         | ValueSome boundModel ->
             (boundModel, state.stampedFileNames.[slot])
             |> Some
         | _ ->
             None
 
-    let tryGetBeforeSlot (state: IncrementalBuilderState) slot =
+    let tryGetBeforeSlotPartial (state: IncrementalBuilderState) slot =
         match slot with
         | 0 (* first file *) ->
             match state.initialBoundModel.TryGetValue() with
@@ -1173,15 +1175,25 @@ type IncrementalBuilder(tcGlobals,
             | _ ->
                 None
         | _ ->
-            tryGetSlot state (slot - 1)
+            tryGetSlotPartial state (slot - 1)
 
-    let evalUpToTargetSlot (state: IncrementalBuilderState) targetSlot =
+    let evalUpToTargetSlotPartial (state: IncrementalBuilderState) targetSlot =
         async {
             if targetSlot < 0 then
                 let! result = state.initialBoundModel.GetValueAsync()
                 return Some(result, DateTime.MinValue)
             else
-                let! boundModel = state.boundModels.[targetSlot].GetValueAsync()
+                let! boundModel = state.boundModels.[targetSlot].GetPartial()
+                return Some(boundModel, state.stampedFileNames.[targetSlot])
+        }
+
+    let evalUpToTargetSlotFull (state: IncrementalBuilderState) targetSlot =
+        async {
+            if targetSlot < 0 then
+                let! result = state.initialBoundModel.GetValueAsync()
+                return Some(result, DateTime.MinValue)
+            else
+                let! boundModel = state.boundModels.[targetSlot].GetFull()
                 return Some(boundModel, state.stampedFileNames.[targetSlot])
         }
 
@@ -1211,7 +1223,6 @@ type IncrementalBuilder(tcGlobals,
                 initialBoundModel = createInitialBoundModelAsyncLazy()
                 boundModels = createBoundModelsAsyncLazy refState fileNames.Length
                 finalizedBoundModel = createFinalizeBoundModelAsyncLazy refState
-                enablePartialTypeChecking = enablePartialTypeChecking
             }
         refState := state
         state
@@ -1274,7 +1285,7 @@ type IncrementalBuilder(tcGlobals,
 
     member builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename: PartialCheckResults option  =
         let slotOfFile = builder.GetSlotOfFileName filename
-        let result = tryGetBeforeSlot currentState slotOfFile
+        let result = tryGetBeforeSlotPartial currentState slotOfFile
 
         match result with
         | Some (boundModel, timestamp) -> Some (PartialCheckResults (boundModel, timestamp))
@@ -1285,25 +1296,32 @@ type IncrementalBuilder(tcGlobals,
         let tmpState = computeTimeStamps currentState cache
 
         let slotOfFile = builder.GetSlotOfFileName filename
-        match tryGetBeforeSlot tmpState slotOfFile with
+        match tryGetBeforeSlotPartial tmpState slotOfFile with
         | Some(boundModel, timestamp) -> PartialCheckResults(boundModel, timestamp) |> Some
         | _ -> None
 
     member builder.AreCheckResultsBeforeFileInProjectReady filename =
         (builder.TryGetCheckResultsBeforeFileInProject filename).IsSome
 
-    member private _.GetCheckResultsBeforeSlotInProject (slotOfFile, _enablePartialTypeChecking) =
+    member _.GetCheckResultsBeforeSlotInProject (slotOfFile) =
       async {
         let cache = TimeStampCache defaultTimeStamp
         do! checkFileTimeStamps cache
-        let! result = evalUpToTargetSlot currentState (slotOfFile - 1)
+        let! result = evalUpToTargetSlotPartial currentState (slotOfFile - 1)
         match result with
         | Some (boundModel, timestamp) -> return PartialCheckResults(boundModel, timestamp)
         | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsBeforeSlotInProject)."
       }
 
-    member builder.GetCheckResultsBeforeSlotInProject (slotOfFile) =
-        builder.GetCheckResultsBeforeSlotInProject(slotOfFile, defaultPartialTypeChecking)
+    member _.GetFullCheckResultsBeforeSlotInProject (slotOfFile) =
+      async {
+        let cache = TimeStampCache defaultTimeStamp
+        do! checkFileTimeStamps cache
+        let! result = evalUpToTargetSlotFull currentState (slotOfFile - 1)
+        match result with
+        | Some (boundModel, timestamp) -> return PartialCheckResults(boundModel, timestamp)
+        | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsBeforeSlotInProject)."
+      }
 
     member builder.GetCheckResultsBeforeFileInProject (filename) =
         let slotOfFile = builder.GetSlotOfFileName filename
@@ -1313,18 +1331,21 @@ type IncrementalBuilder(tcGlobals,
         let slotOfFile = builder.GetSlotOfFileName filename + 1
         builder.GetCheckResultsBeforeSlotInProject (slotOfFile)
 
+    member builder.GetFullCheckResultsBeforeFileInProject (filename) =
+        let slotOfFile = builder.GetSlotOfFileName filename
+        builder.GetFullCheckResultsBeforeSlotInProject (slotOfFile)
+
     member builder.GetFullCheckResultsAfterFileInProject (filename) =
         async {
             let slotOfFile = builder.GetSlotOfFileName filename + 1
-            let! result = builder.GetCheckResultsBeforeSlotInProject(slotOfFile, false)
-            let! _ = result.GetTcInfoWithExtras() // Make sure we forcefully evaluate the info
+            let! result = builder.GetFullCheckResultsBeforeSlotInProject(slotOfFile)
             return result
         }
 
     member builder.GetCheckResultsAfterLastFileInProject () =
         builder.GetCheckResultsBeforeSlotInProject(builder.GetSlotsCount())
 
-    member private _.GetCheckResultsAndImplementationsForProject(_enablePartialTypeChecking) =
+    member _.GetCheckResultsAndImplementationsForProject() =
       async {
         let cache = TimeStampCache(defaultTimeStamp)
         do! checkFileTimeStamps cache
@@ -1334,12 +1355,9 @@ type IncrementalBuilder(tcGlobals,
             return PartialCheckResults (boundModel, timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
       }
 
-    member builder.GetCheckResultsAndImplementationsForProject() =
-        builder.GetCheckResultsAndImplementationsForProject(defaultPartialTypeChecking)
-
     member builder.GetFullCheckResultsAndImplementationsForProject() =
         async {
-            let! result = builder.GetCheckResultsAndImplementationsForProject(false)
+            let! result = builder.GetCheckResultsAndImplementationsForProject()
             let results, _, _, _ = result
             let! _ = results.GetTcInfoWithExtras() // Make sure we forcefully evaluate the info
             return result
@@ -1374,9 +1392,9 @@ type IncrementalBuilder(tcGlobals,
 
     member builder.GetParseResultsForFile (filename) =
         let slotOfFile = builder.GetSlotOfFileName filename
-        let results = fileNames.[slotOfFile]
+        let fileInfo = fileNames.[slotOfFile]
         // re-parse on demand instead of retaining
-        let syntaxTree = ParseTask results
+        let syntaxTree = GetSyntaxTree fileInfo
         syntaxTree.Parse None
 
     member _.SourceFiles  = sourceFiles  |> List.map (fun (_, f, _) -> f)
