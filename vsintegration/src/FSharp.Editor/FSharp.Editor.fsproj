@@ -31,6 +31,7 @@
     <Compile Include="Common\Error.fs" />
     <Compile Include="Common\Logging.fs" />
     <Compile Include="Common\RoslynHelpers.fs" />
+    <Compile Include="Common\FSharpCodeAnalysisExtensions.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
     <Compile Include="Common\Vs.fs" />
     <Compile Include="Options\SettingsPersistence.fs" />
@@ -88,6 +89,7 @@
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
     <Compile Include="Commands\XmlDocCommandService.fs" />
+    <Compile Include="Refactor\ChangeTypeofWithNameToNameofExpression.fs" />
     <Compile Include="Refactor\AddExplicitTypeToParameter.fs" />
     <Compile Include="Refactor\ChangeDerefToValueRefactoring.fs" />
     <Compile Include="CodeFix\CodeFixHelpers.fs" />

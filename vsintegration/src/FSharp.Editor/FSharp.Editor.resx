@@ -285,4 +285,7 @@
   <data name="AddMissingInstanceMemberParameter" xml:space="preserve">
     <value>Add missing instance member parameter</value>
   </data>
+  <data name="UseNameof" xml:space="preserve">
+    <value>Use 'nameof'</value>
+  </data>
 </root>
