@@ -715,9 +715,9 @@ type IncrementalBuilderState =
         stampedFileNames: ImmutableArray<DateTime>
         logicalStampedFileNames: ImmutableArray<DateTime>
         stampedReferencedAssemblies: ImmutableArray<DateTime>
-        initialBoundModel: BoundModel option
+        initialBoundModel: AsyncLazy<BoundModel>
         boundModels: ImmutableArray<BoundModel option>
-        finalizedBoundModel: ((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime) option
+        finalizedBoundModel: AsyncLazy<((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime)>
         enablePartialTypeChecking: bool
     }
 
@@ -1023,7 +1023,27 @@ type IncrementalBuilder(tcGlobals,
     let fileNames = sourceFiles |> Array.ofList // TODO: This should be an immutable array.
     let referencedAssemblies =  nonFrameworkAssemblyInputs |> Array.ofList // TODO: This should be an immutable array.
 
-    let computeStampedFileName (state: IncrementalBuilderState) (cache: TimeStampCache) slot fileInfo =
+    let createInitialBoundModelAsyncLazy () =
+        AsyncLazy(async { 
+            let! ct = Async.CancellationToken
+            match CombineImportedAssembliesTask() |> Cancellable.run ct with
+            | ValueOrCancelled.Cancelled ex -> return raise ex
+            | ValueOrCancelled.Value res -> return res
+        })
+
+    let rec createFinalizeBoundModelAsyncLazy (state: IncrementalBuilderState ref) =
+        AsyncLazy(async {
+            let state = !state
+            let cache = TimeStampCache(defaultTimeStamp)
+            let! state = computeBoundModels state cache
+            let boundModels = state.boundModels |> Seq.choose id |> ImmutableArray.CreateRange
+
+            let! result = FinalizeTypeCheckTask state.enablePartialTypeChecking boundModels
+            let result = (result, DateTime.UtcNow)
+            return result
+        })
+
+    and computeStampedFileName (state: IncrementalBuilderState) (cache: TimeStampCache) slot fileInfo =
         let currentStamp = state.stampedFileNames.[slot]
         let stamp = StampFileNameTask cache fileInfo
 
@@ -1048,18 +1068,22 @@ type IncrementalBuilder(tcGlobals,
                     logicalStampedFileNames.[slot + j] <- stamp
                     boundModels.[slot + j] <- None
 
-                { state with
-                    // Something changed, the finalized view of the project must be invalidated.
-                    finalizedBoundModel = None
+                let refState = ref state
+                let state =
+                    { state with
+                        // Something changed, the finalized view of the project must be invalidated.
+                        finalizedBoundModel = createFinalizeBoundModelAsyncLazy refState
 
-                    stampedFileNames = stampedFileNames.ToImmutable()
-                    logicalStampedFileNames = logicalStampedFileNames.ToImmutable()
-                    boundModels = boundModels.ToImmutable()
-                }
+                        stampedFileNames = stampedFileNames.ToImmutable()
+                        logicalStampedFileNames = logicalStampedFileNames.ToImmutable()
+                        boundModels = boundModels.ToImmutable()
+                    }
+                refState := state
+                state
         else
             state
 
-    let computeStampedFileNames state (cache: TimeStampCache) =
+    and computeStampedFileNames state (cache: TimeStampCache) =
         let mutable i = 0
         (state, fileNames)
         ||> Array.fold (fun state fileInfo ->
@@ -1068,7 +1092,7 @@ type IncrementalBuilder(tcGlobals,
             newState
         )
 
-    let computeStampedReferencedAssemblies state (cache: TimeStampCache) =
+    and computeStampedReferencedAssemblies state (cache: TimeStampCache) =
         let stampedReferencedAssemblies = state.stampedReferencedAssemblies.ToBuilder()
 
         let mutable referencesUpdated = false
@@ -1087,36 +1111,22 @@ type IncrementalBuilder(tcGlobals,
             // Something changed, the finalized view of the project must be invalidated.
             // This is the only place where the initial bound model will be invalidated.
             let count = state.stampedFileNames.Length
-            { state with
-                stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
-                initialBoundModel = None
-                finalizedBoundModel = None
-                stampedFileNames = Array.init count (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
-                logicalStampedFileNames = Array.init count (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
-                boundModels = Array.init count (fun _ -> None) |> ImmutableArray.CreateRange
-            }
+            let refState = ref state
+            let state =
+                { state with
+                    stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
+                    initialBoundModel = createInitialBoundModelAsyncLazy()
+                    finalizedBoundModel = createFinalizeBoundModelAsyncLazy refState
+                    stampedFileNames = Array.init count (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
+                    logicalStampedFileNames = Array.init count (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
+                    boundModels = Array.init count (fun _ -> None) |> ImmutableArray.CreateRange
+                }
+            refState := state
+            state
         else
             state
 
-    let computeInitialBoundModel (state: IncrementalBuilderState) =
-        async {
-            let work =
-                cancellable {
-                    match state.initialBoundModel with
-                    | None ->
-                        // Note this is not time-sliced
-                        let! result = CombineImportedAssembliesTask()
-                        return { state with initialBoundModel = Some result }, result
-                    | Some result ->
-                        return state, result
-                }
-            let! ct = Async.CancellationToken
-            match work |> Cancellable.run ct with
-            | ValueOrCancelled.Cancelled ex -> return raise ex
-            | ValueOrCancelled.Value res -> return res
-        }
-
-    let computeBoundModel state (cache: TimeStampCache) (slot: int) =
+    and computeBoundModel state (cache: TimeStampCache) (slot: int) =
         if IncrementalBuild.injectCancellationFault then (raise(OperationCanceledException())) else
         async {
 
@@ -1125,7 +1135,7 @@ type IncrementalBuilder(tcGlobals,
             let state = computeStampedFileName state cache slot fileInfo
 
             if state.boundModels.[slot].IsNone then
-                let! (state, initial) = computeInitialBoundModel state
+                let! initial = state.initialBoundModel.GetValueAsync()
 
                 let prevBoundModel =
                     match slot with
@@ -1149,25 +1159,11 @@ type IncrementalBuilder(tcGlobals,
                 return state
         }
 
-    let computeBoundModels state (cache: TimeStampCache) =
+    and computeBoundModels state (cache: TimeStampCache) =
         async {
             return!
                 (state, [0..fileNames.Length-1]) 
                 ||> Seq.foldAsync (fun state slot -> computeBoundModel state cache slot)
-        }
-
-    let computeFinalizedBoundModel state (cache: TimeStampCache) =
-        async {
-            let! state = computeBoundModels state cache
-
-            match state.finalizedBoundModel with
-            | Some result -> return state, result
-            | _ ->
-                let boundModels = state.boundModels |> Seq.choose id |> ImmutableArray.CreateRange
-
-                let! result = FinalizeTypeCheckTask state.enablePartialTypeChecking boundModels
-                let result = (result, DateTime.UtcNow)
-                return { state with finalizedBoundModel = Some result }, result
         }
 
     let tryGetSlot (state: IncrementalBuilderState) slot =
@@ -1181,8 +1177,8 @@ type IncrementalBuilder(tcGlobals,
     let tryGetBeforeSlot (state: IncrementalBuilderState) slot =
         match slot with
         | 0 (* first file *) ->
-            match state.initialBoundModel with
-            | Some initial ->
+            match state.initialBoundModel.TryGetValue() with
+            | ValueSome initial ->
                 (initial, DateTime.MinValue)
                 |> Some
             | _ ->
@@ -1190,12 +1186,11 @@ type IncrementalBuilder(tcGlobals,
         | _ ->
             tryGetSlot state (slot - 1)
 
-    let evalUpToTargetSlot state (cache: TimeStampCache) targetSlot =
+    let evalUpToTargetSlot (state: IncrementalBuilderState) (cache: TimeStampCache) targetSlot =
         async {
-            let state = computeStampedReferencedAssemblies state cache
             if targetSlot < 0 then
-                let! state, result = computeInitialBoundModel state
-                return state, Some(result, DateTime.MinValue)
+                let! result = state.initialBoundModel.GetValueAsync()
+                return Some(result, DateTime.MinValue)
             else
                 let! state = 
                     (state, [0..targetSlot]) 
@@ -1207,15 +1202,7 @@ type IncrementalBuilder(tcGlobals,
                         (boundModel, state.stampedFileNames.[targetSlot])
                     )
 
-                return state, result
-        }
-
-    let tryGetFinalized state cache =
-        async {
-            let state = computeStampedReferencedAssemblies state cache
-
-            let! state, res = computeFinalizedBoundModel state cache
-            return state, Some res
+                return result
         }
 
     let MaxTimeStampInDependencies stamps =
@@ -1235,27 +1222,44 @@ type IncrementalBuilder(tcGlobals,
     *)
 
     let mutable currentState =
-        {
-            stampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
-            logicalStampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
-            stampedReferencedAssemblies = Array.init referencedAssemblies.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
-            initialBoundModel = None
-            boundModels = Array.zeroCreate<BoundModel option> fileNames.Length |> ImmutableArray.CreateRange
-            finalizedBoundModel = None
-            enablePartialTypeChecking = enablePartialTypeChecking
+        let refState = ref Unchecked.defaultof<_>
+        let state =
+            {
+                stampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
+                logicalStampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
+                stampedReferencedAssemblies = Array.init referencedAssemblies.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
+                initialBoundModel = createInitialBoundModelAsyncLazy()
+                boundModels = Array.zeroCreate<BoundModel option> fileNames.Length |> ImmutableArray.CreateRange
+                finalizedBoundModel = createFinalizeBoundModelAsyncLazy refState
+                enablePartialTypeChecking = enablePartialTypeChecking
+            }
+        refState := state
+        state
+
+    let agent = 
+        let rec loop (agent: MailboxProcessor<AsyncReplyChannel<unit> * TimeStampCache * CancellationToken>) = 
+            async {
+                let! replyChannel, cache, ct = agent.Receive()
+
+                if ct.IsCancellationRequested then
+                    replyChannel.Reply()
+                    return! loop agent
+                else
+
+                let state = currentState
+                let state = computeStampedFileNames state cache
+                let state = computeStampedReferencedAssemblies state cache
+                currentState <- state
+                replyChannel.Reply()
+                return! loop agent
+            }
+        new MailboxProcessor<_>(loop)
+
+    let checkFileTimeStamps (cache: TimeStampCache) =
+        async {
+            let! ct = Async.CancellationToken
+            do! agent.PostAndAsyncReply(fun replyChannel -> (replyChannel, cache, ct))
         }
-
-    //let agentState = 
-    //    let rec loop (agent: MailboxProcessor<AsyncReplyChannel<IncrementalBuilderState> * IncrementalBuilderState>) = 
-    //        async {
-    //            let! replyChannel, state = agent.Receive()
-    //            currentState <- state
-    //            return! loop agent
-    //        }
-    //    new MailboxProcessor(loop)
-
-    let setCurrentState state =
-        currentState <- state
 
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
 
@@ -1277,17 +1281,9 @@ type IncrementalBuilder(tcGlobals,
 
     member _.PopulatePartialCheckingResults () =
       async {
-        let! ct = Async.CancellationToken
         let cache = TimeStampCache defaultTimeStamp // One per step
-        let state = currentState
-        let state = computeStampedFileNames state cache
-        setCurrentState state
-        ct.ThrowIfCancellationRequested()
-        let state = computeStampedReferencedAssemblies state cache
-        setCurrentState state
-        ct.ThrowIfCancellationRequested()
-        let! state, _res = computeFinalizedBoundModel state cache
-        setCurrentState state
+        do! checkFileTimeStamps cache
+        let! _ = currentState.finalizedBoundModel.GetValueAsync()
         projectChecked.Trigger()
       }
 
@@ -1313,11 +1309,11 @@ type IncrementalBuilder(tcGlobals,
     member builder.AreCheckResultsBeforeFileInProjectReady filename =
         (builder.TryGetCheckResultsBeforeFileInProject filename).IsSome
 
-    member private _.GetCheckResultsBeforeSlotInProject (slotOfFile, enablePartialTypeChecking) =
+    member private _.GetCheckResultsBeforeSlotInProject (slotOfFile, _enablePartialTypeChecking) =
       async {
         let cache = TimeStampCache defaultTimeStamp
-        let! state, result = evalUpToTargetSlot { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache (slotOfFile - 1)
-        setCurrentState { state with enablePartialTypeChecking = defaultPartialTypeChecking }
+        do! checkFileTimeStamps cache
+        let! result = evalUpToTargetSlot currentState cache (slotOfFile - 1)
         match result with
         | Some (boundModel, timestamp) -> return PartialCheckResults(boundModel, timestamp)
         | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsBeforeSlotInProject)."
@@ -1345,18 +1341,14 @@ type IncrementalBuilder(tcGlobals,
     member builder.GetCheckResultsAfterLastFileInProject () =
         builder.GetCheckResultsBeforeSlotInProject(builder.GetSlotsCount())
 
-    member private _.GetCheckResultsAndImplementationsForProject(enablePartialTypeChecking) =
+    member private _.GetCheckResultsAndImplementationsForProject(_enablePartialTypeChecking) =
       async {
-        let cache = TimeStampCache defaultTimeStamp
-
-        let! state, result = tryGetFinalized { currentState with enablePartialTypeChecking = enablePartialTypeChecking } cache
-        setCurrentState { state with enablePartialTypeChecking = defaultPartialTypeChecking }
+        let cache = TimeStampCache(defaultTimeStamp)
+        do! checkFileTimeStamps cache
+        let! result = currentState.finalizedBoundModel.GetValueAsync()
         match result with
-        | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp) ->
+        | ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp) ->
             return PartialCheckResults (boundModel, timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
-        | None ->
-            let msg = "Build was not evaluated, expected the results to be ready after 'tryGetFinalized')."
-            return! failwith msg
       }
 
     member builder.GetCheckResultsAndImplementationsForProject() =
