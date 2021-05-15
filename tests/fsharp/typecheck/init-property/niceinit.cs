@@ -1,7 +1,7 @@
-/*namespace System.Runtime.CompilerServices{
+namespace System.Runtime.CompilerServices{
   
   internal class IsExternalInit {}
-}*/
+}
 
 public class NiceInit {
   public NiceInit() {}
