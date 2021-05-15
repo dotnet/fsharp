@@ -410,13 +410,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
              areSame=AreSameForChecking3,
              areSimilar=AreSubsumable3)
 
-    /// Holds keys for files being currently checked. It's used to prevent checking same file in parallel (interleaving chunk queued to Reactor).
-    let beingCheckedFileTable = 
-        ConcurrentDictionary<FilePath * FSharpProjectOptions * FileVersion, unit>
-            (HashIdentity.FromFunctions
-                hash
-                (fun (f1, o1, v1) (f2, o2, v2) -> f1 = f2 && v1 = v2 && FSharpProjectOptions.AreSameForChecking(o1, o2)))
-
     static let mutable actualParseFileCount = 0
 
     static let mutable actualCheckFileCount = 0
@@ -514,61 +507,49 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
          tcInfo: TcInfo,
          creationDiags: FSharpDiagnostic[]) = 
    
-        async {
-            let beingCheckedFileKey = fileName, options, fileVersion
-            let stopwatch = Stopwatch.StartNew()
-            let rec loop() =
-                async {
-                    // results may appear while we were waiting for the lock, let's recheck if it's the case
-                    let cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) 
+        let work =
+            cancellable {
+                // results may appear while we were waiting for the lock, let's recheck if it's the case
+                let cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) 
             
-                    match cachedResults with
-                    | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
-                    | None ->
-                        if beingCheckedFileTable.TryAdd(beingCheckedFileKey, ()) then
-                            let hash: SourceTextHash = sourceText.GetHashCode() |> int64
-                            try
-                                // Get additional script #load closure information if applicable.
-                                // For scripts, this will have been recorded by GetProjectOptionsFromScript.
-                                let tcConfig = tcPrior.TcConfig
-                                let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
-                                let! checkAnswer = 
-                                    FSharpCheckFileResults.CheckOneFile
-                                        (parseResults,
-                                            sourceText,
-                                            fileName,
-                                            options.ProjectFileName, 
-                                            tcConfig,
-                                            tcPrior.TcGlobals,
-                                            tcPrior.TcImports, 
-                                            tcInfo.tcState,
-                                            tcInfo.moduleNamesDict,
-                                            loadClosure,
-                                            tcInfo.TcErrors,
-                                            options.IsIncompleteTypeCheckEnvironment, 
-                                            options, 
-                                            builder, 
-                                            Array.ofList tcInfo.tcDependencyFiles, 
-                                            creationDiags, 
-                                            parseResults.Diagnostics, 
-                                            keepAssemblyContents,
-                                            suggestNamesForErrors) |> Cancellable.toAsync
-                                let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
-                                reactor.SetPreferredUILang tcConfig.preferredUiLang
-                                bc.RecordCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, hash) 
-                                return FSharpCheckFileAnswer.Succeeded checkAnswer
-                            finally
-                                let dummy = ref ()
-                                beingCheckedFileTable.TryRemove(beingCheckedFileKey, dummy) |> ignore
-                        else 
-                            do! Async.Sleep 100
-                            if stopwatch.Elapsed > TimeSpan.FromMinutes 1. then 
-                                return FSharpCheckFileAnswer.Aborted
-                            else
-                                return! loop()
-                }
-            return! loop()
-        }
+                match cachedResults with
+                | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
+                | None ->
+                        let hash: SourceTextHash = sourceText.GetHashCode() |> int64
+                        // Get additional script #load closure information if applicable.
+                        // For scripts, this will have been recorded by GetProjectOptionsFromScript.
+                        let tcConfig = tcPrior.TcConfig
+                        let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
+                        let! checkAnswer = 
+                            FSharpCheckFileResults.CheckOneFile
+                                (parseResults,
+                                    sourceText,
+                                    fileName,
+                                    options.ProjectFileName, 
+                                    tcConfig,
+                                    tcPrior.TcGlobals,
+                                    tcPrior.TcImports, 
+                                    tcInfo.tcState,
+                                    tcInfo.moduleNamesDict,
+                                    loadClosure,
+                                    tcInfo.TcErrors,
+                                    options.IsIncompleteTypeCheckEnvironment, 
+                                    options, 
+                                    builder, 
+                                    Array.ofList tcInfo.tcDependencyFiles, 
+                                    creationDiags, 
+                                    parseResults.Diagnostics, 
+                                    keepAssemblyContents,
+                                    suggestNamesForErrors)
+                        let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
+                        reactor.SetPreferredUILang tcConfig.preferredUiLang
+                        bc.RecordCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, hash) 
+                        return FSharpCheckFileAnswer.Succeeded checkAnswer
+            }
+
+        Reactor.Singleton.EnqueueAndAwaitOpAsync("", "CheckOneFileImpl", "", fun _ ->
+            work
+        )
 
     /// Type-check the result obtained by parsing, but only if the antecedent type checking context is available. 
     member bc.CheckFileInProjectAllowingStaleCachedResults(parseResults: FSharpParseFileResults, filename, fileVersion, sourceText: ISourceText, options, userOpName) =
@@ -614,8 +595,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     /// Type-check the result obtained by parsing. Force the evaluation of the antecedent type checking context if needed.
     member bc.CheckFileInProject(parseResults: FSharpParseFileResults, filename, fileVersion, sourceText: ISourceText, options, userOpName) =
-        let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "CheckFileInProject", filename, action)
-
         async {
             try 
                 if implicitlyStartBackgroundWork then 
