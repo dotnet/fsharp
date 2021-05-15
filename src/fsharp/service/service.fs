@@ -629,8 +629,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     /// Parses and checks the source file and returns untyped AST and check results.
     member bc.ParseAndCheckFileInProject (filename:string, fileVersion, sourceText: ISourceText, options:FSharpProjectOptions, userOpName) =
-        let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckFileInProject", filename, action)
-
         async {
             try 
                 let strGuid = "_ProjectId=" + (options.ProjectId |> Option.defaultValue "null")
