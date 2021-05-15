@@ -8048,7 +8048,6 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
         match delayed with
         | DelayedSet(e2, mStmt) :: otherDelayed ->
             if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
-            // gauthier todo: implication of init property
             // Static Property Set (possibly indexer)
             UnifyTypes cenv env mStmt overallTy g.unit_ty
             let meths = pinfos |> SettersOfPropInfos
