@@ -651,11 +651,6 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
                 match! agent.Receive() with
                 | GetValue (replyChannel, ct) ->
                     try
-                        use _reg = 
-                            ct.Register (fun () -> 
-                                let ex = OperationCanceledException() :> exn
-                                replyChannel.Reply (Error ex)
-                            )
                         ct.ThrowIfCancellationRequested ()
 
                         match tryGetResult () with
@@ -664,9 +659,6 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
                         | _ ->
                             let result = Async.RunSynchronously(computation, cancellationToken=ct)
                             cachedResult <- ValueSome (WeakReference<_> result)
-
-                            if not ct.IsCancellationRequested then
-                                replyChannel.Reply (Ok result) 
                     with 
                     | ex ->
                         replyChannel.Reply (Error ex)
