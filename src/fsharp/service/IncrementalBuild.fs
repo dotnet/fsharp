@@ -338,7 +338,7 @@ type BoundModel private (tcConfig: TcConfig,
     member this.FinishAsync(finalTcErrorsRev, finalTopAttribs) =
         async {
             let! _ = this.GetTcInfoAsync()
-            let state = tcInfoStateOpt.Value // should not be null at this point
+            let state = lazyTcInfoState.Value // should not be null at this point
 
             let finishTcInfo = { state.TcInfo  with tcErrorsRev = finalTcErrorsRev; topAttribs = finalTopAttribs }
             let finishState =
