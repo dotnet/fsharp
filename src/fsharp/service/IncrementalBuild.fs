@@ -716,7 +716,7 @@ type IncrementalBuilderState =
         logicalStampedFileNames: ImmutableArray<DateTime>
         stampedReferencedAssemblies: ImmutableArray<DateTime>
         initialBoundModel: AsyncLazy<BoundModel>
-        boundModels: ImmutableArray<BoundModel option>
+        boundModels: ImmutableArray<AsyncLazy<BoundModel>>
         finalizedBoundModel: AsyncLazy<((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime)>
         enablePartialTypeChecking: bool
     }
@@ -1031,12 +1031,34 @@ type IncrementalBuilder(tcGlobals,
             | ValueOrCancelled.Value res -> return res
         })
 
+    let createBoundModelAsyncLazy (refState: IncrementalBuilderState ref) i =
+        AsyncLazy(async {
+            let state = !refState
+            let fileInfo = fileNames.[i]
+
+            let initial = state.initialBoundModel.GetValueAsync()
+
+            let! prevBoundModel =
+                match i with
+                | 0 (* first file *) -> initial
+                | _ -> state.boundModels.[i - 1].GetValueAsync()
+
+            return! TypeCheckTask enablePartialTypeChecking prevBoundModel (ParseTask fileInfo)
+        })
+
+    let createBoundModelsAsyncLazy refState count =
+        Array.init count (createBoundModelAsyncLazy refState)
+        |> ImmutableArray.CreateRange
+
     let rec createFinalizeBoundModelAsyncLazy (state: IncrementalBuilderState ref) =
         AsyncLazy(async {
             let state = !state
-            let cache = TimeStampCache(defaultTimeStamp)
-            let! state = computeBoundModels state cache
-            let boundModels = state.boundModels |> Seq.choose id |> ImmutableArray.CreateRange
+            // Compute last bound model then get all the evaluated models.
+            let! _ = state.boundModels.[state.boundModels.Length - 1].GetValueAsync()
+            let boundModels =
+                state.boundModels
+                |> Seq.map (fun x -> x.TryGetValue().Value)
+                |> ImmutableArray.CreateRange
 
             let! result = FinalizeTypeCheckTask state.enablePartialTypeChecking boundModels
             let result = (result, DateTime.UtcNow)
@@ -1048,9 +1070,9 @@ type IncrementalBuilder(tcGlobals,
         let stamp = StampFileNameTask cache fileInfo
 
         if currentStamp <> stamp then
-            match state.boundModels.[slot] with
+            match state.boundModels.[slot].TryGetValue() with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
-            | Some(boundModel) when state.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
+            | ValueSome(boundModel) when state.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
                 boundModel.Invalidate()
                 { state with
                     stampedFileNames = state.stampedFileNames.SetItem(slot, StampFileNameTask cache fileInfo)
@@ -1060,15 +1082,16 @@ type IncrementalBuilder(tcGlobals,
                 let stampedFileNames = state.stampedFileNames.ToBuilder()
                 let logicalStampedFileNames = state.logicalStampedFileNames.ToBuilder()
                 let boundModels = state.boundModels.ToBuilder()
+                
+                let refState = ref state
 
                 // Invalidate the file and all files below it.
                 for j = 0 to stampedFileNames.Count - slot - 1 do
                     let stamp = StampFileNameTask cache fileNames.[slot + j]
                     stampedFileNames.[slot + j] <- stamp
                     logicalStampedFileNames.[slot + j] <- stamp
-                    boundModels.[slot + j] <- None
+                    boundModels.[slot + j] <- createBoundModelAsyncLazy refState (slot + j)
 
-                let refState = ref state
                 let state =
                     { state with
                         // Something changed, the finalized view of the project must be invalidated.
@@ -1119,56 +1142,16 @@ type IncrementalBuilder(tcGlobals,
                     finalizedBoundModel = createFinalizeBoundModelAsyncLazy refState
                     stampedFileNames = Array.init count (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
                     logicalStampedFileNames = Array.init count (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
-                    boundModels = Array.init count (fun _ -> None) |> ImmutableArray.CreateRange
+                    boundModels = createBoundModelsAsyncLazy refState count
                 }
             refState := state
             state
         else
             state
 
-    and computeBoundModel state (cache: TimeStampCache) (slot: int) =
-        if IncrementalBuild.injectCancellationFault then (raise(OperationCanceledException())) else
-        async {
-
-            let fileInfo = fileNames.[slot]
-
-            let state = computeStampedFileName state cache slot fileInfo
-
-            if state.boundModels.[slot].IsNone then
-                let! initial = state.initialBoundModel.GetValueAsync()
-
-                let prevBoundModel =
-                    match slot with
-                    | 0 (* first file *) -> initial
-                    | _ ->
-                        match state.boundModels.[slot - 1] with
-                        | Some(prevBoundModel) -> prevBoundModel
-                        | _ ->
-                            // This shouldn't happen, but on the off-chance, just grab the initial bound model.
-                            initial
-
-                let! boundModel = TypeCheckTask state.enablePartialTypeChecking prevBoundModel (ParseTask fileInfo)
-
-                let state =
-                    { state with
-                        boundModels = state.boundModels.SetItem(slot, Some boundModel)
-                    }
-                return state
-
-            else
-                return state
-        }
-
-    and computeBoundModels state (cache: TimeStampCache) =
-        async {
-            return!
-                (state, [0..fileNames.Length-1]) 
-                ||> Seq.foldAsync (fun state slot -> computeBoundModel state cache slot)
-        }
-
     let tryGetSlot (state: IncrementalBuilderState) slot =
-        match state.boundModels.[slot] with
-        | Some boundModel ->
+        match state.boundModels.[slot].TryGetValue() with
+        | ValueSome boundModel ->
             (boundModel, state.stampedFileNames.[slot])
             |> Some
         | _ ->
@@ -1186,23 +1169,14 @@ type IncrementalBuilder(tcGlobals,
         | _ ->
             tryGetSlot state (slot - 1)
 
-    let evalUpToTargetSlot (state: IncrementalBuilderState) (cache: TimeStampCache) targetSlot =
+    let evalUpToTargetSlot (state: IncrementalBuilderState) targetSlot =
         async {
             if targetSlot < 0 then
                 let! result = state.initialBoundModel.GetValueAsync()
                 return Some(result, DateTime.MinValue)
             else
-                let! state = 
-                    (state, [0..targetSlot]) 
-                    ||> Seq.foldAsync (fun state slot -> computeBoundModel state cache slot)
-
-                let result =
-                    state.boundModels.[targetSlot]
-                    |> Option.map (fun boundModel ->
-                        (boundModel, state.stampedFileNames.[targetSlot])
-                    )
-
-                return result
+                let! boundModel = state.boundModels.[targetSlot].GetValueAsync()
+                return Some(boundModel, state.stampedFileNames.[targetSlot])
         }
 
     let MaxTimeStampInDependencies stamps =
@@ -1229,7 +1203,7 @@ type IncrementalBuilder(tcGlobals,
                 logicalStampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
                 stampedReferencedAssemblies = Array.init referencedAssemblies.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
                 initialBoundModel = createInitialBoundModelAsyncLazy()
-                boundModels = Array.zeroCreate<BoundModel option> fileNames.Length |> ImmutableArray.CreateRange
+                boundModels = createBoundModelsAsyncLazy refState fileNames.Length
                 finalizedBoundModel = createFinalizeBoundModelAsyncLazy refState
                 enablePartialTypeChecking = enablePartialTypeChecking
             }
@@ -1316,7 +1290,7 @@ type IncrementalBuilder(tcGlobals,
       async {
         let cache = TimeStampCache defaultTimeStamp
         do! checkFileTimeStamps cache
-        let! result = evalUpToTargetSlot currentState cache (slotOfFile - 1)
+        let! result = evalUpToTargetSlot currentState (slotOfFile - 1)
         match result with
         | Some (boundModel, timestamp) -> return PartialCheckResults(boundModel, timestamp)
         | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsBeforeSlotInProject)."
