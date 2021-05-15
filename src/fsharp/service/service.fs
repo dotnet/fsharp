@@ -255,10 +255,14 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
                      yield
                         { new IProjectReference with 
-                            member x.EvaluateRawContents(ctok) = 
+                            member x.EvaluateRawContents(_ctok) = 
                               cancellable {
                                 Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
-                                return! self.GetAssemblyData(opts, ctok, userOpName + ".CheckReferencedProject("+nm+")")
+                                let! ct = Cancellable.token()
+                                let res = 
+                                    let work = self.GetAssemblyData(opts, userOpName + ".CheckReferencedProject("+nm+")")
+                                    Async.RunSynchronously(work, cancellationToken=ct)
+                                return res
                               }
                             member x.TryGetLogicalTimeStamp(cache) = 
                                 self.TryGetLogicalTimeStampForProject(cache, opts)
