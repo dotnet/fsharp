@@ -29,7 +29,7 @@ type internal FSharpAddInstanceMemberParameterCodeFixProvider() =
                 CodeFixHelpers.createTextChangeCodeFix(
                     title,
                     context,
-                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "_.") |]))
+                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "x.") |]))
 
             context.RegisterCodeFix(codeFix, diagnostics)
         }
