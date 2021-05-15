@@ -435,7 +435,7 @@ type CalledMeth<'T>
                     let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides id.idRange returnedObjTy
                     let pinfos = pinfos |> ExcludeHiddenOfPropInfos g infoReader.amap m 
                     match pinfos with 
-                    | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 
+                    | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer && not pinfo.SetterIsInitOnly -> 
                         let pminfo = pinfo.SetterMethod
                         let pminst = freshenMethInfo m pminfo
                         Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(pinfo, pminfo, pminst), e))
