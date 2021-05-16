@@ -787,6 +787,8 @@ type IncrementalBuilder(
 
     let defaultTimeStamp = DateTime.UtcNow
 
+    let mutable isInvalidated = false
+
     //----------------------------------------------------
     // START OF BUILD TASK FUNCTIONS
 
@@ -980,7 +982,7 @@ type IncrementalBuilder(
             newState
         )
 
-    and computeStampedReferencedAssemblies state (cache: TimeStampCache) =
+    and computeStampedReferencedAssemblies state canTriggerInvalidation (cache: TimeStampCache) =
         let stampedReferencedAssemblies = state.stampedReferencedAssemblies.ToBuilder()
 
         let mutable referencesUpdated = false
@@ -997,7 +999,9 @@ type IncrementalBuilder(
 
         if referencesUpdated then
             // Build is invalidated. The build must be rebuilt with the newly updated references.
-            invalidated.Trigger()
+            if canTriggerInvalidation then
+                isInvalidated <- true
+                invalidated.Trigger()
             // Update timestamps anyway as to prevent continuous re-triggered of the invalidated event.
             { state with
                 stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
@@ -1006,7 +1010,7 @@ type IncrementalBuilder(
             state
 
     let computeTimeStamps state cache =
-        let state = computeStampedReferencedAssemblies state cache
+        let state = computeStampedReferencedAssemblies state true cache
         let state = computeStampedFileNames state cache
         state
 
@@ -1061,6 +1065,7 @@ type IncrementalBuilder(
     *)
 
     let mutable currentState =
+        let cache = TimeStampCache(defaultTimeStamp)
         let refState = ref Unchecked.defaultof<_>
         let state =
             {
@@ -1071,6 +1076,8 @@ type IncrementalBuilder(
                 boundModels = createBoundModelsAsyncLazy refState fileNames.Length
                 finalizedBoundModel = createFinalizeBoundModelAsyncLazy refState
             }
+        let state = computeStampedReferencedAssemblies state false cache
+        let state = computeStampedFileNames state cache
         refState := state
         state
 
@@ -1117,6 +1124,8 @@ type IncrementalBuilder(
     member _.ProjectChecked = projectChecked.Publish
 
     member _.Invalidated = invalidated.Publish
+
+    member _.IsInvalidated = isInvalidated
 
     member _.AllDependenciesDeprecated = allDependencies
 

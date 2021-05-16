@@ -271,7 +271,17 @@ type CheckFileCacheAgentMessage =
         creationDiags: FSharpDiagnostic[]
 
 // There is only one instance of this type, held in FSharpChecker
-type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification, enablePartialTypeChecking) as self =
+type BackgroundCompiler(
+                        legacyReferenceResolver, 
+                        projectCacheSize, 
+                        keepAssemblyContents, 
+                        keepAllBackgroundResolutions, 
+                        tryGetMetadataSnapshot, 
+                        suggestNamesForErrors, 
+                        keepAllBackgroundSymbolUses, 
+                        enableBackgroundItemKeyStoreAndSemanticClassification, 
+                        enablePartialTypeChecking,
+                        autoInvalidateConfiguration) as self =
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.reactor: The one and only Reactor
     let reactor = Reactor.Singleton
     let beforeFileChecked = Event<string * FSharpProjectOptions>()
@@ -371,10 +381,11 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         | None -> ()
         | Some builder -> 
 
-            // Register the behaviour that responds to CCUs being invalidated because of type
-            // provider Invalidate events. This invalidates the configuration in the build.
-            // The build can be invalidated if one of its assemblies has changed.
-            builder.Invalidated.Add (fun () -> self.InvalidateConfiguration(options, None, userOpName))
+            if autoInvalidateConfiguration then
+                // Register the behaviour that responds to CCUs being invalidated because of type
+                // provider Invalidate events. This invalidates the configuration in the build.
+                // The build can be invalidated if one of its assemblies has changed.
+                builder.Invalidated.Add (fun () -> self.InvalidateConfiguration(options, None, userOpName))
 
             // Register the callback called just before a file is typechecked by the background builder (without recording
             // errors or intellisense information).
@@ -1180,6 +1191,11 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     member _.CurrentQueueLength = reactor.CurrentQueueLength
 
+    member _.IsProjectInvalidated(options: FSharpProjectOptions) =
+        match tryGetBuilder options with
+        | Some (Some builder, _) -> builder.IsInvalidated
+        | _ -> true
+
     member _.ClearCachesAsync (userOpName) =
         reactor.EnqueueAndAwaitOpAsync (userOpName, "ClearCachesAsync", "", fun ctok -> 
             parseCacheLock.AcquireLock (fun ltok -> 
@@ -1223,10 +1239,12 @@ type FSharpChecker(legacyReferenceResolver,
                     suggestNamesForErrors,
                     keepAllBackgroundSymbolUses,
                     enableBackgroundItemKeyStoreAndSemanticClassification,
-                    enablePartialTypeChecking) =
+                    enablePartialTypeChecking,
+                    autoInvalidateConfiguration) =
 
     let backgroundCompiler =
-        BackgroundCompiler(legacyReferenceResolver,
+        BackgroundCompiler(
+            legacyReferenceResolver,
             projectCacheSize,
             keepAssemblyContents,
             keepAllBackgroundResolutions,
@@ -1234,7 +1252,8 @@ type FSharpChecker(legacyReferenceResolver,
             suggestNamesForErrors,
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
-            enablePartialTypeChecking)
+            enablePartialTypeChecking,
+            autoInvalidateConfiguration)
 
     static let globalInstance = lazy FSharpChecker.Create()
             
@@ -1251,7 +1270,17 @@ type FSharpChecker(legacyReferenceResolver,
     let maxMemEvent = new Event<unit>()
 
     /// Instantiate an interactive checker.    
-    static member Create(?projectCacheSize, ?keepAssemblyContents, ?keepAllBackgroundResolutions, ?legacyReferenceResolver, ?tryGetMetadataSnapshot, ?suggestNamesForErrors, ?keepAllBackgroundSymbolUses, ?enableBackgroundItemKeyStoreAndSemanticClassification, ?enablePartialTypeChecking) = 
+    static member Create(
+                         ?projectCacheSize, 
+                         ?keepAssemblyContents, 
+                         ?keepAllBackgroundResolutions, 
+                         ?legacyReferenceResolver, 
+                         ?tryGetMetadataSnapshot, 
+                         ?suggestNamesForErrors, 
+                         ?keepAllBackgroundSymbolUses, 
+                         ?enableBackgroundItemKeyStoreAndSemanticClassification, 
+                         ?enablePartialTypeChecking,
+                         ?autoInvalidateConfiguration) = 
 
         let legacyReferenceResolver = 
             match legacyReferenceResolver with
@@ -1266,6 +1295,7 @@ type FSharpChecker(legacyReferenceResolver,
         let keepAllBackgroundSymbolUses = defaultArg keepAllBackgroundSymbolUses true
         let enableBackgroundItemKeyStoreAndSemanticClassification = defaultArg enableBackgroundItemKeyStoreAndSemanticClassification false
         let enablePartialTypeChecking = defaultArg enablePartialTypeChecking false
+        let autoInvalidateConfiguration = defaultArg autoInvalidateConfiguration true
 
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
@@ -1278,7 +1308,8 @@ type FSharpChecker(legacyReferenceResolver,
             suggestNamesForErrors,
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
-            enablePartialTypeChecking)
+            enablePartialTypeChecking,
+            autoInvalidateConfiguration)
 
     member _.ReferenceResolver = legacyReferenceResolver
 
@@ -1446,6 +1477,9 @@ type FSharpChecker(legacyReferenceResolver,
     member _.InvalidateConfiguration(options: FSharpProjectOptions, ?startBackgroundCompile, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.InvalidateConfiguration(options, startBackgroundCompile, userOpName)
+
+    member _.IsProjectInvalidated(options: FSharpProjectOptions) =
+        backgroundCompiler.IsProjectInvalidated(options)
 
     /// Clear the internal cache of the given projects.
     member _.ClearCache(options: FSharpProjectOptions seq, ?userOpName: string) =

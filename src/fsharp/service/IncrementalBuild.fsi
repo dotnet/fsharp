@@ -155,6 +155,9 @@ type internal IncrementalBuilder =
       /// Raised when the build is invalidated.
       member Invalidated : IEvent<unit>
 
+      /// Check if the build is invalidated.
+      member IsInvalidated : bool
+
       /// The list of files the build depends on
       member AllDependenciesDeprecated : string[]
 
