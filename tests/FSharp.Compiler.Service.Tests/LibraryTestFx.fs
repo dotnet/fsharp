@@ -66,7 +66,11 @@ module SurfaceArea =
       let _asm, actual = getActual ()
       let actual = normalize actual
       let expected = normalize (System.IO.File.ReadAllText expectedFile)
-      if expected <> actual then
+      match Tests.TestHelpers.assembleDiffMessage actual expected with
+      | None -> ()
+      | Some diff ->
           FileSystem.WriteAllTextShim(actualFile, actual)
-          failwith $"surface area defined in {expectedFile} doesn't match actual in {actualFile}. Compare the files and adjust accordingly."
-    
+          printfn $"surface area defined in\n\n{expectedFile}\n\ndoesn't match actual in\n\n{actualFile}\n\nCompare the files and adjust accordingly."
+          printfn $"{diff}"
+          
+          failwith "surface area changed"
