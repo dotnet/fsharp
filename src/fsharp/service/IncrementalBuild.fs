@@ -1136,12 +1136,14 @@ type IncrementalBuilder(
     member _.ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider.Publish
 #endif
 
-    member _.IsImportsInvalidated = 
+    member _.IsReferencesInvalidated = 
         // fast path
         if isImportsInvalidated then true
         else 
-            computeStampedReferencedAssemblies currentState false (TimeStampCache(defaultTimeStamp)) |> ignore
+            computeStampedReferencedAssemblies currentState true (TimeStampCache(defaultTimeStamp)) |> ignore
             isImportsInvalidated
+
+    member _.IsImportsInvalidated = isImportsInvalidated
 
     member _.AllDependenciesDeprecated = allDependencies
 

@@ -157,6 +157,9 @@ type internal IncrementalBuilder =
       member ImportsInvalidatedByTypeProvider : IEvent<unit>
 #endif
 
+      /// Check if one of the build's references is invalidated.
+      member IsReferencesInvalidated : bool
+
       /// Check if the build is invalidated.
       member IsImportsInvalidated : bool
 
