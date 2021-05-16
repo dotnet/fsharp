@@ -98,7 +98,7 @@ module private FSharpProjectOptionsHelpers =
             // At the moment, Roslyn's view of F# dependent project references must not cause an invalidation
             // because the internals of FCS's state relies on the file-system.
             // Therefore, check if the project is invalidated by FCS's view of the world.
-            checker.IsProjectInvalidated options
+            checker.IsProjectReferencesInvalidated options
         else
             res
 

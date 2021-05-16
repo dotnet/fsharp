@@ -381,11 +381,12 @@ type BackgroundCompiler(
         | None -> ()
         | Some builder -> 
 
+#if !NO_EXTENSIONTYPING
             if autoInvalidateConfiguration then
                 // Register the behaviour that responds to CCUs being invalidated because of type
                 // provider Invalidate events. This invalidates the configuration in the build.
-                // The build can be invalidated if one of its assemblies has changed.
-                builder.ImportsInvalidated.Add (fun () -> self.InvalidateConfiguration(options, None, userOpName))
+                builder.ImportsInvalidatedByTypeProvider.Add(fun () -> self.InvalidateConfiguration(options, None, userOpName))
+#endif
 
             // Register the callback called just before a file is typechecked by the background builder (without recording
             // errors or intellisense information).
@@ -1127,7 +1128,7 @@ type BackgroundCompiler(
             }
         ))        
 
-    member _.IsProjectInvalidated(options: FSharpProjectOptions) =
+    member _.IsProjectReferencesInvalidated(options: FSharpProjectOptions) =
         match tryGetBuilder options with
         | Some (Some builder, _) -> builder.IsImportsInvalidated
         | _ -> true
@@ -1433,8 +1434,8 @@ type FSharpChecker(legacyReferenceResolver,
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.InvalidateConfiguration(options, startBackgroundCompile, userOpName)
 
-    member _.IsProjectInvalidated(options: FSharpProjectOptions) =
-        backgroundCompiler.IsProjectInvalidated(options)
+    member _.IsProjectReferencesInvalidated(options: FSharpProjectOptions) =
+        backgroundCompiler.IsProjectReferencesInvalidated(options)
 
     /// Clear the internal cache of the given projects.
     member _.ClearCache(options: FSharpProjectOptions seq, ?userOpName: string) =

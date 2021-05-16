@@ -779,7 +779,9 @@ type IncrementalBuilder(
                         enablePartialTypeChecking,
                         beforeFileChecked: Event<string>,
                         fileChecked: Event<string>,
-                        importsInvalidated: Event<unit>,
+#if !NO_EXTENSIONTYPING
+                        importsInvalidatedByTypeProvider: Event<unit>,
+#endif
                         allDependencies) =
 
     let fileParsed = new Event<string>()
@@ -789,7 +791,9 @@ type IncrementalBuilder(
 
     let mutable isImportsInvalidated = false
 
-    do importsInvalidated.Publish.Add(fun () -> isImportsInvalidated <- true)
+#if !NO_EXTENSIONTYPING
+    do importsInvalidatedByTypeProvider.Publish.Add(fun () -> isImportsInvalidated <- true)
+#endif
 
     //----------------------------------------------------
     // START OF BUILD TASK FUNCTIONS
@@ -1003,15 +1007,14 @@ type IncrementalBuilder(
             // Build is invalidated. The build must be rebuilt with the newly updated references.
             if not isImportsInvalidated && canTriggerInvalidation then
                 isImportsInvalidated <- true
-                importsInvalidated.Trigger()
             { state with
                 stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
-            }, true
+            }
         else
-            state, false
+            state
 
     let computeTimeStamps state cache =
-        let state = computeStampedReferencedAssemblies state true cache |> fst
+        let state = computeStampedReferencedAssemblies state true cache
         let state = computeStampedFileNames state cache
         state
 
@@ -1077,7 +1080,7 @@ type IncrementalBuilder(
                 boundModels = createBoundModelsAsyncLazy refState fileNames.Length
                 finalizedBoundModel = createFinalizeBoundModelAsyncLazy refState
             }
-        let state = computeStampedReferencedAssemblies state false cache |> fst
+        let state = computeStampedReferencedAssemblies state false cache
         let state = computeStampedFileNames state cache
         refState := state
         state
@@ -1129,11 +1132,16 @@ type IncrementalBuilder(
 
     member _.ProjectChecked = projectChecked.Publish
 
-    member _.ImportsInvalidated = importsInvalidated.Publish
+#if !NO_EXTENSIONTYPING
+    member _.ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider.Publish
+#endif
 
     member _.IsImportsInvalidated = 
+        // fast path
         if isImportsInvalidated then true
-        else computeStampedReferencedAssemblies currentState false (TimeStampCache(defaultTimeStamp)) |> snd
+        else 
+            computeStampedReferencedAssemblies currentState false (TimeStampCache(defaultTimeStamp)) |> ignore
+            isImportsInvalidated
 
     member _.AllDependenciesDeprecated = allDependencies
 
@@ -1422,7 +1430,10 @@ type IncrementalBuilder(
             let tcConfigP = TcConfigProvider.Constant tcConfig
             let beforeFileChecked = new Event<string>()
             let fileChecked = new Event<string>()
-            let invalidated = new Event<unit>()
+
+#if !NO_EXTENSIONTYPING
+            let importsInvalidatedByTypeProvider = new Event<unit>()
+#endif
 
             // Check for the existence of loaded sources and prepend them to the sources list if present.
             let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (sourceFiles |>List.map (fun s -> rangeStartup, s))
@@ -1474,13 +1485,13 @@ type IncrementalBuilder(
                               // or keeps itself alive mistakenly, e.g. via some global state in the type provider instance.
                               //
                               // The handler only captures
-                              //    1. a weak reference to the importsInvalidated event.
+                              //    1. a weak reference to the importsInvalidatedByTypeProvider event.
                               //
                               // The IncrementalBuilder holds the strong reference the importsInvalidated event.
                               //
                               // In the invalidation handler we use a weak reference to allow the IncrementalBuilder to
                               // be collected if, for some reason, a TP instance is not disposed or not GC'd.
-                              let capturedImportsInvalidated = WeakReference<_>(invalidated)
+                              let capturedImportsInvalidated = WeakReference<_>(importsInvalidatedByTypeProvider)
                               ccu.Deref.InvalidateEvent.Add(fun _ ->
                                   match capturedImportsInvalidated.TryGetTarget() with
                                   | true, tg -> tg.Trigger()
@@ -1552,7 +1563,9 @@ type IncrementalBuilder(
                     enablePartialTypeChecking,
                     beforeFileChecked,
                     fileChecked,
-                    invalidated,
+#if !NO_EXTENSIONTYPING
+                    importsInvalidatedByTypeProvider,
+#endif
                     allDependencies)
             return Some builder
           with e ->

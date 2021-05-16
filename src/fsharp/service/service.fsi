@@ -365,14 +365,11 @@ type public FSharpChecker =
     member InvalidateConfiguration: options: FSharpProjectOptions * ?startBackgroundCompile: bool * ?userOpName: string -> unit
 
     /// <summary>
-    /// Checks to see if the given project has been invalidated. 
-    /// Returns true if the project is marked as invalidated. 
-    /// Returns true if the project has not been internally created.
-    /// Returns false when the project is not marked as invalidated and exists.
+    /// Checks to see if the given project has been invalidated by its references; not its files. 
     /// When 'autoInvalidateConfiguration' is enabled, the project will internally re-create itself and therefore, this may return false when that happens.
     /// </summary>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
-    member IsProjectInvalidated: options: FSharpProjectOptions -> bool
+    member IsProjectReferencesInvalidated: options: FSharpProjectOptions -> bool
 
     /// <summary>Clear the internal cache of the given projects.</summary>
     /// <param name="options">The given project options.</param>
