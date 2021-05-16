@@ -203,7 +203,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                             | Some (FSharpCheckFileAnswer.Succeeded results) -> Some results, false
 
                         sr := None
-                        parseResults,typedResults,true,aborted,req.Timestamp
+                        parseResults,typedResults,true,aborted,int64 req.Timestamp
                 
                 // Now that we have the parseResults, we can SetDependencyFiles().
                 // 
@@ -255,7 +255,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                         let scope = new FSharpIntellisenseInfo_DEPRECATED(parseResults, req.Line, req.Col, req.Snapshot, typedResults, projectSite, req.View, colorizer, getDocumentationBuilder(), provideMethodList) 
 
                         req.ResultIntellisenseInfo <- scope
-                        req.ResultTimestamp <- resultTimestamp  // This will be different from req.Timestamp when we're using stale results.
+                        req.ResultTimestamp <- int resultTimestamp  // This will be different from req.Timestamp when we're using stale results.
                         req.ResultClearsDirtinessOfFile <- containsFreshFullTypeCheck
 
 
