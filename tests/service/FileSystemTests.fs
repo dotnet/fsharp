@@ -52,11 +52,6 @@ let B = File1.A + File1.A"""
             let fileAccess = defaultArg fileAccess FileAccess.ReadWrite
             let fileShare = defaultArg fileShare FileShare.Read
             defaultFileSystem.OpenFileForWriteShim(filePath, fileMode, fileAccess, fileShare)
-            
-        member this.WriteAllTextShim(filePath: string, text: string) =
-            use writer = (this :> IFileSystem).OpenFileForWriteShim(filePath)
-            use writer = new StreamWriter(writer)
-            writer.Write text
 
         member _.IsStableFileHeuristic(fileName) =
             defaultFileSystem.IsStableFileHeuristic(fileName)

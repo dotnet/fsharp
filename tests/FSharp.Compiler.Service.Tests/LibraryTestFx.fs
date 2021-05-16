@@ -69,7 +69,10 @@ module SurfaceArea =
       match Tests.TestHelpers.assembleDiffMessage actual expected with
       | None -> ()
       | Some diff ->
-          FileSystem.WriteAllTextShim(actualFile, actual)
+          FileSystem
+            .OpenFileForWriteShim(actualFile)
+            .WriteAllText(actual)
+
           printfn $"surface area defined in\n\n{expectedFile}\n\ndoesn't match actual in\n\n{actualFile}\n\nCompare the files and adjust accordingly."
           printfn $"{diff}"
           

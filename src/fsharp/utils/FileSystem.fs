@@ -371,10 +371,10 @@ type DefaultAssemblyLoader() =
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type IFileSystem =
+    // note: do not add members if you can put generic implementation under StreamExtensions below.
     abstract AssemblyLoader: IAssemblyLoader
     abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> ByteMemory
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
-    abstract WriteAllTextShim: filePath: string * text: string -> unit
     abstract GetFullPathShim: fileName: string -> string
     abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
     abstract IsPathRootedShim: path: string -> bool
@@ -393,6 +393,7 @@ type IFileSystem =
     abstract EnumerateFilesShim: path: string * pattern: string -> string seq
     abstract EnumerateDirectoriesShim: path: string -> string seq
     abstract IsStableFileHeuristic: fileName: string -> bool
+    // note: do not add members if you can put generic implementation under StreamExtensions below.
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type DefaultFileSystem() as this =
@@ -468,12 +469,7 @@ type DefaultFileSystem() as this =
             let fileShare = defaultArg fileShare FileShare.Delete ||| FileShare.ReadWrite
 
             new FileStream(filePath, fileMode, fileAccess, fileShare) :> Stream
-        
-        member this.WriteAllTextShim(filePath: string, text: string) =
-            use writer = (this :> IFileSystem).OpenFileForWriteShim(filePath)
-            use writer = new StreamWriter(writer)
-            writer.Write text
-
+       
         member _.GetFullPathShim (fileName: string) = Path.GetFullPath fileName
 
         member _.IsPathRootedShim (path: string) = Path.IsPathRooted path
@@ -609,6 +605,10 @@ module public StreamExtensions =
         member s.ReadAllLines(?encoding: Encoding) : string array =
             let encoding = defaultArg encoding Encoding.UTF8
             s.ReadLines(encoding) |> Seq.toArray
+
+        member s.WriteAllText(text: string) =
+            use writer = new StreamWriter(s)
+            writer.Write text
 
 [<AutoOpen>]
 module public FileSystemAutoOpens =
