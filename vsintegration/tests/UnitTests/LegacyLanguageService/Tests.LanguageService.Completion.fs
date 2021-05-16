@@ -5124,6 +5124,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         Assert.IsTrue(completions.Length>0)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member this.``BadCompletionAfterQuicklyTyping.Bug72561``() =        
         let code = [ "        " ]
         let (_, _, file) = this.CreateSingleFileProject(code)
