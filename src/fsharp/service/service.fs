@@ -682,8 +682,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             return Some checkAnswer
                 with
                 | :? OperationCanceledException ->
-                    let hash: SourceTextHash = sourceText.GetHashCode() |> int64
-                    checkFileAsyncLazyInProjectCache.RemoveAnySimilar(AnyCallerThread, (fileName, hash, options))
                     return None
             }
 
@@ -691,8 +689,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             let! ct = Async.CancellationToken
             match work |> Cancellable.run ct with
             | ValueOrCancelled.Cancelled _ ->
-                let hash: SourceTextHash = sourceText.GetHashCode() |> int64
-                checkFileAsyncLazyInProjectCache.RemoveAnySimilar(AnyCallerThread, (fileName, hash, options))
                 return None
             | ValueOrCancelled.Value res ->
                 return res
@@ -717,7 +713,11 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
             match! lazyCheckFile.GetValueAsync() with
             | Some results -> return FSharpCheckFileAnswer.Succeeded results
-            | _ -> return FSharpCheckFileAnswer.Aborted
+            | _ -> 
+                // Remove the result from the cache as it wasn't successful.
+                let hash: SourceTextHash = sourceText.GetHashCode() |> int64
+                checkFileAsyncLazyInProjectCache.RemoveAnySimilar(AnyCallerThread, (fileName, hash, options))
+                return FSharpCheckFileAnswer.Aborted
          }
 
     /// Type-check the result obtained by parsing, but only if the antecedent type checking context is available. 
