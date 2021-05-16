@@ -208,6 +208,7 @@ module IncrementalBuilderExtensions =
 
     type IncrementalBuilder with
 
+        /// REVIEW: Not used currently, but will be useful when incremental builder's source of truth is not the file system.
         member this.FullCheckFile(parseResults: FSharpParseFileResults, sourceText: ISourceText, fileName: string, options: FSharpProjectOptions, loadClosure, creationDiags, keepAssemblyContents, suggestNamesForErrors) : Async<FSharpCheckFileResults> =
             async {
                 let! checkResults = this.GetCheckResultsAfterFileInProject(fileName)
@@ -251,6 +252,23 @@ module IncrementalBuilderExtensions =
                         tcInfoExtras.tcOpenDeclarationsRev |> List.tryHead |> Option.defaultValue ([||])
                     )
             }
+
+type CheckFileCacheKey = FileName * SourceTextHash * FSharpProjectOptions
+type CheckFileCacheValue = FSharpParseFileResults * FSharpCheckFileResults * FileVersion * DateTime
+
+[<RequireQualifiedAccess;NoComparison;NoEquality>]
+type CheckFileCacheAgentMessage =
+    | GetAsyncLazy of 
+        replyChannel: AsyncReplyChannel<AsyncLazy<FSharpCheckFileResults option>> *
+        parseResults: FSharpParseFileResults *
+        sourceText: ISourceText *
+        fileName: string *
+        options: FSharpProjectOptions *
+        fileVersion: int *
+        builder: IncrementalBuilder *
+        tcPrior: PartialCheckResults *
+        tcInfo: TcInfo *
+        creationDiags: FSharpDiagnostic[]
 
 // There is only one instance of this type, held in FSharpChecker
 type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification, enablePartialTypeChecking) as self =
@@ -446,6 +464,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileInProjectCachePossiblyStale 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileInProjectCache
+    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileAsyncLazyInProjectCache
     //
     /// Cache which holds recently seen type-checks.
     /// This cache may hold out-of-date entries, in two senses
@@ -460,10 +479,59 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     // Also keyed on source. This can only be out of date if the antecedent is out of date
     let checkFileInProjectCache = 
-        MruCache<ParseCacheLockToken,FileName * SourceTextHash * FSharpProjectOptions, FSharpParseFileResults * FSharpCheckFileResults * FileVersion * DateTime>
+        MruCache<ParseCacheLockToken, CheckFileCacheKey, CheckFileCacheValue>
             (keepStrongly=checkFileInProjectCacheSize,
              areSame=AreSameForChecking3,
              areSimilar=AreSubsumable3)
+
+    let checkFileAsyncLazyInProjectCache =
+        MruCache<AnyCallerThreadToken, CheckFileCacheKey, AsyncLazy<FSharpCheckFileResults option>>
+            (keepStrongly=checkFileInProjectCacheSize,
+             areSame=AreSameForChecking3,
+             areSimilar=AreSubsumable3)
+
+    // The goal of the check file cache agent is to ensure 
+    // that we have a single AsyncLazy instance per source text in the project to type-check.
+    let foregroundCheckFileCacheAgent =
+        let loop (agent: MailboxProcessor<CheckFileCacheAgentMessage>) =
+            async {
+                while true do
+                    match! agent.Receive() with
+                    | CheckFileCacheAgentMessage.GetAsyncLazy(
+                                                                replyChannel,
+                                                                parseResults,
+                                                                sourceText,
+                                                                fileName,
+                                                                options,
+                                                                fileVersion,
+                                                                builder,
+                                                                tcPrior,
+                                                                tcInfo,
+                                                                creationDiags) ->
+                        let key = (fileName, sourceText.GetHashCode() |> int64, options)
+                        match checkFileAsyncLazyInProjectCache.TryGet(AnyCallerThread, key) with
+                        | Some res -> replyChannel.Reply(res)
+                        | _ ->
+                            let res =
+                                AsyncLazy(async {
+                                    return!
+                                        self.CheckOneFileImplAux(
+                                            parseResults,
+                                            sourceText,
+                                            fileName,
+                                            options,
+                                            fileVersion,
+                                            builder,
+                                            tcPrior,
+                                            tcInfo,
+                                            creationDiags)
+                                })
+                            checkFileAsyncLazyInProjectCache.Set(AnyCallerThread, key, res)
+                            replyChannel.Reply(res)
+            }
+        let agent = new MailboxProcessor<_>(loop)
+        agent.Start()
+        agent
 
     static let mutable actualParseFileCount = 0
 
@@ -555,7 +623,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     /// 6. Starts whole project background compilation.
     ///
     /// 7. Releases the file "lock".
-    member private bc.CheckOneFileImpl
+    member private bc.CheckOneFileImplAux
         (parseResults: FSharpParseFileResults,
          sourceText: ISourceText,
          fileName: string,
@@ -564,12 +632,12 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
          builder: IncrementalBuilder,
          tcPrior: PartialCheckResults,
          tcInfo: TcInfo,
-         creationDiags: FSharpDiagnostic[]) = 
+         creationDiags: FSharpDiagnostic[]) : Async<FSharpCheckFileResults option> = 
 
         let cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) 
         // fast path
         match cachedResults with
-        | Some(_, checkResults) -> async { return FSharpCheckFileAnswer.Succeeded checkResults }
+        | Some(_, checkResults) -> async { return Some checkResults }
         | _ ->
    
         let work =
@@ -578,7 +646,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     let cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) 
             
                     match cachedResults with
-                    | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
+                    | Some (_, checkResults) -> return Some checkResults
                     | None ->
                             let hash: SourceTextHash = sourceText.GetHashCode() |> int64
                             // Get additional script #load closure information if applicable.
@@ -611,16 +679,46 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             AsyncLazy.SetPreferredUILang tcConfig.preferredUiLang
                             reactor.SetPreferredUILang tcConfig.preferredUiLang
                             bc.RecordCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, hash) 
-                            return FSharpCheckFileAnswer.Succeeded checkAnswer
+                            return Some checkAnswer
                 with
                 | :? OperationCanceledException ->
-                    return FSharpCheckFileAnswer.Aborted
+                    let hash: SourceTextHash = sourceText.GetHashCode() |> int64
+                    checkFileAsyncLazyInProjectCache.RemoveAnySimilar(AnyCallerThread, (fileName, hash, options))
+                    return None
             }
 
-        // TODO: Figure out a better way to handle this that is not on the main reactor queue.
-        Reactor.Singleton.EnqueueAndAwaitOpAsync("", "CheckOneFileImpl", "", fun _ ->
-            work
-        )
+        async {
+            let! ct = Async.CancellationToken
+            match work |> Cancellable.run ct with
+            | ValueOrCancelled.Cancelled _ ->
+                let hash: SourceTextHash = sourceText.GetHashCode() |> int64
+                checkFileAsyncLazyInProjectCache.RemoveAnySimilar(AnyCallerThread, (fileName, hash, options))
+                return None
+            | ValueOrCancelled.Value res ->
+                return res
+        }
+
+    member private bc.CheckOneFileImpl
+        (parseResults: FSharpParseFileResults,
+         sourceText: ISourceText,
+         fileName: string,
+         options: FSharpProjectOptions,
+         fileVersion: int,
+         builder: IncrementalBuilder,
+         tcPrior: PartialCheckResults,
+         tcInfo: TcInfo,
+         creationDiags: FSharpDiagnostic[]) =
+
+         async {
+            let! lazyCheckFile =
+                foregroundCheckFileCacheAgent.PostAndAsyncReply(fun replyChannel ->
+                   CheckFileCacheAgentMessage.GetAsyncLazy(replyChannel, parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
+                )
+
+            match! lazyCheckFile.GetValueAsync() with
+            | Some results -> return FSharpCheckFileAnswer.Succeeded results
+            | _ -> return FSharpCheckFileAnswer.Aborted
+         }
 
     /// Type-check the result obtained by parsing, but only if the antecedent type checking context is available. 
     member bc.CheckFileInProjectAllowingStaleCachedResults(parseResults: FSharpParseFileResults, filename, fileVersion, sourceText: ISourceText, options, userOpName) =
@@ -1088,6 +1186,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     member _.ClearCachesAsync (userOpName) =
         reactor.EnqueueAndAwaitOpAsync (userOpName, "ClearCachesAsync", "", fun ctok -> 
             parseCacheLock.AcquireLock (fun ltok -> 
+                checkFileAsyncLazyInProjectCache.Clear AnyCallerThread
                 checkFileInProjectCachePossiblyStale.Clear ltok
                 checkFileInProjectCache.Clear ltok
                 parseFileCache.Clear(ltok))
@@ -1099,6 +1198,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     member _.DownsizeCaches(userOpName) =
         reactor.EnqueueAndAwaitOpAsync (userOpName, "DownsizeCaches", "", fun ctok -> 
             parseCacheLock.AcquireLock (fun ltok -> 
+                checkFileAsyncLazyInProjectCache.Resize(AnyCallerThread, newKeepStrongly=1)
                 checkFileInProjectCachePossiblyStale.Resize(ltok, newKeepStrongly=1)
                 checkFileInProjectCache.Resize(ltok, newKeepStrongly=1)
                 parseFileCache.Resize(ltok, newKeepStrongly=1))
