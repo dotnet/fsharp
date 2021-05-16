@@ -788,6 +788,7 @@ type IncrementalBuilder(
     let defaultTimeStamp = DateTime.UtcNow
 
     let mutable isInvalidated = false
+    let mutable projectTimeStamp = ValueNone
 
     //----------------------------------------------------
     // START OF BUILD TASK FUNCTIONS
@@ -999,10 +1000,9 @@ type IncrementalBuilder(
 
         if referencesUpdated then
             // Build is invalidated. The build must be rebuilt with the newly updated references.
-            if canTriggerInvalidation then
+            if not isInvalidated && canTriggerInvalidation then
                 isInvalidated <- true
                 invalidated.Trigger()
-            // Update timestamps anyway as to prevent continuous re-triggered of the invalidated event.
             { state with
                 stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
             }
@@ -1081,6 +1081,11 @@ type IncrementalBuilder(
         refState := state
         state
 
+    let computeProjectTimeStamp (state: IncrementalBuilderState) =
+        let t1 = MaxTimeStampInDependencies state.stampedReferencedAssemblies
+        let t2 = MaxTimeStampInDependencies state.stampedFileNames
+        max t1 t2
+
     let agent = 
         // States change only happen here when referenced assemblies' or files' timestamps have changed.
         // Handled the state changes in a thread safe manner.
@@ -1094,6 +1099,7 @@ type IncrementalBuilder(
                 else
 
                 currentState <- computeTimeStamps currentState cache
+                projectTimeStamp <- ValueSome(computeProjectTimeStamp currentState)
                 replyChannel.Reply()
                 return! loop agent
             }
@@ -1218,10 +1224,13 @@ type IncrementalBuilder(
         }
 
     member _.GetLogicalTimeStampForProject(cache) =
-        let tmpState = computeTimeStamps currentState cache
-        let t1 = MaxTimeStampInDependencies tmpState.stampedReferencedAssemblies
-        let t2 = MaxTimeStampInDependencies tmpState.stampedFileNames
-        max t1 t2
+        // Use the cached version of the project timestamp when its state was checked.
+        // Otherwise, compute a temporary state and determine the timestamp.
+        match projectTimeStamp with
+        | ValueSome stamp -> stamp
+        | _ ->
+            let tmpState = computeTimeStamps currentState cache
+            computeProjectTimeStamp tmpState
 
     member _.TryGetSlotOfFileName(filename: string) =
         // Get the slot of the given file and force it to build.
@@ -1288,7 +1297,7 @@ type IncrementalBuilder(
             let resourceManager = new Lexhelp.LexResourceManager()
 
             /// Create a type-check configuration
-            let tcConfigB, sourceFilesNew =
+            let tcConfigB, sourceFiles =
 
                 let getSwitchValue switchString =
                     match commandLineArgs |> Seq.tryFindIndex(fun s -> s.StartsWithOrdinal switchString) with
@@ -1375,7 +1384,7 @@ type IncrementalBuilder(
 
             let tcConfig = TcConfig.Create(tcConfigB, validate=true)
             let niceNameGen = NiceNameGenerator()
-            let outfile, _, assemblyName = tcConfigB.DecideNames sourceFilesNew
+            let outfile, _, assemblyName = tcConfigB.DecideNames sourceFiles
 
             // Resolve assemblies and create the framework TcImports. This is done when constructing the
             // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are

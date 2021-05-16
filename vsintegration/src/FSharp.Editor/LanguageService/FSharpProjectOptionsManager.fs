@@ -342,7 +342,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     return Some(parsingOptions, projectOptions)
   
             | true, (oldProject, parsingOptions, projectOptions) ->
-                if isProjectInvalidated checkerProvider.Checker cache oldProject project settings ct then
+                if checkerProvider.Checker.IsProjectInvalidated projectOptions || isProjectInvalidated checkerProvider.Checker cache oldProject project settings ct then
                     cache.TryRemove(projectId) |> ignore
                     return! tryComputeOptions project ct
                 else
