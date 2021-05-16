@@ -374,6 +374,7 @@ type IFileSystem =
     abstract AssemblyLoader: IAssemblyLoader
     abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> ByteMemory
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
+    abstract WriteAllTextShim: filePath: string * text: string -> unit
     abstract GetFullPathShim: fileName: string -> string
     abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
     abstract IsPathRootedShim: path: string -> bool
@@ -467,6 +468,11 @@ type DefaultFileSystem() as this =
             let fileShare = defaultArg fileShare FileShare.Delete ||| FileShare.ReadWrite
 
             new FileStream(filePath, fileMode, fileAccess, fileShare) :> Stream
+        
+        member this.WriteAllTextShim(filePath: string, text: string) =
+            use writer = (this :> IFileSystem).OpenFileForWriteShim(filePath)
+            use writer = new StreamWriter(writer)
+            writer.Write text
 
         member _.GetFullPathShim (fileName: string) = Path.GetFullPath fileName
 

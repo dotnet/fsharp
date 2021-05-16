@@ -4063,6 +4063,7 @@ FSharp.Compiler.IO.IFileSystem: System.String NormalizePathShim(System.String)
 FSharp.Compiler.IO.IFileSystem: Void CopyShim(System.String, System.String, Boolean)
 FSharp.Compiler.IO.IFileSystem: Void DirectoryDeleteShim(System.String)
 FSharp.Compiler.IO.IFileSystem: Void FileDeleteShim(System.String)
+FSharp.Compiler.IO.IFileSystem: Void WriteAllTextShim(System.String, System.String)
 FSharp.Compiler.IO.IllegalFileNameChar
 FSharp.Compiler.IO.IllegalFileNameChar: Boolean Equals(System.Exception)
 FSharp.Compiler.IO.IllegalFileNameChar: Boolean Equals(System.Object)

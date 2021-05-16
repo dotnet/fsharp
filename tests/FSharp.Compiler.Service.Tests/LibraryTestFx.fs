@@ -67,6 +67,6 @@ module SurfaceArea =
       let actual = normalize actual
       let expected = normalize (System.IO.File.ReadAllText expectedFile)
       if expected <> actual then
-          System.IO.File.WriteAllText(actualFile, actual)
+          FileSystem.WriteAllTextShim(actualFile, actual)
           failwith $"surface area defined in {expectedFile} doesn't match actual in {actualFile}. Compare the files and adjust accordingly."
     
