@@ -321,13 +321,13 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
                      yield
                         { new IProjectReference with 
-                            member x.EvaluateRawContents(_ctok) = 
+                            member x.EvaluateRawContents(ctok) = 
                               cancellable {
                                 Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
                                 let! ct = Cancellable.token()
                                 try
                                     let res = 
-                                        let work = self.GetAssemblyData(opts, userOpName + ".CheckReferencedProject("+nm+")")
+                                        let work = self.GetAssemblyData(ctok, opts, userOpName + ".CheckReferencedProject("+nm+")")
                                         Async.RunSynchronously(work, cancellationToken=ct)
                                     return res
                                 with
@@ -1016,10 +1016,10 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
              return None
       }
 
-    member _.GetAssemblyData(options, userOpName) =
+    member _.GetAssemblyData(ctok, options, userOpName) =
         async {
             try
-                let! builderOpt,_ = getOrCreateBuilder (options, userOpName)
+                let! builderOpt,_ = getOrCreateBuilderRequireCtok (ctok, options, userOpName) |> Cancellable.toAsync
                 match builderOpt with 
                 | None -> 
                     return None
