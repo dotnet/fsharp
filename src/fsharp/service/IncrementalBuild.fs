@@ -716,7 +716,7 @@ type IncrementalBuilderState =
         stampedFileNames: ImmutableArray<DateTime>
         logicalStampedFileNames: ImmutableArray<DateTime>
         stampedReferencedAssemblies: ImmutableArray<DateTime>
-        initialBoundModel: AsyncLazy<BoundModel>
+        initialBoundModel: BoundModel
         boundModels: ImmutableArray<BoundModelLazy>
         finalizedBoundModel: AsyncLazy<((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime)>
     }
@@ -745,10 +745,9 @@ and BoundModelLazy (refState: IncrementalBuilderState ref, i, syntaxTree: Syntax
         AsyncLazy(async {
             let state = !refState
 
-            let initial = state.initialBoundModel.GetValueAsync()
             let! prevBoundModel =
                 match i with
-                | 0 (* first file *) -> initial
+                | 0 (* first file *) -> async { return state.initialBoundModel }
                 | _ -> state.boundModels.[i - 1].GetPartial()
             return! TypeCheckTask partialCheck prevBoundModel syntaxTree
         })
@@ -768,67 +767,25 @@ and BoundModelLazy (refState: IncrementalBuilderState ref, i, syntaxTree: Syntax
     member this.TryGetFull() = lazyFull.TryGetValue()
 
 /// Manages an incremental build graph for the build of a single F# project
-type IncrementalBuilder(tcGlobals,
-        frameworkTcImports,
-        nonFrameworkAssemblyInputs,
-        nonFrameworkResolutions,
-        unresolvedReferences,
-        tcConfig: TcConfig,
-        projectDirectory,
-        outfile,
-        assemblyName,
-        niceNameGen: NiceNameGenerator,
-        lexResourceManager,
-        sourceFiles,
-        loadClosureOpt: LoadClosure option,
-        keepAssemblyContents,
-        keepAllBackgroundResolutions,
-        keepAllBackgroundSymbolUses,
-        enableBackgroundItemKeyStoreAndSemanticClassification,
-        enablePartialTypeChecking,
-        dependencyProviderOpt: DependencyProvider option) =
+type IncrementalBuilder(
+                        initialBoundModel: BoundModel,
+                        tcGlobals,
+                        nonFrameworkAssemblyInputs,
+                        tcConfig: TcConfig,
+                        outfile,
+                        assemblyName,
+                        lexResourceManager,
+                        sourceFiles,
+                        enablePartialTypeChecking,
+                        beforeFileChecked: Event<string>,
+                        fileChecked: Event<string>,
+                        invalidated: Event<unit>,
+                        allDependencies) =
 
-    let tcConfigP = TcConfigProvider.Constant tcConfig
     let fileParsed = new Event<string>()
-    let beforeFileChecked = new Event<string>()
-    let fileChecked = new Event<string>()
     let projectChecked = new Event<unit>()
-#if !NO_EXTENSIONTYPING
-    let importsInvalidatedByTypeProvider = new Event<string>()
-#endif
-    let defaultPartialTypeChecking = enablePartialTypeChecking
-
-    // Check for the existence of loaded sources and prepend them to the sources list if present.
-    let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (sourceFiles |>List.map (fun s -> rangeStartup, s))
-
-    // Mark up the source files with an indicator flag indicating if they are the last source file in the project
-    let sourceFiles =
-        let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)
-        ((sourceFiles, flags) ||> List.map2 (fun (m, nm) flag -> (m, nm, (flag, isExe))))
 
     let defaultTimeStamp = DateTime.UtcNow
-
-    let basicDependencies =
-        [ for (UnresolvedAssemblyReference(referenceText, _))  in unresolvedReferences do
-            // Exclude things that are definitely not a file name
-            if not(FileSystem.IsInvalidPathShim referenceText) then
-                let file = if FileSystem.IsPathRootedShim referenceText then referenceText else Path.Combine(projectDirectory, referenceText)
-                yield file
-
-          for r in nonFrameworkResolutions do
-                yield  r.resolvedPath  ]
-
-    let allDependencies =
-        [| yield! basicDependencies
-           for (_, f, _) in sourceFiles do
-                yield f |]
-
-    // For scripts, the dependency provider is already available.
-    // For projects create a fresh one for the project.
-    let dependencyProvider =
-        match dependencyProviderOpt with
-        | None -> new DependencyProvider()
-        | Some dependencyProvider -> dependencyProvider
 
     //----------------------------------------------------
     // START OF BUILD TASK FUNCTIONS
@@ -840,98 +797,6 @@ type IncrementalBuilder(tcGlobals,
     /// Timestamps of referenced assemblies are taken from the file's timestamp.
     let StampReferencedAssemblyTask (cache: TimeStampCache) (_ref, timeStamper) =
         timeStamper cache
-
-    // Link all the assemblies together and produce the input typecheck accumulator
-    let CombineImportedAssembliesTask() : Async<BoundModel> =
-      async {
-        let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
-        // Return the disposable object that cleans up
-        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
-
-        let! tcImports =
-          async {
-            try
-                let! tcImports = 
-                    Reactor.Singleton.EnqueueAndAwaitOpAsync("", "CombineImportedAssembliesTask", "", fun ctok ->
-                        // This should be safe to re-use the errorLogger here as the errorLogger will not be concurrently accessed,
-                        //     but we need to set the current running thread with this scope.
-                        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
-                        TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
-                    )
-#if !NO_EXTENSIONTYPING
-                tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu ->
-                    // When a CCU reports an invalidation, merge them together and just report a
-                    // general "imports invalidated". This triggers a rebuild.
-                    //
-                    // We are explicit about what the handler closure captures to help reason about the
-                    // lifetime of captured objects, especially in case the type provider instance gets leaked
-                    // or keeps itself alive mistakenly, e.g. via some global state in the type provider instance.
-                    //
-                    // The handler only captures
-                    //    1. a weak reference to the importsInvalidated event.
-                    //
-                    // The IncrementalBuilder holds the strong reference the importsInvalidated event.
-                    //
-                    // In the invalidation handler we use a weak reference to allow the IncrementalBuilder to
-                    // be collected if, for some reason, a TP instance is not disposed or not GC'd.
-                    let capturedImportsInvalidated = WeakReference<_>(importsInvalidatedByTypeProvider)
-                    ccu.Deref.InvalidateEvent.Add(fun msg ->
-                        match capturedImportsInvalidated.TryGetTarget() with
-                        | true, tg -> tg.Trigger msg
-                        | _ -> ()))
-#endif
-                return tcImports
-            with e ->
-                System.Diagnostics.Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" e)
-                errorLogger.Warning e
-                return frameworkTcImports
-          }
-
-        let tcInitial = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
-        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial)
-        let loadClosureErrors =
-           [ match loadClosureOpt with
-             | None -> ()
-             | Some loadClosure ->
-                for inp in loadClosure.Inputs do
-                    yield! inp.MetaCommandDiagnostics ]
-
-        let initialErrors = Array.append (Array.ofList loadClosureErrors) (errorLogger.GetDiagnostics())
-        let tcInfo =
-            {
-              tcState=tcState
-              tcEnvAtEndOfFile=tcInitial
-              topAttribs=None
-              latestCcuSigForFile=None
-              tcErrorsRev = [ initialErrors ]
-              moduleNamesDict = Map.empty
-              tcDependencyFiles = basicDependencies
-              sigNameOpt = None
-            }
-        let tcInfoExtras =
-            {
-                tcResolutionsRev=[]
-                tcSymbolUsesRev=[]
-                tcOpenDeclarationsRev=[]
-                latestImplFile=None
-                itemKeyStore = None
-                semanticClassificationKeyStore = None
-            }
-        return
-            BoundModel.Create(
-                tcConfig,
-                tcGlobals,
-                tcImports,
-                keepAssemblyContents,
-                keepAllBackgroundResolutions,
-                keepAllBackgroundSymbolUses,
-                enableBackgroundItemKeyStoreAndSemanticClassification,
-                defaultPartialTypeChecking,
-                beforeFileChecked,
-                fileChecked,
-                tcInfo,
-                async { return Some tcInfoExtras },
-                None) }
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
     let FinalizeTypeCheckTask (boundModels: ImmutableArray<BoundModel>) =
@@ -1041,9 +906,6 @@ type IncrementalBuilder(tcGlobals,
     let fileNames = sourceFiles |> Array.ofList // TODO: This should be an immutable array.
     let referencedAssemblies =  nonFrameworkAssemblyInputs |> Array.ofList // TODO: This should be an immutable array.
 
-    let createInitialBoundModelAsyncLazy () =
-        AsyncLazy(CombineImportedAssembliesTask())
-
     let createBoundModelAsyncLazy (refState: IncrementalBuilderState ref) i =
         let fileInfo = fileNames.[i]
         let syntaxTree = GetSyntaxTree fileInfo
@@ -1134,26 +996,16 @@ type IncrementalBuilder(tcGlobals,
         )
 
         if referencesUpdated then
-            // Something changed, the finalized view of the project must be invalidated.
-            // This is the only place where the initial bound model will be invalidated.
-            let count = state.stampedFileNames.Length
-            let refState = ref state
-            let state =
-                { state with
-                    stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
-                    initialBoundModel = createInitialBoundModelAsyncLazy()
-                    finalizedBoundModel = createFinalizeBoundModelAsyncLazy refState
-                    stampedFileNames = Array.init count (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
-                    logicalStampedFileNames = Array.init count (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
-                    boundModels = createBoundModelsAsyncLazy refState count
-                }
-            refState := state
-            state
+            // Build is invalidated. The build must be rebuilt with the newly updated references.
+            invalidated.Trigger()
+            // Update timestamps anyway as to prevent continuous re-triggered of the invalidated event.
+            { state with
+                stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
+            }
         else
             state
 
     let computeTimeStamps state cache =
-        // Compute stamped referenced assemblies first as a single reference assembly change will invalidate the files.
         let state = computeStampedReferencedAssemblies state cache
         let state = computeStampedFileNames state cache
         state
@@ -1169,20 +1021,15 @@ type IncrementalBuilder(tcGlobals,
     let tryGetBeforeSlotPartial (state: IncrementalBuilderState) slot =
         match slot with
         | 0 (* first file *) ->
-            match state.initialBoundModel.TryGetValue() with
-            | ValueSome initial ->
-                (initial, DateTime.MinValue)
-                |> Some
-            | _ ->
-                None
+            (initialBoundModel, DateTime.MinValue)
+            |> Some
         | _ ->
             tryGetSlotPartial state (slot - 1)
 
     let evalUpToTargetSlotPartial (state: IncrementalBuilderState) targetSlot =
         async {
             if targetSlot < 0 then
-                let! result = state.initialBoundModel.GetValueAsync()
-                return Some(result, DateTime.MinValue)
+                return Some(initialBoundModel, DateTime.MinValue)
             else
                 let! boundModel = state.boundModels.[targetSlot].GetPartial()
                 return Some(boundModel, state.stampedFileNames.[targetSlot])
@@ -1191,8 +1038,7 @@ type IncrementalBuilder(tcGlobals,
     let evalUpToTargetSlotFull (state: IncrementalBuilderState) targetSlot =
         async {
             if targetSlot < 0 then
-                let! result = state.initialBoundModel.GetValueAsync()
-                return Some(result, DateTime.MinValue)
+                return Some(initialBoundModel, DateTime.MinValue)
             else
                 let! boundModel = state.boundModels.[targetSlot].GetFull()
                 return Some(boundModel, state.stampedFileNames.[targetSlot])
@@ -1221,7 +1067,7 @@ type IncrementalBuilder(tcGlobals,
                 stampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
                 logicalStampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
                 stampedReferencedAssemblies = Array.init referencedAssemblies.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
-                initialBoundModel = createInitialBoundModelAsyncLazy()
+                initialBoundModel = initialBoundModel
                 boundModels = createBoundModelsAsyncLazy refState fileNames.Length
                 finalizedBoundModel = createFinalizeBoundModelAsyncLazy refState
             }
@@ -1270,9 +1116,7 @@ type IncrementalBuilder(tcGlobals,
 
     member _.ProjectChecked = projectChecked.Publish
 
-#if !NO_EXTENSIONTYPING
-    member _.ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider.Publish
-#endif
+    member _.Invalidated = invalidated.Publish
 
     member _.AllDependenciesDeprecated = allDependencies
 
@@ -1554,26 +1398,147 @@ type IncrementalBuilder(tcGlobals,
                   for pr in projectReferences  do
                     yield Choice2Of2 pr, (fun (cache: TimeStampCache) -> cache.GetProjectReferenceTimeStamp (pr)) ]
 
+            //
+            //
+            //
+            //
+            // Start importing
+
+            let tcConfigP = TcConfigProvider.Constant tcConfig
+            let beforeFileChecked = new Event<string>()
+            let fileChecked = new Event<string>()
+            let invalidated = new Event<unit>()
+
+            // Check for the existence of loaded sources and prepend them to the sources list if present.
+            let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (sourceFiles |>List.map (fun s -> rangeStartup, s))
+
+            // Mark up the source files with an indicator flag indicating if they are the last source file in the project
+            let sourceFiles =
+                let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)
+                ((sourceFiles, flags) ||> List.map2 (fun (m, nm) flag -> (m, nm, (flag, isExe))))
+
+            let basicDependencies =
+                [ for (UnresolvedAssemblyReference(referenceText, _))  in unresolvedReferences do
+                    // Exclude things that are definitely not a file name
+                    if not(FileSystem.IsInvalidPathShim referenceText) then
+                        let file = if FileSystem.IsPathRootedShim referenceText then referenceText else Path.Combine(projectDirectory, referenceText)
+                        yield file
+
+                  for r in nonFrameworkResolutions do
+                        yield  r.resolvedPath  ]
+
+            let allDependencies =
+                [| yield! basicDependencies
+                   for (_, f, _) in sourceFiles do
+                        yield f |]
+
+            // For scripts, the dependency provider is already available.
+            // For projects create a fresh one for the project.
+            let dependencyProvider =
+                match dependencyProvider with
+                | None -> new DependencyProvider()
+                | Some dependencyProvider -> dependencyProvider
+
+            let! initialBoundModel = 
+                cancellable {
+                  let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
+                  // Return the disposable object that cleans up
+                  use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
+
+                  let! tcImports =
+                    cancellable {
+                      try
+                          let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
+#if !NO_EXTENSIONTYPING
+                          tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu ->
+                              // When a CCU reports an invalidation, merge them together and just report a
+                              // general "imports invalidated". This triggers a rebuild.
+                              //
+                              // We are explicit about what the handler closure captures to help reason about the
+                              // lifetime of captured objects, especially in case the type provider instance gets leaked
+                              // or keeps itself alive mistakenly, e.g. via some global state in the type provider instance.
+                              //
+                              // The handler only captures
+                              //    1. a weak reference to the importsInvalidated event.
+                              //
+                              // The IncrementalBuilder holds the strong reference the importsInvalidated event.
+                              //
+                              // In the invalidation handler we use a weak reference to allow the IncrementalBuilder to
+                              // be collected if, for some reason, a TP instance is not disposed or not GC'd.
+                              let capturedImportsInvalidated = WeakReference<_>(invalidated)
+                              ccu.Deref.InvalidateEvent.Add(fun _ ->
+                                  match capturedImportsInvalidated.TryGetTarget() with
+                                  | true, tg -> tg.Trigger()
+                                  | _ -> ()))
+#endif
+                          return tcImports
+                      with e ->
+                          System.Diagnostics.Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" e)
+                          errorLogger.Warning e
+                          return frameworkTcImports
+                    }
+
+                  let tcInitial = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+                  let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial)
+                  let loadClosureErrors =
+                     [ match loadClosureOpt with
+                       | None -> ()
+                       | Some loadClosure ->
+                          for inp in loadClosure.Inputs do
+                              yield! inp.MetaCommandDiagnostics ]
+
+                  let initialErrors = Array.append (Array.ofList loadClosureErrors) (errorLogger.GetDiagnostics())
+                  let tcInfo =
+                      {
+                        tcState=tcState
+                        tcEnvAtEndOfFile=tcInitial
+                        topAttribs=None
+                        latestCcuSigForFile=None
+                        tcErrorsRev = [ initialErrors ]
+                        moduleNamesDict = Map.empty
+                        tcDependencyFiles = basicDependencies
+                        sigNameOpt = None
+                      }
+                  let tcInfoExtras =
+                      {
+                          tcResolutionsRev=[]
+                          tcSymbolUsesRev=[]
+                          tcOpenDeclarationsRev=[]
+                          latestImplFile=None
+                          itemKeyStore = None
+                          semanticClassificationKeyStore = None
+                      }
+                  return
+                      BoundModel.Create(
+                          tcConfig,
+                          tcGlobals,
+                          tcImports,
+                          keepAssemblyContents,
+                          keepAllBackgroundResolutions,
+                          keepAllBackgroundSymbolUses,
+                          enableBackgroundItemKeyStoreAndSemanticClassification,
+                          enablePartialTypeChecking,
+                          beforeFileChecked,
+                          fileChecked,
+                          tcInfo,
+                          async { return Some tcInfoExtras },
+                          None) }
+
             let builder =
-                new IncrementalBuilder(tcGlobals,
-                    frameworkTcImports,
+                new IncrementalBuilder(
+                    initialBoundModel,
+                    tcGlobals,
                     nonFrameworkAssemblyInputs,
-                    nonFrameworkResolutions,
-                    unresolvedReferences,
                     tcConfig,
-                    projectDirectory,
                     outfile,
                     assemblyName,
-                    niceNameGen,
                     resourceManager,
-                    sourceFilesNew,
-                    loadClosureOpt,
-                    keepAssemblyContents,
-                    keepAllBackgroundResolutions,
-                    keepAllBackgroundSymbolUses,
-                    enableBackgroundItemKeyStoreAndSemanticClassification,
+                    sourceFiles,
                     enablePartialTypeChecking,
-                    dependencyProvider)
+                    beforeFileChecked,
+                    fileChecked,
+                    invalidated,
+                    allDependencies)
             return Some builder
           with e ->
             errorRecoveryNoRange e

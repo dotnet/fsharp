@@ -152,10 +152,8 @@ type internal IncrementalBuilder =
       /// overall analysis results for the project will be quick.
       member ProjectChecked : IEvent<unit>
 
-#if !NO_EXTENSIONTYPING
-      /// Raised when a type provider invalidates the build.
-      member ImportsInvalidatedByTypeProvider : IEvent<string>
-#endif
+      /// Raised when the build is invalidated.
+      member Invalidated : IEvent<unit>
 
       /// The list of files the build depends on
       member AllDependenciesDeprecated : string[]

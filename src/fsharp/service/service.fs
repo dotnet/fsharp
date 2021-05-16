@@ -371,12 +371,10 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         | None -> ()
         | Some builder -> 
 
-#if !NO_EXTENSIONTYPING
             // Register the behaviour that responds to CCUs being invalidated because of type
             // provider Invalidate events. This invalidates the configuration in the build.
-            builder.ImportsInvalidatedByTypeProvider.Add (fun _ -> 
-                self.InvalidateConfiguration(options, None, userOpName))
-#endif
+            // The build can be invalidated if one of its assemblies has changed.
+            builder.Invalidated.Add (fun () -> self.InvalidateConfiguration(options, None, userOpName))
 
             // Register the callback called just before a file is typechecked by the background builder (without recording
             // errors or intellisense information).
@@ -1114,7 +1112,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             // will have the effect of releasing memory associated with the previous builder, but costs some time.
             if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
 
-                // We do not need to decrement here - it is done by disposal.
                 let newBuilderInfo = CreateOneIncrementalBuilder (ctok, options, userOpName) |> Cancellable.runWithoutCancellation
                 incrementalBuildersCache.Set(AnyCallerThread, options, newBuilderInfo)
 
