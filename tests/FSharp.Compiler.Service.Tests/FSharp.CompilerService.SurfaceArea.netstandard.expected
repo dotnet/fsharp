@@ -4126,7 +4126,7 @@ FSharp.Compiler.IO.StreamExtensions: System.String[] Stream.ReadAllLines(System.
 FSharp.Compiler.IO.StreamExtensions: System.Text.Encoding get_utf8noBOM()
 FSharp.Compiler.IO.StreamExtensions: System.Text.Encoding utf8noBOM
 FSharp.Compiler.IO.StreamExtensions: Void Stream.WriteAllLines(System.IO.Stream, System.Collections.Generic.IEnumerable`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Text.Encoding])
-FSharp.Compiler.IO.StreamExtensions: Void Stream.WriteAllText(System.IO.Stream, string)
+FSharp.Compiler.IO.StreamExtensions: Void Stream.WriteAllText(System.IO.Stream, System.String)
 FSharp.Compiler.IO.StreamExtensions: Void Stream.Write[a](System.IO.Stream, a)
 FSharp.Compiler.Interactive.Shell
 FSharp.Compiler.Interactive.Shell+CompilerInputStream: Boolean CanRead
