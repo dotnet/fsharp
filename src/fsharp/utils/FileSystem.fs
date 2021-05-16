@@ -469,7 +469,7 @@ type DefaultFileSystem() as this =
             let fileShare = defaultArg fileShare FileShare.Delete ||| FileShare.ReadWrite
 
             new FileStream(filePath, fileMode, fileAccess, fileShare) :> Stream
-       
+
         member _.GetFullPathShim (fileName: string) = Path.GetFullPath fileName
 
         member _.IsPathRootedShim (path: string) = Path.IsPathRooted path
