@@ -779,7 +779,7 @@ type IncrementalBuilder(
                         enablePartialTypeChecking,
                         beforeFileChecked: Event<string>,
                         fileChecked: Event<string>,
-                        invalidated: Event<unit>,
+                        importsInvalidated: Event<unit>,
                         allDependencies) =
 
     let fileParsed = new Event<string>()
@@ -787,8 +787,9 @@ type IncrementalBuilder(
 
     let defaultTimeStamp = DateTime.UtcNow
 
-    let mutable isInvalidated = false
-    let mutable projectTimeStamp = ValueNone
+    let mutable isImportsInvalidated = false
+
+    do importsInvalidated.Publish.Add(fun () -> isImportsInvalidated <- true)
 
     //----------------------------------------------------
     // START OF BUILD TASK FUNCTIONS
@@ -1000,17 +1001,17 @@ type IncrementalBuilder(
 
         if referencesUpdated then
             // Build is invalidated. The build must be rebuilt with the newly updated references.
-            if not isInvalidated && canTriggerInvalidation then
-                isInvalidated <- true
-                invalidated.Trigger()
+            if not isImportsInvalidated && canTriggerInvalidation then
+                isImportsInvalidated <- true
+                importsInvalidated.Trigger()
             { state with
                 stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
-            }
+            }, true
         else
-            state
+            state, false
 
     let computeTimeStamps state cache =
-        let state = computeStampedReferencedAssemblies state true cache
+        let state = computeStampedReferencedAssemblies state true cache |> fst
         let state = computeStampedFileNames state cache
         state
 
@@ -1076,7 +1077,7 @@ type IncrementalBuilder(
                 boundModels = createBoundModelsAsyncLazy refState fileNames.Length
                 finalizedBoundModel = createFinalizeBoundModelAsyncLazy refState
             }
-        let state = computeStampedReferencedAssemblies state false cache
+        let state = computeStampedReferencedAssemblies state false cache |> fst
         let state = computeStampedFileNames state cache
         refState := state
         state
@@ -1099,7 +1100,6 @@ type IncrementalBuilder(
                 else
 
                 currentState <- computeTimeStamps currentState cache
-                projectTimeStamp <- ValueSome(computeProjectTimeStamp currentState)
                 replyChannel.Reply()
                 return! loop agent
             }
@@ -1129,9 +1129,11 @@ type IncrementalBuilder(
 
     member _.ProjectChecked = projectChecked.Publish
 
-    member _.Invalidated = invalidated.Publish
+    member _.ImportsInvalidated = importsInvalidated.Publish
 
-    member _.IsInvalidated = isInvalidated
+    member _.IsImportsInvalidated = 
+        if isImportsInvalidated then true
+        else computeStampedReferencedAssemblies currentState false (TimeStampCache(defaultTimeStamp)) |> snd
 
     member _.AllDependenciesDeprecated = allDependencies
 
@@ -1224,13 +1226,8 @@ type IncrementalBuilder(
         }
 
     member _.GetLogicalTimeStampForProject(cache) =
-        // Use the cached version of the project timestamp when its state was checked.
-        // Otherwise, compute a temporary state and determine the timestamp.
-        match projectTimeStamp with
-        | ValueSome stamp -> stamp
-        | _ ->
-            let tmpState = computeTimeStamps currentState cache
-            computeProjectTimeStamp tmpState
+        let tmpState = computeTimeStamps currentState cache
+        computeProjectTimeStamp tmpState
 
     member _.TryGetSlotOfFileName(filename: string) =
         // Get the slot of the given file and force it to build.

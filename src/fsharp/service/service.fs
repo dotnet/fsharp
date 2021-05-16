@@ -254,12 +254,12 @@ module IncrementalBuilderExtensions =
             }
 
 type CheckFileCacheKey = FileName * SourceTextHash * FSharpProjectOptions
-type CheckFileCacheValue = FSharpParseFileResults * FSharpCheckFileResults * FileVersion * DateTime
+type CheckFileCacheValue = FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash * DateTime
 
 [<RequireQualifiedAccess;NoComparison;NoEquality>]
 type CheckFileCacheAgentMessage =
     | GetAsyncLazy of 
-        replyChannel: AsyncReplyChannel<AsyncLazy<FSharpCheckFileResults option>> *
+        replyChannel: AsyncReplyChannel<AsyncLazy<CheckFileCacheValue option>> *
         parseResults: FSharpParseFileResults *
         sourceText: ISourceText *
         fileName: string *
@@ -385,7 +385,7 @@ type BackgroundCompiler(
                 // Register the behaviour that responds to CCUs being invalidated because of type
                 // provider Invalidate events. This invalidates the configuration in the build.
                 // The build can be invalidated if one of its assemblies has changed.
-                builder.Invalidated.Add (fun () -> self.InvalidateConfiguration(options, None, userOpName))
+                builder.ImportsInvalidated.Add (fun () -> self.InvalidateConfiguration(options, None, userOpName))
 
             // Register the callback called just before a file is typechecked by the background builder (without recording
             // errors or intellisense information).
@@ -471,30 +471,16 @@ type BackgroundCompiler(
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseFileInProjectCache. Most recently used cache for parsing files.
     let parseFileCache = MruCache<ParseCacheLockToken,(_ * SourceTextHash * _),_>(parseFileCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
 
-    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileInProjectCachePossiblyStale 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileInProjectCache
-    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileAsyncLazyInProjectCache
     //
     /// Cache which holds recently seen type-checks.
     /// This cache may hold out-of-date entries, in two senses
     ///    - there may be a more recent antecedent state available because the background build has made it available
     ///    - the source for the file may have changed
-    
-    let checkFileInProjectCachePossiblyStale = 
-        MruCache<ParseCacheLockToken,string * FSharpProjectOptions, FSharpParseFileResults * FSharpCheckFileResults * int>
-            (keepStrongly=checkFileInProjectCacheSize,
-             areSame=AreSameForChecking2,
-             areSimilar=AreSubsumable2)
 
     // Also keyed on source. This can only be out of date if the antecedent is out of date
-    let checkFileInProjectCache = 
-        MruCache<ParseCacheLockToken, CheckFileCacheKey, CheckFileCacheValue>
-            (keepStrongly=checkFileInProjectCacheSize,
-             areSame=AreSameForChecking3,
-             areSimilar=AreSubsumable3)
-
-    let checkFileAsyncLazyInProjectCache =
-        MruCache<AnyCallerThreadToken, CheckFileCacheKey, AsyncLazy<FSharpCheckFileResults option>>
+    let checkFileInProjectCache =
+        MruCache<AnyCallerThreadToken, CheckFileCacheKey, AsyncLazy<CheckFileCacheValue option>>
             (keepStrongly=checkFileInProjectCacheSize,
              areSame=AreSameForChecking3,
              areSimilar=AreSubsumable3)
@@ -512,13 +498,13 @@ type BackgroundCompiler(
                                                                 sourceText,
                                                                 fileName,
                                                                 options,
-                                                                fileVersion,
+                                                                _fileVersion,
                                                                 builder,
                                                                 tcPrior,
                                                                 tcInfo,
                                                                 creationDiags) ->
                         let key = (fileName, sourceText.GetHashCode() |> int64, options)
-                        match checkFileAsyncLazyInProjectCache.TryGet(AnyCallerThread, key) with
+                        match checkFileInProjectCache.TryGet(AnyCallerThread, key) with
                         | Some res -> replyChannel.Reply(res)
                         | _ ->
                             let res =
@@ -529,13 +515,12 @@ type BackgroundCompiler(
                                             sourceText,
                                             fileName,
                                             options,
-                                            fileVersion,
                                             builder,
                                             tcPrior,
                                             tcInfo,
                                             creationDiags)
                                 })
-                            checkFileAsyncLazyInProjectCache.Set(AnyCallerThread, key, res)
+                            checkFileInProjectCache.Set(AnyCallerThread, key, res)
                             replyChannel.Reply(res)
             }
         let agent = new MailboxProcessor<_>(loop)
@@ -545,16 +530,6 @@ type BackgroundCompiler(
     static let mutable actualParseFileCount = 0
 
     static let mutable actualCheckFileCount = 0
-
-    member _.RecordCheckFileInProjectResults(filename,options,parsingOptions,parseResults,fileVersion,priorTimeStamp,checkAnswer,hash) =        
-        match checkAnswer with 
-        | None -> ()
-        | Some typedResults -> 
-            actualCheckFileCount <- actualCheckFileCount + 1
-            parseCacheLock.AcquireLock (fun ltok -> 
-                checkFileInProjectCachePossiblyStale.Set(ltok, (filename,options),(parseResults,typedResults,fileVersion))  
-                checkFileInProjectCache.Set(ltok, (filename, hash, options),(parseResults,typedResults,fileVersion,priorTimeStamp))
-                parseFileCache.Set(ltok, (filename, hash, parsingOptions), parseResults))
 
     member bc.ImplicitlyStartCheckProjectInBackground(options, userOpName) =        
         if implicitlyStartBackgroundWork then 
@@ -596,99 +571,71 @@ type BackgroundCompiler(
         }
 
     member _.GetCachedCheckFileResult(builder: IncrementalBuilder, filename, sourceText: ISourceText, options) =
-        let hash = sourceText.GetHashCode() |> int64
+        async {
+            let hash = sourceText.GetHashCode() |> int64
+            let key = (filename, hash, options)
+            let cachedResults = checkFileInProjectCache.TryGet(AnyCallerThread, key)
 
-        // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
-        let cachedResults = parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.TryGet(ltok, (filename, hash, options)))
-
-        let result =
-            match cachedResults with 
-            | Some (parseResults, checkResults,_,priorTimeStamp) 
-                    when 
-                    (match builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename with 
-                    | None -> false
-                    | Some(tcPrior) -> 
-                        tcPrior.TimeStamp = priorTimeStamp &&
-                        builder.AreCheckResultsBeforeFileInProjectReady(filename)) -> 
-                Some (parseResults,checkResults)
+            match cachedResults with
+            | Some cachedResults ->
+                match! cachedResults.GetValueAsync() with
+                | Some (parseResults, checkResults,_,priorTimeStamp) 
+                        when 
+                        (match builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename with 
+                        | None -> false
+                        | Some(tcPrior) -> 
+                            tcPrior.TimeStamp = priorTimeStamp &&
+                            builder.AreCheckResultsBeforeFileInProjectReady(filename)) -> 
+                    return Some (parseResults,checkResults)
+                | _ ->
+                    checkFileInProjectCache.RemoveAnySimilar(AnyCallerThread, key)
+                    return None
             | _ ->
-                None
+                return None
+        }
 
-        if result.IsNone then
-            parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.RemoveAnySimilar(ltok, (filename, hash, options)))
-
-        result
-
-    /// 1. Repeatedly try to get cached file check results or get file "lock". 
-    /// 
-    /// 2. If it've got cached results, returns them.
-    ///
-    /// 3. If it've not got the lock for 1 minute, returns `FSharpCheckFileAnswer.Aborted`.
-    ///
-    /// 4. Type checks the file.
-    ///
-    /// 5. Records results in `BackgroundCompiler` caches.
-    ///
-    /// 6. Starts whole project background compilation.
-    ///
-    /// 7. Releases the file "lock".
     member private bc.CheckOneFileImplAux
         (parseResults: FSharpParseFileResults,
          sourceText: ISourceText,
          fileName: string,
          options: FSharpProjectOptions,
-         fileVersion: int,
          builder: IncrementalBuilder,
          tcPrior: PartialCheckResults,
          tcInfo: TcInfo,
-         creationDiags: FSharpDiagnostic[]) : Async<FSharpCheckFileResults option> = 
+         creationDiags: FSharpDiagnostic[]) : Async<CheckFileCacheValue option> = 
 
-        let cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) 
-        // fast path
-        match cachedResults with
-        | Some(_, checkResults) -> async { return Some checkResults }
-        | _ ->
-   
         let work =
             cancellable {
                 try
-                    let cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) 
-            
-                    match cachedResults with
-                    | Some (_, checkResults) -> return Some checkResults
-                    | None ->
-                            let hash: SourceTextHash = sourceText.GetHashCode() |> int64
-                            // Get additional script #load closure information if applicable.
-                            // For scripts, this will have been recorded by GetProjectOptionsFromScript.
-                            let tcConfig = tcPrior.TcConfig
-                            let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
+                    // Get additional script #load closure information if applicable.
+                    // For scripts, this will have been recorded by GetProjectOptionsFromScript.
+                    let tcConfig = tcPrior.TcConfig
+                    let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
 
-                            let! checkAnswer = 
-                                FSharpCheckFileResults.CheckOneFile
-                                    (parseResults,
-                                        sourceText,
-                                        fileName,
-                                        options.ProjectFileName, 
-                                        tcConfig,
-                                        tcPrior.TcGlobals,
-                                        tcPrior.TcImports, 
-                                        tcInfo.tcState,
-                                        tcInfo.moduleNamesDict,
-                                        loadClosure,
-                                        tcInfo.TcErrors,
-                                        options.IsIncompleteTypeCheckEnvironment, 
-                                        options, 
-                                        builder, 
-                                        Array.ofList tcInfo.tcDependencyFiles, 
-                                        creationDiags, 
-                                        parseResults.Diagnostics, 
-                                        keepAssemblyContents,
-                                        suggestNamesForErrors)
-                            let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
-                            AsyncLazy.SetPreferredUILang tcConfig.preferredUiLang
-                            reactor.SetPreferredUILang tcConfig.preferredUiLang
-                            bc.RecordCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, hash) 
-                            return Some checkAnswer
+                    let! checkAnswer = 
+                        FSharpCheckFileResults.CheckOneFile
+                            (parseResults,
+                                sourceText,
+                                fileName,
+                                options.ProjectFileName, 
+                                tcConfig,
+                                tcPrior.TcGlobals,
+                                tcPrior.TcImports, 
+                                tcInfo.tcState,
+                                tcInfo.moduleNamesDict,
+                                loadClosure,
+                                tcInfo.TcErrors,
+                                options.IsIncompleteTypeCheckEnvironment, 
+                                options, 
+                                builder, 
+                                Array.ofList tcInfo.tcDependencyFiles, 
+                                creationDiags, 
+                                parseResults.Diagnostics, 
+                                keepAssemblyContents,
+                                suggestNamesForErrors)
+                    AsyncLazy.SetPreferredUILang tcConfig.preferredUiLang
+                    reactor.SetPreferredUILang tcConfig.preferredUiLang
+                    return Some(parseResults, checkAnswer, sourceText.GetHashCode() |> int64, tcPrior.TimeStamp)
                 with
                 | :? OperationCanceledException ->
                     return None
@@ -715,18 +662,21 @@ type BackgroundCompiler(
          creationDiags: FSharpDiagnostic[]) =
 
          async {
-            let! lazyCheckFile =
-                foregroundCheckFileCacheAgent.PostAndAsyncReply(fun replyChannel ->
-                   CheckFileCacheAgentMessage.GetAsyncLazy(replyChannel, parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
-                )
+            match! bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) with
+            | Some (_, results) -> return FSharpCheckFileAnswer.Succeeded results
+            | _ ->
+                let! lazyCheckFile =
+                    foregroundCheckFileCacheAgent.PostAndAsyncReply(fun replyChannel ->
+                       CheckFileCacheAgentMessage.GetAsyncLazy(replyChannel, parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
+                    )
 
-            match! lazyCheckFile.GetValueAsync() with
-            | Some results -> return FSharpCheckFileAnswer.Succeeded results
-            | _ -> 
-                // Remove the result from the cache as it wasn't successful.
-                let hash: SourceTextHash = sourceText.GetHashCode() |> int64
-                checkFileAsyncLazyInProjectCache.RemoveAnySimilar(AnyCallerThread, (fileName, hash, options))
-                return FSharpCheckFileAnswer.Aborted
+                match! lazyCheckFile.GetValueAsync() with
+                | Some (_, results, _, _) -> return FSharpCheckFileAnswer.Succeeded results
+                | _ -> 
+                    // Remove the result from the cache as it wasn't successful.
+                    let hash: SourceTextHash = sourceText.GetHashCode() |> int64
+                    checkFileInProjectCache.RemoveAnySimilar(AnyCallerThread, (fileName, hash, options))
+                    return FSharpCheckFileAnswer.Aborted
          }
 
     /// Type-check the result obtained by parsing, but only if the antecedent type checking context is available. 
@@ -743,7 +693,7 @@ type BackgroundCompiler(
 
                             match builderOpt with
                             | Some builder ->
-                                match bc.GetCachedCheckFileResult(builder, filename, sourceText, options) with
+                                match! bc.GetCachedCheckFileResult(builder, filename, sourceText, options) with
                                 | Some (_, checkResults) -> return Some (builder, creationDiags, Some (FSharpCheckFileAnswer.Succeeded checkResults))
                                 | _ -> return Some (builder, creationDiags, None)
                             | _ -> return None // the builder wasn't ready
@@ -787,7 +737,7 @@ type BackgroundCompiler(
                     | None -> return FSharpCheckFileAnswer.Succeeded (FSharpCheckFileResults.MakeEmpty(filename, creationDiags, keepAssemblyContents))
                     | Some builder -> 
                         // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
-                        let cachedResults = bc.GetCachedCheckFileResult(builder, filename, sourceText, options)
+                        let! cachedResults = bc.GetCachedCheckFileResult(builder, filename, sourceText, options)
 
                         match cachedResults with
                         | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
@@ -835,7 +785,7 @@ type BackgroundCompiler(
                         return Some(parseResults, FSharpCheckFileAnswer.Aborted)
 
                     | Some builder -> 
-                        let cachedResults = bc.GetCachedCheckFileResult(builder, filename, sourceText, options)
+                        let! cachedResults = bc.GetCachedCheckFileResult(builder, filename, sourceText, options)
 
                         match cachedResults with 
                         | Some (parseResults, checkResults) -> 
@@ -975,14 +925,23 @@ type BackgroundCompiler(
 
     /// Try to get recent approximate type check results for a file. 
     member _.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, sourceText: ISourceText option, _userOpName: string) =
-        parseCacheLock.AcquireLock (fun ltok -> 
-            match sourceText with 
-            | Some sourceText -> 
-                let hash = sourceText.GetHashCode() |> int64
-                match checkFileInProjectCache.TryGet(ltok,(filename,hash,options)) with
-                | Some (a,b,c,_) -> Some (a,b,c)
-                | None -> checkFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options))
-            | None -> checkFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options)))
+        match sourceText with 
+        | Some sourceText -> 
+            let hash = sourceText.GetHashCode() |> int64
+            let resOpt = checkFileInProjectCache.TryGet(AnyCallerThread,(filename,hash,options))
+            match resOpt with
+            | Some res ->
+                match res.TryGetValue() with
+                | ValueSome resOpt -> 
+                    match resOpt with
+                    | Some(a,b,c,_) -> Some(a,b,c)
+                    | None -> None
+                | ValueNone ->
+                    None
+            | None ->
+                None
+        | None -> 
+            None
 
     /// Parse and typecheck the whole project (the implementation, called recursively as project graph is evaluated)
     member private _.ParseAndCheckProjectImpl(options, userOpName) =
@@ -1168,6 +1127,11 @@ type BackgroundCompiler(
             }
         ))        
 
+    member _.IsProjectInvalidated(options: FSharpProjectOptions) =
+        match tryGetBuilder options with
+        | Some (Some builder, _) -> builder.IsImportsInvalidated
+        | _ -> true
+
     member _.StopBackgroundCompile   () =
         reactor.SetBackgroundOp(None)
 
@@ -1191,17 +1155,10 @@ type BackgroundCompiler(
 
     member _.CurrentQueueLength = reactor.CurrentQueueLength
 
-    member _.IsProjectInvalidated(options: FSharpProjectOptions) =
-        match tryGetBuilder options with
-        | Some (Some builder, _) -> builder.IsInvalidated
-        | _ -> true
-
     member _.ClearCachesAsync (userOpName) =
         reactor.EnqueueAndAwaitOpAsync (userOpName, "ClearCachesAsync", "", fun ctok -> 
             parseCacheLock.AcquireLock (fun ltok -> 
-                checkFileAsyncLazyInProjectCache.Clear AnyCallerThread
-                checkFileInProjectCachePossiblyStale.Clear ltok
-                checkFileInProjectCache.Clear ltok
+                checkFileInProjectCache.Clear(AnyCallerThread)
                 parseFileCache.Clear(ltok))
             incrementalBuildersCache.Clear(AnyCallerThread)
             frameworkTcImportsCache.Clear ctok
@@ -1211,9 +1168,7 @@ type BackgroundCompiler(
     member _.DownsizeCaches(userOpName) =
         reactor.EnqueueAndAwaitOpAsync (userOpName, "DownsizeCaches", "", fun ctok -> 
             parseCacheLock.AcquireLock (fun ltok -> 
-                checkFileAsyncLazyInProjectCache.Resize(AnyCallerThread, newKeepStrongly=1)
-                checkFileInProjectCachePossiblyStale.Resize(ltok, newKeepStrongly=1)
-                checkFileInProjectCache.Resize(ltok, newKeepStrongly=1)
+                checkFileInProjectCache.Resize(AnyCallerThread, newKeepStrongly=1)
                 parseFileCache.Resize(ltok, newKeepStrongly=1))
             incrementalBuildersCache.Resize(AnyCallerThread, newKeepStrongly=1, newKeepMax=1)
             frameworkTcImportsCache.Downsize(ctok)

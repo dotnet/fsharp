@@ -27,8 +27,6 @@ open System.Runtime.CompilerServices
 [<AutoOpen>]
 module private FSharpProjectOptionsHelpers =
 
-    type FSharpProjectCache = ConcurrentDictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>
-
     let mapCpsProjectToSite(project:Project, cpsCommandLineOptions: IDictionary<ProjectId, string[] * string[]>) =
         let sourcePaths, referencePaths, options =
             match cpsCommandLineOptions.TryGetValue(project.Id) with
@@ -58,45 +56,56 @@ module private FSharpProjectOptionsHelpers =
     let hasProjectVersionChanged (oldProject: Project) (newProject: Project) =
         oldProject.Version <> newProject.Version
 
-    let hasDependentVersionChanged (checker: FSharpChecker) (cache: FSharpProjectCache) (oldProject: Project) (newProject: Project) (ct: CancellationToken) =
+    let hasDependentVersionChanged (checker: FSharpChecker) (options: FSharpProjectOptions) (oldProject: Project) (newProject: Project) (ct: CancellationToken) =
         let oldProjectMetadataRefs = oldProject.MetadataReferences
         let newProjectMetadataRefs = newProject.MetadataReferences
 
         if oldProjectMetadataRefs.Count <> newProjectMetadataRefs.Count then true
         else
 
+        let mutable mustCheckFcsInvalidation = false
+
         let oldProjectRefs = oldProject.ProjectReferences
         let newProjectRefs = newProject.ProjectReferences
-        oldProjectRefs.Count() <> newProjectRefs.Count() ||
-        (oldProjectRefs, newProjectRefs)
-        ||> Seq.exists2 (fun p1 p2 ->
-            ct.ThrowIfCancellationRequested()
-            let doesProjectIdDiffer = p1.ProjectId <> p2.ProjectId
-            let p1 = oldProject.Solution.GetProject(p1.ProjectId)
-            let p2 = newProject.Solution.GetProject(p2.ProjectId)
-            doesProjectIdDiffer || 
-            (
-                if p1.Language = LanguageNames.FSharp then
-                    if p1.Version <> p2.Version then
-                        true
-                    else
-                        // At the moment, Roslyn's view of F# dependent project references must not cause an invalidation
-                        // because the internals of FCS's state relies on the file-system.
-                        // Therefore, check if the project is invalidated by FCS's view of the world.
-                        match cache.TryGetValue p1.Id with
-                        | true, (_, _, options) -> checker.IsProjectInvalidated options
-                        | _ -> false // return false if it's not in the cache as it will work itself out in later calls to FCS
-                else
-                    let v1 = p1.GetDependentVersionAsync(ct).Result
-                    let v2 = p2.GetDependentVersionAsync(ct).Result
-                    v1 <> v2
-            )
-        )
 
-    let isProjectInvalidated checker cache (oldProject: Project) (newProject: Project) (settings: EditorOptions) ct =
+        let res =
+            oldProjectRefs.Count() <> newProjectRefs.Count() ||
+            (oldProjectRefs, newProjectRefs)
+            ||> Seq.exists2 (fun p1 p2 ->
+                ct.ThrowIfCancellationRequested()
+                let doesProjectIdDiffer = p1.ProjectId <> p2.ProjectId
+                let p1 = oldProject.Solution.GetProject(p1.ProjectId)
+                let p2 = newProject.Solution.GetProject(p2.ProjectId)
+                doesProjectIdDiffer || 
+                (
+                    if p1.Language = LanguageNames.FSharp then
+                        if p1.Version <> p2.Version then
+                            true
+                        else
+                            let v1 = p1.GetDependentVersionAsync(ct).Result
+                            let v2 = p2.GetDependentVersionAsync(ct).Result
+                            if v1 <> v2 then
+                                mustCheckFcsInvalidation <- true
+                            false
+                    else
+                        let v1 = p1.GetDependentVersionAsync(ct).Result
+                        let v2 = p2.GetDependentVersionAsync(ct).Result
+                        v1 <> v2
+                )
+            )
+
+        if not res && mustCheckFcsInvalidation then
+            // At the moment, Roslyn's view of F# dependent project references must not cause an invalidation
+            // because the internals of FCS's state relies on the file-system.
+            // Therefore, check if the project is invalidated by FCS's view of the world.
+            checker.IsProjectInvalidated options
+        else
+            res
+
+    let isProjectInvalidated checker options (oldProject: Project) (newProject: Project) (settings: EditorOptions) ct =
         let hasProjectVersionChanged = hasProjectVersionChanged oldProject newProject
         if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
-            hasProjectVersionChanged || hasDependentVersionChanged checker cache oldProject newProject ct
+            hasProjectVersionChanged || hasDependentVersionChanged checker options oldProject newProject ct
         else
             hasProjectVersionChanged
 
@@ -116,7 +125,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
 
     let legacyProjectSites = ConcurrentDictionary<ProjectId, IProjectSite>()
 
-    let cache = FSharpProjectCache()
+    let cache = ConcurrentDictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
     let singleFileCache = ConcurrentDictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
 
     // This is used to not constantly emit the same compilation.
@@ -292,6 +301,8 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                                 )
                         )
 
+                let! ver = project.GetDependentVersionAsync(ct) |> Async.AwaitTask
+
                 let projectOptions =
                     {
                         ProjectFileName = projectSite.ProjectFileName
@@ -304,7 +315,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                         LoadTime = projectSite.LoadTime
                         UnresolvedReferences = None
                         OriginalLoadReferences = []
-                        Stamp = Some(int64 (project.Version.GetHashCode()))
+                        Stamp = Some(int64 (ver.GetHashCode()))
                     }
 
                 // This can happen if we didn't receive the callback from HandleCommandLineChanges yet.
@@ -333,7 +344,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             lastSuccessfulCompilations.TryRemove(pair.Key) |> ignore
                     )
 
-                    checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompile = false, userOpName = "computeOptions")
+                    checkerProvider.Checker.ClearCache([projectOptions])
 
                     let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
@@ -342,7 +353,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     return Some(parsingOptions, projectOptions)
   
             | true, (oldProject, parsingOptions, projectOptions) ->
-                if checkerProvider.Checker.IsProjectInvalidated projectOptions || isProjectInvalidated checkerProvider.Checker cache oldProject project settings ct then
+                if isProjectInvalidated checkerProvider.Checker projectOptions oldProject project settings ct then
                     cache.TryRemove(projectId) |> ignore
                     return! tryComputeOptions project ct
                 else
