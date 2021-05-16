@@ -37,7 +37,6 @@ let B = File1.A + File1.A"""
 
         member _.AssemblyLoader = DefaultAssemblyLoader() :> IAssemblyLoader
         // Implement the service to open files for reading and writing
-        
         member _.OpenFileForReadShim(filePath, ?useMemoryMappedFile: bool, ?shouldShadowCopy: bool) =
             let shouldShadowCopy = defaultArg shouldShadowCopy false
             let useMemoryMappedFile = defaultArg useMemoryMappedFile false
