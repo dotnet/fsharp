@@ -59,7 +59,7 @@ let internal identsAndRanges (input: ParsedInput) =
     | ParsedInput.SigFile _ -> []
 
 let internal parseAndExtractRanges code =
-    let file = "Test"
+    let file = "Test.fs"
     let result = parseSourceCode (file, code)
     result |> identsAndRanges
 

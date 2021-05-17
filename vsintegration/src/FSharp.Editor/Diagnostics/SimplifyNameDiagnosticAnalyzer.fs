@@ -34,6 +34,9 @@ type internal SimplifyNameDiagnosticAnalyzer
     interface IFSharpSimplifyNameDiagnosticAnalyzer with
 
         member _.AnalyzeSemanticsAsync(descriptor, document: Document, cancellationToken: CancellationToken) =
+            if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then Tasks.Task.FromResult(ImmutableArray.Empty)
+            else
+
             asyncMaybe {
                 do! Option.guard document.FSharpOptions.CodeFixes.SimplifyName
                 do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)

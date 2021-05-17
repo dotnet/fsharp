@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
-        <target state="new">The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</target>
+        <target state="translated">'AssemblyKeyNameAttribute' kullanım dışı bırakıldı. Bunun yerine 'AssemblyKeyFileAttribute' kullanın.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerSigningUnsupportedOnThisPlatform">
         <source>Key container signing is not supported on this platform.</source>
-        <target state="new">Key container signing is not supported on this platform.</target>
+        <target state="translated">Anahtar kapsayıcısı imzalama bu platformda desteklenmiyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="csAvailableOverloads">
@@ -247,6 +247,11 @@
         <target state="translated">{0} uzaklığında başlayan kaynak üst bilgisi hatalı biçimlendirilmiş.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAllSigs">
+        <source>Print the inferred interfaces of all compilation files to associated signature files</source>
+        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Dil sürümü için izin verilen değerleri görüntüleyin, dil sürümünü 'en son' veya 'önizleme' örneklerindeki gibi belirtin</target>
@@ -332,9 +337,14 @@
         <target state="translated">Bu betik için .NET SDK belirlenemedi. Betik 'global.json' kullanan bir dizindeyse, ilgili .NET SDK'nın yüklü olduğundan emin olun. '{1}' dizinindeki '{0} --version' çıkışı: '{2}' ve çıkış kodu: '{3}'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedNoHost">
+        <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
+        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
-        <target state="new">The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</target>
+        <target state="translated">Bu betik için .NET SDK belirlenemedi. Betik 'global.json' kullanan bir dizindeyse, ilgili .NET SDK'nın yüklü olduğundan emin olun. Beklenmeyen hata '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -2779,7 +2789,7 @@
       </trans-unit>
       <trans-unit id="tcMemberKindPropertyGetSetNotExpected">
         <source>SynMemberKind.PropertyGetSet only expected in parse trees</source>
-        <target state="needs-review-translation">MemberKind.PropertyGetSet yalnızca ayrıştırma ağaçlarında beklenir</target>
+        <target state="translated">SynMemberKind.PropertyGetSet yalnızca ayrıştırma ağaçlarında beklenir</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainValues">

@@ -12,6 +12,11 @@
         <target state="translated">新增缺少的 'fun' 關鍵字</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingInstanceMemberParameter">
+        <source>Add missing instance member parameter</source>
+        <target state="new">Add missing instance member parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">新增 'new' 關鍵字</target>
@@ -19,7 +24,7 @@
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
         <source>Add type annotation</source>
-        <target state="new">Add type annotation</target>
+        <target state="translated">新增型別註解</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -29,7 +34,7 @@
       </trans-unit>
       <trans-unit id="ConvertToNotEqualsEqualityExpression">
         <source>Use '&lt;&gt;' for inequality check</source>
-        <target state="new">Use '&lt;&gt;' for inequality check</target>
+        <target state="translated">使用 '&lt;&gt;' 進行不等式檢查</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
@@ -95,6 +100,11 @@
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">移除 'return!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnusedBinding">
+        <source>Remove unused binding</source>
+        <target state="new">Remove unused binding</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveYield">
@@ -245,6 +255,11 @@
       <trans-unit id="UseMutationWhenValueIsMutable">
         <source>Use '&lt;-' to mutate value</source>
         <target state="translated">使用 '&lt;-' 來變動值</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseNameof">
+        <source>Use 'nameof'</source>
+        <target state="new">Use 'nameof'</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">
