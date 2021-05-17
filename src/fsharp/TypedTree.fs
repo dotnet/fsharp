@@ -4306,9 +4306,17 @@ type DecisionTreeTest =
     override x.ToString() = sprintf "%+A" x 
 
 /// A target of a decision tree. Can be thought of as a little function, though is compiled as a local block. 
+///   -- boundVals - The values bound at the target, matching the valuesin the TDSuccess
+///   -- targetExpr - The expression to evaluate if we branch to the target
+///   -- debugPoint - The debug point for the target
+///   -- isStateVarFlags - Indicates which, if any, of the values are repesents as state machine variables
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type DecisionTreeTarget = 
-    | TTarget of Val list * Expr * DebugPointForTarget * isStateVarFlags: bool list option
+    | TTarget of 
+        boundVals: Val list *
+        targetExpr: Expr *
+        debugPoint: DebugPointForTarget *
+        isStateVarFlags: bool list option
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4321,9 +4329,15 @@ type DecisionTreeTarget =
 type Bindings = Binding list
 
 /// A binding of a variable to an expression, as in a `let` binding or similar
+///  -- val: The value being bound
+///  -- expr: The expression to execute to get the value
+///  -- debugPoint: The debug point for the binding
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type Binding = 
-    | TBind of var: Val * expr: Expr * debugPoint: DebugPointAtBinding
+    | TBind of
+        var: Val *
+        expr: Expr *
+        debugPoint: DebugPointAtBinding
 
     /// The value being bound
     member x.Var = (let (TBind(v, _, _)) = x in v)
@@ -4343,7 +4357,10 @@ type Binding =
 /// integer indicates which choice in the target set is being selected by this item. 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type ActivePatternElemRef = 
-    | APElemRef of activePatternInfo: ActivePatternInfo * activePatternVal: ValRef * caseIndex: int 
+    | APElemRef of
+        activePatternInfo: ActivePatternInfo *
+        activePatternVal: ValRef *
+        caseIndex: int 
 
     /// Get the full information about the active pattern being referred to
     member x.ActivePatternInfo = (let (APElemRef(info, _, _)) = x in info)
@@ -4364,7 +4381,10 @@ type ActivePatternElemRef =
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type ValReprInfo = 
     /// ValReprInfo (typars, args, result)
-    | ValReprInfo of typars: TyparReprInfo list * args: ArgReprInfo list list * result: ArgReprInfo 
+    | ValReprInfo of
+        typars: TyparReprInfo list *
+        args: ArgReprInfo list list *
+        result: ArgReprInfo 
 
     /// Get the extra information about the arguments for the value
     member x.ArgInfos = (let (ValReprInfo(_, args, _)) = x in args)
@@ -4511,7 +4531,6 @@ type Expr =
 
     // Object expressions: A closure that implements an interface or a base type. 
     // The base object type might be a delegate type. 
-    // stateVars are extra fields of the object and only populated during codegen.
     | Obj of 
         unique: Unique * 
         objTy: TType * (* <-- NOTE: specifies type parameters for base type *)

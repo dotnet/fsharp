@@ -69,7 +69,11 @@ open FSharp.Compiler.TypeRelations
 [<RequireQualifiedAccess>]
 type Resumable =
       | None
-      | ResumableExpr of checking: bool * allowed: bool
+      /// Indicates we are expecting resumable code (the body of a ResumableCode delegate or
+      /// the body of the MoveNextMethod for a state machine)
+      ///   -- allowed: are we inside the 'then' branch of an 'if __useResumableCode then ...' 
+      ///      for a ResumableCode delegate.
+      | ResumableExpr of allowed: bool
 
 type env = 
     { 
@@ -988,7 +992,8 @@ and CheckExprLinear (cenv: cenv) (env: env) expr (context: PermitByRefExpr) (con
         // not a linear expression
         contf (CheckExpr cenv env expr context)
 
-/// Check an expression, given information about the position of the expression
+/// Check a resumable code expression (the body of a ResumableCode delegate or
+/// the body of the MoveNextMethod for a state machine)
 and TryCheckResumableCodeConstructs cenv env expr : bool =    
     let g = cenv.g
 
@@ -996,12 +1001,13 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
     | Resumable.None ->
         CheckNoResumableStmtConstructs cenv env expr
         false
-    | Resumable.ResumableExpr (checking, allowed) ->
+    | Resumable.ResumableExpr allowed ->
         match expr with
         | IfUseResumableStateMachinesExpr g (thenExpr, elseExpr) ->
-            CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (checking, true) } thenExpr 
+            CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr true } thenExpr 
             CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } elseExpr 
             true
+
         | ResumableEntryMatchExpr g (noneBranchExpr, someVar, someBranchExpr, _rebuild) ->
             if not allowed then
                 errorR(Error(FSComp.SR.tcInvalidResumableConstruct("__resumableEntry"), expr.Range))
@@ -1009,46 +1015,21 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
             BindVal cenv env someVar
             CheckExprNoByrefs cenv env someBranchExpr
             true
+
         | ResumeAtExpr g pcExpr  ->
             if not allowed then
                 errorR(Error(FSComp.SR.tcInvalidResumableConstruct("__resumeAt"), expr.Range))
             CheckExprNoByrefs cenv env pcExpr
             true
-        | NewDelegateExpr g _ 
-        | Expr.TyLambda _ 
-        | Expr.Lambda _ -> 
-            let rec strip env e = 
-                match stripExpr e with 
-                | Expr.TyLambda _ 
-                | Expr.Lambda _ -> 
-                    let tps, vs, bodyExpr, _rty = stripTopLambda (expr, tyOfExpr g expr)
-                    let env = BindTypars g env tps 
-                    let env = BindArgVals env (List.concat vs)
-                    strip env bodyExpr
-                | NewDelegateExpr g (_, vs, bodyExpr, _, _) ->
-                    let env = BindArgVals env (List.concat vs)
-                    strip env bodyExpr
-                | _ -> 
-                    let env =
-                        let ety = tyOfExpr g e
-                        // partial lambdas where the return is still a ResumableCodeBlock
-                        // e.g. the lambda in "sync.Delay (fun () -> sync.Return 1)"
-                        if isFSharpDelegateTy g ety || isFunTy g ety then
-                            env
-                        else
-                            { env with resumableCode = Resumable.ResumableExpr (false, allowed) }
-                    CheckExprNoByrefs cenv env e
-            strip env expr
-            true
 
         | ResumableCodeInvoke g (_, f, args, _, _) ->
-            CheckExprNoByrefs cenv env f
+            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } f
             for arg in args do
-                CheckExprPermitByRefLike cenv env arg |> ignore
+                CheckExprPermitByRefLike cenv { env with resumableCode = Resumable.None } arg |> ignore
             true
 
         | SequentialResumableCode g (e1, e2, _m, _recreate) ->
-            CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (false,  allowed) }e1
+            CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr allowed }e1
             CheckExprNoByrefs cenv env e2
             true
 
@@ -1091,25 +1072,17 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
             CheckExprNoByrefs cenv env bodyExpr
             true
         
-        // LetRec bindings may not appear as part of resumable code (TODO: lift this restriction)
+        // LetRec bindings may not appear as part of resumable code (more careful work is needed to make them compilable)
         | Expr.LetRec(_bindings, bodyExpr, _range, _frees) when allowed -> 
             errorR(Error(FSComp.SR.tcResumableCodeContainsLetRec(), expr.Range))
             CheckExprNoByrefs cenv env bodyExpr
             true
-        
-        //// First class use of a ResumableCode parameter is allowed (check is by name, the
-        //// Val for the parameter doesn't carry the attributes)
-        //| Expr.Val (vref, vFlags, m) when vref.DisplayName.StartsWith expansionFunctionPrefix ->  
-        //    CheckValUse cenv env (vref, vFlags, m) PermitByRefExpr.No |> ignore
-        //    true
 
         // This construct arises from the 'mkDefault' in the 'Throw' case of an incomplete pattern match
         | Expr.Const (Const.Zero, _, _) -> 
             true
 
         | _ ->
-            //if checking then 
-            //    warning(Error(FSComp.SR.reprStateMachineNotCompilable(), expr.Range))
             false
 
 /// Check an expression, given information about the position of the expression
@@ -1183,7 +1156,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
             error(Error(FSComp.SR.tcResumableCodeNotSupported(), expr.Range))
 
         BindVals cenv env [moveNextThisVar; setStateMachineThisVar; setStateMachineStateVar; afterCodeThisVar]
-        CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr (false, true) } moveNextExpr
+        CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr true } moveNextExpr
         CheckExprNoByrefs cenv env setStateMachineBody
         CheckExprNoByrefs cenv env afterCodeBody
         NoLimit
@@ -1349,7 +1322,7 @@ and CheckMethod cenv env baseValOpt ty (TObjExprMethod(_, attribs, tps, vs, body
         if isResumableCodeTy cenv.g ty then
            if not (cenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
                error(Error(FSComp.SR.tcResumableCodeNotSupported(), m))
-           { env with resumableCode = Resumable.ResumableExpr (false, false) }
+           { env with resumableCode = Resumable.ResumableExpr false }
         else
            { env with resumableCode = Resumable.None }
     CheckAttribs cenv env attribs
@@ -2034,7 +2007,7 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
                 warning(Error(FSComp.SR.tcResumableCodeFunctionMustBeInline(), v.Range))
 
         if isReturnsResumableCodeTy g v.TauType then 
-            { env with resumableCode = Resumable.ResumableExpr (true, false) } 
+            { env with resumableCode = Resumable.ResumableExpr false } 
         else
             env
 
