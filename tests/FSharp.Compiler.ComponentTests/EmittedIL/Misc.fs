@@ -20,11 +20,11 @@ let zGeneric<'a> (): 'a[] = [||]
          |> compile
          |> shouldSucceed
          |> verifyIL ["""
-IL_0000:  call       !!0[] [runtime]System.Array::Empty<valuetype [runtime]System.Int32>()
+IL_0000:  call       !!0[] [runtime]System.Array::Empty<int32>()
 IL_0005:  ret"""
                       """
 
-IL_0000:  call       !!0[] [runtime]System.Array::Empty<class [runtime]System.String>()
+IL_0000:  call       !!0[] [runtime]System.Array::Empty<string>()
 IL_0005:  ret"""
 
                       """
