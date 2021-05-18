@@ -814,15 +814,17 @@ moduleSpfn:
       { if Option.isSome $2 then
             errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
 
-        let typeSigs = $4
-        match typeSigs with
+        match $4 with
         | [] -> raiseParseErrorAt (rhs2 parseState 3 4) (FSComp.SR.parsUnexpectedEmptyModuleDefn ())
-        | SynTypeDefnSig (SynComponentInfo (cas, _, _, _, _, _, _, _), _, _, _) :: _ ->
+        | SynTypeDefnSig (SynComponentInfo (cas, a, cs, b, c, d, d2, d3), e, f, g) :: tail ->
             let attrs = $1 @ cas
-            let mTc = (rhs parseState 3, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
-            let m = (mTc, typeSigs) ||> unionRangeWithListBy (fun (a: SynTypeDefnSig) -> a.Range)
+            let mTc =
+                let keywordM = rhs parseState 3
+                (keywordM, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range) |> unionRanges g
+            let tc = (SynTypeDefnSig(SynComponentInfo(attrs, a, cs, b, c, d, d2, d3), e, f, mTc))
+            let m = (mTc, tail) ||> unionRangeWithListBy (fun (a: SynTypeDefnSig) -> a.Range)
 
-            SynModuleSigDecl.Types (typeSigs, m) }
+            SynModuleSigDecl.Types (tc :: tail, m) }
 
   | opt_attributes opt_declVisibility exconSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
