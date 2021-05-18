@@ -744,6 +744,16 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
            ("nocopyfsharpcore", tagNone,
             OptionUnit (fun () -> tcConfigB.copyFSharpCore <- CopyFSharpCoreFlag.No), None,
             Some (FSComp.SR.optsNoCopyFsharpCore()))
+
+        CompilerOption
+           ("refonly", tagNone,
+            OptionSwitch (SetReferenceAssemblyOnlySwitch tcConfigB), None,
+            Some (FSComp.SR.optsRefOnly()))
+
+        CompilerOption
+           ("refout", tagFile,
+            OptionString (SetReferenceAssemblyOutSwitch tcConfigB), None,
+            Some (FSComp.SR.optsRefOut()))
     ]
 
 
@@ -831,16 +841,6 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
            ("deterministic", tagNone,
             OptionSwitch (SetDeterministicSwitch tcConfigB), None,
             Some (FSComp.SR.optsDeterministic()))
-
-          CompilerOption
-           ("refonly", tagNone,
-            OptionSwitch (SetReferenceAssemblyOnlySwitch tcConfigB), None,
-            Some (FSComp.SR.optsRefOnly()))
-
-          CompilerOption
-           ("refout", tagFile,
-            OptionString (SetReferenceAssemblyOutSwitch tcConfigB), None,
-            Some (FSComp.SR.optsRefOut()))
 
           CompilerOption
            ("pathmap", tagPathMap,
