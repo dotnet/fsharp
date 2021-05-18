@@ -18,11 +18,11 @@ open Microsoft.FSharp.Collections
 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 [<CompilerMessage("This construct  is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
 /// The extra data stored in ResumableStateMachine for tasks
-type TaskStateMachineData<'TOverall> =
+type TaskStateMachineData<'T> =
 
     /// Holds the final result of the state machine
     [<DefaultValue(false)>]
-    val mutable Result : 'TOverall
+    val mutable Result : 'T
 
     /// When interpreted, holds the awaiter used to suspend of the state machine
     [<DefaultValue(false)>]
@@ -30,7 +30,7 @@ type TaskStateMachineData<'TOverall> =
 
     /// Holds the MethodBuilder for the state machine
     [<DefaultValue(false)>]
-    val mutable MethodBuilder : AsyncTaskMethodBuilder<'TOverall>
+    val mutable MethodBuilder : AsyncTaskMethodBuilder<'T>
 
 /// This is used by the compiler as a template for creating state machine structs
 and [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
@@ -184,7 +184,7 @@ module ContextSensitiveTasks =
 
             /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            static member inline CanBindDynamic:
+            static member CanBindDynamic:
                 sm: byref<TaskStateMachine<'TOverall>> *
                 priority: IPriority1 *
                 task: Task<'TResult1> *

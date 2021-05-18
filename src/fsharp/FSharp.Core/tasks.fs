@@ -26,16 +26,16 @@ open Microsoft.FSharp.Collections
 
 /// The extra data stored in ResumableStateMachine for tasks
 [<Struct; NoComparison; NoEquality>]
-type TaskStateMachineData<'TOverall> =
+type TaskStateMachineData<'T> =
 
     [<DefaultValue(false)>]
-    val mutable Result : 'TOverall
+    val mutable Result : 'T
 
     [<DefaultValue(false)>]
     val mutable Awaiter: ICriticalNotifyCompletion
 
     [<DefaultValue(false)>]
-    val mutable MethodBuilder : AsyncTaskMethodBuilder<'TOverall>
+    val mutable MethodBuilder : AsyncTaskMethodBuilder<'T>
 
 and TaskStateMachine<'TOverall> = ResumableStateMachine<TaskStateMachineData<'TOverall>>
 and TaskResumptionFunc<'TOverall> = ResumptionFunc<TaskStateMachineData<'TOverall>>
@@ -267,13 +267,12 @@ module ContextSensitiveTasks =
                 //-- RESUMABLE CODE END
             )
 
-        static member inline CanBindDynamic (sm: byref<_>, priority: IPriority1, task: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : bool =
+        static member CanBindDynamic (sm: byref<_>, priority: IPriority1, task: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : bool =
             ignore priority
             let mutable awaiter = task.GetAwaiter()
 
             let cont = 
                 (TaskResumptionFunc<'TOverall>(fun sm -> 
-                    //Console.WriteLine("[{0}] resumed CanBind(Task)", sm.MethodBuilder.Task.Id)
                     let result = awaiter.GetResult()
                     (continuation result).Invoke(&sm)))
 

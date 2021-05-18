@@ -807,9 +807,6 @@ type IlxClosureInfo =
       /// The ILX specification for the closure
       cloSpec: IlxClosureSpec
 
-      /// The attributes that get attached to the closure class
-      cloAttribs: Attribs
-
       /// The generic parameters for the closure, i.e. the type variables it captures
       cloILGenericParams: IL.ILGenericParameterDefs
 
@@ -4618,7 +4615,6 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
         let eenvouter = eenvouter |> AddStorageForLocalVals g [ (moveNextThisVar, Local(0, false, None)) ]
         GetIlxClosureInfo cenv m ILBoxity.AsValue false false (mkLocalValRef moveNextThisVar :: thisVars) eenvouter moveNextBody
 
-    let cloAttribs = cloinfo.cloAttribs
     let cloFreeVars = cloinfo.cloFreeVars
 
     let ilCloFreeVars = cloinfo.ilCloAllFreeVars
@@ -4631,7 +4627,6 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     let interfaceTys = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m templateStructTy 
 
     let ilInterfaceTys = List.map (GenType cenv.amap m eenvinner.tyenv) interfaceTys
-    let attrs = GenAttrs cenv eenvinner cloAttribs
 
     let super = g.iltyp_ValueType
 
@@ -4730,7 +4725,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                   layout = ILTypeDefLayout.Auto,
                   attributes = enum 0,
                   genericParams = ilCloGenericFormals,
-                  customAttrs = mkILCustomAttrs(attrs @ [mkCompilationMappingAttr g (int SourceConstructFlags.Closure) ]),
+                  customAttrs = mkILCustomAttrs([ g.CompilerGeneratedAttribute; mkCompilationMappingAttr g (int SourceConstructFlags.Closure) ]),
                   fields = mkILFields fdefs,
                   events= emptyILEvents,
                   properties = emptyILProperties,
@@ -4796,7 +4791,6 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
     // free variables of the expression.
     let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsObject false false [] eenvouter objExpr
 
-    let cloAttribs = cloinfo.cloAttribs
     let ilCloLambdas = cloinfo.ilCloLambdas
     let cloName = cloinfo.cloName
     let cloSpec = cloinfo.cloSpec
@@ -4828,10 +4822,9 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
 
     let interfaceTys = interfaceImpls |> List.map (fst >> GenType cenv.amap m eenvinner.tyenv)
 
-    let attrs = GenAttrs cenv eenvinner cloAttribs
     let super = (if isInterfaceTy g baseType then g.ilg.typ_Object else ilCloRetTy)
     let interfaceTys = interfaceTys @ (if isInterfaceTy g baseType then [ilCloRetTy] else [])
-    let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, ilCloGenericFormals, attrs, ilCloAllFreeVars, ilCloLambdas, ilCtorBody, mdefs, mimpls, super, interfaceTys, Some cloinfo.cloSpec)
+    let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, ilCloGenericFormals, [], ilCloAllFreeVars, ilCloLambdas, ilCtorBody, mdefs, mimpls, super, interfaceTys, Some cloinfo.cloSpec)
 
     for cloTypeDef in cloTypeDefs do
         cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
@@ -4859,7 +4852,7 @@ and GenSequenceExpr
         eenvouter |> AddStorageForLocalVals g (stateVars |> List.map (fun v -> v.Deref, Local(0, false, None)))
 
     // Get the free variables. Make a lambda to pretend that the 'nextEnumeratorValRef' is bound (it is an argument to GenerateNext)
-    let (cloAttribs, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef: ILTypeRef, ilCloAllFreeVars, eenvinner) =
+    let (cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef: ILTypeRef, ilCloAllFreeVars, eenvinner) =
          GetIlxClosureFreeVars cenv m [] ILBoxity.AsObject eenvouter [] (mkLambda m nextEnumeratorValRef.Deref (generateNextExpr, g.int32_ty))
 
     let ilCloSeqElemTy = GenType cenv.amap m eenvinner.tyenv seqElemTy
@@ -4926,9 +4919,8 @@ and GenSequenceExpr
     let ilCtorBody =
         mkILSimpleStorageCtor(None, Some ilCloBaseTy.TypeSpec, ilCloTyInner, [], [], ILMemberAccess.Assembly).MethodBody
 
-    let attrs = GenAttrs cenv eenvinner cloAttribs
     let cloMethods = [generateNextMethod; closeMethod; checkCloseMethod; lastGeneratedMethod; getFreshMethod]
-    let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, ilCloGenericParams, attrs, ilCloAllFreeVars, ilCloLambdas, ilCtorBody, cloMethods, [], ilCloBaseTy, [], Some ilxCloSpec)
+    let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, ilCloGenericParams, [], ilCloAllFreeVars, ilCloLambdas, ilCtorBody, cloMethods, [], ilCloBaseTy, [], Some ilxCloSpec)
 
     for cloTypeDef in cloTypeDefs do
         cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
@@ -5148,8 +5140,6 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
 
     let cloFreeTyvars = cloFreeVarResults.FreeTyvars.FreeTypars |> Zset.elements
 
-    let cloAttribs = []
-
     let eenvinner = eenvouter |> EnvForTypars cloFreeTyvars
 
     let ilCloTyInner =
@@ -5202,7 +5192,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
     let eenvinner = eenvinner |> AddStorageForLocalVals g ilCloFreeVarStorage
 
     // Return a various results
-    (cloAttribs, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner)
+    (cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner)
 
 
 and GetIlxClosureInfo cenv m boxity isLocalTypeFunc canUseStaticField thisVars eenvouter expr =
@@ -5232,7 +5222,7 @@ and GetIlxClosureInfo cenv m boxity isLocalTypeFunc canUseStaticField thisVars e
     let takenNames = vs |> List.map (fun v -> v.CompiledName g.CompilerGlobalState)
 
     // Get the free variables and the information about the closure, add the free variables to the environment
-    let (cloAttribs, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner) =
+    let (cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner) =
         GetIlxClosureFreeVars cenv m thisVars boxity eenvouter takenNames expr
 
     // Put the type and value arguments into the environment
@@ -5282,8 +5272,7 @@ and GetIlxClosureInfo cenv m boxity isLocalTypeFunc canUseStaticField thisVars e
           cloILGenericParams = ilCloGenericFormals
           cloFreeVars=cloFreeVars
           cloFreeTyvars=cloFreeTyvars
-          cloWitnessInfos = cloWitnessInfos
-          cloAttribs=cloAttribs }
+          cloWitnessInfos = cloWitnessInfos }
     cloinfo, body, eenvinner
 
 /// Generate a new delegate construction including a closure class if necessary. This is a lot like generating function closures
@@ -5314,7 +5303,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
 
     // Work out the free type variables for the morphing thunk
     let takenNames = List.map nameOfVal tmvs
-    let (cloAttribs, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilDelegeeTypeRef, ilCloAllFreeVars, eenvinner) =
+    let (cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilDelegeeTypeRef, ilCloAllFreeVars, eenvinner) =
         GetIlxClosureFreeVars cenv m [] ILBoxity.AsObject eenvouter takenNames expr
 
     let ilDelegeeGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
@@ -5349,10 +5338,9 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
     let ilCtorBody = delegeeCtorMeth.MethodBody
 
     let ilCloLambdas = Lambdas_return ilCtxtDelTy
-    let ilAttribs = GenAttrs cenv eenvinner cloAttribs
     let cloTypeDefs =
         (if useStaticClosure then GenStaticDelegateClosureTypeDefs else GenClosureTypeDefs)
-            cenv (ilDelegeeTypeRef, ilDelegeeGenericParams, ilAttribs, ilCloAllFreeVars, ilCloLambdas, ilCtorBody, [delegeeInvokeMeth], [], g.ilg.typ_Object, [], None)
+            cenv (ilDelegeeTypeRef, ilDelegeeGenericParams, [], ilCloAllFreeVars, ilCloLambdas, ilCtorBody, [delegeeInvokeMeth], [], g.ilg.typ_Object, [], None)
     for cloTypeDef in cloTypeDefs do
         cgbuf.mgbuf.AddTypeDef(ilDelegeeTypeRef, cloTypeDef, false, false, None)
     CountClosure()

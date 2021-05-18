@@ -42,7 +42,7 @@ type Coroutine() =
     abstract MoveNext: unit -> unit
 
     /// Gets the tailcall target if the coroutine has executed a `return!`
-    abstract HijackTarget: Coroutine option
+    abstract TailcallTarget: Coroutine option
     
 /// This is the implementation of Coroutine with respect to a particular struct state machine type.
 and [<NoEquality; NoComparison>] 
@@ -56,21 +56,21 @@ and [<NoEquality; NoComparison>]
     val mutable Machine: 'Machine
 
     override cr.IsCompleted =
-        match cr.HijackTarget with 
+        match cr.TailcallTarget with 
         | None -> 
             GetResumptionPoint(&cr.Machine) = -1
         | Some tg -> 
             tg.IsCompleted
 
-    override cr.HijackTarget = 
+    override cr.TailcallTarget = 
         CoroutineStateMachineData.GetHijackTarget(&cr.Machine)
 
     override cr.MoveNext() = 
-        match cr.HijackTarget with 
+        match cr.TailcallTarget with 
         | None -> //if verbose then printfn $"[{cr.Id}] move"
             MoveNext(&cr.Machine)
         | Some tg -> 
-            match tg.HijackTarget with 
+            match tg.TailcallTarget with 
             | None -> tg.MoveNext()
             | Some tg2 -> 
                 // Cut out chains of tailcalls
@@ -83,14 +83,14 @@ and [<Struct; NoComparison; NoEquality>]
 
     /// This is used for tailcalls using 'return!'
     [<DefaultValue(false)>]
-    val mutable HijackTarget: Coroutine option
+    val mutable TailcallTarget: Coroutine option
 
     static member GetHijackTarget(x: byref<'Machine> when 'Machine :> IResumableStateMachine<CoroutineStateMachineData>) = 
-        x.Data.HijackTarget
+        x.Data.TailcallTarget
 
     static member SetHijackTarget(x: byref<'Machine>, tg: Coroutine) : unit when 'Machine :> IResumableStateMachine<CoroutineStateMachineData> = 
         let mutable newData = CoroutineStateMachineData()
-        newData.HijackTarget <- Some tg
+        newData.TailcallTarget <- Some tg
         x.Data <- newData
 
 /// These are standard definitions filling in the 'Data' parameter of each
@@ -120,7 +120,7 @@ type CoroutineBuilder() =
                             sm.ResumptionPoint  <- -1 // indicates complete
                         else
                             // Goto request
-                            match sm.Data.HijackTarget with 
+                            match sm.Data.TailcallTarget with 
                             | Some tg -> tg.MoveNext() // recurse
                             | None -> ()
                         //-- RESUMABLE CODE END
@@ -197,7 +197,7 @@ type CoroutineBuilder() =
     // The implementation of `return!`, non-standard for tailcalls
     member inline _.ReturnFrom (other: Coroutine) : CoroutineCode = 
         ResumableCode<_,_>(fun sm -> 
-            sm.Data.HijackTarget <- Some other
+            sm.Data.TailcallTarget <- Some other
             // For tailcalls we return 'false' and re-run from the entry (trampoline)
             false 
             // We could do this immediately with future cut-out, though this will stack-dive on sync code.

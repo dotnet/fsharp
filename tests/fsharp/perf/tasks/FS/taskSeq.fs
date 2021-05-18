@@ -23,7 +23,7 @@ type TaskSeqStateMachineData<'T>() =
     [<DefaultValue(false)>]
     val mutable cancellationToken : CancellationToken
     [<DefaultValue(false)>]
-    val mutable disposalStack : ResizeArray<(unit -> Task<unit>)>
+    val mutable disposalStack : ResizeArray<(unit -> Task)>
     [<DefaultValue(false)>]
     val mutable awaiter : ICriticalNotifyCompletion
     [<DefaultValue(false)>]
@@ -38,9 +38,9 @@ type TaskSeqStateMachineData<'T>() =
     val mutable boxed: TaskSeq<'T>
     // For tailcalls using 'return!'
     [<DefaultValue(false)>]
-    val mutable hijackTarget: TaskSeq<'T> option
+    val mutable tailcallTarget: TaskSeq<'T> option
 
-    member data.PushDispose (f: unit -> Task<unit>) =
+    member data.PushDispose (f: unit -> Task) =
         match data.disposalStack with 
         | null -> data.disposalStack <- ResizeArray()
         | _ -> ()
@@ -54,7 +54,7 @@ type TaskSeqStateMachineData<'T>() =
 
 and [<AbstractClass; NoEquality; NoComparison>] 
     TaskSeq<'T>() =
-    abstract HijackTarget: TaskSeq<'T> option
+    abstract TailcallTarget: TaskSeq<'T> option
     abstract MoveNextAsyncResult: unit -> ValueTask<bool>
 
     // F# requires that we implement interfaces even on an abstract class
@@ -86,15 +86,15 @@ and [<NoComparison; NoEquality>]
     val mutable Machine : 'Machine
 
     member internal ts.hijack() =
-        let res = ts.Machine.Data.hijackTarget
+        let res = ts.Machine.Data.tailcallTarget
         match res with 
         | Some tg -> 
-            match tg.HijackTarget with 
+            match tg.TailcallTarget with 
             | None -> 
                 res
             | (Some tg2 as res2) -> 
                 // Cut out chains of tailcalls
-                ts.Machine.Data.hijackTarget <- Some tg2
+                ts.Machine.Data.tailcallTarget <- Some tg2
                 res2
         | None -> 
             res
@@ -213,7 +213,7 @@ and [<NoComparison; NoEquality>]
             if verbose then printfn "MoveNextAsync pending/faulted/cancelled..."
             ValueTask<bool>(ts, version) // uses IValueTaskSource<'T>
 
-    override cr.HijackTarget = 
+    override cr.TailcallTarget = 
         cr.hijack()
 
 and TaskSeqCode<'T> = ResumableCode<TaskSeqStateMachineData<'T>, unit>
@@ -248,7 +248,7 @@ type TaskSeqBuilder() =
                                 sm.Data.promiseOfValueOrEnd.SetResult(true)
                             else
                                // Goto request
-                                match sm.Data.hijackTarget with 
+                                match sm.Data.tailcallTarget with 
                                 | Some tg -> 
                                     //printfn $"at Run.MoveNext, hijack"
                                     let mutable tg = tg
@@ -330,35 +330,49 @@ type TaskSeqBuilder() =
     member inline _.TryWith(body : TaskSeqCode<'T>, catch : exn -> TaskSeqCode<'T>) : TaskSeqCode<'T> =
         ResumableCode.TryWith(body, catch)
 
-    member inline _.TryFinallyAsync(body: TaskSeqCode<'T>, compensation : unit -> Task<unit>) : TaskSeqCode<'T> =
+    member inline _.TryFinallyAsync(body: TaskSeqCode<'T>, compensation : unit -> Task) : TaskSeqCode<'T> =
         ResumableCode.TryFinallyAsync(
             TaskSeqCode<'T>(fun sm -> 
                 sm.Data.PushDispose (fun () -> compensation())
                 body.Invoke(&sm)), 
-            ResumableCode<_,_>(fun sm -> sm.Data.PopDispose(); true))
+            ResumableCode<_,_>(fun sm -> 
+                sm.Data.PopDispose();
+                let mutable __stack_condition_fin = true
+                let __stack_vtask = compensation()
+                if not __stack_vtask.IsCompleted then
+                    let mutable awaiter = __stack_vtask.GetAwaiter()
+                    let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
+                    __stack_condition_fin <- __stack_yield_fin
+
+                    if not __stack_condition_fin then 
+                        sm.Data.awaiter <- awaiter
+
+                __stack_condition_fin))
 
     member inline _.TryFinally(body: TaskSeqCode<'T>, compensation : unit -> unit) : TaskSeqCode<'T> =
         ResumableCode.TryFinally(
             TaskSeqCode<'T>(fun sm -> 
-                sm.Data.PushDispose (fun () -> Task.FromResult(compensation()))
+                sm.Data.PushDispose (fun () -> compensation(); Task.CompletedTask)
                 body.Invoke(&sm)), 
-            ResumableCode<_,_>(fun sm -> sm.Data.PopDispose(); true))
+            ResumableCode<_,_>(fun sm -> sm.Data.PopDispose(); compensation(); true))
 
-    member inline this.Using(disp : #IDisposable, body : #IDisposable -> TaskSeqCode<'T>) : TaskSeqCode<'T> = 
+    member inline this.Using(disp : #IDisposable, body : #IDisposable -> TaskSeqCode<'T>, ?priority: IPriority2) : TaskSeqCode<'T> = 
+        ignore priority
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinally(
             (fun sm -> (body disp).Invoke(&sm)),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
-    member inline this.UsingAsync(disp : #IAsyncDisposable, body : #IAsyncDisposable -> TaskSeqCode<'T>) : TaskSeqCode<'T> = 
+    member inline this.Using(disp : #IAsyncDisposable, body : #IAsyncDisposable -> TaskSeqCode<'T>, ?priority: IPriority1) : TaskSeqCode<'T> = 
+        ignore priority
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinallyAsync(
             (fun sm -> (body disp).Invoke(&sm)),
             (fun () -> 
                 if not (isNull (box disp)) then 
-                    // TODO should be async
-                    (disp.DisposeAsync().AsTask().Wait(); Task.FromResult())
-                else Task.FromResult()))
+                    disp.DisposeAsync().AsTask()
+                else 
+                    Task.CompletedTask))
 
     member inline this.For(sequence : seq<'TElement>, body : 'TElement -> TaskSeqCode<'T>) : TaskSeqCode<'T> =
         // A for loop is just a using statement on the sequence's enumerator...
@@ -368,7 +382,7 @@ type TaskSeqBuilder() =
 
     member inline this.For(source: #IAsyncEnumerable<'TElement>, body : 'TElement -> TaskSeqCode<'T>) : TaskSeqCode<'T> =
         TaskSeqCode<'T>(fun sm -> 
-            this.UsingAsync(source.GetAsyncEnumerator(sm.Data.cancellationToken), 
+            this.Using(source.GetAsyncEnumerator(sm.Data.cancellationToken), 
                 (fun e -> this.WhileAsync((fun () -> e.MoveNextAsync()), 
                                           (fun sm -> (body e.Current).Invoke(&sm))))).Invoke(&sm))
 
@@ -412,7 +426,7 @@ type TaskSeqBuilder() =
         TaskSeqCode<_>(fun sm -> 
             match other with 
             | :? TaskSeq<'T> as other -> 
-                sm.Data.hijackTarget <- Some other
+                sm.Data.tailcallTarget <- Some other
                 sm.Data.awaiter <- null
                 sm.Data.current <- ValueNone
                 // For tailcalls we return 'false' and re-run from the entry (trampoline)

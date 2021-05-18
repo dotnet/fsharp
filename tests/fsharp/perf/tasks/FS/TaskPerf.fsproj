@@ -24,6 +24,8 @@
 	<Compile Include="option.fs" />
 	<Compile Include="coroutine.fs" />
 	<Compile Include="coroutineBasic.fs" />
+	<Compile Include="async2.fsi" />
+	<Compile Include="async2.fs" />
 	<Compile Include="taskSeq.fs" />
 	<Compile Include="TaskBuilder.fs" />
 	<Compile Include="TaskPerf.fs" />
