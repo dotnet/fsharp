@@ -321,7 +321,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <ParsedScriptInteraction> interaction
 %type <Ident> ident
 %type <SynType> typ typEOF
-%type <SynTypeDefnSig list> tyconSpfns
+%type <SynTypeDefnSig list> tyconSpfnList
 %type <SynExpr> patternResult
 %type <SynExpr> declExpr
 %type <SynExpr> minusExpr
@@ -810,18 +810,19 @@ moduleSpfn:
         let m = (rhs2 parseState 1 4, $5) ||> unionRangeWithListBy (fun (d: SynModuleSigDecl) -> d.Range)
         SynModuleSigDecl.NestedModule(info, isRec, $5, m) }
 
-  | opt_attributes opt_declVisibility  tyconSpfns 
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let (SynTypeDefnSig(SynComponentInfo(cas, a, cs, b, c, d, d2, d3), e, f, g)), rest = 
-           match $3 with
-           | [] -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEmptyModuleDefn()) 
-           | h :: t -> h, t 
-        let attrs = $1@cas
-        let mTc = (g, attrs)  ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
-        let tc = (SynTypeDefnSig(SynComponentInfo(attrs, a, cs, b, c, d, d2, d3), e, f, mTc))
-        let lastType = List.tryLast rest |> Option.defaultValue tc |> fun t -> t.Range
-        let m = mkRange lastType.FileName mTc.Start lastType.End
-        SynModuleSigDecl.Types (tc :: rest, m) } 
+  | opt_attributes opt_declVisibility typeKeyword tyconSpfnList
+      { if Option.isSome $2 then
+            errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+
+        let typeSigs = $4
+        match typeSigs with
+        | [] -> raiseParseErrorAt (rhs2 parseState 3 4) (FSComp.SR.parsUnexpectedEmptyModuleDefn ())
+        | SynTypeDefnSig (SynComponentInfo (cas, _, _, _, _, _, _, _), _, _, _) :: _ ->
+            let attrs = $1 @ cas
+            let mTc = (rhs parseState 3, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
+            let m = (mTc, typeSigs) ||> unionRangeWithListBy (fun (a: SynTypeDefnSig) -> a.Range)
+
+            SynModuleSigDecl.Types (typeSigs, m) }
 
   | opt_attributes opt_declVisibility exconSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
@@ -868,12 +869,6 @@ moduleSpecBlock:
   /* non-#light-syntax, with sig/end or begin/end */
   |             sigOrBegin moduleSpfnsPossiblyEmpty END 
       { $2 }
-
-
-/* A group of type definitions in a signature */
-tyconSpfns:      
-  | typeKeyword tyconSpfnList 
-     { $2 }
 
 
 tyconSpfnList:  
