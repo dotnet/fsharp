@@ -909,6 +909,12 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
             match tcConfig.emitMetadataAssembly with
             | MetadataAssemblyGeneration.None -> ()
             | _ ->
+                let outfile =
+                    match tcConfig.emitMetadataAssembly with
+                    | MetadataAssemblyGeneration.ReferenceOut outputPath ->
+                        outputPath
+                    | _ ->
+                        outfile
                 let referenceAssemblyAttribOpt =
                     tcGlobals.iltyp_ReferenceAssemblyAttributeOpt
                     |> Option.map (fun ilTy ->
@@ -917,10 +923,6 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
                 try
                     use stream =
                         try
-                            let outfile =
-                                let dir = FileSystem.GetDirectoryNameShim outfile
-                                let dir = Path.Combine(dir, "ref")
-                                Path.Combine(dir, Path.GetFileName(outfile))
                             // Ensure the output directory exists otherwise it will fail
                             let dir = FileSystem.GetDirectoryNameShim outfile
                             if not (FileSystem.DirectoryExistsShim dir) then FileSystem.DirectoryCreateShim dir |> ignore
@@ -954,7 +956,8 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
 
             match tcConfig.emitMetadataAssembly with
             | MetadataAssemblyGeneration.MetadataOnly
-            | MetadataAssemblyGeneration.TestSigOfImpl -> ()
+            | MetadataAssemblyGeneration.TestSigOfImpl
+            | MetadataAssemblyGeneration.ReferenceOnly -> ()
             | _ ->
                 try
                     ILBinaryWriter.WriteILBinary

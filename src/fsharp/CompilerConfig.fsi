@@ -134,8 +134,12 @@ type PackageManagerLine =
 [<RequireQualifiedAccess>]
 type MetadataAssemblyGeneration =
     | None
-    /// Complete means we include F# signature and optimization metadata as resources in the emitting assembly.
-    | Complete
+    /// Includes F# signature and optimization metadata as resources in the emitting assembly.
+    /// Implementation assembly will still be emitted normally, but will emit the reference assembly with the specified output path. 
+    | ReferenceOut of outputPath: string
+    /// Includes F# signature and optimization metadata as resources in the emitting assembly.
+    /// Only emits the assembly as a reference assembly.
+    | ReferenceOnly
     /// Partial means we do not include F# optimization metadata as a resource in the emitting assembly.
     | MetadataOnly
     /// This is only for used for testing.

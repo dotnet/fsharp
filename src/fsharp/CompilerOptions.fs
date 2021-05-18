@@ -411,7 +411,21 @@ let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.deterministic <- (switch = OptionSwitch.On)
 
 let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
-    tcConfigB.emitMetadataAssembly <- if (switch = OptionSwitch.On) then MetadataAssemblyGeneration.Complete else MetadataAssemblyGeneration.None
+    match tcConfigB.emitMetadataAssembly with
+    | MetadataAssemblyGeneration.None ->
+        tcConfigB.emitMetadataAssembly <- if (switch = OptionSwitch.On) then MetadataAssemblyGeneration.ReferenceOnly else MetadataAssemblyGeneration.None
+    | _ ->
+        error(Error(FSComp.SR.optsInvalidRefAssembly(), rangeCmdArgs))
+
+let SetReferenceAssemblyOutSwitch (tcConfigB: TcConfigBuilder) outputPath =
+    match tcConfigB.emitMetadataAssembly with
+    | MetadataAssemblyGeneration.None ->      
+        if FileSystem.IsInvalidPathShim outputPath then
+            error(Error(FSComp.SR.optsInvalidRefOut(), rangeCmdArgs))
+        else
+            tcConfigB.emitMetadataAssembly <- MetadataAssemblyGeneration.ReferenceOut outputPath
+    | _ ->
+        error(Error(FSComp.SR.optsInvalidRefAssembly(), rangeCmdArgs))
 
 let AddPathMapping (tcConfigB: TcConfigBuilder) (pathPair: string) =
     match pathPair.Split([|'='|], 2) with
@@ -824,6 +838,11 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
             Some (FSComp.SR.optsRefOnly()))
 
           CompilerOption
+           ("refout", tagFile,
+            OptionString (SetReferenceAssemblyOutSwitch tcConfigB), None,
+            Some (FSComp.SR.optsRefOut()))
+
+          CompilerOption
            ("pathmap", tagPathMap,
             OptionStringList (AddPathMapping tcConfigB), None,
             Some (FSComp.SR.optsPathMap()))
@@ -1053,7 +1072,7 @@ let testFlag tcConfigB =
                 | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
                 | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
                 | "ParallelOff" -> tcConfigB.concurrentBuild <- false
-                | "RefOnlyPartial" -> tcConfigB.emitMetadataAssembly <- MetadataAssemblyGeneration.MetadataOnly
+                | "MetadataOnly" -> tcConfigB.emitMetadataAssembly <- MetadataAssemblyGeneration.MetadataOnly
                 | "RefOnlyTestSigOfImpl" -> tcConfigB.emitMetadataAssembly <- MetadataAssemblyGeneration.TestSigOfImpl
 #if DEBUG
                 | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true

@@ -319,7 +319,8 @@ type PackageManagerLine =
 [<RequireQualifiedAccess>]
 type MetadataAssemblyGeneration =
     | None
-    | Complete
+    | ReferenceOut of outputPath: string
+    | ReferenceOnly
     | MetadataOnly
     | TestSigOfImpl
 
