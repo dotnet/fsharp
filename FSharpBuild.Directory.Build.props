@@ -8,8 +8,9 @@
   </PropertyGroup>
 
   <!-- directory locations -->
-  <PropertyGroup>
-    <DisableAutoSetFscCompilerPath Condition="'$(DisableAutoSetFscCompilerPath)' == '' and '$(Configuration)' != 'Proto'">true</DisableAutoSetFscCompilerPath>
+
+  <PropertyGroup Condition="'$(OS)' != 'Unix' and '$(DisableAutoSetFscCompilerPath)' != 'true' and '$(Configuration)' != 'Proto' and '$(DOTNET_HOST_PATH)' != ''">
+    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
   </PropertyGroup>
 
   <PropertyGroup>
