@@ -747,7 +747,7 @@ and [<CustomEquality>] Bang =
             ]) as t]) ])) ->
             assertRange (4, 0) (5, 9) r1
             assertRange (7, 4) (12, 42) r2
-            assertRange (4, 5) (12, 42) t.Range
+            assertRange (4, 0) (12, 42) t.Range
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
