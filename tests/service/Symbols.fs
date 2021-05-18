@@ -638,7 +638,7 @@ type Meh =
         match parseResults with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(range = r)]) ])) ->
-            assertRange (3, 5) (5,11) r
+            assertRange (3, 0) (5,11) r
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
@@ -653,7 +653,7 @@ type MyRecord =
         match parseResults with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [SynTypeDefnSig.SynTypeDefnSig(range = r)])]) ])) ->
-            assertRange (2, 5) (4, 30) r
+            assertRange (2, 0) (4, 30) r
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
@@ -669,7 +669,7 @@ type MyRecord =
         match parseResults with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [SynTypeDefnSig.SynTypeDefnSig(range = r)])]) ])) ->
-            assertRange (2, 5) (5, 30) r
+            assertRange (2, 0) (5, 30) r
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
@@ -683,7 +683,7 @@ type MyFunction =
         match parseResults with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [SynTypeDefnSig.SynTypeDefnSig(range = r)])]) ])) ->
-            assertRange (2, 5) (3, 29) r
+            assertRange (2, 0) (3, 29) r
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
@@ -698,7 +698,7 @@ type SomeCollection with
         match parseResults with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [SynTypeDefnSig.SynTypeDefnSig(range = r)])]) ])) ->
-            assertRange (2, 5) (4, 37) r
+            assertRange (2, 0) (4, 37) r
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
@@ -745,7 +745,7 @@ and [<CustomEquality>] Bang =
                 SynTypeDefnSig.SynTypeDefnSig(range = r1)
                 SynTypeDefnSig.SynTypeDefnSig(range = r2)
             ]) as t]) ])) ->
-            assertRange (4, 5) (5, 9) r1
+            assertRange (4, 0) (5, 9) r1
             assertRange (7, 4) (12, 42) r2
             assertRange (4, 5) (12, 42) t.Range
         | _ -> Assert.Fail "Could not get valid AST"
