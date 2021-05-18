@@ -1143,8 +1143,6 @@ type IncrementalBuilder(
             computeStampedReferencedAssemblies currentState true (TimeStampCache(defaultTimeStamp)) |> ignore
             isImportsInvalidated
 
-    member _.IsImportsInvalidated = isImportsInvalidated
-
     member _.AllDependenciesDeprecated = allDependencies
 
     member _.PopulatePartialCheckingResults () =

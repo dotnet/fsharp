@@ -56,7 +56,7 @@ module private FSharpProjectOptionsHelpers =
     let hasProjectVersionChanged (oldProject: Project) (newProject: Project) =
         oldProject.Version <> newProject.Version
 
-    let hasDependentVersionChanged (checker: FSharpChecker) (options: FSharpProjectOptions) (oldProject: Project) (newProject: Project) (ct: CancellationToken) =
+    let hasDependentVersionChanged (oldProject: Project) (newProject: Project) (ct: CancellationToken) =
         let oldProjectMetadataRefs = oldProject.MetadataReferences
         let newProjectMetadataRefs = newProject.MetadataReferences
 
@@ -68,44 +68,28 @@ module private FSharpProjectOptionsHelpers =
         let oldProjectRefs = oldProject.ProjectReferences
         let newProjectRefs = newProject.ProjectReferences
 
-        let res =
-            oldProjectRefs.Count() <> newProjectRefs.Count() ||
-            (oldProjectRefs, newProjectRefs)
-            ||> Seq.exists2 (fun p1 p2 ->
-                ct.ThrowIfCancellationRequested()
-                let doesProjectIdDiffer = p1.ProjectId <> p2.ProjectId
-                let p1 = oldProject.Solution.GetProject(p1.ProjectId)
-                let p2 = newProject.Solution.GetProject(p2.ProjectId)
-                doesProjectIdDiffer || 
-                (
-                    if p1.Language = LanguageNames.FSharp then
-                        if p1.Version <> p2.Version then
-                            true
-                        else
-                            let v1 = p1.GetDependentVersionAsync(ct).Result
-                            let v2 = p2.GetDependentVersionAsync(ct).Result
-                            if v1 <> v2 then
-                                mustCheckFcsInvalidation <- true
-                            false
-                    else
-                        let v1 = p1.GetDependentVersionAsync(ct).Result
-                        let v2 = p2.GetDependentVersionAsync(ct).Result
-                        v1 <> v2
-                )
+        oldProjectRefs.Count() <> newProjectRefs.Count() ||
+        (oldProjectRefs, newProjectRefs)
+        ||> Seq.exists2 (fun p1 p2 ->
+            ct.ThrowIfCancellationRequested()
+            let doesProjectIdDiffer = p1.ProjectId <> p2.ProjectId
+            let p1 = oldProject.Solution.GetProject(p1.ProjectId)
+            let p2 = newProject.Solution.GetProject(p2.ProjectId)
+            doesProjectIdDiffer || 
+            (
+                if p1.Language = LanguageNames.FSharp then
+                    p1.Version <> p2.Version
+                else
+                    let v1 = p1.GetDependentVersionAsync(ct).Result
+                    let v2 = p2.GetDependentVersionAsync(ct).Result
+                    v1 <> v2
             )
+        )
 
-        if not res && mustCheckFcsInvalidation then
-            // At the moment, Roslyn's view of F# dependent project references must not cause an invalidation
-            // because the internals of FCS's state relies on the file-system.
-            // Therefore, check if the project is invalidated by FCS's view of the world.
-            checker.IsProjectReferencesInvalidated options
-        else
-            res
-
-    let isProjectInvalidated checker options (oldProject: Project) (newProject: Project) (settings: EditorOptions) ct =
+    let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) ct =
         let hasProjectVersionChanged = hasProjectVersionChanged oldProject newProject
         if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
-            hasProjectVersionChanged || hasDependentVersionChanged checker options oldProject newProject ct
+            hasProjectVersionChanged || hasDependentVersionChanged oldProject newProject ct
         else
             hasProjectVersionChanged
 
@@ -344,7 +328,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             lastSuccessfulCompilations.TryRemove(pair.Key) |> ignore
                     )
 
-                    checkerProvider.Checker.ClearCache([projectOptions])
+                    checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompile = false, userOpName = "tryComputeOptions")
 
                     let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
@@ -353,7 +337,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     return Some(parsingOptions, projectOptions)
   
             | true, (oldProject, parsingOptions, projectOptions) ->
-                if isProjectInvalidated checkerProvider.Checker projectOptions oldProject project settings ct then
+                if isProjectInvalidated oldProject project settings ct then
                     cache.TryRemove(projectId) |> ignore
                     return! tryComputeOptions project ct
                 else

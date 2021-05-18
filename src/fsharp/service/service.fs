@@ -280,8 +280,7 @@ type BackgroundCompiler(
                         suggestNamesForErrors, 
                         keepAllBackgroundSymbolUses, 
                         enableBackgroundItemKeyStoreAndSemanticClassification, 
-                        enablePartialTypeChecking,
-                        autoInvalidateConfiguration) as self =
+                        enablePartialTypeChecking) as self =
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.reactor: The one and only Reactor
     let reactor = Reactor.Singleton
     let beforeFileChecked = Event<string * FSharpProjectOptions>()
@@ -382,10 +381,9 @@ type BackgroundCompiler(
         | Some builder -> 
 
 #if !NO_EXTENSIONTYPING
-            if autoInvalidateConfiguration then
-                // Register the behaviour that responds to CCUs being invalidated because of type
-                // provider Invalidate events. This invalidates the configuration in the build.
-                builder.ImportsInvalidatedByTypeProvider.Add(fun () -> self.InvalidateConfiguration(options, None, userOpName))
+            // Register the behaviour that responds to CCUs being invalidated because of type
+            // provider Invalidate events. This invalidates the configuration in the build.
+            builder.ImportsInvalidatedByTypeProvider.Add(fun () -> self.InvalidateConfiguration(options, None, userOpName))
 #endif
 
             // Register the callback called just before a file is typechecked by the background builder (without recording
@@ -1128,11 +1126,6 @@ type BackgroundCompiler(
             }
         ))        
 
-    member _.IsProjectReferencesInvalidated(options: FSharpProjectOptions) =
-        match tryGetBuilder options with
-        | Some (Some builder, _) -> builder.IsReferencesInvalidated
-        | _ -> true
-
     member _.StopBackgroundCompile   () =
         reactor.SetBackgroundOp(None)
 
@@ -1195,8 +1188,7 @@ type FSharpChecker(legacyReferenceResolver,
                     suggestNamesForErrors,
                     keepAllBackgroundSymbolUses,
                     enableBackgroundItemKeyStoreAndSemanticClassification,
-                    enablePartialTypeChecking,
-                    autoInvalidateConfiguration) =
+                    enablePartialTypeChecking) =
 
     let backgroundCompiler =
         BackgroundCompiler(
@@ -1208,8 +1200,7 @@ type FSharpChecker(legacyReferenceResolver,
             suggestNamesForErrors,
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
-            enablePartialTypeChecking,
-            autoInvalidateConfiguration)
+            enablePartialTypeChecking)
 
     static let globalInstance = lazy FSharpChecker.Create()
             
@@ -1235,8 +1226,7 @@ type FSharpChecker(legacyReferenceResolver,
                          ?suggestNamesForErrors, 
                          ?keepAllBackgroundSymbolUses, 
                          ?enableBackgroundItemKeyStoreAndSemanticClassification, 
-                         ?enablePartialTypeChecking,
-                         ?autoInvalidateConfiguration) = 
+                         ?enablePartialTypeChecking) = 
 
         let legacyReferenceResolver = 
             match legacyReferenceResolver with
@@ -1251,7 +1241,6 @@ type FSharpChecker(legacyReferenceResolver,
         let keepAllBackgroundSymbolUses = defaultArg keepAllBackgroundSymbolUses true
         let enableBackgroundItemKeyStoreAndSemanticClassification = defaultArg enableBackgroundItemKeyStoreAndSemanticClassification false
         let enablePartialTypeChecking = defaultArg enablePartialTypeChecking false
-        let autoInvalidateConfiguration = defaultArg autoInvalidateConfiguration true
 
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
@@ -1264,8 +1253,7 @@ type FSharpChecker(legacyReferenceResolver,
             suggestNamesForErrors,
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
-            enablePartialTypeChecking,
-            autoInvalidateConfiguration)
+            enablePartialTypeChecking)
 
     member _.ReferenceResolver = legacyReferenceResolver
 
@@ -1433,9 +1421,6 @@ type FSharpChecker(legacyReferenceResolver,
     member _.InvalidateConfiguration(options: FSharpProjectOptions, ?startBackgroundCompile, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.InvalidateConfiguration(options, startBackgroundCompile, userOpName)
-
-    member _.IsProjectReferencesInvalidated(options: FSharpProjectOptions) =
-        backgroundCompiler.IsProjectReferencesInvalidated(options)
 
     /// Clear the internal cache of the given projects.
     member _.ClearCache(options: FSharpProjectOptions seq, ?userOpName: string) =

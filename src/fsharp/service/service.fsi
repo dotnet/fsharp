@@ -31,11 +31,10 @@ type public FSharpChecker =
     /// <param name="keepAllBackgroundSymbolUses">Indicate whether all symbol uses should be kept in background checking</param>
     /// <param name="enableBackgroundItemKeyStoreAndSemanticClassification">Indicates whether a table of symbol keys should be kept for background compilation</param>
     /// <param name="enablePartialTypeChecking">Indicates whether to perform partial type checking. Cannot be set to true if keepAssmeblyContents is true. If set to true, can cause duplicate type-checks when richer information on a file is needed, but can skip background type-checking entirely on implementation files with signature files.</param>
-    /// <param name="autoInvalidateConfiguration">Indicates whether a project will auto invalidate itself when its references have changed. 'true' by default.</param>
     static member Create: 
         ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool  *
         ?legacyReferenceResolver: LegacyReferenceResolver * ?tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
-        ?suggestNamesForErrors: bool * ?keepAllBackgroundSymbolUses: bool * ?enableBackgroundItemKeyStoreAndSemanticClassification: bool * ?enablePartialTypeChecking: bool * ?autoInvalidateConfiguration: bool
+        ?suggestNamesForErrors: bool * ?keepAllBackgroundSymbolUses: bool * ?enableBackgroundItemKeyStoreAndSemanticClassification: bool * ?enablePartialTypeChecking: bool
           -> FSharpChecker
 
     /// <summary>
@@ -363,13 +362,6 @@ type public FSharpChecker =
     /// <param name="startBackgroundCompile">Start a background compile of the project if a project with the same name has already been seen before.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member InvalidateConfiguration: options: FSharpProjectOptions * ?startBackgroundCompile: bool * ?userOpName: string -> unit
-
-    /// <summary>
-    /// Checks to see if the given project has been invalidated by its references; not its files. 
-    /// When 'autoInvalidateConfiguration' is enabled, the project will internally re-create itself and therefore, this may return false when that happens.
-    /// </summary>
-    /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
-    member IsProjectReferencesInvalidated: options: FSharpProjectOptions -> bool
 
     /// <summary>Clear the internal cache of the given projects.</summary>
     /// <param name="options">The given project options.</param>

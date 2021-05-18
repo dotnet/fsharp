@@ -160,9 +160,6 @@ type internal IncrementalBuilder =
       /// Check if one of the build's references is invalidated.
       member IsReferencesInvalidated : bool
 
-      /// Check if the build is invalidated.
-      member IsImportsInvalidated : bool
-
       /// The list of files the build depends on
       member AllDependenciesDeprecated : string[]
 
