@@ -63,8 +63,6 @@ module private FSharpProjectOptionsHelpers =
         if oldProjectMetadataRefs.Count <> newProjectMetadataRefs.Count then true
         else
 
-        let mutable mustCheckFcsInvalidation = false
-
         let oldProjectRefs = oldProject.ProjectReferences
         let newProjectRefs = newProject.ProjectReferences
 
