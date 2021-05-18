@@ -479,52 +479,43 @@ type BackgroundCompiler(
 
     // Also keyed on source. This can only be out of date if the antecedent is out of date
     let checkFileInProjectCache =
-        MruCache<AnyCallerThreadToken, CheckFileCacheKey, AsyncLazy<CheckFileCacheValue option>>
+        MruCache<ParseCacheLockToken, CheckFileCacheKey, AsyncLazy<CheckFileCacheValue option>>
             (keepStrongly=checkFileInProjectCacheSize,
              areSame=AreSameForChecking3,
              areSimilar=AreSubsumable3)
 
-    // The goal of the check file cache agent is to ensure 
-    // that we have a single AsyncLazy instance per source text in the project to type-check.
-    let foregroundCheckFileCacheAgent =
-        let loop (agent: MailboxProcessor<CheckFileCacheAgentMessage>) =
-            async {
-                while true do
-                    match! agent.Receive() with
-                    | CheckFileCacheAgentMessage.GetAsyncLazy(
-                                                                replyChannel,
-                                                                parseResults,
-                                                                sourceText,
-                                                                fileName,
-                                                                options,
-                                                                _fileVersion,
-                                                                builder,
-                                                                tcPrior,
-                                                                tcInfo,
-                                                                creationDiags) ->
-                        let key = (fileName, sourceText.GetHashCode() |> int64, options)
-                        match checkFileInProjectCache.TryGet(AnyCallerThread, key) with
-                        | Some res -> replyChannel.Reply(res)
-                        | _ ->
-                            let res =
-                                AsyncLazy(async {
-                                    return!
-                                        self.CheckOneFileImplAux(
-                                            parseResults,
-                                            sourceText,
-                                            fileName,
-                                            options,
-                                            builder,
-                                            tcPrior,
-                                            tcInfo,
-                                            creationDiags)
-                                })
-                            checkFileInProjectCache.Set(AnyCallerThread, key, res)
-                            replyChannel.Reply(res)
-            }
-        let agent = new MailboxProcessor<_>(loop)
-        agent.Start()
-        agent
+    /// Should be a fast operation. Ensures that we have only one async lazy object per file and its hash.
+    let getCheckFileAsyncLazy   (parseResults,
+                                 sourceText,
+                                 fileName,
+                                 options,
+                                 _fileVersion,
+                                 builder,
+                                 tcPrior,
+                                 tcInfo,
+                                 creationDiags) =
+
+        parseCacheLock.AcquireLock (fun ltok -> 
+            let key = (fileName, sourceText.GetHashCode() |> int64, options)
+            match checkFileInProjectCache.TryGet(ltok, key) with
+            | Some res -> res
+            | _ ->
+                let res =
+                    AsyncLazy(async {
+                        return!
+                            self.CheckOneFileImplAux(
+                                parseResults,
+                                sourceText,
+                                fileName,
+                                options,
+                                builder,
+                                tcPrior,
+                                tcInfo,
+                                creationDiags)
+                    })
+                checkFileInProjectCache.Set(ltok, key, res)
+                res
+        )
 
     static let mutable actualParseFileCount = 0
 
@@ -573,9 +564,9 @@ type BackgroundCompiler(
         async {
             let hash = sourceText.GetHashCode() |> int64
             let key = (filename, hash, options)
-            let cachedResults = checkFileInProjectCache.TryGet(AnyCallerThread, key)
+            let cachedResultsOpt = parseCacheLock.AcquireLock(fun ltok -> checkFileInProjectCache.TryGet(ltok, key))
 
-            match cachedResults with
+            match cachedResultsOpt with
             | Some cachedResults ->
                 match! cachedResults.GetValueAsync() with
                 | Some (parseResults, checkResults,_,priorTimeStamp) 
@@ -587,7 +578,7 @@ type BackgroundCompiler(
                             builder.AreCheckResultsBeforeFileInProjectReady(filename)) -> 
                     return Some (parseResults,checkResults)
                 | _ ->
-                    checkFileInProjectCache.RemoveAnySimilar(AnyCallerThread, key)
+                    parseCacheLock.AcquireLock(fun ltok -> checkFileInProjectCache.RemoveAnySimilar(ltok, key))
                     return None
             | _ ->
                 return None
@@ -664,17 +655,15 @@ type BackgroundCompiler(
             match! bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) with
             | Some (_, results) -> return FSharpCheckFileAnswer.Succeeded results
             | _ ->
-                let! lazyCheckFile =
-                    foregroundCheckFileCacheAgent.PostAndAsyncReply(fun replyChannel ->
-                       CheckFileCacheAgentMessage.GetAsyncLazy(replyChannel, parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
-                    )
+                let lazyCheckFile =
+                    getCheckFileAsyncLazy (parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
 
                 match! lazyCheckFile.GetValueAsync() with
                 | Some (_, results, _, _) -> return FSharpCheckFileAnswer.Succeeded results
                 | _ -> 
                     // Remove the result from the cache as it wasn't successful.
                     let hash: SourceTextHash = sourceText.GetHashCode() |> int64
-                    checkFileInProjectCache.RemoveAnySimilar(AnyCallerThread, (fileName, hash, options))
+                    parseCacheLock.AcquireLock(fun ltok -> checkFileInProjectCache.RemoveAnySimilar(ltok, (fileName, hash, options)))
                     return FSharpCheckFileAnswer.Aborted
          }
 
@@ -927,7 +916,7 @@ type BackgroundCompiler(
         match sourceText with 
         | Some sourceText -> 
             let hash = sourceText.GetHashCode() |> int64
-            let resOpt = checkFileInProjectCache.TryGet(AnyCallerThread,(filename,hash,options))
+            let resOpt = parseCacheLock.AcquireLock(fun ltok -> checkFileInProjectCache.TryGet(ltok,(filename,hash,options)))
             match resOpt with
             | Some res ->
                 match res.TryGetValue() with
@@ -1152,7 +1141,7 @@ type BackgroundCompiler(
     member _.ClearCachesAsync (userOpName) =
         reactor.EnqueueAndAwaitOpAsync (userOpName, "ClearCachesAsync", "", fun ctok -> 
             parseCacheLock.AcquireLock (fun ltok -> 
-                checkFileInProjectCache.Clear(AnyCallerThread)
+                checkFileInProjectCache.Clear(ltok)
                 parseFileCache.Clear(ltok))
             incrementalBuildersCache.Clear(AnyCallerThread)
             frameworkTcImportsCache.Clear ctok
@@ -1162,7 +1151,7 @@ type BackgroundCompiler(
     member _.DownsizeCaches(userOpName) =
         reactor.EnqueueAndAwaitOpAsync (userOpName, "DownsizeCaches", "", fun ctok -> 
             parseCacheLock.AcquireLock (fun ltok -> 
-                checkFileInProjectCache.Resize(AnyCallerThread, newKeepStrongly=1)
+                checkFileInProjectCache.Resize(ltok, newKeepStrongly=1)
                 parseFileCache.Resize(ltok, newKeepStrongly=1))
             incrementalBuildersCache.Resize(AnyCallerThread, newKeepStrongly=1, newKeepMax=1)
             frameworkTcImportsCache.Downsize(ctok)
