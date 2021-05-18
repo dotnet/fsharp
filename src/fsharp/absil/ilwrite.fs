@@ -1044,6 +1044,14 @@ let GetTypeAccessFlags access =
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> 0x00000007
     | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> 0x00000005
 
+let canGenMethodDef cenv (md: ILMethodDef) =
+    // When emitting a reference assembly, do not emit methods that are private unless they are virtual/abstract or provide an explicit interface implementation.
+    // Internal methods can be omitted only if the assembly does not contain a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
+    if cenv.referenceAssemblyOnly &&
+        (match md.Access with ILMemberAccess.Private -> true | ILMemberAccess.Assembly | ILMemberAccess.FamilyAndAssembly -> not cenv.hasInternalsVisibleToAttrib | _ -> false) &&
+        not (md.IsVirtual || md.IsAbstract || md.IsNewSlot || md.IsFinal) then false
+    else true
+
 let rec GetTypeDefAsRow cenv env _enc (td: ILTypeDef) =
     let nselem, nelem = GetTypeNameAsElemPair cenv td.Name
     let flags =
@@ -1085,19 +1093,20 @@ and GetKeyForMethodDef cenv tidx (md: ILMethodDef) =
     MethodDefKey (cenv.ilg, tidx, md.GenericParams.Length, md.Name, md.Return.Type, md.ParameterTypes, md.CallingConv.IsStatic)
 
 and GenMethodDefPass2 cenv tidx md =
-    let idx =
-      cenv.methodDefIdxsByKey.AddUniqueEntry
-         "method"
-         (fun (key: MethodDefKey) ->
-           dprintn "Duplicate in method table is:"
-           dprintn (" Type index: "+string key.TypeIdx)
-           dprintn (" Method name: "+key.Name)
-           dprintn (" Method arity (num generic params): "+string key.GenericArity)
-           key.Name
-         )
-         (GetKeyForMethodDef cenv tidx md)
+    if canGenMethodDef cenv md then
+        let idx =
+          cenv.methodDefIdxsByKey.AddUniqueEntry
+             "method"
+             (fun (key: MethodDefKey) ->
+               dprintn "Duplicate in method table is:"
+               dprintn (" Type index: "+string key.TypeIdx)
+               dprintn (" Method name: "+key.Name)
+               dprintn (" Method arity (num generic params): "+string key.GenericArity)
+               key.Name
+             )
+             (GetKeyForMethodDef cenv tidx md)
 
-    cenv.methodDefIdxs.[md] <- idx
+        cenv.methodDefIdxs.[md] <- idx
 
 and GetKeyForPropertyDef tidx (x: ILPropertyDef) =
     PropKey (tidx, x.Name, x.PropertyType, x.Args)
@@ -2524,64 +2533,57 @@ let GenMethodImplPass3 cenv env _tgparams tidx mimpl =
                 MethodDefOrRef (midx2Tag, midx2Row) |]) |> ignore
 
 let GenMethodDefPass3 cenv env (md: ILMethodDef) =
-
-    // When emitting a reference assembly, do not emit methods that are private unless they are virtual/abstract or provide an explicit interface implementation.
-    // Internal methods can be omitted only if the assembly does not contain a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
-    if cenv.referenceAssemblyOnly &&
-        (md.Access = ILMemberAccess.Private ||
-         ((md.Access = ILMemberAccess.Assembly || md.Access = ILMemberAccess.FamilyAndAssembly) && not cenv.hasInternalsVisibleToAttrib)) &&
-        not (md.IsVirtual || md.IsAbstract || md.IsNewSlot || md.IsFinal) then ()
-    else
-
-    let midx = GetMethodDefIdx cenv md
-    let idx2 = AddUnsharedRow cenv TableNames.Method (GenMethodDefAsRow cenv env midx md)
-    if midx <> idx2 then failwith "index of method def on pass 3 does not match index on pass 2"
-    GenReturnPass3 cenv md.Return
-    md.Parameters |> List.iteri (fun n param -> GenParamPass3 cenv env (n+1) param)
-    md.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_MethodDef, midx)
-    md.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_MethodDef, midx)
-    md.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp)
-    match md.Body with
-    | MethodBody.PInvoke attrLazy ->
-        let attr = attrLazy.Value
-        let flags =
-          begin match attr.CallingConv with
-          | PInvokeCallingConvention.None -> 0x0000
-          | PInvokeCallingConvention.Cdecl -> 0x0200
-          | PInvokeCallingConvention.Stdcall -> 0x0300
-          | PInvokeCallingConvention.Thiscall -> 0x0400
-          | PInvokeCallingConvention.Fastcall -> 0x0500
-          | PInvokeCallingConvention.WinApi -> 0x0100
-          end |||
-          begin match attr.CharEncoding with
-          | PInvokeCharEncoding.None -> 0x0000
-          | PInvokeCharEncoding.Ansi -> 0x0002
-          | PInvokeCharEncoding.Unicode -> 0x0004
-          | PInvokeCharEncoding.Auto -> 0x0006
-          end |||
-          begin match attr.CharBestFit with
-          | PInvokeCharBestFit.UseAssembly -> 0x0000
-          | PInvokeCharBestFit.Enabled -> 0x0010
-          | PInvokeCharBestFit.Disabled -> 0x0020
-          end |||
-          begin match attr.ThrowOnUnmappableChar with
-          | PInvokeThrowOnUnmappableChar.UseAssembly -> 0x0000
-          | PInvokeThrowOnUnmappableChar.Enabled -> 0x1000
-          | PInvokeThrowOnUnmappableChar.Disabled -> 0x2000
-          end |||
-          (if attr.NoMangle then 0x0001 else 0x0000) |||
-          (if attr.LastError then 0x0040 else 0x0000)
-        AddUnsharedRow cenv TableNames.ImplMap
-            (UnsharedRow
-               [| UShort (uint16 flags)
-                  MemberForwarded (mf_MethodDef, midx)
-                  StringE (GetStringHeapIdx cenv attr.Name)
-                  SimpleIndex (TableNames.ModuleRef, GetModuleRefAsIdx cenv attr.Where) |]) |> ignore
-    | _ -> ()
+    if canGenMethodDef cenv md then
+        let midx = GetMethodDefIdx cenv md
+        let idx2 = AddUnsharedRow cenv TableNames.Method (GenMethodDefAsRow cenv env midx md)
+        if midx <> idx2 then failwith "index of method def on pass 3 does not match index on pass 2"
+        GenReturnPass3 cenv md.Return
+        md.Parameters |> List.iteri (fun n param -> GenParamPass3 cenv env (n+1) param)
+        md.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_MethodDef, midx)
+        md.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_MethodDef, midx)
+        md.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp)
+        match md.Body with
+        | MethodBody.PInvoke attrLazy ->
+            let attr = attrLazy.Value
+            let flags =
+              begin match attr.CallingConv with
+              | PInvokeCallingConvention.None -> 0x0000
+              | PInvokeCallingConvention.Cdecl -> 0x0200
+              | PInvokeCallingConvention.Stdcall -> 0x0300
+              | PInvokeCallingConvention.Thiscall -> 0x0400
+              | PInvokeCallingConvention.Fastcall -> 0x0500
+              | PInvokeCallingConvention.WinApi -> 0x0100
+              end |||
+              begin match attr.CharEncoding with
+              | PInvokeCharEncoding.None -> 0x0000
+              | PInvokeCharEncoding.Ansi -> 0x0002
+              | PInvokeCharEncoding.Unicode -> 0x0004
+              | PInvokeCharEncoding.Auto -> 0x0006
+              end |||
+              begin match attr.CharBestFit with
+              | PInvokeCharBestFit.UseAssembly -> 0x0000
+              | PInvokeCharBestFit.Enabled -> 0x0010
+              | PInvokeCharBestFit.Disabled -> 0x0020
+              end |||
+              begin match attr.ThrowOnUnmappableChar with
+              | PInvokeThrowOnUnmappableChar.UseAssembly -> 0x0000
+              | PInvokeThrowOnUnmappableChar.Enabled -> 0x1000
+              | PInvokeThrowOnUnmappableChar.Disabled -> 0x2000
+              end |||
+              (if attr.NoMangle then 0x0001 else 0x0000) |||
+              (if attr.LastError then 0x0040 else 0x0000)
+            AddUnsharedRow cenv TableNames.ImplMap
+                (UnsharedRow
+                   [| UShort (uint16 flags)
+                      MemberForwarded (mf_MethodDef, midx)
+                      StringE (GetStringHeapIdx cenv attr.Name)
+                      SimpleIndex (TableNames.ModuleRef, GetModuleRefAsIdx cenv attr.Where) |]) |> ignore
+        | _ -> ()
 
 let GenMethodDefPass4 cenv env md =
-    let midx = GetMethodDefIdx cenv md
-    List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_MethodDef, midx) gp) md.GenericParams
+    if canGenMethodDef cenv md then
+        let midx = GetMethodDefIdx cenv md
+        List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_MethodDef, midx) gp) md.GenericParams
 
 let GenPropertyMethodSemanticsPass3 cenv pidx kind mref =
     // REVIEW: why are we catching exceptions here?
@@ -2893,7 +2895,7 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
         )
 
     let m =
-        // Emit System.Runtime.CompilerServices.ReferenceAssemblyAttribute as an assembly-level when generating a reference assembly.
+        // Emit System.Runtime.CompilerServices.ReferenceAssemblyAttribute as an assembly-level attribute when generating a reference assembly.
         // Useful for the runtime to know that the assembly is a reference assembly.
         match referenceAssemblyAttribOpt with
         | Some referenceAssemblyAttrib when referenceAssemblyOnly ->
