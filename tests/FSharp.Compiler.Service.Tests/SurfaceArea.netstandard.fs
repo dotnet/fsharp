@@ -1973,9 +1973,8 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] Dependen
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.CodeAnalysis.FSharpChecker
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean ImplicitlyStartBackgroundWork
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean IsProjectReferencesInvalidated(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions)
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean get_ImplicitlyStartBackgroundWork()
-FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Instance
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker get_Instance()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions GetProjectOptionsFromCommandLineArgs(System.String, System.String[], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
@@ -10420,6 +10419,8 @@ FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Xml.XmlDoc get_Empty()
 FSharp.Compiler.Xml.XmlDoc: System.String GetXmlText()
 FSharp.Compiler.Xml.XmlDoc: System.String[] GetElaboratedXmlLines()
 FSharp.Compiler.Xml.XmlDoc: System.String[] UnprocessedLines
+FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
+FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)oc: System.String[] UnprocessedLines
 FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
 FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)"
         SurfaceArea.verify expected "netstandard" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))

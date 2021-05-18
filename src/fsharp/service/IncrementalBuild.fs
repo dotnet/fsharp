@@ -1013,11 +1013,6 @@ type IncrementalBuilder(
         else
             state
 
-    let computeTimeStamps state cache =
-        let state = computeStampedReferencedAssemblies state true cache
-        let state = computeStampedFileNames state cache
-        state
-
     let tryGetSlotPartial (state: IncrementalBuilderState) slot =
         match state.boundModels.[slot].TryGetPartial() with
         | ValueSome boundModel ->
@@ -1102,7 +1097,7 @@ type IncrementalBuilder(
                     return! loop agent
                 else
 
-                currentState <- computeTimeStamps currentState cache
+                currentState <- computeStampedFileNames currentState cache
                 replyChannel.Reply()
                 return! loop agent
             }
@@ -1143,8 +1138,6 @@ type IncrementalBuilder(
             computeStampedReferencedAssemblies currentState true (TimeStampCache(defaultTimeStamp)) |> ignore
             isImportsInvalidated
 
-    member _.IsImportsInvalidated = isImportsInvalidated
-
     member _.AllDependenciesDeprecated = allDependencies
 
     member _.PopulatePartialCheckingResults () =
@@ -1165,7 +1158,7 @@ type IncrementalBuilder(
 
     member builder.TryGetCheckResultsBeforeFileInProject (filename) =
         let cache = TimeStampCache defaultTimeStamp
-        let tmpState = computeTimeStamps currentState cache
+        let tmpState = computeStampedFileNames currentState cache
 
         let slotOfFile = builder.GetSlotOfFileName filename
         match tryGetBeforeSlotPartial tmpState slotOfFile with
@@ -1236,7 +1229,7 @@ type IncrementalBuilder(
         }
 
     member _.GetLogicalTimeStampForProject(cache) =
-        let tmpState = computeTimeStamps currentState cache
+        let tmpState = computeStampedFileNames currentState cache
         computeProjectTimeStamp tmpState
 
     member _.TryGetSlotOfFileName(filename: string) =
