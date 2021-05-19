@@ -1589,8 +1589,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let! contentsOpt =
           cancellable {
             match r.ProjectReference with
-            | Some ilb -> return (Async.RunSynchronously(ilb.EvaluateRawContents())) // TODO:
-            | None -> return None
+            | Some ilb -> 
+                // Importing is done on a specific thread, specified by the 'ctok' (CompilationThreadToken).
+                // This specific thread is the only one allowed to run async computations synchronously.
+                return (Async.RunSynchronously(ilb.EvaluateRawContents()))
+            | None -> 
+                return None
           }
 
         // If we have a project reference but did not get any valid contents,
