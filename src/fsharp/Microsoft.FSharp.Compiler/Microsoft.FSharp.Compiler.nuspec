@@ -6,7 +6,7 @@
         <dependencies>
             <group targetFramework=".NET5.0">
                 <dependency id="Microsoft.NETCore.Platforms" version="2.0.0" />
-                <dependency id="NETStandard.Library" version="2.0.0" />
+                <dependency id="NETStandard.Library" version="2.1.0" />
                 <dependency id="System.Collections.Immutable" version="1.5.0" />
                 <dependency id="System.Diagnostics.Process" version="4.3.0" />
                 <dependency id="System.Diagnostics.TraceSource" version="4.3.0" />
@@ -48,8 +48,8 @@
         <!-- assemblies -->
         <file src="fsc\$Configuration$\net5.0\fsc.dll"                                                     target="lib\net5.0" />
         <file src="fsi\$Configuration$\net5.0\fsi.dll"                                                     target="lib\net5.0" />
-        <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.dll"                             target="lib\net5.0" />
-        <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.xml"                             target="lib\net5.0" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.1\FSharp.Core.dll"                             target="lib\net5.0" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.1\FSharp.Core.xml"                             target="lib\net5.0" />
         <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\FSharp.Compiler.Service.dll"     target="lib\net5.0" />
         <file src="FSharp.Build\$Configuration$\netstandard2.0\FSharp.Build.dll"                           target="lib\net5.0" />
         <file src="FSharp.DependencyManager.Nuget\$configuration$\netstandard2.0\FSharp.DependencyManager.Nuget.dll"
@@ -66,7 +66,7 @@
         <file src="FSharp.Build\$Configuration$\netstandard2.0\Microsoft.FSharp.Overrides.NetSdk.targets"  target="contentFiles\any\any" />
 
         <!-- resources -->
-        <file src="FSharp.Core\$Configuration$\netstandard2.0\**\FSharp.Core.resources.dll"                target="lib\net5.0" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.1\**\FSharp.Core.resources.dll"                target="lib\net5.0" />
         <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\**\FSharp.Compiler.Service.resources.dll"
                                                                                                            target="lib\net5.0" />
         <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\**\FSharp.Compiler.Interactive.Settings.resources.dll"
