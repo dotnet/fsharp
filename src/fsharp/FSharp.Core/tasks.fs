@@ -32,9 +32,6 @@ type TaskStateMachineData<'T> =
     val mutable Result : 'T
 
     [<DefaultValue(false)>]
-    val mutable Awaiter: ICriticalNotifyCompletion
-
-    [<DefaultValue(false)>]
     val mutable MethodBuilder : AsyncTaskMethodBuilder<'T>
 
 and TaskStateMachine<'TOverall> = ResumableStateMachine<TaskStateMachineData<'TOverall>>
@@ -78,7 +75,7 @@ type TaskBuilder() =
             { new TaskResumptionDynamicInfo<'T>(initialResumptionFunc) with 
                 member info.MoveNext(sm) = 
                     try
-                        sm.Data.Awaiter <- null
+                        sm.ResumptionDynamicInfo.ResumptionData <- null
                         let step = info.ResumptionFunc.Invoke(&sm) 
                         if step then 
                             sm.Data.MethodBuilder.SetResult(sm.Data.Result)
@@ -87,8 +84,9 @@ type TaskBuilder() =
                             // return to the trampoline. This is because the ResumbleCode.*Dynamic adjust
                             // the continuation by mutation as we come back down the stack.  Note the Awaiter
                             // is always set before each return of 'false'.
-                            assert not (isNull sm.Data.Awaiter)
-                            sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&sm.Data.Awaiter, &sm)
+                            let mutable awaiter = sm.ResumptionDynamicInfo.ResumptionData :?> ICriticalNotifyCompletion
+                            assert not (isNull awaiter)
+                            sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
 
                     with exn ->
                         sm.Data.MethodBuilder.SetException exn
@@ -166,7 +164,7 @@ type TaskBuilder() =
         if task.IsCompleted then
             cont.Invoke(&sm)
         else
-            sm.Data.Awaiter <- awaiter
+            sm.ResumptionDynamicInfo.ResumptionData <- (awaiter :> ICriticalNotifyCompletion)
             sm.ResumptionDynamicInfo.ResumptionFunc <- cont
             false
 
@@ -222,7 +220,7 @@ type TaskBuilder() =
                 if awaiter.IsCompleted then 
                     true
                 else
-                    sm.Data.Awaiter <- awaiter
+                    sm.ResumptionDynamicInfo.ResumptionData <- (awaiter :> ICriticalNotifyCompletion)
                     sm.ResumptionDynamicInfo.ResumptionFunc <- cont
                     false
                 ))
@@ -275,7 +273,7 @@ module ContextSensitiveTasks =
                 if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
                     cont.Invoke(&sm)
                 else
-                    sm.Data.Awaiter <- awaiter
+                    sm.ResumptionDynamicInfo.ResumptionData <- (awaiter :> ICriticalNotifyCompletion)
                     sm.ResumptionDynamicInfo.ResumptionFunc <- cont
                     false
 
@@ -324,7 +322,7 @@ module ContextSensitiveTasks =
             if awaiter.IsCompleted then 
                 cont.Invoke(&sm)
             else
-                sm.Data.Awaiter <- awaiter
+                sm.ResumptionDynamicInfo.ResumptionData <- (awaiter :> ICriticalNotifyCompletion)
                 sm.ResumptionDynamicInfo.ResumptionFunc <- cont
                 false
 
@@ -376,7 +374,7 @@ module ContextSensitiveTasks =
             if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
                 cont.Invoke(&sm)
             else
-                sm.Data.Awaiter <- awaiter
+                sm.ResumptionDynamicInfo.ResumptionData <- (awaiter :> ICriticalNotifyCompletion)
                 sm.ResumptionDynamicInfo.ResumptionFunc <- cont
                 false
 
@@ -424,7 +422,7 @@ module ContextSensitiveTasks =
             if task.IsCompleted then
                 cont.Invoke(&sm)
             else
-                sm.Data.Awaiter <- awaiter
+                sm.ResumptionDynamicInfo.ResumptionData <- (awaiter :> ICriticalNotifyCompletion)
                 sm.ResumptionDynamicInfo.ResumptionFunc <- cont
                 false
 

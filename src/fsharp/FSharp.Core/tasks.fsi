@@ -24,10 +24,6 @@ type TaskStateMachineData<'T> =
     [<DefaultValue(false)>]
     val mutable Result : 'T
 
-    /// When interpreted, holds the awaiter used to suspend of the state machine
-    [<DefaultValue(false)>]
-    val mutable Awaiter: ICriticalNotifyCompletion
-
     /// Holds the MethodBuilder for the state machine
     [<DefaultValue(false)>]
     val mutable MethodBuilder : AsyncTaskMethodBuilder<'T>

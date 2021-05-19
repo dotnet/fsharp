@@ -55,9 +55,20 @@ and IResumableStateMachine<'Data> =
 and
     [<AbstractClass; Experimental("Experimental library feature, requires '--langversion:preview'")>]
     ResumptionDynamicInfo<'Data> =
+
+    /// Create dynamic information for a state machine
     new: initial: ResumptionFunc<'Data> -> ResumptionDynamicInfo<'Data>
+    
+    /// The continuation of the state machine
     member ResumptionFunc: ResumptionFunc<'Data> with get, set 
+    
+    /// Additional data associated with the state machine
+    member ResumptionData: obj with get, set 
+
+    /// Executes the MoveNext implementation of the state machine
     abstract MoveNext: machine: byref<ResumableStateMachine<'Data>> -> unit
+
+    /// Executes the SetStateMachine implementation of the state machine
     abstract SetStateMachine: machine: byref<ResumableStateMachine<'Data>> * machineState: IAsyncStateMachine -> unit
 
 /// Represents the runtime continuation of a resumable state machine created dynamically

@@ -685,7 +685,6 @@ Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Control.TaskBuilder
 Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Control.TaskBuilder task
 Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] TaskBuilder.Using[TResource,TOverall,T](Microsoft.FSharp.Control.TaskBuilder, TResource, Microsoft.FSharp.Core.FSharpFunc`2[TResource,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
 Microsoft.FSharp.Control.TaskStateMachineData`1[T]: System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[T] MethodBuilder
-Microsoft.FSharp.Control.TaskStateMachineData`1[T]: System.Runtime.CompilerServices.ICriticalNotifyCompletion Awaiter
 Microsoft.FSharp.Control.TaskStateMachineData`1[T]: T Result
 Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] AsyncDownloadFile(System.Net.WebClient, System.Uri, System.String)
 Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[System.Byte[]] AsyncDownloadData(System.Net.WebClient, System.Uri)
@@ -818,6 +817,9 @@ Microsoft.FSharp.Core.CompilerServices.ResumptionDynamicInfo`1[TData]: Void .cto
 Microsoft.FSharp.Core.CompilerServices.ResumptionDynamicInfo`1[TData]: Void MoveNext(Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[TData] ByRef)
 Microsoft.FSharp.Core.CompilerServices.ResumptionDynamicInfo`1[TData]: Void SetStateMachine(Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[TData] ByRef, System.Runtime.CompilerServices.IAsyncStateMachine)
 Microsoft.FSharp.Core.CompilerServices.ResumptionDynamicInfo`1[TData]: Void set_ResumptionFunc(Microsoft.FSharp.Core.CompilerServices.ResumptionFunc`1[TData])
+Microsoft.FSharp.Core.CompilerServices.ResumptionDynamicInfo`1[TData]: System.Object ResumptionData
+Microsoft.FSharp.Core.CompilerServices.ResumptionDynamicInfo`1[TData]: System.Object get_ResumptionData()
+Microsoft.FSharp.Core.CompilerServices.ResumptionDynamicInfo`1[TData]: Void set_ResumptionData(System.Object)
 Microsoft.FSharp.Core.CompilerServices.ResumptionFunc`1[TData]: Boolean EndInvoke(System.IAsyncResult)
 Microsoft.FSharp.Core.CompilerServices.ResumptionFunc`1[TData]: Boolean Invoke(Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[TData] ByRef)
 Microsoft.FSharp.Core.CompilerServices.ResumptionFunc`1[TData]: System.IAsyncResult BeginInvoke(Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[TData] ByRef, System.AsyncCallback, System.Object)
