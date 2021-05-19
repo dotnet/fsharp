@@ -7,6 +7,7 @@ open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
 open System.Reflection
+open System.Threading
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -350,18 +351,22 @@ type BackgroundCompiler(
         incrementalBuildersCache.TryGetAny (AnyCallerThread, options)
         |> Option.map (fun x -> x.GetValueAsync())
 
-    let createBuilderLazy (options, userOpName) =
+    let createBuilderLazy (options, userOpName, ct: CancellationToken) =
         lock gate (fun () ->
-            let getBuilderLazy = 
-                let ctok = CompilationThreadToken()
-                AsyncLazy(CreateOneIncrementalBuilder (ctok, options, userOpName) |> Cancellable.toAsync)
-            incrementalBuildersCache.Set (AnyCallerThread, options, getBuilderLazy)
-            getBuilderLazy
+            if ct.IsCancellationRequested then
+                AsyncLazy(async { return None, [||] })
+            else
+                let getBuilderLazy = 
+                    let ctok = CompilationThreadToken()
+                    AsyncLazy(CreateOneIncrementalBuilder (ctok, options, userOpName) |> Cancellable.toAsync)
+                incrementalBuildersCache.Set (AnyCallerThread, options, getBuilderLazy)
+                getBuilderLazy
         )
 
     let createAndGetBuilder (options, userOpName) =
         async {
-            let getBuilderLazy = createBuilderLazy (options, userOpName)
+            let! ct = Async.CancellationToken
+            let getBuilderLazy = createBuilderLazy (options, userOpName, ct)
             return! getBuilderLazy.GetValueAsync()
         }
 
@@ -981,21 +986,26 @@ type BackgroundCompiler(
           |> Cancellable.toAsync
             
     member bc.InvalidateConfiguration(options : FSharpProjectOptions, userOpName) =
-        if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
-            let _ = createBuilderLazy (options, userOpName)
-            ()
+        lock gate (fun () ->
+            if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
+                let _ = createBuilderLazy (options, userOpName, CancellationToken.None)
+                ()
+        )
 
     member bc.ClearCache(options : FSharpProjectOptions seq, _userOpName) =
-        options
-        |> Seq.iter (fun options -> incrementalBuildersCache.RemoveAnySimilar(AnyCallerThread, options))
+        lock gate (fun () ->
+            options
+            |> Seq.iter (fun options -> incrementalBuildersCache.RemoveAnySimilar(AnyCallerThread, options))
+        )
 
     member _.NotifyProjectCleaned (options : FSharpProjectOptions, userOpName) =
         async {
+            let! ct = Async.CancellationToken
             // If there was a similar entry (as there normally will have been) then re-establish an empty builder .  This 
             // is a somewhat arbitrary choice - it will have the effect of releasing memory associated with the previous 
             // builder, but costs some time.
             if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
-                let _ = createBuilderLazy (options, userOpName)
+                let _ = createBuilderLazy (options, userOpName, ct)
                 ()
         }
 

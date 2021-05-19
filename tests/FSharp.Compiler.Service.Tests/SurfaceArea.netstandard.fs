@@ -2020,7 +2020,7 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: System.Tuple`2[FSharp.Compiler.Token
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearCache(System.Collections.Generic.IEnumerable`1[FSharp.Compiler.CodeAnalysis.FSharpProjectOptions], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateAll()
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateConfiguration(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateConfiguration(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void set_MaxMemory(Int32)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsBindingALambdaAtPosition(FSharp.Compiler.Text.Position)
@@ -10396,21 +10396,6 @@ FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.XmlDoc ToXmlDoc(Boolean, Micr
 FSharp.Compiler.Xml.PreXmlDoc: Int32 GetHashCode()
 FSharp.Compiler.Xml.PreXmlDoc: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.Xml.PreXmlDoc: System.String ToString()
-FSharp.Compiler.Xml.XmlDoc
-FSharp.Compiler.Xml.XmlDoc: Boolean IsEmpty
-FSharp.Compiler.Xml.XmlDoc: Boolean NonEmpty
-FSharp.Compiler.Xml.XmlDoc: Boolean get_IsEmpty()
-FSharp.Compiler.Xml.XmlDoc: Boolean get_NonEmpty()
-FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Text.Range Range
-FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Text.Range get_Range()
-FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Xml.XmlDoc Empty
-FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Xml.XmlDoc Merge(FSharp.Compiler.Xml.XmlDoc, FSharp.Compiler.Xml.XmlDoc)
-FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Xml.XmlDoc get_Empty()
-FSharp.Compiler.Xml.XmlDoc: System.String GetXmlText()
-FSharp.Compiler.Xml.XmlDoc: System.String[] GetElaboratedXmlLines()
-FSharp.Compiler.Xml.XmlDoc: System.String[] UnprocessedLines
-FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
-FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)Compiler.Xml.PreXmlDoc: System.String ToString()
 FSharp.Compiler.Xml.XmlDoc
 FSharp.Compiler.Xml.XmlDoc: Boolean IsEmpty
 FSharp.Compiler.Xml.XmlDoc: Boolean NonEmpty
