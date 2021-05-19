@@ -232,42 +232,25 @@ type AssemblyResolution =
     /// Compute the ILAssemblyRef for a resolved assembly. This is done by reading the binary if necessary. The result
     /// is cached.
     ///
-    /// For project references in the language service, this would result in a build of the project.
-    /// This is because ``EvaluateRawContents ctok`` is used. However this path is only currently used
-    /// in fsi.fs, which does not use project references.
-    //
-    member this.GetILAssemblyRef(ctok, reduceMemoryUsage, tryGetMetadataSnapshot) =
-      cancellable {
+    /// Only used in F# Interactive
+    member this.GetILAssemblyRef(reduceMemoryUsage, tryGetMetadataSnapshot) =
         match this.ilAssemblyRef with
-        | Some assemblyRef -> return assemblyRef
+        | Some assemblyRef -> assemblyRef
         | None ->
-            let! assemblyRefOpt =
-              cancellable {
-                match this.ProjectReference with
-                | Some r ->
-                    let! contents = r.EvaluateRawContents ctok
-                    match contents with
-                    | None -> return None
-                    | Some contents ->
-                        match contents.ILScopeRef with
-                        | ILScopeRef.Assembly aref -> return Some aref
-                        | _ -> return None
-                | None -> return None
-              }
+            match this.ProjectReference with
+            | Some _ -> failwith "IProjectReference is not allowed to be used in GetILAssemblyRef"
+            | None -> ()
+
             let assemblyRef =
-                match assemblyRefOpt with
-                | Some aref -> aref
-                | None ->
-                    let readerSettings: ILReaderOptions =
-                        { pdbDirPath=None
-                          reduceMemoryUsage = reduceMemoryUsage
-                          metadataOnly = MetadataOnlyFlag.Yes
-                          tryGetMetadataSnapshot = tryGetMetadataSnapshot }
-                    use reader = OpenILModuleReader this.resolvedPath readerSettings
-                    mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
+                let readerSettings: ILReaderOptions =
+                    { pdbDirPath=None
+                      reduceMemoryUsage = reduceMemoryUsage
+                      metadataOnly = MetadataOnlyFlag.Yes
+                      tryGetMetadataSnapshot = tryGetMetadataSnapshot }
+                use reader = OpenILModuleReader this.resolvedPath readerSettings
+                mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
             this.ilAssemblyRef <- Some assemblyRef
-            return assemblyRef
-      }
+            assemblyRef
 
 type ImportedBinary =
     { FileName: string
@@ -538,16 +521,16 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
 
     member _.TryFindByOriginalReference(assemblyReference: AssemblyReference) = originalReferenceToResolution.TryFind assemblyReference.Text
 
-    /// This doesn't need to be cancellable, it is only used by F# Interactive
-    member _.TryFindByExactILAssemblyRef (ctok, assemblyRef) =
+    /// Only used by F# Interactive
+    member _.TryFindByExactILAssemblyRef (assemblyRef) =
         results |> List.tryFind (fun ar->
-            let r = ar.GetILAssemblyRef(ctok, tcConfig.reduceMemoryUsage, tcConfig.tryGetMetadataSnapshot) |> Cancellable.runWithoutCancellation
+            let r = ar.GetILAssemblyRef(tcConfig.reduceMemoryUsage, tcConfig.tryGetMetadataSnapshot)
             r = assemblyRef)
 
-    /// This doesn't need to be cancellable, it is only used by F# Interactive
-    member _.TryFindBySimpleAssemblyName (ctok, simpleAssemName) =
+    /// Only used by F# Interactive
+    member _.TryFindBySimpleAssemblyName (simpleAssemName) =
         results |> List.tryFind (fun ar->
-            let r = ar.GetILAssemblyRef(ctok, tcConfig.reduceMemoryUsage, tcConfig.tryGetMetadataSnapshot) |> Cancellable.runWithoutCancellation
+            let r = ar.GetILAssemblyRef(tcConfig.reduceMemoryUsage, tcConfig.tryGetMetadataSnapshot)
             r.Name = simpleAssemName)
 
     member _.TryFindByResolvedPath nm = resolvedPathToResolution.TryFind nm
@@ -1606,7 +1589,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let! contentsOpt =
           cancellable {
             match r.ProjectReference with
-            | Some ilb -> return! ilb.EvaluateRawContents ctok
+            | Some ilb -> return (Async.RunSynchronously(ilb.EvaluateRawContents())) // TODO:
             | None -> return None
           }
 
@@ -1710,13 +1693,13 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         | _ -> None
 #endif
 
-    /// This doesn't need to be cancellable, it is only used by F# Interactive
-    member tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName (ctok, simpleAssemName) : string option =
-        resolutions.TryFindBySimpleAssemblyName (ctok, simpleAssemName) |> Option.map (fun r -> r.resolvedPath)
+    /// Only used by F# Interactive
+    member tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName (simpleAssemName) : string option =
+        resolutions.TryFindBySimpleAssemblyName (simpleAssemName) |> Option.map (fun r -> r.resolvedPath)
 
-    /// This doesn't need to be cancellable, it is only used by F# Interactive
-    member tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, assemblyRef: ILAssemblyRef) : string option =
-        resolutions.TryFindByExactILAssemblyRef (ctok, assemblyRef) |> Option.map (fun r -> r.resolvedPath)
+    /// Only used by F# Interactive
+    member tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(assemblyRef: ILAssemblyRef) : string option =
+        resolutions.TryFindByExactILAssemblyRef (assemblyRef) |> Option.map (fun r -> r.resolvedPath)
 
     member tcImports.TryResolveAssemblyReference(ctok, assemblyReference: AssemblyReference, mode: ResolveAssemblyReferenceMode) : OperationResult<AssemblyResolution list> =
         let tcConfig = tcConfigP.Get ctok

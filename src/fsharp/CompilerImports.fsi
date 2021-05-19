@@ -173,10 +173,10 @@ type TcImports =
 
     /// Try to find the given assembly reference by simple name.  Used in magic assembly resolution.  Effectively does implicit
     /// unification of assemblies by simple assembly name.
-    member TryFindExistingFullyQualifiedPathBySimpleAssemblyName: CompilationThreadToken * string -> string option
+    member TryFindExistingFullyQualifiedPathBySimpleAssemblyName: string -> string option
 
     /// Try to find the given assembly reference.
-    member TryFindExistingFullyQualifiedPathByExactAssemblyRef: CompilationThreadToken * ILAssemblyRef -> string option
+    member TryFindExistingFullyQualifiedPathByExactAssemblyRef: ILAssemblyRef -> string option
 
 #if !NO_EXTENSIONTYPING
     /// Try to find a provider-generated assembly

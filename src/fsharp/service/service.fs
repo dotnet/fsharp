@@ -138,7 +138,7 @@ module CompileHelpers =
 
         errors.ToArray(), result
 
-    let createDynamicAssembly (ctok, debugInfo: bool, tcImportsRef: TcImports option ref, execute: bool, assemblyBuilderRef: _ option ref) (tcConfig: TcConfig, tcGlobals:TcGlobals, outfile, ilxMainModule) =
+    let createDynamicAssembly (debugInfo: bool, tcImportsRef: TcImports option ref, execute: bool, assemblyBuilderRef: _ option ref) (tcConfig: TcConfig, tcGlobals:TcGlobals, outfile, ilxMainModule) =
 
         // Create an assembly builder
         let assemblyName = System.Reflection.AssemblyName(System.IO.Path.GetFileNameWithoutExtension outfile)
@@ -161,7 +161,7 @@ module CompileHelpers =
 
         // The function used to resolve types while emitting the code
         let assemblyResolver s = 
-            match tcImportsRef.Value.Value.TryFindExistingFullyQualifiedPathByExactAssemblyRef (ctok, s) with 
+            match tcImportsRef.Value.Value.TryFindExistingFullyQualifiedPathByExactAssemblyRef (s) with 
             | Some res -> Some (Choice1Of2 res)
             | None -> None
 
@@ -266,18 +266,14 @@ type BackgroundCompiler(
 
                      yield
                         { new IProjectReference with 
-                            member x.EvaluateRawContents(ctok) = 
-                              cancellable {
+                            member x.EvaluateRawContents() = 
+                              async {
                                 Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
-                                let! ct = Cancellable.token()
                                 try
-                                    let res = 
-                                        let work = self.GetAssemblyData(ctok, opts, userOpName + ".CheckReferencedProject("+nm+")")
-                                        Async.RunSynchronously(work, cancellationToken=ct)
-                                    return res
+                                    return! self.GetAssemblyData(opts, userOpName + ".CheckReferencedProject("+nm+")")
                                 with
                                 | :? OperationCanceledException ->
-                                    return! Cancellable.canceled()
+                                    return None
                               }
                             member x.TryGetLogicalTimeStamp(cache) = 
                                 self.TryGetLogicalTimeStampForProject(cache, opts)
@@ -286,9 +282,9 @@ type BackgroundCompiler(
                 | FSharpReferencedProject.PEReference(nm,stamp,delayedReader) ->
                     yield
                         { new IProjectReference with 
-                            member x.EvaluateRawContents(_) = 
-                              cancellable {
-                                let! ilReaderOpt = delayedReader.TryGetILModuleReader()
+                            member x.EvaluateRawContents() = 
+                              async {
+                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> Cancellable.toAsync
                                 match ilReaderOpt with
                                 | Some ilReader ->
                                     let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
@@ -341,41 +337,56 @@ type BackgroundCompiler(
     // 
     /// Cache of builds keyed by options.        
     let incrementalBuildersCache = 
-        MruCache<AnyCallerThreadToken, FSharpProjectOptions, (IncrementalBuilder option * FSharpDiagnostic[])>
+        MruCache<AnyCallerThreadToken, FSharpProjectOptions, AsyncLazy<(IncrementalBuilder option * FSharpDiagnostic[])>>
                 (keepStrongly=projectCacheSize, keepMax=projectCacheSize, 
                  areSame =  FSharpProjectOptions.AreSameForChecking, 
                  areSimilar =  FSharpProjectOptions.UseSameProject)
 
-    let tryGetBuilder options =
+    let tryGetBuilderLazy options =
         incrementalBuildersCache.TryGet (AnyCallerThread, options)
 
-    let tryGetSimilarBuilder options =
+    let tryGetBuilder options : Async<(IncrementalBuilder option * FSharpDiagnostic[])> option =
+        tryGetBuilderLazy options
+        |> Option.map (fun x -> x.GetValueAsync())
+
+    let tryGetSimilarBuilder options : Async<(IncrementalBuilder option * FSharpDiagnostic[])> option =
         incrementalBuildersCache.TryGetSimilar (AnyCallerThread, options)
+        |> Option.map (fun x -> x.GetValueAsync())
 
-    let tryGetAnyBuilder options =
+    let tryGetAnyBuilder options : Async<(IncrementalBuilder option * FSharpDiagnostic[])> option =
         incrementalBuildersCache.TryGetAny (AnyCallerThread, options)
+        |> Option.map (fun x -> x.GetValueAsync())
 
-    let getOrCreateBuilderRequireCtok (ctok, options, userOpName) =
-        cancellable {
-            match tryGetBuilder options with
-            | Some (builderOpt,creationDiags) when builderOpt.IsNone || not builderOpt.Value.IsReferencesInvalidated -> 
-                Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
-                return builderOpt,creationDiags
-            | _ -> 
-                Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_BuildingNewCache
-                let! (builderOpt,creationDiags) as info = CreateOneIncrementalBuilder (ctok, options, userOpName)
-                incrementalBuildersCache.Set (AnyCallerThread, options, info)
-                return builderOpt, creationDiags
+    let createBuilderLazy (options, userOpName) =
+        let getBuilderLazy = 
+            let ctok = CompilationThreadToken()
+            AsyncLazy(CreateOneIncrementalBuilder (ctok, options, userOpName) |> Cancellable.toAsync)
+        incrementalBuildersCache.Set (AnyCallerThread, options, getBuilderLazy)
+        getBuilderLazy
+
+    let createAndGetBuilder (options, userOpName) =
+        async {
+            let getBuilderLazy = createBuilderLazy (options, userOpName)
+            return! getBuilderLazy.GetValueAsync()
         }
 
-    let getOrCreateBuilder (options, userOpName) =
-      Reactor.Singleton.EnqueueAndAwaitOpAsync(userOpName, "getOrCreateBuilder", "options", fun ctok ->
-            getOrCreateBuilderRequireCtok(ctok, options, userOpName)
-      )
+    let getOrCreateBuilder (options, userOpName) : Async<(IncrementalBuilder option * FSharpDiagnostic[])> =
+        match tryGetBuilder options with
+        | Some getBuilder -> 
+            async {
+                match! getBuilder with
+                | builderOpt, creationDiags when builderOpt.IsNone || not builderOpt.Value.IsReferencesInvalidated -> 
+                    Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
+                    return builderOpt,creationDiags
+                | _ ->
+                    return! createAndGetBuilder (options, userOpName)
+            }
+        | _ -> 
+            createAndGetBuilder (options, userOpName)
 
     let getSimilarOrCreateBuilder (options, userOpName) =
         match tryGetSimilarBuilder options with
-        | Some res -> async { return res }
+        | Some res -> res
         // The builder does not exist at all. Create it.
         | None -> getOrCreateBuilder (options, userOpName)
 
@@ -387,17 +398,17 @@ type BackgroundCompiler(
 
     let getAnyBuilder (options, userOpName) =
         match tryGetAnyBuilder options with
-        | Some (builderOpt,creationDiags) -> 
+        | Some getBuilder -> 
             Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
-            async { return builderOpt,creationDiags }
+            getBuilder
         | _ ->
             getOrCreateBuilder (options, userOpName)
 
     let getBuilder (options, userOpName) =
         match tryGetBuilder options with
-        | Some (builderOpt,creationDiags) -> 
+        | Some getBuilder -> 
             Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
-            async { return builderOpt,creationDiags }
+            getBuilder
         | _ ->
             getOrCreateBuilder (options, userOpName)
 
@@ -908,10 +919,10 @@ type BackgroundCompiler(
              return None
       }
 
-    member _.GetAssemblyData(ctok, options, userOpName) =
+    member _.GetAssemblyData(options, userOpName) =
         async {
             try
-                let! builderOpt,_ = getOrCreateBuilderRequireCtok (ctok, options, userOpName) |> Cancellable.toAsync
+                let! builderOpt,_ = getOrCreateBuilder (options, userOpName)
                 match builderOpt with 
                 | None -> 
                     return None
@@ -925,9 +936,15 @@ type BackgroundCompiler(
 
     /// Get the timestamp that would be on the output if fully built immediately
     member private _.TryGetLogicalTimeStampForProject(cache, options) =
-        match tryGetBuilder options with
-        | Some (Some builder, _) -> Some (builder.GetLogicalTimeStampForProject(cache))
-        | _ -> None
+        match tryGetBuilderLazy options with
+        | Some lazyWork -> 
+            match lazyWork.TryGetValue() with
+            | ValueSome (Some builder, _) ->
+                Some(builder.GetLogicalTimeStampForProject(cache))
+            | _ ->
+                None
+        | _ -> 
+            None
 
     /// Parse and typecheck the whole project.
     member bc.ParseAndCheckProject(options, userOpName) =
@@ -1000,56 +1017,44 @@ type BackgroundCompiler(
     member bc.InvalidateConfiguration(options : FSharpProjectOptions, startBackgroundCompileIfAlreadySeen, userOpName) =
         let startBackgroundCompileIfAlreadySeen = defaultArg startBackgroundCompileIfAlreadySeen implicitlyStartBackgroundWork
 
-        // This operation can't currently be cancelled nor awaited
-        reactor.EnqueueOp(userOpName, "InvalidateConfiguration: Stamp(" + (options.Stamp |> Option.defaultValue 0L).ToString() + ")", options.ProjectFileName, fun ctok -> 
-            // If there was a similar entry then re-establish an empty builder .  This is a somewhat arbitrary choice - it
-            // will have the effect of releasing memory associated with the previous builder, but costs some time.
-            if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
+        if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
 
-                let newBuilderInfo = CreateOneIncrementalBuilder (ctok, options, userOpName) |> Cancellable.runWithoutCancellation
-                incrementalBuildersCache.Set(AnyCallerThread, options, newBuilderInfo)
+            async {
+                let _ = createBuilderLazy (options, userOpName)
 
                 // Start working on the project.  Also a somewhat arbitrary choice
                 if startBackgroundCompileIfAlreadySeen then 
-                    bc.CheckProjectInBackground(options, userOpName + ".StartBackgroundCompile"))
+                    bc.CheckProjectInBackground(options, userOpName + ".StartBackgroundCompile")
+            }
+            |> Async.Start
 
-    member bc.ClearCache(options : FSharpProjectOptions seq, userOpName) =
-        // This operation can't currently be cancelled nor awaited
-        reactor.EnqueueOp(userOpName, "ClearCache", String.Empty, fun _ ->
-            options
-            |> Seq.iter (fun options -> incrementalBuildersCache.RemoveAnySimilar(AnyCallerThread, options)))
+    member bc.ClearCache(options : FSharpProjectOptions seq, _userOpName) =
+        options
+        |> Seq.iter (fun options -> incrementalBuildersCache.RemoveAnySimilar(AnyCallerThread, options))
 
     member _.NotifyProjectCleaned (options : FSharpProjectOptions, userOpName) =
-        reactor.EnqueueAndAwaitOpAsync(userOpName, "NotifyProjectCleaned", options.ProjectFileName, fun ctok -> 
-            cancellable {
-                // If there was a similar entry (as there normally will have been) then re-establish an empty builder .  This 
-                // is a somewhat arbitrary choice - it will have the effect of releasing memory associated with the previous 
-                // builder, but costs some time.
-                if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
-                    // We do not need to decrement here - it is done by disposal.
-                    let! newBuilderInfo = CreateOneIncrementalBuilder (ctok, options, userOpName) 
-                    incrementalBuildersCache.Set(AnyCallerThread, options, newBuilderInfo)
-            })
+        async {
+            // If there was a similar entry (as there normally will have been) then re-establish an empty builder .  This 
+            // is a somewhat arbitrary choice - it will have the effect of releasing memory associated with the previous 
+            // builder, but costs some time.
+            if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
+                let _ = createBuilderLazy (options, userOpName)
+                ()
+        }
 
     member _.CheckProjectInBackground (options, userOpName) = 
-        reactor.SetBackgroundOp(Some(userOpName, "", "", fun ctok ->
-            eventually {
-                try
-                    let! ct = Eventually.token()
-                    let! builderOpt,_ = getOrCreateBuilderRequireCtok (ctok, options, userOpName) |> Eventually.ofCancellable
-                    let work =
-                        async {
-                            match builderOpt with 
-                            | None -> return ()
-                            | Some builder -> 
-                                return! builder.PopulatePartialCheckingResults ()
-                        }
-                    Async.RunSynchronously(work, cancellationToken=ct)
-                with
-                | :? OperationCanceledException ->
-                    ()
-            }
-        ))        
+        async {
+            try
+                let! builderOpt,_ = getOrCreateBuilder (options, userOpName)
+                match builderOpt with 
+                | None -> return ()
+                | Some builder -> 
+                    return! builder.PopulatePartialCheckingResults ()
+            with
+            | :? OperationCanceledException ->
+                ()
+        }
+        |> Async.Start
 
     member _.StopBackgroundCompile   () =
         reactor.SetBackgroundOp(None)
@@ -1256,7 +1261,7 @@ type FSharpChecker(legacyReferenceResolver,
 
         // Function to generate and store the results of compilation 
         let debugInfo =  otherFlags |> Array.exists (fun arg -> arg = "-g" || arg = "--debug:+" || arg = "/debug:+")
-        let dynamicAssemblyCreator = Some (CompileHelpers.createDynamicAssembly (ctok, debugInfo, tcImportsRef, execute.IsSome, assemblyBuilderRef))
+        let dynamicAssemblyCreator = Some (CompileHelpers.createDynamicAssembly (debugInfo, tcImportsRef, execute.IsSome, assemblyBuilderRef))
 
         // Perform the compilation, given the above capturing function.
         let errorsAndWarnings, result = CompileHelpers.compileFromArgs (ctok, otherFlags, legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator)
@@ -1290,7 +1295,7 @@ type FSharpChecker(legacyReferenceResolver,
         let outFile = Path.Combine(location, assemblyName + ".dll")
 
         // Function to generate and store the results of compilation 
-        let dynamicAssemblyCreator = Some (CompileHelpers.createDynamicAssembly (ctok, debugInfo, tcImportsRef, execute.IsSome, assemblyBuilderRef))
+        let dynamicAssemblyCreator = Some (CompileHelpers.createDynamicAssembly (debugInfo, tcImportsRef, execute.IsSome, assemblyBuilderRef))
 
         // Perform the compilation, given the above capturing function.
         let errorsAndWarnings, result = 
