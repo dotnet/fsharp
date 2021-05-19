@@ -806,6 +806,111 @@ type IncrementalBuilder(
     let StampReferencedAssemblyTask (cache: TimeStampCache) (_ref, timeStamper) =
         timeStamper cache
 
+    // Link all the assemblies together and produce the input typecheck accumulator
+    static let CombineImportedAssembliesTask (ctok, 
+                                              assemblyName, 
+                                              tcConfig: TcConfig, 
+                                              tcConfigP, 
+                                              tcGlobals, 
+                                              frameworkTcImports, 
+                                              nonFrameworkResolutions, 
+                                              unresolvedReferences, 
+                                              dependencyProvider, 
+                                              loadClosureOpt: LoadClosure option, 
+                                              niceNameGen, 
+                                              basicDependencies,
+                                              keepAssemblyContents,
+                                              keepAllBackgroundResolutions,
+                                              keepAllBackgroundSymbolUses,
+                                              enableBackgroundItemKeyStoreAndSemanticClassification,
+                                              defaultPartialTypeChecking,
+                                              beforeFileChecked,
+                                              fileChecked,
+                                              importsInvalidatedByTypeProvider: Event<unit>) : Cancellable<BoundModel> =
+      cancellable {
+        let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
+        // Return the disposable object that cleans up
+        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
+
+        let! tcImports =
+          cancellable {
+            try
+                let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
+#if !NO_EXTENSIONTYPING
+                tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu ->
+                    // When a CCU reports an invalidation, merge them together and just report a
+                    // general "imports invalidated". This triggers a rebuild.
+                    //
+                    // We are explicit about what the handler closure captures to help reason about the
+                    // lifetime of captured objects, especially in case the type provider instance gets leaked
+                    // or keeps itself alive mistakenly, e.g. via some global state in the type provider instance.
+                    //
+                    // The handler only captures
+                    //    1. a weak reference to the importsInvalidated event.
+                    //
+                    // The IncrementalBuilder holds the strong reference the importsInvalidated event.
+                    //
+                    // In the invalidation handler we use a weak reference to allow the IncrementalBuilder to
+                    // be collected if, for some reason, a TP instance is not disposed or not GC'd.
+                    let capturedImportsInvalidated = WeakReference<_>(importsInvalidatedByTypeProvider)
+                    ccu.Deref.InvalidateEvent.Add(fun _ ->
+                        match capturedImportsInvalidated.TryGetTarget() with
+                        | true, tg -> tg.Trigger()
+                        | _ -> ()))
+#endif
+                return tcImports
+            with e ->
+                System.Diagnostics.Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" e)
+                errorLogger.Warning e
+                return frameworkTcImports
+          }
+
+        let tcInitial = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial)
+        let loadClosureErrors =
+           [ match loadClosureOpt with
+             | None -> ()
+             | Some loadClosure ->
+                for inp in loadClosure.Inputs do
+                    yield! inp.MetaCommandDiagnostics ]
+
+        let initialErrors = Array.append (Array.ofList loadClosureErrors) (errorLogger.GetDiagnostics())
+        let tcInfo =
+            {
+              tcState=tcState
+              tcEnvAtEndOfFile=tcInitial
+              topAttribs=None
+              latestCcuSigForFile=None
+              tcErrorsRev = [ initialErrors ]
+              moduleNamesDict = Map.empty
+              tcDependencyFiles = basicDependencies
+              sigNameOpt = None
+            }
+        let tcInfoExtras =
+            {
+                tcResolutionsRev=[]
+                tcSymbolUsesRev=[]
+                tcOpenDeclarationsRev=[]
+                latestImplFile=None
+                itemKeyStore = None
+                semanticClassificationKeyStore = None
+            }
+        return
+            BoundModel.Create(
+                tcConfig,
+                tcGlobals,
+                tcImports,
+                keepAssemblyContents,
+                keepAllBackgroundResolutions,
+                keepAllBackgroundSymbolUses,
+                enableBackgroundItemKeyStoreAndSemanticClassification,
+                defaultPartialTypeChecking,
+                beforeFileChecked,
+                fileChecked,
+                tcInfo,
+                async { return Some tcInfoExtras },
+                None) }
+
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
     let FinalizeTypeCheckTask (boundModels: ImmutableArray<BoundModel>) =
       async {
@@ -1444,89 +1549,28 @@ type IncrementalBuilder(
                 | Some dependencyProvider -> dependencyProvider
 
             let! initialBoundModel = 
-                cancellable {
-                  let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
-                  // Return the disposable object that cleans up
-                  use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
-
-                  let! tcImports =
-                    cancellable {
-                      try
-                          let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
-#if !NO_EXTENSIONTYPING
-                          tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu ->
-                              // When a CCU reports an invalidation, merge them together and just report a
-                              // general "imports invalidated". This triggers a rebuild.
-                              //
-                              // We are explicit about what the handler closure captures to help reason about the
-                              // lifetime of captured objects, especially in case the type provider instance gets leaked
-                              // or keeps itself alive mistakenly, e.g. via some global state in the type provider instance.
-                              //
-                              // The handler only captures
-                              //    1. a weak reference to the importsInvalidatedByTypeProvider event.
-                              //
-                              // The IncrementalBuilder holds the strong reference the importsInvalidated event.
-                              //
-                              // In the invalidation handler we use a weak reference to allow the IncrementalBuilder to
-                              // be collected if, for some reason, a TP instance is not disposed or not GC'd.
-                              let capturedImportsInvalidated = WeakReference<_>(importsInvalidatedByTypeProvider)
-                              ccu.Deref.InvalidateEvent.Add(fun _ ->
-                                  match capturedImportsInvalidated.TryGetTarget() with
-                                  | true, tg -> tg.Trigger()
-                                  | _ -> ()))
-#endif
-                          return tcImports
-                      with e ->
-                          System.Diagnostics.Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" e)
-                          errorLogger.Warning e
-                          return frameworkTcImports
-                    }
-
-                  let tcInitial = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
-                  let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial)
-                  let loadClosureErrors =
-                     [ match loadClosureOpt with
-                       | None -> ()
-                       | Some loadClosure ->
-                          for inp in loadClosure.Inputs do
-                              yield! inp.MetaCommandDiagnostics ]
-
-                  let initialErrors = Array.append (Array.ofList loadClosureErrors) (errorLogger.GetDiagnostics())
-                  let tcInfo =
-                      {
-                        tcState=tcState
-                        tcEnvAtEndOfFile=tcInitial
-                        topAttribs=None
-                        latestCcuSigForFile=None
-                        tcErrorsRev = [ initialErrors ]
-                        moduleNamesDict = Map.empty
-                        tcDependencyFiles = basicDependencies
-                        sigNameOpt = None
-                      }
-                  let tcInfoExtras =
-                      {
-                          tcResolutionsRev=[]
-                          tcSymbolUsesRev=[]
-                          tcOpenDeclarationsRev=[]
-                          latestImplFile=None
-                          itemKeyStore = None
-                          semanticClassificationKeyStore = None
-                      }
-                  return
-                      BoundModel.Create(
-                          tcConfig,
-                          tcGlobals,
-                          tcImports,
-                          keepAssemblyContents,
-                          keepAllBackgroundResolutions,
-                          keepAllBackgroundSymbolUses,
-                          enableBackgroundItemKeyStoreAndSemanticClassification,
-                          enablePartialTypeChecking,
-                          beforeFileChecked,
-                          fileChecked,
-                          tcInfo,
-                          async { return Some tcInfoExtras },
-                          None) }
+                CombineImportedAssembliesTask(
+                    ctok,
+                    assemblyName,
+                    tcConfig,
+                    tcConfigP,
+                    tcGlobals,
+                    frameworkTcImports,
+                    nonFrameworkResolutions,
+                    unresolvedReferences,
+                    dependencyProvider,
+                    loadClosureOpt,
+                    niceNameGen,
+                    basicDependencies,
+                    keepAssemblyContents,
+                    keepAllBackgroundResolutions,
+                    keepAllBackgroundSymbolUses,
+                    enableBackgroundItemKeyStoreAndSemanticClassification,
+                    enablePartialTypeChecking,
+                    beforeFileChecked,
+                    fileChecked,
+                    importsInvalidatedByTypeProvider
+                )
 
             let builder =
                 new IncrementalBuilder(
