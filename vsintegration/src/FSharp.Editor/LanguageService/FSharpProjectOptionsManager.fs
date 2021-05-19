@@ -209,8 +209,6 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             Stamp = Some(int64 (fileStamp.GetHashCode()))
                         }
 
-                checkerProvider.Checker.CheckProjectInBackground(projectOptions, userOpName="checkOptions")
-
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
                 singleFileCache.[document.Id] <- (fileStamp, parsingOptions, projectOptions)
