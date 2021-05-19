@@ -986,11 +986,9 @@ type BackgroundCompiler(
           |> Cancellable.toAsync
             
     member bc.InvalidateConfiguration(options : FSharpProjectOptions, userOpName) =
-        lock gate (fun () ->
-            if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
-                let _ = createBuilderLazy (options, userOpName, CancellationToken.None)
-                ()
-        )
+        if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
+            let _ = createBuilderLazy (options, userOpName, CancellationToken.None)
+            ()
 
     member bc.ClearCache(options : FSharpProjectOptions seq, _userOpName) =
         lock gate (fun () ->
