@@ -13,7 +13,9 @@ type SyncBuilder() =
     member inline _.Run([<InlineIfLambda>] code : SyncCode<'T>) : 'T = 
         code()
 
+#if PREVIEW
     [<DefaultValue>]
+#endif
     member inline _.Zero() : SyncCode< unit> = 
         (fun () -> ())
 

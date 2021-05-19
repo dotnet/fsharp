@@ -98,4 +98,29 @@ let testTask() = task { return 1 }
 } 
                 """
             ])
+#if NETCOREAPP
+    [<Test>]
+    let ``check stack trace of async exception from task``() =
+        let t() =
+            task {
+                let! throws = task {
+                    do! System.Threading.Tasks.Task.Yield()
+                    failwith "Inner task exception"
+                    return ()
+                }
+                return throws
+            }
+            
+        let f() = t().Wait()
+        
+        let stackTrace = try f(); failwith "huh?" with e -> e.ToString()
 
+        if stackTrace.Contains("huh?") then
+           failwith "unexpected - inner exception not generated correctly"
+        
+        if not (stackTrace.Contains("MoveNext()")) then
+           failwith "expected MoveNext() on stack trace"
+
+        if stackTrace.Contains("End of stack trace from previous location") then
+           failwith "expected emit of CompilerGeneratedAtrtibute to suppress message in .NET Core stack walking "
+#endif

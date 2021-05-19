@@ -2,9 +2,6 @@
 module Tests.OptionBuilders
 
 open System
-open System.Runtime.CompilerServices
-open FSharp.Core.CompilerServices
-open FSharp.Core.CompilerServices.StateMachineHelpers
 
 type OptionCode<'T> = unit -> 'T voption
 

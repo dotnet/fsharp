@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 public static class TaskPerfCSharp
 {
     public const int BufferSize = 128;
-    public const int ManyIterations = 10000;
+    //public const int ManyIterations = 10000;
 
-    public static async Task ManyWriteFileAsync()
+    public static async Task ManyWriteFileAsync(int ManyIterations)
     {
         const string path = "tmp";
         var junk = new byte[BufferSize];

@@ -683,9 +683,9 @@ Microsoft.FSharp.Control.TaskBuilder: System.Threading.Tasks.Task`1[T] RunDynami
 Microsoft.FSharp.Control.TaskBuilder: System.Threading.Tasks.Task`1[T] Run[T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T])
 Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Control.TaskBuilder get_task()
 Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Control.TaskBuilder task
-Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall]: System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[TOverall] MethodBuilder
-Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall]: System.Runtime.CompilerServices.ICriticalNotifyCompletion Awaiter
-Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall]: TOverall Result
+Microsoft.FSharp.Control.TaskStateMachineData`1[T]: System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[T] MethodBuilder
+Microsoft.FSharp.Control.TaskStateMachineData`1[T]: System.Runtime.CompilerServices.ICriticalNotifyCompletion Awaiter
+Microsoft.FSharp.Control.TaskStateMachineData`1[T]: T Result
 Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] AsyncDownloadFile(System.Net.WebClient, System.Uri, System.String)
 Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[System.Byte[]] AsyncDownloadData(System.Net.WebClient, System.Uri)
 Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[System.Net.WebResponse] AsyncGetResponse(System.Net.WebRequest)
