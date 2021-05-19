@@ -683,6 +683,7 @@ Microsoft.FSharp.Control.TaskBuilder: System.Threading.Tasks.Task`1[T] RunDynami
 Microsoft.FSharp.Control.TaskBuilder: System.Threading.Tasks.Task`1[T] Run[T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T])
 Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Control.TaskBuilder get_task()
 Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Control.TaskBuilder task
+Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] TaskBuilder.Using[TResource,TOverall,T](Microsoft.FSharp.Control.TaskBuilder, TResource, Microsoft.FSharp.Core.FSharpFunc`2[TResource,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
 Microsoft.FSharp.Control.TaskStateMachineData`1[T]: System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[T] MethodBuilder
 Microsoft.FSharp.Control.TaskStateMachineData`1[T]: System.Runtime.CompilerServices.ICriticalNotifyCompletion Awaiter
 Microsoft.FSharp.Control.TaskStateMachineData`1[T]: T Result

@@ -457,6 +457,134 @@ type Basics() =
             t.Wait()
             require disposed "never disposed B"
 
+#if NETCOREAPP
+    [<Fact>]
+    member __.testUsingAsyncDisposableSync() =
+        printfn "Running testUsing..."
+        for i in 1 .. 5 do 
+            let mutable disposed = 0
+            let t =
+                task {
+                    use d = 
+                        { new IAsyncDisposable with 
+                            member __.DisposeAsync() = 
+                                task { 
+                                   System.Console.WriteLine "incrementing"
+                                   disposed <- disposed + 1 }
+                                |> ValueTask 
+                        }
+                    require (disposed = 0) "disposed way early"
+                    System.Console.WriteLine "delaying"
+                    do! Task.Delay(100)
+                    System.Console.WriteLine "testing"
+                    require (disposed = 0) "disposed kinda early"
+                }
+            t.Wait()
+            require (disposed >= 1) "never disposed B"
+            require (disposed <= 1) "too many dispose on B"
+
+    [<Fact>]
+    member __.testUsingAsyncDisposableAsync() =
+        printfn "Running testUsing..."
+        for i in 1 .. 5 do 
+            let mutable disposed = 0
+            let t =
+                task {
+                    use d = 
+                        { new IAsyncDisposable with 
+                            member __.DisposeAsync() = 
+                                task { 
+                                    do! Task.Delay(10)
+                                    disposed <- disposed + 1 
+                                }
+                                |> ValueTask 
+                        }
+                    require (disposed = 0) "disposed way early"
+                    do! Task.Delay(100)
+                    require (disposed = 0) "disposed kinda early"
+                }
+            t.Wait()
+            require (disposed >= 1) "never disposed B"
+            require (disposed <= 1) "too many dispose on B"
+
+    [<Fact>]
+    member __.testUsingAsyncDisposableExnAsync() =
+        printfn "Running testUsing..."
+        for i in 1 .. 5 do 
+            let mutable disposed = 0
+            let t =
+                task {
+                    use d = 
+                        { new IAsyncDisposable with 
+                            member __.DisposeAsync() = 
+                                task { 
+                                    do! Task.Delay(10)
+                                    disposed <- disposed + 1 
+                                }
+                                |> ValueTask 
+                        }
+                    require (disposed = 0) "disposed way early"
+                    failtest "oops"
+                    
+                }
+            try t.Wait()
+            with | :? AggregateException -> 
+                require (disposed >= 1) "never disposed B"
+                require (disposed <= 1) "too many dispose on B"
+
+    [<Fact>]
+    member __.testUsingAsyncDisposableExnSync() =
+        printfn "Running testUsing..."
+        for i in 1 .. 5 do 
+            let mutable disposed = 0
+            let t =
+                task {
+                    use d = 
+                        { new IAsyncDisposable with 
+                            member __.DisposeAsync() = 
+                                task { 
+                                    disposed <- disposed + 1 
+                                    do! Task.Delay(10)
+                                }
+                                |> ValueTask 
+                        }
+                    require (disposed = 0) "disposed way early"
+                    failtest "oops"
+                    
+                }
+            try t.Wait()
+            with | :? AggregateException -> 
+                require (disposed >= 1) "never disposed B"
+                require (disposed <= 1) "too many dispose on B"
+
+    [<Fact>]
+    member __.testUsingAsyncDisposableDelayExnSync() =
+        printfn "Running testUsing..."
+        for i in 1 .. 5 do 
+            let mutable disposed = 0
+            let t =
+                task {
+                    use d = 
+                        { new IAsyncDisposable with 
+                            member __.DisposeAsync() = 
+                                task { 
+                                    disposed <- disposed + 1 
+                                    do! Task.Delay(10)
+                                }
+                                |> ValueTask 
+                        }
+                    require (disposed = 0) "disposed way early"
+                    do! Task.Delay(10)
+                    require (disposed = 0) "disposed kind of early"
+                    failtest "oops"
+                    
+                }
+            try t.Wait()
+            with | :? AggregateException -> 
+                require (disposed >= 1) "never disposed B"
+                require (disposed <= 1) "too many dispose on B"
+#endif
+
     [<Fact>]
     member __.testUsingFromTask() =
         printfn "Running testUsingFromTask..."

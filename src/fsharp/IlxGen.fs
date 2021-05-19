@@ -4702,6 +4702,8 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     let fdefs =
         [ // Fields copied from the template struct
           for templateFld in infoReader.GetRecordOrClassFieldsOfType (None, AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere, m, templateStructTy) do
+            // Suppress the "ResumptionDynamicInfo" from generated state machines
+            if templateFld.Name <> "ResumptionDynamicInfo" then
               let access = ComputeMemberAccess false
               let fty = GenType cenv.amap m eenvinner.tyenv templateFld.FieldType
               let fdef =

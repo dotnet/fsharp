@@ -151,9 +151,6 @@ type TaskBuilder() =
     member inline _.TryFinally (body: TaskCode<'TOverall, 'T>, [<InlineIfLambda>] compensation : unit -> unit) : TaskCode<'TOverall, 'T> =
         ResumableCode.TryFinally(body, ResumableCode<_,_>(fun _ -> compensation(); true))
 
-    member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (resource : 'Resource, body : 'Resource -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> = 
-        ResumableCode.Using(resource, body)
-
     member inline _.For (sequence : seq<'T>, body : 'T -> TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
         ResumableCode.For(sequence, body)
 
@@ -169,9 +166,8 @@ type TaskBuilder() =
         if task.IsCompleted then
             cont.Invoke(&sm)
         else
-            // If the task definition has not been converted to a state machine then a continuation function is used
-            sm.ResumptionDynamicInfo.ResumptionFunc <- cont
             sm.Data.Awaiter <- awaiter
+            sm.ResumptionDynamicInfo.ResumptionFunc <- cont
             false
 
     member inline _.ReturnFrom (task: Task<'T>) : TaskCode<'T, 'T> = 
@@ -198,10 +194,58 @@ type TaskBuilder() =
                 //-- RESUMABLE CODE END
             )
 
+#if NETSTANDARD2_1
+    member inline internal this.TryFinallyAsync(body: TaskCode<'TOverall, 'T>, compensation : unit -> ValueTask) : TaskCode<'TOverall, 'T> =
+        ResumableCode.TryFinallyAsync(body, ResumableCode<_,_>(fun sm -> 
+            if __useResumableCode then
+                let mutable __stack_condition_fin = true
+                let __stack_vtask = compensation()
+                if not __stack_vtask.IsCompleted then
+                    let mutable awaiter = __stack_vtask.GetAwaiter()
+                    let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
+                    __stack_condition_fin <- __stack_yield_fin
+
+                    if not __stack_condition_fin then 
+                        sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+
+                __stack_condition_fin
+            else
+                let vtask = compensation()
+                let mutable awaiter = vtask.GetAwaiter()
+
+                let cont = 
+                    TaskResumptionFunc<'TOverall>( fun sm -> 
+                        awaiter.GetResult() |> ignore
+                        true)
+
+                // shortcut to continue immediately
+                if awaiter.IsCompleted then 
+                    true
+                else
+                    sm.Data.Awaiter <- awaiter
+                    sm.ResumptionDynamicInfo.ResumptionFunc <- cont
+                    false
+                ))
+
+    member inline this.Using<'Resource, 'TOverall, 'T when 'Resource :> IAsyncDisposable> (resource: 'Resource, body: 'Resource -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
+        this.TryFinallyAsync(
+            (fun sm -> (body resource).Invoke(&sm)),
+            (fun () -> 
+                if not (isNull (box resource)) then 
+                    resource.DisposeAsync()
+                else
+                    ValueTask()))
+#endif
+
 [<AutoOpen>]
 module TaskBuilder = 
 
     let task = TaskBuilder()
+
+    // Low priority extensions
+    type TaskBuilder with 
+        member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (resource: 'Resource, body: 'Resource -> TaskCode<'TOverall, 'T>) =
+            ResumableCode.Using(resource, body)
 
 [<AutoOpen>]
 module ContextSensitiveTasks = 
@@ -380,7 +424,6 @@ module ContextSensitiveTasks =
             if task.IsCompleted then
                 cont.Invoke(&sm)
             else
-                // If the task definition has not been converted to a state machine then a continuation function is used
                 sm.Data.Awaiter <- awaiter
                 sm.ResumptionDynamicInfo.ResumptionFunc <- cont
                 false

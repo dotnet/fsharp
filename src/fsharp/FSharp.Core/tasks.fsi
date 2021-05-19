@@ -70,9 +70,11 @@ type TaskBuilder =
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     member inline TryWith: body: TaskCode<'TOverall, 'T> * catch: (exn -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
     
+#if NETSTANDARD2_1
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    member inline Using: resource: 'Resource * body: ('Resource -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T> when 'Resource :> IDisposable
-    
+    member inline Using<'Resource, 'TOverall, 'T when 'Resource :> IAsyncDisposable> : resource: 'Resource * body: ('Resource -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
+#endif
+
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     member inline While: condition: (unit -> bool) * body: TaskCode<'TOverall, unit> -> TaskCode<'TOverall, unit>
     
@@ -100,6 +102,12 @@ module TaskBuilder =
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val task : TaskBuilder
 
+    // Low priority extensions
+    type TaskBuilder with
+
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        member inline Using: resource: 'Resource * body: ('Resource -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T> when 'Resource :> IDisposable
+    
 /// Contains extension methods allowing the `task` computation expression builder
 /// binding to tasks in a way that is sensitive to the current scheduling context.
 /// This module is automatically opened.
