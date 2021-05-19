@@ -324,7 +324,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             lastSuccessfulCompilations.TryRemove(pair.Key) |> ignore
                     )
 
-                    checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompile = false, userOpName = "tryComputeOptions")
+                    checkerProvider.Checker.InvalidateConfiguration(projectOptions, userOpName = "tryComputeOptions")
 
                     let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 

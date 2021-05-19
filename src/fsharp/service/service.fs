@@ -307,7 +307,7 @@ type BackgroundCompiler(
 #if !NO_EXTENSIONTYPING
             // Register the behaviour that responds to CCUs being invalidated because of type
             // provider Invalidate events. This invalidates the configuration in the build.
-            builder.ImportsInvalidatedByTypeProvider.Add(fun () -> self.InvalidateConfiguration(options, None, userOpName))
+            builder.ImportsInvalidatedByTypeProvider.Add(fun () -> self.InvalidateConfiguration(options, userOpName))
 #endif
 
             // Register the callback called just before a file is typechecked by the background builder (without recording
@@ -658,8 +658,6 @@ type BackgroundCompiler(
                     match cachedResults with
                     | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
                     | _ ->
-                        // In order to prevent blocking of the reactor thread of getting a prior file, we try to get the results if it is considered up-to-date.
-                        // If it's not up-to-date, then use the reactor thread to evaluate and get the results.
                         let! tcPrior, tcInfo =
                             match builder.TryGetCheckResultsBeforeFileInProject filename with
                             | Some(tcPrior) when tcPrior.TryTcInfo.IsSome -> 
@@ -701,8 +699,6 @@ type BackgroundCompiler(
 
                         return Some(parseResults, FSharpCheckFileAnswer.Succeeded checkResults)
                     | _ ->
-                        // In order to prevent blocking of the reactor thread of getting a prior file, we try to get the results if it is considered up-to-date.
-                        // If it's not up-to-date, then use the reactor thread to evaluate and get the results.
                         let! tcPrior, tcInfo =
                             match builder.TryGetCheckResultsBeforeFileInProject filename with
                             | Some(tcPrior) when tcPrior.TryTcInfo.IsSome -> 
@@ -984,19 +980,10 @@ type BackgroundCompiler(
           }
           |> Cancellable.toAsync
             
-    member bc.InvalidateConfiguration(options : FSharpProjectOptions, startBackgroundCompileIfAlreadySeen, userOpName) =
-        let startBackgroundCompileIfAlreadySeen = defaultArg startBackgroundCompileIfAlreadySeen true
-
+    member bc.InvalidateConfiguration(options : FSharpProjectOptions, userOpName) =
         if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
-
-            async {
-                let _ = createBuilderLazy (options, userOpName)
-
-                // Start working on the project.  Also a somewhat arbitrary choice
-                if startBackgroundCompileIfAlreadySeen then 
-                    bc.CheckProjectInBackground(options, userOpName + ".StartBackgroundCompile")
-            }
-            |> Async.Start
+            let _ = createBuilderLazy (options, userOpName)
+            ()
 
     member bc.ClearCache(options : FSharpProjectOptions seq, _userOpName) =
         options
@@ -1301,9 +1288,9 @@ type FSharpChecker(legacyReferenceResolver,
             
     /// This function is called when the configuration is known to have changed for reasons not encoded in the ProjectOptions.
     /// For example, dependent references may have been deleted or created.
-    member _.InvalidateConfiguration(options: FSharpProjectOptions, ?startBackgroundCompile, ?userOpName: string) =
+    member _.InvalidateConfiguration(options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
-        backgroundCompiler.InvalidateConfiguration(options, startBackgroundCompile, userOpName)
+        backgroundCompiler.InvalidateConfiguration(options, userOpName)
 
     /// Clear the internal cache of the given projects.
     member _.ClearCache(options: FSharpProjectOptions seq, ?userOpName: string) =
