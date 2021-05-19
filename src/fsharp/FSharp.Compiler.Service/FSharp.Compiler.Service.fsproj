@@ -198,6 +198,12 @@
     <Compile Include="..\lib.fs">
       <Link>Utilities\lib.fs</Link>
     </Compile>
+	<Compile Include="..\AsyncLazy.fsi">
+		<Link>Utilities\AsyncLazy.fsi</Link>
+	</Compile>
+	<Compile Include="..\AsyncLazy.fs">
+		<Link>Utilities\AsyncLazy.fs</Link>
+	</Compile>
     <Compile Include="..\rational.fsi">
       <Link>Utilities\rational.fsi</Link>
     </Compile>

@@ -291,33 +291,3 @@ module ArrayParallel =
     val inline map : ('T -> 'U) -> 'T [] -> 'U []
 
     val inline mapi : (int -> 'T -> 'U) -> 'T [] -> 'U []
-
-[<RequireQualifiedAccess>]
-module AsyncLazy =
-
-    /// Allows to specify the language for error messages
-    val SetPreferredUILang : preferredUiLang: string option -> unit
-
-/// Lazily evaluate the computation asynchronously, then cache the result in a weak reference.
-/// If the result has been cleaned up by the GC, then the computation will be re-evaluated.
-/// The computation will only be canceled if there are no outstanding requests awaiting a response.
-[<Sealed>]
-type AsyncLazyWeak<'T when 'T : not struct> =
-
-    new : computation: Async<'T> -> AsyncLazyWeak<'T>
-
-    member GetValueAsync: unit -> Async<'T>
-
-    member TryGetValue: unit -> 'T voption
-
-/// Similar to AsyncLazyWeak, but will always strongly cache the result of the computation.
-/// Once the result has been cached, the computation function will also be removed, or 'null'ed out, 
-///     as to prevent any references captured by the computation from being strongly held.
-[<Sealed>]
-type AsyncLazy<'T> =
-
-    new : computation: Async<'T> -> AsyncLazy<'T>
-
-    member GetValueAsync: unit -> Async<'T>
-
-    member TryGetValue: unit -> 'T voption
