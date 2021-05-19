@@ -219,7 +219,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                     // Furthermore, if the project is out-of-date behave just as if we were notified dependency files changed.  
                     if outOfDateProjectFileNames.Contains(projectFileName) then
                         interactiveChecker.InvalidateConfiguration(checkOptions)
-                        interactiveChecker.CheckProjectInBackground(checkOptions) 
+                        interactiveChecker.ParseAndCheckProject(checkOptions) |> Async.Start
                         outOfDateProjectFileNames.Remove(projectFileName) |> ignore
 
                 else
@@ -234,7 +234,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                         req.IsAborted <- aborted
                         // On 'FullTypeCheck', send a message to the reactor to start the background compile for this project, just in case
                         if req.Reason = BackgroundRequestReason.FullTypeCheck then    
-                            interactiveChecker.CheckProjectInBackground(checkOptions) 
+                            interactiveChecker.ParseAndCheckProject(checkOptions) |> Async.Start
 
                     | Some typedResults -> 
                         // Post the parse errors. 
@@ -261,7 +261,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
 
                         // On 'FullTypeCheck', send a message to the reactor to start the background compile for this project, just in case
                         if req.Reason = BackgroundRequestReason.FullTypeCheck then    
-                            interactiveChecker.CheckProjectInBackground(checkOptions) 
+                            interactiveChecker.ParseAndCheckProject(checkOptions) |> Async.Start
                             
                         // On 'QuickInfo', get the text for the quick info while we're off the UI thread, instead of doing it later
                         if req.Reason = BackgroundRequestReason.QuickInfo then 
