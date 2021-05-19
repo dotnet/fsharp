@@ -248,35 +248,35 @@ type BoundModel private (tcConfig: TcConfig,
 
     let mutable lazyAsyncTcInfo =
         AsyncLazy(async {
-            return! this.GetTcInfo()
+            return! this.ComputeTcInfo()
         })
 
     let mutable lazyAsyncTcInfoExtras =
         AsyncLazy(async {
-            let! res = this.GetTcInfoExtras()
+            let! res = this.ComputeTcInfoExtras()
             return Some res
         })
 
     let mutable lazyAsyncFullState =
         AsyncLazy(async {
-            return! this.GetState(false)
+            return! this.ComputeState(false)
         })
 
     let resetAsyncLazyComputations() =
         lazyAsyncTcInfo <-
             AsyncLazy(async {
-                return! this.GetTcInfo()
+                return! this.ComputeTcInfo()
             })
 
         lazyAsyncTcInfoExtras <-
             AsyncLazy(async {
-                let! res = this.GetTcInfoExtras()
+                let! res = this.ComputeTcInfoExtras()
                 return Some res
             })
 
         lazyAsyncFullState <-
             AsyncLazy(async {
-                return! this.GetState(false)
+                return! this.ComputeState(false)
             })
 
     member _.TcConfig = tcConfig
@@ -316,7 +316,7 @@ type BoundModel private (tcConfig: TcConfig,
             |> Option.iter (fun x -> x.Invalidate())
         )
 
-    member private this.GetState(partialCheck: bool) =
+    member private this.ComputeState(partialCheck: bool) =
         async {
             let partialCheck =
                 // Only partial check if we have enabled it.
@@ -355,9 +355,9 @@ type BoundModel private (tcConfig: TcConfig,
             Some syntaxTree,
             None)
 
-    member this.FinishAsync(finalTcErrorsRev, finalTopAttribs) =
+    member this.Finish(finalTcErrorsRev, finalTopAttribs) =
         async {
-            let! _ = this.GetTcInfoAsync()
+            let! _ = this.GetTcInfo()
             let state = lazyTcInfoState.Value // should not be null at this point
 
             let finishTcInfo = { state.TcInfo  with tcErrorsRev = finalTcErrorsRev; topAttribs = finalTopAttribs }
@@ -384,13 +384,13 @@ type BoundModel private (tcConfig: TcConfig,
                     Some finishState)
         }
 
-    member private this.GetTcInfo() : Async<_> =
+    member private this.ComputeTcInfo() : Async<_> =
         async {
-            let! state = this.GetState(true)
+            let! state = this.ComputeState(true)
             return state.TcInfo
         }
 
-    member this.GetTcInfoAsync() =
+    member this.GetTcInfo() =
         lazyAsyncTcInfo.GetValueAsync()
 
     member this.TryTcInfo =
@@ -401,9 +401,9 @@ type BoundModel private (tcConfig: TcConfig,
             | PartialState(tcInfo) -> Some tcInfo
         | _ -> None
 
-    member private this.GetTcInfoExtras() : Async<_> =
+    member private this.ComputeTcInfoExtras() : Async<_> =
         async {
-            let! state = this.GetState(false)
+            let! state = this.ComputeState(false)
             match state with
             | FullState(_, tcInfoExtras) -> return tcInfoExtras
             | PartialState _ ->
@@ -418,10 +418,10 @@ type BoundModel private (tcConfig: TcConfig,
                     }
         }
 
-    member this.GetTcInfoExtrasAsync() =
+    member this.GetTcInfoExtras() =
         lazyAsyncTcInfoExtras.GetValueAsync()
 
-    member this.GetTcInfoWithExtrasAsync() =
+    member this.GetTcInfoWithExtras() =
         async {
             match! lazyAsyncFullState.GetValueAsync() with
             | FullState(tcInfo, tcInfoExtras) -> return tcInfo, tcInfoExtras
@@ -653,19 +653,19 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime) =
 
     member _.TryTcInfo = boundModel.TryTcInfo
 
-    member _.GetTcInfo() = boundModel.GetTcInfoAsync()
+    member _.GetTcInfo() = boundModel.GetTcInfo()
 
-    member _.GetTcInfoWithExtras() = boundModel.GetTcInfoWithExtrasAsync()
+    member _.GetTcInfoWithExtras() = boundModel.GetTcInfoWithExtras()
 
     member _.TryGetItemKeyStore() =
         async {
-            let! _, info = boundModel.GetTcInfoWithExtrasAsync()
+            let! _, info = boundModel.GetTcInfoWithExtras()
             return info.itemKeyStore
         }
 
     member _.GetSemanticClassification() =
         async {
-            let! _, info = boundModel.GetTcInfoWithExtrasAsync()
+            let! _, info = boundModel.GetTcInfoWithExtras()
             return info.semanticClassificationKeyStore
         }
 
@@ -726,16 +726,16 @@ and BoundModelLazy (refState: IncrementalBuilderState ref, i, syntaxTree: Syntax
     /// Type check all files eagerly.
     let TypeCheckTask partialCheck (prevBoundModel: BoundModel) syntaxTree: Async<BoundModel> =
         async {
-            let! tcInfo = prevBoundModel.GetTcInfoAsync()
+            let! tcInfo = prevBoundModel.GetTcInfo()
             let boundModel = prevBoundModel.Next(syntaxTree, tcInfo)
 
             // Eagerly type check
             // We need to do this to keep the expected behavior of events (namely fileChecked) when checking a file/project.
             if partialCheck then
-                let! _ = boundModel.GetTcInfoAsync()
+                let! _ = boundModel.GetTcInfo()
                 ()
             else
-                let! _ = boundModel.GetTcInfoWithExtrasAsync()
+                let! _ = boundModel.GetTcInfoWithExtras()
                 ()
 
             return boundModel
@@ -816,10 +816,10 @@ type IncrementalBuilder(
             boundModels 
             |> Seq.map (fun boundModel -> async { 
                 if enablePartialTypeChecking then
-                    let! tcInfo = boundModel.GetTcInfoAsync()
+                    let! tcInfo = boundModel.GetTcInfo()
                     return tcInfo, None
                 else
-                    let! tcInfo, tcInfoExtras = boundModel.GetTcInfoWithExtrasAsync()
+                    let! tcInfo, tcInfoExtras = boundModel.GetTcInfoWithExtras()
                     return tcInfo, tcInfoExtras.latestImplFile
             })
             |> Seq.map (fun work ->
@@ -835,7 +835,7 @@ type IncrementalBuilder(
         // Get the state at the end of the type-checking of the last file
         let finalBoundModel = boundModels.[boundModels.Length-1]
 
-        let! finalInfo = finalBoundModel.GetTcInfoAsync()
+        let! finalInfo = finalBoundModel.GetTcInfo()
 
         // Finish the checking
         let (_tcEnvAtEndOfLastFile, topAttrs, mimpls, _), tcState =
@@ -897,7 +897,7 @@ type IncrementalBuilder(
                 mkSimpleAssemblyRef assemblyName, None, None
 
         let diagnostics = errorLogger.GetDiagnostics() :: finalInfo.tcErrorsRev
-        let! finalBoundModelWithErrors = finalBoundModel.FinishAsync(diagnostics, Some topAttrs)
+        let! finalBoundModelWithErrors = finalBoundModel.Finish(diagnostics, Some topAttrs)
         return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalBoundModelWithErrors
     }
 
@@ -1063,6 +1063,7 @@ type IncrementalBuilder(
         ReferencedAssembliesStamps => FileStamps => BoundModels => FinalizedBoundModel
     *)
 
+    let gate = obj ()
     let mutable currentState =
         let cache = TimeStampCache(defaultTimeStamp)
         let refState = ref Unchecked.defaultof<_>
@@ -1085,37 +1086,19 @@ type IncrementalBuilder(
         let t2 = MaxTimeStampInDependencies state.stampedFileNames
         max t1 t2
 
-    let agent = 
-        // States change only happen here when referenced assemblies' or files' timestamps have changed.
-        // Handled the state changes in a thread safe manner.
-        let rec loop (agent: MailboxProcessor<AsyncReplyChannel<unit> * TimeStampCache * CancellationToken>) = 
-            async {
-                let! replyChannel, cache, ct = agent.Receive()
-
-                if ct.IsCancellationRequested then
-                    replyChannel.Reply()
-                    return! loop agent
-                else
-
-                currentState <- computeStampedFileNames currentState cache
-                replyChannel.Reply()
-                return! loop agent
-            }
-        let agent =
-            new MailboxProcessor<_>(loop)
-        agent.Start()
-        agent
+    let setCurrentState state cache (ct: CancellationToken) =
+        lock gate (fun () ->
+            ct.ThrowIfCancellationRequested()
+            currentState <- computeStampedFileNames state cache
+        )
 
     let checkFileTimeStamps (cache: TimeStampCache) =
         async {
             let! ct = Async.CancellationToken
-            do! agent.PostAndAsyncReply(fun replyChannel -> (replyChannel, cache, ct))
+            setCurrentState currentState cache ct
         }
 
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
-
-    override this.Finalize() =
-        (agent :> IDisposable).Dispose()
 
     member _.TcConfig = tcConfig
 

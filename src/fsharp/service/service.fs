@@ -203,72 +203,8 @@ type FileVersion = int
 type ParseCacheLockToken() = interface LockToken
 type ScriptClosureCacheToken() = interface LockToken
 
-[<AutoOpen>]
-module IncrementalBuilderExtensions =
-
-    type IncrementalBuilder with
-
-        /// REVIEW: Not used currently, but will be useful when incremental builder's source of truth is not the file system.
-        member this.FullCheckFile(parseResults: FSharpParseFileResults, sourceText: ISourceText, fileName: string, options: FSharpProjectOptions, loadClosure, creationDiags, keepAssemblyContents, suggestNamesForErrors) : Async<FSharpCheckFileResults> =
-            async {
-                let! checkResults = this.GetCheckResultsAfterFileInProject(fileName)
-                let! tcInfo, tcInfoExtras = checkResults.GetTcInfoWithExtras()
-                let tcConfig = checkResults.TcConfig
-
-                // We'll need number of lines for adjusting error messages at EOF
-                let fileInfo = sourceText.GetLastCharacterPosition()
-
-                let tcErrors =
-                    tcInfo.TcErrors
-                    |> Seq.map (fun (exn, sev) ->
-                        DiagnosticHelpers.ReportDiagnostic (tcConfig.errorSeverityOptions, false, fileName, fileInfo, (exn, sev), suggestNamesForErrors)
-                    )
-                    |> Seq.concat
-                    |> Array.ofSeq
-
-                return
-                    FSharpCheckFileResults.Make(
-                        fileName,
-                        options.ProjectFileName,
-                        tcConfig,
-                        checkResults.TcGlobals,
-                        options.IsIncompleteTypeCheckEnvironment,
-                        this,
-                        options,
-                        tcInfo.tcDependencyFiles |> Seq.rev |> Array.ofSeq,
-                        creationDiags,
-                        parseResults.Diagnostics,
-                        tcErrors,
-                        keepAssemblyContents,
-                        tcInfo.tcState.CcuSig,
-                        tcInfo.tcState.Ccu,
-                        checkResults.TcImports,
-                        tcInfo.tcState.TcEnvFromImpls.AccessRights,
-                        tcInfoExtras.tcResolutionsRev |> List.tryHead |> Option.defaultValue (NameResolution.TcResolutions.Empty),
-                        tcInfoExtras.TcSymbolUses |> List.tryHead |> Option.defaultValue (NameResolution.TcSymbolUses.Empty),
-                        tcInfo.tcState.TcEnvFromImpls.eNameResEnv,
-                        loadClosure,
-                        tcInfoExtras.latestImplFile,
-                        tcInfoExtras.tcOpenDeclarationsRev |> List.tryHead |> Option.defaultValue ([||])
-                    )
-            }
-
 type CheckFileCacheKey = FileName * SourceTextHash * FSharpProjectOptions
 type CheckFileCacheValue = FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash * DateTime
-
-[<RequireQualifiedAccess;NoComparison;NoEquality>]
-type CheckFileCacheAgentMessage =
-    | GetAsyncLazy of 
-        replyChannel: AsyncReplyChannel<AsyncLazy<CheckFileCacheValue option>> *
-        parseResults: FSharpParseFileResults *
-        sourceText: ISourceText *
-        fileName: string *
-        options: FSharpProjectOptions *
-        fileVersion: int *
-        builder: IncrementalBuilder *
-        tcPrior: PartialCheckResults *
-        tcInfo: TcInfo *
-        creationDiags: FSharpDiagnostic[]
 
 // There is only one instance of this type, held in FSharpChecker
 type BackgroundCompiler(
