@@ -106,8 +106,6 @@ type AsyncLazy<'T> (computation: Async<'T>) =
                                         agent.Start()
                                         AgentAction<'T>.GetValue newAgentInstance
                                     with
-                                    | :? ObjectDisposedException ->
-                                        AgentAction<'T>.CachedValue Unchecked.defaultof<_>
                                     | ex ->
                                         agentInstance <- None
                                         raise ex
@@ -117,14 +115,7 @@ type AsyncLazy<'T> (computation: Async<'T>) =
                     | AgentAction.GetValue(agent, cts) ->                       
                         try
                             let! ct = Async.CancellationToken
-                            let! res =
-                                async {
-                                    try
-                                        return! agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct))
-                                    with
-                                    | :? ObjectDisposedException ->
-                                        return Result.Ok(Unchecked.defaultof<_>)
-                                }
+                            let! res = agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct))
                             match res with
                             | Ok result -> return result
                             | Error ex -> return raise ex
