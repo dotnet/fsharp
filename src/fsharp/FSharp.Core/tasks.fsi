@@ -95,15 +95,15 @@ type TaskBuilderBase =
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     static member ReturnFromDynamic: sm: byref<TaskStateMachine<'T>> * task: Task<'T> -> bool
 
-    /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    static member RunDynamic: code: TaskCode<'T, 'T> -> Task<'T>
-    
 [<Class>]
 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type TaskBuilder =
     inherit TaskBuilderBase
 
+    /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    static member RunDynamic: code: TaskCode<'T, 'T> -> Task<'T>
+    
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     member inline Run: code: TaskCode<'T, 'T> -> Task<'T>
 
@@ -112,10 +112,6 @@ type TaskBuilder =
 type BackgroundTaskBuilder =
     inherit TaskBuilderBase
 
-    // /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
-    //[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    //static member RunDynamic: code: TaskCode<'T, 'T> -> Task<'T>
-    
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     member inline Run: code: TaskCode<'T, 'T> -> Task<'T>
 

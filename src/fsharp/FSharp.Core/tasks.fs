@@ -512,14 +512,14 @@ type BackgroundTaskBuilder() =
          else
             Task.Run<'T>(fun () -> TaskBuilder.RunDynamic(code))
 
+    // This is a possible simpler implementation but state machine compilation doesn't kick in
+    // when the resumable code is not immediately turned into a state machine
+    //
+    // This restriction could be lifter
+
     //member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
        //Task.Run<'T>(fun () -> TaskBuilderBase.Run(code))
     
-    //member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
-    //   TaskBuilderBase.Run(TaskCode<'T, 'T>(fun sm -> 
-    //       let t = Task.Delay(1).ConfigureAwait(false)
-    //       TaskWitnesses.CanBind(Unchecked.defaultof<IPriority2>, t, (fun () -> TaskCode<'T, 'T>(fun sm -> code.Invoke(&sm)))).Invoke(&sm)))
-
 [<AutoOpen>]
 module TaskBuilder = 
 
