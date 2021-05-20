@@ -79,7 +79,7 @@ type AsyncLazy<'T> (computation: Async<'T>) =
 
     let mutable agentInstance: (MailboxProcessor<AsyncLazyWeakMessage<'T>> * CancellationTokenSource) option = None
 
-    member _.GetValueAsync () =
+    member _.GetValueAsync() =
         // fast path
         match cachedResultAsync with
         | ValueSome resultAsync -> resultAsync
@@ -99,11 +99,11 @@ type AsyncLazy<'T> (computation: Async<'T>) =
                                 | Some agentInstance -> AgentAction<'T>.GetValue agentInstance
                                 | _ ->
                                     try
-                                        let cts = new CancellationTokenSource ()
-                                        let agent = new MailboxProcessor<AsyncLazyWeakMessage<'T>> (loop, cancellationToken = cts.Token)
+                                        let cts = new CancellationTokenSource()
+                                        let agent = new MailboxProcessor<_>(loop, cancellationToken = cts.Token)
                                         let newAgentInstance = (agent, cts)
                                         agentInstance <- Some newAgentInstance
-                                        agent.Start ()
+                                        agent.Start()
                                         AgentAction<'T>.GetValue newAgentInstance
                                     with
                                     | ex ->
@@ -112,19 +112,27 @@ type AsyncLazy<'T> (computation: Async<'T>) =
 
                     match action with
                     | AgentAction.CachedValue result -> return result
-                    | AgentAction.GetValue (agent, cts) ->                       
+                    | AgentAction.GetValue(agent, cts) ->                       
                         try
                             let! ct = Async.CancellationToken
-                            match! agent.PostAndAsyncReply (fun replyChannel -> GetValue(replyChannel, ct)) with
+                            let! res =
+                                async {
+                                    try
+                                        return! agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct))
+                                    with
+                                    | :? ObjectDisposedException ->
+                                        return Result.Ok(Unchecked.defaultof<_>)
+                                }
+                            match res with
                             | Ok result -> return result
-                            | Error ex -> return raise ex                                 
+                            | Error ex -> return raise ex
                         finally
                             lock gate <| fun () ->
                                 requestCount <- requestCount - 1
                                 if requestCount = 0 then
-                                        cts.Cancel () // cancel computation when all requests are cancelled
+                                        cts.Cancel() // cancel computation when all requests are cancelled
                                         try (agent :> IDisposable).Dispose () with | _ -> ()
-                                        cts.Dispose ()
+                                        cts.Dispose()
                                         agentInstance <- None
             }
 
