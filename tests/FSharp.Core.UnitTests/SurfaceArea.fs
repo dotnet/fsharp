@@ -676,7 +676,6 @@ Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.Res
 Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Delay[TOverall,T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
 Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] TryFinally[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] TryWith[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T], Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
-Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Using[TResource,TOverall,T](TResource, Microsoft.FSharp.Core.FSharpFunc`2[TResource,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
 Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T] ReturnFrom[T](System.Threading.Tasks.Task`1[T])
 Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T] Return[T](T)
 Microsoft.FSharp.Control.TaskBuilder: System.Threading.Tasks.Task`1[T] RunDynamic[T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T])
@@ -3030,6 +3029,12 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
 "
+#if NETCOREAPP
+        let expected =
+            expected +
+            """Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Using[TResource,TOverall,T](TResource, Microsoft.FSharp.Core.FSharpFunc`2[TResource,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
+"""
+#endif
 #if DEBUG
         let expected =
             expected +
