@@ -1190,7 +1190,7 @@ type IncrementalBuilder(
 
     let computeProjectTimeStamp (state: IncrementalBuilderState) =
         let t1 = MaxTimeStampInDependencies state.stampedReferencedAssemblies
-        let t2 = MaxTimeStampInDependencies state.stampedFileNames
+        let t2 = MaxTimeStampInDependencies state.logicalStampedFileNames
         max t1 t2
 
     let setCurrentState state cache (ct: CancellationToken) =
