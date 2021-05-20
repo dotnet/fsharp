@@ -8,8 +8,17 @@ open System.Threading
 open Xunit
 open FSharp.Test.Utilities
 open Internal.Utilities.Library
+open System.Runtime.CompilerServices
 
 module AsyncLazyTests =
+    
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let private createLazyWork () =
+        let o = obj ()
+        AsyncLazy(async { 
+            Assert.shouldBeTrue (o <> null)
+            return 1 
+        }), WeakReference(o)
 
     [<Fact>]
     let ``Intialization of async lazy should not have a computed value``() =
@@ -104,16 +113,7 @@ module AsyncLazyTests =
 
     [<Fact>]
     let ``A request to get a value asynchronously should have its computation cleaned up by the GC``() =
-        let createLazyWork (o: obj) = 
-            AsyncLazy(async { 
-                Assert.shouldBeTrue (o <> null)
-                return 1 
-            })
-
-        let mutable o = obj()
-        let lazyWork = createLazyWork o
-        let weak = WeakReference(o)
-        o <- null
+        let lazyWork, weak = createLazyWork ()
 
         GC.Collect(2, GCCollectionMode.Forced, true)
 
@@ -130,16 +130,7 @@ module AsyncLazyTests =
     let ``Many requests to get a value asynchronously should have its computation cleaned up by the GC``() =
         let requests = 10000
 
-        let createLazyWork (o: obj) = 
-            AsyncLazy(async { 
-                Assert.shouldBeTrue (o <> null)
-                return 1 
-            })
-
-        let mutable o = obj()
-        let lazyWork = createLazyWork o
-        let weak = WeakReference(o)
-        o <- null
+        let lazyWork, weak = createLazyWork ()
 
         GC.Collect(2, GCCollectionMode.Forced, true)
         
