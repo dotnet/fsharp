@@ -94,12 +94,20 @@ let RepresentBindingAsStateVar (bind: Binding) (res2: StateMachineConversionFirs
         stateVars = vref :: res2.stateVars }
 
 let isExpandVar g (v: Val) = 
-    let nm = v.LogicalName
-    (nm.StartsWith "builder@" 
-     || (v.BaseOrThisInfo = MemberThisVal)
-     // Anything of [<ResumableCode>] type or any function returning [<ResumableCode>] type
-     || isReturnsResumableCodeTy g v.Type) &&
+    isReturnsResumableCodeTy g v.TauType &&
     not v.IsCompiledAsTopLevel
+
+// We allow a prefix of bindings prior to the state machine, e.g. 
+//     task { .. }
+// becomes
+//     let builder@ = task
+//     ....
+let isStateMachineBindingVar g (v: Val) = 
+    isExpandVar g v  ||
+    (let nm = v.LogicalName
+     (nm.StartsWith "builder@" 
+      || (v.BaseOrThisInfo = MemberThisVal)) &&
+     not v.IsCompiledAsTopLevel)
 
 type env = 
     { 
@@ -119,7 +127,7 @@ type env =
 let rec IsStateMachineExpr g overallExpr = 
     match overallExpr with
     // 'let' binding of initial code
-    | Expr.Let (defn, bodyExpr, m, _) when isExpandVar g defn.Var -> 
+    | Expr.Let (defn, bodyExpr, m, _) when isStateMachineBindingVar g defn.Var -> 
         match IsStateMachineExpr g bodyExpr with
         | None -> None
         | Some altExpr as r ->
@@ -170,7 +178,7 @@ type LowerStateMachine(g: TcGlobals) =
 
         match expr with
         // Bind 'let __expand_ABC = bindExpr in bodyExpr'
-        | Expr.Let (defn, bodyExpr, _, _) when isExpandVar g defn.Var -> 
+        | Expr.Let (defn, bodyExpr, _, _) when isStateMachineBindingVar g defn.Var -> 
             if sm_verbose then printfn "binding %A --> %A..." defn.Var defn.Expr
             let envR = { env with ResumableCodeDefns = env.ResumableCodeDefns.Add defn.Var defn.Expr }
             BindResumableCodeDefinitions envR bodyExpr

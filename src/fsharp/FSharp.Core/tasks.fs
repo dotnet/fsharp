@@ -475,7 +475,7 @@ type BackgroundTaskBuilder() =
     member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
         TaskBuilderBase.Run(TaskCode<'T, 'T>(fun sm -> 
             let t = Task.Delay(1).ConfigureAwait(false)
-            TaskWitnesses.CanBind(Unchecked.defaultof<IPriority2>, t, (fun () -> code)).Invoke(&sm)))
+            TaskWitnesses.CanBind(Unchecked.defaultof<IPriority2>, t, (fun () -> TaskCode<'T, 'T>(fun sm -> code.Invoke(&sm)))).Invoke(&sm)))
 
 [<AutoOpen>]
 module TaskBuilder = 

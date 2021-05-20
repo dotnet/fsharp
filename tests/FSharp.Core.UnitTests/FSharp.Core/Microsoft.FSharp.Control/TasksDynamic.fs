@@ -56,6 +56,28 @@ type TaskBuilderDynamic() =
     member inline _.For (sequence, body) = task.For(sequence, body)
     member inline _.ReturnFrom (t: Task<'T>) = task.ReturnFrom(t)
 
+// Delegates to task, except 'Run' which is deliberately not inlined, hence no chance
+// of static compilation of state machines.  
+type BackgroundTaskBuilderDynamic() =
+    
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    member _.Run(code) = backgroundTask.Run(code) // warning 3511 is generated here: state machine not compilable
+
+    member inline _.Delay f = backgroundTask.Delay(f)
+    [<DefaultValue>]
+    member inline _.Zero()  = backgroundTask.Zero()
+    member inline _.Return (value) = backgroundTask.Return(value)
+    member inline _.Combine(task1, task2) = backgroundTask.Combine(task1, task2)
+    member inline _.While ([<InlineIfLambda>] condition, body) = backgroundTask.While(condition, body)
+    member inline _.TryWith (body, catch) = backgroundTask.TryWith(body, catch)
+    member inline _.TryFinally (body, compensation ) = backgroundTask.TryFinally(body, compensation)
+#if NETCOREAPP
+    member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IAsyncDisposable> (resource: 'Resource, body: 'Resource -> TaskCode<'TOverall, 'T>) =
+        backgroundTask.Using(resource, body)
+#endif
+    member inline _.For (sequence, body) = backgroundTask.For(sequence, body)
+    member inline _.ReturnFrom (t: Task<'T>) = backgroundTask.ReturnFrom(t)
+
 [<AutoOpen>]
 module TaskBuilderDynamicLowPriority = 
 
@@ -64,6 +86,11 @@ module TaskBuilderDynamicLowPriority =
         member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (resource: 'Resource, body: 'Resource -> TaskCode<'TOverall, 'T>) =
             task.Using(resource, body)
 
+    // Low priority extension method
+    type BackgroundTaskBuilderDynamic with
+        member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (resource: 'Resource, body: 'Resource -> TaskCode<'TOverall, 'T>) =
+            backgroundTask.Using(resource, body)
+
 [<AutoOpen>]
 module Value = 
 
@@ -71,14 +98,24 @@ module Value =
     module TaskHelpers = 
 
         type TaskBuilderDynamic with
-            member inline _.ReturnFrom< ^TaskLike, 'T when (TaskWitnesses or ^TaskLike): (static member CanReturnFrom: TaskWitnesses * ^TaskLike -> TaskCode<'T, 'T>) > (t: ^TaskLike)  : TaskCode<'T, 'T> = task.ReturnFrom(t)
+            member inline _.ReturnFrom< ^TaskLike, 'T when (TaskWitnesses or ^TaskLike): (static member CanReturnFrom: TaskWitnesses * ^TaskLike -> TaskCode<'T, 'T>) > (t: ^TaskLike)  : TaskCode<'T, 'T> = 
+                task.ReturnFrom(t)
             member inline _.Bind< ^TaskLike, ^TResult1, 'TResult2, 'TOverall
                                                 when (TaskWitnesses or  ^TaskLike): (static member CanBind: TaskWitnesses * ^TaskLike * (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>)> 
                         (t: ^TaskLike, continuation: ^TResult1 -> TaskCode<'TOverall, 'TResult2>)  : TaskCode<'TOverall, 'TResult2> =
                 task.Bind(t, continuation)
-    let taskd = TaskBuilderDynamic()
-    type Do_no_use_task_in_this_file_use_taskd_instead = | Nope 
-    let task = Do_no_use_task_in_this_file_use_taskd_instead.Nope
+
+        type BackgroundTaskBuilderDynamic with
+            member inline _.ReturnFrom< ^TaskLike, 'T when (TaskWitnesses or ^TaskLike): (static member CanReturnFrom: TaskWitnesses * ^TaskLike -> TaskCode<'T, 'T>) > (t: ^TaskLike)  : TaskCode<'T, 'T> = 
+                backgroundTask.ReturnFrom(t)
+            member inline _.Bind< ^TaskLike, ^TResult1, 'TResult2, 'TOverall
+                                                when (TaskWitnesses or  ^TaskLike): (static member CanBind: TaskWitnesses * ^TaskLike * (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>)> 
+                        (t: ^TaskLike, continuation: ^TResult1 -> TaskCode<'TOverall, 'TResult2>)  : TaskCode<'TOverall, 'TResult2> =
+                backgroundTask.Bind(t, continuation)
+    let taskDynamic = TaskBuilderDynamic()
+    let backgroundTaskDynamic = BackgroundTaskBuilderDynamic()
+    type Do_no_use_task_in_this_file_use_taskDynamic_instead = | Nope 
+    let task = Do_no_use_task_in_this_file_use_taskDynamic_instead.Nope
 
 type ITaskThing =
     abstract member Taskify : 'a option -> 'a Task
@@ -87,7 +124,7 @@ type SmokeTestsForCompilation() =
 
     [<Fact>]
     member __.tinyTask() =
-        taskd {
+        taskDynamic {
             return 1
         }
         |> fun t -> 
@@ -96,7 +133,7 @@ type SmokeTestsForCompilation() =
 
     [<Fact>]
     member __.tbind() =
-        taskd {
+        taskDynamic {
             let! x = Task.FromResult(1)
             return 1 + x
         }
@@ -106,8 +143,8 @@ type SmokeTestsForCompilation() =
 
     [<Fact>]
     member __.tnested() =
-        taskd {
-            let! x = taskd { return 1 }
+        taskDynamic {
+            let! x = taskDynamic { return 1 }
             return x
         }
         |> fun t -> 
@@ -116,7 +153,7 @@ type SmokeTestsForCompilation() =
 
     [<Fact>]
     member __.tcatch0() =
-        taskd {
+        taskDynamic {
             try 
                return 1
             with e -> 
@@ -128,7 +165,7 @@ type SmokeTestsForCompilation() =
 
     [<Fact>]
     member __.tcatch1() =
-        taskd {
+        taskDynamic {
             try 
                let! x = Task.FromResult 1
                return x
@@ -143,11 +180,11 @@ type SmokeTestsForCompilation() =
     [<Fact>]
     member __.t3() =
         let t2() =
-            taskd {
+            taskDynamic {
                 System.Console.WriteLine("hello")
                 return 1
             }
-        taskd {
+        taskDynamic {
             System.Console.WriteLine("hello")
             let! x = t2()
             System.Console.WriteLine("world")
@@ -159,7 +196,7 @@ type SmokeTestsForCompilation() =
 
     [<Fact>]
     member __.t3b() =
-        taskd {
+        taskDynamic {
             System.Console.WriteLine("hello")
             let! x = Task.FromResult(1)
             System.Console.WriteLine("world")
@@ -171,7 +208,7 @@ type SmokeTestsForCompilation() =
 
     [<Fact>]
     member __.t3c() =
-        taskd {
+        taskDynamic {
             System.Console.WriteLine("hello")
             do! Task.Delay(100)
             System.Console.WriteLine("world")
@@ -184,7 +221,7 @@ type SmokeTestsForCompilation() =
     [<Fact>]
     // This tests an exception match
     member __.t67() =
-        taskd {
+        taskDynamic {
             try
                 do! Task.Delay(0)
             with
@@ -200,7 +237,7 @@ type SmokeTestsForCompilation() =
     [<Fact>]
     // This tests compiling an incomplete exception match
     member __.t68() =
-        taskd {
+        taskDynamic {
             try
                 do! Task.Delay(0)
             with
@@ -213,7 +250,7 @@ type SmokeTestsForCompilation() =
 
     [<Fact>]
     member __.testCompileAsyncWhileLoop() =
-        taskd {
+        taskDynamic {
             let mutable i = 0
             while i < 5 do
                 i <- i + 1
@@ -239,7 +276,7 @@ type Basics() =
     member __.testShortCircuitResult() =
         printfn "Running testShortCircuitResult..."
         let t =
-            taskd {
+            taskDynamic {
                 let! x = Task.FromResult(1)
                 let! y = Task.FromResult(2)
                 return x + y
@@ -253,7 +290,7 @@ type Basics() =
         printfn "Running testDelay..."
         let mutable x = 0
         let t =
-            taskd {
+            taskDynamic {
                 do! Task.Delay(50)
                 x <- x + 1
             }
@@ -267,7 +304,7 @@ type Basics() =
         printfn "Running testNoDelay..."
         let mutable x = 0
         let t =
-            taskd {
+            taskDynamic {
                 x <- x + 1
                 do! Task.Delay(5)
                 x <- x + 1
@@ -281,7 +318,7 @@ type Basics() =
         let sw = Stopwatch()
         sw.Start()
         let t =
-            taskd {
+            taskDynamic {
                 do! Task.Yield()
                 Thread.Sleep(100)
             }
@@ -295,7 +332,7 @@ type Basics() =
         let mutable x = 0
         let mutable y = 0
         let t =
-            taskd {
+            taskDynamic {
                 try
                     do! Task.Delay(0)
                     failtest "hello"
@@ -319,7 +356,7 @@ type Basics() =
         let mutable x = 0
         let mutable y = 0
         let t =
-            taskd {
+            taskDynamic {
                 try
                     do! Task.Yield() // can't skip through this
                     failtest "hello"
@@ -343,7 +380,7 @@ type Basics() =
         let mutable caughtInner = 0
         let mutable caughtOuter = 0
         let t1() =
-            taskd {
+            taskDynamic {
                 try
                     do! Task.Yield()
                     failtest "hello"
@@ -354,7 +391,7 @@ type Basics() =
                     raise exn
             }
         let t2 =
-            taskd {
+            taskDynamic {
                 try
                     do! t1()
                 with
@@ -377,7 +414,7 @@ type Basics() =
     member __.testWhileLoopSync() =
         printfn "Running testWhileLoopSync..."
         let t =
-            taskd {
+            taskDynamic {
                 let mutable i = 0
                 while i < 10 do
                     i <- i + 1
@@ -392,7 +429,7 @@ type Basics() =
         printfn "Running testWhileLoopAsyncZeroIteration..."
         for i in 1 .. 5 do 
             let t =
-                taskd {
+                taskDynamic {
                     let mutable i = 0
                     while i < 0 do
                         i <- i + 1
@@ -407,7 +444,7 @@ type Basics() =
         printfn "Running testWhileLoopAsyncOneIteration..."
         for i in 1 .. 5 do 
             let t =
-                taskd {
+                taskDynamic {
                     let mutable i = 0
                     while i < 1 do
                         i <- i + 1
@@ -422,7 +459,7 @@ type Basics() =
         printfn "Running testWhileLoopAsync..."
         for i in 1 .. 5 do 
             let t =
-                taskd {
+                taskDynamic {
                     let mutable i = 0
                     while i < 10 do
                         i <- i + 1
@@ -438,7 +475,7 @@ type Basics() =
         for i in 1 .. 5 do 
             let mutable ran = false
             let t =
-                taskd {
+                taskDynamic {
                     try
                         require (not ran) "ran way early"
                         do! Task.Delay(100)
@@ -454,7 +491,7 @@ type Basics() =
         for i in 1 .. 5 do 
             let mutable ran = false
             let t =
-                taskd {
+                taskDynamic {
                     try
                         require (not ran) "ran way early"
                         do! Task.Delay(100)
@@ -475,7 +512,7 @@ type Basics() =
         for i in 1 .. 5 do 
             let mutable ran = false
             let t =
-                taskd {
+                taskDynamic {
                     try
                         try
                             require (not ran) "ran way early"
@@ -497,7 +534,7 @@ type Basics() =
         for i in 1 .. 5 do 
             let mutable disposed = false
             let t =
-                taskd {
+                taskDynamic {
                     use d = { new IDisposable with member __.Dispose() = disposed <- true }
                     require (not disposed) "disposed way early"
                     do! Task.Delay(100)
@@ -513,11 +550,11 @@ type Basics() =
         for i in 1 .. 5 do 
             let mutable disposed = 0
             let t =
-                taskd {
+                taskDynamic {
                     use d = 
                         { new IAsyncDisposable with 
                             member __.DisposeAsync() = 
-                                taskd { 
+                                taskDynamic { 
                                    System.Console.WriteLine "incrementing"
                                    disposed <- disposed + 1 }
                                 |> ValueTask 
@@ -538,11 +575,11 @@ type Basics() =
         for i in 1 .. 5 do 
             let mutable disposed = 0
             let t =
-                taskd {
+                taskDynamic {
                     use d = 
                         { new IAsyncDisposable with 
                             member __.DisposeAsync() = 
-                                taskd { 
+                                taskDynamic { 
                                     do! Task.Delay(10)
                                     disposed <- disposed + 1 
                                 }
@@ -562,11 +599,11 @@ type Basics() =
         for i in 1 .. 5 do 
             let mutable disposed = 0
             let t =
-                taskd {
+                taskDynamic {
                     use d = 
                         { new IAsyncDisposable with 
                             member __.DisposeAsync() = 
-                                taskd { 
+                                taskDynamic { 
                                     do! Task.Delay(10)
                                     disposed <- disposed + 1 
                                 }
@@ -587,11 +624,11 @@ type Basics() =
         for i in 1 .. 5 do 
             let mutable disposed = 0
             let t =
-                taskd {
+                taskDynamic {
                     use d = 
                         { new IAsyncDisposable with 
                             member __.DisposeAsync() = 
-                                taskd { 
+                                taskDynamic { 
                                     disposed <- disposed + 1 
                                     do! Task.Delay(10)
                                 }
@@ -612,11 +649,11 @@ type Basics() =
         for i in 1 .. 5 do 
             let mutable disposed = 0
             let t =
-                taskd {
+                taskDynamic {
                     use d = 
                         { new IAsyncDisposable with 
                             member __.DisposeAsync() = 
-                                taskd { 
+                                taskDynamic { 
                                     disposed <- disposed + 1 
                                     do! Task.Delay(10)
                                 }
@@ -640,9 +677,9 @@ type Basics() =
         let mutable disposedInner = false
         let mutable disposed = false
         let t =
-            taskd {
+            taskDynamic {
                 use! d =
-                    taskd {
+                    taskDynamic {
                         do! Task.Delay(50)
                         use i = { new IDisposable with member __.Dispose() = disposedInner <- true }
                         require (not disposed && not disposedInner) "disposed inner early"
@@ -662,10 +699,10 @@ type Basics() =
         let mutable disposedInner = false
         let mutable disposed = false
         let t =
-            taskd {
+            taskDynamic {
                 try
                     use! d =
-                        taskd {
+                        taskDynamic {
                             do! Task.Delay(50)
                             use i = { new IDisposable with member __.Dispose() = disposedInner <- true }
                             failtest "uhoh"
@@ -690,7 +727,7 @@ type Basics() =
         printfn "Running testForLoopA..."
         let list = ["a"; "b"; "c"] |> Seq.ofList
         let t =
-            taskd {
+            taskDynamic {
                 printfn "entering loop..." 
                 let mutable x = Unchecked.defaultof<_>
                 let e = list.GetEnumerator()
@@ -733,7 +770,7 @@ type Basics() =
                 member __.GetEnumerator() : IEnumerator = upcast getEnumerator()
             }
         let t =
-            taskd {
+            taskDynamic {
                 let mutable index = 0
                 do! Task.Yield()
                 printfn "entering loop..." 
@@ -767,7 +804,7 @@ type Basics() =
         for i in 1 .. 5 do 
             let wrapList = ["a"; "b"; "c"]
             let t =
-                taskd {
+                taskDynamic {
                         let mutable index = 0
                         do! Task.Yield()
                         for x in wrapList do
@@ -810,7 +847,7 @@ type Basics() =
                 }
             let mutable caught = false
             let t =
-                taskd {
+                taskDynamic {
                     try
                         let mutable index = 0
                         do! Task.Yield()
@@ -838,7 +875,7 @@ type Basics() =
             let mutable ranA = false
             let mutable ranB = false
             let t =
-                taskd {
+                taskDynamic {
                     ranA <- true
                     failtest "uhoh"
                     ranB <- true
@@ -851,7 +888,7 @@ type Basics() =
             let mutable caught = false
             let mutable ranCatcher = false
             let catcher =
-                taskd {
+                taskDynamic {
                     try
                         ranCatcher <- true
                         let! result = t
@@ -872,7 +909,7 @@ type Basics() =
             let mutable ranA = false
             let mutable ranB = false
             let t =
-                taskd {
+                taskDynamic {
                     ranA <- true
                     failtest "uhoh"
                     do! Task.Delay(100)
@@ -886,7 +923,7 @@ type Basics() =
             let mutable caught = false
             let mutable ranCatcher = false
             let catcher =
-                taskd {
+                taskDynamic {
                     try
                         ranCatcher <- true
                         let! result = t
@@ -908,7 +945,7 @@ type Basics() =
             let mutable ranNext = false
             let mutable ranFinally = 0
             let t =
-                taskd {
+                taskDynamic {
                     try
                         ranInitial <- true
                         do! Task.Yield()
@@ -936,7 +973,7 @@ type Basics() =
             let mutable ranNext = false
             let mutable ranFinally = 0
             let t =
-                taskd {
+                taskDynamic {
                     try
                         ranInitial <- true
                         do! Task.Yield()
@@ -962,7 +999,7 @@ type Basics() =
         printfn "running testFixedStackWhileLoop"
         for i in 1 .. 100 do 
             let t =
-                taskd {
+                taskDynamic {
                     let mutable maxDepth = Nullable()
                     let mutable i = 0
                     while i < BIG do
@@ -984,7 +1021,7 @@ type Basics() =
             printfn "running testFixedStackForLoop"
             let mutable ran = false
             let t =
-                taskd {
+                taskDynamic {
                     let mutable maxDepth = Nullable()
                     for i in Seq.init BIG id do
                         do! Task.Yield()
@@ -1002,11 +1039,11 @@ type Basics() =
     [<Fact>]
     member __.testTypeInference() =
         let t1 : string Task =
-            taskd {
+            taskDynamic {
                 return "hello"
             }
         let t2 =
-            taskd {
+            taskDynamic {
                 let! s = t1
                 return s.Length
             }
@@ -1016,7 +1053,7 @@ type Basics() =
     member __.testNoStackOverflowWithImmediateResult() =
         printfn "running testNoStackOverflowWithImmediateResult"
         let longLoop =
-            taskd {
+            taskDynamic {
                 let mutable n = 0
                 while n < BIG do
                     n <- n + 1
@@ -1028,11 +1065,11 @@ type Basics() =
     member __.testNoStackOverflowWithYieldResult() =
         printfn "running testNoStackOverflowWithYieldResult"
         let longLoop =
-            taskd {
+            taskDynamic {
                 let mutable n = 0
                 while n < BIG do
                     let! _ =
-                        taskd {
+                        taskDynamic {
                             do! Task.Yield()
                             let! _ = Task.FromResult(0)
                             n <- n + 1
@@ -1045,7 +1082,7 @@ type Basics() =
     member __.testSmallTailRecursion() =
         printfn "running testSmallTailRecursion"
         let rec loop n =
-            taskd {
+            taskDynamic {
                 if n < 100 then
                     do! Task.Yield()
                     let! _ = Task.FromResult(0)
@@ -1054,7 +1091,7 @@ type Basics() =
                     return ()
             }
         let shortLoop =
-            taskd {
+            taskDynamic {
                 return! loop 0
             }
         shortLoop.Wait()
@@ -1063,13 +1100,13 @@ type Basics() =
     member __.testTryOverReturnFrom() =
         printfn "running testTryOverReturnFrom"
         let inner() =
-            taskd {
+            taskDynamic {
                 do! Task.Yield()
                 failtest "inner"
                 return 1
             }
         let t =
-            taskd {
+            taskDynamic {
                 try
                     do! Task.Yield()
                     return! inner()
@@ -1082,14 +1119,14 @@ type Basics() =
     member __.testTryFinallyOverReturnFromWithException() =
         printfn "running testTryFinallyOverReturnFromWithException"
         let inner() =
-            taskd {
+            taskDynamic {
                 do! Task.Yield()
                 failtest "inner"
                 return 1
             }
         let mutable m = 0
         let t =
-            taskd {
+            taskDynamic {
                 try
                     do! Task.Yield()
                     return! inner()
@@ -1106,13 +1143,13 @@ type Basics() =
     member __.testTryFinallyOverReturnFromWithoutException() =
         printfn "running testTryFinallyOverReturnFromWithoutException"
         let inner() =
-            taskd {
+            taskDynamic {
                 do! Task.Yield()
                 return 1
             }
         let mutable m = 0
         let t =
-            taskd {
+            taskDynamic {
                 try
                     do! Task.Yield()
                     return! inner()
@@ -1127,14 +1164,14 @@ type Basics() =
 
     // no need to call this, we just want to check that it compiles w/o warnings
     member __.testTrivialReturnCompiles (x : 'a) : 'a Task =
-        taskd {
+        taskDynamic {
             do! Task.Yield()
             return x
         }
 
     // no need to call this, we just want to check that it compiles w/o warnings
     member __.testTrivialTransformedReturnCompiles (x : 'a) (f : 'a -> 'b) : 'b Task =
-        taskd {
+        taskDynamic {
             do! Task.Yield()
             return f x
         }
@@ -1142,7 +1179,7 @@ type Basics() =
     [<Fact>]
     member __.testAsyncsMixedWithTasks() =
         let t =
-            taskd {
+            taskDynamic {
                 do! Task.Delay(1)
                 do! Async.Sleep(1)
                 let! x =
@@ -1158,8 +1195,8 @@ type Basics() =
     [<Fact>]
     // no need to call this, we just want to check that it compiles w/o warnings
     member __.testDefaultInferenceForReturnFrom() =
-        let t = taskd { return Some "x" }
-        taskd {
+        let t = taskDynamic { return Some "x" }
+        taskDynamic {
             let! r = t
             if r = None then
                 return! failwithf "Could not find x" 
@@ -1171,13 +1208,63 @@ type Basics() =
     [<Fact>]
     // no need to call this, just check that it compiles
     member __.testCompilerInfersArgumentOfReturnFrom() =
-        taskd {
+        taskDynamic {
             if true then return 1
             else return! failwith ""
         }
         |> ignore
 
 
+[<CollectionDefinition("BasicsNotInParallel", DisableParallelization = true)>]
+type BasicsNotInParallel() = 
+
+    [<Fact; >]
+    member __.testTaskUsesSyncContext() =
+        printfn "Running testBackgroundTask..."
+        for i in 1 .. 5 do 
+            let mutable ran = false
+            let mutable posted = false
+            let oldSyncContext = SynchronizationContext.Current
+            let syncContext = { new SynchronizationContext()  with member _.Post(d,state) = posted <- true; d.Invoke(state) }
+            try 
+                SynchronizationContext.SetSynchronizationContext syncContext
+                require (not (isNull SynchronizationContext.Current)) "need sync context non null on foreground thread A"
+                require (SynchronizationContext.Current = syncContext) "need sync context known on foreground thread A"
+                let t =
+                    taskDynamic {
+                        require (not (isNull SynchronizationContext.Current)) "need sync context non null on foreground thread B"
+                        require (SynchronizationContext.Current = syncContext) "need sync context known on foreground thread B"
+                        do! Task.Yield()
+                        require (not (isNull SynchronizationContext.Current)) "need sync context non null on foreground thread C"
+                        require (SynchronizationContext.Current = syncContext) "need sync context known on foreground thread C"
+                        ran <- true
+                    }
+                t.Wait()
+                require ran "never ran"
+                require posted "never posted"
+            finally
+                SynchronizationContext.SetSynchronizationContext oldSyncContext
+                 
+    [<Fact; >]
+    member __.testBackgroundTaskEscapesSyncContext() =
+        printfn "Running testBackgroundTask..."
+        for i in 1 .. 5 do 
+            let mutable ran = false
+            let mutable posted = false
+            let oldSyncContext = SynchronizationContext.Current
+            let syncContext = { new SynchronizationContext()  with member _.Post(d,state) = posted <- true; d.Invoke(state) }
+            try 
+                SynchronizationContext.SetSynchronizationContext syncContext
+                let t =
+                    backgroundTaskDynamic {
+                        require (isNull SynchronizationContext.Current) "need sync context null on background thread"
+                        ran <- true
+                    }
+                t.Wait()
+                require ran "never ran"
+                require (not posted) "did not expect post to sync context"
+            finally
+                SynchronizationContext.SetSynchronizationContext oldSyncContext
 #if STANDALONE 
 module M = 
   [<EntryPoint>]

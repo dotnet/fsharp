@@ -34,6 +34,19 @@ open Xunit
 type ITaskThing =
     abstract member Taskify : 'a option -> 'a Task
 
+#if NETCOREAPP
+type SupportBothDisposables() =
+    let mutable called = false
+    interface IAsyncDisposable with 
+        member __.DisposeAsync() = 
+            task { 
+                System.Console.WriteLine "incrementing"
+                called <- true }
+            |> ValueTask
+    interface IDisposable with 
+        member __.Dispose() =  failwith "dispose"
+    member x.Disposed = called
+#endif
 type SmokeTestsForCompilation() =
 
     [<Fact>]
@@ -460,7 +473,7 @@ type Basics() =
 #if NETCOREAPP
     [<Fact>]
     member __.testUsingAsyncDisposableSync() =
-        printfn "Running testUsing..."
+        printfn "Running testUsingAsyncDisposableSync..."
         for i in 1 .. 5 do 
             let mutable disposed = 0
             let t =
@@ -485,7 +498,7 @@ type Basics() =
 
     [<Fact>]
     member __.testUsingAsyncDisposableAsync() =
-        printfn "Running testUsing..."
+        printfn "Running testUsingAsyncDisposableAsync..."
         for i in 1 .. 5 do 
             let mutable disposed = 0
             let t =
@@ -509,7 +522,7 @@ type Basics() =
 
     [<Fact>]
     member __.testUsingAsyncDisposableExnAsync() =
-        printfn "Running testUsing..."
+        printfn "Running testUsingAsyncDisposableExnAsync..."
         for i in 1 .. 5 do 
             let mutable disposed = 0
             let t =
@@ -534,7 +547,7 @@ type Basics() =
 
     [<Fact>]
     member __.testUsingAsyncDisposableExnSync() =
-        printfn "Running testUsing..."
+        printfn "Running testUsingAsyncDisposableExnSync..."
         for i in 1 .. 5 do 
             let mutable disposed = 0
             let t =
@@ -559,7 +572,7 @@ type Basics() =
 
     [<Fact>]
     member __.testUsingAsyncDisposableDelayExnSync() =
-        printfn "Running testUsing..."
+        printfn "Running testUsingAsyncDisposableDelayExnSync..."
         for i in 1 .. 5 do 
             let mutable disposed = 0
             let t =
@@ -583,6 +596,53 @@ type Basics() =
             with | :? AggregateException -> 
                 require (disposed >= 1) "never disposed B"
                 require (disposed <= 1) "too many dispose on B"
+
+    [<Fact>]
+    // Test use! resolves
+    member __.testUsingBindAsyncDisposableSync() =
+        printfn "Running testUsingBindAsyncDisposableSync..."
+        for i in 1 .. 5 do 
+            let mutable disposed = 0
+            let t =
+                task {
+                    use! d = 
+                        task {
+                         do! Task.Delay(10)
+                         return
+                             { new IAsyncDisposable with 
+                                member __.DisposeAsync() = 
+                                    task { 
+                                       System.Console.WriteLine "incrementing"
+                                       disposed <- disposed + 1 }
+                                    |> ValueTask 
+                             }
+                        }
+                    require (disposed = 0) "disposed way early"
+                    System.Console.WriteLine "delaying"
+                    do! Task.Delay(100)
+                    System.Console.WriteLine "testing"
+                    require (disposed = 0) "disposed kinda early"
+                }
+            t.Wait()
+            require (disposed >= 1) "never disposed B"
+            require (disposed <= 1) "too many dispose on B"
+
+    [<Fact>]
+    member __.testUsingAsyncDisposableSyncSupportingBothDisposables() =
+        printfn "Running testUsingAsyncDisposableSyncSupportingBothDisposables..."
+        for i in 1 .. 5 do 
+            let disp = new SupportBothDisposables()
+            let t =
+                task {
+                    use d = disp
+                    require (not disp.Disposed) "disposed way early"
+                    System.Console.WriteLine "delaying"
+                    do! Task.Delay(100)
+                    System.Console.WriteLine "testing"
+                    require (not disp.Disposed) "disposed kinda early"
+                }
+            t.Wait()
+            require disp.Disposed "never disposed B"
 #endif
 
     [<Fact>]
