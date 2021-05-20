@@ -534,16 +534,6 @@ Microsoft.FSharp.Control.AsyncPrimitives: Microsoft.FSharp.Control.AsyncReturn I
 Microsoft.FSharp.Control.AsyncPrimitives: Microsoft.FSharp.Control.AsyncReturn TryFinally[T](Microsoft.FSharp.Control.AsyncActivation`1[T], Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Control.AsyncPrimitives: Microsoft.FSharp.Control.AsyncReturn TryWith[T](Microsoft.FSharp.Control.AsyncActivation`1[T], Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Control.FSharpAsync`1[T]]])
 Microsoft.FSharp.Control.AsyncPrimitives: Microsoft.FSharp.Control.FSharpAsync`1[T] MakeAsync[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.AsyncActivation`1[T],Microsoft.FSharp.Control.AsyncReturn])
-Microsoft.FSharp.Control.BackgroundTaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit] For[T,TOverall](System.Collections.Generic.IEnumerable`1[T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit]])
-Microsoft.FSharp.Control.BackgroundTaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit] While[TOverall](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.Boolean], Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit])
-Microsoft.FSharp.Control.BackgroundTaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit] Zero[TOverall]()
-Microsoft.FSharp.Control.BackgroundTaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Combine[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T])
-Microsoft.FSharp.Control.BackgroundTaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Delay[TOverall,T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
-Microsoft.FSharp.Control.BackgroundTaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] TryFinally[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
-Microsoft.FSharp.Control.BackgroundTaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] TryWith[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T], Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
-Microsoft.FSharp.Control.BackgroundTaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Using[TResource,TOverall,T](TResource, Microsoft.FSharp.Core.FSharpFunc`2[TResource,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
-Microsoft.FSharp.Control.BackgroundTaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T] ReturnFrom[T](System.Threading.Tasks.Task`1[T])
-Microsoft.FSharp.Control.BackgroundTaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T] Return[T](T)
 Microsoft.FSharp.Control.BackgroundTaskBuilder: System.Threading.Tasks.Task`1[T] Run[T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T])
 Microsoft.FSharp.Control.CommonExtensions: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] AsyncWrite(System.IO.Stream, Byte[], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Control.CommonExtensions: Microsoft.FSharp.Control.FSharpAsync`1[System.Byte[]] AsyncReadBytes(System.IO.Stream, Int32)
@@ -659,15 +649,6 @@ Microsoft.FSharp.Control.ObservableModule: System.IObservable`1[T] Merge[T](Syst
 Microsoft.FSharp.Control.ObservableModule: System.Tuple`2[System.IObservable`1[TResult1],System.IObservable`1[TResult2]] Split[T,TResult1,TResult2](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpChoice`2[TResult1,TResult2]], System.IObservable`1[T])
 Microsoft.FSharp.Control.ObservableModule: System.Tuple`2[System.IObservable`1[T],System.IObservable`1[T]] Partition[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], System.IObservable`1[T])
 Microsoft.FSharp.Control.ObservableModule: Void Add[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit], System.IObservable`1[T])
-Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit] For[T,TOverall](System.Collections.Generic.IEnumerable`1[T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit]])
-Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit] While[TOverall](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.Boolean], Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit])
-Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit] Zero[TOverall]()
-Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Combine[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T])
-Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Delay[TOverall,T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
-Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] TryFinally[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
-Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] TryWith[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T], Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
-Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T] ReturnFrom[T](System.Threading.Tasks.Task`1[T])
-Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T] Return[T](T)
 Microsoft.FSharp.Control.TaskBuilder: System.Threading.Tasks.Task`1[T] Run[T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T])
 Microsoft.FSharp.Control.TaskBuilderBase: Boolean ReturnFromDynamic[T](Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[Microsoft.FSharp.Control.TaskStateMachineData`1[T]] ByRef, System.Threading.Tasks.Task`1[T])
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit] For[T,TOverall](System.Collections.Generic.IEnumerable`1[T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit]])
@@ -677,7 +658,6 @@ Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Delay[TOverall,T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] TryFinally[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] TryWith[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T], Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
-Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Using[TResource,TOverall,T](TResource, Microsoft.FSharp.Core.FSharpFunc`2[TResource,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T] ReturnFrom[T](System.Threading.Tasks.Task`1[T])
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T] Return[T](T)
 Microsoft.FSharp.Control.TaskBuilderBase: System.Threading.Tasks.Task`1[T] RunDynamic[T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T])
@@ -974,36 +954,8 @@ Microsoft.FSharp.Core.ExtraTopLevelOperators: T PrintFormat[T](Microsoft.FSharp.
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T SpliceExpression[T](Microsoft.FSharp.Quotations.FSharpExpr`1[T])
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T SpliceUntypedExpression[T](Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T[,] CreateArray2D[?,T](System.Collections.Generic.IEnumerable`1[?])
-Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`2[T1,T2])
-Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: Boolean IsChoice1Of2
-Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: Boolean IsChoice2Of2
-Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: Boolean get_IsChoice1Of2()
-Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: Boolean get_IsChoice2Of2()
-Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`2[T1,T2])
-Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: T1 Item
 Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: T1 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`2[T1,T2])
-Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: Boolean IsChoice1Of2
-Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: Boolean IsChoice2Of2
-Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: Boolean get_IsChoice1Of2()
-Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: Boolean get_IsChoice2Of2()
-Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`2[T1,T2])
-Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: T2 Item
 Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: T2 get_Item()
 Microsoft.FSharp.Core.FSharpChoice`2+Tags[T1,T2]: Int32 Choice1Of2
@@ -1027,58 +979,10 @@ Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]: Microsoft.FSharp.Core.FSharpChoice`
 Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]: Microsoft.FSharp.Core.FSharpChoice`2+Tags[T1,T2]
 Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]: Microsoft.FSharp.Core.FSharpChoice`2[T1,T2] NewChoice1Of2(T1)
 Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]: Microsoft.FSharp.Core.FSharpChoice`2[T1,T2] NewChoice2Of2(T2)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3])
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Boolean IsChoice1Of3
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Boolean IsChoice2Of3
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Boolean IsChoice3Of3
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Boolean get_IsChoice1Of3()
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Boolean get_IsChoice2Of3()
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Boolean get_IsChoice3Of3()
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3])
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: T1 Item
 Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: T1 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3])
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Boolean IsChoice1Of3
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Boolean IsChoice2Of3
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Boolean IsChoice3Of3
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Boolean get_IsChoice1Of3()
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Boolean get_IsChoice2Of3()
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Boolean get_IsChoice3Of3()
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3])
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: T2 Item
 Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: T2 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3])
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Boolean IsChoice1Of3
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Boolean IsChoice2Of3
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Boolean IsChoice3Of3
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Boolean get_IsChoice1Of3()
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Boolean get_IsChoice2Of3()
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Boolean get_IsChoice3Of3()
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3])
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: T3 Item
 Microsoft.FSharp.Core.FSharpChoice`3+Choice3Of3[T1,T2,T3]: T3 get_Item()
 Microsoft.FSharp.Core.FSharpChoice`3+Tags[T1,T2,T3]: Int32 Choice1Of3
@@ -1107,84 +1011,12 @@ Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3]: Microsoft.FSharp.Core.FSharpChoi
 Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3]: Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3] NewChoice1Of3(T1)
 Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3]: Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3] NewChoice2Of3(T2)
 Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3]: Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3] NewChoice3Of3(T3)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4])
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Boolean IsChoice1Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Boolean IsChoice2Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Boolean IsChoice3Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Boolean IsChoice4Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Boolean get_IsChoice1Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Boolean get_IsChoice2Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Boolean get_IsChoice3Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Boolean get_IsChoice4Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4])
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: T1 Item
 Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: T1 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4])
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Boolean IsChoice1Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Boolean IsChoice2Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Boolean IsChoice3Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Boolean IsChoice4Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Boolean get_IsChoice1Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Boolean get_IsChoice2Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Boolean get_IsChoice3Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Boolean get_IsChoice4Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4])
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: T2 Item
 Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: T2 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4])
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Boolean IsChoice1Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Boolean IsChoice2Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Boolean IsChoice3Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Boolean IsChoice4Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Boolean get_IsChoice1Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Boolean get_IsChoice2Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Boolean get_IsChoice3Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Boolean get_IsChoice4Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4])
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: T3 Item
 Microsoft.FSharp.Core.FSharpChoice`4+Choice3Of4[T1,T2,T3,T4]: T3 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4])
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Boolean IsChoice1Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Boolean IsChoice2Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Boolean IsChoice3Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Boolean IsChoice4Of4
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Boolean get_IsChoice1Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Boolean get_IsChoice2Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Boolean get_IsChoice3Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Boolean get_IsChoice4Of4()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4])
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: T4 Item
 Microsoft.FSharp.Core.FSharpChoice`4+Choice4Of4[T1,T2,T3,T4]: T4 get_Item()
 Microsoft.FSharp.Core.FSharpChoice`4+Tags[T1,T2,T3,T4]: Int32 Choice1Of4
@@ -1218,114 +1050,14 @@ Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4]: Microsoft.FSharp.Core.FSharpC
 Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4]: Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4] NewChoice2Of4(T2)
 Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4]: Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4] NewChoice3Of4(T3)
 Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4]: Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4] NewChoice4Of4(T4)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5])
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Boolean IsChoice1Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Boolean IsChoice2Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Boolean IsChoice3Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Boolean IsChoice4Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Boolean IsChoice5Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice1Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice2Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice3Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice4Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice5Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5])
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: T1 Item
 Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: T1 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5])
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Boolean IsChoice1Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Boolean IsChoice2Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Boolean IsChoice3Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Boolean IsChoice4Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Boolean IsChoice5Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice1Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice2Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice3Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice4Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice5Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5])
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: T2 Item
 Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: T2 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5])
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Boolean IsChoice1Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Boolean IsChoice2Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Boolean IsChoice3Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Boolean IsChoice4Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Boolean IsChoice5Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice1Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice2Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice3Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice4Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice5Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5])
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: T3 Item
 Microsoft.FSharp.Core.FSharpChoice`5+Choice3Of5[T1,T2,T3,T4,T5]: T3 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5])
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Boolean IsChoice1Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Boolean IsChoice2Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Boolean IsChoice3Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Boolean IsChoice4Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Boolean IsChoice5Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice1Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice2Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice3Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice4Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice5Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5])
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: T4 Item
 Microsoft.FSharp.Core.FSharpChoice`5+Choice4Of5[T1,T2,T3,T4,T5]: T4 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5])
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Boolean IsChoice1Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Boolean IsChoice2Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Boolean IsChoice3Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Boolean IsChoice4Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Boolean IsChoice5Of5
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice1Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice2Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice3Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice4Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Boolean get_IsChoice5Of5()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5])
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: T5 Item
 Microsoft.FSharp.Core.FSharpChoice`5+Choice5Of5[T1,T2,T3,T4,T5]: T5 get_Item()
 Microsoft.FSharp.Core.FSharpChoice`5+Tags[T1,T2,T3,T4,T5]: Int32 Choice1Of5
@@ -1364,148 +1096,16 @@ Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5]: Microsoft.FSharp.Core.FSha
 Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5]: Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5] NewChoice3Of5(T3)
 Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5]: Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5] NewChoice4Of5(T4)
 Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5]: Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5] NewChoice5Of5(T5)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6])
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice1Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice2Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice3Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice4Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice5Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice6Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice1Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice2Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice3Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice4Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice5Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice6Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6])
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: T1 Item
 Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: T1 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6])
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice1Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice2Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice3Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice4Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice5Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice6Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice1Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice2Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice3Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice4Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice5Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice6Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6])
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: T2 Item
 Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: T2 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6])
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice1Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice2Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice3Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice4Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice5Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice6Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice1Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice2Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice3Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice4Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice5Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice6Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6])
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: T3 Item
 Microsoft.FSharp.Core.FSharpChoice`6+Choice3Of6[T1,T2,T3,T4,T5,T6]: T3 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6])
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice1Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice2Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice3Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice4Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice5Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice6Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice1Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice2Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice3Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice4Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice5Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice6Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6])
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: T4 Item
 Microsoft.FSharp.Core.FSharpChoice`6+Choice4Of6[T1,T2,T3,T4,T5,T6]: T4 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6])
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice1Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice2Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice3Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice4Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice5Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice6Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice1Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice2Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice3Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice4Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice5Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice6Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6])
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: T5 Item
 Microsoft.FSharp.Core.FSharpChoice`6+Choice5Of6[T1,T2,T3,T4,T5,T6]: T5 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6])
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice1Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice2Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice3Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice4Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice5Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice6Of6
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice1Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice2Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice3Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice4Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice5Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Boolean get_IsChoice6Of6()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6])
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: T6 Item
 Microsoft.FSharp.Core.FSharpChoice`6+Choice6Of6[T1,T2,T3,T4,T5,T6]: T6 get_Item()
 Microsoft.FSharp.Core.FSharpChoice`6+Tags[T1,T2,T3,T4,T5,T6]: Int32 Choice1Of6
@@ -1549,186 +1149,18 @@ Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6]: Microsoft.FSharp.Core.F
 Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6]: Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6] NewChoice4Of6(T4)
 Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6]: Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6] NewChoice5Of6(T5)
 Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6]: Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6] NewChoice6Of6(T6)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7])
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice1Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice2Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice3Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice4Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice5Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice6Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice7Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice1Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice2Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice3Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice4Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice5Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice6Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice7Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7])
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: T1 Item
 Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: T1 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7])
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice1Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice2Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice3Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice4Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice5Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice6Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice7Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice1Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice2Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice3Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice4Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice5Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice6Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice7Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7])
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: T2 Item
 Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: T2 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7])
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice1Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice2Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice3Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice4Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice5Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice6Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice7Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice1Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice2Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice3Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice4Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice5Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice6Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice7Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7])
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: T3 Item
 Microsoft.FSharp.Core.FSharpChoice`7+Choice3Of7[T1,T2,T3,T4,T5,T6,T7]: T3 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7])
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice1Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice2Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice3Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice4Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice5Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice6Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice7Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice1Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice2Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice3Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice4Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice5Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice6Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice7Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7])
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: T4 Item
 Microsoft.FSharp.Core.FSharpChoice`7+Choice4Of7[T1,T2,T3,T4,T5,T6,T7]: T4 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7])
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice1Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice2Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice3Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice4Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice5Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice6Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice7Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice1Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice2Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice3Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice4Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice5Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice6Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice7Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7])
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: T5 Item
 Microsoft.FSharp.Core.FSharpChoice`7+Choice5Of7[T1,T2,T3,T4,T5,T6,T7]: T5 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7])
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice1Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice2Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice3Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice4Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice5Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice6Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice7Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice1Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice2Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice3Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice4Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice5Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice6Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice7Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7])
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: T6 Item
 Microsoft.FSharp.Core.FSharpChoice`7+Choice6Of7[T1,T2,T3,T4,T5,T6,T7]: T6 get_Item()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7])
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice1Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice2Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice3Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice4Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice5Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice6Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice7Of7
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice1Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice2Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice3Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice4Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice5Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice6Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Boolean get_IsChoice7Of7()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7])
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 Tag
-Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: T7 Item
 Microsoft.FSharp.Core.FSharpChoice`7+Choice7Of7[T1,T2,T3,T4,T5,T6,T7]: T7 get_Item()
 Microsoft.FSharp.Core.FSharpChoice`7+Tags[T1,T2,T3,T4,T5,T6,T7]: Int32 Choice1Of7
@@ -2483,13 +1915,6 @@ Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.T
 Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.Type[] get_CaptureTypes()
 Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: Void .ctor(System.String)
 Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: Void .ctor(System.String, System.Object[], System.Type[])
-Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.Object[] Captures
-Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.Object[] get_Captures()
-Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.String ToString()
-Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.String Value
-Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.String get_Value()
-Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.Type[] CaptureTypes
-Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.Type[] get_CaptureTypes()
 Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: Void .ctor(System.String)
 Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: Void .ctor(System.String, System.Object[], System.Type[])
 Microsoft.FSharp.Core.PrintfModule: T PrintFormatLineToError[T](Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
@@ -2918,18 +2343,8 @@ Microsoft.FSharp.Quotations.FSharpExpr: System.Type Type
 Microsoft.FSharp.Quotations.FSharpExpr: System.Type get_Type()
 Microsoft.FSharp.Quotations.FSharpExpr: Void RegisterReflectedDefinitions(System.Reflection.Assembly, System.String, Byte[])
 Microsoft.FSharp.Quotations.FSharpExpr: Void RegisterReflectedDefinitions(System.Reflection.Assembly, System.String, Byte[], System.Type[])
-Microsoft.FSharp.Quotations.FSharpExpr`1[T]: Boolean Equals(System.Object)
-Microsoft.FSharp.Quotations.FSharpExpr`1[T]: Int32 GetHashCode()
-Microsoft.FSharp.Quotations.FSharpExpr`1[T]: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr] CustomAttributes
-Microsoft.FSharp.Quotations.FSharpExpr`1[T]: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr] get_CustomAttributes()
 Microsoft.FSharp.Quotations.FSharpExpr`1[T]: Microsoft.FSharp.Quotations.FSharpExpr Raw
-Microsoft.FSharp.Quotations.FSharpExpr`1[T]: Microsoft.FSharp.Quotations.FSharpExpr Substitute(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Quotations.FSharpVar,Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Quotations.FSharpExpr]])
 Microsoft.FSharp.Quotations.FSharpExpr`1[T]: Microsoft.FSharp.Quotations.FSharpExpr get_Raw()
-Microsoft.FSharp.Quotations.FSharpExpr`1[T]: System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Quotations.FSharpVar] GetFreeVars()
-Microsoft.FSharp.Quotations.FSharpExpr`1[T]: System.String ToString()
-Microsoft.FSharp.Quotations.FSharpExpr`1[T]: System.String ToString(Boolean)
-Microsoft.FSharp.Quotations.FSharpExpr`1[T]: System.Type Type
-Microsoft.FSharp.Quotations.FSharpExpr`1[T]: System.Type get_Type()
 Microsoft.FSharp.Quotations.FSharpVar: Boolean Equals(System.Object)
 Microsoft.FSharp.Quotations.FSharpVar: Boolean IsMutable
 Microsoft.FSharp.Quotations.FSharpVar: Boolean get_IsMutable()
@@ -3054,7 +2469,7 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
 // This is in netstandard 2.1
         let expected =
             expected +
-            """Microsoft.FSharp.Control.TaskBuilder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Using[TResource,TOverall,T](TResource, Microsoft.FSharp.Core.FSharpFunc`2[TResource,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
+            """Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Using[TResource,TOverall,T](TResource, Microsoft.FSharp.Core.FSharpFunc`2[TResource,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
 """
 #endif
 #if DEBUG
