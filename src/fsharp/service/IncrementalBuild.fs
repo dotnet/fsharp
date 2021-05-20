@@ -1274,7 +1274,7 @@ type IncrementalBuilder(tcGlobals,
         let state = computeStampedFileNames state cache
         let state = computeStampedReferencedAssemblies state cache
         let t1 = MaxTimeStampInDependencies state.stampedReferencedAssemblies
-        let t2 = MaxTimeStampInDependencies state.stampedFileNames
+        let t2 = MaxTimeStampInDependencies state.logicalStampedFileNames
         max t1 t2
 
     member _.TryGetSlotOfFileName(filename: string) =
