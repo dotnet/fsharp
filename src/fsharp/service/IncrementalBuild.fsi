@@ -232,6 +232,8 @@ type internal IncrementalBuilder =
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
       member GetParseResultsForFile: filename:string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
+      member UpdateDocument: CompilationThreadToken * doc: FSharpDocument -> unit
+
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:
           CompilationThreadToken *
@@ -239,7 +241,7 @@ type internal IncrementalBuilder =
           defaultFSharpBinariesDir: string * 
           FrameworkImportsCache *
           loadClosureOpt:LoadClosure option *
-          sourceFiles:string list *
+          docs:FSharpDocument list *
           commandLineArgs:string list *
           projectReferences: IProjectReference list *
           projectDirectory:string *

@@ -379,6 +379,8 @@ type public FSharpChecker =
     //[<Obsolete("Explicitly waiting for background compilation is not recommended and the functionality to allow this may be rearchitected in future release.  If you use this functionality please add an issue on https://github.com/fsharp/FSharp.Compiler.Service describing how you use it and ignore this warning.")>]
     member WaitForBackgroundCompile: unit -> unit
 
+    member UpdateDocument: options: FSharpProjectOptions * doc: FSharpDocument * ct: Threading.CancellationToken -> unit
+
     /// Report a statistic for testability
     static member ActualParseFileCount: int
 

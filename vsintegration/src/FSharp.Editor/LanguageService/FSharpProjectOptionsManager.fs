@@ -85,6 +85,15 @@ module private FSharpProjectOptionsHelpers =
         else
             hasProjectVersionChanged
 
+    type Document with
+
+        member this.ToFSharpDocument() =
+            let dt = DateTime.UtcNow
+            let getTimeStamp = fun () -> dt
+            let getSourceText = fun () ->
+                this.GetTextAsync().Result.ToFSharpSourceText()
+            FSharpDocument.Create(this.FilePath, getTimeStamp, getSourceText)
+
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
     | TryGetOptionsByDocument of Document * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option> * CancellationToken * userOpName: string
@@ -331,6 +340,20 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     cache.TryRemove(projectId) |> ignore
                     return! tryComputeOptions project ct
                 else
+
+
+                    let projectChanges = project.GetChanges(oldProject)
+                    let changedDocs = projectChanges.GetChangedDocuments() |> Array.ofSeq
+
+                    if changedDocs.Length > 0 then
+                        changedDocs
+                        |> Array.iter (fun docId ->
+                            let doc = project.GetDocument(docId)
+                            checkerProvider.Checker.UpdateDocument(projectOptions, doc.ToFSharpDocument(), ct)
+                        )
+
+                        cache.[projectId] <- (project, parsingOptions, projectOptions)
+                        
                     return Some(parsingOptions, projectOptions)
         }
 

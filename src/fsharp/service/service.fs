@@ -284,8 +284,12 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
 
         let! builderOpt, diagnostics = 
+            let docs =
+                options.SourceFiles
+                |> Seq.map FSharpDocument.CreateFromFile
+                |> List.ofSeq
             IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions
-                  (ctok, legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, Array.toList options.SourceFiles, 
+                  (ctok, legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, docs, 
                    Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
                    options.UseScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions,
                    tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses,
@@ -566,6 +570,16 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 }
             return! loop()
         }
+
+    member bc.UpdateDocument(options, doc: FSharpDocument, ct: Threading.CancellationToken) =
+        reactor.EnqueueOp("", "", "", fun ctok -> 
+            match getOrCreateBuilder (ctok, options, "") |> Cancellable.run ct with
+            | ValueOrCancelled.Value(Some builder, _) ->
+                parseCacheLock.AcquireLock(fun ltok -> checkFileInProjectCache.RemoveAnySimilar(ltok, (doc.FilePath, 0L, options)))
+                builder.UpdateDocument(ctok, doc)
+            | _ ->
+                ()
+        )
 
     /// Type-check the result obtained by parsing, but only if the antecedent type checking context is available. 
     member bc.CheckFileInProjectAllowingStaleCachedResults(parseResults: FSharpParseFileResults, filename, fileVersion, sourceText: ISourceText, options, userOpName) =
@@ -1384,6 +1398,9 @@ type FSharpChecker(legacyReferenceResolver,
     //
     // This is for unit testing only
     member _.WaitForBackgroundCompile() = backgroundCompiler.WaitForBackgroundCompile()
+
+    member _.UpdateDocument(options: FSharpProjectOptions, doc: FSharpDocument, ct: Threading.CancellationToken) =
+        backgroundCompiler.UpdateDocument(options, doc, ct)
 
     // Publish the ReactorOps from the background compiler for internal use
     member ic.ReactorOps = backgroundCompiler.ReactorOps
