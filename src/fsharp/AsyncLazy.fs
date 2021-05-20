@@ -43,37 +43,37 @@ type AsyncLazy<'T> (computation: Async<'T>) =
 
     let loop (agent: MailboxProcessor<AsyncLazyWeakMessage<'T>>) =
         async {
-            while true do
-                try
-                    match! agent.Receive() with
-                    | GetValue (replyChannel, ct) ->
-                        Thread.CurrentThread.CurrentUICulture <- AsyncLazy.culture
-                        try
-                            use _reg = 
-                                // When a cancellation has occured, notify the reply channel to let the requester stop waiting for a response.
-                                ct.Register (fun () -> 
-                                    let ex = OperationCanceledException() :> exn
-                                    replyChannel.Reply (Error ex)
-                                )
+            try
+                while true do
+                        match! agent.Receive() with
+                        | GetValue (replyChannel, ct) ->
+                            Thread.CurrentThread.CurrentUICulture <- AsyncLazy.culture
+                            try
+                                use _reg = 
+                                    // When a cancellation has occured, notify the reply channel to let the requester stop waiting for a response.
+                                    ct.Register (fun () -> 
+                                        let ex = OperationCanceledException() :> exn
+                                        replyChannel.Reply (Error ex)
+                                    )
 
-                            ct.ThrowIfCancellationRequested ()
+                                ct.ThrowIfCancellationRequested ()
 
-                            match cachedResult with
-                            | ValueSome result ->
-                                replyChannel.Reply (Ok result)
-                            | _ ->
-                                // This computation can only be canceled if the requestCount reaches zero.
-                                let! result = computation
-                                cachedResult <- ValueSome result
-                                computation <- Unchecked.defaultof<_>
-                                if not ct.IsCancellationRequested then
+                                match cachedResult with
+                                | ValueSome result ->
                                     replyChannel.Reply (Ok result)
-                        with 
-                        | ex ->
-                            replyChannel.Reply (Error ex)
-                with
-                | _ -> 
-                    ()
+                                | _ ->
+                                    // This computation can only be canceled if the requestCount reaches zero.
+                                    let! result = computation
+                                    cachedResult <- ValueSome result
+                                    computation <- Unchecked.defaultof<_>
+                                    if not ct.IsCancellationRequested then
+                                        replyChannel.Reply (Ok result)
+                            with 
+                            | ex ->
+                                replyChannel.Reply (Error ex)
+            with
+            | _ -> 
+                ()
         }
 
     let mutable agentInstance: (MailboxProcessor<AsyncLazyWeakMessage<'T>> * CancellationTokenSource) option = None
