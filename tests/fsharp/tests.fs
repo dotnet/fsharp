@@ -369,6 +369,8 @@ module CoreTests =
 
         fsc cfg "%s -o:test.exe -g --tailcalls- --optimize- --langversion:preview" cfg.fsc_flags ["test.fsx"]
 
+        peverify cfg "test.exe"
+
         exec cfg ("." ++ "test.exe") ""
 
         testOkFile.CheckExists()
@@ -380,6 +382,8 @@ module CoreTests =
         use testOkFile = fileguard cfg "test.ok"
 
         fsc cfg "%s -o:test.exe -g --tailcalls+ --optimize+ --langversion:preview" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test.exe"
 
         exec cfg ("." ++ "test.exe") ""
 

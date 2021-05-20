@@ -394,6 +394,7 @@ let ComputeTypeAccess (tref: ILTypeRef) hidden =
 [<NoEquality; NoComparison>]
 type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int, templateReplacement: (TyconRef * ILType * TyparInst) option) =
 
+    static let empty = TypeReprEnv(count = 0, reprs = Map.empty, templateReplacement = None)
     /// Get the template replacement information used when using struct types for state machines based on a "template" struct
     member __.TemplateReplacement = templateReplacement
 
@@ -423,20 +424,23 @@ type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int, templateReplacement: (Ty
     member _.Count = count
 
     /// Get the empty environment, where no type parameters are in scope.
-    static member Empty =
-        TypeReprEnv(count = 0, reprs = Map.empty, templateReplacement = None)
+    static member Empty = empty
+
+    /// Reset to the empty environment, where no type parameters are in scope.
+    member eenv.ResetTypars() =
+        TypeReprEnv(count = 0, reprs = Map.empty, templateReplacement = eenv.TemplateReplacement)
 
     /// Get the environment for a fixed set of type parameters
-    static member ForTypars tps =
-        TypeReprEnv.Empty.Add tps
+    member eenv.ForTypars tps =
+        eenv.ResetTypars().Add tps
 
     /// Get the environment for within a type definition
-    static member ForTycon (tycon: Tycon) =
-        TypeReprEnv.ForTypars (tycon.TyparsNoRange)
+    member eenv.ForTycon (tycon: Tycon) =
+        eenv.ForTypars (tycon.TyparsNoRange)
 
     /// Get the environment for generating a reference to items within a type definition
-    static member ForTyconRef (tycon: TyconRef) =
-        TypeReprEnv.ForTycon tycon.Deref
+    member eenv.ForTyconRef (tycon: TyconRef) =
+        eenv.ForTycon tycon.Deref
 
 //--------------------------------------------------------------------------
 // Generate type references
@@ -577,7 +581,7 @@ and GenUnionRef (amap: ImportMap) m (tcref: TyconRef) =
     | ValueNone -> failwith "GenUnionRef m"
     | ValueSome funion ->
       cached funion.CompiledRepresentation (fun () ->
-          let tyenvinner = TypeReprEnv.ForTycon tycon
+          let tyenvinner = TypeReprEnv.Empty.ForTycon tycon
           match tcref.CompiledRepresentation with
           | CompiledTypeRepr.ILAsmOpen _ -> failwith "GenUnionRef m: unexpected ASM tyrep"
           | CompiledTypeRepr.ILAsmNamed (tref, _, _) ->
@@ -684,7 +688,7 @@ let GenRecdFieldRef m cenv (tyenv: TypeReprEnv) (rfref: RecdFieldRef) tyargs =
                       ComputeFieldName rfref.Tycon rfref.RecdField,
                       GenType cenv.amap m tyenv (instType inst rfref.RecdField.FormalType))
     | _ -> 
-        let tyenvinner = TypeReprEnv.ForTycon rfref.Tycon
+        let tyenvinner = TypeReprEnv.Empty.ForTycon rfref.Tycon
         let ilty = GenTyApp cenv.amap m tyenv rfref.TyconRef.CompiledRepresentation tyargs
         mkILFieldSpecInTy(ilty,
                       ComputeFieldName rfref.Tycon rfref.RecdField,
@@ -999,9 +1003,9 @@ let SetIsInLoop isInLoop eenv =
     if eenv.isInLoop = isInLoop then eenv
     else { eenv with isInLoop = isInLoop }
 
-let ReplaceTyenv tyenv (eenv: IlxGenEnv) = {eenv with tyenv = tyenv }
+let EnvForTypars tps eenv = {eenv with tyenv = eenv.tyenv.ForTypars tps }
 
-let EnvForTypars tps eenv = {eenv with tyenv = TypeReprEnv.ForTypars tps }
+let EnvForTycon tps eenv = {eenv with tyenv = eenv.tyenv.ForTycon tps }
 
 let AddTyparsToEnv typars (eenv: IlxGenEnv) = {eenv with tyenv = eenv.tyenv.Add typars}
 
@@ -1093,7 +1097,7 @@ let GetMethodSpecForMemberVal amap g (memberInfo: ValMemberInfo) (vref: ValRef) 
     let tps, witnessInfos, curriedArgInfos, returnTy, retInfo =
          assert(vref.ValReprInfo.IsSome)
          GetTopValTypeInCompiledForm g vref.ValReprInfo.Value numEnclosingTypars vref.Type m
-    let tyenvUnderTypars = TypeReprEnv.ForTypars tps
+    let tyenvUnderTypars = TypeReprEnv.Empty.ForTypars tps
     let flatArgInfos = List.concat curriedArgInfos
     let isCtor = (memberInfo.MemberFlags.MemberKind = SynMemberKind.Constructor)
     let cctor = (memberInfo.MemberFlags.MemberKind = SynMemberKind.ClassConstructor)
@@ -1210,7 +1214,7 @@ let ComputeStorageForFSharpFunctionOrFSharpExtensionMember amap (g: TcGlobals) c
     let nm = vref.CompiledName g.CompilerGlobalState
     let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal vref.Deref
     let (tps, witnessInfos, curriedArgInfos, returnTy, retInfo) = GetTopValTypeInCompiledForm g topValInfo numEnclosingTypars vref.Type m
-    let tyenvUnderTypars = TypeReprEnv.ForTypars tps
+    let tyenvUnderTypars = TypeReprEnv.Empty.ForTypars tps
     let (methodArgTys, paramInfos) = curriedArgInfos |> List.concat |> List.unzip
     let ilMethodArgTys = GenParamTypes amap m tyenvUnderTypars false methodArgTys
     let ilRetTy = GenReturnType amap m tyenvUnderTypars returnTy
@@ -1256,7 +1260,7 @@ let ComputeStorageForTopVal (amap, g, optIntraAssemblyInfo: IlxGenIntraAssemblyI
 
     if vref.Deref.IsCompiledAsStaticPropertyWithoutField then
         let nm = "get_"+nm
-        let tyenvUnderTypars = TypeReprEnv.ForTypars []
+        let tyenvUnderTypars = TypeReprEnv.Empty.ForTypars []
         let ilRetTy = GenType amap m tyenvUnderTypars vref.Type
         let ty = mkILTyForCompLoc cloc
         let mspec = mkILStaticMethSpecInTy (ty, nm, [], ilRetTy, [])
@@ -1677,7 +1681,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
             let ilTypeDefAttribs = mkILCustomAttrs [ g.CompilerGeneratedAttribute; mkCompilationMappingAttr g (int SourceConstructFlags.RecordType) ]
 
-            let ilInterfaceTys = [ for (ity, _, _) in tcaug.tcaug_interfaces -> GenType cenv.amap m (TypeReprEnv.ForTypars tps) ity ]
+            let ilInterfaceTys = [ for (ity, _, _) in tcaug.tcaug_interfaces -> GenType cenv.amap m (TypeReprEnv.Empty.ForTypars tps) ity ]
 
             let ilTypeDef =
                 mkILGenericClass (ilTypeRef.Name, ILTypeDefAccess.Public, ilGenericParams, ilBaseTy, ilInterfaceTys,
@@ -2911,7 +2915,7 @@ and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
     | RecdExpr ->
         GenExprs cenv cgbuf eenv args
         // generate a reference to the record constructor
-        let tyenvinner = TypeReprEnv.ForTyconRef tcref
+        let tyenvinner = eenv.tyenv.ForTyconRef tcref
         CG.EmitInstr cgbuf (pop args.Length) (Push [ty])
           (mkNormalNewobj
              (mkILCtorMethSpecForTy (ty, relevantFields |> List.map (fun f -> GenType cenv.amap m tyenvinner f.FormalType) )))
@@ -6408,9 +6412,6 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let hasAggressiveInliningImplFlag = (implflags &&& 0x0100) <> 0x0
     hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningImplFlag, hasAggressiveInliningImplFlag, attrs
 
-and DelayGenMethodForBinding cenv mgbuf eenv ilxMethInfoArgs =
-    cenv.delayedGenMethods.Enqueue (fun cenv -> GenMethodForBinding cenv mgbuf eenv ilxMethInfoArgs)
-
 and GenMethodForBinding
         cenv mgbuf eenv
         (v: Val, mspec, hasWitnessEntry, generateWitnessArgs, access, ctps, mtps, witnessInfos, curriedArgInfos, paramInfos, argTys, retInfo, topValInfo,
@@ -7586,7 +7587,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
     | TNoRepr -> ()
     | TAsmRepr _ | TILObjectRepr _ | TMeasureableRepr _ -> ()
     | TFSharpObjectRepr _ | TRecdRepr _ | TUnionRepr _ ->
-        let eenvinner = ReplaceTyenv (TypeReprEnv.ForTycon tycon) eenv
+        let eenvinner = EnvForTycon tycon eenv
         let thisTy = generalizedTyconRef tcref
 
         let ilThisTy = GenType cenv.amap m eenvinner.tyenv thisTy

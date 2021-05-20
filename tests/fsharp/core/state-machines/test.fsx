@@ -630,6 +630,31 @@ module ``Check nested task compiles to state machine`` =
 
     t68().Wait()
 
+module ``Check after code may include closures`` =
+    let makeStateMachine x = 
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
+                if __useResumableCode then
+                    let y = 1 - x
+                    if x > 3 then 
+                        sm.Data <- 1 + x 
+                    else 
+                        sm.Data <- y
+                else
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (AfterCode<_,_>(fun smref -> 
+                let sm = smref // deref the byref so we can rvalue copy-capture the state machine
+                let f (x:int ) = 
+                    printfn "large closure"
+                    printfn "large closure"
+                    printfn "large closure"
+                    printfn "large closure"
+                    let mutable sm = sm 
+                    MoveOnce(&sm)
+                f 3))
+    check "vwelvewl" (makeStateMachine 3) -2
 
 #if TESTS_AS_APP
 let RUN() = !failures
