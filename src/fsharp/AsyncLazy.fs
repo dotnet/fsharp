@@ -106,6 +106,8 @@ type AsyncLazy<'T> (computation: Async<'T>) =
                                         agent.Start()
                                         AgentAction<'T>.GetValue newAgentInstance
                                     with
+                                    | :? ObjectDisposedException ->
+                                        AgentAction<'T>.CachedValue Unchecked.defaultof<_>
                                     | ex ->
                                         agentInstance <- None
                                         raise ex
