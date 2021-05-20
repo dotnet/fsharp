@@ -40,24 +40,6 @@ and TaskResumptionFunc<'TOverall> = ResumptionFunc<TaskStateMachineData<'TOveral
 and TaskResumptionDynamicInfo<'TOverall> = ResumptionDynamicInfo<TaskStateMachineData<'TOverall>>
 and TaskCode<'TOverall, 'T> = ResumableCode<TaskStateMachineData<'TOverall>, 'T>
 
-[<AutoOpen>]
-module TaskMethodRequire = 
-
-    let inline RequireCanBind< ^Priority, ^TaskLike, ^TResult1, 'TResult2, 'TOverall 
-                                when (^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike * (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>) > 
-                             (priority: ^Priority)
-                             (task: ^TaskLike)
-                             (continuation: ^TResult1 -> TaskCode<'TOverall, 'TResult2>) 
-                             : TaskCode<'TOverall, 'TResult2> = 
-        ((^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike * continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>) (priority, task, continuation))
-
-    
-    let inline RequireCanReturnFrom< ^Priority, ^TaskLike, 'T when (^Priority or ^TaskLike): (static member CanReturnFrom: ^Priority * ^TaskLike -> TaskCode<'T, 'T>)> 
-                             (priority: ^Priority)
-                             (task: ^TaskLike) 
-                             : TaskCode<'T, 'T> = 
-        ((^Priority or ^TaskLike): (static member CanReturnFrom : ^Priority * ^TaskLike -> TaskCode<'T, 'T>) (priority, task))
-
 type TaskBuilderBase() =
 
     member inline _.Delay(f : unit -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
@@ -178,251 +160,6 @@ type TaskBuilderBase() =
                     ValueTask()))
 #endif
 
-    static member CreateInitialDynamicResumptionInfo(code: TaskCode<'T, 'T>) = 
-        let initialResumptionFunc = TaskResumptionFunc<'T>(fun sm -> code.Invoke(&sm))
-        { new TaskResumptionDynamicInfo<'T>(initialResumptionFunc) with 
-            member info.MoveNext(sm) = 
-                try
-                    sm.ResumptionDynamicInfo.ResumptionData <- null
-                    let step = info.ResumptionFunc.Invoke(&sm) 
-                    if step then 
-                        sm.Data.MethodBuilder.SetResult(sm.Data.Result)
-                    else
-                        let mutable awaiter = sm.ResumptionDynamicInfo.ResumptionData :?> ICriticalNotifyCompletion
-                        assert not (isNull awaiter)
-                        sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
-
-                with exn ->
-                    sm.Data.MethodBuilder.SetException exn
-            member _.SetStateMachine(sm, state) =
-                sm.Data.MethodBuilder.SetStateMachine(state)
-            }
- 
-
-[<Sealed>] 
-type TaskWitnesses() =
-
-    interface IPriority1
-    interface IPriority2
-    interface IPriority3
-
-    static member inline CanBindDynamic< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall
-                                        when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
-                                        and ^Awaiter :> ICriticalNotifyCompletion
-                                        and ^Awaiter: (member get_IsCompleted:  unit -> bool)
-                                        and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>
-                (sm: byref<_>, priority: IPriority2, task: ^TaskLike, continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : bool =
-
-            ignore priority
-            let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
-
-            let cont = 
-                (TaskResumptionFunc<'TOverall>( fun sm -> 
-                    let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
-                    (continuation result).Invoke(&sm)))
-
-            // shortcut to continue immediately
-            if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
-                cont.Invoke(&sm)
-            else
-                sm.ResumptionDynamicInfo.ResumptionData <- (awaiter :> ICriticalNotifyCompletion)
-                sm.ResumptionDynamicInfo.ResumptionFunc <- cont
-                false
-
-    static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall
-                                        when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
-                                        and ^Awaiter :> ICriticalNotifyCompletion
-                                        and ^Awaiter: (member get_IsCompleted:  unit -> bool)
-                                        and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>
-                (priority: IPriority2, task: ^TaskLike, continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
-
-        TaskCode<'TOverall, _>(fun sm -> 
-            if __useResumableCode then 
-                //-- RESUMABLE CODE START
-                ignore priority
-                // Get an awaiter from the awaitable
-                let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
-
-                let mutable __stack_fin = true
-                if not (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
-                    // This will yield with __stack_yield_fin = false
-                    // This will resume with __stack_yield_fin = true
-                    let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
-                    __stack_fin <- __stack_yield_fin
-                    
-                if __stack_fin then 
-                    let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
-                    (continuation result).Invoke(&sm)
-                else
-                    sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
-                    false
-            else
-                TaskWitnesses.CanBindDynamic< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall>(&sm, priority, task, continuation)
-            //-- RESUMABLE CODE END
-        )
-
-    static member CanBindDynamic (sm: byref<_>, priority: IPriority1, task: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : bool =
-        ignore priority
-        let mutable awaiter = task.GetAwaiter()
-
-        let cont = 
-            (TaskResumptionFunc<'TOverall>(fun sm -> 
-                let result = awaiter.GetResult()
-                (continuation result).Invoke(&sm)))
-
-        // shortcut to continue immediately
-        if awaiter.IsCompleted then 
-            cont.Invoke(&sm)
-        else
-            sm.ResumptionDynamicInfo.ResumptionData <- (awaiter :> ICriticalNotifyCompletion)
-            sm.ResumptionDynamicInfo.ResumptionFunc <- cont
-            false
-
-    static member inline CanBind (priority: IPriority1, task: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
-
-        TaskCode<'TOverall, _>(fun sm -> 
-            if __useResumableCode then 
-                //-- RESUMABLE CODE START
-                ignore priority
-                // Get an awaiter from the task
-                let mutable awaiter = task.GetAwaiter()
-
-                let mutable __stack_fin = true
-                if not awaiter.IsCompleted then
-                    // This will yield with __stack_yield_fin = false
-                    // This will resume with __stack_yield_fin = true
-                    let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
-                    __stack_fin <- __stack_yield_fin
-                if __stack_fin then 
-                    let result = awaiter.GetResult()
-                    (continuation result).Invoke(&sm)
-                else
-                    sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
-                    false
-            else
-                TaskWitnesses.CanBindDynamic(&sm, priority, task, continuation)
-            //-- RESUMABLE CODE END
-        )
-
-    static member inline CanBind (priority: IPriority1, computation: Async<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
-        TaskWitnesses.CanBind (priority, Async.StartAsTask computation, continuation)
-
-    static member inline CanReturnFromDynamic< ^TaskLike, ^Awaiter, ^T
-                                        when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
-                                        and ^Awaiter :> ICriticalNotifyCompletion
-                                        and ^Awaiter: (member get_IsCompleted: unit -> bool)
-                                        and ^Awaiter: (member GetResult: unit ->  ^T)>
-            (sm: byref<TaskStateMachine< ^T >>, priority: IPriority2, task: ^TaskLike) : bool =
-
-        ignore priority
-        let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
-
-        let cont =
-            (TaskResumptionFunc< ^T >(fun sm -> 
-                sm.Data.Result <- (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
-                true))
-
-        // shortcut to continue immediately
-        if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
-            cont.Invoke(&sm)
-        else
-            sm.ResumptionDynamicInfo.ResumptionData <- (awaiter :> ICriticalNotifyCompletion)
-            sm.ResumptionDynamicInfo.ResumptionFunc <- cont
-            false
-
-    static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T
-                                          when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
-                                          and ^Awaiter :> ICriticalNotifyCompletion
-                                          and ^Awaiter: (member get_IsCompleted: unit -> bool)
-                                          and ^Awaiter: (member GetResult: unit ->  ^T)>
-            (priority: IPriority2, task: ^TaskLike) : TaskCode< ^T,  ^T> =
-
-        TaskCode<_, _>(fun sm -> 
-            if __useResumableCode then 
-                //-- RESUMABLE CODE START
-                ignore priority
-                // Get an awaiter from the awaitable
-                let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
-
-                let mutable __stack_fin = true
-                if not (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
-                    // This will yield with __stack_yield_fin = false
-                    // This will resume with __stack_yield_fin = true
-                    let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
-                    __stack_fin <- __stack_yield_fin
-                if __stack_fin then 
-                    sm.Data.Result <- (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
-                    true
-                else 
-                    sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
-                    false
-            else
-                TaskWitnesses.CanReturnFromDynamic(&sm, priority, task)
-            //-- RESUMABLE CODE END
-        )
-
-    static member CanReturnFromDynamic (sm: byref<_>, task: Task<'T>) : bool =
-
-        let mutable awaiter = task.GetAwaiter()
-
-        let cont =
-            (TaskResumptionFunc<'T>(fun sm -> 
-                sm.Data.Result <- awaiter.GetResult()
-                true))
-
-        // shortcut to continue immediately
-        if task.IsCompleted then
-            cont.Invoke(&sm)
-        else
-            sm.ResumptionDynamicInfo.ResumptionData <- (awaiter :> ICriticalNotifyCompletion)
-            sm.ResumptionDynamicInfo.ResumptionFunc <- cont
-            false
-
-    static member inline CanReturnFrom (priority: IPriority1, task: Task<'T>) : TaskCode<'T, 'T> =
-
-        TaskCode<_, _>(fun sm -> 
-            if __useResumableCode then 
-                //-- RESUMABLE CODE START
-                ignore priority
-                let mutable awaiter = task.GetAwaiter()
-                let mutable __stack_fin = true
-                if not task.IsCompleted then
-                    // This will yield with __stack_yield_fin = false
-                    // This will resume with __stack_yield_fin = true
-                    let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
-                    __stack_fin <- __stack_yield_fin
-                if __stack_fin then 
-                    sm.Data.Result <- awaiter.GetResult()
-                    true
-                else
-                    sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
-                    false
-            else
-                TaskWitnesses.CanReturnFromDynamic(&sm, task)
-            //-- RESUMABLE CODE END
-        )
-
-    static member inline CanReturnFrom (priority: IPriority1, computation: Async<'T>)  : TaskCode<'T, 'T> =
-        TaskWitnesses.CanReturnFrom (priority, Async.StartAsTask computation)
-
-[<AutoOpen>]
-module TaskHelpers = 
-    // Low priority extensions
-    type TaskBuilderBase with
-
-        member inline _.Bind< ^TaskLike, ^TResult1, 'TResult2, 'TOverall
-                                            when (TaskWitnesses or  ^TaskLike): (static member CanBind: TaskWitnesses * ^TaskLike * (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>)> 
-                    (task: ^TaskLike, continuation: ^TResult1 -> TaskCode<'TOverall, 'TResult2>)  : TaskCode<'TOverall, 'TResult2> =
-
-            RequireCanBind< TaskWitnesses, ^TaskLike, ^TResult1, 'TResult2, 'TOverall> Unchecked.defaultof<TaskWitnesses> task continuation
-
-        member inline _.ReturnFrom< ^TaskLike, 'T when (TaskWitnesses or ^TaskLike): (static member CanReturnFrom: TaskWitnesses * ^TaskLike -> TaskCode<'T, 'T>) > 
-                    (task: ^TaskLike)  : TaskCode<'T, 'T> =
-
-            RequireCanReturnFrom< TaskWitnesses, ^TaskLike, 'T> Unchecked.defaultof<TaskWitnesses> task
-
-        member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (resource: 'Resource, body: 'Resource -> TaskCode<'TOverall, 'T>) =
-            ResumableCode.Using(resource, body)
 
 type TaskBuilder() =
 
@@ -436,7 +173,25 @@ type TaskBuilder() =
     // to represent the continuation of the computation.
     static member RunDynamic(code: TaskCode<'T, 'T>) : Task<'T> = 
         let mutable sm = TaskStateMachine<'T>()
-        let resumptionInfo = TaskBuilderBase.CreateInitialDynamicResumptionInfo(code)
+        let initialResumptionFunc = TaskResumptionFunc<'T>(fun sm -> code.Invoke(&sm))
+        let resumptionInfo = 
+            { new TaskResumptionDynamicInfo<'T>(initialResumptionFunc) with 
+                member info.MoveNext(sm) = 
+                    try
+                        sm.ResumptionDynamicInfo.ResumptionData <- null
+                        let step = info.ResumptionFunc.Invoke(&sm) 
+                        if step then 
+                            sm.Data.MethodBuilder.SetResult(sm.Data.Result)
+                        else
+                            let mutable awaiter = sm.ResumptionDynamicInfo.ResumptionData :?> ICriticalNotifyCompletion
+                            assert not (isNull awaiter)
+                            sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+
+                    with exn ->
+                        sm.Data.MethodBuilder.SetException exn
+                member _.SetStateMachine(sm, state) =
+                    sm.Data.MethodBuilder.SetStateMachine(state)
+                }
         sm.ResumptionDynamicInfo <- resumptionInfo
         sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
         sm.Data.MethodBuilder.Start(&sm)
@@ -470,21 +225,6 @@ type TaskBuilder() =
 type BackgroundTaskBuilder() =
 
     inherit TaskBuilderBase()
-
-    //// Same as TaskBuilder.RunDynamic except the start is inside Task.Run
-    //static member RunDynamic(code: TaskCode<'T, 'T>) : Task<'T> = 
-    //    let resumptionInfo = TaskBuilder.CreateInitialDynamicResumptionInfo(code)
-    //    let mutable sm = TaskStateMachine<'T>()
-    //    sm.ResumptionDynamicInfo <- resumptionInfo
-    //    sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
-    //    ThreadPool.QueueUserWorkItem(WaitCallback(fun _ -> 
-    //        sm.Data.MethodBuilder.Start(&sm))) |> ignore
-    //    sm.Data.MethodBuilder.Task
-
-    //   //Task.Run<'T>(fun () -> TaskBuilderBase.Run(code))
-    //   //TaskBuilderBase.Run(TaskCode<'T, 'T>(fun sm -> 
-    //   //    let t = Task.Delay(1).ConfigureAwait(false)
-    //   //    TaskWitnesses.CanBind(Unchecked.defaultof<IPriority2>, t, (fun () -> TaskCode<'T, 'T>(fun sm -> code.Invoke(&sm)))).Invoke(&sm)))
 
     //// Same as TaskBuilder.Run except the start is inside Task.Run
     member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
@@ -520,10 +260,135 @@ type BackgroundTaskBuilder() =
     //member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
        //Task.Run<'T>(fun () -> TaskBuilderBase.Run(code))
     
-[<AutoOpen>]
+    
 module TaskBuilder = 
 
     let task = TaskBuilder()
     let backgroundTask = BackgroundTaskBuilder()
+
+module TaskBuilderExtensions = 
+
+    module LowPriority = 
+        // Low priority extensions
+        type TaskBuilderBase with
+
+            static member inline BindDynamic< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall
+                                                when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
+                                                and ^Awaiter :> ICriticalNotifyCompletion
+                                                and ^Awaiter: (member get_IsCompleted:  unit -> bool)
+                                                and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>
+                        (sm: byref<_>, task: ^TaskLike, continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : bool =
+
+                    let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
+
+                    let cont = 
+                        (TaskResumptionFunc<'TOverall>( fun sm -> 
+                            let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
+                            (continuation result).Invoke(&sm)))
+
+                    // shortcut to continue immediately
+                    if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
+                        cont.Invoke(&sm)
+                    else
+                        sm.ResumptionDynamicInfo.ResumptionData <- (awaiter :> ICriticalNotifyCompletion)
+                        sm.ResumptionDynamicInfo.ResumptionFunc <- cont
+                        false
+
+            member inline _.Bind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall
+                                                when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
+                                                and ^Awaiter :> ICriticalNotifyCompletion
+                                                and ^Awaiter: (member get_IsCompleted:  unit -> bool)
+                                                and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>
+                        (task: ^TaskLike, continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
+
+                TaskCode<'TOverall, _>(fun sm -> 
+                    if __useResumableCode then 
+                        //-- RESUMABLE CODE START
+                        // Get an awaiter from the awaitable
+                        let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
+
+                        let mutable __stack_fin = true
+                        if not (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
+                            // This will yield with __stack_yield_fin = false
+                            // This will resume with __stack_yield_fin = true
+                            let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
+                            __stack_fin <- __stack_yield_fin
+                    
+                        if __stack_fin then 
+                            let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
+                            (continuation result).Invoke(&sm)
+                        else
+                            sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+                            false
+                    else
+                        TaskBuilderBase.BindDynamic< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall>(&sm, task, continuation)
+                    //-- RESUMABLE CODE END
+                )
+
+            member inline this.ReturnFrom< ^TaskLike, ^Awaiter, ^T
+                                                  when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
+                                                  and ^Awaiter :> ICriticalNotifyCompletion
+                                                  and ^Awaiter: (member get_IsCompleted: unit -> bool)
+                                                  and ^Awaiter: (member GetResult: unit ->  ^T)>
+                    (task: ^TaskLike) : TaskCode< ^T,  ^T> =
+
+                this.Bind(task, (fun v -> this.Return v))
+
+            member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (resource: 'Resource, body: 'Resource -> TaskCode<'TOverall, 'T>) =
+                ResumableCode.Using(resource, body)
+
+    module HighPriority = 
+        // High priority extensions
+        type TaskBuilderBase with
+            static member BindDynamic (sm: byref<_>, task: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : bool =
+                let mutable awaiter = task.GetAwaiter()
+
+                let cont = 
+                    (TaskResumptionFunc<'TOverall>(fun sm -> 
+                        let result = awaiter.GetResult()
+                        (continuation result).Invoke(&sm)))
+
+                // shortcut to continue immediately
+                if awaiter.IsCompleted then 
+                    cont.Invoke(&sm)
+                else
+                    sm.ResumptionDynamicInfo.ResumptionData <- (awaiter :> ICriticalNotifyCompletion)
+                    sm.ResumptionDynamicInfo.ResumptionFunc <- cont
+                    false
+
+            member inline _.Bind (task: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
+
+                TaskCode<'TOverall, _>(fun sm -> 
+                    if __useResumableCode then 
+                        //-- RESUMABLE CODE START
+                        // Get an awaiter from the task
+                        let mutable awaiter = task.GetAwaiter()
+
+                        let mutable __stack_fin = true
+                        if not awaiter.IsCompleted then
+                            // This will yield with __stack_yield_fin = false
+                            // This will resume with __stack_yield_fin = true
+                            let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
+                            __stack_fin <- __stack_yield_fin
+                        if __stack_fin then 
+                            let result = awaiter.GetResult()
+                            (continuation result).Invoke(&sm)
+                        else
+                            sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+                            false
+                    else
+                        TaskBuilderBase.BindDynamic(&sm, task, continuation)
+                    //-- RESUMABLE CODE END
+                )
+
+            member inline this.Bind (computation: Async<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
+                this.Bind (Async.StartAsTask computation, continuation)
+
+            member inline this.ReturnFrom (task: Task<'T>) : TaskCode<'T, 'T> =
+
+                this.Bind(task, (fun v -> this.Return v))
+
+            member inline b.ReturnFrom (computation: Async<'T>)  : TaskCode<'T, 'T> =
+                b.ReturnFrom (Async.StartAsTask computation)
 
 #endif
