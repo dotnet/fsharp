@@ -7,8 +7,7 @@ open System.IO
 open FSharp.Compiler.Text
 
 [<RequireQualifiedAccess>]
-type FSharpDocumentText =
-    internal
+type internal DocumentText =
     | Stream of Stream
     | SourceText of ISourceText
 
@@ -21,7 +20,7 @@ type FSharpDocument =
 
     abstract TimeStamp : DateTime
 
-    abstract GetText : unit -> FSharpDocumentText
+    abstract internal GetText : unit -> DocumentText
 
     static member CreateFromFile : filePath: string -> FSharpDocument
 

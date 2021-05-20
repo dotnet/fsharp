@@ -42,7 +42,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
 [<RequireQualifiedAccess>]
-type FSharpDocumentText =
+type DocumentText =
     | Stream of Stream
     | SourceText of ISourceText
 
@@ -60,7 +60,7 @@ type FSharpDocument internal () =
 
     abstract TimeStamp : DateTime
 
-    abstract GetText : unit -> FSharpDocumentText
+    abstract GetText : unit -> DocumentText
 
 type private FSharpDocumentMemoryMappedFile(filePath: string, timeStamp: DateTime, mmf: MemoryMappedFile) =
     inherit FSharpDocument()
@@ -70,7 +70,7 @@ type private FSharpDocumentMemoryMappedFile(filePath: string, timeStamp: DateTim
     override _.TimeStamp = timeStamp
 
     override _.GetText() =
-        FSharpDocumentText.Stream(mmf.CreateViewStream() :> Stream)
+        DocumentText.Stream(mmf.CreateViewStream() :> Stream)
 
 type private FSharpDocumentByteArray(filePath: string, timeStamp: DateTime, bytes: byte[]) =
     inherit FSharpDocument()
@@ -80,7 +80,7 @@ type private FSharpDocumentByteArray(filePath: string, timeStamp: DateTime, byte
     override _.TimeStamp = timeStamp
 
     override _.GetText() =
-        FSharpDocumentText.Stream(new MemoryStream(bytes, 0, bytes.Length, false) :> Stream)
+        DocumentText.Stream(new MemoryStream(bytes, 0, bytes.Length, false) :> Stream)
 
 type private FSharpDocumentFromFile(filePath: string) =
     inherit FSharpDocument()
@@ -89,7 +89,7 @@ type private FSharpDocumentFromFile(filePath: string) =
 
     override _.TimeStamp = FileSystem.GetLastWriteTimeShim(filePath)
 
-    override _.GetText() = FSharpDocumentText.Stream(File.OpenRead(filePath) :> Stream)
+    override _.GetText() = DocumentText.Stream(File.OpenRead(filePath) :> Stream)
 
 type private FSharpDocumentCustom(filePath: string, getTimeStamp, getSourceText) =
     inherit FSharpDocument()
@@ -99,7 +99,7 @@ type private FSharpDocumentCustom(filePath: string, getTimeStamp, getSourceText)
     override _.TimeStamp = getTimeStamp()
 
     override _.GetText() =
-        FSharpDocumentText.SourceText(getSourceText())
+        DocumentText.SourceText(getSourceText())
 
 type FSharpDocument with
 

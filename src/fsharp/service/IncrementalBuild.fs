@@ -131,9 +131,9 @@ module IncrementalBuildSyntaxTree =
                     else
                         use text = doc.GetText()
                         match text with
-                        | FSharpDocumentText.Stream(stream) ->
+                        | DocumentText.Stream(stream) ->
                             ParseOneInputStream(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)false, stream)
-                        | FSharpDocumentText.SourceText(sourceText) ->
+                        | DocumentText.SourceText(sourceText) ->
                             ParseOneInputSourceText(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, sourceText)
 
                 fileParsed.Trigger filename
