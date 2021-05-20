@@ -440,7 +440,7 @@ type BackgroundCompiler(
                                  builder,
                                  tcPrior,
                                  tcInfo,
-                                 creationDiags) =
+                                 creationDiags) (onComplete) =
 
         parseCacheLock.AcquireLock (fun ltok -> 
             let key = (fileName, sourceText.GetHashCode() |> int64, options)
@@ -449,7 +449,7 @@ type BackgroundCompiler(
             | _ ->
                 let res =
                     AsyncLazy(async {
-                        return!
+                        let! res =
                             self.CheckOneFileImplAux(
                                 parseResults,
                                 sourceText,
@@ -459,6 +459,8 @@ type BackgroundCompiler(
                                 tcPrior,
                                 tcInfo,
                                 creationDiags)
+                        onComplete()
+                        return res
                     })
                 checkFileInProjectCache.Set(ltok, key, res)
                 res
@@ -475,7 +477,7 @@ type BackgroundCompiler(
             match parseCacheLock.AcquireLock(fun ltok -> parseFileCache.TryGet(ltok, (filename, hash, options))) with
             | Some res -> return res
             | None ->
-                actualParseFileCount <- actualParseFileCount + 1
+                Interlocked.Increment(&actualParseFileCount) |> ignore
                 let parseDiags, parseTree, anyErrors = ParseAndCheckFile.parseFile(sourceText, filename, options, userOpName, suggestNamesForErrors)
                 let res = FSharpParseFileResults(parseDiags, parseTree, anyErrors, options.SourceFiles)
                 parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (filename, hash, options), res))
@@ -598,7 +600,11 @@ type BackgroundCompiler(
             | Some (_, results) -> return FSharpCheckFileAnswer.Succeeded results
             | _ ->
                 let lazyCheckFile =
-                    getCheckFileAsyncLazy (parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
+                    getCheckFileAsyncLazy 
+                        (parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
+                        (fun () ->
+                            Interlocked.Increment(&actualCheckFileCount) |> ignore
+                        )
 
                 match! lazyCheckFile.GetValueAsync() with
                 | Some (_, results, _, _) -> return FSharpCheckFileAnswer.Succeeded results
@@ -1006,20 +1012,6 @@ type BackgroundCompiler(
                 let _ = createBuilderLazy (options, userOpName, ct)
                 ()
         }
-
-    member _.CheckProjectInBackground (options, userOpName) = 
-        async {
-            try
-                let! builderOpt,_ = getOrCreateBuilder (options, userOpName)
-                match builderOpt with 
-                | None -> return ()
-                | Some builder -> 
-                    return! builder.PopulatePartialCheckingResults ()
-            with
-            | :? OperationCanceledException ->
-                ()
-        }
-        |> Async.Start
 
     member _.BeforeBackgroundFileCheck = beforeFileChecked.Publish
 

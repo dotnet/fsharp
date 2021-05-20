@@ -4526,7 +4526,9 @@ let x = query { for bbbb in abbbbc(*D0*) do
         
         // Save file2
         ReplaceFileInMemory file2 [""]
-        SaveFileToDisk file2      
+        SaveFileToDisk file2    
+        GC.Collect(2, GCCollectionMode.Forced, true)
+        let file3 = OpenFile(project,"File3.fs")
         TakeCoffeeBreak(this.VS)
 
         gpatcc.AssertExactly(notAA[file2; file3], notAA[file2;file3])
