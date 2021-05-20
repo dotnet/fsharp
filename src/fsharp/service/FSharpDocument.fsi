@@ -8,6 +8,7 @@ open FSharp.Compiler.Text
 
 [<RequireQualifiedAccess>]
 type internal DocumentText =
+    | OnDisk
     | Stream of Stream
     | SourceText of ISourceText
 

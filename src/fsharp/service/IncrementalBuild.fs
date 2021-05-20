@@ -135,6 +135,8 @@ module IncrementalBuildSyntaxTree =
                             ParseOneInputStream(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)false, stream)
                         | DocumentText.SourceText(sourceText) ->
                             ParseOneInputSourceText(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, sourceText)
+                        | DocumentText.OnDisk ->
+                            ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
 
                 fileParsed.Trigger filename
 
@@ -684,7 +686,7 @@ type IncrementalBuilder(tcGlobals,
         assemblyName,
         niceNameGen: NiceNameGenerator,
         lexResourceManager,
-        docs: FSharpDocument list,
+        initialDocs: FSharpDocument list,
         loadClosureOpt: LoadClosure option,
         keepAssemblyContents,
         keepAllBackgroundResolutions,
@@ -704,12 +706,12 @@ type IncrementalBuilder(tcGlobals,
     let defaultPartialTypeChecking = enablePartialTypeChecking
 
     // Check for the existence of loaded sources and prepend them to the sources list if present.
-    let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (docs |>List.map (fun s -> rangeStartup, s.FilePath))
+    let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (initialDocs |>List.map (fun s -> rangeStartup, s.FilePath))
 
     // Mark up the source files with an indicator flag indicating if they are the last source file in the project
-    let sourceFiles =
+    let sourceFileStates =
         let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)
-        ((docs, flags) ||> List.map2 (fun doc flag -> (rangeStartup, doc, (flag, isExe))))
+        ((initialDocs, flags) ||> List.map2 (fun doc flag -> (rangeStartup, doc, (flag, isExe))))
         |> Array.ofList
 
     let defaultTimeStamp = DateTime.UtcNow
@@ -726,7 +728,7 @@ type IncrementalBuilder(tcGlobals,
 
     let allDependencies =
         [| yield! basicDependencies
-           for (_, f, _) in sourceFiles do
+           for (_, f, _) in sourceFileStates do
                 yield f.FilePath |]
 
     // For scripts, the dependency provider is already available.
@@ -949,7 +951,7 @@ type IncrementalBuilder(tcGlobals,
     // START OF BUILD DESCRIPTION
 
     // Inputs
-    let fileNames = sourceFiles // TODO: This should be an immutable array.
+    let fileNames = sourceFileStates // TODO: This should be an immutable array.
     let referencedAssemblies =  nonFrameworkAssemblyInputs |> Array.ofList // TODO: This should be an immutable array.
 
     let invalidateSlot (state: IncrementalBuilderState) newStamp slot =
@@ -1190,8 +1192,8 @@ type IncrementalBuilder(tcGlobals,
         let currentStamp = state.stampedFileNames.[slot]
         let stamp = doc.TimeStamp
         if currentStamp <> stamp then
-            let (m, _, isLastCompiland) = sourceFiles.[slot]
-            sourceFiles.[slot] <- (m, doc, isLastCompiland)
+            let (m, _, isLastCompiland) = sourceFileStates.[slot]
+            sourceFileStates.[slot] <- (m, doc, isLastCompiland)
             invalidateSlot state stamp slot
             |> setCurrentState ctok
 
@@ -1325,7 +1327,7 @@ type IncrementalBuilder(tcGlobals,
         let syntaxTree = ParseTask results
         syntaxTree.Parse None
 
-    member _.SourceFiles  = sourceFiles |> Array.map (fun (_, f, _) -> f.FilePath) |> List.ofArray
+    member _.SourceFiles  = sourceFileStates |> Array.map (fun (_, f, _) -> f.FilePath) |> List.ofArray
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.

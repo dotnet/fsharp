@@ -43,6 +43,7 @@ open FSharp.Compiler.TypedTreeOps
 
 [<RequireQualifiedAccess>]
 type DocumentText =
+    | OnDisk
     | Stream of Stream
     | SourceText of ISourceText
 
@@ -89,7 +90,7 @@ type private FSharpDocumentFromFile(filePath: string) =
 
     override _.TimeStamp = FileSystem.GetLastWriteTimeShim(filePath)
 
-    override _.GetText() = DocumentText.Stream(File.OpenRead(filePath) :> Stream)
+    override _.GetText() = DocumentText.OnDisk
 
 type private FSharpDocumentCustom(filePath: string, getTimeStamp, getSourceText) =
     inherit FSharpDocument()
