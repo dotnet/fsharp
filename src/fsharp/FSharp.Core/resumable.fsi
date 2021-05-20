@@ -72,7 +72,6 @@ and
     abstract SetStateMachine: machine: byref<ResumableStateMachine<'Data>> * machineState: IAsyncStateMachine -> unit
 
 /// Represents the runtime continuation of a resumable state machine created dynamically
-
 and [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     ResumptionFunc<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> bool
 

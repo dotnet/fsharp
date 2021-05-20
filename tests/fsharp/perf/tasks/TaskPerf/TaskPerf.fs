@@ -412,28 +412,31 @@ module Main =
         let require x msg = if not x then failwith msg
         printfn "Testing that the tests run..."
         printfn "Running testUsing..."
-        for i in 1 .. 5 do 
+        let f () =
             let mutable disposed = 0
-            let t =
+            let t = 
                 task {
                     use d = 
                         { new IAsyncDisposable with 
                             member __.DisposeAsync() = 
                                 task { 
-                                   System.Console.WriteLine "incrementing"
-                                   disposed <- disposed + 1 }
+                                    disposed <- disposed + 1 
+                                    printfn $"in disposal, disposed = {disposed}"
+                                    do! Task.Delay(10)
+                                    disposed <- disposed + 1 
+                                    printfn $"after disposal, disposed = {disposed}"
+                                }
                                 |> ValueTask 
                         }
-                    require (disposed = 0) "disposed way early"
-                    System.Console.WriteLine "delaying"
-                    do! Task.Delay(2000)
-                    System.Console.WriteLine "testing"
-                    let v = disposed
-                    require (v = 1) $"disposed kinda early, expected 1, got {v} "
-                }
+                    printfn $"in using, disposed = {disposed}"
+                    do! Task.Delay(10)
+                 }
+         
+            printfn $"outside using, disposed = {disposed}"
             t.Wait()
-            require (disposed >= 1) "never disposed B"
-            require (disposed <= 1) "too many dispose on B"
+            printfn $"after full disposal, disposed = {disposed}"
+
+        f()
 
         //Benchmarks().SingleSyncTask_async2()
         //Benchmarks().NonAsyncBinds_async2()

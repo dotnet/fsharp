@@ -1128,6 +1128,58 @@ type Basics() =
         }
         |> ignore
 
+[<CollectionDefinition("BasicsNotInParallel", DisableParallelization = true)>]
+type BasicsNotInParallel() = 
+
+    [<Fact; >]
+    member __.testTaskUsesSyncContext() =
+        printfn "Running testBackgroundTask..."
+        for i in 1 .. 5 do 
+            let mutable ran = false
+            let mutable posted = false
+            let oldSyncContext = SynchronizationContext.Current
+            let syncContext = { new SynchronizationContext()  with member _.Post(d,state) = posted <- true; d.Invoke(state) }
+            try 
+                SynchronizationContext.SetSynchronizationContext syncContext
+                require (not (isNull SynchronizationContext.Current)) "need sync context non null on foreground thread A"
+                require (SynchronizationContext.Current = syncContext) "need sync context known on foreground thread A"
+                let t =
+                    task {
+                        require (not (isNull SynchronizationContext.Current)) "need sync context non null on foreground thread B"
+                        require (SynchronizationContext.Current = syncContext) "need sync context known on foreground thread B"
+                        do! Task.Yield()
+                        require (not (isNull SynchronizationContext.Current)) "need sync context non null on foreground thread C"
+                        require (SynchronizationContext.Current = syncContext) "need sync context known on foreground thread C"
+                        ran <- true
+                    }
+                t.Wait()
+                require ran "never ran"
+                require posted "never posted"
+            finally
+                SynchronizationContext.SetSynchronizationContext oldSyncContext
+                 
+    [<Fact; >]
+    member __.testBackgroundTaskEscapesSyncContext() =
+        printfn "Running testBackgroundTask..."
+        for i in 1 .. 5 do 
+            let mutable ran = false
+            let mutable posted = false
+            let oldSyncContext = SynchronizationContext.Current
+            let syncContext = { new SynchronizationContext()  with member _.Post(d,state) = posted <- true; d.Invoke(state) }
+            try 
+                SynchronizationContext.SetSynchronizationContext syncContext
+                let t =
+                    backgroundTask {
+                        //do! (task { do! Task.Delay(200) }).ConfigureAwait(false)
+                        require (isNull SynchronizationContext.Current) "need sync context null on background thread"
+                        ran <- true
+                    }
+                t.Wait()
+                require ran "never ran"
+                require (not posted) "did not expect post to sync context"
+            finally
+                SynchronizationContext.SetSynchronizationContext oldSyncContext
+                 
 
 #if STANDALONE 
 module M = 
