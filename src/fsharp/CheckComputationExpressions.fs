@@ -1965,6 +1965,7 @@ let TcArrayOrListSequenceExpression (cenv: cenv) env overallTy tpenv (isArray, c
 
         let expr = 
             if cenv.g.compilingFslib then 
+                //warning(Error(FSComp.SR.fslibUsingComputedListOrArray(), expr.Range))
                 expr 
             else 
                 // We add a call to 'seq ... ' to make sure sequence expression compilation gets applied to the contents of the

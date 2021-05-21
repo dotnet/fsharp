@@ -149,3 +149,51 @@ namespace Microsoft.FSharp.Core.CompilerServices
         interface IEnumerator<'T> 
         interface IEnumerator 
         interface IDisposable 
+
+    [<Struct; NoEquality; NoComparison>]
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+    type ListCollector<'T> =
+        [<DefaultValue(false)>]
+        val mutable internal Result: 'T list
+
+        [<DefaultValue(false)>]
+        val mutable internal LastCons: 'T list
+
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        member Add: value: 'T -> unit
+
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        member AddMany: values: seq<'T> -> unit
+
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        member Close: unit -> 'T list
+
+    [<Struct; NoEquality; NoComparison>]
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+    type ArrayCollector<'T> =
+        [<DefaultValue(false)>]
+        val mutable internal ResizeArray: ResizeArray<'T>
+        [<DefaultValue(false)>]
+        val mutable internal First: 'T
+        [<DefaultValue(false)>]
+        val mutable internal Second: 'T
+        [<DefaultValue(false)>]
+        val mutable internal Count: int
+
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        member Add: value: 'T -> unit
+
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        member AddMany: values: seq<'T> -> unit
+
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        member Close: unit -> 'T[]
+
