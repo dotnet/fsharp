@@ -38,8 +38,12 @@ module AsyncLazyTests =
         let lazyWork = 
             AsyncLazy(async { 
                 resetEventInAsync.Set() |> ignore
-                let! _ = Async.AwaitWaitHandle(resetEvent)
-                return 1 
+                try
+                    let! _ = Async.AwaitWaitHandle(resetEvent)
+                    return 1 
+                with
+                | _ ->
+                    return 1
             })
 
         async {
@@ -59,8 +63,12 @@ module AsyncLazyTests =
         let lazyWork = 
             AsyncLazy(async { 
                 resetEventInAsync.Set() |> ignore
-                let! _ = Async.AwaitWaitHandle(resetEvent)
-                return 1 
+                try
+                    let! _ = Async.AwaitWaitHandle(resetEvent)
+                    return 1 
+                with
+                | _ ->
+                    return 1
             })
 
         async {
@@ -149,8 +157,12 @@ module AsyncLazyTests =
 
         let lazyWork = 
             AsyncLazy(async { 
-                let! _ = Async.AwaitWaitHandle(resetEvent)
-                return 1 
+                try
+                    let! _ = Async.AwaitWaitHandle(resetEvent)
+                    return 1 
+                with
+                | _ ->
+                    return 1
             })
 
         use cts = new CancellationTokenSource()
@@ -183,9 +195,13 @@ module AsyncLazyTests =
         let lazyWork = 
             AsyncLazy(async { 
                 computationCountBeforeSleep <- computationCountBeforeSleep + 1
-                let! _ = Async.AwaitWaitHandle(resetEvent)
-                computationCount <- computationCount + 1
-                return 1 
+                try
+                    let! _ = Async.AwaitWaitHandle(resetEvent)
+                    computationCount <- computationCount + 1
+                    return 1 
+                with
+                | _ ->
+                    return 1
             })
 
         use cts = new CancellationTokenSource()
