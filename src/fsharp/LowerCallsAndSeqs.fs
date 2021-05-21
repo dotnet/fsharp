@@ -201,6 +201,22 @@ let (|SeqToArray|_|) g expr =
     | ValApp g g.seq_to_array_vref (_, [seqExpr], m) -> Some (seqExpr, m)
     | _ -> None
 
+let tyConfirmsToSeq g ty = 
+    match tryTcrefOfAppTy g ty with
+    | ValueSome tcref ->
+        tyconRefEq g tcref g.tcref_System_Collections_Generic_IEnumerable
+    | _ -> false 
+
+let (|SeqElemTy|_|) g amap m ty =
+    match SearchEntireHierarchyOfType (tyConfirmsToSeq g) g amap m ty with
+    | None ->
+        // printfn "FAILED - yield! did not yield a sequence! %s" (stringOfRange m)
+        None
+    | Some ty ->
+        // printfn "found yield!"
+        let inpElemTy = List.head (argsOfAppTy g ty)
+        Some inpElemTy
+
 /// Analyze a TAST expression to detect the elaborated form of a sequence expression.
 /// Then compile it to a state machine represented as a TAST containing goto, return and label nodes.
 /// The returned state machine will also contain references to state variables (from internal 'let' bindings),
@@ -569,16 +585,8 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 // printfn "FAILED - not worth compiling an unrecognized immediate yield! %s " (stringOfRange m)
                 None
             else
-                let tyConfirmsToSeq g ty = 
-                    match tryTcrefOfAppTy g ty with
-                    | ValueSome tcref ->
-                        tyconRefEq g tcref g.tcref_System_Collections_Generic_IEnumerable
-                    | _ -> false 
-                match SearchEntireHierarchyOfType (tyConfirmsToSeq g) g amap m (tyOfExpr g arbitrarySeqExpr) with
-                | None ->
-                    // printfn "FAILED - yield! did not yield a sequence! %s" (stringOfRange m)
-                    None
-                | Some ty ->
+                match tyOfExpr g arbitrarySeqExpr with
+                | SeqElemTy g amap m ty ->
                     // printfn "found yield!"
                     let inpElemTy = List.head (argsOfAppTy g ty)
                     if isTailCall then
@@ -610,6 +618,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                     else
                         let v, ve = mkCompGenLocal m "v" inpElemTy
                         ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel (mkCallSeqCollect g m inpElemTy inpElemTy (mkLambdaNoType g m v (mkCallSeqSingleton g m inpElemTy ve)) arbitrarySeqExpr)
+                | _  -> None
 
 
     match overallExpr with
@@ -1003,22 +1012,28 @@ let (|OptionalCoerce|) expr =
 
 // Making 'seq' optional means this kicks in for FSharp.Core, see TcArrayOrListSequenceExpression
 // which only adds a 'seq' call outside of FSharp.Core
-let (|OptionalSeq|) g expr =
+let (|OptionalSeq|_|) g amap expr =
     match expr with
     // use 'seq { ... }' as an indicator
-    | Seq g (e, elemTy) -> e, elemTy
-    | _ -> expr, (argsOfAppTy g (tyOfExpr g expr)).[0]
+    | Seq g (e, elemTy) -> 
+        Some (e, elemTy)
+    | _ -> 
+    // search for the relevant element type
+    match tyOfExpr g expr with
+    | SeqElemTy g amap expr.Range elemTy ->
+        Some (expr, elemTy)
+    | _ -> None
 
 let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
     // If ListCollector is in FSharp.Core then this optimization kicks in
     if g.ListCollector_tcr.CanDeref then
 
         match overallExpr with
-        | SeqToList g (OptionalCoerce (OptionalSeq g (overallSeqExpr, overallElemTy)), m) ->
+        | SeqToList g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             let collectorTy = g.mk_ListCollector_ty overallElemTy
             LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
         
-        | SeqToArray g (OptionalCoerce (OptionalSeq g (overallSeqExpr, overallElemTy)), m) ->
+        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             let collectorTy = g.mk_ArrayCollector_ty overallElemTy
             LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
 
