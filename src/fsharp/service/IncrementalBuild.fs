@@ -609,7 +609,7 @@ type FrameworkImportsCache(size) =
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member _.Get(ctok, tcConfig: TcConfig) =
-      cancellable {
+      async {
         // Split into installed and not installed.
         let frameworkDLLs, nonFrameworkResolutions, unresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
         let frameworkDLLsKey =
@@ -618,7 +618,7 @@ type FrameworkImportsCache(size) =
             |> List.sort  // Sort to promote cache hits.
 
         let! tcGlobals, frameworkTcImports =
-          cancellable {
+          async {
             // Prepare the frameworkTcImportsCache
             //
             // The data elements in this key are very important. There should be nothing else in the TcConfig that logically affects
@@ -828,14 +828,14 @@ type IncrementalBuilder(
                                               defaultPartialTypeChecking,
                                               beforeFileChecked,
                                               fileChecked,
-                                              importsInvalidatedByTypeProvider: Event<unit>) : Cancellable<BoundModel> =
-      cancellable {
+                                              importsInvalidatedByTypeProvider: Event<unit>) : Async<BoundModel> =
+      async {
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
         // Return the disposable object that cleans up
         use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
 
         let! tcImports =
-          cancellable {
+          async {
             try
                 let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
 #if !NO_EXTENSIONTYPING
@@ -1371,7 +1371,7 @@ type IncrementalBuilder(
 
       let useSimpleResolutionSwitch = "--simpleresolution"
 
-      cancellable {
+      async {
 
         // Trap and report warnings and errors from creation.
         let delayedLogger = CapturingErrorLogger("IncrementalBuilderCreation")
@@ -1379,7 +1379,7 @@ type IncrementalBuilder(
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
 
         let! builderOpt =
-         cancellable {
+         async {
           try
 
             // Create the builder.

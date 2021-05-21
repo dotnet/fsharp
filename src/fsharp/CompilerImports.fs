@@ -1581,18 +1581,16 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         phase2
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
-    member tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, r: AssemblyResolution) : Cancellable<(_ * (unit -> AvailableImportedAssembly list)) option> =
-      cancellable {
+    member tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, r: AssemblyResolution) : Async<(_ * (unit -> AvailableImportedAssembly list)) option> =
+      async {
         CheckDisposed()
         let m = r.originalReference.Range
         let filename = r.resolvedPath
         let! contentsOpt =
-          cancellable {
+          async {
             match r.ProjectReference with
             | Some ilb -> 
-                // Importing is done on a specific thread, specified by the 'ctok' (CompilationThreadToken).
-                // This specific thread is the only one allowed to run async computations synchronously.
-                return (Async.RunSynchronously(ilb.EvaluateRawContents()))
+                return! ilb.EvaluateRawContents()
             | None -> 
                 return None
           }
@@ -1646,19 +1644,22 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
     member tcImports.RegisterAndImportReferencedAssemblies (ctok, nms: AssemblyResolution list) =
-      cancellable {
+      async {
         CheckDisposed()
         let! results =
-           nms |> Cancellable.each (fun nm ->
-               cancellable {
-                   try
-                        return! tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, nm)
-                   with e ->
-                        errorR(Error(FSComp.SR.buildProblemReadingAssembly(nm.resolvedPath, e.Message), nm.originalReference.Range))
-                        return None
-               })
+            nms
+            |> List.map (fun nm -> 
+                async {
+                    try
+                         return! tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, nm)
+                    with e ->
+                         errorR(Error(FSComp.SR.buildProblemReadingAssembly(nm.resolvedPath, e.Message), nm.originalReference.Range))
+                         return None
+                }
+            )
+            |> Async.Sequential
 
-        let dllinfos, phase2s = results |> List.choose id |> List.unzip
+        let dllinfos, phase2s = results |> Array.choose id |> List.ofArray |> List.unzip
         fixupOrphanCcus()
         let ccuinfos = (List.collect (fun phase2 -> phase2()) phase2s)
         return dllinfos, ccuinfos
@@ -1678,7 +1679,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 match foundFile with
                 | OkResult (warns, res) ->
                     ReportWarnings warns
-                    tcImports.RegisterAndImportReferencedAssemblies(ctok, res) |> Cancellable.runWithoutCancellation |> ignore
+                    tcImports.RegisterAndImportReferencedAssemblies(ctok, res) |> Async.RunSynchronously |> ignore
                     true
                 | ErrorResult (_warns, _err) ->
                     // Throw away warnings and errors - this is speculative loading
@@ -1758,7 +1759,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     // we dispose TcImports is because we need to dispose type providers, and type providers are never included in the framework DLL set.
     // If a framework set ever includes type providers, you will not have to worry about explicitly calling Dispose as the Finalizer will handle it.
     static member BuildFrameworkTcImports (ctok, tcConfigP: TcConfigProvider, frameworkDLLs, nonFrameworkDLLs) =
-      cancellable {
+      async {
 
         let tcConfig = tcConfigP.Get ctok
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, frameworkDLLs, [])
@@ -1835,38 +1836,42 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let tryFindSysTypeCcu path typeName =
             sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName)
 
-        let fslibCcu =
-            if tcConfig.compilingFslib then
-                // When compiling FSharp.Core.dll, the fslibCcu reference to FSharp.Core.dll is a delayed ccu thunk fixed up during type checking
-                CcuThunk.CreateDelayed getFSharpCoreLibraryName
-            else
-                let fslibCcuInfo =
-                    let coreLibraryReference = tcConfig.CoreLibraryDllReference()
+        let! fslibCcu =
+            async {
+                if tcConfig.compilingFslib then
+                    // When compiling FSharp.Core.dll, the fslibCcu reference to FSharp.Core.dll is a delayed ccu thunk fixed up during type checking
+                    return CcuThunk.CreateDelayed getFSharpCoreLibraryName
+                else
+                    let! fslibCcuInfo =
+                        async {
+                            let coreLibraryReference = tcConfig.CoreLibraryDllReference()
 
-                    let resolvedAssemblyRef =
-                        match tcResolutions.TryFindByOriginalReference coreLibraryReference with
-                        | Some resolution -> Some resolution
-                        | _ ->
-                            // Are we using a "non-canonical" FSharp.Core?
-                            match tcAltResolutions.TryFindByOriginalReference coreLibraryReference with
-                            | Some resolution -> Some resolution
-                            | _ -> tcResolutions.TryFindByOriginalReferenceText (getFSharpCoreLibraryName)  // was the ".dll" elided?
+                            let resolvedAssemblyRef =
+                                match tcResolutions.TryFindByOriginalReference coreLibraryReference with
+                                | Some resolution -> Some resolution
+                                | _ ->
+                                    // Are we using a "non-canonical" FSharp.Core?
+                                    match tcAltResolutions.TryFindByOriginalReference coreLibraryReference with
+                                    | Some resolution -> Some resolution
+                                    | _ -> tcResolutions.TryFindByOriginalReferenceText (getFSharpCoreLibraryName)  // was the ".dll" elided?
 
-                    match resolvedAssemblyRef with
-                    | Some coreLibraryResolution ->
-                        match frameworkTcImports.RegisterAndImportReferencedAssemblies(ctok, [coreLibraryResolution]) |> Cancellable.runWithoutCancellation with
-                        | (_, [ResolvedImportedAssembly fslibCcuInfo ]) -> fslibCcuInfo
-                        | _ ->
-                            error(InternalError("BuildFrameworkTcImports: no successful import of "+coreLibraryResolution.resolvedPath, coreLibraryResolution.originalReference.Range))
-                    | None ->
-                        error(InternalError(sprintf "BuildFrameworkTcImports: no resolution of '%s'" coreLibraryReference.Text, rangeStartup))
-                IlxSettings.ilxFsharpCoreLibAssemRef <-
-                    (let scoref = fslibCcuInfo.ILScopeRef
-                     match scoref with
-                     | ILScopeRef.Assembly aref -> Some aref
-                     | ILScopeRef.Local | ILScopeRef.Module _ | ILScopeRef.PrimaryAssembly ->
-                        error(InternalError("not ILScopeRef.Assembly", rangeStartup)))
-                fslibCcuInfo.FSharpViewOfMetadata
+                            match resolvedAssemblyRef with
+                            | Some coreLibraryResolution ->
+                                match! frameworkTcImports.RegisterAndImportReferencedAssemblies(ctok, [coreLibraryResolution]) with
+                                | (_, [ResolvedImportedAssembly fslibCcuInfo ]) -> return fslibCcuInfo
+                                | _ ->
+                                    return error(InternalError("BuildFrameworkTcImports: no successful import of "+coreLibraryResolution.resolvedPath, coreLibraryResolution.originalReference.Range))
+                            | None ->
+                                return error(InternalError(sprintf "BuildFrameworkTcImports: no resolution of '%s'" coreLibraryReference.Text, rangeStartup))
+                        }
+                    IlxSettings.ilxFsharpCoreLibAssemRef <-
+                        (let scoref = fslibCcuInfo.ILScopeRef
+                         match scoref with
+                         | ILScopeRef.Assembly aref -> Some aref
+                         | ILScopeRef.Local | ILScopeRef.Module _ | ILScopeRef.PrimaryAssembly ->
+                            error(InternalError("not ILScopeRef.Assembly", rangeStartup)))
+                    return fslibCcuInfo.FSharpViewOfMetadata
+            }
 
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
         let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu,
@@ -1894,7 +1899,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
        (ctok, tcConfigP: TcConfigProvider, tcGlobals: TcGlobals, baseTcImports,
         nonFrameworkReferences, knownUnresolved, dependencyProvider) =
 
-      cancellable {
+      async {
         let tcConfig = tcConfigP.Get ctok
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, nonFrameworkReferences, knownUnresolved)
         let references = tcResolutions.GetAssemblyResolutions()
@@ -1905,7 +1910,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
       }
 
     static member BuildTcImports(ctok, tcConfigP: TcConfigProvider, dependencyProvider) =
-      cancellable {
+      async {
         let tcConfig = tcConfigP.Get ctok
         //let foundationalTcImports, tcGlobals = TcImports.BuildFoundationalTcImports tcConfigP
         let frameworkDLLs, nonFrameworkReferences, knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
@@ -1924,7 +1929,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
 let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, referenceRange, file) =
     let resolutions = CommitOperationResult(tcImports.TryResolveAssemblyReference(ctok, AssemblyReference(referenceRange, file, None), ResolveAssemblyReferenceMode.ReportErrors))
-    let dllinfos, ccuinfos = tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions) |> Cancellable.runWithoutCancellation
+    let dllinfos, ccuinfos = tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions) |> Async.RunSynchronously
 
     let asms =
         ccuinfos |> List.map (function

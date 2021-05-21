@@ -27,7 +27,7 @@ open FSharp.Compiler.TypedTree
 type internal FrameworkImportsCache = 
     new : size: int -> FrameworkImportsCache
 
-    member Get : CompilationThreadToken * TcConfig -> Cancellable<TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list>
+    member Get : CompilationThreadToken * TcConfig -> Async<TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list>
 
     member Clear: CompilationThreadToken -> unit
 
@@ -248,7 +248,7 @@ type internal IncrementalBuilder =
           enableBackgroundItemKeyStoreAndSemanticClassification: bool *
           enablePartialTypeChecking: bool *
           dependencyProvider: DependencyProvider option
-             -> Cancellable<IncrementalBuilder option * FSharpDiagnostic[]>
+             -> Async<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.
 module internal IncrementalBuild =

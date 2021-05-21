@@ -244,7 +244,7 @@ type BackgroundCompiler(
     /// CreateOneIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
     let CreateOneIncrementalBuilder (ctok, options:FSharpProjectOptions, userOpName) = 
-      cancellable {
+      async {
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CreateOneIncrementalBuilder", options.ProjectFileName)
         let projectReferences =  
             [ for r in options.ReferencedProjects do
@@ -358,7 +358,7 @@ type BackgroundCompiler(
             else
                 let getBuilderLazy = 
                     let ctok = CompilationThreadToken()
-                    AsyncLazy(CreateOneIncrementalBuilder (ctok, options, userOpName) |> Cancellable.toAsync)
+                    AsyncLazy(CreateOneIncrementalBuilder(ctok, options, userOpName))
                 incrementalBuildersCache.Set (AnyCallerThread, options, getBuilderLazy)
                 getBuilderLazy
         )
