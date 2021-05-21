@@ -98,15 +98,28 @@ let generateOverrides =
 //    optimize = true or false
 //    configuration = "Release" or "Debug"
 //
-let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramework:string) configuration languageVersion=
+let generateProjectArtifacts (pc :ProjectConfiguration) outputType (targetFramework: string) configuration languageVersion =
     let fsharpCoreLocation =
         let compiler =
             if outputType = OutputType.Script then
                 "fsi"
             else
                 "FSharp.Core"
-        (Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts/bin/"  + compiler + "/" + configuration + "/netstandard2.0/FSharp.Core.dll")
 
+        let targetCore =
+            if targetFramework.StartsWith("netstandard", StringComparison.InvariantCultureIgnoreCase) then 
+                "netstandard2.0"
+            else if targetFramework.StartsWith("net4", StringComparison.InvariantCultureIgnoreCase) then
+                "net472"
+            else
+                // TODO: Needs a cleanup - a workaround to use the netstandard F#Core when target for the test is net5/net6
+                if  outputType = OutputType.Script then
+                    "net5.0"
+                else
+                    "netstandard2.0"
+
+        (Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts/bin/"  + compiler + "/" + configuration + "/" + targetCore + "/FSharp.Core.dll")
+    
     let computeSourceItems addDirectory addCondition (compileItem:CompileItem) sources =
         let computeInclude src =
             let fileName = if addDirectory then Path.Combine(pc.SourceDirectory, src) else src
