@@ -7396,11 +7396,11 @@ let tname_SignatureDataVersionAttr = FSharpLib.Core + ".FSharpInterfaceDataVersi
 
 let tnames_SignatureDataVersionAttr = splitILTypeName tname_SignatureDataVersionAttr
 
-let tref_SignatureDataVersionAttr () = mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), tname_SignatureDataVersionAttr)
+let tref_SignatureDataVersionAttr fsharpCoreAssemblyScopeRef = mkILTyRef(fsharpCoreAssemblyScopeRef, tname_SignatureDataVersionAttr)
 
 let mkSignatureDataVersionAttr (g: TcGlobals) (version: ILVersionInfo)  = 
     mkILCustomAttribute g.ilg
-        (tref_SignatureDataVersionAttr(), 
+        (tref_SignatureDataVersionAttr g.ilg.fsharpCoreAssemblyScopeRef, 
          [g.ilg.typ_Int32;g.ilg.typ_Int32;g.ilg.typ_Int32], 
          [ILAttribElem.Int32 (int32 version.Major)
           ILAttribElem.Int32 (int32 version.Minor) 
