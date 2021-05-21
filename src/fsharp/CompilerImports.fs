@@ -1830,29 +1830,10 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 else
                     None)
 
-        let mutable fsharpCoreAssemblyScopeRef = ILScopeRef.Local
-        let ilGlobals = mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fun () -> fsharpCoreAssemblyScopeRef)
-        frameworkTcImports.SetILGlobals ilGlobals
-
-        // Load the rest of the framework DLLs all at once (they may be mutually recursive)
-        let! _assemblies = frameworkTcImports.RegisterAndImportReferencedAssemblies (ctok, resolvedAssemblies)
-
-        // These are the DLLs we can search for well-known types
-        let sysCcus =
-             [| for ccu in frameworkTcImports.GetCcusInDeclOrder() do
-                   //printfn "found sys ccu %s" ccu.AssemblyName
-                   yield ccu |]
-
-        //for ccu in nonFrameworkDLLs do
-        //    printfn "found non-sys ccu %s" ccu.resolvedPath
-
-        let tryFindSysTypeCcu path typeName =
-            sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName)
-
-        let fslibCcu =
+        let fslibCcu, fsharpCoreAssemblyScopeRef =
             if tcConfig.compilingFslib then
                 // When compiling FSharp.Core.dll, the fslibCcu reference to FSharp.Core.dll is a delayed ccu thunk fixed up during type checking
-                CcuThunk.CreateDelayed getFSharpCoreLibraryName
+                CcuThunk.CreateDelayed getFSharpCoreLibraryName, ILScopeRef.Local
             else
                 let fslibCcuInfo =
                     let coreLibraryReference = tcConfig.CoreLibraryDllReference()
@@ -1874,8 +1855,21 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                             error(InternalError("BuildFrameworkTcImports: no successful import of "+coreLibraryResolution.resolvedPath, coreLibraryResolution.originalReference.Range))
                     | None ->
                         error(InternalError(sprintf "BuildFrameworkTcImports: no resolution of '%s'" coreLibraryReference.Text, rangeStartup))
-                fsharpCoreAssemblyScopeRef <- fslibCcuInfo.ILScopeRef
-                fslibCcuInfo.FSharpViewOfMetadata
+                fslibCcuInfo.FSharpViewOfMetadata, fslibCcuInfo.ILScopeRef
+
+        // Load the rest of the framework DLLs all at once (they may be mutually recursive)
+        let! _assemblies = frameworkTcImports.RegisterAndImportReferencedAssemblies (ctok, resolvedAssemblies)
+
+        // These are the DLLs we can search for well-known types
+        let sysCcus =
+             [| for ccu in frameworkTcImports.GetCcusInDeclOrder() do
+                   yield ccu |]
+
+        let tryFindSysTypeCcu path typeName =
+            sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName)
+
+        let ilGlobals = mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef)
+        frameworkTcImports.SetILGlobals ilGlobals
 
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
         let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu,

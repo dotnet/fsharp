@@ -2633,7 +2633,7 @@ let tname_UIntPtr = "System.UIntPtr"
 let tname_TypedReference = "System.TypedReference"
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type ILGlobals(primaryScopeRef: ILScopeRef, assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list, fsharpCoreAssemblyScopeRef: unit -> ILScopeRef) =
+type ILGlobals(primaryScopeRef: ILScopeRef, assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list, fsharpCoreAssemblyScopeRef: ILScopeRef) =
 
     let assembliesThatForwardToPrimaryAssembly = Array.ofList assembliesThatForwardToPrimaryAssembly
 
@@ -2666,7 +2666,7 @@ type ILGlobals(primaryScopeRef: ILScopeRef, assembliesThatForwardToPrimaryAssemb
     member val typ_UIntPtr = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_UIntPtr))
     member val typ_TypedReference = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_TypedReference))
 
-    member _.fsharpCoreAssemblyScopeRef = fsharpCoreAssemblyScopeRef()
+    member _.fsharpCoreAssemblyScopeRef = fsharpCoreAssemblyScopeRef
 
     member x.IsPossiblePrimaryAssemblyRef(aref: ILAssemblyRef) =
         aref.EqualsIgnoringVersion x.primaryAssemblyRef ||
@@ -3751,8 +3751,8 @@ let getCustomAttrData (ilg: ILGlobals) cattr =
 
 let MscorlibScopeRef = ILScopeRef.Assembly (ILAssemblyRef.Create ("mscorlib", None, Some ecmaPublicKey, true, None, None))
 
-let EcmaMscorlibILGlobals = mkILGlobals (MscorlibScopeRef, [], fun () -> ILScopeRef.Local)
-let PrimaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [], fun () -> ILScopeRef.Local)
+let EcmaMscorlibILGlobals = mkILGlobals (MscorlibScopeRef, [], ILScopeRef.Local)
+let PrimaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [], ILScopeRef.Local)
 
 // ILSecurityDecl is a 'blob' having the following format:
 // - A byte containing a period (.).
