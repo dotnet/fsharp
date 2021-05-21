@@ -150,6 +150,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' == ''"">$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' != ''"">$(RestoreAdditionalProjectSources);$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
+    <RollForward>LatestMajor</RollForward>
   </PropertyGroup>
 
   <!-- FSharp.Core reference -->
@@ -256,15 +257,10 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
         let targetsBody = generateTargets
         let overridesBody = generateOverrides
-        let runtimeconfigBody = """
-{
-    "rollForwardOnNoCandidateFx": 2
-}"""
         
         let targetsFileName = Path.Combine(directory, "Directory.Build.targets")
         let propsFileName = Path.Combine(directory, "Directory.Build.props")
         let overridesFileName = Path.Combine(directory, "Directory.Overrides.targets")
-        let runtimeconfigFileName = Path.Combine(directory, "runtimeconfig.template.json")
         let projectFileName = Path.Combine(directory, Path.GetRandomFileName() + ".fsproj")
         try
             // Clean up directory
@@ -280,7 +276,6 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                     emitFile propsFileName propsBody
                     let projectBody = generateProjectArtifacts pc outputType targetFramework cfg.BUILD_CONFIG languageVersion
                     emitFile projectFileName projectBody
-                    emitFile runtimeconfigFileName runtimeconfigBody
                     use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
                     let cfg = { cfg with Directory = directory }
                     let result = execBothToOutNoCheck cfg directory buildOutputFile cfg.DotNetExe  (sprintf "run -f %s" targetFramework)
@@ -295,7 +290,6 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                     emitFile propsFileName propsBody
                     let projectBody = generateProjectArtifacts pc outputType  targetFramework cfg.BUILD_CONFIG languageVersion
                     emitFile projectFileName projectBody
-                    emitFile runtimeconfigFileName runtimeconfigBody
                     use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
                     let cfg = { cfg with Directory = directory }
                     execBothToOut cfg directory buildOutputFile cfg.DotNetExe "build /t:RunFSharpScript"

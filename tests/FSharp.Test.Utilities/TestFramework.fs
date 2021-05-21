@@ -37,7 +37,9 @@ module Commands =
             psi.RedirectStandardError <- true
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
-            psi.Environment.Add("DOTNET_ROLL_FORWARD_TO_PRERELEASE", "1")
+            // When running tests, we want to roll forward to minor versions (including previews).
+            psi.EnvironmentVariables.["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
+            psi.EnvironmentVariables.["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
             psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
             psi.UseShellExecute <- false
 

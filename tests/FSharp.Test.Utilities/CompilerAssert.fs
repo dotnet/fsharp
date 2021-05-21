@@ -337,9 +337,8 @@ type CompilerAssert private () =
         "tfm": "net5.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
-            "version": "6.0.0"
-        },
-        "rollForwardOnNoCandidateFx": 2
+            "version": "6.0"
+        }
     }
 }"""
         let runtimeconfigPath = Path.ChangeExtension(outputFilePath, ".runtimeconfig.json")
