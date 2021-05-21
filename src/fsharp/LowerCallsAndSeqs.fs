@@ -930,10 +930,10 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
         | Expr.Match (spBind, exprm, pt, targets, m, ty) ->
             // lower all the targets. abandon if any fail to lower
             let resTargets =
-                targets |> Array.map (fun (TTarget(vs, targetExpr, spTarget, m)) -> 
+                targets |> Array.map (fun (TTarget(vs, targetExpr, spTarget)) -> 
                     match ConvertSeqExprCode false targetExpr with 
                     | Result.Ok targetExprR -> 
-                        Result.Ok (TTarget(vs, targetExprR, spTarget, m))
+                        Result.Ok (TTarget(vs, targetExprR, spTarget))
                     | Result.Error msg -> Result.Error msg )
             if resTargets |> Array.forall (function Result.Ok _ -> true | _ -> false) then
                 let tglArray = Array.map (function Result.Ok v -> v | _ -> failwith "unreachable") resTargets
