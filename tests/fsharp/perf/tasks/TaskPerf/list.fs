@@ -1,12 +1,10 @@
 
 module Tests.ListBuilders
 
+#if FSHARP_CORE_HAS_LIST_COLLECTOR
 open System
-open System.Collections
 open System.Collections.Generic
-open System.Runtime.CompilerServices
 open FSharp.Core.CompilerServices
-open FSharp.Core.CompilerServices.StateMachineHelpers
 
 #nowarn "57"
 
@@ -15,28 +13,11 @@ module UsingInlinedCodeAndCollector =
     [<Struct; NoEquality; NoComparison>]
     type ListBuilderCollector<'T> =
         [<DefaultValue(false)>]
-        val mutable Result : 'T list
+        val mutable Collector : ListCollector<'T>
 
-        [<DefaultValue(false)>]
-        val mutable LastCons : 'T list
-
-        member sm.Yield (value: 'T) = 
-            match box sm.Result with 
-            | null -> 
-                let ra = RuntimeHelpers.FreshConsNoTail value
-                sm.Result <- ra
-                sm.LastCons <- ra
-            | ra -> 
-                let ra = RuntimeHelpers.FreshConsNoTail value
-                RuntimeHelpers.SetFreshConsTail sm.LastCons ra
-                sm.LastCons <- ra
+        member sm.Yield (value: 'T) = sm.Collector.Yield(value)
     
-        member sm.ToList() = 
-            match box sm.Result with 
-            | null -> []
-            | _ ->
-                RuntimeHelpers.SetFreshConsTail sm.LastCons []
-                sm.Result
+        member sm.ToList() = sm.Collector.ToList()
     
     type ListBuilderCode<'T> = delegate of byref<ListBuilderCollector<'T>> -> unit
 
@@ -211,3 +192,4 @@ module Examples =
 
     perf "fixedSizeBase" fixedSizeBase
     perf "fixedSizeC" fixedSizeC
+#endif

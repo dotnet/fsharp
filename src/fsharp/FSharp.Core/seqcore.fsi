@@ -122,15 +122,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <returns>The initialized event.</returns>
         val CreateEvent : addHandler : ('Delegate -> unit) -> removeHandler : ('Delegate -> unit) -> createHandler : ((obj -> 'Args -> unit) -> 'Delegate) -> Microsoft.FSharp.Control.IEvent<'Delegate,'Args>
 
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-        val SetFreshConsTail: cons: 'T list -> tail: 'T list -> unit
-
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-        val inline FreshConsNoTail: head: 'T -> 'T list
-
     [<AbstractClass>]
     /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
     type GeneratedSequenceBase<'T> =

@@ -348,15 +348,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
                      { new System.IDisposable with
                           member x.Dispose() = removeHandler h } }
 
-        // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
-        // tail cons cells is permitted in carefully written library code.
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let SetFreshConsTail cons tail = cons.( :: ).1 <- tail
-
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        let inline FreshConsNoTail head = head :: (# "ldnull" : 'T list #)
-
     [<AbstractClass>]
     type GeneratedSequenceBase<'T>() =
         let mutable redirectTo : GeneratedSequenceBase<'T> = Unchecked.defaultof<_>

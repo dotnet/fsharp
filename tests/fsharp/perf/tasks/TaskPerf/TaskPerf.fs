@@ -325,7 +325,7 @@ type Benchmarks() =
                     for i in Seq.init 1000 id do
                        res <- i + res }
 
-#if PREVIEW
+#if FSHARP_CORE_HAS_LIST_COLLECTOR
     [<BenchmarkCategory("TinyVariableSizedList"); Benchmark(Baseline=true)>]
     member _.TinyVariableSizedList_Builtin() = Tests.ListBuilders.Examples.tinyVariableSizeBuiltin()
 
