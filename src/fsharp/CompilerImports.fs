@@ -1830,7 +1830,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 else
                     None)
 
-        let ilGlobals = mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly)
+        let mutable fsharpCoreAssemblyScopeRef = ILScopeRef.Local
+        let ilGlobals = mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fun () -> fsharpCoreAssemblyScopeRef)
         frameworkTcImports.SetILGlobals ilGlobals
 
         // Load the rest of the framework DLLs all at once (they may be mutually recursive)
@@ -1873,12 +1874,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                             error(InternalError("BuildFrameworkTcImports: no successful import of "+coreLibraryResolution.resolvedPath, coreLibraryResolution.originalReference.Range))
                     | None ->
                         error(InternalError(sprintf "BuildFrameworkTcImports: no resolution of '%s'" coreLibraryReference.Text, rangeStartup))
-                IlxSettings.ilxFsharpCoreLibAssemRef <-
-                    (let scoref = fslibCcuInfo.ILScopeRef
-                     match scoref with
-                     | ILScopeRef.Assembly aref -> Some aref
-                     | ILScopeRef.Local | ILScopeRef.Module _ | ILScopeRef.PrimaryAssembly ->
-                        error(InternalError("not ILScopeRef.Assembly", rangeStartup)))
+                fsharpCoreAssemblyScopeRef <- fslibCcuInfo.ILScopeRef
                 fslibCcuInfo.FSharpViewOfMetadata
 
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
