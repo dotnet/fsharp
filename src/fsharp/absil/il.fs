@@ -3749,11 +3749,6 @@ let getCustomAttrData (ilg: ILGlobals) cattr =
     | ILAttribute.Decoded (mspec, fixedArgs, namedArgs) ->
         encodeCustomAttrArgs ilg mspec fixedArgs namedArgs
 
-let MscorlibScopeRef = ILScopeRef.Assembly (ILAssemblyRef.Create ("mscorlib", None, Some ecmaPublicKey, true, None, None))
-
-let EcmaMscorlibILGlobals = mkILGlobals (MscorlibScopeRef, [], ILScopeRef.Local)
-let PrimaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [], ILScopeRef.Local)
-
 // ILSecurityDecl is a 'blob' having the following format:
 // - A byte containing a period (.).
 // - A compressed int32 containing the number of attributes encoded in the blob.
@@ -4364,6 +4359,23 @@ let resolveILMethodRef td mref = resolveILMethodRefWithRescope id td mref
 
 let mkRefToILModule m =
     ILModuleRef.Create (m.Name, true, None)
+
+let MscorlibScopeRef = ILScopeRef.Assembly (ILAssemblyRef.Create ("mscorlib", None, Some ecmaPublicKey, true, None, None))
+
+let DummyFSharpCoreScopeRef =
+    let asmRef =
+        // The exact public key token and version used here don't actually matter, or shouldn't.
+        // ilxFsharpCoreLibAssemRef is only 'None' for startup code paths such as
+        // IsSignatureDataVersionAttr, where matching is done by assembly name strings
+        // rather then versions and tokens.
+        ILAssemblyRef.Create("FSharp.Core", None,
+                Some (PublicKeyToken(Bytes.ofInt32Array [| 0xb0; 0x3f; 0x5f; 0x7f; 0x11; 0xd5; 0x0a; 0x3a |])),
+                false,
+                Some (parseILVersion "0.0.0.0"), None)
+    ILScopeRef.Assembly asmRef
+
+let EcmaMscorlibILGlobals = mkILGlobals (MscorlibScopeRef, [], DummyFSharpCoreScopeRef)
+let PrimaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [], DummyFSharpCoreScopeRef)
 
 type ILEventRef =
     { erA: ILTypeRef
