@@ -949,7 +949,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
                 // printfn "FAILED - not worth compiling an unrecognized Seq.toList at %s " (stringOfRange m)
                 Result.Error ()
             else
-                mkCallCollectorAdd tcVal (g: TcGlobals) infoReader m collExpr arbitrarySeqExpr
+                mkCallCollectorAddMany tcVal (g: TcGlobals) infoReader m collExpr arbitrarySeqExpr
                 |> Result.Ok
 
     // Perform conversion

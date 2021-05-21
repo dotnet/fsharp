@@ -470,7 +470,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 this.Count <- 2
                 this.Second <- value
             | 2 ->
-                let ra = ResizeArray()
+                let ra = ResizeArray<'T>()
                 ra.Add(this.First)
                 ra.Add(this.Second)
                 ra.Add(value)
