@@ -439,6 +439,25 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 for v in values do
                    this.Add v
 
+        // In the particular case of closing with a final add of an F# list
+        // we can simply stitch the list into the end of the resulting list
+        member this.AddManyAndClose (values: seq<'T>) =
+            match values with 
+            | :? ('T list) as valuesAsList -> 
+                let res =
+                    match box this.Result with 
+                    | null -> 
+                        valuesAsList
+                    | _ -> 
+                        RuntimeHelpers.SetFreshConsTail this.LastCons valuesAsList
+                        this.Result
+                this.Result <- Unchecked.defaultof<_>
+                this.LastCons <- Unchecked.defaultof<_>
+                res
+            | _ ->
+                this.AddMany values
+                this.Close()
+
         member this.Close() =
             match box this.Result with 
             | null -> []
@@ -494,6 +513,10 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 | _ ->
                     for v in values do
                        this.Add v
+
+        member this.AddManyAndClose (values: seq<'T>) =
+            this.AddMany(values)
+            this.Close()
 
         member this.Close() =
             match this.Count with 

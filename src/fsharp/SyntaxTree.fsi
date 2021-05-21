@@ -236,7 +236,6 @@ type DebugPointAtSequential =
 [<RequireQualifiedAccess>]
 type DebugPointAtTry =
     | Yes of range: range
-    // Used for "use" and "for"
     | Body
     | No
 
@@ -267,6 +266,7 @@ type DebugPointAtFor =
 [<RequireQualifiedAccess>]
 type DebugPointAtWhile =
     | Yes of range: range
+    | Condition
     | No
 
 /// Represents whether a debug point should be present for a 'let' binding,

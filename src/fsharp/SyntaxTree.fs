@@ -206,6 +206,7 @@ type DebugPointAtFor =
 [<RequireQualifiedAccess>]
 type DebugPointAtWhile =
     | Yes of range: range
+    | Condition
     | No
 
 [<RequireQualifiedAccess>]

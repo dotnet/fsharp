@@ -3942,12 +3942,14 @@ and GenWhileLoop cenv cgbuf eenv (spWhile, e1, e2, m) sequel =
     let finish = CG.GenerateDelayMark cgbuf "while_finish"
     let startTest = CG.GenerateMark cgbuf "startTest"
 
-    match spWhile with
-    | DebugPointAtWhile.Yes spStart -> CG.EmitSeqPoint cgbuf spStart
-    | DebugPointAtWhile.No -> ()
+    let spCondition =
+        match spWhile with
+        | DebugPointAtWhile.Yes spStart -> CG.EmitSeqPoint cgbuf spStart; SPSuppress
+        | DebugPointAtWhile.Condition -> SPAlways
+        | DebugPointAtWhile.No -> SPSuppress
 
     // SEQUENCE POINTS: Emit a sequence point to cover all of 'while e do'
-    GenExpr cenv cgbuf eenv SPSuppress e1 (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse, finish.CodeLabel) ]))
+    GenExpr cenv cgbuf eenv spCondition e1 (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse, finish.CodeLabel) ]))
 
     GenExpr cenv cgbuf eenv SPAlways e2 (DiscardThen (Br startTest))
     CG.SetMarkToHere cgbuf finish

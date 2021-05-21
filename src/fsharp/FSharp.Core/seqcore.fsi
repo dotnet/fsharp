@@ -171,6 +171,10 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        member AddManyAndClose: values: seq<'T> -> 'T list
+
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
         member Close: unit -> 'T list
 
     [<Struct; NoEquality; NoComparison>]
@@ -193,6 +197,10 @@ namespace Microsoft.FSharp.Core.CompilerServices
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
         member AddMany: values: seq<'T> -> unit
+
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        member AddManyAndClose: values: seq<'T> -> 'T[]
 
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
