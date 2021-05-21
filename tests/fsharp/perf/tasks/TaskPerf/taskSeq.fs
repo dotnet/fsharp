@@ -18,6 +18,9 @@ let inline MoveNext(x: byref<'T> when 'T :> IAsyncStateMachine) = x.MoveNext()
 
 type taskSeq<'T> = IAsyncEnumerable<'T>
 
+type IPriority1 = interface end
+type IPriority2 = interface end
+
 [<NoComparison; NoEquality>]
 type TaskSeqStateMachineData<'T>() =
     [<DefaultValue(false)>]

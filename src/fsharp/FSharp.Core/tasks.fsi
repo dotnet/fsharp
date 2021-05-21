@@ -31,11 +31,6 @@ namespace Microsoft.FSharp.Control
         [<CompilerMessage("This construct  is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
         TaskStateMachine<'TOverall> = ResumableStateMachine<TaskStateMachineData<'TOverall>>
 
-    /// Represents the runtime continuation of a task state machine created dynamically
-    and [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        [<CompilerMessage("This construct  is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-        TaskResumptionFunc<'TOverall> = ResumptionFunc<TaskStateMachineData<'TOverall>>
-
     /// A special compiler-recognised delegate type for specifying blocks of task code
     /// with access to the state machine.
     and [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
