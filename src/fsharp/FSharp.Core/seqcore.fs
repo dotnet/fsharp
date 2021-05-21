@@ -405,8 +405,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
             member _.Reset() = raise <| new System.NotSupportedException()
 
-#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
-
     [<Struct; NoEquality; NoComparison>]
     type ListCollector<'T> =
         [<DefaultValue(false)>]
@@ -473,10 +471,13 @@ namespace Microsoft.FSharp.Core.CompilerServices
     type ArrayCollector<'T> =
         [<DefaultValue(false)>]
         val mutable ResizeArray: ResizeArray<'T>
+
         [<DefaultValue(false)>]
         val mutable First: 'T
+
         [<DefaultValue(false)>]
         val mutable Second: 'T
+
         [<DefaultValue(false)>]
         val mutable Count: int
 
@@ -537,4 +538,3 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 this <- ArrayCollector<'T>()
                 res
             
-#endif

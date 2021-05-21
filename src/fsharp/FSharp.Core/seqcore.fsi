@@ -150,10 +150,8 @@ namespace Microsoft.FSharp.Core.CompilerServices
         interface IEnumerator 
         interface IDisposable 
 
-#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+    /// Collects elements and builds a list
     [<Struct; NoEquality; NoComparison>]
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
     type ListCollector<'T> =
         [<DefaultValue(false)>]
         val mutable internal Result: 'T list
@@ -161,25 +159,20 @@ namespace Microsoft.FSharp.Core.CompilerServices
         [<DefaultValue(false)>]
         val mutable internal LastCons: 'T list
 
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        /// Add an element to the collector
         member Add: value: 'T -> unit
 
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        /// Add multiple elements to the collector
         member AddMany: values: seq<'T> -> unit
 
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        /// Add multiple elements to the collector and return the resulting list
         member AddManyAndClose: values: seq<'T> -> 'T list
 
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        /// Return the resulting list
         member Close: unit -> 'T list
 
+    /// Collects elements and builds an array
     [<Struct; NoEquality; NoComparison>]
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
     type ArrayCollector<'T> =
         [<DefaultValue(false)>]
         val mutable internal ResizeArray: ResizeArray<'T>
@@ -190,20 +183,15 @@ namespace Microsoft.FSharp.Core.CompilerServices
         [<DefaultValue(false)>]
         val mutable internal Count: int
 
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        /// Add an element to the collector
         member Add: value: 'T -> unit
 
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        /// Add multiple elements to the collector
         member AddMany: values: seq<'T> -> unit
 
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        /// Add multiple elements to the collector and return the resulting array
         member AddManyAndClose: values: seq<'T> -> 'T[]
 
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        /// Return the resulting list
         member Close: unit -> 'T[]
 
-#endif
