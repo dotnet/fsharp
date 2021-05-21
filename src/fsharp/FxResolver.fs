@@ -177,7 +177,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             | Some dir ->
                 try
                     let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
-                    let dotnetConfig = FileSystem.OpenFileForReadShim(dotnetConfigFile).AsStream().ReadAllText()
+                    let dotnetConfig = FileSystem.OpenFileForReadShim(dotnetConfigFile).ReadAllText()
                     let pattern = "\"version\": \""
                     let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
                     let endPos = dotnetConfig.IndexOf("\"", startPos)
@@ -322,7 +322,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                 | asm ->
                     let depsJsonPath = Path.ChangeExtension(asm.Location, "deps.json")
                     if FileSystem.FileExistsShim(depsJsonPath) then
-                        FileSystem.OpenFileForReadShim(depsJsonPath).AsReadOnlyStream().ReadAllText()
+                        FileSystem.OpenFileForReadShim(depsJsonPath).ReadAllText()
                     else
                         ""
             with _ ->
@@ -783,7 +783,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                 match sdkDir with
                 | Some dir ->
                     let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
-                    let dotnetConfig = FileSystem.OpenFileForReadShim(dotnetConfigFile).AsReadOnlyStream().ReadAllText()
+                    let dotnetConfig = FileSystem.OpenFileForReadShim(dotnetConfigFile).ReadAllText()
                     let pattern = "\"tfm\": \""
                     let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
                     let endPos = dotnetConfig.IndexOf("\"", startPos)

@@ -42,8 +42,7 @@ let B = File1.A + File1.A"""
             let useMemoryMappedFile = defaultArg useMemoryMappedFile false
             match files.TryGetValue filePath with
             | true, text ->
-                let bytes = Encoding.UTF8.GetBytes(text)
-                ByteArrayMemory(bytes, 0, bytes.Length) :> ByteMemory
+                new MemoryStream(Encoding.UTF8.GetBytes(text)) :> Stream
             | _ -> defaultFileSystem.OpenFileForReadShim(filePath, useMemoryMappedFile, shouldShadowCopy)
 
         member _.OpenFileForWriteShim(filePath, ?fileMode: FileMode, ?fileAccess: FileAccess, ?fileShare: FileShare) =

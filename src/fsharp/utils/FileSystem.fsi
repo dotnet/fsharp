@@ -141,7 +141,7 @@ type DefaultAssemblyLoader =
 type public IFileSystem =
 
     /// Open the file for read, returns ByteMemory, uses either FileStream (for smaller files) or MemoryMappedFile (for potentially big files, such as dlls).
-    abstract member OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> ByteMemory
+    abstract member OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
 
     /// Open the file for writing. Returns a Stream.
     abstract member OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
@@ -219,9 +219,11 @@ module public StreamExtensions =
         member WriteAllLines : contents: string seq * ?encoding: Encoding -> unit
         member Write : data: ^a -> unit
         member GetReader : codePage: int option * ?retryLocked: bool ->  StreamReader
+        member ReadAllBytes : unit -> byte[]
         member ReadAlLText : ?encoding: Encoding -> string
         member ReadLines : ?encoding: Encoding -> string seq
         member ReadAllLines : ?encoding: Encoding -> string array
+        member AsByteMemory : unit -> ByteMemory
 
 [<AutoOpen>]
 module public FileSystemAutoOpens =

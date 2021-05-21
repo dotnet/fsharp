@@ -207,7 +207,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
                     let bytes =
                         match chunk with
                         | None -> FileSystem.OpenFileForReadShim(fileName).ReadAllBytes()
-                        | Some(start, length) -> FileSystem.OpenFileForReadShim(fileName).ReadBytes(start, length)
+                        | Some(start, length) -> FileSystem.OpenFileForReadShim(fileName).AsByteMemory().ReadBytes(start, length)
 
                     tg <- bytes
 
@@ -3907,12 +3907,12 @@ let createByteFileChunk opts fileName chunk =
         let bytes =
             match chunk with
             | None -> FileSystem.OpenFileForReadShim(fileName).ReadAllBytes()
-            | Some(start, length) -> FileSystem.OpenFileForReadShim(fileName).ReadBytes(start, length)
+            | Some(start, length) -> FileSystem.OpenFileForReadShim(fileName).AsByteMemory().ReadBytes(start, length)
 
         ByteFile(fileName, bytes) :> BinaryFile
 
 let createMemoryMapFile fileName =
-    let byteMem = FileSystem.OpenFileForReadShim(fileName, useMemoryMappedFile = true)
+    let stream = FileSystem.OpenFileForReadShim(fileName, useMemoryMappedFile = true)
 
     let safeHolder =
         { new obj() with
@@ -3921,12 +3921,12 @@ let createMemoryMapFile fileName =
           interface IDisposable with
             member x.Dispose() =
                 GC.SuppressFinalize x
-                byteMem.AsStream().Dispose()
+                stream.Dispose()
                 stats.memoryMapFileClosedCount <- stats.memoryMapFileClosedCount + 1 }
 
     stats.memoryMapFileOpenedCount <- stats.memoryMapFileOpenedCount + 1
 
-    safeHolder, RawMemoryFile(fileName, safeHolder, byteMem) :> BinaryFile
+    safeHolder, RawMemoryFile(fileName, safeHolder, stream.AsByteMemory()) :> BinaryFile
 
 let OpenILModuleReaderFromBytes fileName assemblyContents options =
     let pefile = ByteFile(fileName, assemblyContents) :> BinaryFile
@@ -4037,7 +4037,7 @@ let OpenILModuleReader fileName opts =
         // still use an in-memory ByteFile
         let pefile =
             if not runningOnMono && (alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath) then
-                ByteMemoryFile(fullPath, FileSystem.OpenFileForReadShim(fullPath)) :> BinaryFile
+                ByteMemoryFile(fullPath, FileSystem.OpenFileForReadShim(fullPath).AsByteMemory()) :> BinaryFile
             else
                 createByteFileChunk opts fullPath None
 

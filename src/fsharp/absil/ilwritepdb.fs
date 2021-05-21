@@ -135,7 +135,7 @@ let guidSha2 = Guid("8829d00f-11b8-4213-878b-770e8597ac16")
 
 let checkSum (url: string) (checksumAlgorithm: HashAlgorithm) =
     try
-        use file = FileSystem.OpenFileForReadShim(url).AsReadOnlyStream()
+        use file = FileSystem.OpenFileForReadShim(url)
         let guid, alg =
             match checksumAlgorithm with
             | HashAlgorithm.Sha1 -> guidSha1, System.Security.Cryptography.SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
@@ -310,7 +310,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
             if not embedAllSource && not isInList || not (FileSystem.FileExistsShim file) then
                 None
             else
-                use stream = FileSystem.OpenFileForReadShim(file).AsReadOnlyStream()
+                use stream = FileSystem.OpenFileForReadShim(file)
 
                 let length64 = stream.Length
                 if length64 > int64 (Int32.MaxValue) then raise (new IOException("File is too long"))
@@ -355,7 +355,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
             index.Add(doc.File, handle)
 
         if not (String.IsNullOrWhiteSpace sourceLink) then
-            let fs = FileSystem.OpenFileForReadShim(sourceLink).AsReadOnlyStream()
+            let fs = FileSystem.OpenFileForReadShim(sourceLink)
             let ms = new MemoryStream()
             fs.CopyTo ms
             metadata.AddCustomDebugInformation(

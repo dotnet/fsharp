@@ -63,7 +63,7 @@ type FSharpDocument internal () =
 
     abstract GetText : unit -> DocumentText
 
-type private FSharpDocumentMemoryMappedFile(filePath: string, timeStamp: DateTime, mmf: MemoryMappedFile) =
+type private FSharpDocumentMemoryMappedFile(filePath: string, timeStamp: DateTime, openStream: unit -> Stream) =
     inherit FSharpDocument()
 
     override _.FilePath = filePath
@@ -71,7 +71,7 @@ type private FSharpDocumentMemoryMappedFile(filePath: string, timeStamp: DateTim
     override _.TimeStamp = timeStamp
 
     override _.GetText() =
-        DocumentText.Stream(mmf.CreateViewStream() :> Stream)
+        openStream () |> DocumentText.Stream
 
 type private FSharpDocumentByteArray(filePath: string, timeStamp: DateTime, bytes: byte[]) =
     inherit FSharpDocument()
@@ -111,31 +111,15 @@ type FSharpDocument with
         FSharpDocumentFromFile(filePath) :> FSharpDocument
 
     static member CreateCopyFromFile(filePath: string) =
-        let fileMode = FileMode.Open
-        let fileAccess = FileAccess.Read
-        let fileShare = FileShare.Delete ||| FileShare.ReadWrite
-
         let timeStamp = FileSystem.GetLastWriteTimeShim(filePath)
 
-        // We want to use mmaped files only when:
-        //   -  Opening large binary files (no need to use for source or resource files really)
-        //   -  Running on mono, since its MemoryMappedFile implementation throws when "mapName" is not provided (is null).
-        //      (See: https://github.com/mono/mono/issues/10245)
+        // We want to use mmaped documents only when
+        // not running on mono, since its MemoryMappedFile implementation throws when "mapName" is not provided (is null), (see: https://github.com/mono/mono/issues/10245)
         if runningOnMono then
-            let bytes = File.ReadAllBytes filePath
+            let bytes = FileSystem.OpenFileForReadShim(filePath, useMemoryMappedFile = false).ReadAllBytes()
             FSharpDocumentByteArray(filePath, timeStamp, bytes) :> FSharpDocument
         else
-            let fileStream = new FileStream(filePath, fileMode, fileAccess, fileShare)
-            let length = fileStream.Length
-            let mmf =
-                MemoryMappedFile.CreateNew(
-                    null,
-                    length,
-                    MemoryMappedFileAccess.Read,
-                    MemoryMappedFileOptions.None,
-                    HandleInheritability.None)
-            use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
-            fileStream.CopyTo(stream)
-            fileStream.Dispose()
-            FSharpDocumentMemoryMappedFile(filePath, timeStamp, mmf) :> FSharpDocument
+            let openStream = fun () ->
+                FileSystem.OpenFileForReadShim(filePath, useMemoryMappedFile = true, shouldShadowCopy = true)
+            FSharpDocumentMemoryMappedFile(filePath, timeStamp, openStream) :> FSharpDocument
             

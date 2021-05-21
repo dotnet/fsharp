@@ -3720,7 +3720,7 @@ and writeBinaryAndReportMappingsAux (stream: Stream, leaveStreamOpen: bool,
                     resources |> List.map (function
                         | ILNativeResource.Out bytes -> bytes
                         | ILNativeResource.In (fileName, linkedResourceBase, start, len) ->
-                             let linkedResource = FileSystem.OpenFileForReadShim(fileName).ReadBytes(start, len)
+                             let linkedResource = FileSystem.OpenFileForReadShim(fileName).AsByteMemory().ReadBytes(start, len)
                              unlinkResource linkedResourceBase linkedResource)
 
                 begin

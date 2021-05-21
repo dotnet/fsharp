@@ -372,7 +372,7 @@ type DefaultAssemblyLoader() =
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type IFileSystem =
     abstract AssemblyLoader: IAssemblyLoader
-    abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> ByteMemory
+    abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
     abstract GetFullPathShim: fileName: string -> string
     abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
@@ -398,7 +398,7 @@ type DefaultFileSystem() as this =
     interface IFileSystem with
         member _.AssemblyLoader = DefaultAssemblyLoader() :> IAssemblyLoader
 
-        member this.OpenFileForReadShim(filePath: string, ?useMemoryMappedFile: bool, ?shouldShadowCopy: bool) : ByteMemory =
+        member this.OpenFileForReadShim(filePath: string, ?useMemoryMappedFile: bool, ?shouldShadowCopy: bool) : Stream =
             let fileMode = FileMode.Open
             let fileAccess = FileAccess.Read
             let fileShare = FileShare.Delete ||| FileShare.ReadWrite
@@ -413,53 +413,33 @@ type DefaultFileSystem() as this =
             //   -  Running on mono, since its MemoryMappedFile implementation throws when "mapName" is not provided (is null).
             //      (See: https://github.com/mono/mono/issues/10245)
             if runningOnMono || (not useMemoryMappedFile) then
-                let bytes = File.ReadAllBytes filePath
-                let byteArrayMemory = if bytes.Length = 0 then ByteArrayMemory([||], 0, 0) else ByteArrayMemory(bytes, 0, bytes.Length)
-                byteArrayMemory :> ByteMemory
+                fileStream :> Stream
             else
-                let mmf, viewStream, length =
-                    let mmf =
-                        if shouldShadowCopy then
-                            let mmf =
-                                MemoryMappedFile.CreateNew(
-                                    null,
-                                    length,
-                                    MemoryMappedFileAccess.Read,
-                                    MemoryMappedFileOptions.None,
-                                    HandleInheritability.None)
-                            use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
-                            fileStream.CopyTo(stream)
-                            fileStream.Dispose()
-                            mmf
-                        else
-                            MemoryMappedFile.CreateFromFile(
-                                fileStream,
+                let mmf =
+                    if shouldShadowCopy then
+                        let mmf =
+                            MemoryMappedFile.CreateNew(
                                 null,
                                 length,
                                 MemoryMappedFileAccess.Read,
-                                HandleInheritability.None,
-                                leaveOpen=false)
-                    mmf, mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read), length
-
-                if not viewStream.CanRead then
+                                MemoryMappedFileOptions.None,
+                                HandleInheritability.None)
+                        use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
+                        fileStream.CopyTo(stream)
+                        fileStream.Dispose()
+                        mmf
+                    else
+                        MemoryMappedFile.CreateFromFile(
+                            fileStream,
+                            null,
+                            length,
+                            MemoryMappedFileAccess.Read,
+                            HandleInheritability.None,
+                            leaveOpen=false)
+                let stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
+                if not stream.CanRead then
                     invalidOp "Cannot read file"
-
-                let safeHolder =
-                    { new obj() with
-                        override x.Finalize() =
-                            (x :?> IDisposable).Dispose()
-                      interface IDisposable with
-                        member x.Dispose() =
-                            GC.SuppressFinalize x
-                            viewStream.Dispose()
-                            mmf.SafeMemoryMappedFileHandle.Close()
-                            mmf.Dispose()
-                            fileStream.Dispose() }
-
-                RawByteMemory(
-                    NativePtr.ofNativeInt (viewStream.SafeMemoryMappedViewHandle.DangerousGetHandle()),
-                    int length,
-                    safeHolder) :> ByteMemory
+                stream :> Stream
 
         member _.OpenFileForWriteShim(filePath: string, ?fileMode: FileMode, ?fileAccess: FileAccess, ?fileShare: FileShare) : Stream =
             let fileMode = defaultArg fileMode FileMode.OpenOrCreate
@@ -560,7 +540,7 @@ module public StreamExtensions =
         member s.Write (data: 'a) : unit =
             use sw = s.GetWriter()
             sw.Write(data)
-
+        
         member s.GetReader(codePage: int option, ?retryLocked: bool) =
             let retryLocked = defaultArg retryLocked false
             let retryDelayMilliseconds = 50
@@ -588,6 +568,11 @@ module public StreamExtensions =
                            reraise()
             getSource 0
 
+        member s.ReadAllBytes() =
+            use reader = new BinaryReader(s)
+            let count = (int s.Length)
+            reader.ReadBytes(count)
+        
         member s.ReadAllText(?encoding: Encoding) =
             let encoding = defaultArg encoding Encoding.UTF8
             use sr = new StreamReader(s, encoding, true)
@@ -603,6 +588,28 @@ module public StreamExtensions =
         member s.ReadAllLines(?encoding: Encoding) : string array =
             let encoding = defaultArg encoding Encoding.UTF8
             s.ReadLines(encoding) |> Seq.toArray
+
+        member s.AsByteMemory() : ByteMemory =
+            match s with
+            | :? MemoryMappedViewStream as ums ->
+                let safeHolder =
+                    { new obj() with
+                        override x.Finalize() =
+                            (x :?> IDisposable).Dispose()
+                      interface IDisposable with
+                        member x.Dispose() =
+                            GC.SuppressFinalize x
+                            ums.Dispose() }
+                let length = ums.Length
+                RawByteMemory(
+                    NativePtr.ofNativeInt (ums.SafeMemoryMappedViewHandle.DangerousGetHandle()),
+                    int length,
+                    safeHolder) :> ByteMemory
+
+            | _ ->
+                let bytes = s.ReadAllBytes()
+                let byteArrayMemory = if bytes.Length = 0 then ByteArrayMemory([||], 0, 0) else ByteArrayMemory(bytes, 0, bytes.Length)
+                byteArrayMemory :> ByteMemory
 
 [<AutoOpen>]
 module public FileSystemAutoOpens =
