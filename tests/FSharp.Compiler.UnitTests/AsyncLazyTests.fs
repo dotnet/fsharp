@@ -32,18 +32,14 @@ module AsyncLazyTests =
 
     [<Fact>]
     let ``A request to get a value asynchronously should increase the request count by 1``() =
-        use resetEvent = new ManualResetEvent(false)
-        use resetEventInAsync = new ManualResetEvent(false)
+        let resetEvent = new ManualResetEvent(false)
+        let resetEventInAsync = new ManualResetEvent(false)
 
         let lazyWork = 
             AsyncLazy(async { 
                 resetEventInAsync.Set() |> ignore
-                try
-                    let! _ = Async.AwaitWaitHandle(resetEvent)
-                    return 1 
-                with
-                | _ ->
-                    return 1
+                let! _ = Async.AwaitWaitHandle(resetEvent)
+                return 1 
             })
 
         async {
@@ -57,18 +53,14 @@ module AsyncLazyTests =
 
     [<Fact>]
     let ``Two requests to get a value asynchronously should increase the request count by 2``() =
-        use resetEvent = new ManualResetEvent(false)
-        use resetEventInAsync = new ManualResetEvent(false)
+        let resetEvent = new ManualResetEvent(false)
+        let resetEventInAsync = new ManualResetEvent(false)
 
         let lazyWork = 
             AsyncLazy(async { 
                 resetEventInAsync.Set() |> ignore
-                try
-                    let! _ = Async.AwaitWaitHandle(resetEvent)
-                    return 1 
-                with
-                | _ ->
-                    return 1
+                let! _ = Async.AwaitWaitHandle(resetEvent)
+                return 1 
             })
 
         async {
@@ -153,16 +145,12 @@ module AsyncLazyTests =
 
     [<Fact>]
     let ``A request can cancel``() =
-        use resetEvent = new ManualResetEvent(false)
+        let resetEvent = new ManualResetEvent(false)
 
         let lazyWork = 
             AsyncLazy(async { 
-                try
-                    let! _ = Async.AwaitWaitHandle(resetEvent)
-                    return 1 
-                with
-                | _ ->
-                    return 1
+                let! _ = Async.AwaitWaitHandle(resetEvent)
+                return 1 
             })
 
         use cts = new CancellationTokenSource()
@@ -188,20 +176,16 @@ module AsyncLazyTests =
     [<Fact>]
     let ``Many requests to get a value asynchronously should only evaluate the computation once even when some requests get canceled``() =
         let requests = 10000
-        use resetEvent = new ManualResetEvent(false)
+        let resetEvent = new ManualResetEvent(false)
         let mutable computationCountBeforeSleep = 0
         let mutable computationCount = 0
 
         let lazyWork = 
             AsyncLazy(async { 
                 computationCountBeforeSleep <- computationCountBeforeSleep + 1
-                try
-                    let! _ = Async.AwaitWaitHandle(resetEvent)
-                    computationCount <- computationCount + 1
-                    return 1 
-                with
-                | _ ->
-                    return 1
+                let! _ = Async.AwaitWaitHandle(resetEvent)
+                computationCount <- computationCount + 1
+                return 1 
             })
 
         use cts = new CancellationTokenSource()
