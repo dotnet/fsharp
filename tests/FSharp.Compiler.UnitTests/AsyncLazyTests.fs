@@ -42,14 +42,16 @@ module AsyncLazyTests =
                 return 1 
             })
 
-        async {
-            let! _ = lazyWork.GetValueAsync()
-            ()
-        } |> Async.Start
+        let task =
+            async {
+                let! _ = lazyWork.GetValueAsync()
+                ()
+            } |> Async.StartAsTask
 
         resetEventInAsync.WaitOne() |> ignore
         Assert.shouldBe 1 lazyWork.RequestCount
-        resetEvent.Set()
+        resetEvent.Set() |> ignore
+        task.Wait()
 
     [<Fact>]
     let ``Two requests to get a value asynchronously should increase the request count by 2``() =
@@ -63,20 +65,24 @@ module AsyncLazyTests =
                 return 1 
             })
 
-        async {
-            let! _ = lazyWork.GetValueAsync()
-            ()
-        } |> Async.Start
+        let task1 =
+            async {
+                let! _ = lazyWork.GetValueAsync()
+                ()
+            } |> Async.StartAsTask
 
-        async {
-            let! _ = lazyWork.GetValueAsync()
-            ()
-        } |> Async.Start
+        let task2 =
+            async {
+                let! _ = lazyWork.GetValueAsync()
+                ()
+            } |> Async.StartAsTask
 
         resetEventInAsync.WaitOne() |> ignore
         Thread.Sleep(100) // Give it just enough time so that two requests are waiting
         Assert.shouldBe 2 lazyWork.RequestCount
-        resetEvent.Set()
+        resetEvent.Set() |> ignore
+        task1.Wait()
+        task2.Wait()
 
     [<Fact>]
     let ``Many requests to get a value asynchronously should only evaluate the computation once``() =
@@ -155,12 +161,13 @@ module AsyncLazyTests =
 
         use cts = new CancellationTokenSource()
 
-        async {
-            do! Async.Sleep(100) // Some buffer time
-            cts.Cancel()
-            resetEvent.Set() |> ignore
-        }
-        |> Async.Start
+        let task =
+            async {
+                do! Async.Sleep(100) // Some buffer time
+                cts.Cancel()
+                resetEvent.Set() |> ignore
+            }
+            |> Async.StartAsTask
 
         let ex =
             try
@@ -172,6 +179,7 @@ module AsyncLazyTests =
                 ex
 
         Assert.shouldBeTrue(ex <> null)
+        task.Wait()
 
     [<Fact>]
     let ``Many requests to get a value asynchronously should only evaluate the computation once even when some requests get canceled``() =
@@ -196,11 +204,15 @@ module AsyncLazyTests =
                 ()
             }
 
+        let tasks = ResizeArray()
+
         for i = 0 to requests - 1 do
             if i % 10 = 0 then
-                Async.Start(work, cancellationToken = cts.Token)
+                Async.StartAsTask(work, cancellationToken = cts.Token)
+                |> tasks.Add
             else
-                Async.Start(work)
+                Async.StartAsTask(work)
+                |> tasks.Add
 
         Thread.Sleep(100) // Buffer some time
         cts.Cancel()
@@ -211,3 +223,7 @@ module AsyncLazyTests =
         Assert.shouldBeTrue cts.IsCancellationRequested
         Assert.shouldBe 1 computationCountBeforeSleep
         Assert.shouldBe 1 computationCount
+
+        tasks
+        |> Seq.iter (fun x -> 
+            try x.Wait() with | _ -> ())
