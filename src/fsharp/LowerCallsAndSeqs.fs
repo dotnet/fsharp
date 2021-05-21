@@ -212,9 +212,9 @@ let (|SeqElemTy|_|) g amap m ty =
     | None ->
         // printfn "FAILED - yield! did not yield a sequence! %s" (stringOfRange m)
         None
-    | Some ty ->
+    | Some seqTy ->
         // printfn "found yield!"
-        let inpElemTy = List.head (argsOfAppTy g ty)
+        let inpElemTy = List.head (argsOfAppTy g seqTy)
         Some inpElemTy
 
 /// Analyze a TAST expression to detect the elaborated form of a sequence expression.
@@ -586,9 +586,8 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 None
             else
                 match tyOfExpr g arbitrarySeqExpr with
-                | SeqElemTy g amap m ty ->
+                | SeqElemTy g amap m inpElemTy ->
                     // printfn "found yield!"
-                    let inpElemTy = List.head (argsOfAppTy g ty)
                     if isTailCall then
                              //this.pc <- NEXT
                              //nextEnumerator <- e
