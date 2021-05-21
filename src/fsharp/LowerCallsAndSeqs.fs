@@ -983,14 +983,15 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
 
     // Perform conversion
     match ConvertSeqExprCode true true overallSeqExpr with 
-    | Result.Ok (true, overallSeqExprR) ->
-        mkInvisibleLet m collVal (mkDefault (m, collectorTy))
-            (mkCompGenSequential m 
+    | Result.Ok (closed, overallSeqExprR) ->
+        mkInvisibleLet m collVal (mkDefault (m, collectorTy)) 
+            (if closed then 
+                // If we ended with AddManyAndClose then we're done
                 overallSeqExprR
-                (mkCallCollectorClose tcVal g infoReader m collExpr))
-        |> Some
-    | Result.Ok (false, overallSeqExprR) ->
-        mkInvisibleLet m collVal (mkDefault (m, collectorTy)) overallSeqExprR
+             else
+                mkCompGenSequential m 
+                    overallSeqExprR
+                    (mkCallCollectorClose tcVal g infoReader m collExpr))
         |> Some
     | Result.Error () -> 
         None
