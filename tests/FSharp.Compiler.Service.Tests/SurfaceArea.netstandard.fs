@@ -2126,6 +2126,7 @@ FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: Void .ctor(System.String, Mic
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreateFSharp(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions)
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreateFromILModuleReader(System.String, System.DateTime, ILModuleReader)
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreatePortableExecutable(System.String, System.DateTime, Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpOption`1[System.IO.Stream]])
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Int32 GetHashCode()
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String FileName

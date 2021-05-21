@@ -279,6 +279,17 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                               }
                             member x.TryGetLogicalTimeStamp(_) = stamp |> Some
                             member x.FileName = nm }
+
+                | FSharpReferencedProject.ILModuleReference(nm,stamp,ilReader) ->
+                    yield
+                        { new IProjectReference with 
+                            member x.EvaluateRawContents(_) = 
+                              cancellable {
+                                let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
+                                return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
+                              }
+                            member x.TryGetLogicalTimeStamp(_) = stamp |> Some
+                            member x.FileName = nm }
                 ]
 
         let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
