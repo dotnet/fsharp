@@ -13,260 +13,229 @@
 
 namespace Microsoft.FSharp.Control
 
-#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
-open System
-open System.Runtime.CompilerServices
-open System.Threading
-open System.Threading.Tasks
-open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.CompilerServices
-open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
-open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Control
-open Microsoft.FSharp.Collections
+    #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+    open System
+    open System.Runtime.CompilerServices
+    open System.Threading
+    open System.Threading.Tasks
+    open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Core.CompilerServices
+    open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
+    open Microsoft.FSharp.Control
+    open Microsoft.FSharp.Collections
 
-/// The extra data stored in ResumableStateMachine for tasks
-[<Struct; NoComparison; NoEquality>]
-type TaskStateMachineData<'T> =
+    /// The extra data stored in ResumableStateMachine for tasks
+    [<Struct; NoComparison; NoEquality>]
+    type TaskStateMachineData<'T> =
 
-    [<DefaultValue(false)>]
-    val mutable Result : 'T
+        [<DefaultValue(false)>]
+        val mutable Result : 'T
 
-    [<DefaultValue(false)>]
-    val mutable MethodBuilder : AsyncTaskMethodBuilder<'T>
+        [<DefaultValue(false)>]
+        val mutable MethodBuilder : AsyncTaskMethodBuilder<'T>
 
-and TaskStateMachine<'TOverall> = ResumableStateMachine<TaskStateMachineData<'TOverall>>
-and TaskResumptionFunc<'TOverall> = ResumptionFunc<TaskStateMachineData<'TOverall>>
-and TaskResumptionDynamicInfo<'TOverall> = ResumptionDynamicInfo<TaskStateMachineData<'TOverall>>
-and TaskCode<'TOverall, 'T> = ResumableCode<TaskStateMachineData<'TOverall>, 'T>
+    and TaskStateMachine<'TOverall> = ResumableStateMachine<TaskStateMachineData<'TOverall>>
+    and TaskResumptionFunc<'TOverall> = ResumptionFunc<TaskStateMachineData<'TOverall>>
+    and TaskResumptionDynamicInfo<'TOverall> = ResumptionDynamicInfo<TaskStateMachineData<'TOverall>>
+    and TaskCode<'TOverall, 'T> = ResumableCode<TaskStateMachineData<'TOverall>, 'T>
 
-type TaskBuilderBase() =
+    type TaskBuilderBase() =
 
-    member inline _.Delay(f : unit -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
-        TaskCode<'TOverall, 'T>(fun sm -> (f()).Invoke(&sm))
+        member inline _.Delay(f : unit -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
+            TaskCode<'TOverall, 'T>(fun sm -> (f()).Invoke(&sm))
 
-    /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
-    [<DefaultValue>]
-    member inline _.Zero() : TaskCode<'TOverall, unit> = ResumableCode.Zero()
+        /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
+        [<DefaultValue>]
+        member inline _.Zero() : TaskCode<'TOverall, unit> = ResumableCode.Zero()
 
-    member inline _.Return (value: 'T) : TaskCode<'T, 'T> = 
-        TaskCode<'T, _>(fun sm -> 
-            sm.Data.Result <- value
-            true)
-
-    /// Chains together a step with its following step.
-    /// Note that this requires that the first step has no result.
-    /// This prevents constructs like `task { return 1; return 2; }`.
-    member inline _.Combine(task1: TaskCode<'TOverall, unit>, task2: TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
-        ResumableCode.Combine(task1, task2)
-
-    /// Builds a step that executes the body while the condition predicate is true.
-    member inline _.While ([<InlineIfLambda>] condition : unit -> bool, body : TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
-        ResumableCode.While(condition, body)
-
-    /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
-    /// to retrieve the step, and in the continuation of the step (if any).
-    member inline _.TryWith (body: TaskCode<'TOverall, 'T>, catch: exn -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
-        ResumableCode.TryWith(body, catch)
-
-    /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
-    /// to retrieve the step, and in the continuation of the step (if any).
-    member inline _.TryFinally (body: TaskCode<'TOverall, 'T>, [<InlineIfLambda>] compensation : unit -> unit) : TaskCode<'TOverall, 'T> =
-        ResumableCode.TryFinally(body, ResumableCode<_,_>(fun _ -> compensation(); true))
-
-    member inline _.For (sequence : seq<'T>, body : 'T -> TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
-        ResumableCode.For(sequence, body)
-
-    static member ReturnFromDynamic (sm: byref<TaskStateMachine<'T>>, task: Task<'T>) : bool = 
-        let mutable awaiter = task.GetAwaiter()
-
-        let cont =
-            TaskResumptionFunc<'T>(fun sm -> 
-                sm.Data.Result <- awaiter.GetResult()
+        member inline _.Return (value: 'T) : TaskCode<'T, 'T> = 
+            TaskCode<'T, _>(fun sm -> 
+                sm.Data.Result <- value
                 true)
 
-        // shortcut to continue immediately
-        if task.IsCompleted then
-            cont.Invoke(&sm)
-        else
-            sm.ResumptionDynamicInfo.ResumptionData <- (awaiter :> ICriticalNotifyCompletion)
-            sm.ResumptionDynamicInfo.ResumptionFunc <- cont
-            false
+        /// Chains together a step with its following step.
+        /// Note that this requires that the first step has no result.
+        /// This prevents constructs like `task { return 1; return 2; }`.
+        member inline _.Combine(task1: TaskCode<'TOverall, unit>, task2: TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
+            ResumableCode.Combine(task1, task2)
 
-    member inline _.ReturnFrom (task: Task<'T>) : TaskCode<'T, 'T> = 
-        TaskCode<'T, _>(fun sm -> 
-            if __useResumableCode then 
-                //-- RESUMABLE CODE START
-                // This becomes a state machine variable
-                let mutable awaiter = task.GetAwaiter()
+        /// Builds a step that executes the body while the condition predicate is true.
+        member inline _.While ([<InlineIfLambda>] condition : unit -> bool, body : TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
+            ResumableCode.While(condition, body)
 
-                let mutable __stack_fin = true
-                if not task.IsCompleted then
-                    // This will yield with __stack_yield_fin = false
-                    // This will resume with __stack_yield_fin = true
-                    let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
-                    __stack_fin <- __stack_yield_fin
-                if __stack_fin then 
-                    sm.Data.Result <- awaiter.GetResult()
-                    true
-                else
-                    sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
-                    false
-            else
-                TaskBuilderBase.ReturnFromDynamic(&sm, task)
-                //-- RESUMABLE CODE END
-            )
+        /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
+        /// to retrieve the step, and in the continuation of the step (if any).
+        member inline _.TryWith (body: TaskCode<'TOverall, 'T>, catch: exn -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
+            ResumableCode.TryWith(body, catch)
 
-#if NETSTANDARD2_1
-    member inline internal this.TryFinallyAsync(body: TaskCode<'TOverall, 'T>, compensation : unit -> ValueTask) : TaskCode<'TOverall, 'T> =
-        ResumableCode.TryFinallyAsync(body, ResumableCode<_,_>(fun sm -> 
-            if __useResumableCode then
-                let mutable __stack_condition_fin = true
-                let __stack_vtask = compensation()
-                if not __stack_vtask.IsCompleted then
-                    let mutable awaiter = __stack_vtask.GetAwaiter()
-                    let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
-                    __stack_condition_fin <- __stack_yield_fin
+        /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
+        /// to retrieve the step, and in the continuation of the step (if any).
+        member inline _.TryFinally (body: TaskCode<'TOverall, 'T>, [<InlineIfLambda>] compensation : unit -> unit) : TaskCode<'TOverall, 'T> =
+            ResumableCode.TryFinally(body, ResumableCode<_,_>(fun _ -> compensation(); true))
 
-                    if not __stack_condition_fin then 
-                        sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+        member inline _.For (sequence : seq<'T>, body : 'T -> TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
+            ResumableCode.For(sequence, body)
 
-                __stack_condition_fin
-            else
-                let vtask = compensation()
-                let mutable awaiter = vtask.GetAwaiter()
+    #if NETSTANDARD2_1
+        member inline internal this.TryFinallyAsync(body: TaskCode<'TOverall, 'T>, compensation : unit -> ValueTask) : TaskCode<'TOverall, 'T> =
+            ResumableCode.TryFinallyAsync(body, ResumableCode<_,_>(fun sm -> 
+                if __useResumableCode then
+                    let mutable __stack_condition_fin = true
+                    let __stack_vtask = compensation()
+                    if not __stack_vtask.IsCompleted then
+                        let mutable awaiter = __stack_vtask.GetAwaiter()
+                        let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
+                        __stack_condition_fin <- __stack_yield_fin
 
-                let cont = 
-                    TaskResumptionFunc<'TOverall>( fun sm -> 
-                        awaiter.GetResult() |> ignore
-                        true)
-
-                // shortcut to continue immediately
-                if awaiter.IsCompleted then 
-                    true
-                else
-                    sm.ResumptionDynamicInfo.ResumptionData <- (awaiter :> ICriticalNotifyCompletion)
-                    sm.ResumptionDynamicInfo.ResumptionFunc <- cont
-                    false
-                ))
-
-    member inline this.Using<'Resource, 'TOverall, 'T when 'Resource :> IAsyncDisposable> (resource: 'Resource, body: 'Resource -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
-        this.TryFinallyAsync(
-            (fun sm -> (body resource).Invoke(&sm)),
-            (fun () -> 
-                if not (isNull (box resource)) then 
-                    resource.DisposeAsync()
-                else
-                    ValueTask()))
-#endif
-
-
-type TaskBuilder() =
-
-    inherit TaskBuilderBase()
-
-    // This is the dynamic implementation - this is not used
-    // for statically compiled tasks.  An executor (resumptionFuncExecutor) is 
-    // registered with the state machine, plus the initial resumption.
-    // The executor stays constant throughout the execution, it wraps each step
-    // of the execution in a try/with.  The resumption is changed at each step
-    // to represent the continuation of the computation.
-    static member RunDynamic(code: TaskCode<'T, 'T>) : Task<'T> = 
-        let mutable sm = TaskStateMachine<'T>()
-        let initialResumptionFunc = TaskResumptionFunc<'T>(fun sm -> code.Invoke(&sm))
-        let resumptionInfo = 
-            { new TaskResumptionDynamicInfo<'T>(initialResumptionFunc) with 
-                member info.MoveNext(sm) = 
-                    try
-                        sm.ResumptionDynamicInfo.ResumptionData <- null
-                        let step = info.ResumptionFunc.Invoke(&sm) 
-                        if step then 
-                            sm.Data.MethodBuilder.SetResult(sm.Data.Result)
-                        else
-                            let mutable awaiter = sm.ResumptionDynamicInfo.ResumptionData :?> ICriticalNotifyCompletion
-                            assert not (isNull awaiter)
+                        if not __stack_condition_fin then 
                             sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
 
-                    with exn ->
-                        sm.Data.MethodBuilder.SetException exn
-                member _.SetStateMachine(sm, state) =
-                    sm.Data.MethodBuilder.SetStateMachine(state)
-                }
-        sm.ResumptionDynamicInfo <- resumptionInfo
-        sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
-        sm.Data.MethodBuilder.Start(&sm)
-        sm.Data.MethodBuilder.Task
+                    __stack_condition_fin
+                else
+                    let vtask = compensation()
+                    let mutable awaiter = vtask.GetAwaiter()
 
-    static member inline Run(code : TaskCode<'T, 'T>) : Task<'T> = 
-         if __useResumableCode then 
-            __stateMachine<TaskStateMachineData<'T>, Task<'T>>
-                (MoveNextMethodImpl<_>(fun sm -> 
-                    //-- RESUMABLE CODE START
-                    __resumeAt sm.ResumptionPoint 
-                    try
-                        let __stack_code_fin = code.Invoke(&sm)
-                        if __stack_code_fin then
-                            sm.Data.MethodBuilder.SetResult(sm.Data.Result)
-                    with exn ->
-                        sm.Data.MethodBuilder.SetException exn
-                    //-- RESUMABLE CODE END
-                ))
-                (SetStateMachineMethodImpl<_>(fun sm state -> sm.Data.MethodBuilder.SetStateMachine(state)))
-                (AfterCode<_,_>(fun sm -> 
-                    sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
-                    sm.Data.MethodBuilder.Start(&sm)
-                    sm.Data.MethodBuilder.Task))
-         else
-            TaskBuilder.RunDynamic(code)
+                    let cont = 
+                        TaskResumptionFunc<'TOverall>( fun sm -> 
+                            awaiter.GetResult() |> ignore
+                            true)
 
-    member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
-       TaskBuilder.Run(code)
+                    // shortcut to continue immediately
+                    if awaiter.IsCompleted then 
+                        true
+                    else
+                        sm.ResumptionDynamicInfo.ResumptionData <- (awaiter :> ICriticalNotifyCompletion)
+                        sm.ResumptionDynamicInfo.ResumptionFunc <- cont
+                        false
+                    ))
 
-type BackgroundTaskBuilder() =
+        member inline this.Using<'Resource, 'TOverall, 'T when 'Resource :> IAsyncDisposable> (resource: 'Resource, body: 'Resource -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
+            this.TryFinallyAsync(
+                (fun sm -> (body resource).Invoke(&sm)),
+                (fun () -> 
+                    if not (isNull (box resource)) then 
+                        resource.DisposeAsync()
+                    else
+                        ValueTask()))
+    #endif
 
-    inherit TaskBuilderBase()
 
-    //// Same as TaskBuilder.Run except the start is inside Task.Run
-    member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
-         if __useResumableCode then 
-            __stateMachine<TaskStateMachineData<'T>, Task<'T>>
-                (MoveNextMethodImpl<_>(fun sm -> 
-                    //-- RESUMABLE CODE START
-                    __resumeAt sm.ResumptionPoint 
-                    try
-                        let __stack_code_fin = code.Invoke(&sm)
-                        if __stack_code_fin then
-                            sm.Data.MethodBuilder.SetResult(sm.Data.Result)
-                    with exn ->
-                        sm.Data.MethodBuilder.SetException exn
-                    //-- RESUMABLE CODE END
-                ))
-                (SetStateMachineMethodImpl<_>(fun sm state -> sm.Data.MethodBuilder.SetStateMachine(state)))
-                (AfterCode<_,Task<'T>>(fun sm -> 
-                        let sm = sm
-                        Task.Run<'T>(fun () -> 
-                            let mutable sm = sm
-                            sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
-                            sm.Data.MethodBuilder.Start(&sm)
-                            sm.Data.MethodBuilder.Task)))
-         else
-            Task.Run<'T>(fun () -> TaskBuilder.RunDynamic(code))
+    type TaskBuilder() =
 
-    // This is a possible simpler implementation but state machine compilation doesn't kick in
-    // when the resumable code is not immediately turned into a state machine
-    //
-    // This restriction could be lifter
+        inherit TaskBuilderBase()
 
-    //member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
-       //Task.Run<'T>(fun () -> TaskBuilderBase.Run(code))
+        // This is the dynamic implementation - this is not used
+        // for statically compiled tasks.  An executor (resumptionFuncExecutor) is 
+        // registered with the state machine, plus the initial resumption.
+        // The executor stays constant throughout the execution, it wraps each step
+        // of the execution in a try/with.  The resumption is changed at each step
+        // to represent the continuation of the computation.
+        static member RunDynamic(code: TaskCode<'T, 'T>) : Task<'T> = 
+            let mutable sm = TaskStateMachine<'T>()
+            let initialResumptionFunc = TaskResumptionFunc<'T>(fun sm -> code.Invoke(&sm))
+            let resumptionInfo = 
+                { new TaskResumptionDynamicInfo<'T>(initialResumptionFunc) with 
+                    member info.MoveNext(sm) = 
+                        try
+                            sm.ResumptionDynamicInfo.ResumptionData <- null
+                            let step = info.ResumptionFunc.Invoke(&sm) 
+                            if step then 
+                                sm.Data.MethodBuilder.SetResult(sm.Data.Result)
+                            else
+                                let mutable awaiter = sm.ResumptionDynamicInfo.ResumptionData :?> ICriticalNotifyCompletion
+                                assert not (isNull awaiter)
+                                sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+
+                        with exn ->
+                            sm.Data.MethodBuilder.SetException exn
+                    member _.SetStateMachine(sm, state) =
+                        sm.Data.MethodBuilder.SetStateMachine(state)
+                    }
+            sm.ResumptionDynamicInfo <- resumptionInfo
+            sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
+            sm.Data.MethodBuilder.Start(&sm)
+            sm.Data.MethodBuilder.Task
+
+        static member inline Run(code : TaskCode<'T, 'T>) : Task<'T> = 
+             if __useResumableCode then 
+                __stateMachine<TaskStateMachineData<'T>, Task<'T>>
+                    (MoveNextMethodImpl<_>(fun sm -> 
+                        //-- RESUMABLE CODE START
+                        __resumeAt sm.ResumptionPoint 
+                        try
+                            let __stack_code_fin = code.Invoke(&sm)
+                            if __stack_code_fin then
+                                sm.Data.MethodBuilder.SetResult(sm.Data.Result)
+                        with exn ->
+                            sm.Data.MethodBuilder.SetException exn
+                        //-- RESUMABLE CODE END
+                    ))
+                    (SetStateMachineMethodImpl<_>(fun sm state -> sm.Data.MethodBuilder.SetStateMachine(state)))
+                    (AfterCode<_,_>(fun sm -> 
+                        sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
+                        sm.Data.MethodBuilder.Start(&sm)
+                        sm.Data.MethodBuilder.Task))
+             else
+                TaskBuilder.RunDynamic(code)
+
+        member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
+           TaskBuilder.Run(code)
+
+    type BackgroundTaskBuilder() =
+
+        inherit TaskBuilderBase()
+
+        //// Same as TaskBuilder.Run except the start is inside Task.Run
+        member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
+             if __useResumableCode then 
+                __stateMachine<TaskStateMachineData<'T>, Task<'T>>
+                    (MoveNextMethodImpl<_>(fun sm -> 
+                        //-- RESUMABLE CODE START
+                        __resumeAt sm.ResumptionPoint 
+                        try
+                            let __stack_code_fin = code.Invoke(&sm)
+                            if __stack_code_fin then
+                                sm.Data.MethodBuilder.SetResult(sm.Data.Result)
+                        with exn ->
+                            sm.Data.MethodBuilder.SetException exn
+                        //-- RESUMABLE CODE END
+                    ))
+                    (SetStateMachineMethodImpl<_>(fun sm state -> sm.Data.MethodBuilder.SetStateMachine(state)))
+                    (AfterCode<_,Task<'T>>(fun sm -> 
+                            let sm = sm
+                            Task.Run<'T>(fun () -> 
+                                let mutable sm = sm
+                                sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
+                                sm.Data.MethodBuilder.Start(&sm)
+                                sm.Data.MethodBuilder.Task)))
+             else
+                Task.Run<'T>(fun () -> TaskBuilder.RunDynamic(code))
+
+        // This is a possible simpler implementation but state machine compilation doesn't kick in
+        // when the resumable code is not immediately turned into a state machine
+        //
+        // This restriction could be lifter
+
+        //member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
+           //Task.Run<'T>(fun () -> TaskBuilderBase.Run(code))
     
     
-module TaskBuilder = 
+    module TaskBuilder = 
 
-    let task = TaskBuilder()
-    let backgroundTask = BackgroundTaskBuilder()
+        let task = TaskBuilder()
+        let backgroundTask = BackgroundTaskBuilder()
 
-module TaskBuilderExtensions = 
+namespace Microsoft.FSharp.Control.TaskBuilderExtensions 
+
+    open Microsoft.FSharp.Control
+    open System
+    open System.Runtime.CompilerServices
+    open System.Threading.Tasks
+    open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Core.CompilerServices
+    open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
     module LowPriority = 
         // Low priority extensions
@@ -381,14 +350,17 @@ module TaskBuilderExtensions =
                     //-- RESUMABLE CODE END
                 )
 
+            member inline this.ReturnFrom (task: Task<'T>) : TaskCode<'T, 'T> =
+                this.Bind(task, (fun v -> this.Return v))
+
+    module MediumPriority = 
+        open HighPriority
+        // High priority extensions
+        type TaskBuilderBase with
             member inline this.Bind (computation: Async<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
                 this.Bind (Async.StartAsTask computation, continuation)
 
-            member inline this.ReturnFrom (task: Task<'T>) : TaskCode<'T, 'T> =
-
-                this.Bind(task, (fun v -> this.Return v))
-
-            member inline b.ReturnFrom (computation: Async<'T>)  : TaskCode<'T, 'T> =
-                b.ReturnFrom (Async.StartAsTask computation)
+            member inline this.ReturnFrom (computation: Async<'T>)  : TaskCode<'T, 'T> =
+                this.ReturnFrom (Async.StartAsTask computation)
 
 #endif

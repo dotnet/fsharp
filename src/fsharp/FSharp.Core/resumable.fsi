@@ -8,22 +8,6 @@ open Microsoft.FSharp.Core
 open System
 open System.Runtime.CompilerServices
 
-/// A marker interface to give priority to different available overloads.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-type IPriority3 = interface end
-
-/// A marker interface to give priority to different available overloads. Overloads using a
-/// parameter of this type will be preferred to overloads with IPriority3,
-/// all else being equal.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-type IPriority2 = interface inherit IPriority3 end
-
-/// A marker interface to give priority to different available overloads. Overloads using a
-/// parameter of this type will be preferred to overloads with IPriority2 or IPriority3,
-/// all else being equal.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-type IPriority1 = interface inherit IPriority2 end
-
 /// Acts as a template for struct state machines introduced by __stateMachine, and also as a reflective implementation
 [<Struct; NoComparison; NoEquality>]
 type ResumableStateMachine<'Data> =

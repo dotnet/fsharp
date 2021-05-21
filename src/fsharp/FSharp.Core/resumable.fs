@@ -20,12 +20,6 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 
-type IPriority3 = interface end
-
-type IPriority2 = interface inherit IPriority3 end
-
-type IPriority1 = interface inherit IPriority2 end
-
 type IResumableStateMachine<'Data> =
     abstract ResumptionPoint: int
     abstract Data: 'Data with get, set
