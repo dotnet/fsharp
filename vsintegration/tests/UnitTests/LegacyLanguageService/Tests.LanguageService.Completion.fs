@@ -7150,7 +7150,6 @@ let rec f l =
         let (_, _, file) = this.CreateSingleFileProject(code)
 
         TakeCoffeeBreak(this.VS)
-        let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
 
         // In this case, we quickly type "." and then get dot-completions
         // For "level <- Module" this shows completions from the "Module" (e.g. "Module.Other")
@@ -7163,7 +7162,6 @@ let rec f l =
         let completions = AutoCompleteAtCursor file
         AssertCompListContainsAll(completions, ["Length"])
         AssertCompListDoesNotContainAny(completions, ["AbstractClassAttribute"]) 
-        gpatcc.AssertExactly(0,0)
 
     [<Test>]
     member this.``SelfParameter.InDoKeywordScope``() =
