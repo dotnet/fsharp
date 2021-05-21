@@ -1001,10 +1001,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member g.mk_GeneratedSequenceBase_ty seqElemTy = TType_app(g.seq_base_tcr,[seqElemTy])
   member g.mk_ListCollector_ty seqElemTy = TType_app(g.ListCollector_tcr,[seqElemTy])
   member g.mk_ArrayCollector_ty seqElemTy = TType_app(g.ArrayCollector_tcr,[seqElemTy])
-  member val ResumableStateMachine_tcr = mk_MFCompilerServices_tcref fslibCcu "ResumableStateMachine`1"
-  member g.mk_ResumableStateMachine_ty dataTy = TType_app(g.ResumableStateMachine_tcr,[dataTy])
-  member val IResumableStateMachine_tcr = mk_MFCompilerServices_tcref fslibCcu "IResumableStateMachine`1"
-  member g.mk_IResumableStateMachine_ty dataTy = TType_app(g.IResumableStateMachine_tcr,[dataTy])
   member val byrefkind_In_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "In"
   member val byrefkind_Out_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "Out"
   member val byrefkind_InOut_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "InOut"

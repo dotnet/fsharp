@@ -12,10 +12,8 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.MethodCalls
-open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypeRelations
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -835,14 +833,14 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
     let infoReader = InfoReader(g, amap)
     let collVal, collExpr = mkMutableCompGenLocal m "@collector" collectorTy
     //let collExpr = mkValAddr m false (mkLocalValRef collVal)
-    let rec ConvertSeqExprCode isWholeExpr expr =
+    let rec ConvertSeqExprCode isUninteresting expr =
         match expr with
         | SeqYield g (e, m) -> 
             mkCallCollectorAdd tcVal (g: TcGlobals) infoReader m collExpr e
             |> Result.Ok
 
         | SeqDelay g (delayedExpr, _elemTy) ->
-            ConvertSeqExprCode isWholeExpr delayedExpr
+            ConvertSeqExprCode isUninteresting delayedExpr
 
         | SeqAppend g (e1, e2, m) ->
             let res1 = ConvertSeqExprCode false e1
@@ -904,7 +902,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
             mkUnit g m |> Result.Ok
 
         | Expr.Sequential (x1, bodyExpr, NormalSeq, ty, m) ->
-            let resBody = ConvertSeqExprCode false bodyExpr
+            let resBody = ConvertSeqExprCode isUninteresting bodyExpr
             match resBody with 
             | Result.Ok bodyExprR ->
                 Expr.Sequential (x1, bodyExprR, NormalSeq, ty, m)
@@ -912,7 +910,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
             | Result.Error msg -> Result.Error msg
 
         | Expr.Let (bind, bodyExpr, m, _) ->
-            let resBody = ConvertSeqExprCode false bodyExpr
+            let resBody = ConvertSeqExprCode isUninteresting bodyExpr
             match resBody with 
             | Result.Ok bodyExprR ->
                 mkLetBind m bind bodyExprR
@@ -920,7 +918,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
             | Result.Error msg -> Result.Error msg
 
         | Expr.LetRec (binds, bodyExpr, m, _) ->
-            let resBody = ConvertSeqExprCode false bodyExpr
+            let resBody = ConvertSeqExprCode isUninteresting bodyExpr
             match resBody with 
             | Result.Ok bodyExprR ->
                 mkLetRecBinds m binds bodyExprR
@@ -947,7 +945,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
 
         | arbitrarySeqExpr ->
             let m = arbitrarySeqExpr.Range
-            if isWholeExpr then
+            if isUninteresting then
                 // printfn "FAILED - not worth compiling an unrecognized Seq.toList at %s " (stringOfRange m)
                 Result.Error ()
             else
