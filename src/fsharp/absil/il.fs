@@ -4365,9 +4365,6 @@ let MscorlibScopeRef = ILScopeRef.Assembly (ILAssemblyRef.Create ("mscorlib", No
 let DummyFSharpCoreScopeRef =
     let asmRef =
         // The exact public key token and version used here don't actually matter, or shouldn't.
-        // ilxFsharpCoreLibAssemRef is only 'None' for startup code paths such as
-        // IsSignatureDataVersionAttr, where matching is done by assembly name strings
-        // rather then versions and tokens.
         ILAssemblyRef.Create("FSharp.Core", None,
                 Some (PublicKeyToken(Bytes.ofInt32Array [| 0xb0; 0x3f; 0x5f; 0x7f; 0x11; 0xd5; 0x0a; 0x3a |])),
                 false,
