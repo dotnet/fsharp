@@ -5231,6 +5231,11 @@ FSharp.Compiler.Syntax.DebugPointAtFinally: Int32 GetHashCode(System.Collections
 FSharp.Compiler.Syntax.DebugPointAtFinally: Int32 Tag
 FSharp.Compiler.Syntax.DebugPointAtFinally: Int32 get_Tag()
 FSharp.Compiler.Syntax.DebugPointAtFinally: System.String ToString()
+FSharp.Compiler.Syntax.DebugPointAtFinally+Tags: Int32 Body
+FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean IsBody
+FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean get_IsBody()
+FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally Body
+FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally get_Body()
 FSharp.Compiler.Syntax.DebugPointAtFor
 FSharp.Compiler.Syntax.DebugPointAtFor+Tags: Int32 No
 FSharp.Compiler.Syntax.DebugPointAtFor+Tags: Int32 Yes

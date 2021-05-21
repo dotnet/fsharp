@@ -896,7 +896,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
             let resBody = ConvertSeqExprCode false bodyExpr
             match resBody with 
             | Result.Ok bodyExprR ->
-                mkTryFinally g (bodyExprR, compensation, m, tyOfExpr g bodyExpr, DebugPointAtTry.Body, DebugPointAtFinally.No)
+                mkTryFinally g (bodyExprR, compensation, m, tyOfExpr g bodyExpr, DebugPointAtTry.Body, DebugPointAtFinally.Body)
                 |> Result.Ok
             | Result.Error msg -> Result.Error msg
 

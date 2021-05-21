@@ -150,6 +150,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         interface IEnumerator 
         interface IDisposable 
 
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
     [<Struct; NoEquality; NoComparison>]
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
@@ -197,3 +198,4 @@ namespace Microsoft.FSharp.Core.CompilerServices
         [<CompilerMessage("This is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
         member Close: unit -> 'T[]
 
+#endif

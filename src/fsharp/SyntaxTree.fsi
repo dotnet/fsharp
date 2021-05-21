@@ -252,6 +252,7 @@ type DebugPointAtWith =
 [<RequireQualifiedAccess>]
 type DebugPointAtFinally =
     | Yes of range: range
+    | Body
     | No
 
 /// Represents whether a debug point should be present for the 'for' in a 'for...' loop,

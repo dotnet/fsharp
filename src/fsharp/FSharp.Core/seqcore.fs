@@ -405,6 +405,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
             member _.Reset() = raise <| new System.NotSupportedException()
 
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 
     [<Struct; NoEquality; NoComparison>]
     type ListCollector<'T> =
@@ -499,10 +500,12 @@ namespace Microsoft.FSharp.Core.CompilerServices
             | 0 -> Array.Empty<'T>()
             | 1 -> 
                 let res = [| this.First |]
+                this.Count <- 0
                 this.First <- Unchecked.defaultof<_>
                 res
             | 2 -> 
                 let res = [| this.First; this.Second |]
+                this.Count <- 0
                 this.First <- Unchecked.defaultof<_>
                 this.Second <- Unchecked.defaultof<_>
                 res           
@@ -511,3 +514,4 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 this <- ArrayCollector<'T>()
                 res
             
+#endif
