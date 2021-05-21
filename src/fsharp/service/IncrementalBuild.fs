@@ -598,8 +598,10 @@ type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*TargetF
 /// Represents a cache of 'framework' references that can be shared between multiple incremental builds
 type FrameworkImportsCache(size) =
 
+    let gate = obj()
+
     // Mutable collection protected via CompilationThreadToken
-    let frameworkTcImportsCache = AgedLookup<CompilationThreadToken, FrameworkImportsCacheKey, (TcGlobals * TcImports)>(size, areSimilar=(fun (x, y) -> x = y))
+    let frameworkTcImportsCache = AgedLookup<CompilationThreadToken, FrameworkImportsCacheKey, AsyncLazy<(TcGlobals * TcImports)>>(size, areSimilar=(fun (x, y) -> x = y))
 
     /// Reduce the size of the cache in low-memory scenarios
     member _.Downsize ctok = frameworkTcImportsCache.Resize(ctok, newKeepStrongly=0)
@@ -630,13 +632,22 @@ type FrameworkImportsCache(size) =
                         tcConfig.fsharpBinariesDir,
                         tcConfig.langVersion.SpecifiedVersion)
 
-            match frameworkTcImportsCache.TryGet (ctok, key) with
-            | Some res -> return res
-            | None ->
-                let tcConfigP = TcConfigProvider.Constant tcConfig
-                let! ((tcGlobals, tcImports) as res) = TcImports.BuildFrameworkTcImports (ctok, tcConfigP, frameworkDLLs, nonFrameworkResolutions)
-                frameworkTcImportsCache.Put(ctok, key, res)
-                return tcGlobals, tcImports
+            let lazyWork =
+                lock gate (fun () ->
+                    match frameworkTcImportsCache.TryGet (ctok, key) with
+                    | Some lazyWork -> lazyWork
+                    | None ->
+                        let work =
+                            async {
+                                let tcConfigP = TcConfigProvider.Constant tcConfig
+                                return! TcImports.BuildFrameworkTcImports (ctok, tcConfigP, frameworkDLLs, nonFrameworkResolutions)
+                            }
+                        let lazyWork = AsyncLazy(work)
+                        frameworkTcImportsCache.Put(ctok, key, lazyWork)
+                        lazyWork
+                )
+
+            return! lazyWork.GetValueAsync()
           }
         return tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolved
       }
