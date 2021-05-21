@@ -281,9 +281,9 @@ let ConvertSequenceExprToObject g amap overallExpr =
             let label = IL.generateCodeLabel()
             Some { phase2 = (fun (pcVar, currVar, _nextv, pcMap) ->
                         let generate =
-                            mkCompGenSequential m
+                            mkSequential DebugPointAtSequential.Both m
                                 (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
-                                (mkSequential DebugPointAtSequential.Both m
+                                (mkCompGenSequential m
                                     (mkValSet m currVar e)
                                     (mkCompGenSequential m
                                         (Expr.Op (TOp.Return, [], [mkOne g m], m))
@@ -323,7 +323,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 Some { phase2 = (fun ctxt ->
                             let generate1, dispose1, checkDispose1 = res1.phase2 ctxt
                             let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
-                            let generate = mkCompGenSequential m generate1 generate2
+                            let generate = mkSequential DebugPointAtSequential.Both m generate1 generate2
                             // Order shouldn't matter here, since disposals actions are linked together by goto's  (each ends in a goto).
                             // However leaving as is for now.
                             let dispose = mkCompGenSequential m dispose2 dispose1
@@ -445,14 +445,14 @@ let ConvertSequenceExprToObject g amap overallExpr =
                    significantClose = false
                    asyncVars = emptyFreeVars }
 
-        | Expr.Sequential (x1, x2, NormalSeq, ty, m) ->
-            match ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel x2 with
+        | Expr.Sequential (expr1, expr2, NormalSeq, sp, m) ->
+            match ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel expr2 with
             | Some res2->
                 // printfn "found sequential execution"
                 Some { res2 with
                         phase2 = (fun ctxt ->
                             let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
-                            let generate = Expr.Sequential (x1, generate2, NormalSeq, ty, m)
+                            let generate = Expr.Sequential (expr1, generate2, NormalSeq, sp, m)
                             let dispose = dispose2
                             let checkDispose = checkDispose2
                             generate, dispose, checkDispose) }
@@ -865,7 +865,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
             let res2 = ConvertSeqExprCode false isTailcall e2
             match res1, res2 with 
             | Result.Ok (_, e1R), Result.Ok (closed2, e2R) -> 
-                let exprR = mkCompGenSequential m e1R e2R
+                let exprR = mkSequential DebugPointAtSequential.Both m e1R e2R
                 Result.Ok (closed2, exprR)
             | Result.Error msg, _ | _, Result.Error msg -> Result.Error msg
 
