@@ -113,7 +113,7 @@ type internal DelayedILModuleReader =
 type FSharpReferencedProject =
     | FSharpReference of projectFileName: string * options: FSharpProjectOptions
     | PEReference of projectFileName: string * stamp: DateTime * delayedReader: DelayedILModuleReader
-    | ILModuleReference of projectFileName: string * stamp: DateTime * ilReader: ILModuleReader
+    | ILModuleReference of projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader)
 
     member this.FileName =
         match this with
@@ -127,8 +127,8 @@ type FSharpReferencedProject =
     static member CreatePortableExecutable(projectFileName, stamp, getStream) =
         PEReference(projectFileName, stamp, DelayedILModuleReader(projectFileName, getStream))
 
-    static member CreateFromILModuleReader(projectFileName, stamp, ilReader) =
-        ILModuleReference(projectFileName, stamp, ilReader)
+    static member CreateFromILModuleReader(projectFileName, getStamp, getReader) =
+        ILModuleReference(projectFileName, getStamp, getReader)
 
     override this.Equals(o) =
         match o with
@@ -138,8 +138,8 @@ type FSharpReferencedProject =
                 projectFileName1 = projectFileName2 && options1 = options2
             | PEReference(projectFileName1, stamp1, _), PEReference(projectFileName2, stamp2, _) ->
                 projectFileName1 = projectFileName2 && stamp1 = stamp2
-            | ILModuleReference(projectFileName1, stamp1, _), ILModuleReference(projectFileName2, stamp2, _) ->
-                projectFileName1 = projectFileName2 && stamp1 = stamp2
+            | ILModuleReference(projectFileName1, getStamp1, _), ILModuleReference(projectFileName2, getStamp2, _) ->
+                projectFileName1 = projectFileName2 && (getStamp1()) = (getStamp2())
             | _ ->
                 false
         | _ ->

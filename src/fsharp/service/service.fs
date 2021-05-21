@@ -280,15 +280,16 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             member x.TryGetLogicalTimeStamp(_) = stamp |> Some
                             member x.FileName = nm }
 
-                | FSharpReferencedProject.ILModuleReference(nm,stamp,ilReader) ->
+                | FSharpReferencedProject.ILModuleReference(nm,getStamp,getReader) ->
                     yield
                         { new IProjectReference with 
                             member x.EvaluateRawContents(_) = 
                               cancellable {
+                                let ilReader = getReader()
                                 let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
                                 return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
                               }
-                            member x.TryGetLogicalTimeStamp(_) = stamp |> Some
+                            member x.TryGetLogicalTimeStamp(_) = getStamp() |> Some
                             member x.FileName = nm }
                 ]
 

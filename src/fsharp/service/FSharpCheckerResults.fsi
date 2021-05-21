@@ -98,7 +98,7 @@ and [<NoComparison;CustomEquality>] public FSharpReferencedProject =
     internal
     | FSharpReference of projectFileName: string * options: FSharpProjectOptions
     | PEReference of projectFileName: string * stamp: DateTime * delayedReader: DelayedILModuleReader
-    | ILModuleReference of projectFileName: string * stamp: DateTime * ilReader: ILModuleReader
+    | ILModuleReference of projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader)
 
     member FileName : string
 
@@ -112,7 +112,7 @@ and [<NoComparison;CustomEquality>] public FSharpReferencedProject =
     static member CreatePortableExecutable : projectFileName: string * stamp: DateTime * getStream: (CancellationToken -> Stream option) -> FSharpReferencedProject
 
     /// Creates a reference from an ILModuleReader.
-    static member CreateFromILModuleReader : projectFileName: string * stamp: DateTime * ilReader: ILModuleReader -> FSharpReferencedProject
+    static member CreateFromILModuleReader : projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader) -> FSharpReferencedProject
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]
