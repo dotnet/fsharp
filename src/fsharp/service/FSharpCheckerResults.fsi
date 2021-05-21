@@ -482,7 +482,6 @@ type internal FsiInteractiveChecker =
           ->  FsiInteractiveChecker 
 
     member internal ParseAndCheckInteraction : 
-        ctok: CompilationThreadToken * 
         sourceText:ISourceText * 
         ?userOpName: string 
           -> Cancellable<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>

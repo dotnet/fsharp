@@ -27,11 +27,11 @@ open FSharp.Compiler.TypedTree
 type internal FrameworkImportsCache = 
     new : size: int -> FrameworkImportsCache
 
-    member Get : CompilationThreadToken * TcConfig -> Async<TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list>
+    member Get : TcConfig -> Async<TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list>
 
-    member Clear: CompilationThreadToken -> unit
+    member Clear: unit -> unit
 
-    member Downsize: CompilationThreadToken -> unit
+    member Downsize: unit -> unit
   
 /// Used for unit testing
 module internal IncrementalBuilderEventTesting =
@@ -230,7 +230,6 @@ type internal IncrementalBuilder =
 
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:
-          CompilationThreadToken *
           LegacyReferenceResolver *
           defaultFSharpBinariesDir: string * 
           FrameworkImportsCache *

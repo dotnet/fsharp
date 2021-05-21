@@ -122,11 +122,11 @@ type TcAssemblyResolutions =
 
     member GetAssemblyResolutions: unit -> AssemblyResolution list
 
-    static member SplitNonFoundationalResolutions: ctok: CompilationThreadToken * tcConfig: TcConfig -> AssemblyResolution list * AssemblyResolution list * UnresolvedAssemblyReference list
+    static member SplitNonFoundationalResolutions: tcConfig: TcConfig -> AssemblyResolution list * AssemblyResolution list * UnresolvedAssemblyReference list
 
-    static member BuildFromPriorResolutions: ctok: CompilationThreadToken * tcConfig: TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
+    static member BuildFromPriorResolutions: tcConfig: TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
 
-    static member GetAssemblyResolutionInformation: ctok: CompilationThreadToken * tcConfig: TcConfig -> AssemblyResolution list * UnresolvedAssemblyReference list
+    static member GetAssemblyResolutionInformation: tcConfig: TcConfig -> AssemblyResolution list * UnresolvedAssemblyReference list
 
 [<Sealed>]
 type RawFSharpAssemblyData =
@@ -190,14 +190,12 @@ type TcImports =
     member internal Base: TcImports option
 
     static member BuildFrameworkTcImports:
-        CompilationThreadToken *
         TcConfigProvider *
         AssemblyResolution list *
         AssemblyResolution list
             -> Async<TcGlobals * TcImports>
 
     static member BuildNonFrameworkTcImports:
-        CompilationThreadToken * 
         TcConfigProvider * 
         TcGlobals * 
         TcImports * 
@@ -207,7 +205,6 @@ type TcImports =
             -> Async<TcImports>
 
     static member BuildTcImports:
-        ctok: CompilationThreadToken *
         tcConfigP: TcConfigProvider * 
         dependencyProvider: DependencyProvider 
             -> Async<TcGlobals * TcImports>

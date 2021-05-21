@@ -1571,7 +1571,7 @@ type internal FsiDynamicCompiler
           let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
           let closure =
-              LoadClosure.ComputeClosureOfScriptFiles(ctok, tcConfig,
+              LoadClosure.ComputeClosureOfScriptFiles(tcConfig,
                  sourceFiles, CodeContext.CompilationAndEvaluation,
                  lexResourceManager, fsiOptions.DependencyProvider)
 
@@ -2670,11 +2670,11 @@ type internal FsiInteractionProcessor
         let names  = names |> List.filter (fun name -> name.StartsWithOrdinal(stem))
         names
 
-    member _.ParseAndCheckInteraction (ctok, legacyReferenceResolver, istate, text:string) =
+    member _.ParseAndCheckInteraction (legacyReferenceResolver, istate, text:string) =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
-        fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
+        fsiInteractiveChecker.ParseAndCheckInteraction(SourceText.ofString text)
 
 
 //----------------------------------------------------------------------------
@@ -2820,7 +2820,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
       match fsiOptions.WriteReferencesAndExit with
       | Some outFile ->
           let tcConfig = tcConfigP.Get(ctokStartup)
-          let references, _unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(ctokStartup, tcConfig)
+          let references, _unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(tcConfig)
           let lines = [ for r in references -> r.resolvedPath ]
           FileSystem.OpenFileForWriteShim(outFile).WriteAllLines(lines)
           exit 0
@@ -2861,13 +2861,13 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let (tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolvedReferences) =
         try
             let tcConfig = tcConfigP.Get(ctokStartup)
-            checker.FrameworkImportsCache.Get (ctokStartup, tcConfig) |> Async.RunSynchronously
+            checker.FrameworkImportsCache.Get (tcConfig) |> Async.RunSynchronously
         with e ->
             stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 
     let tcImports =
       try
-          TcImports.BuildNonFrameworkTcImports(ctokStartup, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, fsiOptions.DependencyProvider) |> Async.RunSynchronously
+          TcImports.BuildNonFrameworkTcImports(tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, fsiOptions.DependencyProvider) |> Async.RunSynchronously
       with e ->
           stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 
@@ -2946,8 +2946,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         fsiInteractionProcessor.CompletionsForPartialLID (fsiInteractionProcessor.CurrentState, longIdent)  |> Seq.ofList
 
     member x.ParseAndCheckInteraction(code) =
-        let ctok = AssumeCompilationThreadWithoutEvidence ()
-        fsiInteractionProcessor.ParseAndCheckInteraction (ctok, legacyReferenceResolver, fsiInteractionProcessor.CurrentState, code)
+        fsiInteractionProcessor.ParseAndCheckInteraction (legacyReferenceResolver, fsiInteractionProcessor.CurrentState, code)
         |> Cancellable.runWithoutCancellation
 
     member x.InteractiveChecker = checker

@@ -243,7 +243,7 @@ type BackgroundCompiler(
 
     /// CreateOneIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    let CreateOneIncrementalBuilder (ctok, options:FSharpProjectOptions, userOpName) = 
+    let CreateOneIncrementalBuilder (options:FSharpProjectOptions, userOpName) = 
       async {
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CreateOneIncrementalBuilder", options.ProjectFileName)
         let projectReferences =  
@@ -293,7 +293,7 @@ type BackgroundCompiler(
 
         let! builderOpt, diagnostics = 
             IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions
-                  (ctok, legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, Array.toList options.SourceFiles, 
+                  (legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, Array.toList options.SourceFiles, 
                    Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
                    options.UseScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions,
                    tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses,
@@ -357,8 +357,7 @@ type BackgroundCompiler(
                 AsyncLazy(async { return None, [||] })
             else
                 let getBuilderLazy = 
-                    let ctok = CompilationThreadToken()
-                    AsyncLazy(CreateOneIncrementalBuilder(ctok, options, userOpName))
+                    AsyncLazy(CreateOneIncrementalBuilder(options, userOpName))
                 incrementalBuildersCache.Set (AnyCallerThread, options, getBuilderLazy)
                 getBuilderLazy
         )
@@ -956,9 +955,8 @@ type BackgroundCompiler(
                 let fsiCompilerOptions = CompilerOptions.GetCoreFsiCompilerOptions tcConfigB 
                 CompilerOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, Array.toList otherFlags)
 
-            let loadClosure = 
-                let ctok = CompilationThreadToken()
-                LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, 
+            let loadClosure =
+                LoadClosure.ComputeClosureOfScriptText(legacyReferenceResolver, 
                     FSharpCheckerResultsSettings.defaultFSharpBinariesDir, filename, sourceText, 
                     CodeContext.Editing, useSimpleResolution, useFsiAuxLib, useSdkRefs, sdkDirOverride, new Lexhelp.LexResourceManager(), 
                     applyCompilerOptions, assumeDotNetFramework, 
@@ -1029,7 +1027,7 @@ type BackgroundCompiler(
                         checkFileInProjectCache.Clear(ltok)
                         parseFileCache.Clear(ltok))
                     incrementalBuildersCache.Clear(AnyCallerThread)
-                    frameworkTcImportsCache.Clear(CompilationThreadToken())
+                    frameworkTcImportsCache.Clear()
                     scriptClosureCache.Clear (AnyCallerThread)
                 )
         }
@@ -1042,7 +1040,7 @@ type BackgroundCompiler(
                         checkFileInProjectCache.Resize(ltok, newKeepStrongly=1)
                         parseFileCache.Resize(ltok, newKeepStrongly=1))
                     incrementalBuildersCache.Resize(AnyCallerThread, newKeepStrongly=1, newKeepMax=1)
-                    frameworkTcImportsCache.Downsize(CompilationThreadToken())
+                    frameworkTcImportsCache.Downsize()
                     scriptClosureCache.Resize(AnyCallerThread,newKeepStrongly=1, newKeepMax=1)
                 )
         }

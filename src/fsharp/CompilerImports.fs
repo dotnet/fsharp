@@ -501,6 +501,7 @@ type TcConfig with
             else
                 resultingResolutions, unresolvedReferences |> List.map (fun (name, _, r) -> (name, r)) |> List.map UnresolvedAssemblyReference
 
+let assemblyResolutionGate = obj()
 
 [<Sealed>]
 type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list, unresolved: UnresolvedAssemblyReference list) =
@@ -537,7 +538,7 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
 
     member _.TryFindByOriginalReferenceText nm = originalReferenceToResolution.TryFind nm
 
-    static member ResolveAssemblyReferences (ctok, tcConfig: TcConfig, assemblyList: AssemblyReference list, knownUnresolved: UnresolvedAssemblyReference list) : TcAssemblyResolutions =
+    static member ResolveAssemblyReferences (tcConfig: TcConfig, assemblyList: AssemblyReference list, knownUnresolved: UnresolvedAssemblyReference list) : TcAssemblyResolutions =
         let resolved, unresolved =
             if tcConfig.useSimpleResolution then
                 let resolutions =
@@ -552,8 +553,10 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                 let failures = resolutions |> List.choose (function Choice2Of2 x -> Some (UnresolvedAssemblyReference(x.Text, [x])) | _ -> None)
                 successes, failures
             else
-                RequireCompilationThread ctok // we don't want to do assembly resolution concurrently, we assume MSBuild doesn't handle this
-                TcConfig.TryResolveLibsUsingMSBuildRules (tcConfig, assemblyList, rangeStartup, ResolveAssemblyReferenceMode.ReportErrors)
+                // we don't want to do assembly resolution concurrently, we assume MSBuild doesn't handle this
+                lock assemblyResolutionGate (fun () ->
+                    TcConfig.TryResolveLibsUsingMSBuildRules (tcConfig, assemblyList, rangeStartup, ResolveAssemblyReferenceMode.ReportErrors)
+                )
         TcAssemblyResolutions(tcConfig, resolved, unresolved @ knownUnresolved)
 
     static member GetAllDllReferences (tcConfig: TcConfig) = [
@@ -586,9 +589,9 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
             yield! tcConfig.referencedDLLs
         ]
 
-    static member SplitNonFoundationalResolutions (ctok, tcConfig: TcConfig) =
+    static member SplitNonFoundationalResolutions (tcConfig: TcConfig) =
         let assemblyList = TcAssemblyResolutions.GetAllDllReferences tcConfig
-        let resolutions = TcAssemblyResolutions.ResolveAssemblyReferences (ctok, tcConfig, assemblyList, tcConfig.knownUnresolvedReferences)
+        let resolutions = TcAssemblyResolutions.ResolveAssemblyReferences (tcConfig, assemblyList, tcConfig.knownUnresolvedReferences)
         let frameworkDLLs, nonFrameworkReferences = resolutions.GetAssemblyResolutions() |> List.partition (fun r -> r.sysdir)
         let unresolved = resolutions.GetUnresolvedReferences()
 #if DEBUG
@@ -612,20 +615,20 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
         if itFailed then
             // idea is, put a breakpoint here and then step through
             let assemblyList = TcAssemblyResolutions.GetAllDllReferences tcConfig
-            let resolutions = TcAssemblyResolutions.ResolveAssemblyReferences (ctok, tcConfig, assemblyList, [])
+            let resolutions = TcAssemblyResolutions.ResolveAssemblyReferences (tcConfig, assemblyList, [])
             let _frameworkDLLs, _nonFrameworkReferences = resolutions.GetAssemblyResolutions() |> List.partition (fun r -> r.sysdir)
             ()
 #endif
         frameworkDLLs, nonFrameworkReferences, unresolved
 
-    static member BuildFromPriorResolutions (ctok, tcConfig: TcConfig, resolutions, knownUnresolved) =
+    static member BuildFromPriorResolutions (tcConfig: TcConfig, resolutions, knownUnresolved) =
         let references = resolutions |> List.map (fun r -> r.originalReference)
-        TcAssemblyResolutions.ResolveAssemblyReferences (ctok, tcConfig, references, knownUnresolved)
+        TcAssemblyResolutions.ResolveAssemblyReferences (tcConfig, references, knownUnresolved)
 
-    static member GetAssemblyResolutionInformation(ctok, tcConfig: TcConfig) =
+    static member GetAssemblyResolutionInformation(tcConfig: TcConfig) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         let assemblyList = TcAssemblyResolutions.GetAllDllReferences tcConfig
-        let resolutions = TcAssemblyResolutions.ResolveAssemblyReferences (ctok, tcConfig, assemblyList, [])
+        let resolutions = TcAssemblyResolutions.ResolveAssemblyReferences (tcConfig, assemblyList, [])
         resolutions.GetAssemblyResolutions(), resolutions.GetUnresolvedReferences()
 
 //----------------------------------------------------------------------------
@@ -1758,12 +1761,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     // Note: This returns a TcImports object. However, framework TcImports are not currently disposed. The only reason
     // we dispose TcImports is because we need to dispose type providers, and type providers are never included in the framework DLL set.
     // If a framework set ever includes type providers, you will not have to worry about explicitly calling Dispose as the Finalizer will handle it.
-    static member BuildFrameworkTcImports (ctok, tcConfigP: TcConfigProvider, frameworkDLLs, nonFrameworkDLLs) =
+    static member BuildFrameworkTcImports (tcConfigP: TcConfigProvider, frameworkDLLs, nonFrameworkDLLs) =
       async {
-
+        let ctok = CompilationThreadToken()
         let tcConfig = tcConfigP.Get ctok
-        let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, frameworkDLLs, [])
-        let tcAltResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, nonFrameworkDLLs, [])
+        let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(tcConfig, frameworkDLLs, [])
+        let tcAltResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(tcConfig, nonFrameworkDLLs, [])
 
         let frameworkTcImports = new TcImports(tcConfigP, tcResolutions, None, None, None)
 
@@ -1896,12 +1899,13 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         |> List.iter reportAssemblyNotResolved
 
     static member BuildNonFrameworkTcImports
-       (ctok, tcConfigP: TcConfigProvider, tcGlobals: TcGlobals, baseTcImports,
+       (tcConfigP: TcConfigProvider, tcGlobals: TcGlobals, baseTcImports,
         nonFrameworkReferences, knownUnresolved, dependencyProvider) =
 
       async {
+        let ctok = CompilationThreadToken()
         let tcConfig = tcConfigP.Get ctok
-        let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, nonFrameworkReferences, knownUnresolved)
+        let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(tcConfig, nonFrameworkReferences, knownUnresolved)
         let references = tcResolutions.GetAssemblyResolutions()
         let tcImports = new TcImports(tcConfigP, tcResolutions, Some baseTcImports, Some tcGlobals.ilg, Some dependencyProvider)
         let! _assemblies = tcImports.RegisterAndImportReferencedAssemblies(ctok, references)
@@ -1909,13 +1913,13 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         return tcImports
       }
 
-    static member BuildTcImports(ctok, tcConfigP: TcConfigProvider, dependencyProvider) =
+    static member BuildTcImports(tcConfigP: TcConfigProvider, dependencyProvider) =
       async {
+        let ctok = CompilationThreadToken()
         let tcConfig = tcConfigP.Get ctok
-        //let foundationalTcImports, tcGlobals = TcImports.BuildFoundationalTcImports tcConfigP
-        let frameworkDLLs, nonFrameworkReferences, knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
-        let! tcGlobals, frameworkTcImports = TcImports.BuildFrameworkTcImports (ctok, tcConfigP, frameworkDLLs, nonFrameworkReferences)
-        let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkReferences, knownUnresolved, dependencyProvider)
+        let frameworkDLLs, nonFrameworkReferences, knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
+        let! tcGlobals, frameworkTcImports = TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkReferences)
+        let! tcImports = TcImports.BuildNonFrameworkTcImports(tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkReferences, knownUnresolved, dependencyProvider)
         return tcGlobals, tcImports
       }
 

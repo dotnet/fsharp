@@ -601,19 +601,19 @@ type FrameworkImportsCache(size) =
     let gate = obj()
 
     // Mutable collection protected via CompilationThreadToken
-    let frameworkTcImportsCache = AgedLookup<CompilationThreadToken, FrameworkImportsCacheKey, AsyncLazy<(TcGlobals * TcImports)>>(size, areSimilar=(fun (x, y) -> x = y))
+    let frameworkTcImportsCache = AgedLookup<AnyCallerThreadToken, FrameworkImportsCacheKey, AsyncLazy<(TcGlobals * TcImports)>>(size, areSimilar=(fun (x, y) -> x = y))
 
     /// Reduce the size of the cache in low-memory scenarios
-    member _.Downsize ctok = frameworkTcImportsCache.Resize(ctok, newKeepStrongly=0)
+    member _.Downsize() = frameworkTcImportsCache.Resize(AnyCallerThread, newKeepStrongly=0)
 
     /// Clear the cache
-    member _.Clear ctok = frameworkTcImportsCache.Clear ctok
+    member _.Clear() = frameworkTcImportsCache.Clear AnyCallerThread
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
-    member _.Get(ctok, tcConfig: TcConfig) =
+    member _.Get(tcConfig: TcConfig) =
       async {
         // Split into installed and not installed.
-        let frameworkDLLs, nonFrameworkResolutions, unresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
+        let frameworkDLLs, nonFrameworkResolutions, unresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
         let frameworkDLLsKey =
             frameworkDLLs
             |> List.map (fun ar->ar.resolvedPath) // The cache key. Just the minimal data.
@@ -634,16 +634,16 @@ type FrameworkImportsCache(size) =
 
             let lazyWork =
                 lock gate (fun () ->
-                    match frameworkTcImportsCache.TryGet (ctok, key) with
+                    match frameworkTcImportsCache.TryGet (AnyCallerThread, key) with
                     | Some lazyWork -> lazyWork
                     | None ->
                         let work =
                             async {
                                 let tcConfigP = TcConfigProvider.Constant tcConfig
-                                return! TcImports.BuildFrameworkTcImports (ctok, tcConfigP, frameworkDLLs, nonFrameworkResolutions)
+                                return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
                             }
                         let lazyWork = AsyncLazy(work)
-                        frameworkTcImportsCache.Put(ctok, key, lazyWork)
+                        frameworkTcImportsCache.Put(AnyCallerThread, key, lazyWork)
                         lazyWork
                 )
 
@@ -820,7 +820,7 @@ type IncrementalBuilder(
         timeStamper cache
 
     // Link all the assemblies together and produce the input typecheck accumulator
-    static let CombineImportedAssembliesTask (ctok, 
+    static let CombineImportedAssembliesTask (
                                               assemblyName, 
                                               tcConfig: TcConfig, 
                                               tcConfigP, 
@@ -848,7 +848,7 @@ type IncrementalBuilder(
         let! tcImports =
           async {
             try
-                let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
+                let! tcImports = TcImports.BuildNonFrameworkTcImports(tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
 #if !NO_EXTENSIONTYPING
                 tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu ->
                     // When a CCU reports an invalidation, merge them together and just report a
@@ -1366,7 +1366,7 @@ type IncrementalBuilder(
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
     static member TryCreateIncrementalBuilderForProjectOptions
-                      (ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
+                      (legacyReferenceResolver, defaultFSharpBinariesDir,
                        frameworkTcImportsCache: FrameworkImportsCache,
                        loadClosureOpt: LoadClosure option,
                        sourceFiles: string list,
@@ -1490,7 +1490,7 @@ type IncrementalBuilder(
             // Resolve assemblies and create the framework TcImports. This is done when constructing the
             // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are
             // included in these references.
-            let! (tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences) = frameworkTcImportsCache.Get(ctok, tcConfig)
+            let! (tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences) = frameworkTcImportsCache.Get(tcConfig)
 
             // Note we are not calling errorLogger.GetDiagnostics() anywhere for this task.
             // This is ok because not much can actually go wrong here.
@@ -1563,7 +1563,6 @@ type IncrementalBuilder(
 
             let! initialBoundModel = 
                 CombineImportedAssembliesTask(
-                    ctok,
                     assemblyName,
                     tcConfig,
                     tcConfigP,
