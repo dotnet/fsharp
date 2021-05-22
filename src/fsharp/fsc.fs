@@ -521,8 +521,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     // Import basic assemblies
     let tcGlobals, frameworkTcImports = 
         TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes)
-        |> AsyncErrorLogger.toAsync
-        |> Async.RunSynchronously
+        |> AsyncErrorLogger.RunSynchronously
 
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
@@ -563,8 +562,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let tcImports =
         TcImports.BuildNonFrameworkTcImports(tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
-        |> AsyncErrorLogger.toAsync
-        |> Async.RunSynchronously
+        |> AsyncErrorLogger.RunSynchronously
 
     // register tcImports to be disposed in future
     disposables.Register tcImports
@@ -676,8 +674,7 @@ let main1OfAst
     // Import basic assemblies
     let tcGlobals, frameworkTcImports = 
         TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes) 
-        |> AsyncErrorLogger.toAsync
-        |> Async.RunSynchronously
+        |> AsyncErrorLogger.RunSynchronously
 
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
@@ -692,8 +689,7 @@ let main1OfAst
     ReportTime tcConfig "Import non-system references"
     let tcImports = 
         TcImports.BuildNonFrameworkTcImports(tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider) 
-        |> AsyncErrorLogger.toAsync
-        |> Async.RunSynchronously
+        |> AsyncErrorLogger.RunSynchronously
 
     // register tcImports to be disposed in future
     disposables.Register tcImports

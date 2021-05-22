@@ -569,7 +569,6 @@ type BoundModel private (tcConfig: TcConfig,
                                 return FullState(tcInfo, tcInfoExtras)
                     }
             }
-            |> AsyncErrorLogger.toAsync
 
     static member Create(tcConfig: TcConfig,
                          tcGlobals: TcGlobals,
@@ -641,11 +640,10 @@ type FrameworkImportsCache(size) =
                     | Some lazyWork -> lazyWork
                     | None ->
                         let work =
-                            asyncErrorLogger {
+                            async {
                                 let tcConfigP = TcConfigProvider.Constant tcConfig
                                 return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
                             }
-                            |> AsyncErrorLogger.toAsync
                         let lazyWork = AsyncLazy(work)
                         frameworkTcImportsCache.Put(AnyCallerThread, key, lazyWork)
                         lazyWork
@@ -843,7 +841,7 @@ type IncrementalBuilder(
                                               defaultPartialTypeChecking,
                                               beforeFileChecked,
                                               fileChecked,
-                                              importsInvalidatedByTypeProvider: Event<unit>) : AsyncErrorLogger<BoundModel> =
+                                              importsInvalidatedByTypeProvider: Event<unit>) : Async<BoundModel> =
       asyncErrorLogger {
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
         use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
@@ -1054,7 +1052,7 @@ type IncrementalBuilder(
                 |> Seq.map (fun x -> x.TryGetPartial().Value)
                 |> ImmutableArray.CreateRange
 
-            let! result = FinalizeTypeCheckTask boundModels |> AsyncErrorLogger.toAsync
+            let! result = FinalizeTypeCheckTask boundModels
             let result = (result, DateTime.UtcNow)
             return result
         })
@@ -1624,4 +1622,3 @@ type IncrementalBuilder(
 
         return builderOpt, diagnostics
       }
-      |> AsyncErrorLogger.toAsync

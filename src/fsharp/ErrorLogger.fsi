@@ -335,30 +335,25 @@ type CompilationGlobalsScope =
     interface IDisposable
 
 [<Sealed>]
-type AsyncErrorLogger<'T>
-
-[<Sealed>]
 type AsyncErrorLoggerBuilder =
 
-    member Bind : AsyncErrorLogger<'T> * ('T -> AsyncErrorLogger<'U>) -> AsyncErrorLogger<'U>
+    member Bind : Async<'T> * ('T -> Async<'U>) -> Async<'U>
 
-    member Bind : Async<'T> * ('T -> AsyncErrorLogger<'U>) -> AsyncErrorLogger<'U>
+    member Zero : unit -> Async<unit>
 
-    member Zero : unit -> AsyncErrorLogger<unit>
+    member Delay : (unit -> Async<'T>) -> Async<'T>
 
-    member Delay : (unit -> AsyncErrorLogger<'T>) -> AsyncErrorLogger<'T>
+    member Return : 'T -> Async<'T> 
 
-    member Return : 'T -> AsyncErrorLogger<'T> 
+    member ReturnFrom : Async<'T> -> Async<'T>
 
-    member ReturnFrom : AsyncErrorLogger<'T> -> AsyncErrorLogger<'T>
+    member TryWith : Async<'T> * (exn -> Async<'T>) -> Async<'T>
 
-    member TryWith : AsyncErrorLogger<'T> * (exn -> AsyncErrorLogger<'T>) -> AsyncErrorLogger<'T>
-
-    member Using : CompilationGlobalsScope * (CompilationGlobalsScope -> AsyncErrorLogger<'T>) -> AsyncErrorLogger<'T>
+    member Using : CompilationGlobalsScope * (CompilationGlobalsScope -> Async<'T>) -> Async<'T>
 
 [<RequireQualifiedAccess>]
 module AsyncErrorLogger =
 
-    val toAsync : AsyncErrorLogger<'T> -> Async<'T>
+    val RunSynchronously : computation: Async<'T> -> 'T
 
 val asyncErrorLogger : AsyncErrorLoggerBuilder

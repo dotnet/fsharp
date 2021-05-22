@@ -1585,7 +1585,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         phase2
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
-    member tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, r: AssemblyResolution) : AsyncErrorLogger<(_ * (unit -> AvailableImportedAssembly list)) option> =
+    member tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, r: AssemblyResolution) : Async<(_ * (unit -> AvailableImportedAssembly list)) option> =
       asyncErrorLogger {
         CheckDisposed()
         let m = r.originalReference.Range
@@ -1654,9 +1654,9 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let! results =
             nms
             |> List.map (fun nm -> 
-                async {
+                asyncErrorLogger {
                     try
-                         return! tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, nm) |> AsyncErrorLogger.toAsync
+                         return! tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, nm)
                     with e ->
                          errorR(Error(FSComp.SR.buildProblemReadingAssembly(nm.resolvedPath, e.Message), nm.originalReference.Range))
                          return None
@@ -1685,8 +1685,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 | OkResult (warns, res) ->
                     ReportWarnings warns
                     tcImports.RegisterAndImportReferencedAssemblies(ctok, res) 
-                    |> AsyncErrorLogger.toAsync 
-                    |> Async.RunSynchronously 
+                    |> AsyncErrorLogger.RunSynchronously 
                     |> ignore
                     true
                 | ErrorResult (_warns, _err) ->
@@ -1926,8 +1925,7 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, referenceRa
     let resolutions = CommitOperationResult(tcImports.TryResolveAssemblyReference(ctok, AssemblyReference(referenceRange, file, None), ResolveAssemblyReferenceMode.ReportErrors))
     let dllinfos, ccuinfos = 
         tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions) 
-        |> AsyncErrorLogger.toAsync 
-        |> Async.RunSynchronously
+        |> AsyncErrorLogger.RunSynchronously
 
     let asms =
         ccuinfos |> List.map (function

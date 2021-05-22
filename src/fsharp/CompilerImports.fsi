@@ -193,7 +193,7 @@ type TcImports =
         TcConfigProvider *
         AssemblyResolution list *
         AssemblyResolution list
-            -> AsyncErrorLogger<TcGlobals * TcImports>
+            -> Async<TcGlobals * TcImports>
 
     static member BuildNonFrameworkTcImports:
         TcConfigProvider * 
@@ -202,12 +202,12 @@ type TcImports =
         AssemblyResolution list * 
         UnresolvedAssemblyReference list * 
         DependencyProvider 
-            -> AsyncErrorLogger<TcImports>
+            -> Async<TcImports>
 
     static member BuildTcImports:
         tcConfigP: TcConfigProvider * 
         dependencyProvider: DependencyProvider 
-            -> AsyncErrorLogger<TcGlobals * TcImports>
+            -> Async<TcGlobals * TcImports>
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
