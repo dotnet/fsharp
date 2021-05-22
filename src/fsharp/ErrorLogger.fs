@@ -735,21 +735,21 @@ type AsyncErrorLoggerBuilder() =
         }
 
     member _.TryWith(computation: Async<'T>, binder: exn -> Async<'T>) : Async<'T> =
-            async {
-                let errorLogger = CompileThreadStatic.ErrorLogger
-                let phase = CompileThreadStatic.BuildPhase
+        async {
+            let errorLogger = CompileThreadStatic.ErrorLogger
+            let phase = CompileThreadStatic.BuildPhase
+            try
                 try
-                    try
-                        return! computation
-                    with
-                    | ex ->  
-                        CompileThreadStatic.ErrorLogger <- errorLogger
-                        CompileThreadStatic.BuildPhase <- phase
-                        return! binder ex
-                finally
+                    return! computation
+                with
+                | ex ->  
                     CompileThreadStatic.ErrorLogger <- errorLogger
                     CompileThreadStatic.BuildPhase <- phase
-            }
+                    return! binder ex
+            finally
+                CompileThreadStatic.ErrorLogger <- errorLogger
+                CompileThreadStatic.BuildPhase <- phase
+        }
 
     member _.Using(value: CompilationGlobalsScope, binder: CompilationGlobalsScope -> Async<'U>) =
         async {
