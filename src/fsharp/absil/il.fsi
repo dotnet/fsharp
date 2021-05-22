@@ -1658,7 +1658,6 @@ type internal ILGlobals =
 /// Build the table of commonly used references given functions to find types in system assemblies
 val internal mkILGlobals: primaryScopeRef: ILScopeRef * assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list * fsharpCoreAssemblyScopeRef: ILScopeRef -> ILGlobals
 
-val internal EcmaMscorlibILGlobals: ILGlobals
 val internal PrimaryAssemblyILGlobals: ILGlobals
 
 /// When writing a binary the fake "toplevel" type definition (called <Module>)

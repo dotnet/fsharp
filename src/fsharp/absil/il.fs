@@ -3700,8 +3700,6 @@ let compareILVersions (version1 : ILVersionInfo) (version2 : ILVersionInfo) =
     if c <> 0 then c else
     0
 
-let MscorlibScopeRef = ILScopeRef.Assembly (ILAssemblyRef.Create ("mscorlib", None, Some ecmaPublicKey, true, None, None))
-
 let DummyFSharpCoreScopeRef =
     let asmRef =
         // The exact public key token and version used here don't actually matter, or shouldn't.
@@ -3711,7 +3709,6 @@ let DummyFSharpCoreScopeRef =
                 Some (parseILVersion "0.0.0.0"), None)
     ILScopeRef.Assembly asmRef
 
-let EcmaMscorlibILGlobals = mkILGlobals (MscorlibScopeRef, [], DummyFSharpCoreScopeRef)
 let PrimaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [], DummyFSharpCoreScopeRef)
 
 let rec decodeCustomAttrElemType bytes sigptr x =
