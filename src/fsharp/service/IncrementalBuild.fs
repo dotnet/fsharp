@@ -462,7 +462,7 @@ type BoundModel private (tcConfig: TcConfig,
                     IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked filename)
                     let capturingErrorLogger = CompilationErrorLogger("TypeCheck", tcConfig.errorSeverityOptions)
                     let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, capturingErrorLogger)
-                    do! useErrorLogger (errorLogger, BuildPhase.TypeCheck)
+                    use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
 
                     return! asyncErrorLogger {
                         beforeFileChecked.Trigger filename
@@ -846,7 +846,7 @@ type IncrementalBuilder(
                                               importsInvalidatedByTypeProvider: Event<unit>) : AsyncErrorLogger<BoundModel> =
       asyncErrorLogger {
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
-        do! useErrorLogger (errorLogger, BuildPhase.Parameter)
+        use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
 
         let! tcImports =
           asyncErrorLogger {
@@ -931,7 +931,7 @@ type IncrementalBuilder(
     let FinalizeTypeCheckTask (boundModels: ImmutableArray<BoundModel>) =
       asyncErrorLogger {
         let errorLogger = CompilationErrorLogger("FinalizeTypeCheckTask", tcConfig.errorSeverityOptions)
-        do! useErrorLogger (errorLogger, BuildPhase.TypeCheck)
+        use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
 
         let! results =
             boundModels 
@@ -1389,7 +1389,7 @@ type IncrementalBuilder(
 
         // Trap and report warnings and errors from creation.
         let delayedLogger = CapturingErrorLogger("IncrementalBuilderCreation")
-        do! useErrorLogger (delayedLogger, BuildPhase.Parameter)
+        use _ = new CompilationGlobalsScope(delayedLogger, BuildPhase.Parameter)
 
         let! builderOpt =
          asyncErrorLogger {
@@ -1501,7 +1501,7 @@ type IncrementalBuilder(
             // This is ok because not much can actually go wrong here.
             let errorOptions = tcConfig.errorSeverityOptions
             let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", errorOptions)
-            do! useErrorLogger (errorLogger, BuildPhase.Parameter)
+            use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
 
             // Get the names and time stamps of all the non-framework referenced assemblies, which will act
             // as inputs to one of the nodes in the build.

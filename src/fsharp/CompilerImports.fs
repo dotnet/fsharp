@@ -1462,6 +1462,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #endif
               FSharpOptimizationData = notlazy None }
         tcImports.RegisterCcu ccuinfo
+
         let phase2 () =
 #if !NO_EXTENSIONTYPING
             ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
@@ -1652,15 +1653,15 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let! results =
             nms
             |> List.map (fun nm -> 
-                asyncErrorLogger {
+                async {
                     try
-                         return! tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, nm)
+                         return! tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, nm) |> AsyncErrorLogger.toAsync
                     with e ->
                          errorR(Error(FSComp.SR.buildProblemReadingAssembly(nm.resolvedPath, e.Message), nm.originalReference.Range))
                          return None
                 }
             )
-            |> AsyncErrorLogger.sequential
+            |> Async.Sequential
 
         let dllinfos, phase2s = results |> Array.choose id |> List.ofArray |> List.unzip
         fixupOrphanCcus()

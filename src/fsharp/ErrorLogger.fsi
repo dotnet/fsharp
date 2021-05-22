@@ -354,13 +354,11 @@ type AsyncErrorLoggerBuilder =
 
     member TryWith : AsyncErrorLogger<'T> * (exn -> AsyncErrorLogger<'T>) -> AsyncErrorLogger<'T>
 
+    member Using : CompilationGlobalsScope * (CompilationGlobalsScope -> AsyncErrorLogger<'T>) -> AsyncErrorLogger<'T>
+
 [<RequireQualifiedAccess>]
 module AsyncErrorLogger =
 
     val toAsync : AsyncErrorLogger<'T> -> Async<'T>
-
-    val sequential : AsyncErrorLogger<'T> seq -> AsyncErrorLogger<'T []>
-
-val useErrorLogger : ErrorLogger * BuildPhase -> AsyncErrorLogger<unit>
 
 val asyncErrorLogger : AsyncErrorLoggerBuilder
