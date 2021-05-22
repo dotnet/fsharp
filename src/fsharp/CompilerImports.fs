@@ -1650,6 +1650,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     member tcImports.RegisterAndImportReferencedAssemblies (ctok, nms: AssemblyResolution list) =
       asyncErrorLogger {
         CheckDisposed()
+
         let! results =
             nms
             |> List.map (fun nm -> 

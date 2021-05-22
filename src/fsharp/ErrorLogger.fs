@@ -712,18 +712,18 @@ type AsyncErrorLoggerState =
         mutable phase: BuildPhase
     }
 
-    member this.ResetScopes() =
+    member this.ResetScope() =
         let threadId = System.Threading.Thread.CurrentThread.ManagedThreadId
         if this.threadId <> threadId then
             this.threadId <- threadId
-            new CompilationGlobalsScope(this.errorLogger, this.phase) :> IDisposable
-        else
-            dummyDisposable
+            CompileThreadStatic.ErrorLogger <- this.errorLogger
+            CompileThreadStatic.BuildPhase <- this.phase
 
 type AsyncErrorLogger<'T> = AsyncErrorLogger of (AsyncErrorLoggerState -> Async<'T>)
 
 [<Sealed>]
 type AsyncErrorLoggerBuilder() =
+
     member _.Zero () : AsyncErrorLogger<unit> = 
         AsyncErrorLogger(fun _ -> 
             async { 
@@ -749,17 +749,17 @@ type AsyncErrorLoggerBuilder() =
         match computation with
         | AsyncErrorLogger f ->
             AsyncErrorLogger(fun state ->
-                let oldErrorLogger = state.errorLogger
-                let oldPhase = state.phase
-
                 async {
+                    let oldErrorLogger = state.errorLogger
+                    let oldPhase = state.phase
                     try
-                        use _ = state.ResetScopes()
                         let! res = f state
+                        state.ResetScope()
                         match binder res with
                         | AsyncErrorLogger f ->
-                            use _ = state.ResetScopes()
-                            return! f state
+                            let! res = f state
+                            state.ResetScope()
+                            return res
                     finally
                         state.errorLogger <- oldErrorLogger
                         state.phase <- oldPhase
@@ -768,17 +768,17 @@ type AsyncErrorLoggerBuilder() =
 
     member _.Bind (computation: Async<'a>, binder: 'a -> AsyncErrorLogger<'b>) : AsyncErrorLogger<'b> =
         AsyncErrorLogger(fun state ->
-            let oldErrorLogger = state.errorLogger
-            let oldPhase = state.phase
-
             async {
-                try
-                    use _ = state.ResetScopes()
+                let oldErrorLogger = state.errorLogger
+                let oldPhase = state.phase
+                try               
                     let! res = computation
-                    match (binder res) with
+                    state.ResetScope()
+                    match binder res with
                     | AsyncErrorLogger f ->
-                        use _ = state.ResetScopes()
-                        return! f state
+                        let! res = f state
+                        state.ResetScope()
+                        return res
                 finally
                     state.errorLogger <- oldErrorLogger
                     state.phase <- oldPhase
@@ -789,21 +789,22 @@ type AsyncErrorLoggerBuilder() =
         match computation with
         | AsyncErrorLogger f ->
             AsyncErrorLogger(fun state ->
-                let oldErrorLogger = state.errorLogger
-                let oldPhase = state.phase
-
                 async {
+                    let oldErrorLogger = state.errorLogger
+                    let oldPhase = state.phase
                     try
                         try
-                            use _ = state.ResetScopes()
-                            return! f state
+                            let! res = f state
+                            state.ResetScope()
+                            return res
                         with
                         | ex ->  
-                            use _ = state.ResetScopes()
+                            state.ResetScope()
                             match binder ex with
                             | AsyncErrorLogger f ->
-                                use _ = state.ResetScopes()
-                                return! f state
+                                let! res = f state
+                                state.ResetScope()
+                                return res
                     finally
                         state.errorLogger <- oldErrorLogger
                         state.phase <- oldPhase
@@ -812,34 +813,41 @@ type AsyncErrorLoggerBuilder() =
 
     member _.Using(value: CompilationGlobalsScope, binder: CompilationGlobalsScope -> AsyncErrorLogger<'U>) =
         AsyncErrorLogger(fun state ->
-            let oldErrorLogger = state.errorLogger
-            let oldPhase = state.phase
-            state.errorLogger <- value.ErrorLogger
-            state.phase <- value.Phase
+            async {
+                let oldErrorLogger = state.errorLogger
+                let oldPhase = state.phase
+                state.errorLogger <- value.ErrorLogger
+                state.phase <- value.Phase
 
-            let res =
-                try
-                    binder value 
-                with 
-                | _ -> 
-                    (value :> IDisposable).Dispose()
-                    state.errorLogger <- oldErrorLogger
-                    state.phase <- oldPhase
-                    reraise()
+                CompileThreadStatic.ErrorLogger <- value.ErrorLogger
+                CompileThreadStatic.BuildPhase <- value.Phase
 
-            match res with
-            | AsyncErrorLogger f ->
-                let work = f state
-                async {
+                let res =
                     try
-                        use _ = state.ResetScopes()
-                        return! work
+                        binder value 
+                    with 
+                    | _ -> 
+                        (value :> IDisposable).Dispose()
+                        state.errorLogger <- oldErrorLogger
+                        state.phase <- oldPhase
+                        CompileThreadStatic.ErrorLogger <- oldErrorLogger
+                        CompileThreadStatic.BuildPhase <- oldPhase
+                        reraise()
+
+                match res with
+                | AsyncErrorLogger f ->
+                    let work = f state
+                    try
+                        let! res = work
+                        state.ResetScope()
+                        return res
                     finally
                         (value :> IDisposable).Dispose()
                         state.errorLogger <- oldErrorLogger
                         state.phase <- oldPhase
-                }
-
+                        CompileThreadStatic.ErrorLogger <- oldErrorLogger
+                        CompileThreadStatic.BuildPhase <- oldPhase
+            }
         )
 
 [<RequireQualifiedAccess>]
@@ -848,17 +856,19 @@ module AsyncErrorLogger =
     let toAsync (asyncErrLg: AsyncErrorLogger<_>) =
         match asyncErrLg with
         | AsyncErrorLogger f ->
-            let errorLogger = CompileThreadStatic.ErrorLogger
-            let phase = CompileThreadStatic.BuildPhase
             async {
-                use _ = new CompilationGlobalsScope(errorLogger, phase)
+                let errorLogger = CompileThreadStatic.ErrorLogger
+                let phase = CompileThreadStatic.BuildPhase
                 let state =
                     {
                         threadId = System.Threading.Thread.CurrentThread.ManagedThreadId
                         errorLogger = errorLogger
                         phase = phase
                     }
-                return! f state
+                let! res = f state
+                CompileThreadStatic.ErrorLogger <- errorLogger
+                CompileThreadStatic.BuildPhase <- phase
+                return res
             }
 
 let asyncErrorLogger = AsyncErrorLoggerBuilder()
