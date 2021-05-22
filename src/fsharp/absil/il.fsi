@@ -1643,6 +1643,8 @@ type internal ILGlobals =
     member typ_Char: ILType
     member typ_TypedReference: ILType
 
+    member fsharpCoreAssemblyScopeRef: ILScopeRef
+
     /// Is the given assembly possibly a primary assembly?
     /// In practice, a primary assembly is an assembly that contains the System.Object type definition
     /// and has no referenced assemblies.
@@ -1654,7 +1656,7 @@ type internal ILGlobals =
     member IsPossiblePrimaryAssemblyRef: ILAssemblyRef -> bool
 
 /// Build the table of commonly used references given functions to find types in system assemblies
-val internal mkILGlobals: primaryScopeRef: ILScopeRef * assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list -> ILGlobals
+val internal mkILGlobals: primaryScopeRef: ILScopeRef * assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list * fsharpCoreAssemblyScopeRef: ILScopeRef -> ILGlobals
 
 val internal EcmaMscorlibILGlobals: ILGlobals
 val internal PrimaryAssemblyILGlobals: ILGlobals
