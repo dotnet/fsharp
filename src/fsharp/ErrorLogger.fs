@@ -774,15 +774,15 @@ module AsyncErrorLogger =
     let RunSynchronously (computation: Async<'T>) =
         let errorLogger = CompileThreadStatic.ErrorLogger
         let phase = CompileThreadStatic.BuildPhase
-        let res =
+        try
             async {
                 CompileThreadStatic.ErrorLogger <- errorLogger
                 CompileThreadStatic.BuildPhase <- phase
                 return! computation
             }
             |> Async.RunSynchronously
-        CompileThreadStatic.ErrorLogger <- errorLogger
-        CompileThreadStatic.BuildPhase <- phase
-        res
+        finally
+            CompileThreadStatic.ErrorLogger <- errorLogger
+            CompileThreadStatic.BuildPhase <- phase
 
 let asyncErrorLogger = AsyncErrorLoggerBuilder()

@@ -2861,7 +2861,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let (tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolvedReferences) =
         try
             let tcConfig = tcConfigP.Get(ctokStartup)
-            checker.FrameworkImportsCache.Get (tcConfig) |> Async.RunSynchronously
+            checker.FrameworkImportsCache.Get (tcConfig) |> AsyncErrorLogger.RunSynchronously
         with e ->
             stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 

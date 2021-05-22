@@ -613,7 +613,7 @@ type FrameworkImportsCache(size) =
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member _.Get(tcConfig: TcConfig) =
-      async {
+      asyncErrorLogger {
         // Split into installed and not installed.
         let frameworkDLLs, nonFrameworkResolutions, unresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
         let frameworkDLLsKey =
@@ -622,7 +622,7 @@ type FrameworkImportsCache(size) =
             |> List.sort  // Sort to promote cache hits.
 
         let! tcGlobals, frameworkTcImports =
-          async {
+          asyncErrorLogger {
             // Prepare the frameworkTcImportsCache
             //
             // The data elements in this key are very important. There should be nothing else in the TcConfig that logically affects
@@ -640,7 +640,7 @@ type FrameworkImportsCache(size) =
                     | Some lazyWork -> lazyWork
                     | None ->
                         let work =
-                            async {
+                            asyncErrorLogger {
                                 let tcConfigP = TcConfigProvider.Constant tcConfig
                                 return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
                             }
