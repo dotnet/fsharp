@@ -47,6 +47,8 @@ open FSharp.Core.CompilerServices
 
 let (++) x s = x @ [s]
 
+let assemblyResolutionGate = obj()
+
 //----------------------------------------------------------------------------
 // Signature and optimization data blobs
 //--------------------------------------------------------------------------
@@ -320,10 +322,12 @@ type TcConfig with
                     not (Range.equals r rangeCmdArgs) &&
                     FileSystem.IsPathRootedShim r.FileName
 
-                if isPoundRReference m then
-                    tcConfig.GetSearchPathsForLibraryFiles() @ [Path.GetDirectoryName(m.FileName)]
-                else
-                    tcConfig.GetSearchPathsForLibraryFiles()
+                lock assemblyResolutionGate (fun () ->
+                    if isPoundRReference m then
+                        tcConfig.GetSearchPathsForLibraryFiles() @ [Path.GetDirectoryName(m.FileName)]
+                    else
+                        tcConfig.GetSearchPathsForLibraryFiles()
+                )
 
             let resolved = TryResolveFileUsingPaths(searchPaths, m, nm)
             match resolved with
@@ -361,7 +365,7 @@ type TcConfig with
         | None ->
             match ccuLoadFailureAction with
             | CcuLoadFailureAction.RaiseError ->
-                let searchMessage = String.concat "\n " (tcConfig.GetSearchPathsForLibraryFiles())
+                let searchMessage = String.concat "\n " (lock assemblyResolutionGate (fun () -> tcConfig.GetSearchPathsForLibraryFiles()))
                 raise (FileNameNotResolved(nm, searchMessage, m))
             | CcuLoadFailureAction.ReturnNone -> None
 
@@ -397,16 +401,18 @@ type TcConfig with
             | Some IA64 -> "ia64"
 
         try
-            tcConfig.legacyReferenceResolver.Impl.Resolve
-               (tcConfig.resolutionEnvironment,
-                references,
-                tcConfig.targetFrameworkVersion,
-                tcConfig.GetTargetFrameworkDirectories(),
-                targetProcessorArchitecture,
-                tcConfig.fsharpBinariesDir, // FSharp binaries directory
-                tcConfig.includes, // Explicit include directories
-                tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)
-                logMessage showMessages, logDiagnostic showMessages)
+            lock assemblyResolutionGate (fun () ->
+                tcConfig.legacyReferenceResolver.Impl.Resolve
+                   (tcConfig.resolutionEnvironment,
+                    references,
+                    tcConfig.targetFrameworkVersion,
+                    tcConfig.GetTargetFrameworkDirectories(),
+                    targetProcessorArchitecture,
+                    tcConfig.fsharpBinariesDir, // FSharp binaries directory
+                    tcConfig.includes, // Explicit include directories
+                    tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)
+                    logMessage showMessages, logDiagnostic showMessages)
+            )
         with
             | LegacyResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(), errorAndWarningRange))
 
@@ -500,8 +506,6 @@ type TcConfig with
                 [], (List.ofArray groupedReferences) |> List.map (fun (name, _, r) -> (name, r)) |> List.map UnresolvedAssemblyReference
             else
                 resultingResolutions, unresolvedReferences |> List.map (fun (name, _, r) -> (name, r)) |> List.map UnresolvedAssemblyReference
-
-let assemblyResolutionGate = obj()
 
 [<Sealed>]
 type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list, unresolved: UnresolvedAssemblyReference list) =
