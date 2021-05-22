@@ -519,7 +519,10 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     let sysRes, otherRes, knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
 
     // Import basic assemblies
-    let tcGlobals, frameworkTcImports = TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes) |> Async.RunSynchronously
+    let tcGlobals, frameworkTcImports = 
+        TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes)
+        |> AsyncErrorLogger.toAsync
+        |> Async.RunSynchronously
 
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
@@ -560,6 +563,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let tcImports =
         TcImports.BuildNonFrameworkTcImports(tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
+        |> AsyncErrorLogger.toAsync
         |> Async.RunSynchronously
 
     // register tcImports to be disposed in future
@@ -670,7 +674,10 @@ let main1OfAst
     let sysRes, otherRes, knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
 
     // Import basic assemblies
-    let tcGlobals, frameworkTcImports = TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes) |> Async.RunSynchronously
+    let tcGlobals, frameworkTcImports = 
+        TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes) 
+        |> AsyncErrorLogger.toAsync
+        |> Async.RunSynchronously
 
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
@@ -683,7 +690,10 @@ let main1OfAst
 
     // Import other assemblies
     ReportTime tcConfig "Import non-system references"
-    let tcImports = TcImports.BuildNonFrameworkTcImports(tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)  |> Async.RunSynchronously
+    let tcImports = 
+        TcImports.BuildNonFrameworkTcImports(tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider) 
+        |> AsyncErrorLogger.toAsync
+        |> Async.RunSynchronously
 
     // register tcImports to be disposed in future
     disposables.Register tcImports

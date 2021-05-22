@@ -326,3 +326,41 @@ val checkLanguageFeatureErrorRecover: langVersion:LanguageVersion -> langFeature
 val tryLanguageFeatureErrorOption: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> exn option
 
 val languageFeatureNotSupportedInLibraryError: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> 'a
+
+/// This represents the global state established as each task function runs as part of the build.
+///
+/// Use to reset error and warning handlers.
+type CompilationGlobalsScope =
+    new : ErrorLogger * BuildPhase -> CompilationGlobalsScope
+    interface IDisposable
+
+[<Sealed>]
+type AsyncErrorLogger<'T>
+
+[<Sealed>]
+type AsyncErrorLoggerBuilder =
+
+    member Bind : AsyncErrorLogger<'T> * ('T -> AsyncErrorLogger<'U>) -> AsyncErrorLogger<'U>
+
+    member Bind : Async<'T> * ('T -> AsyncErrorLogger<'U>) -> AsyncErrorLogger<'U>
+
+    member Zero : unit -> AsyncErrorLogger<unit>
+
+    member Delay : (unit -> AsyncErrorLogger<'T>) -> AsyncErrorLogger<'T>
+
+    member Return : 'T -> AsyncErrorLogger<'T> 
+
+    member ReturnFrom : AsyncErrorLogger<'T> -> AsyncErrorLogger<'T>
+
+    member TryWith : AsyncErrorLogger<'T> * (exn -> AsyncErrorLogger<'T>) -> AsyncErrorLogger<'T>
+
+[<RequireQualifiedAccess>]
+module AsyncErrorLogger =
+
+    val toAsync : AsyncErrorLogger<'T> -> Async<'T>
+
+    val sequential : AsyncErrorLogger<'T> seq -> AsyncErrorLogger<'T []>
+
+val useErrorLogger : ErrorLogger * BuildPhase -> AsyncErrorLogger<unit>
+
+val asyncErrorLogger : AsyncErrorLoggerBuilder

@@ -445,9 +445,11 @@ type BoundModel private (tcConfig: TcConfig,
         | false, Some (FullState _ as state) -> async { return state }
         | _ ->
 
-        async {
+        asyncErrorLogger {
             match syntaxTreeOpt with
-            | None -> return! defaultTypeCheck ()
+            | None -> 
+                let! res = defaultTypeCheck ()
+                return res
             | Some syntaxTree ->
                 let sigNameOpt =
                     if partialCheck then
@@ -460,9 +462,9 @@ type BoundModel private (tcConfig: TcConfig,
                     IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked filename)
                     let capturingErrorLogger = CompilationErrorLogger("TypeCheck", tcConfig.errorSeverityOptions)
                     let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, capturingErrorLogger)
-                    use _ = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) :> IDisposable
+                    do! useErrorLogger (errorLogger, BuildPhase.TypeCheck)
 
-                    return! async {
+                    return! asyncErrorLogger {
                         beforeFileChecked.Trigger filename
                         let prevModuleNamesDict = prevTcInfo.moduleNamesDict
                         let prevTcState = prevTcInfo.tcState
@@ -567,6 +569,7 @@ type BoundModel private (tcConfig: TcConfig,
                                 return FullState(tcInfo, tcInfoExtras)
                     }
             }
+            |> AsyncErrorLogger.toAsync
 
     static member Create(tcConfig: TcConfig,
                          tcGlobals: TcGlobals,
@@ -638,10 +641,11 @@ type FrameworkImportsCache(size) =
                     | Some lazyWork -> lazyWork
                     | None ->
                         let work =
-                            async {
+                            asyncErrorLogger {
                                 let tcConfigP = TcConfigProvider.Constant tcConfig
                                 return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
                             }
+                            |> AsyncErrorLogger.toAsync
                         let lazyWork = AsyncLazy(work)
                         frameworkTcImportsCache.Put(AnyCallerThread, key, lazyWork)
                         lazyWork
@@ -839,14 +843,13 @@ type IncrementalBuilder(
                                               defaultPartialTypeChecking,
                                               beforeFileChecked,
                                               fileChecked,
-                                              importsInvalidatedByTypeProvider: Event<unit>) : Async<BoundModel> =
-      async {
+                                              importsInvalidatedByTypeProvider: Event<unit>) : AsyncErrorLogger<BoundModel> =
+      asyncErrorLogger {
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
-        // Return the disposable object that cleans up
-        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
+        do! useErrorLogger (errorLogger, BuildPhase.Parameter)
 
         let! tcImports =
-          async {
+          asyncErrorLogger {
             try
                 let! tcImports = TcImports.BuildNonFrameworkTcImports(tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
 #if !NO_EXTENSIONTYPING
@@ -926,9 +929,9 @@ type IncrementalBuilder(
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
     let FinalizeTypeCheckTask (boundModels: ImmutableArray<BoundModel>) =
-      async {
+      asyncErrorLogger {
         let errorLogger = CompilationErrorLogger("FinalizeTypeCheckTask", tcConfig.errorSeverityOptions)
-        use _ = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck)
+        do! useErrorLogger (errorLogger, BuildPhase.TypeCheck)
 
         let! results =
             boundModels 
@@ -1051,7 +1054,7 @@ type IncrementalBuilder(
                 |> Seq.map (fun x -> x.TryGetPartial().Value)
                 |> ImmutableArray.CreateRange
 
-            let! result = FinalizeTypeCheckTask boundModels
+            let! result = FinalizeTypeCheckTask boundModels |> AsyncErrorLogger.toAsync
             let result = (result, DateTime.UtcNow)
             return result
         })
@@ -1382,15 +1385,14 @@ type IncrementalBuilder(
 
       let useSimpleResolutionSwitch = "--simpleresolution"
 
-      async {
+      asyncErrorLogger {
 
         // Trap and report warnings and errors from creation.
         let delayedLogger = CapturingErrorLogger("IncrementalBuilderCreation")
-        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
-        use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        do! useErrorLogger (delayedLogger, BuildPhase.Parameter)
 
         let! builderOpt =
-         async {
+         asyncErrorLogger {
           try
 
             // Create the builder.
@@ -1465,23 +1467,26 @@ type IncrementalBuilder(
             // script and its load closure to the configuration.
             //
             // NOTE: it would probably be cleaner and more accurate to re-run the load closure at this point.
-            match loadClosureOpt with
-            | Some loadClosure ->
-                let dllReferences =
-                    [for reference in tcConfigB.referencedDLLs do
-                        // If there's (one or more) resolutions of closure references then yield them all
-                        match loadClosure.References  |> List.tryFind (fun (resolved, _)->resolved=reference.Text) with
-                        | Some (resolved, closureReferences) ->
-                            for closureReference in closureReferences do
-                                yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
-                        | None -> yield reference]
-                tcConfigB.referencedDLLs <- []
-                tcConfigB.primaryAssembly <- (if loadClosure.UseDesktopFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
-                // Add one by one to remove duplicates
-                dllReferences |> List.iter (fun dllReference ->
-                    tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
-                tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
-            | None -> ()
+            let setupConfigFromLoadClosure () =
+                match loadClosureOpt with
+                | Some loadClosure ->
+                    let dllReferences =
+                        [for reference in tcConfigB.referencedDLLs do
+                            // If there's (one or more) resolutions of closure references then yield them all
+                            match loadClosure.References  |> List.tryFind (fun (resolved, _)->resolved=reference.Text) with
+                            | Some (resolved, closureReferences) ->
+                                for closureReference in closureReferences do
+                                    yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
+                            | None -> yield reference]
+                    tcConfigB.referencedDLLs <- []
+                    tcConfigB.primaryAssembly <- (if loadClosure.UseDesktopFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
+                    // Add one by one to remove duplicates
+                    dllReferences |> List.iter (fun dllReference ->
+                        tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
+                    tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
+                | None -> ()
+
+            setupConfigFromLoadClosure()
 
             let tcConfig = TcConfig.Create(tcConfigB, validate=true)
             let niceNameGen = NiceNameGenerator()
@@ -1496,8 +1501,7 @@ type IncrementalBuilder(
             // This is ok because not much can actually go wrong here.
             let errorOptions = tcConfig.errorSeverityOptions
             let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", errorOptions)
-            // Return the disposable object that cleans up
-            use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
+            do! useErrorLogger (errorLogger, BuildPhase.Parameter)
 
             // Get the names and time stamps of all the non-framework referenced assemblies, which will act
             // as inputs to one of the nodes in the build.
@@ -1620,3 +1624,4 @@ type IncrementalBuilder(
 
         return builderOpt, diagnostics
       }
+      |> AsyncErrorLogger.toAsync
