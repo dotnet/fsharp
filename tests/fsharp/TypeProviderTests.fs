@@ -146,11 +146,11 @@ let helloWorld p =
 
     peverify cfg (bincompat2 ++ "testlib_client.exe")
 
-[<Test>]
+[<Test;NonParallelizable>]
 let ``helloWorld fsc`` () = helloWorld FSC_BASIC
 
 #if !NETCOREAPP
-[<Test>]
+[<Test;NonParallelizable>]
 let ``helloWorld fsi`` () = helloWorld FSI_STDIN
 #endif
 
