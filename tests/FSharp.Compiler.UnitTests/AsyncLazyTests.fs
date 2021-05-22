@@ -51,7 +51,7 @@ module AsyncLazyTests =
         resetEventInAsync.WaitOne() |> ignore
         Assert.shouldBe 1 lazyWork.RequestCount
         resetEvent.Set() |> ignore
-        task.Wait()
+        try task.Wait() with | _ -> ()
 
     [<Fact>]
     let ``Two requests to get a value asynchronously should increase the request count by 2``() =
@@ -81,8 +81,11 @@ module AsyncLazyTests =
         Thread.Sleep(100) // Give it just enough time so that two requests are waiting
         Assert.shouldBe 2 lazyWork.RequestCount
         resetEvent.Set() |> ignore
-        task1.Wait()
-        task2.Wait()
+        try
+            task1.Wait()
+            task2.Wait()
+        with
+        | _ -> ()
 
     [<Fact>]
     let ``Many requests to get a value asynchronously should only evaluate the computation once``() =
@@ -179,7 +182,7 @@ module AsyncLazyTests =
                 ex
 
         Assert.shouldBeTrue(ex <> null)
-        task.Wait()
+        try task.Wait() with | _ -> ()
 
     [<Fact>]
     let ``Many requests to get a value asynchronously should only evaluate the computation once even when some requests get canceled``() =
