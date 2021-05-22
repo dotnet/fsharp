@@ -499,7 +499,7 @@ let output_custom_attr_data os data =
 let goutput_custom_attr env os (attr: ILAttribute) =
   output_string os " .custom "
   goutput_mspec env os attr.Method
-  let data = getCustomAttrData env.ilGlobals attr
+  let data = getCustomAttrData attr
   output_custom_attr_data os data
 
 let goutput_custom_attrs env os (attrs : ILAttributes) =

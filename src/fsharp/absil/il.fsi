@@ -1670,7 +1670,6 @@ val internal destTypeDefsWithGlobalFunctionsFirst: ILGlobals -> ILTypeDefs -> IL
 /// enums must be bound in order to discover the size of the underlying integer.
 /// The following assumes enums have size int32.
 val internal decodeILAttribData:
-    ILGlobals ->
     ILAttribute ->
       ILAttribElem list *  (* fixed args *)
       ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *)
@@ -1747,22 +1746,20 @@ val internal mkILSimpleTypar: string -> ILGenericParameterDef
 
 /// Make custom attributes.
 val internal mkILCustomAttribMethRef:
-    ILGlobals
-    -> ILMethodSpec
+    ILMethodSpec
        * ILAttribElem list (* fixed args: values and implicit types *)
        * ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *)
       -> ILAttribute
 
 val internal mkILCustomAttribute:
-    ILGlobals
-    -> ILTypeRef * ILType list *
+    ILTypeRef * ILType list *
        ILAttribElem list (* fixed args: values and implicit types *) *
        ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *)
          -> ILAttribute
 
-val internal getCustomAttrData: ILGlobals -> ILAttribute -> byte[]
+val internal getCustomAttrData: ILAttribute -> byte[]
 
-val internal mkPermissionSet: ILGlobals -> ILSecurityAction * (ILTypeRef * (string * ILType * ILAttribElem) list) list -> ILSecurityDecl
+val internal mkPermissionSet: ILSecurityAction * (ILTypeRef * (string * ILType * ILAttribElem) list) list -> ILSecurityDecl
 
 /// Making code.
 val internal generateCodeLabel: unit -> ILCodeLabel
