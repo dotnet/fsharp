@@ -291,8 +291,8 @@ type BackgroundCompiler(
                 | FSharpReferencedProject.ILModuleReference(nm,getStamp,getReader) ->
                     yield
                         { new IProjectReference with 
-                            member x.EvaluateRawContents(_) = 
-                              cancellable {
+                            member x.EvaluateRawContents() = 
+                              async {
                                 let ilReader = getReader()
                                 let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
                                 return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some

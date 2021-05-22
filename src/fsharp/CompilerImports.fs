@@ -1825,12 +1825,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 else
                     None)
 
-        let fslibCcu, fsharpCoreAssemblyScopeRef =
-            if tcConfig.compilingFslib then
-                // When compiling FSharp.Core.dll, the fslibCcu reference to FSharp.Core.dll is a delayed ccu thunk fixed up during type checking
-                CcuThunk.CreateDelayed getFSharpCoreLibraryName, ILScopeRef.Local
-            else
-                let fslibCcuInfo =
+        let! fslibCcu, fsharpCoreAssemblyScopeRef =
+            asyncErrorLogger {
+                if tcConfig.compilingFslib then
+                    // When compiling FSharp.Core.dll, the fslibCcu reference to FSharp.Core.dll is a delayed ccu thunk fixed up during type checking
+                    return CcuThunk.CreateDelayed getFSharpCoreLibraryName, ILScopeRef.Local
+                else
                     let coreLibraryReference = tcConfig.CoreLibraryDllReference()
 
                     let resolvedAssemblyRef =
@@ -1844,13 +1844,13 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
                     match resolvedAssemblyRef with
                     | Some coreLibraryResolution ->
-                        match frameworkTcImports.RegisterAndImportReferencedAssemblies(ctok, [coreLibraryResolution]) |> Cancellable.runWithoutCancellation with
-                        | (_, [ResolvedImportedAssembly fslibCcuInfo ]) -> fslibCcuInfo
+                        match! frameworkTcImports.RegisterAndImportReferencedAssemblies(ctok, [coreLibraryResolution]) with
+                        | (_, [ResolvedImportedAssembly fslibCcuInfo ]) -> return fslibCcuInfo.FSharpViewOfMetadata, fslibCcuInfo.ILScopeRef
                         | _ ->
-                            error(InternalError("BuildFrameworkTcImports: no successful import of "+coreLibraryResolution.resolvedPath, coreLibraryResolution.originalReference.Range))
+                            return error(InternalError("BuildFrameworkTcImports: no successful import of "+coreLibraryResolution.resolvedPath, coreLibraryResolution.originalReference.Range))
                     | None ->
-                        error(InternalError(sprintf "BuildFrameworkTcImports: no resolution of '%s'" coreLibraryReference.Text, rangeStartup))
-                fslibCcuInfo.FSharpViewOfMetadata, fslibCcuInfo.ILScopeRef
+                        return error(InternalError(sprintf "BuildFrameworkTcImports: no resolution of '%s'" coreLibraryReference.Text, rangeStartup))   
+            }
 
         // Load the rest of the framework DLLs all at once (they may be mutually recursive)
         let! _assemblies = frameworkTcImports.RegisterAndImportReferencedAssemblies (ctok, resolvedAssemblies)
