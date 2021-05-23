@@ -415,14 +415,6 @@ type BackgroundCompiler(
         | _ ->
             getOrCreateBuilder (options, userOpName)
 
-    let getBuilder (options, userOpName) =
-        match tryGetBuilder options with
-        | Some getBuilder -> 
-            Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
-            getBuilder
-        | _ ->
-            getOrCreateBuilder (options, userOpName)
-
     let parseCacheLock = Lock<ParseCacheLockToken>()
     
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseFileInProjectCache. Most recently used cache for parsing files.
@@ -502,7 +494,7 @@ type BackgroundCompiler(
     member _.GetBackgroundParseResultsForFileInProject(filename, options, userOpName) =
         async {
             try
-                let! builderOpt, creationDiags = getBuilder (options, userOpName)
+                let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
                 match builderOpt with
                 | None ->
                     let parseTree = EmptyParsedInput(filename, (false, false))
@@ -670,7 +662,7 @@ type BackgroundCompiler(
     member bc.CheckFileInProject(parseResults: FSharpParseFileResults, filename, fileVersion, sourceText: ISourceText, options, userOpName) =
         async {
             try
-                let! builderOpt,creationDiags = getBuilder (options, userOpName)
+                let! builderOpt,creationDiags = getOrCreateBuilder (options, userOpName)
                 match builderOpt with
                 | None -> return FSharpCheckFileAnswer.Succeeded (FSharpCheckFileResults.MakeEmpty(filename, creationDiags, keepAssemblyContents))
                 | Some builder -> 
@@ -703,7 +695,7 @@ type BackgroundCompiler(
                 let strGuid = "_ProjectId=" + (options.ProjectId |> Option.defaultValue "null")
                 Logger.LogBlockMessageStart (filename + strGuid) LogCompilerFunctionId.Service_ParseAndCheckFileInProject
 
-                let! builderOpt,creationDiags = getBuilder (options, userOpName)
+                let! builderOpt,creationDiags = getOrCreateBuilder (options, userOpName)
                 match builderOpt with
                 | None -> 
                     Logger.LogBlockMessageStop (filename + strGuid + "-Failed_Aborted") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
