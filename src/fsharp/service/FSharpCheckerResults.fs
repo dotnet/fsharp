@@ -1640,7 +1640,7 @@ module internal ParseAndCheckFile =
     let isFeatureSupported (_featureId:LanguageFeature) = true
 
     let createLexbuf sourceText =
-        UnicodeLexing.SourceTextAsLexbuf(isFeatureSupported, sourceText)
+        UnicodeLexing.SourceTextAsLexbuf(true, isFeatureSupported, sourceText)
 
     let matchBraces(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         let delayedLogger = CapturingErrorLogger("matchBraces")
