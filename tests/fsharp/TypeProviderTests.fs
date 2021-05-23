@@ -7,7 +7,7 @@
 #load "../FSharp.Test.Utilities/TestFramework.fs"
 #load "single-test.fs"
 #else
-[<NUnit.Framework.Category "Type Provider">]
+[<NUnit.Framework.Category "Type Provider";NUnit.Framework.NonParallelizable>]
 module FSharp.Test.FSharpSuite.TypeProviderTests
 #endif
 
@@ -146,11 +146,11 @@ let helloWorld p =
 
     peverify cfg (bincompat2 ++ "testlib_client.exe")
 
-[<Test;NonParallelizable>]
+[<Test>]
 let ``helloWorld fsc`` () = helloWorld FSC_BASIC
 
 #if !NETCOREAPP
-[<Test;NonParallelizable>]
+[<Test>]
 let ``helloWorld fsi`` () = helloWorld FSI_STDIN
 #endif
 
