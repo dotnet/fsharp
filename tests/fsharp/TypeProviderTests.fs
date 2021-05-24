@@ -19,6 +19,8 @@ open TestFramework
 open Scripting
 open SingleTest
 
+open FSharp.Compiler.IO
+
 #if !NETCOREAPP
 // All tests which do a manual invoke of the F# compiler are disabled
 
@@ -32,11 +34,11 @@ let FSI_BASIC = FSI_FILE
 #endif
 
 let inline getTestsDirectory dir = __SOURCE_DIRECTORY__ ++ dir
-let testConfig' = getTestsDirectory >> testConfig
+let testConfig = getTestsDirectory >> testConfig
 
 [<Test>]
 let diamondAssembly () =
-    let cfg = testConfig' "typeProviders/diamondAssembly"
+    let cfg = testConfig "typeProviders/diamondAssembly"
 
     rm cfg "provider.dll"
 
@@ -72,14 +74,14 @@ let diamondAssembly () =
 
 [<Test>]
 let globalNamespace () =
-    let cfg = testConfig' "typeProviders/globalNamespace"
+    let cfg = testConfig "typeProviders/globalNamespace"
 
     csc cfg """/out:globalNamespaceTP.dll /debug+ /target:library /r:netstandard.dll /r:"%s" """ cfg.FSCOREDLLPATH ["globalNamespaceTP.cs"]
 
     fsc cfg "%s /debug+ /r:globalNamespaceTP.dll /optimize-" cfg.fsc_flags ["test.fsx"]
 
 let helloWorld p =
-    let cfg = testConfig' "typeProviders/helloWorld"
+    let cfg = testConfig "typeProviders/helloWorld"
 
     fsc cfg "%s" "--out:provided1.dll -g -a" [".." ++ "helloWorld" ++ "provided.fs"]
 
@@ -154,7 +156,7 @@ let ``helloWorld fsi`` () = helloWorld FSI_STDIN
 
 [<Test>]
 let helloWorldCSharp () =
-    let cfg = testConfig' "typeProviders/helloWorldCSharp"
+    let cfg = testConfig "typeProviders/helloWorldCSharp"
 
     rm cfg "magic.dll"
 
@@ -203,7 +205,7 @@ let helloWorldCSharp () =
 [<TestCase("EVIL_PROVIDER_ConstructorThrows")>]
 [<TestCase("EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments")>]
 let ``negative type provider tests`` (name:string) =
-    let cfg = testConfig' "typeProviders/negTests"
+    let cfg = testConfig "typeProviders/negTests"
     let dir = cfg.Directory
 
     if requireENCulture () then
@@ -241,12 +243,14 @@ let ``negative type provider tests`` (name:string) =
         let preprocess name pref =
             let dirp = (dir |> Commands.pathAddBackslash)
             do
-            File.ReadAllText(sprintf "%s%s.%sbslpp" dirp name pref)
-                .Replace("<ASSEMBLY>", getfullpath cfg (sprintf "provider_%s.dll" name))
-                .Replace("<FILEPATH>",dirp)
-                .Replace("<URIPATH>",sprintf "file:///%s" dirp)
-                |> fun txt -> File.WriteAllText(sprintf "%s%s.%sbsl" dirp name pref,txt)
-
+            FileSystem.OpenFileForReadShim(sprintf "%s%s.%sbslpp" dirp name pref)
+                      .AsStream()
+                      .ReadAllText()
+                      .Replace("<ASSEMBLY>", getfullpath cfg (sprintf "provider_%s.dll" name))
+                      .Replace("<FILEPATH>",dirp)
+                      .Replace("<URIPATH>",sprintf "file:///%s" dirp)
+                      |> fun txt -> FileSystem.OpenFileForWriteShim(sprintf "%s%s.%sbsl" dirp name pref).Write(txt)
+                      
         if name = "ProviderAttribute_EmptyConsume" || name = "providerAttributeErrorConsume" then ()
         else fsc cfg "--define:%s --out:provider_%s.dll -a" name name ["provider.fsx"]
 
@@ -257,8 +261,8 @@ let ``negative type provider tests`` (name:string) =
         SingleTest.singleNegTest cfg name
 
 let splitAssembly subdir project =
-
-    let cfg = testConfig' project
+    let subdir = getTestsDirectory subdir
+    let cfg = testConfig project
 
     let clean() =
         rm cfg "providerDesigner.dll"
@@ -330,17 +334,16 @@ let splitAssembly subdir project =
         end
 
     clean()
-let splitAssembly' = getTestsDirectory >> splitAssembly
 
 [<Test>]
-let splitAssemblyTools () = splitAssembly' "tools" "typeProviders/splitAssemblyTools"
+let splitAssemblyTools () = splitAssembly "tools" "typeProviders/splitAssemblyTools"
 
 [<Test>]
-let splitAssemblyTypeProviders () = splitAssembly' "typeproviders" "typeProviders/splitAssemblyTypeproviders"
+let splitAssemblyTypeProviders () = splitAssembly "typeproviders" "typeProviders/splitAssemblyTypeproviders"
 
 [<Test>]
 let wedgeAssembly () =
-    let cfg = testConfig' "typeProviders/wedgeAssembly"
+    let cfg = testConfig "typeProviders/wedgeAssembly"
 
     rm cfg "provider.dll"
 

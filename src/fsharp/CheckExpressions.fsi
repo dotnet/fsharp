@@ -20,6 +20,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
@@ -130,7 +131,7 @@ exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * 
 exception FunctionValueUnexpected of DisplayEnv * TType * range
 exception UnionPatternsBindDifferentNames of range
 exception VarBoundTwice of Ident
-exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
+exception ValueRestriction of DisplayEnv * InfoReader * bool * Val * Typar * range
 exception ValNotMutable of DisplayEnv * ValRef * range
 exception ValNotLocal of DisplayEnv * ValRef * range
 exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
