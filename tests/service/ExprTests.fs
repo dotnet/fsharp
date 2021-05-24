@@ -3544,7 +3544,7 @@ let isNullQuoted (ts : 't[]) =
 
     let createOptions() = createOptionsAux [fileSource1] ["--langversion:preview"]
 
-[<Test>]
+[<Test; Ignore("See https://github.com/dotnet/fsharp/pull/6804#issuecomment-847236717")>]
 let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
     let cleanup, options = ProjectForWitnesses4.createOptions()
     use _holder = cleanup
