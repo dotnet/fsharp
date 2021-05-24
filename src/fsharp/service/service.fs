@@ -262,11 +262,7 @@ type BackgroundCompiler(
                             member x.EvaluateRawContents() = 
                               async {
                                 Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
-                                try
-                                    return! self.GetAssemblyData(opts, userOpName + ".CheckReferencedProject("+nm+")")
-                                with
-                                | :? OperationCanceledException ->
-                                    return None
+                                return! self.GetAssemblyData(opts, userOpName + ".CheckReferencedProject("+nm+")")
                               }
                             member x.TryGetLogicalTimeStamp(cache) = 
                                 self.TryGetLogicalTimeStampForProject(cache, opts)
