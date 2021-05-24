@@ -6077,9 +6077,9 @@ FSharp.Compiler.Syntax.SynEnumCase: Microsoft.FSharp.Collections.FSharpList`1[FS
 FSharp.Compiler.Syntax.SynEnumCase: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] get_attributes()
 FSharp.Compiler.Syntax.SynEnumCase: System.String ToString()
 FSharp.Compiler.Syntax.SynErasedUnionCase
-FSharp.Compiler.Syntax.SynErasedUnionCase: FSharp.Compiler.Syntax.PreXmlDoc get_xmlDoc()
-FSharp.Compiler.Syntax.SynErasedUnionCase: FSharp.Compiler.Syntax.PreXmlDoc xmlDoc
-FSharp.Compiler.Syntax.SynErasedUnionCase: FSharp.Compiler.Syntax.SynErasedUnionCase NewSynErasedUnionCase(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.PreXmlDoc, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynErasedUnionCase: FSharp.Compiler.Xml.PreXmlDoc get_xmlDoc()
+FSharp.Compiler.Syntax.SynErasedUnionCase: FSharp.Compiler.Xml.PreXmlDoc xmlDoc
+FSharp.Compiler.Syntax.SynErasedUnionCase: FSharp.Compiler.Syntax.SynErasedUnionCase NewSynErasedUnionCase(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Xml.PreXmlDoc, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynErasedUnionCase: FSharp.Compiler.Syntax.SynType get_typ()
 FSharp.Compiler.Syntax.SynErasedUnionCase: FSharp.Compiler.Syntax.SynType typ
 FSharp.Compiler.Syntax.SynErasedUnionCase: FSharp.Compiler.Text.Range Range
