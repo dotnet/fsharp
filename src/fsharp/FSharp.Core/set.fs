@@ -91,19 +91,6 @@ module internal SetTree =
         if isEmpty t then 0
         else t.Height 
 
-#if CHECKED
-    let rec checkInvariant (t:SetTree<'T>) =
-        // A good sanity check, loss of balance can hit perf
-        if isEmpty t then true
-        else
-            if t.Height = 1 then true
-            else
-                let tn = asNode t
-                let h1 = height tn.Left 
-                let h2 = height tn.Right 
-                (-2 <= (h1 - h2) && (h1 - h2) <= 2) && checkInvariant tn.Left && checkInvariant tn.Right
-#endif
-
     [<Literal>]
     let private tolerance = 2
 
