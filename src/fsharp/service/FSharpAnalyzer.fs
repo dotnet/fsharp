@@ -130,7 +130,7 @@ module FSharpAnalyzers =
 
     let ImportAnalyzers(tcConfig, compilerToolPaths) =
         [ for (m, analyzerPath) in enumerateAnalyzerAssemblies compilerToolPaths do
-            if FileSystem.SafeExists(analyzerPath) then
+            if FileSystem.FileExistsShim(analyzerPath) then
                 yield! CreateAnalyzers (tcConfig, analyzerPath, m) 
             // TODO: give a warning here (or in CreateAnalyzer)
         ]
