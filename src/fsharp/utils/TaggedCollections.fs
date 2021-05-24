@@ -48,19 +48,6 @@ namespace Internal.Utilities.Collections.Tagged
                 | :? SetTreeNode<'T> as tn -> tn.Height
                 | _ -> 1
 
-#if CHECKED
-        let rec checkInvariant (t:SetTree<'T>) =
-            // A good sanity check, loss of balance can hit perf
-            if isEmpty t then true
-            else
-                match t with 
-                | :? SetTreeNode<'T> as tn  ->
-                    let h1 = height tn.Left 
-                    let h2 = height tn.Right 
-                    (-2 <= (h1 - h2) && (h1 - h2) <= 2) && checkInvariant tn.Left && checkInvariant tn.Right
-                | _ -> true
-#endif
-
         [<Literal>]
         let tolerance = 2
 
@@ -520,10 +507,6 @@ namespace Internal.Utilities.Collections.Tagged
         member s.Contains(x) = SetTree.contains comparer  x tree
         member s.Iterate(x) = SetTree.iter  x tree
         member s.Fold f x  = SetTree.fold f tree x
-
-#if CHECKED
-        member s.CheckBalanceInvariant = checkInvariant tree // diagnostics...
-#endif
         member s.IsEmpty  = SetTree.isEmpty tree
 
         member s.Partition predicate  : Set<'T,'ComparerTag> *  Set<'T,'ComparerTag> = 

@@ -24,6 +24,9 @@ type internal UnusedDeclarationsAnalyzer
     interface IFSharpUnusedDeclarationsDiagnosticAnalyzer with
 
         member _.AnalyzeSemanticsAsync(descriptor, document, cancellationToken) =
+            if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then Threading.Tasks.Task.FromResult(ImmutableArray.Empty)
+            else
+
             asyncMaybe {
                 do! Option.guard document.FSharpOptions.CodeFixes.UnusedDeclarations
 

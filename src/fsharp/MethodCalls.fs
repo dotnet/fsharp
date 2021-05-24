@@ -214,11 +214,10 @@ let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnown
                     calledArgTy
                 // If at the beginning of inference then use a type variable.
                 else 
-                    let destTy = destNullableTy g calledArgTy
                     match calledArg.OptArgInfo with
-                    // Use the type variable from the Nullable if called arg is not optional.
-                    | NotOptional when isTyparTy g destTy ->
-                        destTy
+                    // If inference has not solved the kind of Nullable on the called arg and is not optional then use this.
+                    | NotOptional when isTyparTy g (destNullableTy g calledArgTy) ->
+                        calledArgTy
                     | _ ->
                         let compgenId = mkSynId range0 unassignedTyparName
                         mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false))
@@ -768,7 +767,7 @@ let BuildILMethInfoCall g amap m isProp (minfo: ILMethInfo) valUseFlags minst di
     let ilMethRef = minfo.ILMethodRef
     let newobj = ctor && (match valUseFlags with NormalValUse -> true | _ -> false)
     let exprTy = if ctor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnTy(amap, m, minst)
-    let retTy = if not ctor && ilMethRef.ReturnType = ILType.Void then [] else [exprTy]
+    let retTy = if not ctor && (stripILModifiedFromTy ilMethRef.ReturnType) = ILType.Void then [] else [exprTy]
     let isDllImport = minfo.IsDllImport g
     Expr.Op (TOp.ILCall (useCallvirt, isProtected, valu, newobj, valUseFlags, isProp, isDllImport, ilMethRef, minfo.DeclaringTypeInst, minst, retTy), [], args, m),
     exprTy
