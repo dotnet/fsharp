@@ -25,6 +25,7 @@ open FSharp.Compiler.QuotationPickler
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -5152,7 +5153,9 @@ type CcuData =
       MemberSignatureEquality: (TType -> TType -> bool) 
       
       /// The table of .NET CLI type forwarders for this assembly
-      TypeForwarders: CcuTypeForwarderTable }
+      TypeForwarders: CcuTypeForwarderTable
+      
+      XmlDocumentationInfo: XmlDocumentationInfo option }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -5187,7 +5190,7 @@ type CcuThunk =
     {
       /// ccu.target is null when a reference is missing in the transitive closure of static references that
       /// may potentially be required for the metadata of referenced DLLs.
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
       mutable target: CcuData
 #else
       mutable target: CcuData?
@@ -5195,7 +5198,7 @@ type CcuThunk =
       name: CcuReference
     }
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     /// Dereference the asssembly reference 
     member ccu.Deref = 
         if isNull (box ccu.target) then 

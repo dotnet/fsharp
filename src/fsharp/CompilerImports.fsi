@@ -131,6 +131,13 @@ type TcAssemblyResolutions =
 
     static member GetAssemblyResolutionInformation: ctok: CompilationThreadToken * tcConfig: TcConfig -> AssemblyResolution list * UnresolvedAssemblyReference list
 
+[<Sealed>]
+type RawFSharpAssemblyData =
+
+    new : ilModule: ILModuleDef * ilAssemblyRefs: ILAssemblyRef list -> RawFSharpAssemblyData
+
+    interface IRawFSharpAssemblyData
+
 /// Represents a table of imported assemblies with their resolutions.
 /// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
 /// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.

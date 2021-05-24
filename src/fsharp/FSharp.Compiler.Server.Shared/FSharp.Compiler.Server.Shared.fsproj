@@ -6,7 +6,7 @@
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
-    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --checknulls --langversion:preview</OtherFlags>
+    <CheckNulls>true</CheckNulls>
   </PropertyGroup>
 
   <ItemGroup>

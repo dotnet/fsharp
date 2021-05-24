@@ -116,7 +116,7 @@ type IEnvironment =
     abstract MaxColumns: int
     abstract MaxRows: int
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
 [<AutoOpen>]
 module NullShim =
     // Shim to match nullness checking library support in preview
@@ -307,6 +307,10 @@ module Layout =
     let (@@-) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 1)) layout1 layout2
 
     let (@@--) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 2)) layout1 layout2
+    
+    let (@@---) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 3)) layout1 layout2
+        
+    let (@@----) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 4)) layout1 layout2
 
     let tagListL tagger els =
         match els with 

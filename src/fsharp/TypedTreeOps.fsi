@@ -11,7 +11,7 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 
@@ -991,8 +991,12 @@ type DisplayEnv =
       showConstraintTyparAnnotations:bool
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
+      /// If set, signatures will be rendered with XML documentation comments for members if they exist
+      /// Defaults to false, expected use cases include things like signature file generation.
+      showDocumentation: bool
       shrinkOverloads: bool
       printVerboseSignatures: bool
+      escapeKeywordNames: bool
       g: TcGlobals
       contextAccessibility: Accessibility
       generatedValueLayout: (Val -> Layout option)
@@ -1009,6 +1013,8 @@ type DisplayEnv =
     member AddOpenModuleOrNamespace: ModuleOrNamespaceRef -> DisplayEnv
 
     member UseGenericParameterStyle: GenericParameterStyle -> DisplayEnv
+
+    static member InitialForSigFileGeneration: TcGlobals -> DisplayEnv
 
 val tagEntityRefName: xref: EntityRef -> name: string -> TaggedText
 
@@ -1564,6 +1570,8 @@ val normalizeEnumTy: TcGlobals -> TType -> TType
 
 /// Determine if a type is a struct type
 val isStructTy: TcGlobals -> TType -> bool
+
+val isStructOrEnumTyconTy: TcGlobals -> TType -> bool
 
 /// Determine if a type is a variable type with the ': struct' constraint.
 ///
@@ -2126,7 +2134,7 @@ val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool optio
 
 #if !NO_EXTENSIONTYPING
 /// returns Some(assemblyName) for success
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
 val TryDecodeTypeProviderAssemblyAttr: ILGlobals -> ILAttribute -> string option
 #else
 val TryDecodeTypeProviderAssemblyAttr: ILGlobals -> ILAttribute -> string? option

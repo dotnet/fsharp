@@ -3,6 +3,7 @@
 namespace FSharp.Test.Utilities
 
 open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.IO
 open FSharp.Compiler.Diagnostics
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Assert
@@ -101,7 +102,7 @@ module rec Compiler =
     let private getSource (src: TestType) : string =
         match src with
         | Text t -> t
-        | Path p -> System.IO.File.ReadAllText p
+        | Path p -> FileSystem.OpenFileForReadShim(p).AsStream().ReadAllText()
 
     let private fsFromString (source: string) (kind: SourceKind) : FSharpCompilationSource =
         match source with
@@ -121,8 +122,8 @@ module rec Compiler =
         | null -> failwith "Source cannot be null"
         | _ ->
             { Source          = Text source
-              LangVersion     = CSharpLanguageVersion.CSharp8
-              TargetFramework = TargetFramework.NetCoreApp31
+              LangVersion     = CSharpLanguageVersion.CSharp9
+              TargetFramework = TargetFramework.Current
               Name            = None
               References      = [] }
 
@@ -426,6 +427,17 @@ module rec Compiler =
         | FS fs -> typecheckFSharp fs
         | _ -> failwith "Typecheck only supports F#"
 
+    let typecheckResults (cUnit: CompilationUnit) : FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults =
+        match cUnit with
+        | FS fsSource ->
+            let source = getSource fsSource.Source
+            let options = fsSource.Options |> Array.ofList
+
+            let name = match fsSource.Name with | None -> "test.fs" | Some n -> n
+
+            CompilerAssert.TypeCheck(options, name, source)
+        | _ -> failwith "Typecheck only supports F#"
+
     let run (result: TestResult) : TestResult =
         match result with
         | Failure f -> failwith (sprintf "Compilation should be successfull in order to run.\n Errors: %A" (f.Diagnostics))
@@ -502,9 +514,9 @@ module rec Compiler =
         | _ -> failwith "FSI running only supports F#."
 
 
-    let private createBaselineErrors (baseline: Baseline) actualErrors extension : unit =
+    let private createBaselineErrors (baseline: Baseline) (actualErrors: string) extension : unit =
         match baseline.SourceFilename with
-        | Some f -> File.WriteAllText(Path.ChangeExtension(f, extension), actualErrors)
+        | Some f -> FileSystem.OpenFileForWriteShim(Path.ChangeExtension(f, extension)).Write(actualErrors)
         | _ -> ()
 
     let private verifyFSBaseline (fs) : unit =

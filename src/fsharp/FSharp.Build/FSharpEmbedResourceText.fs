@@ -8,7 +8,7 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
 type FSharpEmbedResourceText() =
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     let mutable _buildEngine : IBuildEngine = null
     let mutable _hostObject : ITaskHost = null
 #else
@@ -34,7 +34,7 @@ type FSharpEmbedResourceText() =
     let xmlBoilerPlateString = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <root>
     <!--
-    Microsoft ResX Schema 
+    Microsoft ResX Schema
 
     Version 2.0
 
@@ -60,7 +60,7 @@ type FSharpEmbedResourceText() =
         <comment>This is a comment</comment>
     </data>
 
-    There are any number of ""resheader"" rows that contain simple 
+    There are any number of ""resheader"" rows that contain simple
     name/value pairs.
 
     Each data row contains a name, and value. The row also contains a
@@ -225,10 +225,10 @@ type FSharpEmbedResourceText() =
                 if i = txt.Length then
                     Err(filename, lineNum, sprintf "After the identifier '%s' and comma, there should be the quoted string resource" ident)
                 else
-                    let str = 
+                    let str =
                         try
                             System.String.Format(Unquote(txt.Substring i))  // Format turns e.g '\n' into that char, but also requires that we 'escape' curlies in the original .txt file, e.g. "{{"
-                        with 
+                        with
                             e -> Err(filename, lineNum, sprintf "Error calling System.String.Format (note that curly braces must be escaped, and there cannot be trailing space on the line): >>>%s<<< -- %s" (txt.Substring i) e.Message)
                     let holes, netFormatString = ComputeHoles filename lineNum str
                     (lineNum, (errNum,ident), str, holes.ToArray(), netFormatString)
@@ -261,10 +261,10 @@ open Printf
     #endif
         s
 
-    static let mkFunctionValue (tys: System.Type[]) (impl:obj->obj) = 
+    static let mkFunctionValue (tys: System.Type[]) (impl:obj->obj) =
         FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys.[0],tys.[1]), impl)
 
-    static let funTyC = typeof<(obj -> obj)>.GetGenericTypeDefinition()  
+    static let funTyC = typeof<(obj -> obj)>.GetGenericTypeDefinition()
 
     static let isNamedType(ty:System.Type) = not (ty.IsArray ||  ty.IsByRef ||  ty.IsPointer)
     static let isFunctionType (ty1:System.Type)  =
@@ -272,11 +272,11 @@ open Printf
 
     static let rec destFunTy (ty:System.Type) =
         if isFunctionType ty then
-            ty, ty.GetGenericArguments() 
+            ty, ty.GetGenericArguments()
         else
-            match getTypeInfo(ty).BaseType with 
+            match getTypeInfo(ty).BaseType with
             | null -> failwith ""destFunTy: not a function type""
-            | b -> destFunTy b 
+            | b -> destFunTy b
 
     static let buildFunctionForOneArgPat (ty: System.Type) impl =
         let _,tys = destFunTy ty
@@ -299,7 +299,7 @@ open Printf
 
     static let createMessageString (messageString : string) (fmt : Printf.StringFormat<'T>) : 'T =
         let fmt = fmt.Value // here, we use the actual error string, as opposed to the one stored as fmt
-        let len = fmt.Length 
+        let len = fmt.Length
 
         /// Function to capture the arguments and then run.
         let rec capture args ty i =
@@ -347,7 +347,7 @@ open Printf
           let outFilename = Path.Combine(_outputPath, justfilename + ".fs")
           let outXmlFilename = Path.Combine(_outputPath, justfilename + ".resx")
 
-          let condition1 = File.Exists(outFilename) 
+          let condition1 = File.Exists(outFilename)
           let condition2 = condition1 && File.Exists(outXmlFilename)
           let condition3 = condition2 && File.Exists(filename)
           let condition4 = condition3 && (File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outFilename))
@@ -359,14 +359,14 @@ open Printf
             printMessage (sprintf "Generating %s and %s from %s, because condition %d is false, see FSharpEmbedResourceText.fs in the F# source"  outFilename outXmlFilename filename (if not condition1 then 1 elif not condition2 then 2 elif not condition3 then 3 elif not condition4 then 4 else 5) )
 
             printMessage (sprintf "Reading %s" filename)
-            let lines = File.ReadAllLines(filename) 
+            let lines = File.ReadAllLines(filename)
                         |> Array.mapi (fun i s -> i,s) // keep line numbers
                         |> Array.filter (fun (i,s) -> not(s.StartsWith "#"))  // filter out comments
 
             printMessage (sprintf "Parsing %s" filename)
             let stringInfos = lines |> Array.map (fun (i,s) -> ParseLine filename i s)
             // now we have array of (lineNum, ident, str, holes, netFormatString)  // str has %d, netFormatString has {0}
-            
+
             printMessage (sprintf "Validating %s" filename)
             // validate that all the idents are unique
             let allIdents = new System.Collections.Generic.Dictionary<string,int>()
@@ -374,7 +374,7 @@ open Printf
                 if allIdents.ContainsKey(ident) then
                     Err(filename,line,sprintf "Identifier '%s' is already used previously on line %d - each identifier must be unique" ident allIdents.[ident])
                 allIdents.Add(ident,line)
-            
+
             printMessage (sprintf "Validating uniqueness of %s" filename)
             // validate that all the strings themselves are unique
             let allStrs = new System.Collections.Generic.Dictionary<string,(int*string)>()
@@ -383,7 +383,7 @@ open Printf
                     let prevLine,prevIdent = allStrs.[str]
                     Err(filename,line,sprintf "String '%s' already appears on line %d with identifier '%s' - each string must be unique" str prevLine prevIdent)
                 allStrs.Add(str,(line,ident))
-            
+
             printMessage (sprintf "Generating %s" outFilename)
             use outStream = File.Create outFilename
             use out = new StreamWriter(outStream)
@@ -414,7 +414,7 @@ open Printf
                 formalArgs.Append ")" |> ignore
                 fprintfn out "    /// %s" str
                 fprintfn out "    /// (Originally from %s:%d)" filename (lineNum+1)
-                let justPercentsFromFormatString = 
+                let justPercentsFromFormatString =
                     (holes |> Array.fold (fun acc holeType ->
                         acc + match holeType with
                                 | "System.Int32" -> ",,,%d"
@@ -453,7 +453,7 @@ open Printf
             xd.Save outXmlStream
             printMessage (sprintf "Done %s" outFilename)
             Some (filename, outFilename, outXmlFilename)
-        with e -> 
+        with e ->
             PrintErr(filename, 0, sprintf "An exception occurred when processing '%s'\n%s" filename (e.ToString()))
             None
 

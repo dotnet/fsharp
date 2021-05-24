@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -15,7 +15,7 @@
     <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --langversion:preview</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <NGenBinary>true</NGenBinary>
-
+    <CheckNulls>false</CheckNulls>
     <PreRelease>true</PreRelease>
     <PackageId>FSharp.Core</PackageId>
     <PackageVersionPrefix>$(FSCorePackageVersion)</PackageVersionPrefix>

@@ -279,4 +279,13 @@
   <data name="AddTypeAnnotation" xml:space="preserve">
     <value>Add type annotation</value>
   </data>
+  <data name="RemoveUnusedBinding" xml:space="preserve">
+    <value>Remove unused binding</value>
+  </data>
+  <data name="AddMissingInstanceMemberParameter" xml:space="preserve">
+    <value>Add missing instance member parameter</value>
+  </data>
+  <data name="UseNameof" xml:space="preserve">
+    <value>Use 'nameof'</value>
+  </data>
 </root>

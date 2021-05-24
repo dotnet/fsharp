@@ -11,7 +11,7 @@
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <OtherFlags>$(OtherFlags) /warnon:3218 /warnon:1182 /warnon:3390 --times</OtherFlags>
-    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --checknulls --langversion:preview</OtherFlags>
+    <CheckNulls>true</CheckNulls>
     <Tailcalls>true</Tailcalls>
     <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <NGenBinary>true</NGenBinary>
@@ -152,8 +152,11 @@
     <Compile Include="..\utils\TaggedCollections.fs">
       <Link>Utilities\TaggedCollections.fs</Link>
     </Compile>
-    <Compile Include="..\utils\FileSystem.fsi">
-      <Link>Utilities\FileSystem.fsi</Link>
+    <Compile Include="..\absil\illib.fsi">
+      <Link>Utilities\illib.fsi</Link>
+    </Compile>
+    <Compile Include="..\absil\illib.fs">
+      <Link>Utilities\illib.fs</Link>
     </Compile>
     <Compile Include="..\utils\FileSystem.fs">
       <Link>Utilities\FileSystem.fs</Link>
@@ -163,18 +166,6 @@
     </Compile>
     <Compile Include="..\absil\ildiag.fs">
       <Link>Utilities\ildiag.fs</Link>
-    </Compile>
-    <Compile Include="..\absil\illib.fsi">
-      <Link>Utilities\illib.fsi</Link>
-    </Compile>
-    <Compile Include="..\absil\illib.fs">
-      <Link>Utilities\illib.fs</Link>
-    </Compile>
-    <Compile Include="..\utils\filename.fsi">
-      <Link>Utilities\filename.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\filename.fs">
-      <Link>Utilities\filename.fs</Link>
     </Compile>
     <Compile Include="..\absil\zmap.fsi">
       <Link>Utilities\zmap.fsi</Link>
@@ -187,12 +178,6 @@
     </Compile>
     <Compile Include="..\absil\zset.fs">
       <Link>Utilities\zset.fs</Link>
-    </Compile>
-    <Compile Include="..\absil\bytes.fsi">
-      <Link>Utilities\bytes.fsi</Link>
-    </Compile>
-    <Compile Include="..\absil\bytes.fs">
-      <Link>Utilities\bytes.fs</Link>
     </Compile>
     <Compile Include="..\XmlAdapters.fsi">
       <Link>Utilities\XmlAdapters.fsi</Link>
@@ -392,9 +377,6 @@
     </Compile>
     <Compile Include="..\PrettyNaming.fs">
       <Link>PrettyNaming\PrettyNaming.fs</Link>
-    </Compile>
-    <Compile Include="..\ilx\ilxsettings.fs">
-      <Link>ILXErase\ilxsettings.fs</Link>
     </Compile>
     <Compile Include="..\ilx\EraseClosures.fsi">
       <Link>ILXErase\EraseClosures.fsi</Link>

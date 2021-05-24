@@ -728,7 +728,7 @@ module FSharpExprConvert =
                 let op = mkCallNotEqualsOperator g m elemTy arg nullVal
                 ConvExprPrim cenv env op
 
-            | TOp.ILAsm ([ I_ldlen; AI_conv DT_I4 ], _), _, [arr] -> 
+            | TOp.ILAsm ([ I_ldlen; AI_conv DT_I4 ], _), _, [arr] ->
                 let arrayTy = tyOfExpr g arr
                 let elemTy = destArrayTy g arrayTy
                 let op = mkCallArrayLength g m elemTy arr
@@ -1277,8 +1277,10 @@ module FSharpExprConvert =
                             E.IfThenElse (E.TypeTest (tyR, eR) |> Mk cenv m cenv.g.bool_ty, acc, ConvDecisionTree cenv env dtreeRetTy dtree m) 
                         | _ -> 
                             let ty = tyOfExpr cenv.g e1
-                            let eq = mkCallEqualsOperator cenv.g m ty e1 (Expr.Const (Const.Zero, m, ty))
-                            let eqR = ConvExpr cenv env eq 
+                            let eqR =
+                                let eq = mkCallEqualsOperator cenv.g m ty e1 (Expr.Const (Const.Zero, m, ty))
+                                let env = { env with suppressWitnesses = true }
+                                ConvExpr cenv env eq 
                             E.IfThenElse (eqR, ConvDecisionTree cenv env dtreeRetTy dtree m, acc) 
                     | DecisionTreeTest.IsInst (_srcty, tgty) -> 
                         let e1R = ConvExpr cenv env e1

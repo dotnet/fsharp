@@ -30,6 +30,7 @@ open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -5717,7 +5718,7 @@ let ApplyDefaults (cenv: cenv) g denvAtEnd m mexpr extraAttribs =
                     ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
     with e -> errorRecovery e m
 
-let CheckValueRestriction denvAtEnd rootSigOpt implFileTypePriorToSig m = 
+let CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig m = 
     if Option.isNone rootSigOpt then
       let rec check (mty: ModuleOrNamespaceType) =
           for v in mty.AllValsAndMembers do
@@ -5731,7 +5732,7 @@ let CheckValueRestriction denvAtEnd rootSigOpt implFileTypePriorToSig m =
                   // for example FSharp 1.0 3661.
                   (match v.ValReprInfo with None -> true | Some tvi -> tvi.HasNoArgs)) then 
                 match ftyvs with 
-                | tp :: _ -> errorR (ValueRestriction(denvAtEnd, false, v, tp, v.Range))
+                | tp :: _ -> errorR (ValueRestriction(denvAtEnd, infoReader, false, v, tp, v.Range))
                 | _ -> ()
           mty.ModuleAndNamespaceDefinitions |> List.iter (fun v -> check v.ModuleOrNamespaceType) 
       try check implFileTypePriorToSig with e -> errorRecovery e m
@@ -5762,7 +5763,7 @@ let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePrior
                 // As typechecked the signature and implementation use different tycons etc. 
                 // Here we (a) check there are enough names, (b) match them up to build a renaming and   
                 // (c) check signature conformance up to this renaming. 
-                if not (SignatureConformance.CheckNamesOfModuleOrNamespace denv (mkLocalTyconRef implFileSpecPriorToSig) sigFileType) then 
+                if not (SignatureConformance.CheckNamesOfModuleOrNamespace denv cenv.infoReader (mkLocalTyconRef implFileSpecPriorToSig) sigFileType) then 
                     raise (ReportedError None)
 
                 // Compute the remapping from implementation to signature
@@ -5770,7 +5771,7 @@ let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePrior
                      
                 let aenv = { TypeEquivEnv.Empty with EquivTycons = TyconRefMap.OfList remapInfo.RepackagedEntities }
                     
-                if not (SignatureConformance.Checker(cenv.g, cenv.amap, denv, remapInfo, true).CheckSignature aenv (mkLocalModRef implFileSpecPriorToSig) sigFileType) then (
+                if not (SignatureConformance.Checker(cenv.g, cenv.amap, denv, remapInfo, true).CheckSignature aenv cenv.infoReader (mkLocalModRef implFileSpecPriorToSig) sigFileType) then (
                     // We can just raise 'ReportedError' since CheckModuleOrNamespace raises its own error 
                     raise (ReportedError None)
                 )
@@ -5794,6 +5795,8 @@ let TypeCheckOneImplFile
        env 
        (rootSigOpt: ModuleOrNamespaceType option)
        (ParsedImplFileInput (_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland)) =
+
+ let infoReader = InfoReader(g, amap)
 
  eventually {
     let cenv = 
@@ -5838,7 +5841,7 @@ let TypeCheckOneImplFile
 
     // Check the value restriction. Only checked if there is no signature.
     conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-      CheckValueRestriction denvAtEnd rootSigOpt implFileTypePriorToSig m)
+      CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig m)
 
     // Solve unsolved internal type variables 
     conditionallySuppressErrorReporting (checkForErrors()) (fun () ->

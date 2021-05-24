@@ -64,7 +64,7 @@ module internal ProjectFile =
     let findIncludesFromResolutions (resolutions:Resolution[]) =
         let managedRoots =
             resolutions
-            |> Array.filter(fun r -> 
+            |> Array.filter(fun r ->
                 not(String.IsNullOrEmpty(r.NugetPackageId) ||
                     String.IsNullOrEmpty(r.PackageRoot)) &&
                 Directory.Exists(r.PackageRoot))
@@ -139,7 +139,6 @@ $(POUND_R)
 
     <!-- Disable automagic FSharp.Core resolution when not using with FSharp scripts -->
     <DisableImplicitFSharpCoreReference Condition="'$(SCRIPTEXTENSION)' != '.fsx'">true</DisableImplicitFSharpCoreReference>
-    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
 
     <!-- Temporary fix some sdks, shipped internally with broken parameterization -->
@@ -274,8 +273,8 @@ $(PACKAGEREFERENCES)
           KeepDuplicates="false" />
     </ItemGroup>
 
-    <WriteLinesToFile Lines='@(ResolvedReferenceLines)' 
-                      File='$(MSBuildProjectFullPath).resolvedReferences.paths' 
+    <WriteLinesToFile Lines='@(ResolvedReferenceLines)'
+                      File='$(MSBuildProjectFullPath).resolvedReferences.paths'
                       Overwrite='True' WriteOnlyWhenDifferent='True' />
   </Target>
 

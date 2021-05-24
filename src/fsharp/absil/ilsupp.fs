@@ -578,14 +578,14 @@ let linkNativeResources (unlinkedResources: byte[] list)  (rva: int32) =
    let resources =
        unlinkedResources
        |> Seq.map (fun s -> new MemoryStream(s))
-       |> Seq.map (fun s -> 
+       |> Seq.map (fun s ->
            let res = CvtResFile.ReadResFile s
            s.Dispose()
            res)
        |> Seq.collect id
        // See MakeWin32ResourceList https://github.com/dotnet/roslyn/blob/f40b89234db51da1e1153c14af184e618504be41/src/Compilers/Core/Portable/Compilation/Compilation.cs
-       |> Seq.map (fun r -> 
-           Win32Resource(data = r.data, codePage = 0u, languageId = uint32 r.LanguageId, 
+       |> Seq.map (fun r ->
+           Win32Resource(data = r.data, codePage = 0u, languageId = uint32 r.LanguageId,
                                id = int (int16 r.pstringName.Ordinal), name = r.pstringName.theString,
                                typeId = int (int16 r.pstringType.Ordinal), typeName = r.pstringType.theString))
    let bb = new System.Reflection.Metadata.BlobBuilder()
@@ -805,7 +805,7 @@ type ISymUnmanagedWriter2 =
     abstract GetDebugInfo: iDD: ImageDebugDirectory byref *
                           cData: int *
                           pcData: int byref *
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
                           [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]data : byte[] -> unit
 #else
                           [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]data : byte[]? -> unit
@@ -909,7 +909,7 @@ let pdbClose (writer: PdbWriter) dllFilename pdbFilename =
 
     let isLocked filename =
         try
-            use x = File.Open (filename, FileMode.Open, FileAccess.ReadWrite, FileShare.None)
+            use x = FileSystem.OpenFileForWriteShim(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.None)
             false
         with
         | _ -> true
@@ -935,7 +935,7 @@ let hashSizeOfMD5 = 16
 // In this case, catch the failure, and not set a checksum.
 let internal setCheckSum (url: string, writer: ISymUnmanagedDocumentWriter) =
     try
-        use file = FileSystem.FileStreamReadShim url
+        use file = FileSystem.OpenFileForReadShim(url).AsReadOnlyStream()
         use md5 = System.Security.Cryptography.MD5.Create()
         let checkSum = md5.ComputeHash file
         if (checkSum.Length = hashSizeOfMD5) then

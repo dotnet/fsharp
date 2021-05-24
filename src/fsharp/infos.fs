@@ -13,6 +13,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -694,7 +695,7 @@ let OptionalArgInfoOfProvidedParameter (amap: Import.ImportMap) m (provParam : T
         NotOptional
 
 /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
 let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> ProvidedMethodInfo) err = 
     match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase)),m) with 
     | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> mi.DeclaringType.Name), m)), m))   
@@ -1198,7 +1199,7 @@ type MethInfo =
     member x.IsNewSlot =
         (x.IsVirtual &&
           (match x with
-           | ILMeth(_, x, _) -> x.IsNewSlot
+           | ILMeth(_, x, _) -> x.IsNewSlot || (isInterfaceTy x.TcGlobals x.ApparentEnclosingType && not x.IsFinal)
            | FSMeth(_, _, vref, _) -> vref.IsDispatchSlotMember
 #if !NO_EXTENSIONTYPING
            | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsHideBySig), m) // REVIEW: Check this is correct

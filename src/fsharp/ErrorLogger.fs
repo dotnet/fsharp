@@ -488,12 +488,9 @@ let report f =
 
 let deprecatedWithError s m = errorR(Deprecated(s, m))
 
-// Note: global state, but only for compiling FSharp.Core.dll
-let mutable reportLibraryOnlyFeatures = true
+let libraryOnlyError m = errorR(LibraryUseOnly m)
 
-let libraryOnlyError m = if reportLibraryOnlyFeatures then errorR(LibraryUseOnly m)
-
-let libraryOnlyWarning m = if reportLibraryOnlyFeatures then warning(LibraryUseOnly m)
+let libraryOnlyWarning m = warning(LibraryUseOnly m)
 
 let deprecatedOperator m = deprecatedWithError (FSComp.SR.elDeprecatedOperator()) m
 
@@ -636,7 +633,7 @@ let NewlineifyErrorString (message:string) = message.Replace(stringThatIsAProxyF
 /// fixes given string by replacing all control chars with spaces.
 /// NOTE: newlines are recognized and replaced with stringThatIsAProxyForANewlineInFlatErrors (ASCII 29, the 'group separator'), 
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
 let NormalizeErrorString (text : string) =
     if isNull text then nullArg "text"
 #else

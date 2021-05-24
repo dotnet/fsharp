@@ -12,6 +12,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices
+open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 #nowarn "9" // NativePtr.toNativeInt
@@ -23,10 +24,11 @@ type internal FSharpCheckerProvider
     (
         analyzerService: IFSharpDiagnosticAnalyzerService,
         [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace,
+        projectContextFactory: IWorkspaceProjectContextFactory,
         settings: EditorOptions
     ) =
 
-    let metadataAsSource = FSharpMetadataAsSourceService()
+    let metadataAsSource = FSharpMetadataAsSourceService(projectContextFactory)
 
     let tryGetMetadataSnapshot (path, timeStamp) = 
         try

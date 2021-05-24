@@ -200,7 +200,7 @@ module internal ExtensionTyping =
             [||]
 
     /// Try to access a member on a provided type, catching and reporting errors and checking the result is non-null, 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     let TryTypeMemberNonNull<'T, 'U when 'U : null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U)) : Tainted<'U> =
         match TryTypeMember(st, fullName, memberName, m, recover, f) with 
 #else
@@ -225,7 +225,7 @@ module internal ExtensionTyping =
         resolver.PUntaint((fun tp -> tp.GetType().Name), m)
 
     /// Validate a provided namespace name
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     let ValidateNamespaceName(name, typeProvider: Tainted<ITypeProvider>, m, nsp:string) =
 #else
     let ValidateNamespaceName(name, typeProvider: Tainted<ITypeProvider>, m, nsp:string?) =
@@ -323,7 +323,7 @@ module internal ExtensionTyping =
 
     and
       [<Sealed>]
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
       [<AllowNullLiteral>]
 #endif
       ProvidedType (x: System.Type, ctxt: ProvidedTypeContext) =
@@ -348,14 +348,14 @@ module internal ExtensionTyping =
         member _.IsSuppressRelocate = (x.Attributes &&& enum (int32 TypeProviderTypeAttributes.SuppressRelocate)) <> enum 0  
         member _.IsErased = (x.Attributes &&& enum (int32 TypeProviderTypeAttributes.IsErased)) <> enum 0  
         member _.IsGenericType = x.IsGenericType
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         member _.Namespace : string = x.Namespace
 #else
         member _.Namespace : string? = x.Namespace
 #endif
         member _.FullName = x.FullName
         member _.IsArray = x.IsArray
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         member _.Assembly: ProvidedAssembly = x.Assembly |> ProvidedAssembly.Create
 #else
         member _.Assembly: ProvidedAssembly? = x.Assembly |> ProvidedAssembly.Create
@@ -377,7 +377,7 @@ module internal ExtensionTyping =
         member _.GetGenericTypeDefinition() = x.GetGenericTypeDefinition() |> ProvidedType.CreateWithNullCheck ctxt "GenericTypeDefinition"
         /// Type.BaseType can be null when Type is interface or object
         member _.BaseType = x.BaseType |> ProvidedType.Create ctxt
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         member _.GetStaticParameters(provider: ITypeProvider) : ProvidedParameterInfo[] = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArray ctxt
 #else
         member _.GetStaticParameters(provider: ITypeProvider) : ProvidedParameterInfo[]? = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArray ctxt
@@ -418,7 +418,7 @@ module internal ExtensionTyping =
 
         member _.AsProvidedVar name = ProvidedVar.CreateNonNull ctxt (Quotations.Var(name, x))
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member Create ctxt x : ProvidedType = 
 #else
         static member Create ctxt x : ProvidedType? = 
@@ -434,7 +434,7 @@ module internal ExtensionTyping =
             | Null -> nullArg name 
             | t -> ProvidedType (t, ctxt)
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member CreateArray ctxt (xs: Type[]) : ProvidedType[] = 
 #else
         static member CreateArray ctxt (xs: Type[]?) : ProvidedType[]? = 
@@ -459,11 +459,11 @@ module internal ExtensionTyping =
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
     and 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         IProvidedCustomAttributeProvider =
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         abstract GetDefinitionLocationAttribute : provider: ITypeProvider -> (string * int * int) option 
 #else
         abstract GetDefinitionLocationAttribute : provider: ITypeProvider -> (string? * int * int) option 
@@ -520,7 +520,7 @@ module internal ExtensionTyping =
                         |> Seq.toArray  }
 
     and [<AbstractClass>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedMemberInfo (x: System.Reflection.MemberInfo, ctxt) = 
@@ -535,7 +535,7 @@ module internal ExtensionTyping =
             member _.GetAttributeConstructorArgs (provider, attribName) = provide().GetAttributeConstructorArgs (provider, attribName)
 
     and [<Sealed>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedParameterInfo (x: System.Reflection.ParameterInfo, ctxt) = 
@@ -549,7 +549,7 @@ module internal ExtensionTyping =
         /// ParameterInfo.ParameterType cannot be null
         member _.ParameterType = ProvidedType.CreateWithNullCheck ctxt "ParameterType" x.ParameterType
         
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member Create ctxt (x: ParameterInfo) : ProvidedParameterInfo = 
 #else
         static member Create ctxt (x: ParameterInfo?) : ProvidedParameterInfo? = 
@@ -560,7 +560,7 @@ module internal ExtensionTyping =
 
         static member CreateNonNull ctxt x = ProvidedParameterInfo (x, ctxt)
         
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member CreateArray ctxt (xs: ParameterInfo[]) : ProvidedParameterInfo[] = 
 #else
         static member CreateArray ctxt (xs: ParameterInfo[]?) : ProvidedParameterInfo[]? = 
@@ -585,7 +585,7 @@ module internal ExtensionTyping =
         override _.GetHashCode() = assert false; x.GetHashCode()
 
     and [<Sealed>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedAssembly (x: System.Reflection.Assembly) = 
@@ -593,7 +593,7 @@ module internal ExtensionTyping =
         member _.FullName = x.FullName
         member _.GetManifestModuleContents(provider: ITypeProvider) = provider.GetGeneratedAssemblyContents x
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member Create x : ProvidedAssembly = match x with null -> null | t -> ProvidedAssembly (t)
 #else
         static member Create x : ProvidedAssembly? = match x with null -> null | t -> ProvidedAssembly (t)
@@ -606,7 +606,7 @@ module internal ExtensionTyping =
         override _.GetHashCode() = assert false; x.GetHashCode()
 
     and [<AbstractClass>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedMethodBase (x: System.Reflection.MethodBase, ctxt) = 
@@ -687,7 +687,7 @@ module internal ExtensionTyping =
 
 
     and [<Sealed>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedFieldInfo (x: System.Reflection.FieldInfo, ctxt) = 
@@ -695,7 +695,7 @@ module internal ExtensionTyping =
 
         static member CreateNonNull ctxt x = ProvidedFieldInfo (x, ctxt)
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member Create ctxt x : ProvidedFieldInfo = 
 #else
         static member Create ctxt x : ProvidedFieldInfo? = 
@@ -704,7 +704,7 @@ module internal ExtensionTyping =
             | Null -> null 
             | NonNull x -> ProvidedFieldInfo (x, ctxt)
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member CreateArray ctxt (xs: FieldInfo[]) : ProvidedFieldInfo[] = 
 #else
         static member CreateArray ctxt (xs: FieldInfo[]?) : ProvidedFieldInfo[]? = 
@@ -734,7 +734,7 @@ module internal ExtensionTyping =
 
 
     and [<Sealed>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedMethodInfo (x: System.Reflection.MethodInfo, ctxt) = 
@@ -745,7 +745,7 @@ module internal ExtensionTyping =
         static member CreateNonNull ctxt (x: MethodInfo) : ProvidedMethodInfo = 
             ProvidedMethodInfo (x, ctxt)
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member Create ctxt (x: MethodInfo) : ProvidedMethodInfo = 
 #else
         static member Create ctxt (x: MethodInfo?) : ProvidedMethodInfo? = 
@@ -754,7 +754,7 @@ module internal ExtensionTyping =
             | Null -> null
             | NonNull x -> ProvidedMethodInfo (x, ctxt)
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member CreateArray ctxt (xs: MethodInfo[]) : ProvidedMethodInfo[] = 
 #else
         static member CreateArray ctxt (xs: MethodInfo[]?) : ProvidedMethodInfo[]? = 
@@ -769,7 +769,7 @@ module internal ExtensionTyping =
         override _.GetHashCode() = assert false; x.GetHashCode()
 
     and [<Sealed>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedPropertyInfo (x: System.Reflection.PropertyInfo, ctxt) = 
@@ -784,7 +784,7 @@ module internal ExtensionTyping =
 
         static member CreateNonNull ctxt x = ProvidedPropertyInfo (x, ctxt)
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member Create ctxt x : ProvidedPropertyInfo = 
 #else
         static member Create ctxt x : ProvidedPropertyInfo? = 
@@ -793,7 +793,7 @@ module internal ExtensionTyping =
             | Null -> null 
             | NonNull x -> ProvidedPropertyInfo (x, ctxt)
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member CreateArray ctxt xs : ProvidedPropertyInfo[] = 
 #else
         static member CreateArray ctxt (xs: PropertyInfo[]?) : ProvidedPropertyInfo[]? = 
@@ -817,7 +817,7 @@ module internal ExtensionTyping =
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
     and [<Sealed>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedEventInfo (x: System.Reflection.EventInfo, ctxt) = 
@@ -829,7 +829,7 @@ module internal ExtensionTyping =
         
         static member CreateNonNull ctxt x = ProvidedEventInfo (x, ctxt)
         
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member Create ctxt x : ProvidedEventInfo = 
 #else
         static member Create ctxt x : ProvidedEventInfo? = 
@@ -838,7 +838,7 @@ module internal ExtensionTyping =
             | Null -> null 
             | NonNull x -> ProvidedEventInfo (x, ctxt)
         
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member CreateArray ctxt xs : ProvidedEventInfo[] = 
 #else
         static member CreateArray ctxt (xs: EventInfo[]?) : ProvidedEventInfo[]? = 
@@ -862,7 +862,7 @@ module internal ExtensionTyping =
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
     and [<Sealed>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedConstructorInfo (x: System.Reflection.ConstructorInfo, ctxt) = 
@@ -870,7 +870,7 @@ module internal ExtensionTyping =
 
         static member CreateNonNull ctxt x = ProvidedConstructorInfo (x, ctxt)
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member Create ctxt (x: ConstructorInfo) : ProvidedConstructorInfo = 
 #else
         static member Create ctxt (x: ConstructorInfo?) : ProvidedConstructorInfo? = 
@@ -879,7 +879,7 @@ module internal ExtensionTyping =
             | Null -> null 
             | NonNull x -> ProvidedConstructorInfo (x, ctxt)
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member CreateArray ctxt xs : ProvidedConstructorInfo[] = 
 #else
         static member CreateArray ctxt (xs: ConstructorInfo[]?) : ProvidedConstructorInfo[]? = 
@@ -917,7 +917,7 @@ module internal ExtensionTyping =
         | ProvidedIfThenElseExpr of ProvidedExpr * ProvidedExpr * ProvidedExpr
         | ProvidedVarExpr of ProvidedVar
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     and [<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
 #else
     and [<RequireQualifiedAccess; Class; Sealed>]
@@ -974,7 +974,7 @@ module internal ExtensionTyping =
             | Quotations.Patterns.Var v ->
                 Some (ProvidedVarExpr (ProvidedVar.CreateNonNull ctxt v))
             | _ -> None
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         static member Create ctxt t : ProvidedExpr = 
 #else
         static member Create ctxt t : ProvidedExpr? = 
@@ -995,7 +995,7 @@ module internal ExtensionTyping =
 
         override _.GetHashCode() = x.GetHashCode()
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     and [<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
 #else
     and [<RequireQualifiedAccess; Class; Sealed>]
@@ -1049,7 +1049,7 @@ module internal ExtensionTyping =
         if name <> expectedName then
             raise (TypeProviderError(FSComp.SR.etProvidedTypeHasUnexpectedName(expectedName, name), st.TypeProviderDesignation, m))
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         let namespaceName = TryTypeMember(st, name, "Namespace", m, "", fun st -> st.Namespace) |> unmarshal
 #else
         let namespaceName = TryTypeMember<_, string?>(st, name, "Namespace", m, "", fun st -> st.Namespace) |> unmarshal // TODO NULLNESS: why is this explicit instantiation needed?
@@ -1076,7 +1076,7 @@ module internal ExtensionTyping =
         // Do all the calling into st up front with recovery
         let fullName, namespaceName, usedMembers =
             let name = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.Name), "Name")
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
             let namespaceName = TryTypeMember(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
 #else
             let namespaceName = TryTypeMember<_, string?>(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
@@ -1185,7 +1185,7 @@ module internal ExtensionTyping =
 
         // Validate the Name, Namespace and FullName properties
         let name = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.Name), "Name")
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         let _namespaceName = TryTypeMember(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
 #else
         let _namespaceName = TryTypeMember<_, (string?)>(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
@@ -1200,7 +1200,7 @@ module internal ExtensionTyping =
         | -1 -> ()
         | n -> errorR(Error(FSComp.SR.etIllegalCharactersInTypeName(string expectedName.[n], expectedName), m))  
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         let staticParameters = st.PApplyWithProvider((fun (st, provider) -> st.GetStaticParameters provider), range=m) 
 #else
         let staticParameters : Tainted<ProvidedParameterInfo[]?> = st.PApplyWithProvider((fun (st, provider) -> st.GetStaticParameters provider), range=m) 
@@ -1212,7 +1212,7 @@ module internal ExtensionTyping =
     /// Resolve a (non-nested) provided type given a full namespace name and a type name. 
     /// May throw an exception which will be turned into an error message by one of the 'Try' function below.
     /// If resolution is successful the type is then validated.
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     let ResolveProvidedType (resolver: Tainted<ITypeProvider>, m, moduleOrNamespace: string[], typeName) : Tainted<ProvidedType> =
 #else
     let ResolveProvidedType (resolver: Tainted<ITypeProvider>, m, moduleOrNamespace: string[], typeName) : Tainted<ProvidedType?> =
@@ -1400,7 +1400,7 @@ module internal ExtensionTyping =
             | None -> None
 
     /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     let GetPartsOfNamespaceRecover(namespaceName: string) = 
 #else
     let GetPartsOfNamespaceRecover(namespaceName: string?) = 
@@ -1412,7 +1412,7 @@ module internal ExtensionTyping =
             else splitNamespace (nonNull namespaceName)
 
     /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     let GetProvidedNamespaceAsPath (m, resolver:Tainted<ITypeProvider>, namespaceName:string) = 
 #else
     let GetProvidedNamespaceAsPath (m, resolver:Tainted<ITypeProvider>, namespaceName:string?) = 
@@ -1429,7 +1429,7 @@ module internal ExtensionTyping =
         // Can't use st.Fullname because it may be like IEnumerable<Something>
         // We want [System;Collections;Generic]
         let namespaceParts = GetPartsOfNamespaceRecover(st.PUntaint((fun st -> st.Namespace), range))
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
         let rec walkUpNestedClasses(st: Tainted<ProvidedType>, soFar) =
 #else
         let rec walkUpNestedClasses(st: Tainted<ProvidedType?>, soFar) =

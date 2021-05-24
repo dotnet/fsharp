@@ -2,6 +2,8 @@
 
 module FSharp.Compiler.AbstractIL.IL
 
+open FSharp.Compiler.IO
+
 #nowarn "49"
 #nowarn "343" // The type 'ILAssemblyRef' implements 'System.IComparable' explicitly but provides no corresponding override for 'Object.Equals'.
 #nowarn "346" // The struct, record or union type 'IlxExtensionType' has an explicit implementation of 'Object.Equals'. ...
@@ -1297,20 +1299,20 @@ type ILFieldInit =
     | Null
 
     member x.AsObject() =
-        match x with 
+        match x with
         | ILFieldInit.String s -> box s
-        | ILFieldInit.Bool bool -> box bool   
-        | ILFieldInit.Char u16 -> box (char (int u16))  
-        | ILFieldInit.Int8 i8 -> box i8     
-        | ILFieldInit.Int16 i16 -> box i16    
-        | ILFieldInit.Int32 i32 -> box i32    
-        | ILFieldInit.Int64 i64 -> box i64    
-        | ILFieldInit.UInt8 u8 -> box u8     
-        | ILFieldInit.UInt16 u16 -> box u16    
-        | ILFieldInit.UInt32 u32 -> box u32    
-        | ILFieldInit.UInt64 u64 -> box u64    
-        | ILFieldInit.Single ieee32 -> box ieee32 
-        | ILFieldInit.Double ieee64 -> box ieee64 
+        | ILFieldInit.Bool bool -> box bool
+        | ILFieldInit.Char u16 -> box (char (int u16))
+        | ILFieldInit.Int8 i8 -> box i8
+        | ILFieldInit.Int16 i16 -> box i16
+        | ILFieldInit.Int32 i32 -> box i32
+        | ILFieldInit.Int64 i64 -> box i64
+        | ILFieldInit.UInt8 u8 -> box u8
+        | ILFieldInit.UInt16 u16 -> box u16
+        | ILFieldInit.UInt32 u32 -> box u32
+        | ILFieldInit.UInt64 u64 -> box u64
+        | ILFieldInit.Single ieee32 -> box ieee32
+        | ILFieldInit.Double ieee64 -> box ieee64
         | ILFieldInit.Null -> (null :> Object)
 
 // --------------------------------------------------------------------
@@ -1765,8 +1767,8 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
 
     member x.FindByNameAndArity (nm, arity) = x.FindByName nm |> List.filter (fun x -> List.length x.Parameters = arity)
 
-    member x.TryFindInstanceByNameAndCallingSignature (nm, callingSig) = 
-        x.FindByName nm 
+    member x.TryFindInstanceByNameAndCallingSignature (nm, callingSig) =
+        x.FindByName nm
         |> List.tryFind (fun x -> not x.IsStatic && x.CallingSignature = callingSig)
 
 [<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
@@ -2631,15 +2633,15 @@ let tname_UIntPtr = "System.UIntPtr"
 let tname_TypedReference = "System.TypedReference"
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type ILGlobals(primaryScopeRef: ILScopeRef, assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list) =
+type ILGlobals(primaryScopeRef: ILScopeRef, assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list, fsharpCoreAssemblyScopeRef: ILScopeRef) =
 
     let assembliesThatForwardToPrimaryAssembly = Array.ofList assembliesThatForwardToPrimaryAssembly
 
     let mkSysILTypeRef nm = mkILTyRef (primaryScopeRef, nm)
 
     member _.primaryAssemblyScopeRef = primaryScopeRef
-    member x.primaryAssemblyRef = 
-        match primaryScopeRef with 
+    member x.primaryAssemblyRef =
+        match primaryScopeRef with
         | ILScopeRef.Assembly aref -> aref
         | _ -> failwith "Invalid primary assembly"
     member x.primaryAssemblyName = x.primaryAssemblyRef.Name
@@ -2664,6 +2666,8 @@ type ILGlobals(primaryScopeRef: ILScopeRef, assembliesThatForwardToPrimaryAssemb
     member val typ_UIntPtr = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_UIntPtr))
     member val typ_TypedReference = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_TypedReference))
 
+    member _.fsharpCoreAssemblyScopeRef = fsharpCoreAssemblyScopeRef
+
     member x.IsPossiblePrimaryAssemblyRef(aref: ILAssemblyRef) =
         aref.EqualsIgnoringVersion x.primaryAssemblyRef ||
         assembliesThatForwardToPrimaryAssembly
@@ -2675,7 +2679,7 @@ type ILGlobals(primaryScopeRef: ILScopeRef, assembliesThatForwardToPrimaryAssemb
 
     override x.ToString() = "<ILGlobals>"
 
-let mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly) = ILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly)
+let mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef) = ILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef)
 
 let mkNormalCall mspec = I_call (Normalcall, mspec, None)
 
@@ -2720,10 +2724,15 @@ let isILBoxedTy = function ILType.Boxed _ -> true | _ -> false
 
 let isILValueTy = function ILType.Value _ -> true | _ -> false
 
+let rec stripILModifiedFromTy (ty: ILType) =
+    match ty with
+    | ILType.Modified(_, _, ty) -> stripILModifiedFromTy ty
+    | _ -> ty
+
 let isBuiltInTySpec (ilg: ILGlobals) (tspec: ILTypeSpec) n =
     let tref = tspec.TypeRef
     let scoref = tref.Scope
-    tref.Name = n && 
+    tref.Name = n &&
     (match scoref with
      | ILScopeRef.Local
      | ILScopeRef.Module _ -> false
@@ -2926,7 +2935,7 @@ let mkILMethodBody (initlocals, locals, maxstack, code, tag) : ILMethodBody =
       Code= code
       SourceMarker=tag }
 
-let mkMethodBody (zeroinit, locals, maxstack, code, tag) = 
+let mkMethodBody (zeroinit, locals, maxstack, code, tag) =
     let ilCode = mkILMethodBody (zeroinit, locals, maxstack, code, tag)
     MethodBody.IL (lazy ilCode)
 
@@ -3740,11 +3749,6 @@ let getCustomAttrData (ilg: ILGlobals) cattr =
     | ILAttribute.Decoded (mspec, fixedArgs, namedArgs) ->
         encodeCustomAttrArgs ilg mspec fixedArgs namedArgs
 
-let MscorlibScopeRef = ILScopeRef.Assembly (ILAssemblyRef.Create ("mscorlib", None, Some ecmaPublicKey, true, None, None))
-
-let EcmaMscorlibILGlobals = mkILGlobals (MscorlibScopeRef, [])
-let PrimaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [])
-
 // ILSecurityDecl is a 'blob' having the following format:
 // - A byte containing a period (.).
 // - A compressed int32 containing the number of attributes encoded in the blob.
@@ -4355,6 +4359,20 @@ let resolveILMethodRef td mref = resolveILMethodRefWithRescope id td mref
 
 let mkRefToILModule m =
     ILModuleRef.Create (m.Name, true, None)
+
+let MscorlibScopeRef = ILScopeRef.Assembly (ILAssemblyRef.Create ("mscorlib", None, Some ecmaPublicKey, true, None, None))
+
+let DummyFSharpCoreScopeRef =
+    let asmRef =
+        // The exact public key token and version used here don't actually matter, or shouldn't.
+        ILAssemblyRef.Create("FSharp.Core", None,
+                Some (PublicKeyToken(Bytes.ofInt32Array [| 0xb0; 0x3f; 0x5f; 0x7f; 0x11; 0xd5; 0x0a; 0x3a |])),
+                false,
+                Some (parseILVersion "0.0.0.0"), None)
+    ILScopeRef.Assembly asmRef
+
+let EcmaMscorlibILGlobals = mkILGlobals (MscorlibScopeRef, [], DummyFSharpCoreScopeRef)
+let PrimaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [], DummyFSharpCoreScopeRef)
 
 type ILEventRef =
     { erA: ILTypeRef

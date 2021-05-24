@@ -33,16 +33,14 @@ type internal NavigateToSearchResult(item: NavigableItem, matchKind: FSharpNavig
 
 module private Index =
     [<System.Diagnostics.DebuggerDisplay("{DebugString()}")>]
-    type private IndexEntry(str: string, offset: int, item: NavigableItem, isOperator: bool) =
+    type private IndexEntry(str: string, offset: int, item: NavigableItem) =
         member _.String = str
         member _.Offset = offset
         member _.Length = str.Length - offset
         member _.Item = item
-        member _.IsOperator = isOperator
         member x.StartsWith (s: string) = 
             if s.Length > x.Length then false
             else CultureInfo.CurrentCulture.CompareInfo.IndexOf(str, s, offset, s.Length, CompareOptions.IgnoreCase) = offset
-        member private _.DebugString() = sprintf "%s (offset %d) (%s)" (str.Substring offset) offset str
 
     let private indexEntryComparer =
         { new IComparer<IndexEntry> with
@@ -70,20 +68,20 @@ module private Index =
         let entries = ResizeArray()
 
         for item in items do
-            let isOperator, name = 
+            let name = 
                 if PrettyNaming.IsMangledOpName item.Name then 
-                    true, PrettyNaming.DecompileOpName item.Name 
+                    PrettyNaming.DecompileOpName item.Name 
                 else 
-                    false, item.Name
+                    item.Name
             for i = 0 to name.Length - 1 do
-                entries.Add(IndexEntry(name, i, item, isOperator))
+                entries.Add(IndexEntry(name, i, item))
 
         entries.Sort(indexEntryComparer)
         { new IIndexedNavigableItems with
               member _.Find (searchValue) =
                   let result = HashSet(navigateToSearchResultComparer)
                   if entries.Count > 0 then 
-                     let entryToFind = IndexEntry(searchValue, 0, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
+                     let entryToFind = IndexEntry(searchValue, 0, Unchecked.defaultof<_>)
                      
                      let initial = 
                          let p = entries.BinarySearch(entryToFind, indexEntryComparer)
@@ -143,7 +141,8 @@ module private Utils =
         | NavigableItemKind.EnumCase -> Glyph.EnumPublic
         | NavigableItemKind.UnionCase -> Glyph.EnumPublic
 
-    let containerToString (container: NavigableContainer) (project: Project) =
+    let containerToString (container: NavigableContainer) (document: Document) =
+        let project = document.Project
         let typeAsString =
             match container.Type with
             | NavigableContainerType.File -> "project "
@@ -156,7 +155,13 @@ module private Utils =
             | NavigableContainerType.File ->
                 (Path.GetFileNameWithoutExtension project.Name) + ", " + (Path.GetFileName container.Name)
             | _ -> container.Name
-        typeAsString + name
+
+        let combined = typeAsString + name
+
+        if isSignatureFile document.FilePath then
+            "signature for: " + combined
+        else
+            combined
 
     type PerDocumentSavedData = { Hash: int; Items: Index.IIndexedNavigableItems }
 
@@ -181,23 +186,29 @@ type internal FSharpNavigateToSearchService
             match parseResults with
             | None -> return [||]
             | Some parseResults ->
+                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let navItems parsedInput =
+                    NavigateTo.GetNavigableItems parsedInput
+                    |> Array.filter (fun i -> kinds.Contains(navigateToItemKindToRoslynKind i.Kind))
 
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-            let navItems parsedInput =
-                NavigateTo.GetNavigableItems parsedInput
-                |> Array.filter (fun i -> kinds.Contains(navigateToItemKindToRoslynKind i.Kind))
-
-            let items = parseResults.ParseTree |> navItems
-            let navigableItems =
-                [| for item in items do
-                        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with 
-                        | None -> ()
-                        | Some sourceSpan ->
-                            let glyph = navigateToItemKindToGlyph item.Kind
-                            let kind = navigateToItemKindToRoslynKind item.Kind
-                            let additionalInfo = containerToString item.Container document.Project
-                            yield NavigableItem(document, sourceSpan, glyph, item.Name, kind, additionalInfo) |]
-            return navigableItems
+                let items = parseResults.ParseTree |> navItems
+                let navigableItems =
+                    [|
+                        for item in items do
+                            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with 
+                            | None -> ()
+                            | Some sourceSpan ->
+                                let glyph = navigateToItemKindToGlyph item.Kind
+                                let kind = navigateToItemKindToRoslynKind item.Kind
+                                let additionalInfo = containerToString item.Container document
+                                let _name =
+                                    if isSignatureFile document.FilePath then
+                                        item.Name + " (signature)"
+                                    else
+                                        item.Name
+                                yield NavigableItem(document, sourceSpan, glyph, item.Name, kind, additionalInfo)
+                    |]
+                return navigableItems
         }
 
     let getCachedIndexedNavigableItems(document: Document, parsingOptions: FSharpParsingOptions, kinds: IImmutableSet<string>) =

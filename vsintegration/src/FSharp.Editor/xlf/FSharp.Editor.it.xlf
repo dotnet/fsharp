@@ -12,6 +12,11 @@
         <target state="translated">Aggiungi la parola chiave mancante 'fun'</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingInstanceMemberParameter">
+        <source>Add missing instance member parameter</source>
+        <target state="new">Add missing instance member parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">Aggiungi la parola chiave 'new'</target>
@@ -19,7 +24,7 @@
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
         <source>Add type annotation</source>
-        <target state="new">Add type annotation</target>
+        <target state="translated">Aggiungere l'annotazione di tipo</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -29,7 +34,7 @@
       </trans-unit>
       <trans-unit id="ConvertToNotEqualsEqualityExpression">
         <source>Use '&lt;&gt;' for inequality check</source>
-        <target state="new">Use '&lt;&gt;' for inequality check</target>
+        <target state="translated">Usare '&lt;&gt;' per il controllo di disuguaglianza</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
@@ -95,6 +100,11 @@
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">Rimuovi 'return!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnusedBinding">
+        <source>Remove unused binding</source>
+        <target state="new">Remove unused binding</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveYield">
@@ -245,6 +255,11 @@
       <trans-unit id="UseMutationWhenValueIsMutable">
         <source>Use '&lt;-' to mutate value</source>
         <target state="translated">Usare '&lt;-' per modificare il valore</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseNameof">
+        <source>Use 'nameof'</source>
+        <target state="new">Use 'nameof'</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">

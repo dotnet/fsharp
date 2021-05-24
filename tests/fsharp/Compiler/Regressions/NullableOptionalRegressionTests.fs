@@ -34,3 +34,66 @@ let test () =
         |> typecheck
         |> shouldSucceed
         |> ignore
+
+    [<Test>]
+    let ``Method should infer 'z' correctly``() =
+        let fsSrc =
+            """
+namespace FSharpTest
+
+open System
+
+type Test() = class end
+
+type Test with
+
+    static member nullableE (encoder, x: Nullable<'a>) = if x.HasValue then encoder x.Value else Test()
+    static member nullable codec z = Test.nullableE(codec, z)
+            """
+        FSharp fsSrc
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Test>]
+    let ``Method should infer correctly``() =
+        let fsSrc =
+            """
+namespace FSharpTest
+
+open System
+
+type Test() = class end
+
+type Test with
+
+    static member nullableE encoder (x: Nullable<'a>) = if x.HasValue then encoder x.Value else Test()
+    static member nullable codec = Test.nullableE codec
+            """
+        FSharp fsSrc
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Test>]
+    let ``Method should infer correctly 2``() =
+        let fsSrc =
+            """
+namespace FSharpTest
+
+open System
+
+type Test() = class end
+
+type Test with
+
+    static member nullableE encoder (x: Nullable<int32>) = if x.HasValue then encoder x.Value else Test()
+    static member nullable codec = Test.nullableE codec
+            """
+        FSharp fsSrc
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore

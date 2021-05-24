@@ -14,6 +14,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -29,12 +30,15 @@ type AssemblyLoader =
 
     /// Resolve an Abstract IL assembly reference to a Ccu
     abstract FindCcuFromAssemblyRef : CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
+
+    abstract TryFindXmlDocumentationInfo : assemblyName: string -> XmlDocumentationInfo option
+
 #if !NO_EXTENSIONTYPING
 
     /// Get a flag indicating if an assembly is a provided assembly, plus the
     /// table of information recording remappings from type names in the provided assembly to type
     /// names in the statically linked, embedded assembly.
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     abstract GetProvidedAssemblyInfo : CompilationThreadToken * range * Tainted<ProvidedAssembly> -> bool * ProvidedAssemblyStaticLinkingMap option
 #else
     abstract GetProvidedAssemblyInfo : CompilationThreadToken * range * Tainted<ProvidedAssembly?> -> bool * ProvidedAssemblyStaticLinkingMap option
@@ -612,7 +616,7 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
     ] |> Map.ofList
 
 /// Import an IL assembly as a new TAST CCU
-let ImportILAssembly(amap: (unit -> ImportMap), m, auxModuleLoader, ilScopeRef, sourceDir, filename, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
+let ImportILAssembly(amap: (unit -> ImportMap), m, auxModuleLoader, xmlDocInfoLoader: IXmlDocumentationInfoLoader option, ilScopeRef, sourceDir, filename, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
     invalidateCcu |> ignore
     let aref =   
         match ilScopeRef with 
@@ -641,6 +645,11 @@ let ImportILAssembly(amap: (unit -> ImportMap), m, auxModuleLoader, ilScopeRef, 
           FileName = filename
           MemberSignatureEquality= (fun ty1 ty2 -> typeEquivAux EraseAll (amap()).g ty1 ty2)
           TryGetILModuleDef = (fun () -> Some ilModule)
-          TypeForwarders = forwarders }
+          TypeForwarders = forwarders
+          XmlDocumentationInfo = 
+            match xmlDocInfoLoader, filename with
+            | Some xmlDocInfoLoader, Some filename -> xmlDocInfoLoader.TryLoad(filename, ilModule)
+            | _ -> None
+        }
                 
     CcuThunk.Create(nm, ccuData)
