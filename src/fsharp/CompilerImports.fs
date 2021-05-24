@@ -39,6 +39,7 @@ open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.BuildGraph
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -1589,13 +1590,13 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         phase2
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
-    member tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, r: AssemblyResolution) : Async<(_ * (unit -> AvailableImportedAssembly list)) option> =
-      asyncErrorLogger {
+    member tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, r: AssemblyResolution) : GraphNode<(_ * (unit -> AvailableImportedAssembly list)) option> =
+      node {
         CheckDisposed()
         let m = r.originalReference.Range
         let filename = r.resolvedPath
         let! contentsOpt =
-          async {
+          node {
             match r.ProjectReference with
             | Some ilb -> 
                 return! ilb.EvaluateRawContents()
@@ -1652,13 +1653,13 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
     member tcImports.RegisterAndImportReferencedAssemblies (ctok, nms: AssemblyResolution list) =
-      asyncErrorLogger {
+      node {
         CheckDisposed()
 
         let! results =
             nms
             |> List.map (fun nm -> 
-                asyncErrorLogger {
+                node {
                     try
                          return! tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, nm)
                     with e ->
@@ -1666,7 +1667,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                          return None
                 }
             )
-            |> Async.Sequential
+            |> GraphNode.Sequential
 
         let dllinfos, phase2s = results |> Array.choose id |> List.ofArray |> List.unzip
         fixupOrphanCcus()
@@ -1689,7 +1690,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 | OkResult (warns, res) ->
                     ReportWarnings warns
                     tcImports.RegisterAndImportReferencedAssemblies(ctok, res) 
-                    |> AsyncErrorLogger.RunSynchronously 
+                    |> GraphNode.RunSynchronously 
                     |> ignore
                     true
                 | ErrorResult (_warns, _err) ->
@@ -1770,7 +1771,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     // we dispose TcImports is because we need to dispose type providers, and type providers are never included in the framework DLL set.
     // If a framework set ever includes type providers, you will not have to worry about explicitly calling Dispose as the Finalizer will handle it.
     static member BuildFrameworkTcImports (tcConfigP: TcConfigProvider, frameworkDLLs, nonFrameworkDLLs) =
-      asyncErrorLogger {
+      node {
         let ctok = CompilationThreadToken()
         let tcConfig = tcConfigP.Get ctok
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(tcConfig, frameworkDLLs, [])
@@ -1830,7 +1831,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                     None)
 
         let! fslibCcu, fsharpCoreAssemblyScopeRef =
-            asyncErrorLogger {
+            node {
                 if tcConfig.compilingFslib then
                     // When compiling FSharp.Core.dll, the fslibCcu reference to FSharp.Core.dll is a delayed ccu thunk fixed up during type checking
                     return CcuThunk.CreateDelayed getFSharpCoreLibraryName, ILScopeRef.Local
@@ -1896,7 +1897,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
        (tcConfigP: TcConfigProvider, tcGlobals: TcGlobals, baseTcImports,
         nonFrameworkReferences, knownUnresolved, dependencyProvider) =
 
-      asyncErrorLogger {
+      node {
         let ctok = CompilationThreadToken()
         let tcConfig = tcConfigP.Get ctok
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(tcConfig, nonFrameworkReferences, knownUnresolved)
@@ -1908,7 +1909,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
       }
 
     static member BuildTcImports(tcConfigP: TcConfigProvider, dependencyProvider) =
-      asyncErrorLogger {
+      node {
         let ctok = CompilationThreadToken()
         let tcConfig = tcConfigP.Get ctok
         let frameworkDLLs, nonFrameworkReferences, knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
@@ -1929,7 +1930,7 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, referenceRa
     let resolutions = CommitOperationResult(tcImports.TryResolveAssemblyReference(ctok, AssemblyReference(referenceRange, file, None), ResolveAssemblyReferenceMode.ReportErrors))
     let dllinfos, ccuinfos = 
         tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions) 
-        |> AsyncErrorLogger.RunSynchronously
+        |> GraphNode.RunSynchronously
 
     let asms =
         ccuinfos |> List.map (function

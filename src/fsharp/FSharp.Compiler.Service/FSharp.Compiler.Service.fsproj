@@ -198,12 +198,6 @@
     <Compile Include="..\lib.fs">
       <Link>Utilities\lib.fs</Link>
     </Compile>
-	<Compile Include="..\AsyncLazy.fsi">
-		<Link>Utilities\AsyncLazy.fsi</Link>
-	</Compile>
-	<Compile Include="..\AsyncLazy.fs">
-		<Link>Utilities\AsyncLazy.fs</Link>
-	</Compile>
     <Compile Include="..\rational.fsi">
       <Link>Utilities\rational.fsi</Link>
     </Compile>
@@ -703,6 +697,12 @@
     </Compile>
     <Compile Include="..\DependencyManager/DependencyProvider.fs">
       <Link>Driver\DependencyProvider.fs</Link>
+    </Compile>
+    <Compile Include="..\BuildGraph.fsi">
+      <Link>Driver\BuildGraph.fsi</Link>
+    </Compile>
+    <Compile Include="..\BuildGraph.fs">
+      <Link>Driver\BuildGraph.fs</Link>
     </Compile>
     <Compile Include="..\CompilerConfig.fsi">
       <Link>Driver\CompilerConfig.fsi</Link>

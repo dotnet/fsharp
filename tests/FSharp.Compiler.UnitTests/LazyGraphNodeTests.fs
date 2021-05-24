@@ -9,25 +9,26 @@ open Xunit
 open FSharp.Test.Utilities
 open Internal.Utilities.Library
 open System.Runtime.CompilerServices
+open FSharp.Compiler.BuildGraph
 
-module AsyncLazyTests =
+module LazyGraphNodeTests =
     
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let private createLazyWork () =
         let o = obj ()
-        AsyncLazy(async { 
+        LazyGraphNode(node { 
             Assert.shouldBeTrue (o <> null)
             return 1 
         }), WeakReference(o)
 
     [<Fact>]
     let ``Intialization of async lazy should not have a computed value``() =
-        let lazyWork = AsyncLazy(async { return 1 })
+        let lazyWork = LazyGraphNode(node { return 1 })
         Assert.shouldBeTrue(lazyWork.TryGetValue().IsNone)
 
     [<Fact>]
     let ``Intialization of async lazy should have a request count of zero``() =
-        let lazyWork = AsyncLazy(async { return 1 })
+        let lazyWork = LazyGraphNode(node { return 1 })
         Assert.shouldBe 0 lazyWork.RequestCount
 
     [<Fact>]
@@ -36,17 +37,17 @@ module AsyncLazyTests =
         let resetEventInAsync = new ManualResetEvent(false)
 
         let lazyWork = 
-            AsyncLazy(async { 
+            LazyGraphNode(node { 
                 resetEventInAsync.Set() |> ignore
-                let! _ = Async.AwaitWaitHandle(resetEvent)
+                let! _ = GraphNode.AwaitWaitHandle(resetEvent)
                 return 1 
             })
 
         let task =
-            async {
-                let! _ = lazyWork.GetValueAsync()
+            node {
+                let! _ = lazyWork.GetValue()
                 ()
-            } |> Async.StartAsTask
+            } |> GraphNode.StartAsTask
 
         resetEventInAsync.WaitOne() |> ignore
         Assert.shouldBe 1 lazyWork.RequestCount
@@ -59,23 +60,23 @@ module AsyncLazyTests =
         let resetEventInAsync = new ManualResetEvent(false)
 
         let lazyWork = 
-            AsyncLazy(async { 
+            LazyGraphNode(node { 
                 resetEventInAsync.Set() |> ignore
-                let! _ = Async.AwaitWaitHandle(resetEvent)
+                let! _ = GraphNode.AwaitWaitHandle(resetEvent)
                 return 1 
             })
 
         let task1 =
-            async {
-                let! _ = lazyWork.GetValueAsync()
+            node {
+                let! _ = lazyWork.GetValue()
                 ()
-            } |> Async.StartAsTask
+            } |> GraphNode.StartAsTask
 
         let task2 =
-            async {
-                let! _ = lazyWork.GetValueAsync()
+            node {
+                let! _ = lazyWork.GetValue()
                 ()
-            } |> Async.StartAsTask
+            } |> GraphNode.StartAsTask
 
         resetEventInAsync.WaitOne() |> ignore
         Thread.Sleep(100) // Give it just enough time so that two requests are waiting
@@ -93,12 +94,12 @@ module AsyncLazyTests =
         let mutable computationCount = 0
 
         let lazyWork = 
-            AsyncLazy(async { 
+            LazyGraphNode(node { 
                 computationCount <- computationCount + 1
                 return 1 
             })
 
-        let work = Async.Parallel(Array.init requests (fun _ -> lazyWork.GetValueAsync()))
+        let work = Async.Parallel(Array.init requests (fun _ -> lazyWork.GetValue() |> Async.AwaitGraphNode))
 
         Async.RunSynchronously(work)
         |> ignore
@@ -109,9 +110,9 @@ module AsyncLazyTests =
     let ``Many requests to get a value asynchronously should get the correct value``() =
         let requests = 10000
 
-        let lazyWork = AsyncLazy(async { return 1 })
+        let lazyWork = LazyGraphNode(node { return 1 })
 
-        let work = Async.Parallel(Array.init requests (fun _ -> lazyWork.GetValueAsync()))
+        let work = Async.Parallel(Array.init requests (fun _ -> lazyWork.GetValue() |> Async.AwaitGraphNode))
 
         let result = Async.RunSynchronously(work)
 
@@ -128,7 +129,7 @@ module AsyncLazyTests =
 
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunSynchronously(lazyWork.GetValueAsync())
+        GraphNode.RunSynchronously(lazyWork.GetValue())
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -145,7 +146,7 @@ module AsyncLazyTests =
         
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunSynchronously(Async.Parallel(Array.init requests (fun _ -> lazyWork.GetValueAsync())))
+        Async.RunSynchronously(Async.Parallel(Array.init requests (fun _ -> lazyWork.GetValue() |> Async.AwaitGraphNode)))
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -157,8 +158,8 @@ module AsyncLazyTests =
         let resetEvent = new ManualResetEvent(false)
 
         let lazyWork = 
-            AsyncLazy(async { 
-                let! _ = Async.AwaitWaitHandle(resetEvent)
+            LazyGraphNode(node { 
+                let! _ = GraphNode.AwaitWaitHandle(resetEvent)
                 return 1 
             })
 
@@ -174,7 +175,7 @@ module AsyncLazyTests =
 
         let ex =
             try
-                Async.RunSynchronously(lazyWork.GetValueAsync(), cancellationToken = cts.Token)
+                Async.RunSynchronously(lazyWork.GetValue() |> Async.AwaitGraphNode, cancellationToken = cts.Token)
                 |> ignore
                 failwith "Should have canceled"
             with
@@ -192,9 +193,9 @@ module AsyncLazyTests =
         let mutable computationCount = 0
 
         let lazyWork = 
-            AsyncLazy(async { 
+            LazyGraphNode(node { 
                 computationCountBeforeSleep <- computationCountBeforeSleep + 1
-                let! _ = Async.AwaitWaitHandle(resetEvent)
+                let! _ = GraphNode.AwaitWaitHandle(resetEvent)
                 computationCount <- computationCount + 1
                 return 1 
             })
@@ -202,8 +203,8 @@ module AsyncLazyTests =
         use cts = new CancellationTokenSource()
 
         let work = 
-            async { 
-                let! _ = lazyWork.GetValueAsync()
+            node { 
+                let! _ = lazyWork.GetValue()
                 ()
             }
 
@@ -211,16 +212,16 @@ module AsyncLazyTests =
 
         for i = 0 to requests - 1 do
             if i % 10 = 0 then
-                Async.StartAsTask(work, cancellationToken = cts.Token)
+                GraphNode.StartAsTask(work, ct = cts.Token)
                 |> tasks.Add
             else
-                Async.StartAsTask(work)
+                GraphNode.StartAsTask(work)
                 |> tasks.Add
 
         Thread.Sleep(100) // Buffer some time
         cts.Cancel()
         resetEvent.Set() |> ignore
-        Async.RunSynchronously(work)
+        GraphNode.RunSynchronously(work)
         |> ignore
 
         Assert.shouldBeTrue cts.IsCancellationRequested

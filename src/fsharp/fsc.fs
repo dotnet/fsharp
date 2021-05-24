@@ -56,6 +56,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.XmlDocFileWriter
+open FSharp.Compiler.BuildGraph
 
 //----------------------------------------------------------------------------
 // Reporting - warnings, errors
@@ -521,7 +522,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     // Import basic assemblies
     let tcGlobals, frameworkTcImports = 
         TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes)
-        |> AsyncErrorLogger.RunSynchronously
+        |> GraphNode.RunSynchronously
 
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
@@ -562,7 +563,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let tcImports =
         TcImports.BuildNonFrameworkTcImports(tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
-        |> AsyncErrorLogger.RunSynchronously
+        |> GraphNode.RunSynchronously
 
     // register tcImports to be disposed in future
     disposables.Register tcImports
@@ -674,7 +675,7 @@ let main1OfAst
     // Import basic assemblies
     let tcGlobals, frameworkTcImports = 
         TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes) 
-        |> AsyncErrorLogger.RunSynchronously
+        |> GraphNode.RunSynchronously
 
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
@@ -689,7 +690,7 @@ let main1OfAst
     ReportTime tcConfig "Import non-system references"
     let tcImports = 
         TcImports.BuildNonFrameworkTcImports(tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider) 
-        |> AsyncErrorLogger.RunSynchronously
+        |> GraphNode.RunSynchronously
 
     // register tcImports to be disposed in future
     disposables.Register tcImports

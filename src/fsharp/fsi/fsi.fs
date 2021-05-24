@@ -67,6 +67,7 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.BuildGraph
 
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
@@ -2861,14 +2862,14 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let (tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolvedReferences) =
         try
             let tcConfig = tcConfigP.Get(ctokStartup)
-            checker.FrameworkImportsCache.Get (tcConfig) |> AsyncErrorLogger.RunSynchronously
+            checker.FrameworkImportsCache.Get (tcConfig) |> GraphNode.RunSynchronously
         with e ->
             stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 
     let tcImports =
       try
           TcImports.BuildNonFrameworkTcImports(tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, fsiOptions.DependencyProvider) 
-          |> AsyncErrorLogger.RunSynchronously
+          |> GraphNode.RunSynchronously
       with e ->
           stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 

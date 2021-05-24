@@ -16,6 +16,7 @@ open FSharp.Compiler.Optimizer
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.Text
 open FSharp.Core.CompilerServices
 
@@ -193,7 +194,7 @@ type TcImports =
         TcConfigProvider *
         AssemblyResolution list *
         AssemblyResolution list
-            -> Async<TcGlobals * TcImports>
+            -> GraphNode<TcGlobals * TcImports>
 
     static member BuildNonFrameworkTcImports:
         TcConfigProvider * 
@@ -202,12 +203,12 @@ type TcImports =
         AssemblyResolution list * 
         UnresolvedAssemblyReference list * 
         DependencyProvider 
-            -> Async<TcImports>
+            -> GraphNode<TcImports>
 
     static member BuildTcImports:
         tcConfigP: TcConfigProvider * 
         dependencyProvider: DependencyProvider 
-            -> Async<TcGlobals * TcImports>
+            -> GraphNode<TcGlobals * TcImports>
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
