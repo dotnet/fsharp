@@ -515,6 +515,9 @@ let s = "sixsix"
 // check %A
 check "vcewweh22" $"x = %A{1}" "x = 1"
 
+// check %B (binary)
+check "vcewweh22a" $"x = %B{19}" "x = 10011"
+
 // check %d
 check "vcewweh22b" $"x = %d{1}" "x = 1"
 
