@@ -6,7 +6,6 @@ open System
 open System.Threading
 open System.Diagnostics
 open System.Globalization
-open System.Runtime.Remoting.Messaging
 open FSharp.Compiler.ErrorLogger
 
 
@@ -246,9 +245,7 @@ type LazyGraphNode<'T> (computation: GraphNode<'T>) =
                 while true do
                     match! agent.Receive() with
 #if DEBUG
-                    | GetValue (replyChannel, ct, stackTrace) ->
-                        let frames = stackTrace.GetFrames() |> Array.map (fun x -> x.ToString())
-                        CallContext.LogicalSetData("LazyGraphNode`1", frames)
+                    | GetValue (replyChannel, ct, _stackTrace) ->
 #else
                     | GetValue (replyChannel, ct) ->
 #endif
