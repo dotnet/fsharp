@@ -6627,9 +6627,6 @@ and TcObjectExpr cenv env tpenv (objTy, realObjTy, argopt, binds, extraImpls, mO
         if isFSharpObjModelTy cenv.g objTy && GetCtorShapeCounter env = 1 then
             error(Error(FSComp.SR.tcObjectsMustBeInitializedWithObjectExpression(), mNewExpr))
 
-      // Work out the type of any interfaces to implement
-        UnifyTypes cenv env mWholeExpr objTy realObjTy
-
         let ctorCall, baseIdOpt, tpenv =
             match item, argopt with
             | Item.CtorGroup(methodName, minfos), Some (arg, baseIdOpt) ->
@@ -6694,6 +6691,7 @@ and TcObjectExpr cenv env tpenv (objTy, realObjTy, argopt, binds, extraImpls, mO
               (implty, overrides'))
 
         let (objTy', overrides') = allTypeImpls.Head
+        assert (typeEquiv cenv.g objTy objTy')
         let extraImpls = allTypeImpls.Tail
 
         // 7. Build the implementation
