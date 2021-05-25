@@ -30,46 +30,55 @@ type CompilationGlobalsScope(errorLogger: ErrorLogger, phase: BuildPhase) =
 [<NoEquality;NoComparison>]
 type GraphNode<'T> = Node of Async<'T>
 
+let wrapThreadStaticInfo computation =
+    async {
+        let errorLogger = CompileThreadStatic.ErrorLogger
+        let phase = CompileThreadStatic.BuildPhase
+        try
+            try
+                let! res = computation 
+                CompileThreadStatic.ErrorLogger <- errorLogger
+                CompileThreadStatic.BuildPhase <- phase
+                return res
+            with
+            | ex ->
+                CompileThreadStatic.ErrorLogger <- errorLogger
+                CompileThreadStatic.BuildPhase <- phase
+                return raise ex
+        finally
+            CompileThreadStatic.ErrorLogger <- errorLogger
+            CompileThreadStatic.BuildPhase <- phase 
+    }
+
 type Async<'T> with
 
     static member AwaitGraphNode(node: GraphNode<'T>) =
         match node with
-        | Node(computation) -> computation
+        | Node(computation) -> wrapThreadStaticInfo computation
 
 [<Sealed>]
 type GraphNodeBuilder() =
 
-    member _.Zero () : GraphNode<unit> = 
-        Node(
-            async { 
-                ()
-            }
-        )
+    static let zero = Node(async { () })
 
-    member _.Delay (f: unit -> GraphNode<'T>) = f()   
+    member _.Zero () : GraphNode<unit> = zero
 
-    member _.Return value =
+    member _.Delay (f: unit -> GraphNode<'T>) = 
         Node(
-            async { 
-                return value
+            async {
+                return! f() |> Async.AwaitGraphNode
             }
-        )
+        )        
+
+    member _.Return value = Node(async { return value })
 
     member _.ReturnFrom (computation:GraphNode<_>) = computation
 
     member _.Bind (computation: GraphNode<'a>, binder: 'a -> GraphNode<'b>) : GraphNode<'b> =
         Node(
             async {
-                let errorLogger = CompileThreadStatic.ErrorLogger
-                let phase = CompileThreadStatic.BuildPhase
-                try
-                    let! res = computation |> Async.AwaitGraphNode
-                    CompileThreadStatic.ErrorLogger <- errorLogger
-                    CompileThreadStatic.BuildPhase <- phase
-                    return! binder res |> Async.AwaitGraphNode
-                finally
-                    CompileThreadStatic.ErrorLogger <- errorLogger
-                    CompileThreadStatic.BuildPhase <- phase
+                let! res = computation |> Async.AwaitGraphNode
+                return! binder res |> Async.AwaitGraphNode
             }
         )
 
@@ -79,16 +88,12 @@ type GraphNodeBuilder() =
                 let errorLogger = CompileThreadStatic.ErrorLogger
                 let phase = CompileThreadStatic.BuildPhase
                 try
-                    try
-                        return! computation |> Async.AwaitGraphNode
-                    with
-                    | ex ->  
-                        CompileThreadStatic.ErrorLogger <- errorLogger
-                        CompileThreadStatic.BuildPhase <- phase
-                        return! binder ex |> Async.AwaitGraphNode
-                finally
+                    return! computation |> Async.AwaitGraphNode
+                with
+                | ex ->  
                     CompileThreadStatic.ErrorLogger <- errorLogger
                     CompileThreadStatic.BuildPhase <- phase
+                    return! binder ex |> Async.AwaitGraphNode
             }
         )
 
@@ -138,17 +143,17 @@ type GraphNodeBuilder() =
 let node = GraphNodeBuilder()
 
 [<AbstractClass;Sealed>]
-type GraphNode =
+type GraphNode private () =
+
+    static let cancellationToken =
+        Node(wrapThreadStaticInfo Async.CancellationToken)
 
     static member RunSynchronously (computation: GraphNode<'T>) =
         let errorLogger = CompileThreadStatic.ErrorLogger
         let phase = CompileThreadStatic.BuildPhase
         try
-            async {
-                CompileThreadStatic.ErrorLogger <- errorLogger
-                CompileThreadStatic.BuildPhase <- phase
-                return! computation |> Async.AwaitGraphNode
-            }
+            computation 
+            |> Async.AwaitGraphNode
             |> Async.RunSynchronously
         finally
             CompileThreadStatic.ErrorLogger <- errorLogger
@@ -158,27 +163,19 @@ type GraphNode =
         let errorLogger = CompileThreadStatic.ErrorLogger
         let phase = CompileThreadStatic.BuildPhase
         try
-            let work =
-                async {
-                    CompileThreadStatic.ErrorLogger <- errorLogger
-                    CompileThreadStatic.BuildPhase <- phase
-                    return! computation |> Async.AwaitGraphNode
-                }
+            let work = computation |> Async.AwaitGraphNode
             Async.StartAsTask(work, cancellationToken=defaultArg ct CancellationToken.None)
         finally
             CompileThreadStatic.ErrorLogger <- errorLogger
             CompileThreadStatic.BuildPhase <- phase
 
-    static member CancellationToken = Node(async { return! Async.CancellationToken })
+    static member CancellationToken = cancellationToken
 
-    static member AwaitAsync(computation: Async<'T>) = Node(computation)
+    static member AwaitAsync(computation: Async<'T>) = 
+        Node(wrapThreadStaticInfo computation)
 
     static member AwaitWaitHandle(waitHandle: WaitHandle) =
-        Node(
-            async {
-                return! Async.AwaitWaitHandle(waitHandle)
-            }
-        )
+        Node(wrapThreadStaticInfo (Async.AwaitWaitHandle(waitHandle)))
 
     static member Sequential(computations: GraphNode<'T> seq) =
         node {
