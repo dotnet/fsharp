@@ -8,7 +8,6 @@ open System.Diagnostics
 open System.Globalization
 open FSharp.Compiler.ErrorLogger
 
-
 /// This represents the thread-local state established as each task function runs as part of the build.
 ///
 /// Use to reset error and warning handlers.
@@ -200,7 +199,7 @@ type GraphNode private () =
 
 type private AgentMessage<'T> =
 #if DEBUG
-    | GetValue of AsyncReplyChannel<Result<'T, Exception>> * CancellationToken * StackTrace
+    | GetValue of AsyncReplyChannel<Result<'T, Exception>> * CancellationToken * stackTrace: string
 #else
     | GetValue of AsyncReplyChannel<Result<'T, Exception>> * CancellationToken
 #endif
@@ -238,6 +237,10 @@ type LazyGraphNode<'T> (computation: GraphNode<'T>) =
     let mutable requestCount = 0
     let mutable cachedResult = ValueNone
     let mutable cachedResultNode = ValueNone
+
+#if DEBUG
+    let stackTrace = Environment.StackTrace
+#endif
 
     let loop (agent: MailboxProcessor<AgentMessage<'T>>) =
         async {
@@ -318,7 +321,6 @@ type LazyGraphNode<'T> (computation: GraphNode<'T>) =
                         try
                             let! ct = GraphNode.CancellationToken
 #if DEBUG
-                            let stackTrace = StackTrace()
                             let! res = agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct, stackTrace)) |> GraphNode.AwaitAsync
 #else
                             let! res = agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct)) |> GraphNode.AwaitAsync
