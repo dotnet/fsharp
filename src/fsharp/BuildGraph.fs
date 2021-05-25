@@ -2,14 +2,13 @@
 
 module FSharp.Compiler.BuildGraph
 
-open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.Features
-open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Text
-open FSharp.Compiler.ErrorLogger
 open System
 open System.Threading
+open System.Diagnostics
 open System.Globalization
+open System.Runtime.Remoting.Messaging
+open FSharp.Compiler.ErrorLogger
+
 
 /// This represents the thread-local state established as each task function runs as part of the build.
 ///
@@ -152,8 +151,14 @@ type GraphNode private () =
         let errorLogger = CompileThreadStatic.ErrorLogger
         let phase = CompileThreadStatic.BuildPhase
         try
-            computation 
-            |> Async.AwaitGraphNode
+            async {
+                CompileThreadStatic.ErrorLogger <- errorLogger
+                CompileThreadStatic.BuildPhase <- phase
+                let! res = computation |> Async.AwaitGraphNode
+                CompileThreadStatic.ErrorLogger <- errorLogger
+                CompileThreadStatic.BuildPhase <- phase
+                return res
+            }
             |> Async.RunSynchronously
         finally
             CompileThreadStatic.ErrorLogger <- errorLogger
@@ -163,7 +168,15 @@ type GraphNode private () =
         let errorLogger = CompileThreadStatic.ErrorLogger
         let phase = CompileThreadStatic.BuildPhase
         try
-            let work = computation |> Async.AwaitGraphNode
+            let work =
+                async {
+                    CompileThreadStatic.ErrorLogger <- errorLogger
+                    CompileThreadStatic.BuildPhase <- phase
+                    let! res = computation |> Async.AwaitGraphNode
+                    CompileThreadStatic.ErrorLogger <- errorLogger
+                    CompileThreadStatic.BuildPhase <- phase
+                    return res
+                }
             Async.StartAsTask(work, cancellationToken=defaultArg ct CancellationToken.None)
         finally
             CompileThreadStatic.ErrorLogger <- errorLogger
@@ -187,7 +200,11 @@ type GraphNode private () =
         }
 
 type private AgentMessage<'T> =
+#if DEBUG
+    | GetValue of AsyncReplyChannel<Result<'T, Exception>> * CancellationToken * StackTrace
+#else
     | GetValue of AsyncReplyChannel<Result<'T, Exception>> * CancellationToken
+#endif
 
 type private AgentInstance<'T> = (MailboxProcessor<AgentMessage<'T>> * CancellationTokenSource)
 
@@ -228,7 +245,13 @@ type LazyGraphNode<'T> (computation: GraphNode<'T>) =
             try
                 while true do
                     match! agent.Receive() with
+#if DEBUG
+                    | GetValue (replyChannel, ct, stackTrace) ->
+                        let frames = stackTrace.GetFrames() |> Array.map (fun x -> x.ToString())
+                        CallContext.LogicalSetData("LazyGraphNode`1", frames)
+#else
                     | GetValue (replyChannel, ct) ->
+#endif
                         Thread.CurrentThread.CurrentUICulture <- LazyGraphNode.culture
                         try
                             use _reg = 
@@ -297,7 +320,12 @@ type LazyGraphNode<'T> (computation: GraphNode<'T>) =
                     | AgentAction.GetValue(agent, cts) ->                       
                         try
                             let! ct = GraphNode.CancellationToken
+#if DEBUG
+                            let stackTrace = StackTrace()
+                            let! res = agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct, stackTrace)) |> GraphNode.AwaitAsync
+#else
                             let! res = agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct)) |> GraphNode.AwaitAsync
+#endif
                             match res with
                             | Ok result -> return result
                             | Result.Error ex -> return raise ex
