@@ -562,7 +562,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     ReportTime tcConfig "Import non-system references"
 
     let tcImports =
-        TcImports.BuildNonFrameworkTcImports(tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
+        TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
         |> GraphNode.RunSynchronously
 
     // register tcImports to be disposed in future
@@ -688,8 +688,9 @@ let main1OfAst
 
     // Import other assemblies
     ReportTime tcConfig "Import non-system references"
+
     let tcImports = 
-        TcImports.BuildNonFrameworkTcImports(tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider) 
+        TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider) 
         |> GraphNode.RunSynchronously
 
     // register tcImports to be disposed in future

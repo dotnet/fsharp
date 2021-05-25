@@ -1331,7 +1331,7 @@ let rec GetCustomAttrDataAsBlobIdx cenv (data: byte[]) =
 
 and GetCustomAttrRow cenv hca (attr: ILAttribute) =
     let cat = GetMethodRefAsCustomAttribType cenv attr.Method.MethodRef
-    let data = getCustomAttrData cenv.ilg attr
+    let data = getCustomAttrData attr
     for element in attr.Elements do
         match element with
         | ILAttribElem.Type (Some ty) when ty.IsNominal -> GetTypeRefAsTypeRefIdx cenv ty.TypeRef |> ignore

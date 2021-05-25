@@ -29,10 +29,10 @@ exception LoadedSourceNotFoundIgnoring of (*filename*) string * range
 type IRawFSharpAssemblyData =
 
     ///  The raw list AutoOpenAttribute attributes in the assembly
-    abstract GetAutoOpenAttributes: ILGlobals -> string list
+    abstract GetAutoOpenAttributes: unit -> string list
 
     ///  The raw list InternalsVisibleToAttribute attributes in the assembly
-    abstract GetInternalsVisibleToAttributes: ILGlobals  -> string list
+    abstract GetInternalsVisibleToAttributes: unit  -> string list
 
     ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
     /// in the language service
@@ -40,7 +40,7 @@ type IRawFSharpAssemblyData =
 
     abstract HasAnyFSharpSignatureDataAttribute: bool
 
-    abstract HasMatchingFSharpSignatureDataAttribute: ILGlobals -> bool
+    abstract HasMatchingFSharpSignatureDataAttribute: bool
 
     ///  The raw F# signature data in the assembly, if any
     abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list

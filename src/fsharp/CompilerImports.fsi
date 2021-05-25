@@ -198,7 +198,6 @@ type TcImports =
 
     static member BuildNonFrameworkTcImports:
         TcConfigProvider * 
-        TcGlobals * 
         TcImports * 
         AssemblyResolution list * 
         UnresolvedAssemblyReference list * 
