@@ -988,7 +988,7 @@ module internal PrintfImpl =
             Basic.withPadding spec (fun (c: obj) -> (unbox<char> c).ToString())
         | 'M'  ->
             FloatAndDecimal.withPadding spec (fun _ -> "G") "G" // %M ignores precision
-        | 'd' | 'i' | 'x' | 'X' | 'u' | 'o' | 'B' -> 
+        | 'd' | 'i' | 'u' | 'B' | 'o' | 'x' | 'X' -> 
             Integer.getValueConverter spec
         | 'e' | 'E' 
         | 'f' | 'F' 
