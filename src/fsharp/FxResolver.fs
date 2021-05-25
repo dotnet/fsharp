@@ -177,7 +177,8 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             | Some dir ->
                 try
                     let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
-                    let dotnetConfig = FileSystem.OpenFileForReadShim(dotnetConfigFile).AsStream().ReadAllText()
+                    use stream = FileSystem.OpenFileForReadShim(dotnetConfigFile)
+                    let dotnetConfig = stream.ReadAllText()
                     let pattern = "\"version\": \""
                     let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
                     let endPos = dotnetConfig.IndexOf("\"", startPos)
@@ -322,7 +323,8 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                 | asm ->
                     let depsJsonPath = Path.ChangeExtension(asm.Location, "deps.json")
                     if FileSystem.FileExistsShim(depsJsonPath) then
-                        FileSystem.OpenFileForReadShim(depsJsonPath).AsReadOnlyStream().ReadAllText()
+                        use stream = FileSystem.OpenFileForReadShim(depsJsonPath)
+                        stream.ReadAllText()
                     else
                         ""
             with _ ->
@@ -783,7 +785,8 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                 match sdkDir with
                 | Some dir ->
                     let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
-                    let dotnetConfig = FileSystem.OpenFileForReadShim(dotnetConfigFile).AsReadOnlyStream().ReadAllText()
+                    use stream = FileSystem.OpenFileForReadShim(dotnetConfigFile)
+                    let dotnetConfig = stream.ReadAllText()
                     let pattern = "\"tfm\": \""
                     let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
                     let endPos = dotnetConfig.IndexOf("\"", startPos)

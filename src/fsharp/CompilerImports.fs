@@ -690,7 +690,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                     let sigFileName = Path.ChangeExtension(filename, "sigdata")
                     if not (FileSystem.FileExistsShim sigFileName) then
                         error(Error(FSComp.SR.buildExpectedSigdataFile (FileSystem.GetFullPathShim sigFileName), m))
-                    [ (ilShortAssemName, fun () -> FileSystem.OpenFileForReadShim(sigFileName, shouldShadowCopy=true).AsReadOnly())]
+                    [ (ilShortAssemName, fun () -> FileSystem.OpenFileForReadShim(sigFileName, useMemoryMappedFile=true, shouldShadowCopy=true).AsByteMemory().AsReadOnly())]
                 else
                     sigDataReaders
             sigDataReaders
@@ -706,7 +706,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                     let optDataFile = Path.ChangeExtension(filename, "optdata")
                     if not (FileSystem.FileExistsShim optDataFile) then
                         error(Error(FSComp.SR.buildExpectedFileAlongSideFSharpCore(optDataFile, FileSystem.GetFullPathShim optDataFile), m))
-                    [ (ilShortAssemName, (fun () -> FileSystem.OpenFileForReadShim(optDataFile, shouldShadowCopy=true).AsReadOnly()))]
+                    [ (ilShortAssemName, (fun () -> FileSystem.OpenFileForReadShim(optDataFile, useMemoryMappedFile=true, shouldShadowCopy=true).AsByteMemory().AsReadOnly()))]
                 else
                     optDataReaders
             optDataReaders

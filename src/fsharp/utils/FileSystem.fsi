@@ -4,7 +4,12 @@ namespace FSharp.Compiler.IO
 
 open System
 open System.IO
+open System.IO.MemoryMappedFiles
 open System.Reflection
+open System.Runtime.InteropServices
+open System.Text
+
+open FSharp.NativeInterop
 
 open Internal.Utilities.Library
 
@@ -25,11 +30,13 @@ module internal Bytes =
 /// A view over bytes.
 /// May be backed by managed or unmanaged memory, or memory mapped file.
 [<AbstractClass>]
-type internal ByteMemory =
+type public ByteMemory =
 
     abstract Item: int -> byte with get
 
     abstract Length: int
+
+    abstract ReadAllBytes: unit -> byte[]
 
     abstract ReadBytes: pos: int * count: int -> byte[]
 
@@ -65,6 +72,8 @@ type internal ReadOnlyByteMemory =
 
     member Length: int
 
+    member ReadAllBytes: unit -> byte[]
+
     member ReadBytes: pos: int * count: int -> byte[]
 
     member ReadInt32: pos: int -> int
@@ -83,7 +92,11 @@ type internal ReadOnlyByteMemory =
 
     member AsStream: unit -> Stream
 
-
+/// MemoryMapped extensions
+module internal MemoryMappedFileExtensions =
+    type MemoryMappedFile with
+        static member TryFromByteMemory : bytes: ReadOnlyByteMemory -> MemoryMappedFile option
+    
 /// Filesystem helpers
 module internal FileSystemUtils =
     val checkPathForIllegalChars: (string -> unit)
@@ -109,20 +122,11 @@ module internal FileSystemUtils =
     /// Trim the quotes and spaces from either end of a string
     val trimQuotes: string -> string
 
-    /// Checks whether filename ends in suffidx, ignoring case.
+    /// Checks whether filename ends in suffix, ignoring case.
     val hasSuffixCaseInsensitive: string -> string -> bool
 
     /// Checks whether file is dll (ends in .dll)
     val isDll: string -> bool
-
-    // Reads all data from Stream.
-    val readAllFromStream: Stream -> string
-
-    // Yields content line by line from stream
-    val readLinesFromStream: Stream -> string seq
-
-    // Writes data to a stream
-    val inline writeToStream: Stream ->  ^a -> unit
 
 /// Type which we use to load assemblies.
 type public IAssemblyLoader =
@@ -140,8 +144,11 @@ type DefaultAssemblyLoader =
 /// Represents a shim for the file system
 type public IFileSystem =
 
+    // Assembly loader.
+    abstract member AssemblyLoader : IAssemblyLoader
+    
     /// Open the file for read, returns ByteMemory, uses either FileStream (for smaller files) or MemoryMappedFile (for potentially big files, such as dlls).
-    abstract member OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> ByteMemory
+    abstract member OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
 
     /// Open the file for writing. Returns a Stream.
     abstract member OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
@@ -217,11 +224,14 @@ module public StreamExtensions =
     type System.IO.Stream with
         member GetWriter : ?encoding: Encoding -> TextWriter
         member WriteAllLines : contents: string seq * ?encoding: Encoding -> unit
-        member Write : data: ^a -> unit
+        member Write<'a> : data:'a -> unit
         member GetReader : codePage: int option * ?retryLocked: bool ->  StreamReader
-        member ReadAlLText : ?encoding: Encoding -> string
+        member ReadBytes : start: int * len: int -> byte[]
+        member ReadAllBytes : unit -> byte[]
+        member ReadAllText : ?encoding: Encoding -> string
         member ReadLines : ?encoding: Encoding -> string seq
         member ReadAllLines : ?encoding: Encoding -> string array
+        member AsByteMemory : unit -> ByteMemory
 
 [<AutoOpen>]
 module public FileSystemAutoOpens =

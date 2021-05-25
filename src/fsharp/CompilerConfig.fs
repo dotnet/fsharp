@@ -138,7 +138,7 @@ type VersionFlag =
              if not(FileSystem.FileExistsShim s) then
                  errorR(Error(FSComp.SR.buildInvalidVersionFile s, rangeStartup)); "0.0.0.0"
              else
-                 use fs = FileSystem.OpenFileForReadShim(s).AsReadOnlyStream()
+                 use fs = FileSystem.OpenFileForReadShim(s)
                  use is = new StreamReader(fs)
                  is.ReadLine()
          | VersionNone -> "0.0.0.0"
