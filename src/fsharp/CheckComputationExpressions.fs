@@ -1959,8 +1959,6 @@ let TcArrayOrListSequenceExpression (cenv: cenv) env overallTy tpenv (isArray, c
       //     let x : seq<int64>  = [ yield 1; if true then yield 2 ]
       TcPropagatingExprLeafThenConvert cenv overallTy genCollTy env (* canAdhoc  *) m (fun () ->
         
-        UnifyTypes cenv env m overallTy.Commit genCollTy
-
         let exprty = mkSeqTy cenv.g genCollElemTy
 
         // Check the comprehension

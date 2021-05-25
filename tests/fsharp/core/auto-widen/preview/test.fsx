@@ -309,13 +309,149 @@ let annotations =
 let f1 () : obj = 1
 let f2 () : obj = if true then 1 else 3.0
 
-#if NEGATIVE
-let annotations = 
-    (id "" : obj) |> ignore /// note, the 'obj' annotation correctly instantiates the type variable to 'obj'
-    ((if true then ()) : obj) |> ignore
+module TestComputedListExpressionsAtList = 
+    let x1 : list<int64>  = [ yield 1 ]
+    let x2 : list<int64>  = [ yield 1;
+                              if true then yield 2L ]
+    let x3 : list<int64>  = [ yield 1L;
+                              if true then yield 2 ]
+    let x4 : list<int64>  = [ yield 1L;
+                              while false do yield 2 ]
+    let x5 : list<int64>  = [ yield 1;
+                              while false do yield 2L ]
+    let x6 : list<int64>  = [ while false do yield 2L ]
+    let x7 : list<int64>  = [ for i in 0 .. 10 do yield 2 ]
+    let x8 : list<int64>  = [ yield 1L
+                              for i in 0 .. 10 do yield 2 ]
+    let x9 : list<int64>  = [ yield 1
+                              for i in 0 .. 10 do yield 2L ]
+    let x10 : list<int64>  = [ try yield 2 finally () ]
+    let x11 : list<int64>  = [ yield 1L
+                               try yield 2 finally ()  ]
+    let x12 : list<int64>  = [ yield 1
+                               try yield 2L finally ()  ]
 
-let f3 x = if true then 1 else 3.0
-#endif
+module TestComputedListExpressionsAtSeq = 
+    let x1 : seq<int64>  = [ yield 1 ]
+    let x2 : seq<int64>  = 
+        [ yield 1;
+          if true then yield 2L ]
+    let x3 : seq<int64>  = 
+        [ yield 1L;
+          if true then yield 2 ]
+    let x4 : seq<int64>  = 
+        [ yield 1L;
+          while false do yield 2 ]
+    let x5 : seq<int64>  = 
+        [ yield 1;
+          while false do yield 2L ]
+    let x6 : seq<int64>  = 
+        [ while false do yield 2L ]
+    let x7 : seq<int64>  = 
+        [ for i in 0 .. 10 do yield 2 ]
+    let x8 : seq<int64>  = 
+        [ yield 1L
+          for i in 0 .. 10 do yield 2 ]
+    let x9 : seq<int64>  = 
+        [ yield 1
+          for i in 0 .. 10 do yield 2L ]
+    let x10 : seq<int64>  = 
+        [ try yield 2 finally () ]
+    let x11 : seq<int64>  = 
+        [ yield 1L
+          try yield 2 finally ()  ]
+    let x12 : seq<int64>  = 
+        [ yield 1
+          try yield 2L finally ()  ]
+
+module TestComputedArrayExpressionsAtArray = 
+    let x1 : array<int64>  = [| yield 1 |]
+    let x2 : array<int64>  = [| yield 1;
+                                if true then yield 2L |]
+    let x3 : array<int64>  = [| yield 1L;
+                                if true then yield 2 |]
+    let x4 : array<int64>  = [| yield 1L;
+                                while false do yield 2 |]
+    let x5 : array<int64>  = [| yield 1;
+                                while false do yield 2L |]
+    let x6 : array<int64>  = [| while false do yield 2L |]
+    let x7 : array<int64>  = [| for i in 0 .. 10 do yield 2 |]
+    let x8 : array<int64>  = [| yield 1L
+                                for i in 0 .. 10 do yield 2 |]
+    let x9 : array<int64>  = [| yield 1
+                                for i in 0 .. 10 do yield 2L |]
+    let x10 : array<int64>  = [| try yield 2 finally () |]
+    let x11 : array<int64>  = [| yield 1L
+                                 try yield 2 finally ()  |]
+    let x12 : array<int64>  = [| yield 1
+                                 try yield 2L finally ()  |]
+
+module TestComputedArrayExpressionsAtSeq = 
+    let x1 : seq<int64>  = [| yield 1 |]
+    let x2 :   seq<int64>  = [| yield 1;
+                                if true then yield 2L |]
+    let x3 :   seq<int64>  = [| yield 1L;
+                                if true then yield 2 |]
+    let x4 :   seq<int64>  = [| yield 1L;
+                                while false do yield 2 |]
+    let x5 :   seq<int64>  = [| yield 1;
+                                while false do yield 2L |]
+    let x6 :   seq<int64>  = [| while false do yield 2L |]
+    let x7 :   seq<int64>  = [| for i in 0 .. 10 do yield 2 |]
+    let x8 :   seq<int64>  = [| yield 1L
+                                for i in 0 .. 10 do yield 2 |]
+    let x9 :   seq<int64>  = [| yield 1
+                                for i in 0 .. 10 do yield 2L |]
+    let x10 :   seq<int64>  = [| try yield 2 finally () |]
+    let x11 :   seq<int64>  = [| yield 1L
+                                 try yield 2 finally ()  |]
+    let x12 :   seq<int64>  = [| yield 1
+                                 try yield 2L finally ()  |]
+
+module TestInferObjExprTypeParamFromKNownType = 
+    // Check we are inferring type int64
+    let x1 : seq<int64>  = 
+         { new seq<_> with 
+              member x.GetEnumerator() = 
+                  // The 'ToString("4")' would not resolve if the type parameter is not inferred by this point
+                  x.GetEnumerator().Current.ToString("4")  |> ignore<string>
+                  failwith ""
+
+           interface System.Collections.IEnumerable with 
+              member x.GetEnumerator() = failwith ""
+              }
+
+    type OtherSeq<'T> =
+        inherit seq<'T>
+
+    // Check we are inferring type int64
+    let x2 : seq<int64>  = 
+         { new OtherSeq<_> with 
+              member x.GetEnumerator() = 
+                  // The 'ToString("4")' would not resolve if the type parameter is not inferred by this point
+                  x.GetEnumerator().Current.ToString("4")  |> ignore<string>
+                  failwith ""
+
+           interface System.Collections.IEnumerable with 
+              member x.GetEnumerator() = failwith ""
+              }
+
+    type OtherSeqImpl<'T>(f : 'T -> unit) =
+        interface OtherSeq<'T> with 
+              member x.GetEnumerator() =
+                  failwith ""
+
+        interface System.Collections.IEnumerable with 
+            member x.GetEnumerator() = failwith ""
+
+    let x3 : seq<int64>  = 
+        new OtherSeqImpl<_>(fun x -> 
+             // The 'ToString("4")' would not resolve if the type parameter is not inferred to be int64 by this point
+             x.ToString("4")  |> ignore<string>)
+
+    let x4 : int64 * int32  = (3, 3)
+
+    let x5 : {| A: int64; B: int32 |} = {| A=3; B=3 |}
 
 printfn "test done"
 

@@ -95,13 +95,94 @@ test.fsx(186,27,186,28): typecheck error FS3386: This expression uses an implici
 
 test.fsx(188,15,188,16): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'Nullable<int>'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
 
-test.fsx(315,7,315,22): typecheck error FS0001: This expression was expected to have type
-    'unit'    
-but here has type
-    'obj'    
+test.fsx(313,37,313,38): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
 
-test.fsx(317,32,317,35): typecheck error FS0193: Type constraint mismatch. The type 
-    'float'    
-is not compatible with type
-    'int'    
+test.fsx(314,37,314,38): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
 
+test.fsx(317,50,317,51): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(319,52,319,53): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(320,37,320,38): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(323,57,323,58): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(325,57,325,58): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(326,37,326,38): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(328,42,328,43): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(330,42,330,43): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(331,38,331,39): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(335,36,335,37): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(337,17,337,18): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(341,30,341,31): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(344,32,344,33): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(346,17,346,18): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(351,37,351,38): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(354,37,354,38): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(356,17,356,18): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(359,21,359,22): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(362,21,362,22): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(364,17,364,18): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(368,39,368,40): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(369,39,369,40): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(372,52,372,53): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(374,54,374,55): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(375,39,375,40): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(378,59,378,60): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(380,59,380,60): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(381,39,381,40): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(383,44,383,45): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(385,44,385,45): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(386,40,386,41): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(390,37,390,38): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(391,39,391,40): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(394,52,394,53): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(396,54,396,55): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(397,39,397,40): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(400,59,400,60): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(402,59,402,60): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(403,39,403,40): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(405,44,405,45): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(407,44,407,45): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(408,40,408,41): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(452,32,452,33): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(454,46,454,47): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
