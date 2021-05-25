@@ -2355,7 +2355,7 @@ and CanMemberSigsMatchUpToCheck
                     match reqdRetTyOpt with
                     | Some _  when ( (* minfo.IsConstructor || *) not alwaysCheckReturn && isNil unnamedCalledOutArgs) ->
                         ResultD TypeDirectedConversionUsed.No
-                    | Some (MustConvertTo(reqdTy)) when g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions ->
+                    | Some (MustConvertTo(reqdTy)) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
                         let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
                         subsumeOrConvertTypes reqdTy methodRetTy
                     | Some reqdRetTy ->
@@ -2983,7 +2983,7 @@ and ResolveOverloading
                                     return! ErrorD(Error(FSComp.SR.tcByrefReturnImplicitlyDereferenced(), m))
                                 else
                                     match reqdRetTy with
-                                    | MustConvertTo(reqdRetTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions ->
+                                    | MustConvertTo(reqdRetTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
                                         let! _usesTDC = TypesMustSubsumeOrConvert csenv ad ndeep trace cxsln true m reqdRetTy actualRetTy
                                         return ()
                                     | _ ->

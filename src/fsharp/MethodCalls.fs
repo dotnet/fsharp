@@ -167,7 +167,7 @@ let AdjustDelegateTy (infoReader: InfoReader) actualTy reqdTy m =
 let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualTy m =
     let g = infoReader.g
     let amap = infoReader.amap
-    if g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && not (isTyparTy g actualTy) then
+    if g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && not (isTyparTy g actualTy) then
 
         let reqdTy2 = 
             if isTyparTy g reqdTy then
@@ -241,24 +241,24 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
         AdjustRequiredTypeForTypeDirectedConversions infoReader ad isConstraint delegateTy actualTy m
 
     // Adhoc int32 --> int64
-    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
+    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
        g.int32_ty, TypeDirectedConversionUsed.Yes(warn), None
 
     // Adhoc int32 --> float32
-    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && typeEquiv g g.float32_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
+    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float32_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
        g.int32_ty, TypeDirectedConversionUsed.Yes(warn), None
 
     // Adhoc int32 --> float64
-    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
+    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
        g.int32_ty, TypeDirectedConversionUsed.Yes(warn), None
 
     // Adhoc float32--> float64
-    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.float32_ty actualTy then 
+    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.float32_ty actualTy then 
        g.float32_ty, TypeDirectedConversionUsed.Yes(warn), None
 
     // Adhoc based on op_Implicit, perhaps returing a new equational type constraint to 
     // eliminate articifical constrained type variables.
-    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions then
+    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
          match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
          | Some (_minfo, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn), Some eqn
          | None -> reqdTy, TypeDirectedConversionUsed.No, None
@@ -1139,19 +1139,19 @@ let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap infoReade
        mkCallQuoteToLinqLambdaExpression g m delegateTy (Expr.Quote (expr2, ref None, false, m, mkQuotedExprTy g delegateTy))
 
    // Adhoc int32 --> int64
-   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
+   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
        mkCallToInt64Operator g m actualTy expr
 
    // Adhoc int32 --> float32
-   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && typeEquiv g g.float32_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
+   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float32_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
        mkCallToSingleOperator g m actualTy expr
 
    // Adhoc int32 --> float64
-   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
+   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
        mkCallToDoubleOperator g m actualTy expr
 
    // Adhoc float32 --> float64
-   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.float32_ty actualTy then 
+   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.float32_ty actualTy then 
        mkCallToDoubleOperator g m actualTy expr
 
    else

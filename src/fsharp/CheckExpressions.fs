@@ -453,11 +453,14 @@ let CopyAndFixupTypars m rigid tpsorig =
 let UnifyTypes cenv (env: TcEnv) m actualTy expectedTy =
     ConstraintSolver.AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m (tryNormalizeMeasureInType cenv.g actualTy) (tryNormalizeMeasureInType cenv.g expectedTy)
 
-// If the overall type admits subsumption, and the original unify would have failed,
-// then allow subsumption.
+// If the overall type admits subsumption or type directed conversion, and the original unify would have failed,
+// then allow subsumption or type directed conversion.
+//
+// Any call to UnifyOverallType MUST have a matching call to TcAdjustExprForTypeDirectedConversions
+// to actually build the expression for any conversion applied.
 let UnifyOverallType cenv (env: TcEnv) m overallTy actualTy =
     match overallTy with
-    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions ->
+    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
         let actualTy = tryNormalizeMeasureInType cenv.g actualTy
         let reqdTy = tryNormalizeMeasureInType cenv.g reqdTy
         if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m reqdTy actualTy then
@@ -5451,53 +5454,90 @@ and TcExprUndelayedNoType cenv env tpenv synExpr: Expr * TType * _ =
     let expr, tpenv = TcExprUndelayed cenv (MustEqual overallTy) env tpenv synExpr
     expr, overallTy, tpenv
 
-and TcExprLeafProtectExcept2 p cenv (overallTy: OverallTy) actualTy (env: TcEnv) canAdhoc m f =
+/// Process a leaf construct where the actual type (or an approximation of it such as 'list<_>'
+/// or 'array<_>') is already sufficiently pre-known, and the information in the overall type
+/// can be eagerly propagated into the actual type (UnifyOverallType), including pre-calculating
+/// any type-directed conversion. This must mean that types extracted when processing the expression are not
+/// considered in determining any type-directed conversion. 
+///
+/// Used for:
+///   - Array or List expressions (both computed and fixed-size), to propagate from the overall type into the array/list type
+///     e.g. to infer element types, which may be relevant to processing each individual expression and the 'yield'
+///     returns.
+///
+///   - 'new ABC<_>(args)' expressions, to propagate from the overall type into the 'ABC<_>' type, e.g. to infer type parameters,
+///     which may be relevant to checking the arguments.
+///
+///   - object expressions '{ new ABC<_>(args) with ... }', to propagate from the overall type into the
+///     object type, e.g. to infer type parameters, which may be relevant to checking the arguments and
+///     methods of the object expression.
+///
+///   - string literal expressions (though the propagation is not essential in this case)
+///
+and TcPropagatingExprLeafThenConvert cenv overallTy actualTy (env: TcEnv) (* canAdhoc *) m (f: unit -> Expr * UnscopedTyparEnv) =
     match overallTy with
-    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && not (p reqdTy) ->
-        // Note about the cases where canAdhoc=false:
-        //    Some constructs (list expressions etc) require placing the subtype constraint down
-        //    before processing in order to propagate into the construct.
-        //
-        //    These do not support adhoc conversions
-        //
-        // Note about the cases where canAdhoc=true:
-        //
-        //    This assumes the processing of the construct is independent of overallTy, and we can just pass a type
-        //    variable then check for adhoc and subsumption conversions after.
-        if not canAdhoc then
-            AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace reqdTy actualTy
+    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+        assert (cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions)
+        //if not canAdhoc then
+        //    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace reqdTy actualTy
+        // Compute the conversion _before_ processing the construct. We know enough to process this conversion eagerly.
+        UnifyOverallType cenv env m (MustConvertTo reqdTy) actualTy
+        // Process the construct
         let expr, tpenv = f ()
-        if canAdhoc then
-            let reqdTy2, usesTDC, eqn = AdjustRequiredTypeForTypeDirectedConversions cenv.infoReader env.eAccessRights false reqdTy actualTy m
-            match eqn with
-            | Some (ty1, ty2, msg) ->
-                UnifyTypes cenv env m ty1 ty2
-                msg env.DisplayEnv
-            | None -> ()
-            match usesTDC with
-            | TypeDirectedConversionUsed.Yes warn -> warning(warn env.DisplayEnv)
-            | TypeDirectedConversionUsed.No -> ()
-            AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace reqdTy2 actualTy
-        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
-        let expr2 = AdjustExprForTypeDirectedConversions tcVal cenv.g cenv.amap cenv.infoReader env.AccessRights reqdTy actualTy m expr
+        // Build the conversion
+        let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy actualTy env (* canAdhoc *) m expr
         expr2, tpenv
     | _ ->
         UnifyTypes cenv env m overallTy.Commit actualTy
         f ()
 
-and TcExprLeafProtectExcept p cenv (overallTy: OverallTy) (env: TcEnv) canAdhoc m f =
+/// Process a leaf construct, for cases where we propogate the overall type eagerly in
+/// some cases. Then apply additional type-directed conversions.
+///
+/// However in some cases favour propagating characteristics of the overall type.
+///
+/// 'isPropagating' indicates if propagation occurs
+/// 'processExpr' does the actual processing of the construct.
+///
+/// Used for
+///  - tuple (exception is if overallTy is a tuple type, used to propagate structness from known type)
+///  - anon record (exception is if overallTy is an anon record type, similarly)
+///  - record (exception is (fun ty -> requiresCtor || haveCtor || isRecdTy cenv.g ty), similarly)
+and TcPossiblyPropogatingExprLeafThenConvert isPropagating cenv (overallTy: OverallTy) (env: TcEnv) m processExpr =
     match overallTy with
-    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions && not (p reqdTy) ->
-        let actualTy = NewInferenceType()
-        TcExprLeafProtectExcept2 p cenv overallTy actualTy env canAdhoc m (fun () -> f actualTy)
+    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && not (isPropagating reqdTy) ->
+        TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
+            let exprTy = NewInferenceType()
+            // Here 'processExpr' will do the unification with exprTy.
+            let expr, tpenv = processExpr exprTy
+            expr, exprTy, tpenv)
     | _ ->
-        f overallTy.Commit
+        // Here 'processExpr' will do the unification with the overall type.
+        processExpr overallTy.Commit
 
-and TcExprLeafProtect cenv overallTy env canAdhoc m f =
-    TcExprLeafProtectExcept (fun _ -> false) cenv overallTy env canAdhoc m f
+/// Process a leaf construct where the processing of the construct is initially independent
+/// of the overall type. Determine and apply additional type-directed conversions after the processing 
+/// is complete, as the inferred type of the expression may enable a type-directed conversion.
+///
+/// Used for:
+///   - trait call 
+///   - LibraryOnlyUnionCaseFieldGet
+///   - constants 
+and TcNonPropagatingExprLeafThenConvert cenv (overallTy: OverallTy) (env: TcEnv) m processExpr =
+    // Process the construct
+    let expr, exprTy, tpenv = processExpr ()
+    // Now compute the conversion, based on the post-processing type
+    UnifyOverallType cenv env m overallTy exprTy
+    let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy exprTy env (* true  *) m expr
+    expr2, tpenv
 
-and TcExprLeafProtect2 cenv overallTy actualTy env canAdhoc m f =
-    TcExprLeafProtectExcept2 (fun _ -> false) cenv overallTy actualTy env canAdhoc m f
+and TcAdjustExprForTypeDirectedConversions cenv (overallTy: OverallTy) actualTy (env: TcEnv) (* canAdhoc *) m expr =
+    match overallTy with
+    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+        AdjustExprForTypeDirectedConversions tcVal cenv.g cenv.amap cenv.infoReader env.AccessRights reqdTy actualTy m expr
+    | _ ->
+        expr
 
 and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
 
@@ -5568,8 +5608,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synType
         UnifyOverallType cenv env m overallTy tgtTy
         let bodyExpr, tpenv = TcExpr cenv (MustConvertTo tgtTy) env tpenv synBodyExpr
-        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
-        let bodyExpr2 = AdjustExprForTypeDirectedConversions tcVal cenv.g cenv.amap cenv.infoReader env.AccessRights overallTy.Commit tgtTy m bodyExpr
+        let bodyExpr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy tgtTy env (* true  *) m bodyExpr
         bodyExpr2, tpenv
 
     // e :? ty
@@ -5631,7 +5670,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         expr, tpenv
 
     | SynExpr.Tuple (isExplicitStruct, args, _, m) ->
-        TcExprLeafProtectExcept (isAnyTupleTy cenv.g) cenv overallTy env true m (fun overallTy ->
+        TcPossiblyPropogatingExprLeafThenConvert (isAnyTupleTy cenv.g) cenv overallTy env m (fun overallTy ->
             let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
 
             let flexes = argTys |> List.map (fun _ -> false)
@@ -5641,7 +5680,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         )
 
     | SynExpr.AnonRecd (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr) ->
-        TcExprLeafProtectExcept (isAnonRecdTy cenv.g) cenv overallTy env true mWholeExpr (fun overallTy ->
+        TcPossiblyPropogatingExprLeafThenConvert (isAnonRecdTy cenv.g) cenv overallTy env mWholeExpr (fun overallTy ->
             TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr)
         )
 
@@ -5650,20 +5689,12 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
        let argty = NewInferenceType ()
        let actualTy = if isArray then mkArrayType cenv.g argty else mkListTy cenv.g argty
 
-       // Note, allowing canAdhoc = true would disable subtype-based propagation from overallTy into checking of structure
-       //
-       // For example
-       //    let x : A seq = [ B(); B() ]
-       //    let x : B seq = [ B(); B() ]
-       //    let x : A list = [ B(); B() ]
-       //    let x : B list = [ B(); B() ]
-       // but consider the case where there is no relation but an op_Implicit is enabled from List<_> to C
+       // Propagating type directed conversion, e.g. for 
+       //     let x : seq<int64>  = [ 1; 2 ]
+       // Consider also the case where there is no relation but an op_Implicit is enabled from List<_> to C
        //    let x : C = [ B(); B() ]
-       //
-       // So op_Implicit is effectively disabled for direct uses of list expressions etc.
-       let canAdhoc = false //not (AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit actualTy)
 
-       TcExprLeafProtect2 cenv overallTy actualTy env canAdhoc m (fun () ->
+       TcPropagatingExprLeafThenConvert cenv overallTy actualTy env (* canAdhoc  *) m (fun () ->
 
         // Always allow subsumption if a nominal type is known prior to type checking any arguments
         let flex = not (isTyparTy cenv.g argty)
@@ -5686,14 +5717,11 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.New (superInit, synObjTy, arg, mNewExpr) ->
       let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.Use env tpenv synObjTy
 
-      // For consistency, op_Implicit is effectively disabled for direct uses of 'new' expressions
-      let canAdhoc = false
-
-      TcExprLeafProtect2 cenv overallTy objTy env canAdhoc mNewExpr (fun () ->
+      TcPropagatingExprLeafThenConvert cenv overallTy objTy env (* true *) mNewExpr (fun () ->
         TcNewExpr cenv env tpenv objTy (Some synObjTy.Range) superInit arg mNewExpr
       )
 
-    | SynExpr.ObjExpr (objTy, argopt, binds, extraImpls, mNewExpr, m) ->
+    | SynExpr.ObjExpr (synObjTy, argopt, binds, extraImpls, mNewExpr, m) ->
       CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.eAccessRights)
 
       // Note, allowing canAdhoc = true would disable subtype-based propagation from overallTy into checking of structure
@@ -5702,10 +5730,26 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
       //    let x : A seq = { new Collection<_> with ... the element type should be known in here! }
       //
       // So op_Implicit is effectively disabled for direct uses of object expressions
-      let canAdhoc = false //not (AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit actualTy)
+      //let canAdhoc = false
 
-      TcExprLeafProtect cenv overallTy env canAdhoc m (fun overallTy ->
-        TcObjectExpr cenv overallTy env tpenv (objTy, argopt, binds, extraImpls, mNewExpr, m)
+      let mObjTy = synObjTy.Range
+
+      let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synObjTy
+
+      // Work out the type of any interfaces to implement
+      let extraImpls, tpenv =
+          (tpenv, extraImpls) ||> List.mapFold (fun tpenv (SynInterfaceImpl(synIntfTy, overrides, m)) ->
+              let intfTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synIntfTy
+              if not (isInterfaceTy cenv.g intfTy) then
+                error(Error(FSComp.SR.tcExpectedInterfaceType(), m))
+              if isErasedType cenv.g intfTy then
+                  errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(), m))
+              (m, intfTy, overrides), tpenv)
+
+      let realObjTy = if isObjTy cenv.g objTy && not (isNil extraImpls) then (p23 (List.head extraImpls)) else objTy
+
+      TcPropagatingExprLeafThenConvert cenv overallTy realObjTy env (* canAdhoc *) m (fun () ->
+        TcObjectExpr cenv env tpenv (objTy, realObjTy, argopt, binds, extraImpls, mObjTy, mNewExpr, m)
       )
 
     | SynExpr.Record (inherits, optOrigExpr, flds, mWholeExpr) ->
@@ -5713,7 +5757,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
       CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy.Commit, env.AccessRights)
       let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors
       let haveCtor = Option.isSome inherits
-      TcExprLeafProtectExcept (fun ty -> requiresCtor || haveCtor || isRecdTy cenv.g ty) cenv overallTy env true mWholeExpr (fun overallTy ->
+      TcPossiblyPropogatingExprLeafThenConvert (fun ty -> requiresCtor || haveCtor || isRecdTy cenv.g ty) cenv overallTy env mWholeExpr (fun overallTy ->
         TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr)
       )
 
@@ -5867,7 +5911,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
             TcLongIdentThen cenv overallTy env tpenv lidwd [ DelayedApp(ExprAtomicFlag.Atomic, e1, mStmt); MakeDelayedSet(e2, mStmt) ]
 
     | SynExpr.TraitCall (tps, memSpfn, arg, m) ->
-      TcExprLeafProtect cenv overallTy env true m (fun overallTy ->
+      TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
         let synTypes = tps |> List.map (fun tp -> SynType.Var(tp, m))
         let traitInfo, tpenv = TcPseudoMemberSpec cenv NewTyparsOK env synTypes tpenv memSpfn m
         if BakedInTraitConstraintNames.Contains traitInfo.MemberName then
@@ -5881,18 +5925,16 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         let flexes = argTys |> List.map (isTyparTy cenv.g >> not)
         let args', tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys args
         AddCxMethodConstraint env.DisplayEnv cenv.css m NoTrace traitInfo
-        UnifyTypes cenv env m overallTy returnTy
-        Expr.Op (TOp.TraitCall traitInfo, [], args', m), tpenv
+        Expr.Op (TOp.TraitCall traitInfo, [], args', m), returnTy, tpenv
       )
 
     | SynExpr.LibraryOnlyUnionCaseFieldGet (e1, c, n, m) ->
-      TcExprLeafProtect cenv overallTy env true m (fun overallTy ->
+      TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
         let e1', ty1, tpenv = TcExprOfUnknownType cenv env tpenv e1
         let mkf, ty2 = TcUnionCaseOrExnField cenv env ty1 m c n
                           ((fun (a, b) n -> mkUnionCaseFieldGetUnproven cenv.g (e1', a, b, n, m)),
                            (fun a n -> mkExnCaseFieldGet(e1', a, n, m)))
-        UnifyTypes cenv env m overallTy ty2
-        mkf n, tpenv
+        mkf n, ty2, tpenv
       )
 
     | SynExpr.LibraryOnlyUnionCaseFieldSet (e1, c, n, e2, m) ->
@@ -6546,17 +6588,15 @@ and CheckSuperType cenv ty m =
         errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(), m))
 
 
-and TcObjectExpr cenv (overallTy: TType) env tpenv (synObjTy, argopt, binds, extraImpls, mNewExpr, mWholeExpr) =
-    let mObjTy = synObjTy.Range
+and TcObjectExpr cenv env tpenv (objTy, realObjTy, argopt, binds, extraImpls, mObjTy, mNewExpr, mWholeExpr) =
 
-    let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synObjTy
     match tryTcrefOfAppTy cenv.g objTy with
     | ValueNone -> error(Error(FSComp.SR.tcNewMustBeUsedWithNamedType(), mNewExpr))
     | ValueSome tcref ->
     let isRecordTy = tcref.IsRecordTycon
     if not isRecordTy && not (isInterfaceTy cenv.g objTy) && isSealedTy cenv.g objTy then errorR(Error(FSComp.SR.tcCannotCreateExtensionOfSealedType(), mNewExpr))
 
-    CheckSuperType cenv objTy synObjTy.Range
+    CheckSuperType cenv objTy mObjTy
 
     // Add the object type to the ungeneralizable items
     let env = {env with eUngeneralizableItems = addFreeItemOfTy objTy env.eUngeneralizableItems }
@@ -6580,7 +6620,7 @@ and TcObjectExpr cenv (overallTy: TType) env tpenv (synObjTy, argopt, binds, ext
                 | NormalizedBinding (_, _, _, _, [], _, _, _, SynPat.Named(SynPat.Wild _, id, _, _, _), NormalizedBindingRhs(_, _, rhsExpr), _, _) -> id.idText, rhsExpr
                 | _ -> error(Error(FSComp.SR.tcOnlySimpleBindingsCanBeUsedInConstructionExpressions(), b.RangeOfBindingWithoutRhs)))
 
-        TcRecordConstruction cenv overallTy env tpenv None objTy fldsList mWholeExpr
+        TcRecordConstruction cenv objTy env tpenv None objTy fldsList mWholeExpr
     else
         let item = ForceRaise (ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mObjTy ad objTy)
 
@@ -6588,23 +6628,13 @@ and TcObjectExpr cenv (overallTy: TType) env tpenv (synObjTy, argopt, binds, ext
             error(Error(FSComp.SR.tcObjectsMustBeInitializedWithObjectExpression(), mNewExpr))
 
       // Work out the type of any interfaces to implement
-        let extraImpls, tpenv =
-          (tpenv, extraImpls) ||> List.mapFold (fun tpenv (SynInterfaceImpl(synIntfTy, overrides, m)) ->
-              let intfTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synIntfTy
-              if not (isInterfaceTy cenv.g intfTy) then
-                error(Error(FSComp.SR.tcExpectedInterfaceType(), m))
-              if isErasedType cenv.g intfTy then
-                  errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(), m))
-              (m, intfTy, overrides), tpenv)
-
-        let realObjTy = if isObjTy cenv.g objTy && not (isNil extraImpls) then (p23 (List.head extraImpls)) else objTy
-        UnifyTypes cenv env mWholeExpr overallTy realObjTy
+        UnifyTypes cenv env mWholeExpr objTy realObjTy
 
         let ctorCall, baseIdOpt, tpenv =
             match item, argopt with
             | Item.CtorGroup(methodName, minfos), Some (arg, baseIdOpt) ->
                 let meths = minfos |> List.map (fun minfo -> minfo, None)
-                let afterResolution = ForNewConstructors cenv.tcSink env synObjTy.Range methodName minfos
+                let afterResolution = ForNewConstructors cenv.tcSink env mObjTy methodName minfos
                 let ad = env.AccessRights
 
                 let expr, tpenv = TcMethodApplicationThen cenv env (MustEqual objTy) None tpenv None [] mWholeExpr mObjTy methodName ad PossiblyMutates false meths afterResolution CtorValUsedAsSuperInit [arg] ExprAtomicFlag.Atomic []
@@ -6624,15 +6654,13 @@ and TcObjectExpr cenv (overallTy: TType) env tpenv (synObjTy, argopt, binds, ext
         let baseValOpt = MakeAndPublishBaseVal cenv env baseIdOpt objTy
         let env = Option.foldBack (AddLocalVal cenv.tcSink mNewExpr) baseValOpt env
 
-
         let impls = (mWholeExpr, objTy, binds) :: extraImpls
-
 
         // 1. collect all the relevant abstract slots for each type we have to implement
 
         let overridesAndVirts, tpenv = ComputeObjectExprOverrides cenv env tpenv impls
 
-
+        // 2. check usage conditions
         overridesAndVirts |> List.iter (fun (m, implty, dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, overrides) ->
             let overrideSpecs = overrides |> List.map fst
 
@@ -6640,7 +6668,7 @@ and TcObjectExpr cenv (overallTy: TType) env tpenv (synObjTy, argopt, binds, ext
 
             DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, false, implty, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore)
 
-        // 6c. create the specs of overrides
+        // 3. create the specs of overrides
         let allTypeImpls =
           overridesAndVirts |> List.map (fun (m, implty, _, dispatchSlotsKeyed, _, overrides) ->
               let overrides' =
@@ -6660,7 +6688,7 @@ and TcObjectExpr cenv (overallTy: TType) env tpenv (synObjTy, argopt, binds, ext
                             let overridden =
                                 match searchForOverride with
                                 | Some x -> x
-                                | None -> error(Error(FSComp.SR.tcAtLeastOneOverrideIsInvalid(), synObjTy.Range))
+                                | None -> error(Error(FSComp.SR.tcAtLeastOneOverrideIsInvalid(), mObjTy))
 
                             yield TObjExprMethod(overridden.GetSlotSig(cenv.amap, m), bindingAttribs, mtps, [thisVal] :: methodVars, bindingBody, id.idRange) ]
               (implty, overrides'))
@@ -6718,7 +6746,7 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
         fmtExpr, tpenv
 
     else
-        TcExprLeafProtect2 cenv overallTy g.string_ty env true m (fun () ->
+        TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
             mkString g m fmtString, tpenv
         )
 
@@ -6874,8 +6902,8 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
         let fmtExpr = MakeMethInfoCall cenv.amap m newFormatMethod [] [mkString g m printfFormatString; argsExpr; percentATysExpr]
 
         if isString then
-            // Make the call to sprintf
-            TcExprLeafProtect2 cenv overallTy g.string_ty env true m (fun () ->
+            TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
+                // Make the call to sprintf
                 mkCall_sprintf g m printerTy fmtExpr [], tpenv
             )
         else
@@ -6911,15 +6939,14 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
 and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
     match c with
 
-    // NOTE: these aren't "really" constants
     | SynConst.Bytes (bytes, _, m) ->
-      TcExprLeafProtect cenv overallTy env true m <| fun overallTy ->
-       UnifyTypes cenv env m overallTy (mkByteArrayTy cenv.g)
+      let actualTy = mkByteArrayTy cenv.g
+      TcPropagatingExprLeafThenConvert cenv overallTy actualTy env (* true *) m <| fun ()->
        Expr.Op (TOp.Bytes bytes, [], [], m), tpenv
 
     | SynConst.UInt16s arr ->
-      TcExprLeafProtect cenv overallTy env true m <| fun overallTy ->
-       UnifyTypes cenv env m overallTy (mkArrayType cenv.g cenv.g.uint16_ty)
+      let actualTy = mkArrayType cenv.g cenv.g.uint16_ty
+      TcPropagatingExprLeafThenConvert cenv overallTy actualTy env (* true *) m <| fun () ->
        Expr.Op (TOp.UInt16s arr, [], [], m), tpenv
 
     | SynConst.UserNum (s, suffix) ->
@@ -6955,9 +6982,10 @@ and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
         TcExpr cenv overallTy env tpenv expr
 
     | _ ->
-      TcExprLeafProtect cenv overallTy env true m <| fun overallTy ->
-        let c' = TcConst cenv overallTy m env c
-        Expr.Const (c', m, overallTy), tpenv
+      TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
+        let cTy = NewInferenceType()
+        let c' = TcConst cenv cTy m env c
+        Expr.Const (c', m, cTy), cTy, tpenv)
 
 //-------------------------------------------------------------------------
 // TcAssertExpr
@@ -7466,8 +7494,7 @@ and TcDelayed cenv (overallTy: OverallTy) env tpenv mExpr expr exprty (atomicFla
     | DelayedDot :: _ ->
         // at the end of the application chain allow coercion introduction
         UnifyOverallType cenv env mExpr overallTy exprty
-        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
-        let expr2 = AdjustExprForTypeDirectedConversions tcVal cenv.g cenv.amap cenv.infoReader env.AccessRights overallTy.Commit exprty mExpr expr.Expr
+        let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy exprty env (* true  *) mExpr expr.Expr
         expr2, tpenv
 
     // Expr.M (args) where x.M is a .NET method or index property
@@ -8999,9 +9026,7 @@ and TcMethodApplication
             expr, tyOfExpr cenv.g expr
 
     // Subsumption or conversion to return type
-    let callExpr2b =
-        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
-        AdjustExprForTypeDirectedConversions tcVal cenv.g cenv.amap cenv.infoReader env.AccessRights returnTy.Commit exprty mMethExpr callExpr2
+    let callExpr2b = TcAdjustExprForTypeDirectedConversions cenv returnTy exprty env mMethExpr callExpr2
 
     // Handle post-hoc property assignments
     let setterExprPrebinders, callExpr3 =

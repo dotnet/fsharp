@@ -661,6 +661,11 @@ val TcExprOfUnknownType: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv
 /// and insert a coercion if necessary.
 val TcExprFlex: cenv:TcFileState -> flex:bool -> compat:bool -> desiredTy:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> synExpr:SynExpr -> Expr * UnscopedTyparEnv    
 
+/// Process a leaf construct where the actual type of that construct is already pre-known,
+/// and the overall type can be eagerly propagated into the actual type, including pre-calculating
+/// any type-directed conversion.
+val TcPropagatingExprLeafThenConvert: cenv:TcFileState -> overallTy: OverallTy -> actualTy: TType -> env: TcEnv -> m: range  -> f: (unit -> Expr * UnscopedTyparEnv) -> Expr * UnscopedTyparEnv
+
 /// Check a syntactic statement and convert it to a typed tree expression.
 val TcStmtThatCantBeCtorBody: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    
 

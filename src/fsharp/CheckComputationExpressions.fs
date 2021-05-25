@@ -214,7 +214,7 @@ let RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv
 
 /// Used for all computation expressions except sequence expressions
 let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, interpExpr: Expr, builderTy, comp: SynExpr) = 
-    let overallTy = overallTy.Commit // TODO: a computation expression should be enough for MustConvertTo 'obj' etc.
+    let overallTy = overallTy.Commit
     
     //dprintfn "TcComputationExpression, comp = \n%A\n-------------------\n" comp
     let ad = env.eAccessRights
@@ -1951,10 +1951,14 @@ let TcArrayOrListSequenceExpression (cenv: cenv) env overallTy tpenv (isArray, c
         TcExprUndelayed cenv overallTy env tpenv replacementExpr
     | _ -> 
 
-        let genCollElemTy = NewInferenceType ()
+      let genCollElemTy = NewInferenceType ()
 
-        let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
+      let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
 
+      // Propagating type directed conversion, e.g. for 
+      //     let x : seq<int64>  = [ yield 1; if true then yield 2 ]
+      TcPropagatingExprLeafThenConvert cenv overallTy genCollTy env (* canAdhoc  *) m (fun () ->
+        
         UnifyTypes cenv env m overallTy.Commit genCollTy
 
         let exprty = mkSeqTy cenv.g genCollElemTy
@@ -1980,4 +1984,4 @@ let TcArrayOrListSequenceExpression (cenv: cenv) env overallTy tpenv (isArray, c
             else 
                 mkCallSeqToList cenv.g m genCollElemTy expr
                 
-        expr, tpenv
+        expr, tpenv)
