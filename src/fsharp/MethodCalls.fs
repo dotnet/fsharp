@@ -163,12 +163,22 @@ let AdjustDelegateTy (infoReader: InfoReader) actualTy reqdTy m =
 // Also allow adhoc for X --> ? where the ? is a type inference variable constrained
 // by a coercion constraint to Y for which there is an op_Implicit from X to Y, and there is
 // no feasible subtype relationship between X and Y.
+//
+// Implicit conversions are only activated if the types precisely match based on known type information
+// at the point of resolution.  For example
+//     let f (x: 'T) : Nullable<'T> = x
+// is enough, whereas
+//     let f (x: 'T) : Nullable<_> = x
+//     let f x : Nullable<'T> = x
+// are not enough to activate.
 
 let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualTy m =
     let g = infoReader.g
     let amap = infoReader.amap
-    if g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && not (isTyparTy g actualTy) then
+    if g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
 
+        // shortcut
+        if typeEquiv g reqdTy actualTy then None else
         let reqdTy2 = 
             if isTyparTy g reqdTy then
                 let tp = destTyparTy g reqdTy 
@@ -177,11 +187,20 @@ let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualT
                 | _ -> reqdTy
             else reqdTy
 
+        // Implicit conversions only activate if a precise implicit conversion exists and:
+        //   1. no feasible subtype relationship between X and Y (an approximation), OR
+        //   2. T --> some-type-containing-precisely-T
+        // Note that even for (2) implicit conversions are still only activated if the
+        // types *precisely* and *completely* match based on *known* type information at the point of resolution.
+        
         if not (isTyparTy g reqdTy2) &&
-           not (TypeFeasiblySubsumesType 0 g amap m reqdTy2 CanCoerce actualTy) then
+           (not (TypeFeasiblySubsumesType 0 g amap m reqdTy2 CanCoerce actualTy) ||
+            isTyparTy g actualTy && (let ftyvs = freeInType CollectAll reqdTy2 in ftyvs.FreeTypars.Contains(destTyparTy g actualTy))) then
+
             let implicits = 
-                TryFindIntrinsicMethInfo infoReader m ad "op_Implicit" reqdTy2 @
-                TryFindIntrinsicMethInfo infoReader m ad "op_Implicit" actualTy
+                infoReader.FindImplicitConversions m ad actualTy @
+                infoReader.FindImplicitConversions m ad reqdTy2
+            
             let implicits = 
                 implicits |> List.filter (fun minfo -> 
                     not minfo.IsInstance &&
@@ -192,6 +211,7 @@ let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualT
                     (let rty = minfo.GetFSharpReturnTy(amap, m, []) 
                      typeEquiv g rty reqdTy2)
                 )
+
             match implicits with
             | [minfo] ->
                 Some (minfo, (reqdTy, reqdTy2, ignore))

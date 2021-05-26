@@ -2941,7 +2941,7 @@ let TryFindIntrinsicOrExtensionMethInfo collectionSettings (cenv: cenv) (env: Tc
     AllMethInfosOfTypeInScope collectionSettings cenv.infoReader env.NameEnv (Some nm) ad IgnoreOverrides m ty
 
 let TryFindFSharpSignatureInstanceGetterProperty (cenv: cenv) (env: TcEnv) m nm ty (sigTys: TType list) =
-    TryFindPropInfo cenv.infoReader m env.AccessRights nm ty
+    TryFindIntrinsicPropInfo cenv.infoReader m env.AccessRights nm ty
     |> List.tryFind (fun propInfo ->
         not propInfo.IsStatic && propInfo.HasGetter &&
         (
