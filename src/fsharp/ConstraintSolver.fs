@@ -2376,7 +2376,7 @@ and CanMemberSigsMatchUpToCheck
                     match reqdRetTyOpt with
                     | Some _  when ( (* minfo.IsConstructor || *) not alwaysCheckReturn && isNil unnamedCalledOutArgs) ->
                         ResultD TypeDirectedConversionUsed.No
-                    | Some (MustConvertTo(reqdTy)) when g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions ->
+                    | Some (MustConvertTo(reqdTy)) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
                         let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
                         subsumeOrConvertTypes reqdTy methodRetTy
                     | Some reqdRetTy ->
@@ -2819,7 +2819,6 @@ and ResolveOverloading
                     let otherWarnCount = List.length otherWarnings
 
                     // Prefer methods that don't use type-directed conversion
-                    // Note: Relies on 'compare' respecting true > false
                     let c = compare (match usesTDC1 with TypeDirectedConversionUsed.No -> 1 | _ -> 0) (match usesTDC2 with TypeDirectedConversionUsed.No -> 1 | _ -> 0)
                     if c <> 0 then c else
 
@@ -2924,7 +2923,6 @@ and ResolveOverloading
                     if c <> 0 then c else
 
                     0
-                    
 
                 let bestMethods =
                     let indexedApplicableMeths = applicableMeths |> List.indexed
@@ -3004,7 +3002,7 @@ and ResolveOverloading
                                     return! ErrorD(Error(FSComp.SR.tcByrefReturnImplicitlyDereferenced(), m))
                                 else
                                     match reqdRetTy with
-                                    | MustConvertTo(reqdRetTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalImplicitConversions ->
+                                    | MustConvertTo(reqdRetTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
                                         let! _usesTDC = TypesMustSubsumeOrConvert csenv ad ndeep trace cxsln true m reqdRetTy actualRetTy
                                         return ()
                                     | _ ->

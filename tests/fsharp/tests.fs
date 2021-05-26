@@ -2483,6 +2483,11 @@ module TypecheckTests =
     let ``type check neg20`` () = singleNegTest (testConfig "typecheck/sigs") "neg20"
 
     [<Test>]
+    let ``type check neg20 version 5_0`` () =
+        let cfg = testConfig "typecheck/sigs/version50"
+        singleVersionedNegTest cfg "5.0" "neg20"
+
+    [<Test>]
     let ``type check neg21`` () = singleNegTest (testConfig "typecheck/sigs") "neg21"
 
     [<Test>]

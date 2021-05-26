@@ -3927,7 +3927,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "Chars" ] // should not contain (documenting the undesirable behavior, that this does not show up)
 
     [<Test>]
-    //[<Ignore("unknown hang in feature/auto-widen branch")>]
     member public this.``BY_DESIGN.ExplicitlyCloseTheParens.Bug73940``() =        
         AssertAutoCompleteContains 
             [ @"

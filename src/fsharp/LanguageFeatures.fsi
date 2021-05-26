@@ -21,7 +21,7 @@ type LanguageFeature =
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
     | ErasedUnions
-    | AdditionalImplicitConversions
+    | AdditionalTypeDirectedConversions
     | InterfacesWithMultipleGenericInstantiation
     | StringInterpolation
     | OverloadsForCustomOperations

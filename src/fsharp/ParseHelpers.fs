@@ -242,7 +242,7 @@ let ParseAssemblyCodeType s reportLibraryOnlyFeatures (isFeatureSupported: Featu
 
 #if NO_INLINE_IL_PARSER
     errorR(Error((193, "Inline IL not valid in a hosted environment"), m))
-    IL.EcmaMscorlibILGlobals.typ_Object
+    IL.PrimaryAssemblyILGlobals.typ_Object
 #else
     let isFeatureSupported (_featureId:LanguageFeature) = true
     try
@@ -251,6 +251,6 @@ let ParseAssemblyCodeType s reportLibraryOnlyFeatures (isFeatureSupported: Featu
            (UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, isFeatureSupported, s))
     with RecoverableParseError ->
       errorR(Error(FSComp.SR.astParseEmbeddedILTypeError(), m));
-      IL.EcmaMscorlibILGlobals.typ_Object
+      IL.PrimaryAssemblyILGlobals.typ_Object
 #endif
 
