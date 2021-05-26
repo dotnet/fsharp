@@ -152,6 +152,11 @@
         <target state="translated">패키지 관리</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePrintfBinaryFormat">
+        <source>printf format for binary integers</source>
+        <target state="new">printf format for binary integers</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
         <target state="translated">공백 완화</target>
