@@ -152,6 +152,11 @@
         <target state="translated">Package Management</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePrintfBinaryFormat">
+        <source>printf format for binary integers</source>
+        <target state="new">printf format for binary integers</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
         <target state="translated">assouplissement de la mise en retrait avec des espaces blancs</target>
