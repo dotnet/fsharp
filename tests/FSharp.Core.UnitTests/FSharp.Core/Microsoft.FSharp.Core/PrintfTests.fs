@@ -60,11 +60,20 @@ type PrintfTests() =
         
     [<Fact>]
     member this.VariableWidth() =
-        Assert.AreEqual("     123", sprintf "%*u" 8 123   
-        Assert.AreEqual(" 1111011", sprintf "%*B" 8 123   
-        Assert.AreEqual("     173", sprintf "%*o" 8 123   
-        Assert.AreEqual("      7b", sprintf "%*x" 8 123   
-        Assert.AreEqual("      7B", sprintf "%*X" 8 123   
+        Assert.AreEqual("       a", sprintf "%*c"  8 'a'  )
+        Assert.AreEqual("a       ", sprintf "%*c" -8 'a'  )
+        Assert.AreEqual("     abc", sprintf "%*s"  8 "abc")
+        Assert.AreEqual("abc     ", sprintf "%*s" -8 "abc")
+        Assert.AreEqual("     123", sprintf "%*u"  8 123  )
+        Assert.AreEqual("123     ", sprintf "%*u" -8 123  )
+        Assert.AreEqual(" 1111011", sprintf "%*B"  8 123  )
+        Assert.AreEqual("1111011 ", sprintf "%*B" -8 123  )
+        Assert.AreEqual("     173", sprintf "%*o"  8 123  )
+        Assert.AreEqual("173     ", sprintf "%*o" -8 123  )
+        Assert.AreEqual("      7b", sprintf "%*x"  8 123  )
+        Assert.AreEqual("7b      ", sprintf "%*x" -8 123  )
+        Assert.AreEqual("      7B", sprintf "%*X"  8 123  )
+        Assert.AreEqual("7B      ", sprintf "%*X" -8 123  ) 
         
     [<Fact>]
     member _.``union case formatting`` () =
