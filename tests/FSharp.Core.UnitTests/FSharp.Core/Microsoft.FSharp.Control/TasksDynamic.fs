@@ -1313,6 +1313,28 @@ type BasicsNotInParallel() =
                 require (not posted) "did not expect post to sync context"
             finally
                 SynchronizationContext.SetSynchronizationContext oldSyncContext
+
+    [<Fact; >]
+    member __.testBackgroundTaskStaysOnSameThreadIfAlreadyOnBackground() =
+        printfn "Running testBackgroundTask..."
+        for i in 1 .. 5 do 
+            let mutable ran = false
+            let taskOuter =
+                Task.Run(fun () ->
+                    let tid = System.Threading.Thread.CurrentThread.ManagedThreadId 
+                    require (isNull SynchronizationContext.Current) "expected sync context null on background thread (1)"
+                    let t =
+                        backgroundTaskDynamic {
+                            require (isNull SynchronizationContext.Current) "expected sync context null on background thread (2)"
+                            let tid2 = System.Threading.Thread.CurrentThread.ManagedThreadId 
+                            require (tid = tid2) "expected synchronous starts when already on background thread"
+                            do! Task.Delay(200)
+                            ran <- true
+                        }
+                    t.Wait()
+                    require ran "never ran")
+            taskOuter.Wait()
+                 
 #if STANDALONE 
 module M = 
   [<EntryPoint>]

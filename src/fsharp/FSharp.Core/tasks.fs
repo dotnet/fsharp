@@ -186,7 +186,14 @@ namespace Microsoft.FSharp.Control
 
         inherit TaskBuilderBase()
 
-        //// Same as TaskBuilder.Run except the start is inside Task.Run
+        static member RunDynamic(code: TaskCode<'T, 'T>) : Task<'T> = 
+            match SynchronizationContext.Current with 
+            | null -> 
+                TaskBuilder.RunDynamic(code)
+            | _ -> 
+                Task.Run<'T>(fun () -> TaskBuilder.RunDynamic(code))
+
+        //// Same as TaskBuilder.Run except the start is inside Task.Run if necessary
         member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
              if __useResumableCode then 
                 __stateMachine<TaskStateMachineData<'T>, Task<'T>>
@@ -203,23 +210,21 @@ namespace Microsoft.FSharp.Control
                     ))
                     (SetStateMachineMethodImpl<_>(fun sm state -> sm.Data.MethodBuilder.SetStateMachine(state)))
                     (AfterCode<_,Task<'T>>(fun sm -> 
-                            let sm = sm
+                        // backgroundTask { .. } escapes to a background thread (SynchronizationContext.Current = null) where necessary
+                        match SynchronizationContext.Current with 
+                        | null -> 
+                            sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
+                            sm.Data.MethodBuilder.Start(&sm)
+                            sm.Data.MethodBuilder.Task
+                        | _ ->
+                            let sm = sm // copy contents of state machine so we can capture it
                             Task.Run<'T>(fun () -> 
-                                let mutable sm = sm
+                                let mutable sm = sm // host local mutable copy of contents of state machine on this thread pool thread
                                 sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
                                 sm.Data.MethodBuilder.Start(&sm)
                                 sm.Data.MethodBuilder.Task)))
              else
-                Task.Run<'T>(fun () -> TaskBuilder.RunDynamic(code))
-
-        // This is a possible simpler implementation but state machine compilation doesn't kick in
-        // when the resumable code is not immediately turned into a state machine
-        //
-        // This restriction could be lifter
-
-        //member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
-           //Task.Run<'T>(fun () -> TaskBuilderBase.Run(code))
-    
+                BackgroundTaskBuilder.RunDynamic(code)
     
     module TaskBuilder = 
 
