@@ -266,7 +266,6 @@ type DebugPointAtFor =
 [<RequireQualifiedAccess>]
 type DebugPointAtWhile =
     | Yes of range: range
-    | Condition
     | No
 
 /// Represents whether a debug point should be present for a 'let' binding,

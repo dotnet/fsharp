@@ -5335,11 +5335,6 @@ FSharp.Compiler.Syntax.DebugPointAtWhile: Int32 GetHashCode(System.Collections.I
 FSharp.Compiler.Syntax.DebugPointAtWhile: Int32 Tag
 FSharp.Compiler.Syntax.DebugPointAtWhile: Int32 get_Tag()
 FSharp.Compiler.Syntax.DebugPointAtWhile: System.String ToString()
-FSharp.Compiler.Syntax.DebugPointAtWhile+Tags: Int32 Condition
-FSharp.Compiler.Syntax.DebugPointAtWhile: Boolean IsCondition
-FSharp.Compiler.Syntax.DebugPointAtWhile: Boolean get_IsCondition()
-FSharp.Compiler.Syntax.DebugPointAtWhile: FSharp.Compiler.Syntax.DebugPointAtWhile Condition
-FSharp.Compiler.Syntax.DebugPointAtWhile: FSharp.Compiler.Syntax.DebugPointAtWhile get_Condition()
 FSharp.Compiler.Syntax.DebugPointAtWith
 FSharp.Compiler.Syntax.DebugPointAtWith+Tags: Int32 No
 FSharp.Compiler.Syntax.DebugPointAtWith+Tags: Int32 Yes
