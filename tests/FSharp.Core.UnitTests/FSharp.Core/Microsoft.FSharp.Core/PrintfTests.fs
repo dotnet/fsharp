@@ -46,6 +46,19 @@ type PrintfTests() =
         test "%-10c" 'a'   "a         "
     
     [<Fact>]
+    member this.NumbersInDifferentBases() =
+        test "%10u"  123   "       123"
+        test "%-10u" 123   "123       "
+        test "%10B"  123   "   1111011"
+        test "%-10B" 123   "1111011   "
+        test "%10o"  123   "       173"
+        test "%-10o" 123   "173       "
+        test "%10x"  123   "        7b"
+        test "%-10x" 123   "7b        "
+        test "%10X"  123   "        7B"
+        test "%-10X" 123   "7B        "
+        
+    [<Fact>]
     member _.``union case formatting`` () =
         Assert.AreEqual("CaseOne", sprintf "%A" CaseOne)
         Assert.AreEqual("CaseTwo \"hello\"", sprintf "%A" (CaseTwo "hello"))
