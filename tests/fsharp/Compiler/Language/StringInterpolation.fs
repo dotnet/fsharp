@@ -540,16 +540,15 @@ check "vcewweh20" $"x = %A{1}" "x = 1"
     let ``%B fails for langVersion 5.0`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
             """printf "%B" 10"""
-            [|(FSharpDiagnosticSeverity.Error, 741, (2, 8, 2, 11),
-               "Unable to parse format string 'Bad format specifier: 'B''")
-            |]
+            [|(FSharpDiagnosticSeverity.Error, 3350, (1, 8, 1, 12),
+                   "Feature 'string interpolation' is not available in F# 5.0. Please use language version preview or greater.")|]
     [<Test>]
     let ``%B succeeds for langVersion preview`` () =
-        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |] ("""
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |] """
 let check msg a b = 
     if a = b then printfn "test case '%s' succeeded" msg else failwithf "test case '%s' failed, expected %A, got %A" msg b a
 check "vcewweh22a" $"x = %B{19}" "x = 10011"
-""")
+        """)
 
     [<Test>]
     let ``String interpolation using list and array data`` () =
