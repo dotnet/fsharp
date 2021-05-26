@@ -187,10 +187,11 @@ namespace Microsoft.FSharp.Control
         inherit TaskBuilderBase()
 
         static member RunDynamic(code: TaskCode<'T, 'T>) : Task<'T> = 
-            match SynchronizationContext.Current with 
-            | null -> 
+            // backgroundTask { .. } escapes to a background thread where necessary
+            // See spec of ConfigureAwait(false) at https://devblogs.microsoft.com/dotnet/configureawait-faq/
+            if isNull SynchronizationContext.Current && not (obj.ReferenceEquals(TaskScheduler.Current, TaskScheduler.Default)) then
                 TaskBuilder.RunDynamic(code)
-            | _ -> 
+            else
                 Task.Run<'T>(fun () -> TaskBuilder.RunDynamic(code))
 
         //// Same as TaskBuilder.Run except the start is inside Task.Run if necessary
@@ -210,13 +211,13 @@ namespace Microsoft.FSharp.Control
                     ))
                     (SetStateMachineMethodImpl<_>(fun sm state -> sm.Data.MethodBuilder.SetStateMachine(state)))
                     (AfterCode<_,Task<'T>>(fun sm -> 
-                        // backgroundTask { .. } escapes to a background thread (SynchronizationContext.Current = null) where necessary
-                        match SynchronizationContext.Current with 
-                        | null -> 
+                        // backgroundTask { .. } escapes to a background thread where necessary
+                        // See spec of ConfigureAwait(false) at https://devblogs.microsoft.com/dotnet/configureawait-faq/
+                        if isNull SynchronizationContext.Current && not (obj.ReferenceEquals(TaskScheduler.Current, TaskScheduler.Default)) then
                             sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
                             sm.Data.MethodBuilder.Start(&sm)
                             sm.Data.MethodBuilder.Task
-                        | _ ->
+                        else
                             let sm = sm // copy contents of state machine so we can capture it
                             Task.Run<'T>(fun () -> 
                                 let mutable sm = sm // host local mutable copy of contents of state machine on this thread pool thread
