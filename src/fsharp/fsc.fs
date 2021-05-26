@@ -561,7 +561,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     ReportTime tcConfig "Import non-system references"
 
     let tcImports =
-        TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
+        TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
         |> Cancellable.runWithoutCancellation
 
     // register tcImports to be disposed in future
@@ -702,7 +702,7 @@ let main1OfAst
 
     // Import other assemblies
     ReportTime tcConfig "Import non-system references"
-    let tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)  |> Cancellable.runWithoutCancellation
+    let tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)  |> Cancellable.runWithoutCancellation
 
     // register tcImports to be disposed in future
     disposables.Register tcImports
