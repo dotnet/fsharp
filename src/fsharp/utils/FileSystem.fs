@@ -780,7 +780,7 @@ type ByteStorage(getByteMemory: unit -> ReadOnlyByteMemory) =
     static member FromByteArrayAndCopy(bytes: byte [], useBackingMemoryMappedFile: bool) =
         ByteStorage.FromByteMemoryAndCopy(ByteMemory.FromArray(bytes).AsReadOnly(), useBackingMemoryMappedFile)
 
-module SourceText =
+module internal SourceText =
     let readFile fileName inputCodePage = 
         let fileName = FileSystem.GetFullPathShim fileName
         use stream = FileSystem.OpenFileForReadShim(fileName).AsReadOnlyStream()

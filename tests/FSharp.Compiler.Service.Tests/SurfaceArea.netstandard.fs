@@ -1919,7 +1919,6 @@ FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Void .ctor(FSharp.Compiler.CodeAnal
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults[] CheckerModel
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults[] get_CheckerModel()
-FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext: FSharp.Compiler.Text.ISourceText GetFileSource(System.String)
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext: System.Threading.CancellationToken CancellationToken
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext: System.Threading.CancellationToken get_CancellationToken()
 FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext
