@@ -1384,7 +1384,7 @@ let convCustomAttr cenv emEnv (cattr: ILAttribute) =
        match convConstructorSpec cenv emEnv cattr.Method with
        | null -> failwithf "convCustomAttr: %+A" cattr.Method
        | res -> res
-    let data = getCustomAttrData cenv.ilg cattr
+    let data = getCustomAttrData cattr
     (methInfo, data)
 
 let emitCustomAttr cenv emEnv add cattr = add (convCustomAttr cenv emEnv cattr)
@@ -1740,7 +1740,7 @@ let typeAttributesOfTypeLayout cenv emEnv x =
         match cenv.tryFindSysILTypeRef "System.Runtime.InteropServices.StructLayoutAttribute", cenv.tryFindSysILTypeRef "System.Runtime.InteropServices.LayoutKind" with
         | Some tref1, Some tref2 ->
           Some(convCustomAttr cenv emEnv
-                (IL.mkILCustomAttribute cenv.ilg
+                (IL.mkILCustomAttribute
                   (tref1,
                    [mkILNonGenericValueTy tref2 ],
                    [ ILAttribElem.Int32 x ],

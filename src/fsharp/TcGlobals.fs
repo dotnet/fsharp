@@ -761,8 +761,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let mutable generatedAttribsCache = []
   let mutable debuggerBrowsableNeverAttributeCache = None
-  let mkDebuggerNonUserCodeAttribute() = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerNonUserCodeAttribute, [], [], [])
-  let mkCompilerGeneratedAttribute () = mkILCustomAttribute ilg (tref_CompilerGeneratedAttribute, [], [], [])
+  let mkDebuggerNonUserCodeAttribute() = mkILCustomAttribute (findSysILTypeRef tname_DebuggerNonUserCodeAttribute, [], [], [])
+  let mkCompilerGeneratedAttribute () = mkILCustomAttribute (tref_CompilerGeneratedAttribute, [], [], [])
   let compilerGlobalState = CompilerGlobalState()
 
   // Requests attributes to be added to compiler generated methods.
@@ -786,7 +786,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
         let typ_DebuggerBrowsableState =
             let tref = findSysILTypeRef tname_DebuggerBrowsableState
             ILType.Value (mkILNonGenericTySpec tref)
-        mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerBrowsableAttribute, [typ_DebuggerBrowsableState], [ILAttribElem.Int32 n], [])
+        mkILCustomAttribute (findSysILTypeRef tname_DebuggerBrowsableAttribute, [typ_DebuggerBrowsableState], [ILAttribElem.Int32 n], [])
 
   let mkDebuggerBrowsableNeverAttribute() =
       match debuggerBrowsableNeverAttributeCache with
@@ -799,7 +799,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList @ [mkDebuggerBrowsableNeverAttribute()])
   let addPropertyNeverAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addNeverAttrs pdef.CustomAttrs)
   let addFieldNeverAttrs (fdef:ILFieldDef) = fdef.With(customAttrs = addNeverAttrs fdef.CustomAttrs)
-  let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
+  let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
 
   let betterTyconEntries =
      [| "Int32"    , v_int_tcr
@@ -1529,17 +1529,17 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member _.AddFieldNeverAttrs mdef = addFieldNeverAttrs mdef
 
-  member _.mkDebuggerHiddenAttribute() = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerHiddenAttribute, [], [], [])
+  member _.mkDebuggerHiddenAttribute() = mkILCustomAttribute (findSysILTypeRef tname_DebuggerHiddenAttribute, [], [], [])
 
-  member _.mkDebuggerDisplayAttribute s = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerDisplayAttribute, [ilg.typ_String], [ILAttribElem.String (Some s)], [])
+  member _.mkDebuggerDisplayAttribute s = mkILCustomAttribute (findSysILTypeRef tname_DebuggerDisplayAttribute, [ilg.typ_String], [ILAttribElem.String (Some s)], [])
 
   member _.DebuggerBrowsableNeverAttribute = mkDebuggerBrowsableNeverAttribute()
 
   member _.mkDebuggerStepThroughAttribute() =
-      mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerStepThroughAttribute, [], [], [])
+      mkILCustomAttribute (findSysILTypeRef tname_DebuggerStepThroughAttribute, [], [], [])
 
   member _.mkDebuggableAttribute (jitOptimizerDisabled) =
-      mkILCustomAttribute ilg (tref_DebuggableAttribute, [ilg.typ_Bool; ilg.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
+      mkILCustomAttribute (tref_DebuggableAttribute, [ilg.typ_Bool; ilg.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
 
   member _.mkDebuggableAttributeV2(jitTracking, ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
         let debuggingMode =
@@ -1548,7 +1548,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
             (if enableEnC then 4 else 0)
         let tref_DebuggableAttribute_DebuggingModes = mkILTyRefInTyRef (tref_DebuggableAttribute, tname_DebuggableAttribute_DebuggingModes)
-        mkILCustomAttribute ilg
+        mkILCustomAttribute
           (tref_DebuggableAttribute, [mkILNonGenericValueTy tref_DebuggableAttribute_DebuggingModes],
            (* See System.Diagnostics.DebuggableAttribute.DebuggingModes *)
            [ILAttribElem.Int32( debuggingMode )], [])

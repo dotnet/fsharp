@@ -298,7 +298,7 @@ module MainModuleBuilder =
         let manifestAttrs =
             mkILCustomAttrs
                  [ if not tcConfig.internConstantStrings then
-                       yield mkILCustomAttribute tcGlobals.ilg
+                       yield mkILCustomAttribute
                                  (tcGlobals.FindSysILTypeRef "System.Runtime.CompilerServices.CompilationRelaxationsAttribute",
                                   [tcGlobals.ilg.typ_Int32], [ILAttribElem.Int32( 8)], [])
                    yield! sigDataAttributes
