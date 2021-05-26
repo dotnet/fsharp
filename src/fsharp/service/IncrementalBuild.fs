@@ -153,7 +153,7 @@ module IncrementalBuildSyntaxTree =
             | _ -> parse sigNameOpt
 
         member _.Invalidate() =
-            weakCache <- None
+            SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, filename, isLastCompiland)
 
         member _.FileName = filename
 
@@ -214,10 +214,15 @@ type TcInfoState =
     | PartialState of TcInfo
     | FullState of TcInfo * TcInfoExtras
 
-    member this.TcInfo: TcInfo =
-        match this with
-        | PartialState tcInfo -> tcInfo
-        | FullState(tcInfo, _) -> tcInfo
+[<NoEquality; NoComparison>]
+type TcInfoNode =
+    | PartialNode of GraphNode<TcInfo>
+    | FullNode of GraphNode<TcInfo * TcInfoExtras>
+
+    static member FromState(state: TcInfoState) =
+        match state with
+        | PartialState tcInfo -> PartialNode(GraphNode(node { return tcInfo }))
+        | FullState(tcInfo, tcInfoExtras) -> FullNode(GraphNode(node { return tcInfo, tcInfoExtras }))
 
 /// Bound model of an underlying syntax and typed tree.
 [<Sealed>]
@@ -231,12 +236,44 @@ type BoundModel private (tcConfig: TcConfig,
                          beforeFileChecked: Event<string>,
                          fileChecked: Event<string>,
                          prevTcInfo: TcInfo,
-                         prevTcInfoExtras: (NodeCode<TcInfoExtras option>),
+                         prevTcInfoExtras: NodeCode<TcInfoExtras option>,
                          syntaxTreeOpt: SyntaxTree option,
                          tcInfoStateOpt: TcInfoState option) as this =
 
-    let mutable lazyTcInfoState = tcInfoStateOpt
-    let gate = obj()
+    static let emptyTcInfoExtras =
+        {
+            tcResolutionsRev = []
+            tcSymbolUsesRev = []
+            tcOpenDeclarationsRev = []
+            latestImplFile = None
+            itemKeyStore = None
+            semanticClassificationKeyStore = None
+        }
+
+    let tcInfoNode = 
+        match tcInfoStateOpt with
+        | Some tcInfoState -> TcInfoNode.FromState(tcInfoState)
+        | _ ->
+            if enablePartialTypeChecking then
+                PartialNode(
+                    GraphNode(
+                        node {
+                            match! this.TypeCheck(true) with
+                            | FullState(tcInfo, _) -> return tcInfo
+                            | PartialState(tcInfo) -> return tcInfo
+                        }
+                    )
+                )
+            else
+                FullNode(
+                    GraphNode(
+                        node {
+                            match! this.TypeCheck(false) with
+                            | FullState(tcInfo, tcInfoExtras) -> return tcInfo, tcInfoExtras
+                            | PartialState(tcInfo) -> return tcInfo, emptyTcInfoExtras
+                        }
+                    )
+                )
 
     let defaultTypeCheck () =
         node {
@@ -244,41 +281,8 @@ type BoundModel private (tcConfig: TcConfig,
             | Some prevTcInfoExtras ->
                 return FullState(prevTcInfo, prevTcInfoExtras)
             | _ ->
-                return PartialState prevTcInfo
+                return PartialState(prevTcInfo)
         }
-
-    let mutable lazyAsyncTcInfo =
-        GraphNode(node {
-            return! this.ComputeTcInfo()
-        })
-
-    let mutable lazyAsyncTcInfoExtras =
-        GraphNode(node {
-            let! res = this.ComputeTcInfoExtras()
-            return Some res
-        })
-
-    let mutable lazyAsyncFullState =
-        GraphNode(node {
-            return! this.ComputeState(false)
-        })
-
-    let resetAsyncLazyComputations() =
-        lazyAsyncTcInfo <-
-            GraphNode(node {
-                return! this.ComputeTcInfo()
-            })
-
-        lazyAsyncTcInfoExtras <-
-            GraphNode(node {
-                let! res = this.ComputeTcInfoExtras()
-                return Some res
-            })
-
-        lazyAsyncFullState <-
-            GraphNode(node {
-                return! this.ComputeState(false)
-            })
 
     member _.TcConfig = tcConfig
 
@@ -298,46 +302,44 @@ type BoundModel private (tcConfig: TcConfig,
         | _ ->
             None
 
-    member this.Invalidate() =
-        lock gate (fun () ->
-            let hasSig = this.BackingSignature.IsSome
-            match lazyTcInfoState with
-            // If partial checking is enabled and we have a backing sig file, then do nothing. The partial state contains the sig state.
-            | Some(PartialState _) when enablePartialTypeChecking && hasSig -> ()
-            // If partial checking is enabled and we have a backing sig file, then use the partial state. The partial state contains the sig state.
-            | Some(FullState(tcInfo, _)) when enablePartialTypeChecking && hasSig -> 
-                lazyTcInfoState <- Some(PartialState tcInfo)
-                resetAsyncLazyComputations()
-            | _ ->
-                lazyTcInfoState <- None
-                resetAsyncLazyComputations()
-
+    /// If partial type-checking is enabled,
+    ///     this will create a new bound-model that will only have the partial state if the
+    ///     the current bound-model has the full state.
+    member this.ClearTcInfoExtras() =
+        let hasSig = this.BackingSignature.IsSome
+        match tcInfoNode with
+        // If partial checking is enabled and we have a backing sig file, then do nothing. The partial state contains the sig state.
+        | PartialNode _ when enablePartialTypeChecking && hasSig -> this
+        // If partial checking is enabled and we have a backing sig file, then use the partial state. The partial state contains the sig state.
+        | FullNode(stateNode) when enablePartialTypeChecking && hasSig -> 
             // Always invalidate the syntax tree cache.
-            syntaxTreeOpt
-            |> Option.iter (fun x -> x.Invalidate())
-        )
+            let newSyntaxTreeOpt =
+                syntaxTreeOpt
+                |> Option.map (fun x -> x.Invalidate())
 
-    member private this.ComputeState(partialCheck: bool) =
-        node {
-            let partialCheck =
-                // Only partial check if we have enabled it.
-                if enablePartialTypeChecking then partialCheck
-                else false
+            let newTcInfoStateOpt =
+                match stateNode.TryGetValue() with
+                | ValueSome(tcInfo, _) ->
+                    Some(PartialState tcInfo)
+                | _ ->
+                    None
 
-            let mustCheck =
-                match lazyTcInfoState, partialCheck with
-                | None, _ -> true
-                | Some(PartialState _), false -> true
-                | _ -> false
-
-            match lazyTcInfoState with
-            | Some tcInfoState when not mustCheck -> return tcInfoState
-            | _ ->
-                lazyTcInfoState <- None
-                let! tcInfoState = this.TypeCheck(partialCheck)
-                lazyTcInfoState <- Some tcInfoState
-                return tcInfoState
-        }
+            BoundModel(
+                tcConfig,
+                tcGlobals,
+                tcImports,
+                keepAssemblyContents, keepAllBackgroundResolutions,
+                keepAllBackgroundSymbolUses,
+                enableBackgroundItemKeyStoreAndSemanticClassification,
+                enablePartialTypeChecking,
+                beforeFileChecked,
+                fileChecked,
+                prevTcInfo,
+                prevTcInfoExtras,
+                newSyntaxTreeOpt,
+                newTcInfoStateOpt)
+        | _ ->
+            this
 
     member this.Next(syntaxTree, tcInfo) =
         BoundModel(
@@ -352,20 +354,27 @@ type BoundModel private (tcConfig: TcConfig,
             beforeFileChecked,
             fileChecked,
             tcInfo,
-            lazyAsyncTcInfoExtras.GetValue(),
+            this.GetTcInfoExtras(),
             Some syntaxTree,
             None)
 
     member this.Finish(finalTcErrorsRev, finalTopAttribs) =
         node {
-            let! _ = this.GetTcInfo()
-            let state = lazyTcInfoState.Value // should not be null at this point
+            let createFinish tcInfo =
+                { tcInfo  with tcErrorsRev = finalTcErrorsRev; topAttribs = finalTopAttribs }
 
-            let finishTcInfo = { state.TcInfo  with tcErrorsRev = finalTcErrorsRev; topAttribs = finalTopAttribs }
-            let finishState =
-                match state with
-                | PartialState(_) -> PartialState(finishTcInfo)
-                | FullState(_, tcInfoExtras) -> FullState(finishTcInfo, tcInfoExtras)
+            let! finishState =
+                node {
+                    match tcInfoNode with
+                    | PartialNode(stateNode) ->
+                        let! tcInfo = stateNode.GetValue()
+                        let finishTcInfo = createFinish tcInfo
+                        return PartialState(finishTcInfo)
+                    | FullNode(stateNode) ->
+                        let! tcInfo, tcInfoExtras = stateNode.GetValue()
+                        let finishTcInfo = createFinish tcInfo
+                        return FullState(finishTcInfo, tcInfoExtras)
+                }
 
             return
                 BoundModel(
@@ -385,48 +394,42 @@ type BoundModel private (tcConfig: TcConfig,
                     Some finishState)
         }
 
-    member private this.ComputeTcInfo() : NodeCode<_> =
-        node {
-            let! state = this.ComputeState(true)
-            return state.TcInfo
-        }
-
     member this.GetTcInfo() =
-        lazyAsyncTcInfo.GetValue()
+        match tcInfoNode with
+        | PartialNode(stateNode) -> stateNode.GetValue()
+        | FullNode(stateNode) ->
+            node {
+                let! tcInfo, _ = stateNode.GetValue()
+                return tcInfo
+            }
 
     member this.TryTcInfo =
-        match lazyTcInfoState with
-        | Some(state) ->
-            match state with
-            | FullState(tcInfo, _)
-            | PartialState(tcInfo) -> Some tcInfo
-        | _ -> None
-
-    member private this.ComputeTcInfoExtras() : NodeCode<_> =
-        node {
-            let! state = this.ComputeState(false)
-            match state with
-            | FullState(_, tcInfoExtras) -> return tcInfoExtras
-            | PartialState _ ->
-                return
-                    {
-                        tcResolutionsRev = []
-                        tcSymbolUsesRev = []
-                        tcOpenDeclarationsRev = []
-                        latestImplFile = None
-                        itemKeyStore = None
-                        semanticClassificationKeyStore = None
-                    }
-        }
+        match tcInfoNode with
+        | PartialNode(stateNode) ->
+            match stateNode.TryGetValue() with
+            | ValueSome tcInfo -> Some tcInfo
+            | _ -> None
+        | FullNode(stateNode) ->
+            match stateNode.TryGetValue() with
+            | ValueSome(tcInfo, _) -> Some tcInfo
+            | _ -> None
 
     member this.GetTcInfoExtras() =
-        lazyAsyncTcInfoExtras.GetValue()
+        match tcInfoNode with
+        | FullNode(stateNode) -> 
+            node {
+                let! _, tcInfoExtras = stateNode.GetValue()
+                return Some tcInfoExtras
+            }
+        | PartialNode _ ->
+            node { return None }
 
     member this.GetTcInfoWithExtras() =
-        node {
-            match! lazyAsyncFullState.GetValue() with
-            | FullState(tcInfo, tcInfoExtras) -> return tcInfo, tcInfoExtras
-            | PartialState(tcInfo) ->
+        match tcInfoNode with
+        | FullNode(stateNode) -> stateNode.GetValue()
+        | PartialNode(stateNode) ->
+            node {
+                let! tcInfo = stateNode.GetValue()
                 let tcInfoExtras =
                     {
                         tcResolutionsRev = []
@@ -437,10 +440,10 @@ type BoundModel private (tcConfig: TcConfig,
                         semanticClassificationKeyStore = None
                     }
                 return tcInfo, tcInfoExtras
-        }
+            }
 
     member private this.TypeCheck (partialCheck: bool) : NodeCode<TcInfoState> =
-        match partialCheck, lazyTcInfoState with
+        match partialCheck, tcInfoStateOpt with
         | true, Some (PartialState _ as state)
         | true, Some (FullState _ as state) -> node { return state }
         | false, Some (FullState _ as state) -> node { return state }
@@ -732,55 +735,10 @@ type IncrementalBuilderState =
         stampedFileNames: ImmutableArray<DateTime>
         logicalStampedFileNames: ImmutableArray<DateTime>
         stampedReferencedAssemblies: ImmutableArray<DateTime>
-        initialBoundModel: BoundModel
-        boundModels: ImmutableArray<BoundModelLazy>
+        initialBoundModel: GraphNode<BoundModel>
+        boundModels: ImmutableArray<GraphNode<BoundModel>>
         finalizedBoundModel: GraphNode<((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime)>
     }
-
-and BoundModelLazy (refState: IncrementalBuilderState ref, i, syntaxTree: SyntaxTree, enablePartialTypeChecking) =
-
-    /// Type check all files eagerly.
-    let TypeCheckTask partialCheck (prevBoundModel: BoundModel) syntaxTree: NodeCode<BoundModel> =
-        node {
-            let! tcInfo = prevBoundModel.GetTcInfo()
-            let boundModel = prevBoundModel.Next(syntaxTree, tcInfo)
-
-            // Eagerly type check
-            // We need to do this to keep the expected behavior of events (namely fileChecked) when checking a file/project.
-            if partialCheck then
-                let! _ = boundModel.GetTcInfo()
-                ()
-            else
-                let! _ = boundModel.GetTcInfoWithExtras()
-                ()
-
-            return boundModel
-        }
-
-    let mkLazy partialCheck =
-        GraphNode(node {
-            let state = !refState
-
-            let! prevBoundModel =
-                match i with
-                | 0 (* first file *) -> node { return state.initialBoundModel }
-                | _ -> state.boundModels.[i - 1].GetPartial()
-            return! TypeCheckTask partialCheck prevBoundModel syntaxTree
-        })
-
-    let lazyFull = mkLazy false
-    // If partial type checking is not enabled, GetPartial will always return an eager evaluation of the full check.
-    let lazyPartial =
-        if enablePartialTypeChecking then
-            mkLazy true
-        else
-            lazyFull
-     
-    member this.GetPartial() : NodeCode<BoundModel> = lazyPartial.GetValue()
-    member this.TryGetPartial() = lazyPartial.TryGetValue()
-
-    member this.GetFull() : NodeCode<BoundModel> = lazyFull.GetValue()
-    member this.TryGetFull() = lazyFull.TryGetValue()
 
 /// Manages an incremental build graph for the build of a single F# project
 type IncrementalBuilder(
@@ -926,6 +884,24 @@ type IncrementalBuilder(
                 node { return Some tcInfoExtras },
                 None) }
 
+    /// Type check all files eagerly.
+    let TypeCheckTask partialCheck (prevBoundModel: BoundModel) syntaxTree: NodeCode<BoundModel> =
+        node {
+            let! tcInfo = prevBoundModel.GetTcInfo()
+            let boundModel = prevBoundModel.Next(syntaxTree, tcInfo)
+
+            // Eagerly type check
+            // We need to do this to keep the expected behavior of events (namely fileChecked) when checking a file/project.
+            if partialCheck then
+                let! _ = boundModel.GetTcInfo()
+                ()
+            else
+                let! _ = boundModel.GetTcInfoWithExtras()
+                ()
+
+            return boundModel
+        }
+
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
     let FinalizeTypeCheckTask (boundModels: ImmutableArray<BoundModel>) =
       node {
@@ -1034,23 +1010,27 @@ type IncrementalBuilder(
     let fileNames = sourceFiles |> Array.ofList // TODO: This should be an immutable array.
     let referencedAssemblies =  nonFrameworkAssemblyInputs |> Array.ofList // TODO: This should be an immutable array.
 
-    let createBoundModelGraphNode (refState: IncrementalBuilderState ref) i =
+    let createBoundModelGraphNode initialBoundModel (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) i =
         let fileInfo = fileNames.[i]
+        let prevBoundModelGraphNode =
+            match i with
+            | 0 (* first file *) -> initialBoundModel
+            | _ -> boundModels.[i - 1]
         let syntaxTree = GetSyntaxTree fileInfo
-        BoundModelLazy(refState, i, syntaxTree, enablePartialTypeChecking)
+        GraphNode(
+            node {
+                let! prevBoundModel = prevBoundModelGraphNode.GetValue()
+                return! TypeCheckTask enablePartialTypeChecking prevBoundModel syntaxTree
+            }
+        )
 
-    let createBoundModelsGraphNode refState count =
-        Array.init count (createBoundModelGraphNode refState)
-        |> ImmutableArray.CreateRange
-
-    let rec createFinalizeBoundModelGraphNode (state: IncrementalBuilderState ref) =
+    let rec createFinalizeBoundModelGraphNode (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) =
         GraphNode(node {
-            let state = !state
             // Compute last bound model then get all the evaluated models.
-            let! _ = state.boundModels.[state.boundModels.Length - 1].GetPartial()
+            let! _ = boundModels.[boundModels.Count - 1].GetValue()
             let boundModels =
-                state.boundModels
-                |> Seq.map (fun x -> x.TryGetPartial().Value)
+                boundModels
+                |> Seq.map (fun x -> x.TryGetValue().Value)
                 |> ImmutableArray.CreateRange
 
             let! result = FinalizeTypeCheckTask boundModels
@@ -1063,11 +1043,12 @@ type IncrementalBuilder(
         let stamp = StampFileNameTask cache fileInfo
 
         if currentStamp <> stamp then
-            match state.boundModels.[slot].TryGetPartial() with
+            match state.boundModels.[slot].TryGetValue() with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
             | ValueSome(boundModel) when enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
-                boundModel.Invalidate()
+                let newBoundModel = boundModel.ClearTcInfoExtras()
                 { state with
+                    boundModels = state.boundModels.RemoveAt(slot).Insert(slot, GraphNode(node { return newBoundModel }))
                     stampedFileNames = state.stampedFileNames.SetItem(slot, StampFileNameTask cache fileInfo)
                 }
             | _ ->
@@ -1075,27 +1056,22 @@ type IncrementalBuilder(
                 let stampedFileNames = state.stampedFileNames.ToBuilder()
                 let logicalStampedFileNames = state.logicalStampedFileNames.ToBuilder()
                 let boundModels = state.boundModels.ToBuilder()
-                
-                let refState = ref state
 
                 // Invalidate the file and all files below it.
                 for j = 0 to stampedFileNames.Count - slot - 1 do
                     let stamp = StampFileNameTask cache fileNames.[slot + j]
                     stampedFileNames.[slot + j] <- stamp
                     logicalStampedFileNames.[slot + j] <- stamp
-                    boundModels.[slot + j] <- createBoundModelGraphNode refState (slot + j)
+                    boundModels.[slot + j] <- createBoundModelGraphNode state.initialBoundModel boundModels (slot + j)
 
-                let state =
-                    { state with
-                        // Something changed, the finalized view of the project must be invalidated.
-                        finalizedBoundModel = createFinalizeBoundModelGraphNode refState
+                { state with
+                    // Something changed, the finalized view of the project must be invalidated.
+                    finalizedBoundModel = createFinalizeBoundModelGraphNode boundModels
 
-                        stampedFileNames = stampedFileNames.ToImmutable()
-                        logicalStampedFileNames = logicalStampedFileNames.ToImmutable()
-                        boundModels = boundModels.ToImmutable()
-                    }
-                refState := state
-                state
+                    stampedFileNames = stampedFileNames.ToImmutable()
+                    logicalStampedFileNames = logicalStampedFileNames.ToImmutable()
+                    boundModels = boundModels.ToImmutable()
+                }
         else
             state
 
@@ -1134,7 +1110,7 @@ type IncrementalBuilder(
             state
 
     let tryGetSlotPartial (state: IncrementalBuilderState) slot =
-        match state.boundModels.[slot].TryGetPartial() with
+        match state.boundModels.[slot].TryGetValue() with
         | ValueSome boundModel ->
             (boundModel, state.stampedFileNames.[slot])
             |> Some
@@ -1154,7 +1130,7 @@ type IncrementalBuilder(
             if targetSlot < 0 then
                 return Some(initialBoundModel, DateTime.MinValue)
             else
-                let! boundModel = state.boundModels.[targetSlot].GetPartial()
+                let! boundModel = state.boundModels.[targetSlot].GetValue()
                 return Some(boundModel, state.stampedFileNames.[targetSlot])
         }
 
@@ -1163,7 +1139,7 @@ type IncrementalBuilder(
             if targetSlot < 0 then
                 return Some(initialBoundModel, DateTime.MinValue)
             else
-                let! boundModel = state.boundModels.[targetSlot].GetFull()
+                let! boundModel = state.boundModels.[targetSlot].GetValue()
                 return Some(boundModel, state.stampedFileNames.[targetSlot])
         }
 
@@ -1186,19 +1162,23 @@ type IncrementalBuilder(
     let gate = obj ()
     let mutable currentState =
         let cache = TimeStampCache(defaultTimeStamp)
-        let refState = ref Unchecked.defaultof<_>
+        let initialBoundModel = GraphNode(node { return initialBoundModel })
+        let boundModels = ImmutableArray.CreateBuilder(fileNames.Length)
+
+        for slot = 0 to fileNames.Length - 1 do
+            boundModels.Add(createBoundModelGraphNode initialBoundModel boundModels slot)
+
         let state =
             {
                 stampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
                 logicalStampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
                 stampedReferencedAssemblies = Array.init referencedAssemblies.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
                 initialBoundModel = initialBoundModel
-                boundModels = createBoundModelsGraphNode refState fileNames.Length
-                finalizedBoundModel = createFinalizeBoundModelGraphNode refState
+                boundModels = boundModels.ToImmutable()
+                finalizedBoundModel = createFinalizeBoundModelGraphNode boundModels
             }
         let state = computeStampedReferencedAssemblies state false cache
         let state = computeStampedFileNames state cache
-        refState := state
         state
 
     let computeProjectTimeStamp (state: IncrementalBuilderState) =

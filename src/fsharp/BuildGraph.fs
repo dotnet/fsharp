@@ -282,4 +282,6 @@ type GraphNode<'T> (computation: NodeCode<'T>) =
 
        member _.TryGetValue() = cachedResult
 
+       member _.HasValue = cachedResult.IsSome
+
        member _.RequestCount = requestCount

@@ -78,4 +78,6 @@ type internal GraphNode<'T> =
 
     member TryGetValue: unit -> 'T voption
 
+    member HasValue: bool
+
     member RequestCount: int
