@@ -541,7 +541,7 @@ check "vcewweh20" $"x = %A{1}" "x = 1"
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
             """printf "%B" 10"""
             [|(FSharpDiagnosticSeverity.Error, 3350, (1, 8, 1, 12),
-                   "Feature 'printf for binary integers' is not available in F# 5.0. Please use language version preview or greater.")|]
+                   "Feature 'printf format for binary integers' is not available in F# 5.0. Please use language version preview or greater.")|]
     [<Test>]
     let ``%B succeeds for langVersion preview`` () =
         CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |] """
