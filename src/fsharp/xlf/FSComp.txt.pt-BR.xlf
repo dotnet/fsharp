@@ -153,8 +153,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
-        <source>printf format for binary integers</source>
-        <target state="new">printf format for binary integers</target>
+        <source>binary formatting for integers</source>
+        <target state="new">binary formatting for integers</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
