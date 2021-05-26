@@ -515,9 +515,6 @@ let s = "sixsix"
 // check %A
 check "vcewweh22" $"x = %A{1}" "x = 1"
 
-// check %B (binary)
-check "vcewweh22a" $"x = %B{19}" "x = 10011"
-
 // check %d
 check "vcewweh22b" $"x = %d{1}" "x = 1"
 
@@ -539,7 +536,20 @@ check "vcewweh22g" $"x = %A{s}" "x = \"sixsix\""
 check "vcewweh20" $"x = %A{1}" "x = 1"
 
             """
-
+    [<Test>]
+    let ``%B fails for langVersion 5.0`` () =
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
+            """printf "%B" 10"""
+            [|(FSharpDiagnosticSeverity.Error, 741, (2, 8, 2, 11),
+               "Unable to parse format string 'Bad format specifier: 'B''")
+            |]
+    [<Test>]
+    let ``%B succeeds for langVersion preview`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |] ("""
+let check msg a b = 
+    if a = b then printfn "test case '%s' succeeded" msg else failwithf "test case '%s' failed, expected %A, got %A" msg b a
+check "vcewweh22a" $"x = %B{19}" "x = 10011"
+""")
 
     [<Test>]
     let ``String interpolation using list and array data`` () =
