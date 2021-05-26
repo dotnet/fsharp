@@ -548,7 +548,7 @@ check "vcewweh20" $"x = %A{1}" "x = 1"
 let check msg a b = 
     if a = b then printfn "test case '%s' succeeded" msg else failwithf "test case '%s' failed, expected %A, got %A" msg b a
 check "vcewweh22a" $"x = %B{19}" "x = 10011"
-        """)
+        """
 
     [<Test>]
     let ``String interpolation using list and array data`` () =
