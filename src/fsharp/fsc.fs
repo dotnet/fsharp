@@ -522,7 +522,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     // Import basic assemblies
     let tcGlobals, frameworkTcImports = 
         TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes)
-        |> GraphNode.RunSynchronously
+        |> NodeCode.RunImmediate
 
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
@@ -563,7 +563,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let tcImports =
         TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
-        |> GraphNode.RunSynchronously
+        |> NodeCode.RunImmediate
 
     // register tcImports to be disposed in future
     disposables.Register tcImports
@@ -675,7 +675,7 @@ let main1OfAst
     // Import basic assemblies
     let tcGlobals, frameworkTcImports = 
         TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes) 
-        |> GraphNode.RunSynchronously
+        |> NodeCode.RunImmediate
 
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
@@ -691,7 +691,7 @@ let main1OfAst
 
     let tcImports = 
         TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider) 
-        |> GraphNode.RunSynchronously
+        |> NodeCode.RunImmediate
 
     // register tcImports to be disposed in future
     disposables.Register tcImports

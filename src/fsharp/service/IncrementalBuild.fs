@@ -231,7 +231,7 @@ type BoundModel private (tcConfig: TcConfig,
                          beforeFileChecked: Event<string>,
                          fileChecked: Event<string>,
                          prevTcInfo: TcInfo,
-                         prevTcInfoExtras: (GraphNode<TcInfoExtras option>),
+                         prevTcInfoExtras: (NodeCode<TcInfoExtras option>),
                          syntaxTreeOpt: SyntaxTree option,
                          tcInfoStateOpt: TcInfoState option) as this =
 
@@ -248,35 +248,35 @@ type BoundModel private (tcConfig: TcConfig,
         }
 
     let mutable lazyAsyncTcInfo =
-        LazyGraphNode(node {
+        GraphNode(node {
             return! this.ComputeTcInfo()
         })
 
     let mutable lazyAsyncTcInfoExtras =
-        LazyGraphNode(node {
+        GraphNode(node {
             let! res = this.ComputeTcInfoExtras()
             return Some res
         })
 
     let mutable lazyAsyncFullState =
-        LazyGraphNode(node {
+        GraphNode(node {
             return! this.ComputeState(false)
         })
 
     let resetAsyncLazyComputations() =
         lazyAsyncTcInfo <-
-            LazyGraphNode(node {
+            GraphNode(node {
                 return! this.ComputeTcInfo()
             })
 
         lazyAsyncTcInfoExtras <-
-            LazyGraphNode(node {
+            GraphNode(node {
                 let! res = this.ComputeTcInfoExtras()
                 return Some res
             })
 
         lazyAsyncFullState <-
-            LazyGraphNode(node {
+            GraphNode(node {
                 return! this.ComputeState(false)
             })
 
@@ -385,7 +385,7 @@ type BoundModel private (tcConfig: TcConfig,
                     Some finishState)
         }
 
-    member private this.ComputeTcInfo() : GraphNode<_> =
+    member private this.ComputeTcInfo() : NodeCode<_> =
         node {
             let! state = this.ComputeState(true)
             return state.TcInfo
@@ -402,7 +402,7 @@ type BoundModel private (tcConfig: TcConfig,
             | PartialState(tcInfo) -> Some tcInfo
         | _ -> None
 
-    member private this.ComputeTcInfoExtras() : GraphNode<_> =
+    member private this.ComputeTcInfoExtras() : NodeCode<_> =
         node {
             let! state = this.ComputeState(false)
             match state with
@@ -439,7 +439,7 @@ type BoundModel private (tcConfig: TcConfig,
                 return tcInfo, tcInfoExtras
         }
 
-    member private this.TypeCheck (partialCheck: bool) : GraphNode<TcInfoState> =
+    member private this.TypeCheck (partialCheck: bool) : NodeCode<TcInfoState> =
         match partialCheck, lazyTcInfoState with
         | true, Some (PartialState _ as state)
         | true, Some (FullState _ as state) -> node { return state }
@@ -479,7 +479,7 @@ type BoundModel private (tcConfig: TcConfig,
                         
                         Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
                         
-                        let! ct = GraphNode.CancellationToken
+                        let! ct = NodeCode.CancellationToken
                         let (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
                             let res =
                                 eventually {
@@ -581,7 +581,7 @@ type BoundModel private (tcConfig: TcConfig,
                          beforeFileChecked: Event<string>,
                          fileChecked: Event<string>,
                          prevTcInfo: TcInfo,
-                         prevTcInfoExtras: GraphNode<TcInfoExtras option>,
+                         prevTcInfoExtras: NodeCode<TcInfoExtras option>,
                          syntaxTreeOpt: SyntaxTree option) =
         BoundModel(tcConfig, tcGlobals, tcImports,
                       keepAssemblyContents, keepAllBackgroundResolutions,
@@ -604,7 +604,7 @@ type FrameworkImportsCache(size) =
     let gate = obj()
 
     // Mutable collection protected via CompilationThreadToken
-    let frameworkTcImportsCache = AgedLookup<AnyCallerThreadToken, FrameworkImportsCacheKey, LazyGraphNode<(TcGlobals * TcImports)>>(size, areSimilar=(fun (x, y) -> x = y))
+    let frameworkTcImportsCache = AgedLookup<AnyCallerThreadToken, FrameworkImportsCacheKey, GraphNode<(TcGlobals * TcImports)>>(size, areSimilar=(fun (x, y) -> x = y))
 
     /// Reduce the size of the cache in low-memory scenarios
     member _.Downsize() = frameworkTcImportsCache.Resize(AnyCallerThread, newKeepStrongly=0)
@@ -645,7 +645,7 @@ type FrameworkImportsCache(size) =
                                 let tcConfigP = TcConfigProvider.Constant tcConfig
                                 return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
                             }
-                        let lazyWork = LazyGraphNode(work)
+                        let lazyWork = GraphNode(work)
                         frameworkTcImportsCache.Put(AnyCallerThread, key, lazyWork)
                         lazyWork
                 )
@@ -734,13 +734,13 @@ type IncrementalBuilderState =
         stampedReferencedAssemblies: ImmutableArray<DateTime>
         initialBoundModel: BoundModel
         boundModels: ImmutableArray<BoundModelLazy>
-        finalizedBoundModel: LazyGraphNode<((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime)>
+        finalizedBoundModel: GraphNode<((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime)>
     }
 
 and BoundModelLazy (refState: IncrementalBuilderState ref, i, syntaxTree: SyntaxTree, enablePartialTypeChecking) =
 
     /// Type check all files eagerly.
-    let TypeCheckTask partialCheck (prevBoundModel: BoundModel) syntaxTree: GraphNode<BoundModel> =
+    let TypeCheckTask partialCheck (prevBoundModel: BoundModel) syntaxTree: NodeCode<BoundModel> =
         node {
             let! tcInfo = prevBoundModel.GetTcInfo()
             let boundModel = prevBoundModel.Next(syntaxTree, tcInfo)
@@ -758,7 +758,7 @@ and BoundModelLazy (refState: IncrementalBuilderState ref, i, syntaxTree: Syntax
         }
 
     let mkLazy partialCheck =
-        LazyGraphNode(node {
+        GraphNode(node {
             let state = !refState
 
             let! prevBoundModel =
@@ -776,10 +776,10 @@ and BoundModelLazy (refState: IncrementalBuilderState ref, i, syntaxTree: Syntax
         else
             lazyFull
      
-    member this.GetPartial() : GraphNode<BoundModel> = lazyPartial.GetValue()
+    member this.GetPartial() : NodeCode<BoundModel> = lazyPartial.GetValue()
     member this.TryGetPartial() = lazyPartial.TryGetValue()
 
-    member this.GetFull() : GraphNode<BoundModel> = lazyFull.GetValue()
+    member this.GetFull() : NodeCode<BoundModel> = lazyFull.GetValue()
     member this.TryGetFull() = lazyFull.TryGetValue()
 
 /// Manages an incremental build graph for the build of a single F# project
@@ -842,7 +842,7 @@ type IncrementalBuilder(
                                               defaultPartialTypeChecking,
                                               beforeFileChecked,
                                               fileChecked,
-                                              importsInvalidatedByTypeProvider: Event<unit>) : GraphNode<BoundModel> =
+                                              importsInvalidatedByTypeProvider: Event<unit>) : NodeCode<BoundModel> =
       node {
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
         use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
@@ -948,7 +948,7 @@ type IncrementalBuilder(
                     return (tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile)
                 }
             )
-            |> GraphNode.Sequential
+            |> NodeCode.Sequential
 
         let results = results |> List.ofSeq
 
@@ -1034,17 +1034,17 @@ type IncrementalBuilder(
     let fileNames = sourceFiles |> Array.ofList // TODO: This should be an immutable array.
     let referencedAssemblies =  nonFrameworkAssemblyInputs |> Array.ofList // TODO: This should be an immutable array.
 
-    let createBoundModelAsyncLazy (refState: IncrementalBuilderState ref) i =
+    let createBoundModelGraphNode (refState: IncrementalBuilderState ref) i =
         let fileInfo = fileNames.[i]
         let syntaxTree = GetSyntaxTree fileInfo
         BoundModelLazy(refState, i, syntaxTree, enablePartialTypeChecking)
 
-    let createBoundModelsAsyncLazy refState count =
-        Array.init count (createBoundModelAsyncLazy refState)
+    let createBoundModelsGraphNode refState count =
+        Array.init count (createBoundModelGraphNode refState)
         |> ImmutableArray.CreateRange
 
-    let rec createFinalizeBoundModelAsyncLazy (state: IncrementalBuilderState ref) =
-        LazyGraphNode(node {
+    let rec createFinalizeBoundModelGraphNode (state: IncrementalBuilderState ref) =
+        GraphNode(node {
             let state = !state
             // Compute last bound model then get all the evaluated models.
             let! _ = state.boundModels.[state.boundModels.Length - 1].GetPartial()
@@ -1083,12 +1083,12 @@ type IncrementalBuilder(
                     let stamp = StampFileNameTask cache fileNames.[slot + j]
                     stampedFileNames.[slot + j] <- stamp
                     logicalStampedFileNames.[slot + j] <- stamp
-                    boundModels.[slot + j] <- createBoundModelAsyncLazy refState (slot + j)
+                    boundModels.[slot + j] <- createBoundModelGraphNode refState (slot + j)
 
                 let state =
                     { state with
                         // Something changed, the finalized view of the project must be invalidated.
-                        finalizedBoundModel = createFinalizeBoundModelAsyncLazy refState
+                        finalizedBoundModel = createFinalizeBoundModelGraphNode refState
 
                         stampedFileNames = stampedFileNames.ToImmutable()
                         logicalStampedFileNames = logicalStampedFileNames.ToImmutable()
@@ -1193,8 +1193,8 @@ type IncrementalBuilder(
                 logicalStampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
                 stampedReferencedAssemblies = Array.init referencedAssemblies.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
                 initialBoundModel = initialBoundModel
-                boundModels = createBoundModelsAsyncLazy refState fileNames.Length
-                finalizedBoundModel = createFinalizeBoundModelAsyncLazy refState
+                boundModels = createBoundModelsGraphNode refState fileNames.Length
+                finalizedBoundModel = createFinalizeBoundModelGraphNode refState
             }
         let state = computeStampedReferencedAssemblies state false cache
         let state = computeStampedFileNames state cache
@@ -1214,7 +1214,7 @@ type IncrementalBuilder(
 
     let checkFileTimeStamps (cache: TimeStampCache) =
         node {
-            let! ct = GraphNode.CancellationToken
+            let! ct = NodeCode.CancellationToken
             setCurrentState currentState cache ct
         }
 

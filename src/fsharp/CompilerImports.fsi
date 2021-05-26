@@ -194,7 +194,7 @@ type TcImports =
         TcConfigProvider *
         AssemblyResolution list *
         AssemblyResolution list
-            -> GraphNode<TcGlobals * TcImports>
+            -> NodeCode<TcGlobals * TcImports>
 
     static member BuildNonFrameworkTcImports:
         TcConfigProvider * 
@@ -202,12 +202,12 @@ type TcImports =
         AssemblyResolution list * 
         UnresolvedAssemblyReference list * 
         DependencyProvider 
-            -> GraphNode<TcImports>
+            -> NodeCode<TcImports>
 
     static member BuildTcImports:
         tcConfigP: TcConfigProvider * 
         dependencyProvider: DependencyProvider 
-            -> GraphNode<TcGlobals * TcImports>
+            -> NodeCode<TcGlobals * TcImports>
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.

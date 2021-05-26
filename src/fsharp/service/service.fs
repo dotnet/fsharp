@@ -274,7 +274,7 @@ type BackgroundCompiler(
                         { new IProjectReference with 
                             member x.EvaluateRawContents() = 
                               node {
-                                let! ct = GraphNode.CancellationToken
+                                let! ct = NodeCode.CancellationToken
                                 let ilReaderOpt = delayedReader.TryGetILModuleReader() |> Cancellable.run ct
                                 match ilReaderOpt with
                                 | ValueOrCancelled.Cancelled ex -> return raise ex
@@ -344,7 +344,7 @@ type BackgroundCompiler(
     /// Cache of builds keyed by options.  
     let gate = obj()
     let incrementalBuildersCache = 
-        MruCache<AnyCallerThreadToken, FSharpProjectOptions, LazyGraphNode<(IncrementalBuilder option * FSharpDiagnostic[])>>
+        MruCache<AnyCallerThreadToken, FSharpProjectOptions, GraphNode<(IncrementalBuilder option * FSharpDiagnostic[])>>
                 (keepStrongly=projectCacheSize, keepMax=projectCacheSize, 
                  areSame =  FSharpProjectOptions.AreSameForChecking, 
                  areSimilar =  FSharpProjectOptions.UseSameProject)
@@ -352,37 +352,37 @@ type BackgroundCompiler(
     let tryGetBuilderLazy options =
         incrementalBuildersCache.TryGet (AnyCallerThread, options)
 
-    let tryGetBuilder options : GraphNode<(IncrementalBuilder option * FSharpDiagnostic[])> option =
+    let tryGetBuilder options : NodeCode<(IncrementalBuilder option * FSharpDiagnostic[])> option =
         tryGetBuilderLazy options
         |> Option.map (fun x -> x.GetValue())
 
-    let tryGetSimilarBuilder options : GraphNode<(IncrementalBuilder option * FSharpDiagnostic[])> option =
+    let tryGetSimilarBuilder options : NodeCode<(IncrementalBuilder option * FSharpDiagnostic[])> option =
         incrementalBuildersCache.TryGetSimilar (AnyCallerThread, options)
         |> Option.map (fun x -> x.GetValue())
 
-    let tryGetAnyBuilder options : GraphNode<(IncrementalBuilder option * FSharpDiagnostic[])> option =
+    let tryGetAnyBuilder options : NodeCode<(IncrementalBuilder option * FSharpDiagnostic[])> option =
         incrementalBuildersCache.TryGetAny (AnyCallerThread, options)
         |> Option.map (fun x -> x.GetValue())
 
     let createBuilderLazy (options, userOpName, ct: CancellationToken) =
         lock gate (fun () ->
             if ct.IsCancellationRequested then
-                LazyGraphNode(node { return None, [||] })
+                GraphNode(node { return None, [||] })
             else
                 let getBuilderLazy = 
-                    LazyGraphNode(CreateOneIncrementalBuilder(options, userOpName))
+                    GraphNode(CreateOneIncrementalBuilder(options, userOpName))
                 incrementalBuildersCache.Set (AnyCallerThread, options, getBuilderLazy)
                 getBuilderLazy
         )
 
     let createAndGetBuilder (options, userOpName) =
         node {
-            let! ct = GraphNode.CancellationToken
+            let! ct = NodeCode.CancellationToken
             let getBuilderLazy = createBuilderLazy (options, userOpName, ct)
             return! getBuilderLazy.GetValue()
         }
 
-    let getOrCreateBuilder (options, userOpName) : GraphNode<(IncrementalBuilder option * FSharpDiagnostic[])> =
+    let getOrCreateBuilder (options, userOpName) : NodeCode<(IncrementalBuilder option * FSharpDiagnostic[])> =
         match tryGetBuilder options with
         | Some getBuilder -> 
             node {
@@ -430,7 +430,7 @@ type BackgroundCompiler(
 
     // Also keyed on source. This can only be out of date if the antecedent is out of date
     let checkFileInProjectCache =
-        MruCache<ParseCacheLockToken, CheckFileCacheKey, LazyGraphNode<CheckFileCacheValue option>>
+        MruCache<ParseCacheLockToken, CheckFileCacheKey, GraphNode<CheckFileCacheValue option>>
             (keepStrongly=checkFileInProjectCacheSize,
              areSame=AreSameForChecking3,
              areSimilar=AreSubsumable3)
@@ -452,7 +452,7 @@ type BackgroundCompiler(
             | Some res -> res
             | _ ->
                 let res =
-                    LazyGraphNode(node {
+                    GraphNode(node {
                         let! res =
                             self.CheckOneFileImplAux(
                                 parseResults,
@@ -541,7 +541,7 @@ type BackgroundCompiler(
          builder: IncrementalBuilder,
          tcPrior: PartialCheckResults,
          tcInfo: TcInfo,
-         creationDiags: FSharpDiagnostic[]) : GraphNode<CheckFileCacheValue option> = 
+         creationDiags: FSharpDiagnostic[]) : NodeCode<CheckFileCacheValue option> = 
 
         let work =
             cancellable {
@@ -572,7 +572,7 @@ type BackgroundCompiler(
                                 parseResults.Diagnostics, 
                                 keepAssemblyContents,
                                 suggestNamesForErrors)
-                    LazyGraphNode.SetPreferredUILang tcConfig.preferredUiLang
+                    GraphNode.SetPreferredUILang tcConfig.preferredUiLang
                     return Some(parseResults, checkAnswer, sourceText.GetHashCode() |> int64, tcPrior.TimeStamp)
                 with
                 | :? OperationCanceledException ->
@@ -580,7 +580,7 @@ type BackgroundCompiler(
             }
 
         node {
-            let! ct = GraphNode.CancellationToken
+            let! ct = NodeCode.CancellationToken
             match work |> Cancellable.run ct with
             | ValueOrCancelled.Cancelled _ ->
                 return None
@@ -727,7 +727,7 @@ type BackgroundCompiler(
                     
                         // Do the parsing.
                         let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList (builder.SourceFiles), options.UseScriptResolutionRules)
-                        LazyGraphNode.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
+                        GraphNode.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
                         let parseDiags, parseTree, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName, suggestNamesForErrors)
                         let parseResults = FSharpParseFileResults(parseDiags, parseTree, anyErrors, builder.AllDependenciesDeprecated)
                         let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
@@ -1171,12 +1171,12 @@ type FSharpChecker(legacyReferenceResolver,
     member _.GetBackgroundParseResultsForFileInProject (filename,options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.GetBackgroundParseResultsForFileInProject(filename, options, userOpName)
-        |> Async.AwaitGraphNode
+        |> Async.AwaitNode
         
     member _.GetBackgroundCheckResultsForFileInProject (filename,options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.GetBackgroundCheckResultsForFileInProject(filename,options, userOpName)
-        |> Async.AwaitGraphNode
+        |> Async.AwaitNode
         
     /// Try to get recent approximate type check results for a file. 
     member _.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, ?sourceText, ?userOpName: string) =
@@ -1312,7 +1312,7 @@ type FSharpChecker(legacyReferenceResolver,
     member _.CheckFileInProjectAllowingStaleCachedResults(parseResults:FSharpParseFileResults, filename:string, fileVersion:int, source:string, options:FSharpProjectOptions, ?userOpName: string) =        
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.CheckFileInProjectAllowingStaleCachedResults(parseResults,filename,fileVersion,SourceText.ofString source,options,userOpName)
-        |> Async.AwaitGraphNode
+        |> Async.AwaitNode
 
     /// Typecheck a source code file, returning a handle to the results of the 
     /// parse including the reconstructed types in the file.
@@ -1320,7 +1320,7 @@ type FSharpChecker(legacyReferenceResolver,
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
         backgroundCompiler.CheckFileInProject(parseResults,filename,fileVersion,sourceText,options,userOpName)
-        |> Async.AwaitGraphNode
+        |> Async.AwaitNode
 
     /// Typecheck a source code file, returning a handle to the results of the 
     /// parse including the reconstructed types in the file.
@@ -1328,26 +1328,26 @@ type FSharpChecker(legacyReferenceResolver,
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
         backgroundCompiler.ParseAndCheckFileInProject(filename, fileVersion, sourceText, options, userOpName)
-        |> Async.AwaitGraphNode
+        |> Async.AwaitNode
             
     member ic.ParseAndCheckProject(options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
         backgroundCompiler.ParseAndCheckProject(options, userOpName)
-        |> Async.AwaitGraphNode
+        |> Async.AwaitNode
 
     member ic.FindBackgroundReferencesInFile(filename:string, options: FSharpProjectOptions, symbol: FSharpSymbol, ?canInvalidateProject: bool, ?userOpName: string) =
         let canInvalidateProject = defaultArg canInvalidateProject true
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
         backgroundCompiler.FindReferencesInFile(filename, options, symbol, canInvalidateProject, userOpName)
-        |> Async.AwaitGraphNode
+        |> Async.AwaitNode
 
     member ic.GetBackgroundSemanticClassificationForFile(filename:string, options: FSharpProjectOptions, ?userOpName) =
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
         backgroundCompiler.GetSemanticClassificationForFile(filename, options, userOpName)
-        |> Async.AwaitGraphNode
+        |> Async.AwaitNode
 
     /// For a given script file, get the ProjectOptions implied by the #load closure
     member _.GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?assumeDotNetFramework, ?sdkDirOverride, ?optionsStamp: int64, ?userOpName: string) = 

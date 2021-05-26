@@ -1580,7 +1580,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         phase2
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
-    member tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, r: AssemblyResolution) : GraphNode<(_ * (unit -> AvailableImportedAssembly list)) option> =
+    member tcImports.TryRegisterAndPrepareToImportReferencedDll (ctok, r: AssemblyResolution) : NodeCode<(_ * (unit -> AvailableImportedAssembly list)) option> =
       node {
         CheckDisposed()
         let m = r.originalReference.Range
@@ -1656,7 +1656,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                          return None
                 }
             )
-            |> GraphNode.Sequential
+            |> NodeCode.Sequential
 
         let dllinfos, phase2s = results |> Array.choose id |> List.ofArray |> List.unzip
         fixupOrphanCcus()
@@ -1679,7 +1679,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 | OkResult (warns, res) ->
                     ReportWarnings warns
                     tcImports.RegisterAndImportReferencedAssemblies(ctok, res) 
-                    |> GraphNode.RunSynchronously 
+                    |> NodeCode.RunImmediate 
                     |> ignore
                     true
                 | ErrorResult (_warns, _err) ->
@@ -1918,7 +1918,7 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, referenceRa
     let resolutions = CommitOperationResult(tcImports.TryResolveAssemblyReference(ctok, AssemblyReference(referenceRange, file, None), ResolveAssemblyReferenceMode.ReportErrors))
     let dllinfos, ccuinfos = 
         tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions) 
-        |> GraphNode.RunSynchronously
+        |> NodeCode.RunImmediate
 
     let asms =
         ccuinfos |> List.map (function

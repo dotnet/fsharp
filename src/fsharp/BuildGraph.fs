@@ -25,23 +25,14 @@ type CompilationGlobalsScope(errorLogger: ErrorLogger, phase: BuildPhase) =
             unwindEL.Dispose()
 
 [<NoEquality;NoComparison>]
-type GraphNode<'T> = Node of Async<'T>
+type NodeCode<'T> = Node of Async<'T>
 
 let wrapThreadStaticInfo computation =
     async {
         let errorLogger = CompileThreadStatic.ErrorLogger
         let phase = CompileThreadStatic.BuildPhase
         try
-            try
-                let! res = computation 
-                CompileThreadStatic.ErrorLogger <- errorLogger
-                CompileThreadStatic.BuildPhase <- phase
-                return res
-            with
-            | ex ->
-                CompileThreadStatic.ErrorLogger <- errorLogger
-                CompileThreadStatic.BuildPhase <- phase
-                return raise ex
+            return! computation 
         finally
             CompileThreadStatic.ErrorLogger <- errorLogger
             CompileThreadStatic.BuildPhase <- phase 
@@ -49,120 +40,74 @@ let wrapThreadStaticInfo computation =
 
 type Async<'T> with
 
-    static member AwaitGraphNode(node: GraphNode<'T>) =
+    static member AwaitNode(node: NodeCode<'T>) =
         match node with
         | Node(computation) -> wrapThreadStaticInfo computation
 
 [<Sealed>]
-type GraphNodeBuilder() =
+type NodeCodeBuilder() =
 
-    static let zero = Node(async { () })
+    static let zero = Node(async.Zero())
 
-    member _.Zero () : GraphNode<unit> = zero
+    member _.Zero () : NodeCode<unit> = zero
 
-    member _.Delay (f: unit -> GraphNode<'T>) = 
-        Node(
-            async {
-                return! f() |> Async.AwaitGraphNode
-            }
-        )        
+    member _.Delay (f: unit -> NodeCode<'T>) = 
+        Node(async.Delay(fun () -> match f() with Node(p) -> p))    
 
-    member _.Return value = Node(async { return value })
+    member _.Return value = Node(async.Return(value))
 
-    member _.ReturnFrom (computation:GraphNode<_>) = computation
+    member _.ReturnFrom (computation: NodeCode<_>) = computation
 
-    member _.Bind (computation: GraphNode<'a>, binder: 'a -> GraphNode<'b>) : GraphNode<'b> =
-        Node(
-            async {
-                let! res = computation |> Async.AwaitGraphNode
-                return! binder res |> Async.AwaitGraphNode
-            }
-        )
+    member _.Bind (Node(p): NodeCode<'a>, binder: 'a -> NodeCode<'b>) : NodeCode<'b> =
+        Node(async.Bind(p, fun x -> match binder x with Node p -> p))
 
-    member _.TryWith(computation: GraphNode<'T>, binder: exn -> GraphNode<'T>) : GraphNode<'T> =
-        Node(
-            async {
-                let errorLogger = CompileThreadStatic.ErrorLogger
-                let phase = CompileThreadStatic.BuildPhase
-                try
-                    return! computation |> Async.AwaitGraphNode
-                with
-                | ex ->  
-                    CompileThreadStatic.ErrorLogger <- errorLogger
-                    CompileThreadStatic.BuildPhase <- phase
-                    return! binder ex |> Async.AwaitGraphNode
-            }
-        )
+    member _.TryWith(Node(p): NodeCode<'T>, binder: exn -> NodeCode<'T>) : NodeCode<'T> =
+        Node(async.TryWith(p, fun ex -> match binder ex with Node p -> p))
 
-    member _.TryFinally(computation: GraphNode<'T>, binder: unit -> unit) : GraphNode<'T> =
-        Node(
-            async {
-                let errorLogger = CompileThreadStatic.ErrorLogger
-                let phase = CompileThreadStatic.BuildPhase
-                try
-                    return! computation |> Async.AwaitGraphNode
-                finally
-                    CompileThreadStatic.ErrorLogger <- errorLogger
-                    CompileThreadStatic.BuildPhase <- phase
-                    binder()
-            }
-        )
+    member _.TryFinally(Node(p): NodeCode<'T>, binder: unit -> unit) : NodeCode<'T> =
+        Node(async.TryFinally(p, binder))
 
-    member _.For(xs: 'T seq, binder: 'T -> GraphNode<unit>) : GraphNode<unit> =
-        Node(
-            async {
-                for x in xs do
-                    do! binder x |> Async.AwaitGraphNode
-            }
-        )
+    member _.For(xs: 'T seq, binder: 'T -> NodeCode<unit>) : NodeCode<unit> =
+        Node(async.For(xs, fun x -> match binder x with Node p -> p))
 
-    member _.Combine(x1: GraphNode<unit>, x2: GraphNode<'T>) : GraphNode<'T> =
-        Node(
-            async {
-                do! x1 |> Async.AwaitGraphNode
-                return! x2 |> Async.AwaitGraphNode
-            }
-        )
+    member _.Combine(Node(p1): NodeCode<unit>, Node(p2): NodeCode<'T>) : NodeCode<'T> =
+        Node(async.Combine(p1, p2))
 
-    member _.Using(value: CompilationGlobalsScope, binder: CompilationGlobalsScope -> GraphNode<'U>) =
+    member _.Using(value: CompilationGlobalsScope, binder: CompilationGlobalsScope -> NodeCode<'U>) =
         Node(
             async {
                 CompileThreadStatic.ErrorLogger <- value.ErrorLogger
                 CompileThreadStatic.BuildPhase <- value.Phase
-
                 try
-                    return! binder value |> Async.AwaitGraphNode
+                    return! binder value |> Async.AwaitNode
                 finally
                     (value :> IDisposable).Dispose()
             }
         )
 
-let node = GraphNodeBuilder()
+let node = NodeCodeBuilder()
 
 [<AbstractClass;Sealed>]
-type GraphNode private () =
+type NodeCode private () =
 
     static let cancellationToken =
         Node(wrapThreadStaticInfo Async.CancellationToken)
 
-    static member RunSynchronously (computation: GraphNode<'T>) =
+    static member RunImmediate (computation: NodeCode<'T>) =
         let errorLogger = CompileThreadStatic.ErrorLogger
         let phase = CompileThreadStatic.BuildPhase
         try
             async {
                 CompileThreadStatic.ErrorLogger <- errorLogger
                 CompileThreadStatic.BuildPhase <- phase
-                let! res = computation |> Async.AwaitGraphNode
-                CompileThreadStatic.ErrorLogger <- errorLogger
-                CompileThreadStatic.BuildPhase <- phase
-                return res
+                return! computation |> Async.AwaitNode
             }
             |> Async.RunSynchronously
         finally
             CompileThreadStatic.ErrorLogger <- errorLogger
             CompileThreadStatic.BuildPhase <- phase
 
-    static member StartAsTask (computation: GraphNode<'T>, ?ct: CancellationToken) =
+    static member StartAsTask (computation: NodeCode<'T>, ?ct: CancellationToken) =
         let errorLogger = CompileThreadStatic.ErrorLogger
         let phase = CompileThreadStatic.BuildPhase
         try
@@ -170,10 +115,7 @@ type GraphNode private () =
                 async {
                     CompileThreadStatic.ErrorLogger <- errorLogger
                     CompileThreadStatic.BuildPhase <- phase
-                    let! res = computation |> Async.AwaitGraphNode
-                    CompileThreadStatic.ErrorLogger <- errorLogger
-                    CompileThreadStatic.BuildPhase <- phase
-                    return res
+                    return! computation |> Async.AwaitNode
                 }
             Async.StartAsTask(work, cancellationToken=defaultArg ct CancellationToken.None)
         finally
@@ -188,7 +130,7 @@ type GraphNode private () =
     static member AwaitWaitHandle(waitHandle: WaitHandle) =
         Node(wrapThreadStaticInfo (Async.AwaitWaitHandle(waitHandle)))
 
-    static member Sequential(computations: GraphNode<'T> seq) =
+    static member Sequential(computations: NodeCode<'T> seq) =
         node {
             let results = ResizeArray()
             for computation in computations do
@@ -212,7 +154,7 @@ type private AgentAction<'T> =
     | CachedValue of 'T
 
 [<RequireQualifiedAccess>]
-module LazyGraphNode =
+module GraphNode =
 
     // We need to store the culture for the VS thread that is executing now, 
     // so that when the agent in the async lazy object picks up thread from the thread pool we can set the culture
@@ -230,7 +172,7 @@ module LazyGraphNode =
         | None -> ()
 
 [<Sealed>]
-type LazyGraphNode<'T> (computation: GraphNode<'T>) =
+type GraphNode<'T> (computation: NodeCode<'T>) =
 
     let gate = obj ()
     let mutable computation = computation
@@ -252,7 +194,7 @@ type LazyGraphNode<'T> (computation: GraphNode<'T>) =
 #else
                     | GetValue (replyChannel, ct) ->
 #endif
-                        Thread.CurrentThread.CurrentUICulture <- LazyGraphNode.culture
+                        Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
                         try
                             use _reg = 
                                 // When a cancellation has occured, notify the reply channel to let the requester stop waiting for a response.
@@ -268,7 +210,7 @@ type LazyGraphNode<'T> (computation: GraphNode<'T>) =
                                 replyChannel.Reply (Ok result)
                             | _ ->
                                 // This computation can only be canceled if the requestCount reaches zero.
-                                let! result = computation |> Async.AwaitGraphNode
+                                let! result = computation |> Async.AwaitNode
                                 cachedResult <- ValueSome result
                                 cachedResultNode <- ValueSome (Node(async { return result }))
                                 computation <- Unchecked.defaultof<_>
@@ -319,9 +261,9 @@ type LazyGraphNode<'T> (computation: GraphNode<'T>) =
                     | AgentAction.CachedValue result -> return result
                     | AgentAction.GetValue(agent, cts) ->                       
                         try
-                            let! ct = GraphNode.CancellationToken
+                            let! ct = NodeCode.CancellationToken
 #if DEBUG
-                            let! res = agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct, stackTrace)) |> GraphNode.AwaitAsync
+                            let! res = agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct, stackTrace)) |> NodeCode.AwaitAsync
 #else
                             let! res = agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct)) |> GraphNode.AwaitAsync
 #endif

@@ -15,52 +15,52 @@ type CompilationGlobalsScope =
     interface IDisposable
 
 [<NoEquality;NoComparison;Sealed>]
-type GraphNode<'T>
+type NodeCode<'T>
 
 type Async<'T> with
 
-    static member AwaitGraphNode: node: GraphNode<'T> -> Async<'T>
+    static member AwaitNode: node: NodeCode<'T> -> Async<'T>
 
 [<Sealed>]
-type GraphNodeBuilder =
+type NodeCodeBuilder =
 
-    member Bind : GraphNode<'T> * ('T -> GraphNode<'U>) -> GraphNode<'U>
+    member Bind : NodeCode<'T> * ('T -> NodeCode<'U>) -> NodeCode<'U>
 
-    member Zero : unit -> GraphNode<unit>
+    member Zero : unit -> NodeCode<unit>
 
-    member Delay : (unit -> GraphNode<'T>) -> GraphNode<'T>
+    member Delay : (unit -> NodeCode<'T>) -> NodeCode<'T>
 
-    member Return : 'T -> GraphNode<'T> 
+    member Return : 'T -> NodeCode<'T> 
 
-    member ReturnFrom : GraphNode<'T> -> GraphNode<'T>
+    member ReturnFrom : NodeCode<'T> -> NodeCode<'T>
 
-    member TryWith : GraphNode<'T> * (exn -> GraphNode<'T>) -> GraphNode<'T>
+    member TryWith : NodeCode<'T> * (exn -> NodeCode<'T>) -> NodeCode<'T>
 
-    member TryFinally : GraphNode<'T> * (unit -> unit) -> GraphNode<'T>
+    member TryFinally : NodeCode<'T> * (unit -> unit) -> NodeCode<'T>
 
-    member For : xs: 'T seq * binder: ('T -> GraphNode<unit>) -> GraphNode<unit>
+    member For : xs: 'T seq * binder: ('T -> NodeCode<unit>) -> NodeCode<unit>
 
-    member Combine : x1: GraphNode<unit> * x2: GraphNode<'T> -> GraphNode<'T>
+    member Combine : x1: NodeCode<unit> * x2: NodeCode<'T> -> NodeCode<'T>
 
-    member Using : CompilationGlobalsScope * (CompilationGlobalsScope -> GraphNode<'T>) -> GraphNode<'T>
+    member Using : CompilationGlobalsScope * (CompilationGlobalsScope -> NodeCode<'T>) -> NodeCode<'T>
 
-val node : GraphNodeBuilder
+val node : NodeCodeBuilder
 
 [<AbstractClass;Sealed>]
-type GraphNode =
+type NodeCode =
 
-    static member RunSynchronously : computation: GraphNode<'T> -> 'T
+    static member RunImmediate : computation: NodeCode<'T> -> 'T
 
-    static member StartAsTask : computation: GraphNode<'T> * ?ct: CancellationToken -> Task<'T>
+    static member StartAsTask : computation: NodeCode<'T> * ?ct: CancellationToken -> Task<'T>
 
-    static member CancellationToken : GraphNode<CancellationToken>
+    static member CancellationToken : NodeCode<CancellationToken>
 
-    static member Sequential : computations: GraphNode<'T> seq -> GraphNode<'T []>
+    static member Sequential : computations: NodeCode<'T> seq -> NodeCode<'T []>
 
-    static member AwaitWaitHandle : waitHandle: WaitHandle -> GraphNode<bool>
+    static member AwaitWaitHandle : waitHandle: WaitHandle -> NodeCode<bool>
 
 [<RequireQualifiedAccess>]
-module internal LazyGraphNode =
+module internal GraphNode =
 
     /// Allows to specify the language for error messages
     val SetPreferredUILang : preferredUiLang: string option -> unit
@@ -70,11 +70,11 @@ module internal LazyGraphNode =
 ///     as to prevent any references captured by the computation from being strongly held.
 /// The computation will only be canceled if there are no outstanding requests awaiting a response.
 [<Sealed>]
-type internal LazyGraphNode<'T> =
+type internal GraphNode<'T> =
 
-    new : computation: GraphNode<'T> -> LazyGraphNode<'T>
+    new : computation: NodeCode<'T> -> GraphNode<'T>
 
-    member GetValue: unit -> GraphNode<'T>
+    member GetValue: unit -> NodeCode<'T>
 
     member TryGetValue: unit -> 'T voption
 
