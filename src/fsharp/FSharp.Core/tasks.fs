@@ -189,7 +189,7 @@ namespace Microsoft.FSharp.Control
         static member RunDynamic(code: TaskCode<'T, 'T>) : Task<'T> = 
             // backgroundTask { .. } escapes to a background thread where necessary
             // See spec of ConfigureAwait(false) at https://devblogs.microsoft.com/dotnet/configureawait-faq/
-            if isNull SynchronizationContext.Current && not (obj.ReferenceEquals(TaskScheduler.Current, TaskScheduler.Default)) then
+            if isNull SynchronizationContext.Current && obj.ReferenceEquals(TaskScheduler.Current, TaskScheduler.Default) then
                 TaskBuilder.RunDynamic(code)
             else
                 Task.Run<'T>(fun () -> TaskBuilder.RunDynamic(code))
@@ -213,7 +213,7 @@ namespace Microsoft.FSharp.Control
                     (AfterCode<_,Task<'T>>(fun sm -> 
                         // backgroundTask { .. } escapes to a background thread where necessary
                         // See spec of ConfigureAwait(false) at https://devblogs.microsoft.com/dotnet/configureawait-faq/
-                        if isNull SynchronizationContext.Current && not (obj.ReferenceEquals(TaskScheduler.Current, TaskScheduler.Default)) then
+                        if isNull SynchronizationContext.Current && obj.ReferenceEquals(TaskScheduler.Current, TaskScheduler.Default) then
                             sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
                             sm.Data.MethodBuilder.Start(&sm)
                             sm.Data.MethodBuilder.Task
