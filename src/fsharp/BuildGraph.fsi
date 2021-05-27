@@ -49,7 +49,7 @@ val node : NodeCodeBuilder
 [<AbstractClass;Sealed>]
 type NodeCode =
 
-    static member RunImmediate : computation: NodeCode<'T> -> 'T
+    static member RunImmediate : computation: NodeCode<'T> * ?ct: CancellationToken -> 'T
 
     static member StartAsTask : computation: NodeCode<'T> * ?ct: CancellationToken -> Task<'T>
 
@@ -58,6 +58,8 @@ type NodeCode =
     static member Sequential : computations: NodeCode<'T> seq -> NodeCode<'T []>
 
     static member AwaitWaitHandle : waitHandle: WaitHandle -> NodeCode<bool>
+
+    static member Sleep : ms: int -> NodeCode<unit>
 
 [<RequireQualifiedAccess>]
 module internal GraphNode =

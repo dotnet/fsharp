@@ -698,6 +698,12 @@
     <Compile Include="..\DependencyManager/DependencyProvider.fs">
       <Link>Driver\DependencyProvider.fs</Link>
     </Compile>
+    <Compile Include="..\AsyncLazy.fsi">
+      <Link>Driver\AsyncLazy.fsi</Link>
+    </Compile>
+    <Compile Include="..\AsyncLazy.fs">
+      <Link>Driver\AsyncLazy.fs</Link>
+    </Compile>
     <Compile Include="..\BuildGraph.fsi">
       <Link>Driver\BuildGraph.fsi</Link>
     </Compile>

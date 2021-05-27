@@ -4,9 +4,11 @@ module FSharp.Compiler.BuildGraph
 
 open System
 open System.Threading
+open System.Threading.Tasks
 open System.Diagnostics
 open System.Globalization
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.AsyncLazy
 
 /// This represents the thread-local state established as each task function runs as part of the build.
 ///
@@ -49,30 +51,40 @@ type NodeCodeBuilder() =
 
     static let zero = Node(async.Zero())
 
+    [<DebuggerHidden;DebuggerStepThrough>]
     member _.Zero () : NodeCode<unit> = zero
 
+    [<DebuggerHidden;DebuggerStepThrough>]
     member _.Delay (f: unit -> NodeCode<'T>) = 
         Node(async.Delay(fun () -> match f() with Node(p) -> p))    
 
+    [<DebuggerHidden;DebuggerStepThrough>]
     member _.Return value = Node(async.Return(value))
 
+    [<DebuggerHidden;DebuggerStepThrough>]
     member _.ReturnFrom (computation: NodeCode<_>) = computation
 
+    [<DebuggerHidden;DebuggerStepThrough>]
     member _.Bind (Node(p): NodeCode<'a>, binder: 'a -> NodeCode<'b>) : NodeCode<'b> =
         Node(async.Bind(p, fun x -> match binder x with Node p -> p))
 
+    [<DebuggerHidden;DebuggerStepThrough>]
     member _.TryWith(Node(p): NodeCode<'T>, binder: exn -> NodeCode<'T>) : NodeCode<'T> =
         Node(async.TryWith(p, fun ex -> match binder ex with Node p -> p))
 
+    [<DebuggerHidden;DebuggerStepThrough>]
     member _.TryFinally(Node(p): NodeCode<'T>, binder: unit -> unit) : NodeCode<'T> =
         Node(async.TryFinally(p, binder))
 
+    [<DebuggerHidden;DebuggerStepThrough>]
     member _.For(xs: 'T seq, binder: 'T -> NodeCode<unit>) : NodeCode<unit> =
         Node(async.For(xs, fun x -> match binder x with Node p -> p))
 
+    [<DebuggerHidden;DebuggerStepThrough>]
     member _.Combine(Node(p1): NodeCode<unit>, Node(p2): NodeCode<'T>) : NodeCode<'T> =
         Node(async.Combine(p1, p2))
 
+    [<DebuggerHidden;DebuggerStepThrough>]
     member _.Using(value: CompilationGlobalsScope, binder: CompilationGlobalsScope -> NodeCode<'U>) =
         Node(
             async {
@@ -93,19 +105,24 @@ type NodeCode private () =
     static let cancellationToken =
         Node(wrapThreadStaticInfo Async.CancellationToken)
 
-    static member RunImmediate (computation: NodeCode<'T>) =
+    static member RunImmediate (computation: NodeCode<'T>, ?ct: CancellationToken) =
         let errorLogger = CompileThreadStatic.ErrorLogger
         let phase = CompileThreadStatic.BuildPhase
         try
-            async {
+            try
+                let work =
+                    async {
+                        CompileThreadStatic.ErrorLogger <- errorLogger
+                        CompileThreadStatic.BuildPhase <- phase
+                        return! computation |> Async.AwaitNode
+                    }
+                Async.StartImmediateAsTask(work, cancellationToken=defaultArg ct CancellationToken.None).Result
+            finally
                 CompileThreadStatic.ErrorLogger <- errorLogger
                 CompileThreadStatic.BuildPhase <- phase
-                return! computation |> Async.AwaitNode
-            }
-            |> Async.RunSynchronously
-        finally
-            CompileThreadStatic.ErrorLogger <- errorLogger
-            CompileThreadStatic.BuildPhase <- phase
+        with
+        | :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
+            raise(ex.InnerExceptions.[0])
 
     static member StartAsTask (computation: NodeCode<'T>, ?ct: CancellationToken) =
         let errorLogger = CompileThreadStatic.ErrorLogger
@@ -127,8 +144,14 @@ type NodeCode private () =
     static member AwaitAsync(computation: Async<'T>) = 
         Node(wrapThreadStaticInfo computation)
 
+    static member AwaitTask(task: Task<'T>) =
+        Node(wrapThreadStaticInfo(Async.AwaitTask task))
+
     static member AwaitWaitHandle(waitHandle: WaitHandle) =
         Node(wrapThreadStaticInfo (Async.AwaitWaitHandle(waitHandle)))
+
+    static member Sleep(ms: int) =
+        Node(wrapThreadStaticInfo (Async.Sleep(ms)))
 
     static member Sequential(computations: NodeCode<'T> seq) =
         node {
@@ -139,6 +162,7 @@ type NodeCode private () =
             return results.ToArray()
         }
 
+#if ORIGINAL_GRAPH_NODE
 type private AgentMessage<'T> =
 #if DEBUG
     | GetValue of AsyncReplyChannel<Result<'T, Exception>> * CancellationToken * stackTrace: string
@@ -152,6 +176,7 @@ type private AgentInstance<'T> = (MailboxProcessor<AgentMessage<'T>> * Cancellat
 type private AgentAction<'T> =
     | GetValue of AgentInstance<'T>
     | CachedValue of 'T
+#endif
 
 [<RequireQualifiedAccess>]
 module GraphNode =
@@ -171,6 +196,60 @@ module GraphNode =
 #endif
         | None -> ()
 
+[<Sealed>]
+type GraphNode<'T>(computation: NodeCode<'T>) =
+        
+    let gate = obj()
+    let mutable computation = computation
+    let mutable asyncLazyOpt = ValueNone
+    let mutable requestCount = 0
+
+    [<DebuggerHidden>]
+    member _.GetValue() =
+        node {
+            let! ct = NodeCode.CancellationToken
+            let asyncLazy =
+                match asyncLazyOpt with
+                | ValueSome asyncLazy -> asyncLazy
+                | _ ->
+                    let asyncLazy =
+                        lock gate (fun () ->
+                            match asyncLazyOpt with
+                            | ValueSome asyncLazy -> asyncLazy
+                            | _ ->
+                                let captureComputation = computation
+                                let computeFunction = System.Func<_, _>(fun ct -> new Task<'T>((fun () -> NodeCode.RunImmediate(captureComputation, ct)), ct, TaskCreationOptions.None))
+                                let computeSyncFunction = System.Func<_, _>((fun ct -> NodeCode.RunImmediate(captureComputation, ct)))
+                                let asyncLazy = AsyncLazy<'T>(computeFunction, computeSyncFunction, cacheResult = true)
+                                asyncLazyOpt <- ValueSome asyncLazy
+                                computation <- Unchecked.defaultof<_> // null out computation as it's stored in AsyncLazy
+                                asyncLazy
+                        )
+                    asyncLazy
+            
+            Interlocked.Increment(&requestCount) |> ignore
+            try
+#if DEBUG
+                return asyncLazy.GetValue(ct)
+#else
+                return asyncLazy.GetValueAsync(ct) |> NodeCode.AwaitTask
+#endif
+            finally
+                Interlocked.Decrement(&requestCount) |> ignore
+        }
+
+    [<DebuggerHidden>]
+    member this.TryGetValue() =
+        match asyncLazyOpt with
+        | ValueNone -> ValueNone
+        | ValueSome asyncLazy -> asyncLazy.TryGetValue()
+
+    [<DebuggerHidden>]
+    member this.HasValue = this.TryGetValue().IsSome
+
+    member this.RequestCount = requestCount
+
+#if ORIGINAL_GRAPH_NODE
 [<Sealed>]
 type GraphNode<'T> (computation: NodeCode<'T>) =
 
@@ -285,3 +364,5 @@ type GraphNode<'T> (computation: NodeCode<'T>) =
        member _.HasValue = cachedResult.IsSome
 
        member _.RequestCount = requestCount
+
+#endif

@@ -2,14 +2,12 @@
 namespace FSharp.Compiler.UnitTests
 
 open System
-open System.Diagnostics
-open System.Globalization
 open System.Threading
+open System.Runtime.CompilerServices
 open Xunit
 open FSharp.Test.Utilities
-open Internal.Utilities.Library
-open System.Runtime.CompilerServices
 open FSharp.Compiler.BuildGraph
+open Internal.Utilities.Library
 
 module BuildGraphTests =
     
@@ -155,6 +153,32 @@ module BuildGraphTests =
 
     [<Fact>]
     let ``A request can cancel``() =
+        let graphNode = 
+            GraphNode(node { 
+                return 1 
+            })
+
+        use cts = new CancellationTokenSource()
+
+        let work =
+            node {
+                cts.Cancel()
+                return! graphNode.GetValue()
+            }
+
+        let ex =
+            try
+                NodeCode.RunImmediate(work, ct = cts.Token)
+                |> ignore
+                failwith "Should have canceled"
+            with
+            | :? OperationCanceledException as ex ->
+                ex
+
+        Assert.shouldBeTrue(ex <> null)
+
+    [<Fact>]
+    let ``A request can cancel 2``() =
         let resetEvent = new ManualResetEvent(false)
 
         let graphNode = 
@@ -166,12 +190,12 @@ module BuildGraphTests =
         use cts = new CancellationTokenSource()
 
         let task =
-            async {
-                do! Async.Sleep(100) // Some buffer time
+            node {
+                do! NodeCode.Sleep(1000) // Some buffer time
                 cts.Cancel()
                 resetEvent.Set() |> ignore
             }
-            |> Async.StartAsTask
+            |> NodeCode.StartAsTask
 
         let ex =
             try
