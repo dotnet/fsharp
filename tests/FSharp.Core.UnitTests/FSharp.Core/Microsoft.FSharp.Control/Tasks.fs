@@ -1248,6 +1248,8 @@ type BasicsNotInParallel() =
             let taskOuter =
                 Task.Run(fun () ->
                     let tid = System.Threading.Thread.CurrentThread.ManagedThreadId 
+                    // In case other thread pool activities have polluted this one, sigh
+                    SynchronizationContext.SetSynchronizationContext null
                     require (isNull SynchronizationContext.Current) "expected sync context null on background thread (1)"
                     let t =
                         backgroundTask {
