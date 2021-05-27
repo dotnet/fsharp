@@ -153,6 +153,9 @@
     <Compile Include="..\absil\illib.fs">
       <Link>Utilities\illib.fs</Link>
     </Compile>
+    <Compile Include="..\utils\FileSystem.fsi">
+      <Link>Utilities\FileSystem.fsi</Link>
+    </Compile>
     <Compile Include="..\utils\FileSystem.fs">
       <Link>Utilities\FileSystem.fs</Link>
     </Compile>
@@ -372,9 +375,6 @@
     </Compile>
     <Compile Include="..\PrettyNaming.fs">
       <Link>PrettyNaming\PrettyNaming.fs</Link>
-    </Compile>
-    <Compile Include="..\ilx\ilxsettings.fs">
-      <Link>ILXErase\ilxsettings.fs</Link>
     </Compile>
     <Compile Include="..\ilx\EraseClosures.fsi">
       <Link>ILXErase\EraseClosures.fsi</Link>

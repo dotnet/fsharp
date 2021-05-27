@@ -424,7 +424,7 @@ let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, conditionalCompil
     use reader = fileStream.GetReader(tcConfig.inputCodePage, retryLocked)
 
     // Set up the LexBuffer for the file
-    let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(tcConfig.langVersion.SupportsFeature, reader)
+    let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFslib, tcConfig.langVersion.SupportsFeature, reader)
 
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)

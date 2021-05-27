@@ -355,8 +355,8 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
             index.Add(doc.File, handle)
 
         if not (String.IsNullOrWhiteSpace sourceLink) then
-            let fs = FileSystem.OpenFileForReadShim(sourceLink)
-            let ms = new MemoryStream()
+            use fs = FileSystem.OpenFileForReadShim(sourceLink)
+            use ms = new MemoryStream()
             fs.CopyTo ms
             metadata.AddCustomDebugInformation(
                 ModuleDefinitionHandle.op_Implicit(EntityHandle.ModuleDefinition),

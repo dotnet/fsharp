@@ -4,7 +4,12 @@ namespace FSharp.Compiler.IO
 
 open System
 open System.IO
+open System.IO.MemoryMappedFiles
 open System.Reflection
+open System.Runtime.InteropServices
+open System.Text
+
+open FSharp.NativeInterop
 
 open Internal.Utilities.Library
 
@@ -25,11 +30,13 @@ module internal Bytes =
 /// A view over bytes.
 /// May be backed by managed or unmanaged memory, or memory mapped file.
 [<AbstractClass>]
-type internal ByteMemory =
+type public ByteMemory =
 
     abstract Item: int -> byte with get
 
     abstract Length: int
+
+    abstract ReadAllBytes: unit -> byte[]
 
     abstract ReadBytes: pos: int * count: int -> byte[]
 
@@ -65,6 +72,8 @@ type internal ReadOnlyByteMemory =
 
     member Length: int
 
+    member ReadAllBytes: unit -> byte[]
+
     member ReadBytes: pos: int * count: int -> byte[]
 
     member ReadInt32: pos: int -> int
@@ -83,7 +92,11 @@ type internal ReadOnlyByteMemory =
 
     member AsStream: unit -> Stream
 
-
+/// MemoryMapped extensions
+module internal MemoryMappedFileExtensions =
+    type MemoryMappedFile with
+        static member TryFromByteMemory : bytes: ReadOnlyByteMemory -> MemoryMappedFile option
+    
 /// Filesystem helpers
 module internal FileSystemUtils =
     val checkPathForIllegalChars: (string -> unit)
@@ -109,20 +122,11 @@ module internal FileSystemUtils =
     /// Trim the quotes and spaces from either end of a string
     val trimQuotes: string -> string
 
-    /// Checks whether filename ends in suffidx, ignoring case.
+    /// Checks whether filename ends in suffix, ignoring case.
     val hasSuffixCaseInsensitive: string -> string -> bool
 
     /// Checks whether file is dll (ends in .dll)
     val isDll: string -> bool
-
-    // Reads all data from Stream.
-    val readAllFromStream: Stream -> string
-
-    // Yields content line by line from stream
-    val readLinesFromStream: Stream -> string seq
-
-    // Writes data to a stream
-    val inline writeToStream: Stream ->  ^a -> unit
 
 /// Type which we use to load assemblies.
 type public IAssemblyLoader =
@@ -140,6 +144,9 @@ type DefaultAssemblyLoader =
 /// Represents a shim for the file system
 type public IFileSystem =
 
+    // Assembly loader.
+    abstract member AssemblyLoader : IAssemblyLoader
+    
     /// Open the file for read, returns ByteMemory, uses either FileStream (for smaller files) or MemoryMappedFile (for potentially big files, such as dlls).
     abstract member OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
 
@@ -163,7 +170,7 @@ type public IFileSystem =
     abstract member NormalizePathShim: path: string -> string
 
     /// A shim over Path.IsInvalidPath
-    abstract member IsInvalidPathShim: filename:string -> bool
+    abstract member IsInvalidPathShim: path:string -> bool
 
     /// A shim over Path.GetTempPath
     abstract member GetTempPathShim: unit -> string
@@ -209,6 +216,69 @@ type public IFileSystem =
 type DefaultFileSystem =
     /// Create a default implementation of the file system
     new: unit -> DefaultFileSystem
+    abstract member AssemblyLoader: IAssemblyLoader
+    override AssemblyLoader: IAssemblyLoader
+    
+    abstract member OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
+    override OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
+    
+    abstract member OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
+    override OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
+    
+    abstract member GetFullPathShim: fileName: string -> string
+    override GetFullPathShim: fileName: string -> string
+    
+    abstract member GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
+    override GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
+    
+    abstract member IsPathRootedShim: path: string -> bool
+    override IsPathRootedShim: path: string -> bool
+    
+    abstract member NormalizePathShim: path: string -> string
+    override NormalizePathShim: path: string -> string
+    
+    abstract member IsInvalidPathShim: path: string -> bool
+    override IsInvalidPathShim: path: string -> bool
+    
+    abstract member GetTempPathShim: unit -> string
+    override GetTempPathShim: unit -> string
+    
+    abstract member GetDirectoryNameShim: path: string -> string
+    override GetDirectoryNameShim: path: string -> string
+    
+    abstract member GetLastWriteTimeShim: fileName: string -> DateTime
+    override GetLastWriteTimeShim: fileName: string -> DateTime
+    
+    abstract member GetCreationTimeShim: path: string -> DateTime
+    override GetCreationTimeShim: path: string -> DateTime
+    
+    abstract member CopyShim: src: string * dest: string * overwrite: bool -> unit
+    override CopyShim: src: string * dest: string * overwrite: bool -> unit
+    
+    abstract member FileExistsShim: fileName: string -> bool
+    override FileExistsShim: fileName: string -> bool
+    
+    abstract member FileDeleteShim: fileName: string -> unit
+    override FileDeleteShim: fileName: string -> unit
+    
+    abstract member DirectoryCreateShim: path: string -> DirectoryInfo
+    override DirectoryCreateShim: path: string -> DirectoryInfo
+    
+    abstract member DirectoryExistsShim: path: string -> bool
+    override DirectoryExistsShim: path: string -> bool
+    
+    abstract member DirectoryDeleteShim: path: string -> unit
+    override DirectoryDeleteShim: path: string -> unit
+    
+    abstract member EnumerateFilesShim: path: string * pattern: string -> string seq
+    override EnumerateFilesShim: path: string * pattern: string -> string seq
+    
+    abstract member EnumerateDirectoriesShim: path: string -> string seq
+    override EnumerateDirectoriesShim: path: string -> string seq
+    
+    abstract member IsStableFileHeuristic: fileName: string -> bool
+    override IsStableFileHeuristic: fileName: string -> bool
+    
     interface IFileSystem
 
 [<AutoOpen>]
@@ -217,10 +287,11 @@ module public StreamExtensions =
     type System.IO.Stream with
         member GetWriter : ?encoding: Encoding -> TextWriter
         member WriteAllLines : contents: string seq * ?encoding: Encoding -> unit
-        member Write : data: ^a -> unit
+        member Write<'a> : data:'a -> unit
         member GetReader : codePage: int option * ?retryLocked: bool ->  StreamReader
+        member ReadBytes : start: int * len: int -> byte[]
         member ReadAllBytes : unit -> byte[]
-        member ReadAlLText : ?encoding: Encoding -> string
+        member ReadAllText : ?encoding: Encoding -> string
         member ReadLines : ?encoding: Encoding -> string seq
         member ReadAllLines : ?encoding: Encoding -> string array
         member AsByteMemory : unit -> ByteMemory

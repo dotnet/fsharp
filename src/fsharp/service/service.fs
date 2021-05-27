@@ -23,6 +23,7 @@ open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.IO
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Symbols
@@ -278,6 +279,18 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                     return None
                               }
                             member x.TryGetLogicalTimeStamp(_) = stamp |> Some
+                            member x.FileName = nm }
+
+                | FSharpReferencedProject.ILModuleReference(nm,getStamp,getReader) ->
+                    yield
+                        { new IProjectReference with 
+                            member x.EvaluateRawContents(_) = 
+                              cancellable {
+                                let ilReader = getReader()
+                                let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
+                                return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
+                              }
+                            member x.TryGetLogicalTimeStamp(_) = getStamp() |> Some
                             member x.FileName = nm }
                 ]
 
@@ -1216,7 +1229,7 @@ type FSharpChecker(legacyReferenceResolver,
 
         let debugInfo = defaultArg debug false
         let noframework = defaultArg noframework false
-        let location = Path.Combine(Path.GetTempPath(),"test"+string(hash assemblyName))
+        let location = Path.Combine(FileSystem.GetTempPathShim(),"test"+string(hash assemblyName))
         try Directory.CreateDirectory(location) |> ignore with _ -> ()
 
         let outFile = Path.Combine(location, assemblyName + ".dll")
