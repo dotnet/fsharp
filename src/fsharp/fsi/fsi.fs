@@ -2131,7 +2131,7 @@ type internal FsiInteractionProcessor
     let ChangeDirectory (path:string) m =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
         let path = tcConfig.MakePathAbsolute path
-        if Directory.Exists(path) then
+        if FileSystem.DirectoryExistsShim(path) then
             tcConfigB.implicitIncludeDir <- path
         else
             error(Error(FSIstrings.SR.fsiDirectoryDoesNotExist(path),m))

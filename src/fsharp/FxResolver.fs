@@ -88,7 +88,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             | Some dotnetHostPath ->
                 try
                     let workingDir =
-                        if Directory.Exists(projectDir) then
+                        if FileSystem.DirectoryExistsShim(projectDir) then
                             Some projectDir
                         else
                             None
@@ -131,8 +131,8 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             let sdksDir = 
                 match getDotnetHostDirectory() with
                 | Some dotnetDir ->
-                    let candidate = Path.GetFullPath(Path.Combine(dotnetDir, "sdk"))
-                    if Directory.Exists(candidate) then Some candidate else None
+                    let candidate = FileSystem.GetFullPathShim(Path.Combine(dotnetDir, "sdk"))
+                    if FileSystem.DirectoryExistsShim(candidate) then Some candidate else None
                 | None -> None
 
             match sdksDir with
@@ -183,8 +183,8 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                     let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
                     let endPos = dotnetConfig.IndexOf("\"", startPos)
                     let ver = dotnetConfig.[startPos..endPos-1]
-                    let path = Path.GetFullPath(Path.Combine(dir, "..", "..", "shared", "Microsoft.NETCore.App", ver))
-                    if Directory.Exists(path) then
+                    let path = FileSystem.GetFullPathShim(Path.Combine(dir, "..", "..", "shared", "Microsoft.NETCore.App", ver))
+                    if FileSystem.DirectoryExistsShim(path) then
                         path, warnings
                     else
                         getRunningImplementationAssemblyDir(), warnings

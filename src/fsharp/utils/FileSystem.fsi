@@ -170,7 +170,7 @@ type public IFileSystem =
     abstract member NormalizePathShim: path: string -> string
 
     /// A shim over Path.IsInvalidPath
-    abstract member IsInvalidPathShim: filename:string -> bool
+    abstract member IsInvalidPathShim: path:string -> bool
 
     /// A shim over Path.GetTempPath
     abstract member GetTempPathShim: unit -> string
@@ -216,6 +216,69 @@ type public IFileSystem =
 type DefaultFileSystem =
     /// Create a default implementation of the file system
     new: unit -> DefaultFileSystem
+    abstract member AssemblyLoader: IAssemblyLoader
+    override AssemblyLoader: IAssemblyLoader
+    
+    abstract member OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
+    override OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
+    
+    abstract member OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
+    override OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
+    
+    abstract member GetFullPathShim: fileName: string -> string
+    override GetFullPathShim: fileName: string -> string
+    
+    abstract member GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
+    override GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
+    
+    abstract member IsPathRootedShim: path: string -> bool
+    override IsPathRootedShim: path: string -> bool
+    
+    abstract member NormalizePathShim: path: string -> string
+    override NormalizePathShim: path: string -> string
+    
+    abstract member IsInvalidPathShim: path: string -> bool
+    override IsInvalidPathShim: path: string -> bool
+    
+    abstract member GetTempPathShim: unit -> string
+    override GetTempPathShim: unit -> string
+    
+    abstract member GetDirectoryNameShim: path: string -> string
+    override GetDirectoryNameShim: path: string -> string
+    
+    abstract member GetLastWriteTimeShim: fileName: string -> DateTime
+    override GetLastWriteTimeShim: fileName: string -> DateTime
+    
+    abstract member GetCreationTimeShim: path: string -> DateTime
+    override GetCreationTimeShim: path: string -> DateTime
+    
+    abstract member CopyShim: src: string * dest: string * overwrite: bool -> unit
+    override CopyShim: src: string * dest: string * overwrite: bool -> unit
+    
+    abstract member FileExistsShim: fileName: string -> bool
+    override FileExistsShim: fileName: string -> bool
+    
+    abstract member FileDeleteShim: fileName: string -> unit
+    override FileDeleteShim: fileName: string -> unit
+    
+    abstract member DirectoryCreateShim: path: string -> DirectoryInfo
+    override DirectoryCreateShim: path: string -> DirectoryInfo
+    
+    abstract member DirectoryExistsShim: path: string -> bool
+    override DirectoryExistsShim: path: string -> bool
+    
+    abstract member DirectoryDeleteShim: path: string -> unit
+    override DirectoryDeleteShim: path: string -> unit
+    
+    abstract member EnumerateFilesShim: path: string * pattern: string -> string seq
+    override EnumerateFilesShim: path: string * pattern: string -> string seq
+    
+    abstract member EnumerateDirectoriesShim: path: string -> string seq
+    override EnumerateDirectoriesShim: path: string -> string seq
+    
+    abstract member IsStableFileHeuristic: fileName: string -> bool
+    override IsStableFileHeuristic: fileName: string -> bool
+    
     interface IFileSystem
 
 [<AutoOpen>]
