@@ -931,7 +931,7 @@ let hashSizeOfMD5 = 16
 // In this case, catch the failure, and not set a checksum.
 let internal setCheckSum (url: string, writer: ISymUnmanagedDocumentWriter) =
     try
-        use file = FileSystem.OpenFileForReadShim(url).AsReadOnlyStream()
+        use file = FileSystem.OpenFileForReadShim(url)
         use md5 = System.Security.Cryptography.MD5.Create()
         let checkSum = md5.ComputeHash file
         if (checkSum.Length = hashSizeOfMD5) then

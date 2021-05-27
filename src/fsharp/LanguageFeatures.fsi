@@ -25,6 +25,7 @@ type LanguageFeature =
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
+    | PrintfBinaryFormat
 
 /// LanguageVersion management
 type LanguageVersion =
