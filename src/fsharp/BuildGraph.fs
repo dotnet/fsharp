@@ -265,7 +265,7 @@ type GraphNode<'T> (computation: NodeCode<'T>) =
 #if DEBUG
                             let! res = agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct, stackTrace)) |> NodeCode.AwaitAsync
 #else
-                            let! res = agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct)) |> GraphNode.AwaitAsync
+                            let! res = agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct)) |> NodeCode.AwaitAsync
 #endif
                             match res with
                             | Ok result -> return result
