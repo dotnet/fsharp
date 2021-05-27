@@ -24,6 +24,7 @@ open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.IO
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Symbols
@@ -1238,7 +1239,7 @@ type FSharpChecker(legacyReferenceResolver,
 
         let debugInfo = defaultArg debug false
         let noframework = defaultArg noframework false
-        let location = Path.Combine(Path.GetTempPath(),"test"+string(hash assemblyName))
+        let location = Path.Combine(FileSystem.GetTempPathShim(),"test"+string(hash assemblyName))
         try Directory.CreateDirectory(location) |> ignore with _ -> ()
 
         let outFile = Path.Combine(location, assemblyName + ".dll")

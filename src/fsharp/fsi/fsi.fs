@@ -2132,7 +2132,7 @@ type internal FsiInteractionProcessor
     let ChangeDirectory (path:string) m =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
         let path = tcConfig.MakePathAbsolute path
-        if Directory.Exists(path) then
+        if FileSystem.DirectoryExistsShim(path) then
             tcConfigB.implicitIncludeDir <- path
         else
             error(Error(FSIstrings.SR.fsiDirectoryDoesNotExist(path),m))
@@ -2473,7 +2473,7 @@ type internal FsiInteractionProcessor
               // An included script file may contain maybe several interaction blocks.
               // We repeatedly parse and process these, until an error occurs.
 
-                use fileStream = FileSystem.OpenFileForReadShim(sourceFile).AsStream()
+                use fileStream = FileSystem.OpenFileForReadShim(sourceFile)
                 use reader = fileStream.GetReader(tcConfigB.inputCodePage, false)
 
                 let tokenizer = fsiStdinLexerProvider.CreateIncludedScriptLexer (sourceFile, reader, errorLogger)

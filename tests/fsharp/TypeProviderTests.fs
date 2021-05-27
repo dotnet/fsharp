@@ -245,7 +245,6 @@ let ``negative type provider tests`` (name:string) =
             let dirp = (dir |> Commands.pathAddBackslash)
             do
             FileSystem.OpenFileForReadShim(sprintf "%s%s.%sbslpp" dirp name pref)
-                      .AsStream()
                       .ReadAllText()
                       .Replace("<ASSEMBLY>", getfullpath cfg (sprintf "provider_%s.dll" name))
                       .Replace("<FILEPATH>",dirp)

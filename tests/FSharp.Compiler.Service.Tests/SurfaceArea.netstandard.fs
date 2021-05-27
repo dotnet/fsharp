@@ -3980,24 +3980,6 @@ FSharp.Compiler.EditorServices.XmlDocable: Int32 line
 FSharp.Compiler.EditorServices.XmlDocable: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_paramNames()
 FSharp.Compiler.EditorServices.XmlDocable: Microsoft.FSharp.Collections.FSharpList`1[System.String] paramNames
 FSharp.Compiler.EditorServices.XmlDocable: System.String ToString()
-FSharp.Compiler.IO.ByteArrayMemory
-FSharp.Compiler.IO.ByteArrayMemory: Byte Item [Int32]
-FSharp.Compiler.IO.ByteArrayMemory: Byte get_Item(Int32)
-FSharp.Compiler.IO.ByteArrayMemory: Byte[] ReadAllBytes()
-FSharp.Compiler.IO.ByteArrayMemory: Byte[] ReadBytes(Int32, Int32)
-FSharp.Compiler.IO.ByteArrayMemory: Byte[] ToArray()
-FSharp.Compiler.IO.ByteArrayMemory: FSharp.Compiler.IO.ByteMemory Slice(Int32, Int32)
-FSharp.Compiler.IO.ByteArrayMemory: Int32 Length
-FSharp.Compiler.IO.ByteArrayMemory: Int32 ReadInt32(Int32)
-FSharp.Compiler.IO.ByteArrayMemory: Int32 get_Length()
-FSharp.Compiler.IO.ByteArrayMemory: System.IO.Stream AsReadOnlyStream()
-FSharp.Compiler.IO.ByteArrayMemory: System.IO.Stream AsStream()
-FSharp.Compiler.IO.ByteArrayMemory: System.String ReadUtf8String(Int32, Int32)
-FSharp.Compiler.IO.ByteArrayMemory: UInt16 ReadUInt16(Int32)
-FSharp.Compiler.IO.ByteArrayMemory: Void .ctor(Byte[], Int32, Int32)
-FSharp.Compiler.IO.ByteArrayMemory: Void Copy(Int32, Byte[], Int32, Int32)
-FSharp.Compiler.IO.ByteArrayMemory: Void CopyTo(System.IO.Stream)
-FSharp.Compiler.IO.ByteArrayMemory: Void set_Item(Int32, Byte)
 FSharp.Compiler.IO.ByteMemory
 FSharp.Compiler.IO.ByteMemory: Byte Item [Int32]
 FSharp.Compiler.IO.ByteMemory: Byte get_Item(Int32)
@@ -4019,21 +4001,35 @@ FSharp.Compiler.IO.ByteMemory: System.IO.Stream AsReadOnlyStream()
 FSharp.Compiler.IO.ByteMemory: System.IO.Stream AsStream()
 FSharp.Compiler.IO.ByteMemory: System.String ReadUtf8String(Int32, Int32)
 FSharp.Compiler.IO.ByteMemory: UInt16 ReadUInt16(Int32)
-FSharp.Compiler.IO.ByteMemory: Void .ctor()
 FSharp.Compiler.IO.ByteMemory: Void Copy(Int32, Byte[], Int32, Int32)
 FSharp.Compiler.IO.ByteMemory: Void CopyTo(System.IO.Stream)
 FSharp.Compiler.IO.ByteMemory: Void set_Item(Int32, Byte)
-FSharp.Compiler.IO.ByteStorage
-FSharp.Compiler.IO.ByteStorage: FSharp.Compiler.IO.ByteStorage FromByteArray(Byte[])
-FSharp.Compiler.IO.ByteStorage: FSharp.Compiler.IO.ByteStorage FromByteArrayAndCopy(Byte[], Boolean)
-FSharp.Compiler.IO.ByteStorage: FSharp.Compiler.IO.ByteStorage FromByteMemory(FSharp.Compiler.IO.ReadOnlyByteMemory)
-FSharp.Compiler.IO.ByteStorage: FSharp.Compiler.IO.ByteStorage FromByteMemoryAndCopy(FSharp.Compiler.IO.ReadOnlyByteMemory, Boolean)
-FSharp.Compiler.IO.ByteStorage: FSharp.Compiler.IO.ReadOnlyByteMemory GetByteMemory()
-FSharp.Compiler.IO.ByteStorage: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.IO.ReadOnlyByteMemory])
 FSharp.Compiler.IO.DefaultAssemblyLoader
 FSharp.Compiler.IO.DefaultAssemblyLoader: Void .ctor()
 FSharp.Compiler.IO.DefaultFileSystem
+FSharp.Compiler.IO.DefaultFileSystem: Boolean DirectoryExistsShim(System.String)
+FSharp.Compiler.IO.DefaultFileSystem: Boolean FileExistsShim(System.String)
+FSharp.Compiler.IO.DefaultFileSystem: Boolean IsInvalidPathShim(System.String)
+FSharp.Compiler.IO.DefaultFileSystem: Boolean IsPathRootedShim(System.String)
+FSharp.Compiler.IO.DefaultFileSystem: Boolean IsStableFileHeuristic(System.String)
+FSharp.Compiler.IO.DefaultFileSystem: FSharp.Compiler.IO.IAssemblyLoader AssemblyLoader
+FSharp.Compiler.IO.DefaultFileSystem: FSharp.Compiler.IO.IAssemblyLoader get_AssemblyLoader()
+FSharp.Compiler.IO.DefaultFileSystem: System.Collections.Generic.IEnumerable`1[System.String] EnumerateDirectoriesShim(System.String)
+FSharp.Compiler.IO.DefaultFileSystem: System.Collections.Generic.IEnumerable`1[System.String] EnumerateFilesShim(System.String, System.String)
+FSharp.Compiler.IO.DefaultFileSystem: System.DateTime GetCreationTimeShim(System.String)
+FSharp.Compiler.IO.DefaultFileSystem: System.DateTime GetLastWriteTimeShim(System.String)
+FSharp.Compiler.IO.DefaultFileSystem: System.IO.DirectoryInfo DirectoryCreateShim(System.String)
+FSharp.Compiler.IO.DefaultFileSystem: System.IO.Stream OpenFileForReadShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
+FSharp.Compiler.IO.DefaultFileSystem: System.IO.Stream OpenFileForWriteShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileMode], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileAccess], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileShare])
+FSharp.Compiler.IO.DefaultFileSystem: System.String GetDirectoryNameShim(System.String)
+FSharp.Compiler.IO.DefaultFileSystem: System.String GetFullFilePathInDirectoryShim(System.String, System.String)
+FSharp.Compiler.IO.DefaultFileSystem: System.String GetFullPathShim(System.String)
+FSharp.Compiler.IO.DefaultFileSystem: System.String GetTempPathShim()
+FSharp.Compiler.IO.DefaultFileSystem: System.String NormalizePathShim(System.String)
 FSharp.Compiler.IO.DefaultFileSystem: Void .ctor()
+FSharp.Compiler.IO.DefaultFileSystem: Void CopyShim(System.String, System.String, Boolean)
+FSharp.Compiler.IO.DefaultFileSystem: Void DirectoryDeleteShim(System.String)
+FSharp.Compiler.IO.DefaultFileSystem: Void FileDeleteShim(System.String)
 FSharp.Compiler.IO.FileSystemAutoOpens
 FSharp.Compiler.IO.FileSystemAutoOpens: FSharp.Compiler.IO.IFileSystem FileSystem
 FSharp.Compiler.IO.FileSystemAutoOpens: FSharp.Compiler.IO.IFileSystem get_FileSystem()
@@ -4047,7 +4043,6 @@ FSharp.Compiler.IO.IFileSystem: Boolean FileExistsShim(System.String)
 FSharp.Compiler.IO.IFileSystem: Boolean IsInvalidPathShim(System.String)
 FSharp.Compiler.IO.IFileSystem: Boolean IsPathRootedShim(System.String)
 FSharp.Compiler.IO.IFileSystem: Boolean IsStableFileHeuristic(System.String)
-FSharp.Compiler.IO.IFileSystem: FSharp.Compiler.IO.ByteMemory OpenFileForReadShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.IO.IFileSystem: FSharp.Compiler.IO.IAssemblyLoader AssemblyLoader
 FSharp.Compiler.IO.IFileSystem: FSharp.Compiler.IO.IAssemblyLoader get_AssemblyLoader()
 FSharp.Compiler.IO.IFileSystem: System.Collections.Generic.IEnumerable`1[System.String] EnumerateDirectoriesShim(System.String)
@@ -4055,6 +4050,7 @@ FSharp.Compiler.IO.IFileSystem: System.Collections.Generic.IEnumerable`1[System.
 FSharp.Compiler.IO.IFileSystem: System.DateTime GetCreationTimeShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.DateTime GetLastWriteTimeShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.IO.DirectoryInfo DirectoryCreateShim(System.String)
+FSharp.Compiler.IO.IFileSystem: System.IO.Stream OpenFileForReadShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.IO.IFileSystem: System.IO.Stream OpenFileForWriteShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileMode], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileAccess], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileShare])
 FSharp.Compiler.IO.IFileSystem: System.String GetDirectoryNameShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.String GetFullFilePathInDirectoryShim(System.String, System.String)
@@ -4065,7 +4061,6 @@ FSharp.Compiler.IO.IFileSystem: Void CopyShim(System.String, System.String, Bool
 FSharp.Compiler.IO.IFileSystem: Void DirectoryDeleteShim(System.String)
 FSharp.Compiler.IO.IFileSystem: Void FileDeleteShim(System.String)
 FSharp.Compiler.IO.IllegalFileNameChar
-FSharp.Compiler.IO.IllegalFileNameChar: Boolean Equals(System.Exception)
 FSharp.Compiler.IO.IllegalFileNameChar: Boolean Equals(System.Object)
 FSharp.Compiler.IO.IllegalFileNameChar: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.IO.IllegalFileNameChar: Char Data1
@@ -4076,56 +4071,15 @@ FSharp.Compiler.IO.IllegalFileNameChar: System.String Data0
 FSharp.Compiler.IO.IllegalFileNameChar: System.String get_Data0()
 FSharp.Compiler.IO.IllegalFileNameChar: Void .ctor()
 FSharp.Compiler.IO.IllegalFileNameChar: Void .ctor(System.String, Char)
-FSharp.Compiler.IO.MemoryMappedFileExtensions
-FSharp.Compiler.IO.MemoryMappedFileExtensions: Microsoft.FSharp.Core.FSharpOption`1[System.IO.MemoryMappedFiles.MemoryMappedFile] MemoryMappedFile.TryFromByteMemory.Static(FSharp.Compiler.IO.ReadOnlyByteMemory)
-FSharp.Compiler.IO.RawByteMemory
-FSharp.Compiler.IO.RawByteMemory: Byte Item [Int32]
-FSharp.Compiler.IO.RawByteMemory: Byte get_Item(Int32)
-FSharp.Compiler.IO.RawByteMemory: Byte[] ReadAllBytes()
-FSharp.Compiler.IO.RawByteMemory: Byte[] ReadBytes(Int32, Int32)
-FSharp.Compiler.IO.RawByteMemory: Byte[] ToArray()
-FSharp.Compiler.IO.RawByteMemory: FSharp.Compiler.IO.ByteMemory Slice(Int32, Int32)
-FSharp.Compiler.IO.RawByteMemory: Int32 Length
-FSharp.Compiler.IO.RawByteMemory: Int32 ReadInt32(Int32)
-FSharp.Compiler.IO.RawByteMemory: Int32 get_Length()
-FSharp.Compiler.IO.RawByteMemory: System.IO.Stream AsReadOnlyStream()
-FSharp.Compiler.IO.RawByteMemory: System.IO.Stream AsStream()
-FSharp.Compiler.IO.RawByteMemory: System.String ReadUtf8String(Int32, Int32)
-FSharp.Compiler.IO.RawByteMemory: UInt16 ReadUInt16(Int32)
-FSharp.Compiler.IO.RawByteMemory: Void .ctor(Byte*, Int32, System.Object)
-FSharp.Compiler.IO.RawByteMemory: Void Copy(Int32, Byte[], Int32, Int32)
-FSharp.Compiler.IO.RawByteMemory: Void CopyTo(System.IO.Stream)
-FSharp.Compiler.IO.RawByteMemory: Void set_Item(Int32, Byte)
-FSharp.Compiler.IO.ReadOnlyByteMemory
-FSharp.Compiler.IO.ReadOnlyByteMemory: Byte Item [Int32]
-FSharp.Compiler.IO.ReadOnlyByteMemory: Byte get_Item(Int32)
-FSharp.Compiler.IO.ReadOnlyByteMemory: Byte[] ReadAllBytes()
-FSharp.Compiler.IO.ReadOnlyByteMemory: Byte[] ReadBytes(Int32, Int32)
-FSharp.Compiler.IO.ReadOnlyByteMemory: Byte[] ToArray()
-FSharp.Compiler.IO.ReadOnlyByteMemory: FSharp.Compiler.IO.ByteMemory Underlying
-FSharp.Compiler.IO.ReadOnlyByteMemory: FSharp.Compiler.IO.ByteMemory get_Underlying()
-FSharp.Compiler.IO.ReadOnlyByteMemory: FSharp.Compiler.IO.ReadOnlyByteMemory Slice(Int32, Int32)
-FSharp.Compiler.IO.ReadOnlyByteMemory: Int32 Length
-FSharp.Compiler.IO.ReadOnlyByteMemory: Int32 ReadInt32(Int32)
-FSharp.Compiler.IO.ReadOnlyByteMemory: Int32 get_Length()
-FSharp.Compiler.IO.ReadOnlyByteMemory: System.IO.Stream AsStream()
-FSharp.Compiler.IO.ReadOnlyByteMemory: System.String ReadUtf8String(Int32, Int32)
-FSharp.Compiler.IO.ReadOnlyByteMemory: UInt16 ReadUInt16(Int32)
-FSharp.Compiler.IO.ReadOnlyByteMemory: Void .ctor(FSharp.Compiler.IO.ByteMemory)
-FSharp.Compiler.IO.ReadOnlyByteMemory: Void Copy(Int32, Byte[], Int32, Int32)
-FSharp.Compiler.IO.ReadOnlyByteMemory: Void CopyTo(System.IO.Stream)
-FSharp.Compiler.IO.SafeUnmanagedMemoryStream
-FSharp.Compiler.IO.SafeUnmanagedMemoryStream: Void .ctor(Byte*, Int64, Int64, System.IO.FileAccess, System.Object)
-FSharp.Compiler.IO.SafeUnmanagedMemoryStream: Void .ctor(Byte*, Int64, System.Object)
-FSharp.Compiler.IO.SafeUnmanagedMemoryStream: Void Dispose(Boolean)
 FSharp.Compiler.IO.StreamExtensions
+FSharp.Compiler.IO.StreamExtensions: Byte[] Stream.ReadAllBytes(System.IO.Stream)
+FSharp.Compiler.IO.StreamExtensions: Byte[] Stream.ReadBytes(System.IO.Stream, Int32, Int32)
+FSharp.Compiler.IO.StreamExtensions: FSharp.Compiler.IO.ByteMemory Stream.AsByteMemory(System.IO.Stream)
 FSharp.Compiler.IO.StreamExtensions: System.Collections.Generic.IEnumerable`1[System.String] Stream.ReadLines(System.IO.Stream, Microsoft.FSharp.Core.FSharpOption`1[System.Text.Encoding])
 FSharp.Compiler.IO.StreamExtensions: System.IO.StreamReader Stream.GetReader(System.IO.Stream, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.IO.StreamExtensions: System.IO.TextWriter Stream.GetWriter(System.IO.Stream, Microsoft.FSharp.Core.FSharpOption`1[System.Text.Encoding])
 FSharp.Compiler.IO.StreamExtensions: System.String Stream.ReadAllText(System.IO.Stream, Microsoft.FSharp.Core.FSharpOption`1[System.Text.Encoding])
 FSharp.Compiler.IO.StreamExtensions: System.String[] Stream.ReadAllLines(System.IO.Stream, Microsoft.FSharp.Core.FSharpOption`1[System.Text.Encoding])
-FSharp.Compiler.IO.StreamExtensions: System.Text.Encoding get_utf8noBOM()
-FSharp.Compiler.IO.StreamExtensions: System.Text.Encoding utf8noBOM
 FSharp.Compiler.IO.StreamExtensions: Void Stream.WriteAllLines(System.IO.Stream, System.Collections.Generic.IEnumerable`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Text.Encoding])
 FSharp.Compiler.IO.StreamExtensions: Void Stream.Write[a](System.IO.Stream, a)
 FSharp.Compiler.Interactive.Shell

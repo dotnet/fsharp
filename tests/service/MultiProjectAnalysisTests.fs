@@ -885,7 +885,7 @@ let ``Type provider project references should not throw exceptions`` () =
 
     //printfn "options: %A" options
     let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/Program.fs"
-    let fileSource = FileSystem.OpenFileForReadShim(fileName).AsStream().ReadAllText()
+    let fileSource = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
     let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, options) |> Async.RunSynchronously |> Option.get
     let fileCheckResults =
         match fileCheckAnswer with
@@ -976,7 +976,7 @@ let ``Projects creating generated types should not utilize cross-project-referen
            OriginalLoadReferences = [] }
     //printfn "options: %A" options
     let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/Program.fs"
-    let fileSource = FileSystem.OpenFileForReadShim(fileName).AsStream().ReadAllText()
+    let fileSource = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
 
     let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, options) |> Async.RunSynchronously |> Option.get
     let fileCheckResults =
