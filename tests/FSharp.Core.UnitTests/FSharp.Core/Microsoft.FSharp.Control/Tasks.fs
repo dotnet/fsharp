@@ -1201,12 +1201,15 @@ type BasicsNotInParallel() =
             let syncContext = { new SynchronizationContext()  with member _.Post(d,state) = posted <- true; d.Invoke(state) }
             try 
                 SynchronizationContext.SetSynchronizationContext syncContext
+                let tid = System.Threading.Thread.CurrentThread.ManagedThreadId 
                 require (not (isNull SynchronizationContext.Current)) "need sync context non null on foreground thread A"
                 require (SynchronizationContext.Current = syncContext) "need sync context known on foreground thread A"
                 let t =
                     task {
+                        let tid2 = System.Threading.Thread.CurrentThread.ManagedThreadId 
                         require (not (isNull SynchronizationContext.Current)) "need sync context non null on foreground thread B"
                         require (SynchronizationContext.Current = syncContext) "need sync context known on foreground thread B"
+                        require (tid = tid2) "expected synchronous start for task B2"
                         do! Task.Yield()
                         require (not (isNull SynchronizationContext.Current)) "need sync context non null on foreground thread C"
                         require (SynchronizationContext.Current = syncContext) "need sync context known on foreground thread C"
@@ -1230,8 +1233,7 @@ type BasicsNotInParallel() =
                 SynchronizationContext.SetSynchronizationContext syncContext
                 let t =
                     backgroundTask {
-                        //do! (task { do! Task.Delay(200) }).ConfigureAwait(false)
-                        require (isNull SynchronizationContext.Current) "need sync context null on background thread"
+                        require (System.Threading.Thread.CurrentThread.IsThreadPoolThread) "expect to be on background thread"
                         ran <- true
                     }
                 t.Wait()
@@ -1250,10 +1252,10 @@ type BasicsNotInParallel() =
                     let tid = System.Threading.Thread.CurrentThread.ManagedThreadId 
                     // In case other thread pool activities have polluted this one, sigh
                     SynchronizationContext.SetSynchronizationContext null
-                    require (isNull SynchronizationContext.Current) "expected sync context null on background thread (1)"
+                    require (System.Threading.Thread.CurrentThread.IsThreadPoolThread) "expected thread pool thread (1)"
                     let t =
                         backgroundTask {
-                            require (isNull SynchronizationContext.Current) "expected sync context null on background thread (2)"
+                            require (System.Threading.Thread.CurrentThread.IsThreadPoolThread) "expected thread pool thread (2)"
                             let tid2 = System.Threading.Thread.CurrentThread.ManagedThreadId 
                             require (tid = tid2) "expected synchronous starts when already on background thread"
                             do! Task.Delay(200)
