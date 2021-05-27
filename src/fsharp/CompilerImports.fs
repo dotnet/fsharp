@@ -693,19 +693,19 @@ let MakeScopeRefForILModule (ilModule: ILModuleDef) =
 let GetCustomAttributesOfILModule (ilModule: ILModuleDef) =
     (match ilModule.Manifest with Some m -> m.CustomAttrs | None -> ilModule.CustomAttrs).AsList
 
-let GetAutoOpenAttributes ilg ilModule =
-    ilModule |> GetCustomAttributesOfILModule |> List.choose (TryFindAutoOpenAttr ilg)
+let GetAutoOpenAttributes ilModule =
+    ilModule |> GetCustomAttributesOfILModule |> List.choose TryFindAutoOpenAttr
 
-let GetInternalsVisibleToAttributes ilg ilModule =
-    ilModule |> GetCustomAttributesOfILModule |> List.choose (TryFindInternalsVisibleToAttr ilg)
+let GetInternalsVisibleToAttributes ilModule =
+    ilModule |> GetCustomAttributesOfILModule |> List.choose TryFindInternalsVisibleToAttr
 
 type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyRefs) =
     let externalSigAndOptData = ["FSharp.Core"]
     interface IRawFSharpAssemblyData with
 
-         member _.GetAutoOpenAttributes ilg = GetAutoOpenAttributes ilg ilModule
+         member _.GetAutoOpenAttributes() = GetAutoOpenAttributes ilModule
 
-         member _.GetInternalsVisibleToAttributes ilg = GetInternalsVisibleToAttributes ilg ilModule
+         member _.GetInternalsVisibleToAttributes() = GetInternalsVisibleToAttributes ilModule
 
          member _.TryGetILModuleDef() = Some ilModule
 
@@ -784,18 +784,18 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
             let attrs = GetCustomAttributesOfILModule ilModule
             List.exists IsSignatureDataVersionAttr attrs
 
-         member _.HasMatchingFSharpSignatureDataAttribute ilg =
+         member _.HasMatchingFSharpSignatureDataAttribute =
             let attrs = GetCustomAttributesOfILModule ilModule
-            List.exists (IsMatchingSignatureDataVersionAttr ilg (parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
+            List.exists (IsMatchingSignatureDataVersionAttr (parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
 
 [<Sealed>]
 type RawFSharpAssemblyData (ilModule: ILModuleDef, ilAssemblyRefs) =
 
     interface IRawFSharpAssemblyData with
 
-         member _.GetAutoOpenAttributes ilg = GetAutoOpenAttributes ilg ilModule
+         member _.GetAutoOpenAttributes() = GetAutoOpenAttributes ilModule
 
-         member _.GetInternalsVisibleToAttributes ilg = GetInternalsVisibleToAttributes ilg ilModule
+         member _.GetInternalsVisibleToAttributes() = GetInternalsVisibleToAttributes ilModule
 
          member _.TryGetILModuleDef() = Some ilModule
 
@@ -851,9 +851,9 @@ type RawFSharpAssemblyData (ilModule: ILModuleDef, ilAssemblyRefs) =
             let attrs = GetCustomAttributesOfILModule ilModule
             List.exists IsSignatureDataVersionAttr attrs
 
-         member _.HasMatchingFSharpSignatureDataAttribute ilg =
+         member _.HasMatchingFSharpSignatureDataAttribute =
             let attrs = GetCustomAttributesOfILModule ilModule
-            List.exists (IsMatchingSignatureDataVersionAttr ilg (parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
+            List.exists (IsMatchingSignatureDataVersionAttr (parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
 
 //----------------------------------------------------------------------------
 // TcImports
@@ -918,8 +918,7 @@ and TcImportsWeakHack (tcImports: WeakReference<TcImports>) =
 /// Represents a table of imported assemblies with their resolutions.
 /// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
 /// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.
-and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolutions, importsBase: TcImports option,
-                         ilGlobalsOpt, dependencyProviderOpt: DependencyProvider option)
+and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolutions, importsBase: TcImports option, dependencyProviderOpt: DependencyProvider option)
 #if !NO_EXTENSIONTYPING
                          as this
 #endif
@@ -940,7 +939,6 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
     let disposeActions = ResizeArray()
     let mutable disposed = false
-    let mutable ilGlobalsOpt = ilGlobalsOpt
     let mutable tcGlobals = None
     let disposeTypeProviderActions = ResizeArray()
 #if !NO_EXTENSIONTYPING
@@ -1326,10 +1324,6 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             | Some b -> b.GetTcGlobals()
             | None -> failwith "unreachable: GetGlobals - are the references to mscorlib.dll and FSharp.Core.dll valid?"
 
-    member private tcImports.SetILGlobals ilg =
-        CheckDisposed()
-        ilGlobalsOpt <- Some ilg
-
     member private tcImports.SetTcGlobals g =
         CheckDisposed()
         tcGlobals <- Some g
@@ -1397,7 +1391,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         // have class which implement ITypeProvider and which have TypeProviderAttribute on them.
         let designTimeAssemblyNames =
             runtimeAssemblyAttributes
-            |> List.choose (TryDecodeTypeProviderAssemblyAttr (defaultArg ilGlobalsOpt EcmaMscorlibILGlobals))
+            |> List.choose (TryDecodeTypeProviderAssemblyAttr)
             // If no design-time assembly is specified, use the runtime assembly
             |> List.map (function Null -> fileNameOfRuntimeAssembly | NonNull s -> s)
             // For each simple name of a design-time assembly, we take the first matching one in the order they are
@@ -1555,13 +1549,11 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let invalidateCcu = new Event<_>()
         let ccu = Import.ImportILAssembly(tcImports.GetImportMap, m, auxModuleLoader, tcConfig.xmlDocInfoLoader, ilScopeRef, tcConfig.implicitIncludeDir, Some filename, ilModule, invalidateCcu.Publish)
 
-        let ilg = defaultArg ilGlobalsOpt EcmaMscorlibILGlobals
-
         let ccuinfo =
             { FSharpViewOfMetadata=ccu
               ILScopeRef = ilScopeRef
-              AssemblyAutoOpenAttributes = GetAutoOpenAttributes ilg ilModule
-              AssemblyInternalsVisibleToAttributes = GetInternalsVisibleToAttributes ilg ilModule
+              AssemblyAutoOpenAttributes = GetAutoOpenAttributes ilModule
+              AssemblyInternalsVisibleToAttributes = GetInternalsVisibleToAttributes ilModule
 #if !NO_EXTENSIONTYPING
               IsProviderGenerated = false
               TypeProviders = []
@@ -1645,12 +1637,10 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                             if verbose then dprintf "found optimization data for CCU %s\n" ccuName
                             Some (fixupThunk ()))
 
-                let ilg = defaultArg ilGlobalsOpt EcmaMscorlibILGlobals
-
                 let ccuinfo =
                     { FSharpViewOfMetadata=ccu
-                      AssemblyAutoOpenAttributes = ilModule.GetAutoOpenAttributes ilg
-                      AssemblyInternalsVisibleToAttributes = ilModule.GetInternalsVisibleToAttributes ilg
+                      AssemblyAutoOpenAttributes = ilModule.GetAutoOpenAttributes()
+                      AssemblyInternalsVisibleToAttributes = ilModule.GetInternalsVisibleToAttributes()
                       FSharpOptimizationData=optdata
 #if !NO_EXTENSIONTYPING
                       IsProviderGenerated = false
@@ -1734,10 +1724,9 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                   ILScopeRef = ilScopeRef
                   ILAssemblyRefs = assemblyData.ILAssemblyRefs }
             tcImports.RegisterDll dllinfo
-            let ilg = defaultArg ilGlobalsOpt EcmaMscorlibILGlobals
             let phase2 =
                 if assemblyData.HasAnyFSharpSignatureDataAttribute then
-                    if not (assemblyData.HasMatchingFSharpSignatureDataAttribute ilg) then
+                    if not assemblyData.HasMatchingFSharpSignatureDataAttribute then
                         errorR(Error(FSComp.SR.buildDifferentVersionMustRecompile filename, m))
                         tcImports.PrepareToImportReferencedILAssembly (ctok, m, filename, dllinfo)
                     else
@@ -1869,7 +1858,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, frameworkDLLs, [])
         let tcAltResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, nonFrameworkDLLs, [])
 
-        let frameworkTcImports = new TcImports(tcConfigP, tcResolutions, None, None, None)
+        let frameworkTcImports = new TcImports(tcConfigP, tcResolutions, None, None)
 
         // Fetch the primaryAssembly from the referenced assemblies otherwise
         let primaryAssemblyReference =
@@ -1961,7 +1950,6 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName)
 
         let ilGlobals = mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef)
-        frameworkTcImports.SetILGlobals ilGlobals
 
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
         let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu,
@@ -1986,14 +1974,14 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         |> List.iter reportAssemblyNotResolved
 
     static member BuildNonFrameworkTcImports
-       (ctok, tcConfigP: TcConfigProvider, tcGlobals: TcGlobals, baseTcImports,
+       (ctok, tcConfigP: TcConfigProvider, baseTcImports,
         nonFrameworkReferences, knownUnresolved, dependencyProvider) =
 
       cancellable {
         let tcConfig = tcConfigP.Get ctok
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, nonFrameworkReferences, knownUnresolved)
         let references = tcResolutions.GetAssemblyResolutions()
-        let tcImports = new TcImports(tcConfigP, tcResolutions, Some baseTcImports, Some tcGlobals.ilg, Some dependencyProvider)
+        let tcImports = new TcImports(tcConfigP, tcResolutions, Some baseTcImports, Some dependencyProvider)
         let! _assemblies = tcImports.RegisterAndImportReferencedAssemblies(ctok, references)
         tcImports.ReportUnresolvedAssemblyReferences knownUnresolved
         return tcImports
@@ -2005,7 +1993,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         //let foundationalTcImports, tcGlobals = TcImports.BuildFoundationalTcImports tcConfigP
         let frameworkDLLs, nonFrameworkReferences, knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
         let! tcGlobals, frameworkTcImports = TcImports.BuildFrameworkTcImports (ctok, tcConfigP, frameworkDLLs, nonFrameworkReferences)
-        let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkReferences, knownUnresolved, dependencyProvider)
+        let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, frameworkTcImports, nonFrameworkReferences, knownUnresolved, dependencyProvider)
         return tcGlobals, tcImports
       }
 

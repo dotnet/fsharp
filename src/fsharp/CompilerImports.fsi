@@ -202,7 +202,6 @@ type TcImports =
     static member BuildNonFrameworkTcImports:
         CompilationThreadToken * 
         TcConfigProvider * 
-        TcGlobals * 
         TcImports * 
         AssemblyResolution list * 
         UnresolvedAssemblyReference list * 

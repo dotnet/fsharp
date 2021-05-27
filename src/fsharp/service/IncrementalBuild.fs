@@ -654,8 +654,8 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState:
     let ivtAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute)
 
     interface IRawFSharpAssemblyData with
-        member _.GetAutoOpenAttributes(_ilg) = autoOpenAttrs
-        member _.GetInternalsVisibleToAttributes(_ilg) =  ivtAttrs
+        member _.GetAutoOpenAttributes() = autoOpenAttrs
+        member _.GetInternalsVisibleToAttributes() =  ivtAttrs
         member _.TryGetILModuleDef() = None
         member _.GetRawFSharpSignatureData(_m, _ilShortAssemName, _filename) = sigData
         member _.GetRawFSharpOptimizationData(_m, _ilShortAssemName, _filename) = [ ]
@@ -664,7 +664,7 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState:
         member _.ILScopeRef = IL.ILScopeRef.Assembly ilAssemRef
         member _.ILAssemblyRefs = [] // These are not significant for service scenarios
         member _.HasAnyFSharpSignatureDataAttribute =  true
-        member _.HasMatchingFSharpSignatureDataAttribute _ilg = true
+        member _.HasMatchingFSharpSignatureDataAttribute = true
 
 type IncrementalBuilderState =
     {
@@ -767,7 +767,7 @@ type IncrementalBuilder(tcGlobals,
         let! tcImports =
           cancellable {
             try
-                let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
+                let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
 #if !NO_EXTENSIONTYPING
                 tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu ->
                     // When a CCU reports an invalidation, merge them together and just report a

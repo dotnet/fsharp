@@ -1433,7 +1433,7 @@ type MethInfo =
             [ [ for p in ilMethInfo.ParamMetadata do
                  let isParamArrayArg = TryFindILAttribute g.attrib_ParamArrayAttribute p.CustomAttrs
                  let reflArgInfo =
-                     match TryDecodeILAttribute g g.attrib_ReflectedDefinitionAttribute.TypeRef p.CustomAttrs with
+                     match TryDecodeILAttribute g.attrib_ReflectedDefinitionAttribute.TypeRef p.CustomAttrs with
                      | Some ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
                      | Some _ -> ReflectedArgInfo.Quote false
                      | _ -> ReflectedArgInfo.None

@@ -2092,7 +2092,7 @@ val mkLdelem: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 // Analyze attribute sets 
 //------------------------------------------------------------------------- 
 
-val TryDecodeILAttribute: TcGlobals -> ILTypeRef -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
+val TryDecodeILAttribute: ILTypeRef -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
 
 val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
 
@@ -2135,19 +2135,19 @@ val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool optio
 #if !NO_EXTENSIONTYPING
 /// returns Some(assemblyName) for success
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
-val TryDecodeTypeProviderAssemblyAttr: ILGlobals -> ILAttribute -> string option
+val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string option
 #else
-val TryDecodeTypeProviderAssemblyAttr: ILGlobals -> ILAttribute -> string? option
+val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string? option
 #endif
 #endif
 
 val IsSignatureDataVersionAttr: ILAttribute -> bool
 
-val TryFindAutoOpenAttr: IL.ILGlobals -> ILAttribute -> string option 
+val TryFindAutoOpenAttr: ILAttribute -> string option 
 
-val TryFindInternalsVisibleToAttr: IL.ILGlobals -> ILAttribute -> string option 
+val TryFindInternalsVisibleToAttr: ILAttribute -> string option 
 
-val IsMatchingSignatureDataVersionAttr: IL.ILGlobals -> ILVersionInfo -> ILAttribute -> bool
+val IsMatchingSignatureDataVersionAttr: ILVersionInfo -> ILAttribute -> bool
 
 val mkCompilationMappingAttr: TcGlobals -> int -> ILAttribute
 val mkCompilationMappingAttrWithSeqNum: TcGlobals -> int -> int -> ILAttribute

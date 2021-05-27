@@ -1145,7 +1145,7 @@ type internal FsiDynamicCompiler
         errorLogger.AbortOnError(fsiConsoleOutput);
 
         ReportTime tcConfig "Assembly refs Normalised";
-        let mainmod3 = Morphs.morphILScopeRefsInILModuleMemoized ilGlobals (NormalizeAssemblyRefs (ctok, ilGlobals, tcImports)) ilxMainModule
+        let mainmod3 = Morphs.morphILScopeRefsInILModuleMemoized (NormalizeAssemblyRefs (ctok, ilGlobals, tcImports)) ilxMainModule
         errorLogger.AbortOnError(fsiConsoleOutput);
 
 #if DEBUG
@@ -2893,7 +2893,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let tcImports =
       try
-          TcImports.BuildNonFrameworkTcImports(ctokStartup, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, fsiOptions.DependencyProvider) |> Cancellable.runWithoutCancellation
+          TcImports.BuildNonFrameworkTcImports(ctokStartup, tcConfigP, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, fsiOptions.DependencyProvider) |> Cancellable.runWithoutCancellation
       with e ->
           stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 
