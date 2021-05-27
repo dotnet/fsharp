@@ -694,9 +694,8 @@ module Utilities =
 /// Constructs the build data (IRawFSharpAssemblyData) representing the assembly when used
 /// as a cross-assembly reference.  Note the assembly has not been generated on disk, so this is
 /// a virtualized view of the assembly contents as computed by background checking.
-type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState: TcState, outfile, topAttrs, assemblyName, ilAssemRef) =
+type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generatedCcu: CcuThunk, outfile, topAttrs, assemblyName, ilAssemRef) =
 
-    let generatedCcu = tcState.Ccu
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
 
     let sigData =
@@ -925,55 +924,50 @@ type IncrementalBuilder(
 
         let ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt =
             try
-                // TypeCheckClosedInputSetFinish fills in tcState.Ccu but in incremental scenarios we don't want this,
-                // so we make this temporary here
-                let oldContents = tcState.Ccu.Deref.Contents
-                try
-                    let tcState, tcAssemblyExpr = TypeCheckClosedInputSetFinish (mimpls, tcState)
+                let tcState, tcAssemblyExpr, ccuContents = TypeCheckClosedInputSetFinish (mimpls, tcState)
 
-                    // Compute the identity of the generated assembly based on attributes, options etc.
-                    // Some of this is duplicated from fsc.fs
-                    let ilAssemRef =
-                        let publicKey =
-                            try
-                                let signingInfo = ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
-                                match GetStrongNameSigner signingInfo with
-                                | None -> None
-                                | Some s -> Some (PublicKey.KeyAsToken(s.PublicKey))
-                            with e ->
-                                errorRecoveryNoRange e
-                                None
-                        let locale = TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib  "System.Reflection.AssemblyCultureAttribute") topAttrs.assemblyAttrs
-                        let assemVerFromAttrib =
-                            TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib "System.Reflection.AssemblyVersionAttribute") topAttrs.assemblyAttrs
-                            |> Option.bind  (fun v -> try Some (parseILVersion v) with _ -> None)
-                        let ver =
-                            match assemVerFromAttrib with
-                            | None -> tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
-                            | Some v -> v
-                        ILAssemblyRef.Create(assemblyName, None, publicKey, false, Some ver, locale)
+                let generatedCcu =
+                    { tcState.Ccu with target = { tcState.Ccu.target with Contents = ccuContents } }
 
-                    let tcAssemblyDataOpt =
+                // Compute the identity of the generated assembly based on attributes, options etc.
+                // Some of this is duplicated from fsc.fs
+                let ilAssemRef =
+                    let publicKey =
                         try
-
-                          // Assemblies containing type provider components can not successfully be used via cross-assembly references.
-                          // We return 'None' for the assembly portion of the cross-assembly reference
-                          let hasTypeProviderAssemblyAttrib =
-                              topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
-                                  let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName
-                                  nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
-
-                          if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
-                            None
-                          else
-                            Some  (RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState, outfile, topAttrs, assemblyName, ilAssemRef) :> IRawFSharpAssemblyData)
-
+                            let signingInfo = ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
+                            match GetStrongNameSigner signingInfo with
+                            | None -> None
+                            | Some s -> Some (PublicKey.KeyAsToken(s.PublicKey))
                         with e ->
                             errorRecoveryNoRange e
                             None
-                    ilAssemRef, tcAssemblyDataOpt, Some tcAssemblyExpr
-                finally
-                    tcState.Ccu.Deref.Contents <- oldContents
+                    let locale = TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib "System.Reflection.AssemblyCultureAttribute") topAttrs.assemblyAttrs
+                    let assemVerFromAttrib =
+                        TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib "System.Reflection.AssemblyVersionAttribute") topAttrs.assemblyAttrs
+                        |> Option.bind  (fun v -> try Some (parseILVersion v) with _ -> None)
+                    let ver =
+                        match assemVerFromAttrib with
+                        | None -> tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
+                        | Some v -> v
+                    ILAssemblyRef.Create(assemblyName, None, publicKey, false, Some ver, locale)
+
+                let tcAssemblyDataOpt =
+                    try
+                        // Assemblies containing type provider components can not successfully be used via cross-assembly references.
+                        // We return 'None' for the assembly portion of the cross-assembly reference
+                        let hasTypeProviderAssemblyAttrib =
+                            topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
+                                let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName
+                                nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
+
+                        if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
+                            None
+                        else
+                            Some  (RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generatedCcu, outfile, topAttrs, assemblyName, ilAssemRef) :> IRawFSharpAssemblyData)
+                    with e ->
+                        errorRecoveryNoRange e
+                        None
+                ilAssemRef, tcAssemblyDataOpt, Some tcAssemblyExpr
             with e ->
                 errorRecoveryNoRange e
                 mkSimpleAssemblyRef assemblyName, None, None

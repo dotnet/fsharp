@@ -102,7 +102,7 @@ val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option * 'U) list * 
 val TypeCheckClosedInputSetFinish:
     TypedImplFile list *
     TcState
-      -> TcState * TypedImplFile list
+      -> TcState * TypedImplFile list * ModuleOrNamespace
 
 /// Check a closed set of inputs 
 val TypeCheckClosedInputSet:

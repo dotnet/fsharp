@@ -907,19 +907,20 @@ let TypeCheckOneInputAndFinishEventually(checkForErrors, tcConfig: TcConfig, tcI
     }
 
 let TypeCheckClosedInputSetFinish (declaredImpls: TypedImplFile list, tcState) =
-    // Publish the latest contents to the CCU
-    tcState.tcsCcu.Deref.Contents <- Construct.NewCcuContents ILScopeRef.Local range0 tcState.tcsCcu.AssemblyName tcState.tcsCcuSig
+    // Latest contents to the CCU
+    let ccuContents = Construct.NewCcuContents ILScopeRef.Local range0 tcState.tcsCcu.AssemblyName tcState.tcsCcuSig
 
     // Check all interfaces have implementations
     tcState.tcsRootSigs |> Zmap.iter (fun qualNameOfFile _ ->
       if not (Zset.contains qualNameOfFile tcState.tcsRootImpls) then
         errorR(Error(FSComp.SR.buildSignatureWithoutImplementation(qualNameOfFile.Text), qualNameOfFile.Range)))
 
-    tcState, declaredImpls
+    tcState, declaredImpls, ccuContents
 
 let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState = (tcState, inputs) ||> List.mapFold (TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt))
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState = TypeCheckMultipleInputsFinish(results, tcState)
-    let tcState, declaredImpls = TypeCheckClosedInputSetFinish (implFiles, tcState)
+    let tcState, declaredImpls, ccuContents = TypeCheckClosedInputSetFinish (implFiles, tcState)
+    tcState.Ccu.Deref.Contents <- ccuContents
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
