@@ -2148,6 +2148,7 @@ val TryFindInternalsVisibleToAttr: ILAttribute -> string option
 val IsMatchingSignatureDataVersionAttr: ILVersionInfo -> ILAttribute -> bool
 
 val mkCompilationMappingAttr: TcGlobals -> int -> ILAttribute
+
 val mkCompilationMappingAttrWithSeqNum: TcGlobals -> int -> int -> ILAttribute
 
 
