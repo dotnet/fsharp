@@ -218,7 +218,7 @@ module BuildGraphTests =
                 NodeCode.StartAsTask(work)
                 |> tasks.Add
 
-        Thread.Sleep(100) // Buffer some time
+        Thread.Sleep(1000) // Buffer some time
         cts.Cancel()
         resetEvent.Set() |> ignore
         NodeCode.RunImmediate(work)
