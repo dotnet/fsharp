@@ -146,6 +146,9 @@ type NodeCode private () =
     static member AwaitTask(task: Task<'T>) =
         Node(wrapThreadStaticInfo(Async.AwaitTask task))
 
+    static member AwaitTask(task: Task) =
+        Node(wrapThreadStaticInfo(Async.AwaitTask task))
+
     static member AwaitWaitHandle(waitHandle: WaitHandle) =
         Node(wrapThreadStaticInfo (Async.AwaitWaitHandle(waitHandle)))
 
@@ -164,11 +167,12 @@ type NodeCode private () =
 type private AgentMessage<'T> =
     | GetValue of AsyncReplyChannel<Result<'T, Exception>> * callerCancellationToken: CancellationToken
 
-type private AgentInstance<'T> = (MailboxProcessor<AgentMessage<'T>> * CancellationTokenSource)
+type private Agent<'T> = (MailboxProcessor<AgentMessage<'T>> * CancellationTokenSource)
 
 [<RequireQualifiedAccess>]
-type private AgentAction<'T> =
-    | GetValue of AgentInstance<'T>
+type private GraphNodeAction<'T> =
+    | GetValueByAgent
+    | GetValue
     | CachedValue of 'T
 
 [<RequireQualifiedAccess>]
@@ -190,13 +194,19 @@ module GraphNode =
         | None -> ()
 
 [<Sealed>]
-type GraphNode<'T> (computation: NodeCode<'T>) =
+type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
 
     let gate = obj ()
     let mutable computation = computation
     let mutable requestCount = 0
-    let mutable cachedResult = ValueNone
-    let mutable cachedResultNode = ValueNone
+    let mutable cachedResult: Task<'T> = Unchecked.defaultof<_>
+    let mutable cachedResultNode: NodeCode<'T> = Unchecked.defaultof<_>
+
+    let isCachedResultNodeNotNull() =
+        not (obj.ReferenceEquals(cachedResultNode, null))
+
+    let isCachedResultNotNull() =
+        cachedResult <> null
 
     let loop (agent: MailboxProcessor<AgentMessage<'T>>) =
         async {
@@ -216,64 +226,113 @@ type GraphNode<'T> (computation: NodeCode<'T>) =
 
                             callerCancellationToken.ThrowIfCancellationRequested ()
 
-                            match cachedResult with
-                            | ValueSome result ->
-                                replyChannel.Reply (Ok result)
-                            | _ ->
+                            if isCachedResultNotNull() then
+                                replyChannel.Reply(Ok cachedResult.Result)
+                            else
                                 // This computation can only be canceled if the requestCount reaches zero.
                                 let! result = computation |> Async.AwaitNode
-                                cachedResult <- ValueSome result
-                                cachedResultNode <- ValueSome(node { return result })
+                                cachedResult <- Task.FromResult(result)
+                                cachedResultNode <- node { return result }
                                 computation <- Unchecked.defaultof<_>
                                 if not callerCancellationToken.IsCancellationRequested then
-                                    replyChannel.Reply (Ok result)
-                        with 
+                                    replyChannel.Reply(Ok result)
+                        with
                         | ex ->
-                            replyChannel.Reply (Result.Error ex)
+                            if not callerCancellationToken.IsCancellationRequested then
+                                replyChannel.Reply(Result.Error ex)
             with
             | _ -> 
                 ()
         }
 
-    let mutable agentInstance: AgentInstance<'T> option = None
+    let mutable agent: Agent<'T> = Unchecked.defaultof<_>
+
+    let semaphore: SemaphoreSlim = 
+        if retryCompute then
+            new SemaphoreSlim(1, 1)
+        else
+            Unchecked.defaultof<_>
 
     member _.GetValue() =
         // fast path
-        match cachedResultNode with
-        | ValueSome resultNode -> resultNode
-        | _ ->
+        if isCachedResultNodeNotNull() then
+            cachedResultNode
+        else
             node {
-                match cachedResult with
-                | ValueSome result -> return result
-                | _ ->
+                if isCachedResultNodeNotNull() then
+                    return! cachedResult |> NodeCode.AwaitTask
+                else
                     let action =
                         lock gate <| fun () ->
                             // We try to get the cached result after the lock so we don't spin up a new mailbox processor.
-                            match cachedResult with
-                            | ValueSome result -> AgentAction<'T>.CachedValue result
-                            | _ ->
+                            if isCachedResultNodeNotNull() then
+                                GraphNodeAction<'T>.CachedValue cachedResult.Result
+                            else
                                 requestCount <- requestCount + 1
-                                match agentInstance with
-                                | Some agentInstance -> AgentAction<'T>.GetValue agentInstance
-                                | _ ->
-                                    try
-                                        let cts = new CancellationTokenSource()
-                                        let agent = new MailboxProcessor<_>(loop, cancellationToken = cts.Token)
-                                        let newAgentInstance = (agent, cts)
-                                        agentInstance <- Some newAgentInstance
-                                        agent.Start()
-                                        AgentAction<'T>.GetValue newAgentInstance
-                                    with
-                                    | ex ->
-                                        agentInstance <- None
-                                        raise ex
+                                if retryCompute then
+                                    GraphNodeAction<'T>.GetValue
+                                else
+                                    match box agent with
+                                    | null ->
+                                        try
+                                            let cts = new CancellationTokenSource()
+                                            let mbp = new MailboxProcessor<_>(loop, cancellationToken = cts.Token)
+                                            let newAgent = (mbp, cts)
+                                            agent <- newAgent
+                                            mbp.Start()
+                                            GraphNodeAction<'T>.GetValueByAgent
+                                        with
+                                        | ex ->
+                                            agent <- Unchecked.defaultof<_>
+                                            raise ex
+                                    | _ -> 
+                                        GraphNodeAction<'T>.GetValueByAgent
 
                     match action with
-                    | AgentAction.CachedValue result -> return result
-                    | AgentAction.GetValue(agent, cts) ->                       
+                    | GraphNodeAction.CachedValue result -> return result
+                    | GraphNodeAction.GetValue ->
                         try
                             let! ct = NodeCode.CancellationToken
-                            let! res = agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct)) |> NodeCode.AwaitAsync
+                            
+                            do! semaphore.WaitAsync(ct) |> NodeCode.AwaitTask
+
+                            try
+                                if isCachedResultNotNull() then
+                                    return cachedResult.Result
+                                else
+                                    let tcs = TaskCompletionSource<'T>()
+                                    let (Node(p)) = computation
+                                    Async.StartWithContinuations(
+                                        async {
+                                            Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
+                                            return! p
+                                        },
+                                        (fun res ->
+                                            cachedResult <- Task.FromResult(res)
+                                            cachedResultNode <- node { return res }
+                                            computation <- Unchecked.defaultof<_>
+                                            tcs.SetResult(res)
+                                        ),
+                                        (fun ex ->
+                                            tcs.SetException(ex)
+                                        ),
+                                        (fun _ ->
+                                            tcs.SetCanceled()
+                                        ),
+                                        ct
+                                    )
+                                    return! tcs.Task |> NodeCode.AwaitTask
+                            finally
+                                semaphore.Release() |> ignore
+                        finally
+                            lock gate <| fun () ->
+                                requestCount <- requestCount - 1
+
+                    | GraphNodeAction.GetValueByAgent -> 
+                        let mbp, cts = agent
+                        try
+                            let! ct = NodeCode.CancellationToken
+                            let! res = mbp.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct)) |> NodeCode.AwaitAsync
                             match res with
                             | Ok result -> return result
                             | Result.Error ex -> return raise ex
@@ -282,13 +341,19 @@ type GraphNode<'T> (computation: NodeCode<'T>) =
                                 requestCount <- requestCount - 1
                                 if requestCount = 0 then
                                         cts.Cancel() // cancel computation when all requests are cancelled
-                                        try (agent :> IDisposable).Dispose () with | _ -> ()
+                                        try (mbp :> IDisposable).Dispose () with | _ -> ()
                                         cts.Dispose()
-                                        agentInstance <- None
+                                        agent <- Unchecked.defaultof<_>
             }
 
-       member _.TryGetValue() = cachedResult
+        member _.TryGetValue() = 
+            match cachedResult with
+            | null -> ValueNone
+            | _ -> ValueSome cachedResult.Result
 
-       member _.HasValue = cachedResult.IsSome
+        member _.HasValue = cachedResult <> null
 
-       member _.IsComputing = requestCount > 0
+        member _.IsComputing = requestCount > 0
+
+    new(computation) =
+        GraphNode(true, computation)

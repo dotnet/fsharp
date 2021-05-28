@@ -70,10 +70,15 @@ module internal GraphNode =
 /// Lazily evaluate the computation asynchronously, then strongly cache the result.
 /// Once the result has been cached, the computation function will also be removed, or 'null'ed out, 
 ///     as to prevent any references captured by the computation from being strongly held.
-/// The computation will only be canceled if there are no outstanding requests awaiting a response.
 [<Sealed>]
 type internal GraphNode<'T> =
 
+    /// <param name="retryCompute">When set to 'true', subsequent requesters will retry the computation if the first-in request cancels.
+    ///     Retrying computations will have better callstacks.</param>
+    /// <param name="computation">The computation code to run.</param>
+    new : retryCompute: bool * computation: NodeCode<'T> -> GraphNode<'T>
+
+    /// By default, 'retryCompute' is 'true'.
     new : computation: NodeCode<'T> -> GraphNode<'T>
 
     member GetValue: unit -> NodeCode<'T>
