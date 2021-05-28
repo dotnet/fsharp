@@ -334,93 +334,150 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     return Some(parsingOptions, projectOptions)
         }
 
+    let tryGetOptionsByDocument (document: Document, ct: CancellationToken, userOpName) =
+        async {
+            if ct.IsCancellationRequested then
+                return None
+            else
+                try
+                    // For now, disallow miscellaneous workspace since we are using the hacky F# miscellaneous files project.
+                    if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
+                        return None
+                    elif document.Project.IsFSharpMiscellaneousOrMetadata then
+                        let! options = tryComputeOptionsByFile document ct userOpName
+                        if ct.IsCancellationRequested then
+                            return None
+                        else
+                            return options
+                    else
+                        // We only care about the latest project in the workspace's solution.
+                        // We do this to prevent any possible cache thrashing in FCS.
+                        let project = document.Project.Solution.Workspace.CurrentSolution.GetProject(document.Project.Id)
+                        if not (isNull project) then
+                            let! options = tryComputeOptions project ct
+                            if ct.IsCancellationRequested then
+                                return None
+                            else
+                                return options
+                        else
+                            return None
+                with
+                | _ ->
+                    return None
+        }
+
+    let tryGetOptionsByProject (project: Project, ct: CancellationToken) =
+        async {
+            if ct.IsCancellationRequested then
+                return None
+            else
+                try
+                    if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.IsFSharpMiscellaneousOrMetadata then
+                        return None
+                    else
+                        // We only care about the latest project in the workspace's solution.
+                        // We do this to prevent any possible cache thrashing in FCS.
+                        let project = project.Solution.Workspace.CurrentSolution.GetProject(project.Id)
+                        if not (isNull project) then
+                            let! options = tryComputeOptions project ct
+                            if ct.IsCancellationRequested then
+                                return None
+                            else
+                                return options
+                        else
+                            return None
+                with
+                | _ ->
+                    return None
+        }
+
+    let clearOptions projectId =
+        match cache.TryRemove(projectId) with
+        | true, (_, _, projectOptions) ->
+            lastSuccessfulCompilations.TryRemove(projectId) |> ignore
+            checkerProvider.Checker.ClearCache([projectOptions])
+        | _ ->
+            ()
+        legacyProjectSites.TryRemove(projectId) |> ignore
+
+    let clearSingleFileOptionsCache documentId =
+        match singleFileCache.TryRemove(documentId) with
+        | true, (_, _, projectOptions) ->
+            lastSuccessfulCompilations.TryRemove(documentId.ProjectId) |> ignore
+            checkerProvider.Checker.ClearCache([projectOptions])
+        | _ ->
+            ()
+
+    [<Literal>]
+    let useMailboxProcessor =
+#if DEBUG
+        false
+#else
+        true
+#endif
+
+    let gate = obj()
+    let asyncLock f =
+        async {
+            try
+                Monitor.Enter(gate)
+                return! f
+            finally
+                Monitor.Exit(gate)
+        }
+
     let loop (agent: MailboxProcessor<FSharpProjectOptionsMessage>) =
         async {
             while true do
                 match! agent.Receive() with
                 | FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, ct, userOpName) ->
-                    if ct.IsCancellationRequested then
+                    try
+                        let! result = tryGetOptionsByDocument(document, ct, userOpName)
+                        reply.Reply result
+                    with
+                    | _ ->
                         reply.Reply None
-                    else
-                        try
-                            // For now, disallow miscellaneous workspace since we are using the hacky F# miscellaneous files project.
-                            if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
-                                reply.Reply None
-                            elif document.Project.IsFSharpMiscellaneousOrMetadata then
-                                let! options = tryComputeOptionsByFile document ct userOpName
-                                if ct.IsCancellationRequested then
-                                    reply.Reply None
-                                else
-                                    reply.Reply options
-                            else
-                                // We only care about the latest project in the workspace's solution.
-                                // We do this to prevent any possible cache thrashing in FCS.
-                                let project = document.Project.Solution.Workspace.CurrentSolution.GetProject(document.Project.Id)
-                                if not (isNull project) then
-                                    let! options = tryComputeOptions project ct
-                                    if ct.IsCancellationRequested then
-                                        reply.Reply None
-                                    else
-                                        reply.Reply options
-                                else
-                                    reply.Reply None
-                        with
-                        | _ ->
-                            reply.Reply None
 
                 | FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, ct) ->
-                    if ct.IsCancellationRequested then
+                    try
+                        let! result = tryGetOptionsByProject(project, ct)
+                        reply.Reply result
+                    with
+                    | _ ->
                         reply.Reply None
-                    else
-                        try
-                            if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.IsFSharpMiscellaneousOrMetadata then
-                                reply.Reply None
-                            else
-                                // We only care about the latest project in the workspace's solution.
-                                // We do this to prevent any possible cache thrashing in FCS.
-                                let project = project.Solution.Workspace.CurrentSolution.GetProject(project.Id)
-                                if not (isNull project) then
-                                    let! options = tryComputeOptions project ct
-                                    if ct.IsCancellationRequested then
-                                        reply.Reply None
-                                    else
-                                        reply.Reply options
-                                else
-                                    reply.Reply None
-                        with
-                        | _ ->
-                            reply.Reply None
 
                 | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
-                    match cache.TryRemove(projectId) with
-                    | true, (_, _, projectOptions) ->
-                        lastSuccessfulCompilations.TryRemove(projectId) |> ignore
-                        checkerProvider.Checker.ClearCache([projectOptions])
-                    | _ ->
-                        ()
-                    legacyProjectSites.TryRemove(projectId) |> ignore
+                    clearOptions projectId
+
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
-                    match singleFileCache.TryRemove(documentId) with
-                    | true, (_, _, projectOptions) ->
-                        lastSuccessfulCompilations.TryRemove(documentId.ProjectId) |> ignore
-                        checkerProvider.Checker.ClearCache([projectOptions])
-                    | _ ->
-                        ()
+                    clearSingleFileOptionsCache documentId
         }
 
     let agent = MailboxProcessor.Start((fun agent -> loop agent), cancellationToken = cancellationTokenSource.Token)
 
     member _.TryGetOptionsByProjectAsync(project, ct) =
-        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, ct))
+        if useMailboxProcessor then
+            agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, ct))
+        else
+            asyncLock (tryGetOptionsByProject(project, ct))
 
     member _.TryGetOptionsByDocumentAsync(document, ct, userOpName) =
-        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, ct, userOpName))
+        if useMailboxProcessor then
+            agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, ct, userOpName))
+        else
+            asyncLock (tryGetOptionsByDocument(document, ct, userOpName))
 
     member _.ClearOptionsByProjectId(projectId) =
-        agent.Post(FSharpProjectOptionsMessage.ClearOptions(projectId))
+        if useMailboxProcessor then
+            agent.Post(FSharpProjectOptionsMessage.ClearOptions(projectId))
+        else
+            Async.Start(asyncLock (async { clearOptions projectId }))
 
     member _.ClearSingleFileOptionsCache(documentId) =
-        agent.Post(FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId))
+        if useMailboxProcessor then
+            agent.Post(FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId))
+        else
+            Async.Start(asyncLock (async { clearSingleFileOptionsCache documentId }))
 
     member _.SetCpsCommandLineOptions(projectId, sourcePaths, options) =
         cpsCommandLineOptions.[projectId] <- (sourcePaths, options)

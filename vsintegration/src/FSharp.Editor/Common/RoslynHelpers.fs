@@ -104,37 +104,10 @@ module internal RoslynHelpers =
     //  2. if exception occurs then set result to Unchecked.defaultof<_>, i.e. swallow exceptions
     //     and hope that Roslyn copes with the null
     let StartAsyncAsTask (cancellationToken: CancellationToken) computation =
-        let tcs = new TaskCompletionSource<_>(TaskCreationOptions.None)
-        let barrier = VolatileBarrier()
-        let reg = cancellationToken.Register(fun _ -> if barrier.Proceed then tcs.TrySetCanceled(cancellationToken) |> ignore)
-        let task = tcs.Task
-        let disposeReg() = barrier.Stop(); if not task.IsCanceled then reg.Dispose()
-        Async.StartWithContinuations(
-                  async { do! Async.SwitchToThreadPool()
-                          return! computation }, 
-                  continuation=(fun result -> 
-                      disposeReg()
-                      tcs.TrySetResult(result) |> ignore
-                  ), 
-                  exceptionContinuation=(fun exn -> 
-                      disposeReg()
-                      match exn with 
-                      | :? OperationCanceledException -> 
-                          tcs.TrySetCanceled(cancellationToken)  |> ignore
-                      | exn ->
-                          System.Diagnostics.Trace.WriteLine("Visual F# Tools: exception swallowed and not passed to Roslyn: {0}", exn.Message)
-                          let res = Unchecked.defaultof<_>
-                          tcs.TrySetResult(res) |> ignore
-                  ),
-                  cancellationContinuation=(fun _oce -> 
-                      disposeReg()
-                      tcs.TrySetCanceled(cancellationToken) |> ignore
-                  ),
-                  cancellationToken=cancellationToken)
-        task
+        Async.StartImmediateAsTask(computation, cancellationToken=cancellationToken)
 
     let StartAsyncUnitAsTask cancellationToken (computation:Async<unit>) = 
-        StartAsyncAsTask cancellationToken computation  :> Task
+        StartAsyncAsTask cancellationToken computation :> Task
 
     let ConvertError(error: FSharpDiagnostic, location: Location) =
         // Normalize the error message into the same format that we will receive it from the compiler.
