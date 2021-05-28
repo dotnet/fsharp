@@ -101,8 +101,6 @@ module internal RoslynHelpers =
                 try
                     return! computation
                 with
-                | :? OperationCanceledException as ex ->
-                    return raise ex
                 | _ ->
                     return Unchecked.defaultof<_>
             }
