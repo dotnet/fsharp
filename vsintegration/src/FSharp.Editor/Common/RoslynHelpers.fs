@@ -99,12 +99,20 @@ module internal RoslynHelpers =
         member _.Proceed = not isStopped
         member _.Stop() = isStopped <- true
 
-    // This is like Async.StartAsTask, but
-    //  1. if cancellation occurs we explicitly associate the cancellation with cancellationToken
-    //  2. if exception occurs then set result to Unchecked.defaultof<_>, i.e. swallow exceptions
-    //     and hope that Roslyn copes with the null
+    // If exception occurs then return the result as Unchecked.defaultof<_>, i.e. swallow exceptions
+    // and hope that Roslyn copes with the null.
     let StartAsyncAsTask (cancellationToken: CancellationToken) computation =
-        Async.StartImmediateAsTask(computation, cancellationToken=cancellationToken)
+        let catchEx =
+            async {
+                try
+                    return! computation
+                with
+                | :? OperationCanceledException as ex ->
+                    return raise ex
+                | _ ->
+                    return Unchecked.defaultof<_>
+            }
+        Async.StartImmediateAsTask(catchEx, cancellationToken=cancellationToken)
 
     let StartAsyncUnitAsTask cancellationToken (computation:Async<unit>) = 
         StartAsyncAsTask cancellationToken computation :> Task
