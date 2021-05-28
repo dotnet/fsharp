@@ -93,12 +93,6 @@ module internal RoslynHelpers =
 
     let CollectTaggedText (list: List<_>) (t:TaggedText) = list.Add(RoslynTaggedText(roslynTag t.Tag, t.Text))
 
-    type VolatileBarrier() =
-        [<VolatileField>]
-        let mutable isStopped = false
-        member _.Proceed = not isStopped
-        member _.Stop() = isStopped <- true
-
     // If exception occurs then return the result as Unchecked.defaultof<_>, i.e. swallow exceptions
     // and hope that Roslyn copes with the null.
     let StartAsyncAsTask (cancellationToken: CancellationToken) computation =
