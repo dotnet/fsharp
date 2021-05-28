@@ -8,7 +8,6 @@ open System.Threading.Tasks
 open System.Diagnostics
 open System.Globalization
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.AsyncLazy
 
 /// This represents the thread-local state established as each task function runs as part of the build.
 ///
@@ -162,13 +161,8 @@ type NodeCode private () =
             return results.ToArray()
         }
 
-#if ORIGINAL_GRAPH_NODE
 type private AgentMessage<'T> =
-#if DEBUG
-    | GetValue of AsyncReplyChannel<Result<'T, Exception>> * CancellationToken * stackTrace: string
-#else
-    | GetValue of AsyncReplyChannel<Result<'T, Exception>> * CancellationToken
-#endif
+    | GetValue of AsyncReplyChannel<Result<'T, Exception>> * callerCancellationToken: CancellationToken
 
 type private AgentInstance<'T> = (MailboxProcessor<AgentMessage<'T>> * CancellationTokenSource)
 
@@ -176,7 +170,6 @@ type private AgentInstance<'T> = (MailboxProcessor<AgentMessage<'T>> * Cancellat
 type private AgentAction<'T> =
     | GetValue of AgentInstance<'T>
     | CachedValue of 'T
-#endif
 
 [<RequireQualifiedAccess>]
 module GraphNode =
@@ -197,62 +190,6 @@ module GraphNode =
         | None -> ()
 
 [<Sealed>]
-type GraphNode<'T>(computation: NodeCode<'T>) =
-        
-    let gate = obj()
-    let mutable computation = computation
-    let mutable asyncLazyOpt = ValueNone
-
-    [<DebuggerHidden>]
-    member _.GetValue() =
-        node {
-            let! ct = NodeCode.CancellationToken
-            let asyncLazy =
-                match asyncLazyOpt with
-                | ValueSome asyncLazy -> asyncLazy
-                | _ ->
-                    let asyncLazy =
-                        lock gate (fun () ->
-                            match asyncLazyOpt with
-                            | ValueSome asyncLazy -> asyncLazy
-                            | _ ->
-                                let captureComputation = computation
-                                let computeFunction = System.Func<_, _>(fun ct -> new Task<'T>((fun () -> NodeCode.RunImmediate(captureComputation, ct)), ct, TaskCreationOptions.None))
-                                let computeSyncFunction = System.Func<_, _>((fun ct -> NodeCode.RunImmediate(captureComputation, ct)))
-                                let asyncLazy = AsyncLazy<'T>(computeFunction, computeSyncFunction, cacheResult = true)
-                                asyncLazyOpt <- ValueSome asyncLazy
-                                computation <- Unchecked.defaultof<_> // null out computation as it's stored in AsyncLazy
-                                asyncLazy
-                        )
-                    asyncLazy
-            
-#if DEBUG
-            return asyncLazy.GetValue(ct)
-#else
-            return! asyncLazy.GetValueAsync(ct) |> NodeCode.AwaitTask
-#endif
-        }
-
-    [<DebuggerHidden>]
-    member this.TryGetValue() =
-        match asyncLazyOpt with
-        | ValueNone -> ValueNone
-        | ValueSome asyncLazy -> asyncLazy.TryGetValue()
-
-    [<DebuggerHidden>]
-    member this.HasValue =
-        match asyncLazyOpt with
-        | ValueNone -> false
-        | ValueSome asyncLazy -> asyncLazy.HasValue
-
-    [<DebuggerHidden>]
-    member this.IsComputing =
-        match asyncLazyOpt with
-        | ValueNone -> false
-        | ValueSome asyncLazy -> asyncLazy.IsComputing
-
-#if ORIGINAL_GRAPH_NODE
-[<Sealed>]
 type GraphNode<'T> (computation: NodeCode<'T>) =
 
     let gate = obj ()
@@ -261,30 +198,23 @@ type GraphNode<'T> (computation: NodeCode<'T>) =
     let mutable cachedResult = ValueNone
     let mutable cachedResultNode = ValueNone
 
-#if DEBUG
-    let stackTrace = Environment.StackTrace
-#endif
-
     let loop (agent: MailboxProcessor<AgentMessage<'T>>) =
         async {
             try
                 while true do
                     match! agent.Receive() with
-#if DEBUG
-                    | GetValue (replyChannel, ct, _stackTrace) ->
-#else
-                    | GetValue (replyChannel, ct) ->
-#endif
+                    | GetValue (replyChannel, callerCancellationToken) ->
+
                         Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
                         try
                             use _reg = 
                                 // When a cancellation has occured, notify the reply channel to let the requester stop waiting for a response.
-                                ct.Register (fun () -> 
+                                callerCancellationToken.Register (fun () -> 
                                     let ex = OperationCanceledException() :> exn
                                     replyChannel.Reply (Result.Error ex)
                                 )
 
-                            ct.ThrowIfCancellationRequested ()
+                            callerCancellationToken.ThrowIfCancellationRequested ()
 
                             match cachedResult with
                             | ValueSome result ->
@@ -293,9 +223,9 @@ type GraphNode<'T> (computation: NodeCode<'T>) =
                                 // This computation can only be canceled if the requestCount reaches zero.
                                 let! result = computation |> Async.AwaitNode
                                 cachedResult <- ValueSome result
-                                cachedResultNode <- ValueSome (Node(async { return result }))
+                                cachedResultNode <- ValueSome(node { return result })
                                 computation <- Unchecked.defaultof<_>
-                                if not ct.IsCancellationRequested then
+                                if not callerCancellationToken.IsCancellationRequested then
                                     replyChannel.Reply (Ok result)
                         with 
                         | ex ->
@@ -343,11 +273,7 @@ type GraphNode<'T> (computation: NodeCode<'T>) =
                     | AgentAction.GetValue(agent, cts) ->                       
                         try
                             let! ct = NodeCode.CancellationToken
-#if DEBUG
-                            let! res = agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct, stackTrace)) |> NodeCode.AwaitAsync
-#else
                             let! res = agent.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct)) |> NodeCode.AwaitAsync
-#endif
                             match res with
                             | Ok result -> return result
                             | Result.Error ex -> return raise ex
@@ -365,6 +291,4 @@ type GraphNode<'T> (computation: NodeCode<'T>) =
 
        member _.HasValue = cachedResult.IsSome
 
-       member _.RequestCount = requestCount
-
-#endif
+       member _.IsComputing = requestCount > 0
