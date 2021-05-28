@@ -106,6 +106,7 @@ module internal RoslynHelpers =
                 | :? OperationCanceledException ->
                     ts.TrySetCanceled() |> ignore
                 | _ ->
+                    System.Diagnostics.Trace.WriteLine("FSharp.Editor: exception swallowed and not passed to Roslyn: {0}", exn.Message)
                     ts.TrySetResult Unchecked.defaultof<_> |> ignore
             ),
             (fun _ -> ts.TrySetCanceled() |> ignore),
