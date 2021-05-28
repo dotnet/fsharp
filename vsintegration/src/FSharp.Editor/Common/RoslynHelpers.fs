@@ -100,15 +100,15 @@ module internal RoslynHelpers =
         let task = ts.Task
         Async.StartWithContinuations(
             computation,
-            (fun k -> ts.SetResult k),
+            (fun k -> ts.TrySetResult k |> ignore),
             (fun exn -> 
                 match exn with
                 | :? OperationCanceledException ->
-                    ts.SetCanceled()
+                    ts.TrySetCanceled() |> ignore
                 | _ ->
-                    ts.SetResult(Unchecked.defaultof<_>)
+                    ts.TrySetResult Unchecked.defaultof<_> |> ignore
             ),
-            (fun _ -> ts.SetCanceled()),
+            (fun _ -> ts.TrySetCanceled() |> ignore),
             cancellationToken)
         task
 
