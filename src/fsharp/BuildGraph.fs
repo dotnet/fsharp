@@ -232,7 +232,7 @@ type GraphNode<'T>(computation: NodeCode<'T>) =
 #if DEBUG
                 return asyncLazy.GetValue(ct)
 #else
-                return asyncLazy.GetValueAsync(ct) |> NodeCode.AwaitTask
+                return! asyncLazy.GetValueAsync(ct) |> NodeCode.AwaitTask
 #endif
             finally
                 Interlocked.Decrement(&requestCount) |> ignore
