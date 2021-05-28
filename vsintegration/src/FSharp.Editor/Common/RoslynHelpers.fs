@@ -96,15 +96,21 @@ module internal RoslynHelpers =
     // If exception occurs then return the result as Unchecked.defaultof<_>, i.e. swallow exceptions
     // and hope that Roslyn copes with the null.
     let StartAsyncAsTask (cancellationToken: CancellationToken) computation =
-        let catchEx =
-            async {
-                try
-                    return! computation
-                with
+        let ts = TaskCompletionSource<'T>()
+        let task = ts.Task
+        Async.StartWithContinuations(
+            computation,
+            (fun k -> ts.SetResult k),
+            (fun exn -> 
+                match exn with
+                | :? OperationCanceledException ->
+                    ts.SetCanceled()
                 | _ ->
-                    return Unchecked.defaultof<_>
-            }
-        Async.StartImmediateAsTask(catchEx, cancellationToken=cancellationToken)
+                    ts.SetResult(Unchecked.defaultof<_>)
+            ),
+            (fun _ -> ts.SetCanceled()),
+            cancellationToken)
+        task
 
     let StartAsyncUnitAsTask cancellationToken (computation:Async<unit>) = 
         StartAsyncAsTask cancellationToken computation :> Task
