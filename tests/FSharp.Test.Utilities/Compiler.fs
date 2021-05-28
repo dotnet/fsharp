@@ -102,7 +102,9 @@ module rec Compiler =
     let private getSource (src: TestType) : string =
         match src with
         | Text t -> t
-        | Path p -> FileSystem.OpenFileForReadShim(p).AsStream().ReadAllText()
+        | Path p ->
+            use stream = FileSystem.OpenFileForReadShim(p)
+            stream.ReadAllText()
 
     let private fsFromString (source: string) (kind: SourceKind) : FSharpCompilationSource =
         match source with

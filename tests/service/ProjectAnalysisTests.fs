@@ -5168,7 +5168,7 @@ let test2() = test()
 
 [<Test>]
 let ``Test project42 to ensure cached checked results are invalidated`` () =
-    let text2 = SourceText.ofString(FileSystem.OpenFileForReadShim(Project42.fileName2).AsStream().ReadAllText())
+    let text2 = SourceText.ofString(FileSystem.OpenFileForReadShim(Project42.fileName2).ReadAllText())
     let checkedFile2 = checker.ParseAndCheckFileInProject(Project42.fileName2, text2.GetHashCode(), text2, Project42.options) |> Async.RunSynchronously
     match checkedFile2 with
     | _, FSharpCheckFileAnswer.Succeeded(checkedFile2Results) ->
@@ -5431,7 +5431,7 @@ type UseTheThings(i:int) =
     //(snd symbolUses.[42]).Symbol.IsEffectivelySameAs((snd symbolUses.[37]).Symbol)
     //(snd symbolUses.[42]).Symbol.GetEffectivelySameAsHash()
     //(snd symbolUses.[37]).Symbol.GetEffectivelySameAsHash()
-    let lines = FileSystem.OpenFileForReadShim(fileName1).AsStream().ReadAllLines()
+    let lines = FileSystem.OpenFileForReadShim(fileName1).ReadAllLines()
     let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunSynchronously
     let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
     let expected =
@@ -5504,7 +5504,7 @@ type UseTheThings(i:int) =
     //(snd symbolUses.[42]).Symbol.IsEffectivelySameAs((snd symbolUses.[37]).Symbol)
     //(snd symbolUses.[42]).Symbol.GetEffectivelySameAsHash()
     //(snd symbolUses.[37]).Symbol.GetEffectivelySameAsHash()
-    let lines = FileSystem.OpenFileForReadShim(fileName1).AsStream().ReadAllLines()
+    let lines = FileSystem.OpenFileForReadShim(fileName1).ReadAllLines()
     let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunSynchronously
     let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
     let expected =
@@ -5580,7 +5580,7 @@ module M2 =
         |> function
             | _, FSharpCheckFileAnswer.Succeeded(res) -> res
             | _ -> failwithf "Parsing aborted unexpectedly..."
-    let lines = FileSystem.OpenFileForReadShim(fileName1).AsStream().ReadAllLines()
+    let lines = FileSystem.OpenFileForReadShim(fileName1).ReadAllLines()
     let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunSynchronously
     let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
     let expected =
