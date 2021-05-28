@@ -701,6 +701,12 @@ type AsyncLazy<'T> =
         request.Task
 
     [<DebuggerHidden>]
+    member this.IsComputing = this._computationActive
+
+    [<DebuggerHidden>]
+    member this.HasValue = this._cachedResult <> null
+
+    [<DebuggerHidden>]
     new(asynchronousComputeFunction, cacheResult) =
         AsyncLazy<'T>(asynchronousComputeFunction, null, cacheResult = cacheResult)
 

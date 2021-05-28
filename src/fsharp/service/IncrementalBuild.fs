@@ -273,14 +273,14 @@ type BoundModel private (tcConfig: TcConfig,
                 if enablePartialTypeChecking then
                     GraphNode(
                         node {
-                            match fullGraphNode.TryGetValue() with
-                            | ValueSome(tcInfo, _) -> return tcInfo
-                            | _ ->
-                                // Optimization so we have less of a chance to duplicate work.
-                                if fullGraphNode.RequestCount > 0 then
-                                    let! tcInfo, _ = fullGraphNode.GetValue()
-                                    return tcInfo
-                                else
+                            // Optimization so we have less of a chance to duplicate work.
+                            if fullGraphNode.IsComputing then
+                                let! tcInfo, _ = fullGraphNode.GetValue()
+                                return tcInfo
+                            else
+                                match fullGraphNode.TryGetValue() with
+                                | ValueSome(tcInfo, _) -> return tcInfo
+                                | _ ->
                                     match! this.TypeCheck(true) with
                                     | FullState(tcInfo, _) -> return tcInfo
                                     | PartialState(tcInfo) -> return tcInfo

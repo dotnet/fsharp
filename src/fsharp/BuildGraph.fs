@@ -202,7 +202,6 @@ type GraphNode<'T>(computation: NodeCode<'T>) =
     let gate = obj()
     let mutable computation = computation
     let mutable asyncLazyOpt = ValueNone
-    let mutable requestCount = 0
 
     [<DebuggerHidden>]
     member _.GetValue() =
@@ -227,15 +226,11 @@ type GraphNode<'T>(computation: NodeCode<'T>) =
                         )
                     asyncLazy
             
-            Interlocked.Increment(&requestCount) |> ignore
-            try
 #if DEBUG
-                return asyncLazy.GetValue(ct)
+            return asyncLazy.GetValue(ct)
 #else
-                return! asyncLazy.GetValueAsync(ct) |> NodeCode.AwaitTask
+            return! asyncLazy.GetValueAsync(ct) |> NodeCode.AwaitTask
 #endif
-            finally
-                Interlocked.Decrement(&requestCount) |> ignore
         }
 
     [<DebuggerHidden>]
@@ -245,9 +240,16 @@ type GraphNode<'T>(computation: NodeCode<'T>) =
         | ValueSome asyncLazy -> asyncLazy.TryGetValue()
 
     [<DebuggerHidden>]
-    member this.HasValue = this.TryGetValue().IsSome
+    member this.HasValue =
+        match asyncLazyOpt with
+        | ValueNone -> false
+        | ValueSome asyncLazy -> asyncLazy.HasValue
 
-    member this.RequestCount = requestCount
+    [<DebuggerHidden>]
+    member this.IsComputing =
+        match asyncLazyOpt with
+        | ValueNone -> false
+        | ValueSome asyncLazy -> asyncLazy.IsComputing
 
 #if ORIGINAL_GRAPH_NODE
 [<Sealed>]

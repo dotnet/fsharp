@@ -23,37 +23,10 @@ module BuildGraphTests =
     let ``Intialization of graph node should not have a computed value``() =
         let node = GraphNode(node { return 1 })
         Assert.shouldBeTrue(node.TryGetValue().IsNone)
+        Assert.shouldBeFalse(node.HasValue)
 
     [<Fact>]
-    let ``Intialization of graph node should have a request count of zero``() =
-        let node = GraphNode(node { return 1 })
-        Assert.shouldBe 0 node.RequestCount
-
-    [<Fact>]
-    let ``A request to get a value asynchronously should increase the request count by 1``() =
-        let resetEvent = new ManualResetEvent(false)
-        let resetEventInAsync = new ManualResetEvent(false)
-
-        let graphNode = 
-            GraphNode(node { 
-                resetEventInAsync.Set() |> ignore
-                let! _ = NodeCode.AwaitWaitHandle(resetEvent)
-                return 1 
-            })
-
-        let task =
-            node {
-                let! _ = graphNode.GetValue()
-                ()
-            } |> NodeCode.StartAsTask
-
-        resetEventInAsync.WaitOne() |> ignore
-        Assert.shouldBe 1 graphNode.RequestCount
-        resetEvent.Set() |> ignore
-        try task.Wait() with | _ -> ()
-
-    [<Fact>]
-    let ``Two requests to get a value asynchronously should increase the request count by 2``() =
+    let ``Two requests to get a value asynchronously should be successful``() =
         let resetEvent = new ManualResetEvent(false)
         let resetEventInAsync = new ManualResetEvent(false)
 
@@ -77,8 +50,7 @@ module BuildGraphTests =
             } |> NodeCode.StartAsTask
 
         resetEventInAsync.WaitOne() |> ignore
-        Thread.Sleep(100) // Give it just enough time so that two requests are waiting
-        Assert.shouldBe 2 graphNode.RequestCount
+        Thread.Sleep(1000) // Give it just enough time so that two requests are waiting
         resetEvent.Set() |> ignore
         try
             task1.Wait()

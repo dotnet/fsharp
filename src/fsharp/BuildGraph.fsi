@@ -82,4 +82,4 @@ type internal GraphNode<'T> =
 
     member HasValue: bool
 
-    member RequestCount: int
+    member IsComputing: bool

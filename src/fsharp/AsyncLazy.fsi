@@ -43,3 +43,7 @@ type AsyncLazy<'T> =
     member GetValue: CancellationToken -> 'T
 
     member GetValueAsync: CancellationToken -> Task<'T>
+
+    member IsComputing: bool
+
+    member HasValue: bool
