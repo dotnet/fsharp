@@ -19,13 +19,13 @@ module BuildGraphTests =
             return 1 
         }), WeakReference(o)
 
-    [<Fact(Skip = "Re-enable when a linux CI passes")>]
+    [<Fact>]
     let ``Intialization of graph node should not have a computed value``() =
         let node = GraphNode(node { return 1 })
         Assert.shouldBeTrue(node.TryGetValue().IsNone)
         Assert.shouldBeFalse(node.HasValue)
 
-    [<Fact(Skip = "Re-enable when a linux CI passes")>]
+    [<Fact>]
     let ``Two requests to get a value asynchronously should be successful``() =
         let resetEvent = new ManualResetEvent(false)
         let resetEventInAsync = new ManualResetEvent(false)
@@ -91,7 +91,7 @@ module BuildGraphTests =
         result
         |> Seq.iter (Assert.shouldBe 1)
 
-    [<Fact(Skip = "Re-enable when a linux CI passes")>]
+    [<Fact>]
     let ``A request to get a value asynchronously should have its computation cleaned up by the GC``() =
         let graphNode, weak = createNode ()
 
@@ -123,7 +123,7 @@ module BuildGraphTests =
 
         Assert.shouldBeFalse weak.IsAlive
 
-    [<Fact(Skip = "Re-enable when a linux CI passes")>]
+    [<Fact>]
     let ``A request can cancel``() =
         let graphNode = 
             GraphNode(node { 
@@ -149,7 +149,7 @@ module BuildGraphTests =
 
         Assert.shouldBeTrue(ex <> null)
 
-    [<Fact(Skip = "Re-enable when a linux CI passes")>]
+    [<Fact>]
     let ``A request can cancel 2``() =
         let resetEvent = new ManualResetEvent(false)
 
