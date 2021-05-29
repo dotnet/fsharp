@@ -2893,9 +2893,9 @@ and GenNewArraySimple cenv cgbuf eenv (elems, elemTy, m) sequel =
     let ilElemTy = GenType cenv.amap m eenv.tyenv elemTy
     let ilArrTy = mkILArr1DTy ilElemTy
 
-    if List.isEmpty elems && cenv.g.system_Array_tcref.ILTyconRawMetadata.Methods.FindByName "Empty" |> List.isEmpty |> not then
-        let emptyCallIns = mkNormalCall (mkILMethSpecInTy (cenv.g.ilg.typ_Array, ILCallingConv.Static, "Empty", [], mkILArr1DTy (mkILTyvarTy 0us), [ilElemTy]))
-        CG.EmitInstr cgbuf (pop 0) (Push [ilArrTy]) emptyCallIns
+    if List.isEmpty elems && cenv.g.isArrayEmptyAvailable then
+        mkNormalCall (mkILMethSpecInTy (cenv.g.ilg.typ_Array, ILCallingConv.Static, "Empty", [], mkILArr1DTy (mkILTyvarTy 0us), [ilElemTy]))
+        |> CG.EmitInstr cgbuf (pop 0) (Push [ilArrTy])
     else
         CG.EmitInstrs cgbuf (pop 0) (Push [ilArrTy]) [ (AI_ldc (DT_I4, ILConst.I4 (elems.Length))); I_newarr (ILArrayShape.SingleDimensional, ilElemTy) ]
         elems |> List.iteri (fun i e ->
