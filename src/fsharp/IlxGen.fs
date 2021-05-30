@@ -460,7 +460,7 @@ type PtrsOK =
 let GenReadOnlyAttributeIfNecessary (g: TcGlobals) ty =
     let add = isInByrefTy g ty && g.attrib_IsReadOnlyAttribute.TyconRef.CanDeref
     if add then
-        let attr = mkILCustomAttribute g.ilg (g.attrib_IsReadOnlyAttribute.TypeRef, [], [], [])
+        let attr = mkILCustomAttribute (g.attrib_IsReadOnlyAttribute.TypeRef, [], [], [])
         Some attr
     else
         None
@@ -2896,12 +2896,16 @@ and GenNewArraySimple cenv cgbuf eenv (elems, elemTy, m) sequel =
     let ilElemTy = GenType cenv.amap m eenv.tyenv elemTy
     let ilArrTy = mkILArr1DTy ilElemTy
 
-    CG.EmitInstrs cgbuf (pop 0) (Push [ilArrTy]) [ (AI_ldc (DT_I4, ILConst.I4 (elems.Length))); I_newarr (ILArrayShape.SingleDimensional, ilElemTy) ]
-    elems |> List.iteri (fun i e ->
-        CG.EmitInstrs cgbuf (pop 0) (Push [ilArrTy; cenv.g.ilg.typ_Int32]) [ AI_dup; (AI_ldc (DT_I4, ILConst.I4 i)) ]
-        GenExpr cenv cgbuf eenv SPSuppress e Continue
-        CG.EmitInstr cgbuf (pop 3) Push0 (I_stelem_any (ILArrayShape.SingleDimensional, ilElemTy)))
-
+    if List.isEmpty elems && cenv.g.isArrayEmptyAvailable then
+        mkNormalCall (mkILMethSpecInTy (cenv.g.ilg.typ_Array, ILCallingConv.Static, "Empty", [], mkILArr1DTy (mkILTyvarTy 0us), [ilElemTy]))
+        |> CG.EmitInstr cgbuf (pop 0) (Push [ilArrTy])
+    else
+        CG.EmitInstrs cgbuf (pop 0) (Push [ilArrTy]) [ (AI_ldc (DT_I4, ILConst.I4 (elems.Length))); I_newarr (ILArrayShape.SingleDimensional, ilElemTy) ]
+        elems |> List.iteri (fun i e ->
+            CG.EmitInstrs cgbuf (pop 0) (Push [ilArrTy; cenv.g.ilg.typ_Int32]) [ AI_dup; (AI_ldc (DT_I4, ILConst.I4 i)) ]
+            GenExpr cenv cgbuf eenv SPSuppress e Continue
+            CG.EmitInstr cgbuf (pop 3) Push0 (I_stelem_any (ILArrayShape.SingleDimensional, ilElemTy)))
+  
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenNewArray cenv cgbuf eenv (elems: Expr list, elemTy, m) sequel =
@@ -6846,7 +6850,7 @@ and GenAttr amap g eenv (Attrib(_, k, args, props, _, _, _)) =
              let mspec, _, _, _, _, _, _, _, _, _ = GetMethodSpecForMemberVal amap g (Option.get vref.MemberInfo) vref
              mspec
     let ilArgs = List.map2 (fun (AttribExpr(_, vexpr)) ty -> GenAttribArg amap g eenv vexpr ty) args mspec.FormalArgTypes
-    mkILCustomAttribMethRef g.ilg (mspec, ilArgs, props)
+    mkILCustomAttribMethRef (mspec, ilArgs, props)
 
 and GenAttrs cenv eenv attrs =
     List.map (GenAttr cenv.amap cenv.g eenv) attrs
@@ -6870,11 +6874,11 @@ and CreatePermissionSets cenv eenv (securityAttributes: Attrib list) =
         let tref = tcref.CompiledRepresentationForNamedType
         let ilattr = GenAttr cenv.amap g eenv attr
         let _, ilNamedArgs =
-            match TryDecodeILAttribute g tref (mkILCustomAttrs [ilattr]) with
+            match TryDecodeILAttribute tref (mkILCustomAttrs [ilattr]) with
             | Some(ae, na) -> ae, na
             | _ -> [], []
         let setArgs = ilNamedArgs |> List.map (fun (n, ilt, _, ilae) -> (n, ilt, ilae))
-        yield IL.mkPermissionSet g.ilg (secaction, [(tref, setArgs)])]
+        yield IL.mkPermissionSet (secaction, [(tref, setArgs)])]
 
 //--------------------------------------------------------------------------
 // Generate the set of modules for an assembly, and the declarations in each module
@@ -7392,7 +7396,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                 | Some memberInfo ->
                     match name, memberInfo.MemberFlags.MemberKind with
                     | ("Item" | "op_IndexedLookup"), (SynMemberKind.PropertyGet | SynMemberKind.PropertySet) when not (isNil (ArgInfosOfPropertyVal g vref.Deref)) ->
-                        Some( mkILCustomAttribute g.ilg (g.FindSysILTypeRef "System.Reflection.DefaultMemberAttribute", [g.ilg.typ_String], [ILAttribElem.String(Some name)], []) )
+                        Some( mkILCustomAttribute (g.FindSysILTypeRef "System.Reflection.DefaultMemberAttribute", [g.ilg.typ_String], [ILAttribElem.String(Some name)], []) )
                     | _ -> None)
             |> Option.toList
 
