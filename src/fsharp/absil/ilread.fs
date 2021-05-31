@@ -3915,7 +3915,6 @@ let createByteFileChunk opts fileName chunk =
 
 let createMemoryMapFile fileName =
     let stream = FileSystem.OpenFileForReadShim(fileName, useMemoryMappedFile = true)
-    let byteMem = stream.AsByteMemory()
 
     let safeHolder =
         { new obj() with
