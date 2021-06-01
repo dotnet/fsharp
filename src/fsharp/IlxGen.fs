@@ -891,10 +891,7 @@ and Mark =
     | Mark of ILCodeLabel
     member x.CodeLabel = (let (Mark lab) = x in lab)
 
-//--------------------------------------------------------------------------
-// We normally generate in the context of a "what to do next" continuation
-//--------------------------------------------------------------------------
-
+/// Represents "what to do next after we generate this expression"
 and sequel =
   | EndFilter
 
@@ -904,6 +901,9 @@ and sequel =
 
   /// Branch to the given mark
   | Br of Mark
+  
+  /// Execute the given comparison-then-branch instructions on the result of the expression
+  /// If the branch isn't taken then drop through.
   | CmpThenBrOrContinue of Pops * ILInstr list
 
   /// Continue and leave the value on the IL computation stack
@@ -1943,6 +1943,16 @@ type CodeGenBuffer(m: range,
 
     member cgbuf.SetMarkToHere (Mark lab) =
         cgbuf.SetCodeLabelToPC(lab, codebuf.Count)
+
+    member cgbuf.SetMarkToHereIfNecessary (inplabOpt: Mark option) =
+        match inplabOpt with
+        | None -> ()
+        | Some inplab -> cgbuf.SetMarkToHere inplab
+
+    member cgbuf.EmitBranchIfNecessary (inplabOpt: Mark option, target: Mark) =
+        match inplabOpt with
+        | None -> cgbuf.EmitInstr (pop 0, Push0, I_br target.CodeLabel)
+        | Some inplab -> cgbuf.SetMark(inplab, target)
 
     member cgbuf.SetStack s =
         stack <- s
@@ -5177,7 +5187,7 @@ and GenJoinPoint cenv cgbuf pos eenv ty m sequel =
 
 // Accumulate the decision graph as we go
 and GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequel contf =
-    let targetCounts = accTargetsOfDecisionTree tree [] |> List.countBy id |> Map.ofList
+    let targetCounts = accTargetsOfDecisionTree tree [] |> List.countBy id |> Dictionary.ofList
     GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv tree targets targetCounts repeatSP (IntMap.empty()) sequel (fun targetInfos ->
         let sortedTargetInfos =
             targetInfos
@@ -5198,10 +5208,6 @@ and GenPostponedDecisionTreeTargets cenv cgbuf targetInfos stackAtTargets sequel
         else
             GenPostponedDecisionTreeTargets cenv cgbuf rest stackAtTargets sequel contf
 
-and TryFindTargetInfo targetInfos n =
-    match IntMap.tryFind n targetInfos with
-    | Some (targetInfo, _) -> Some targetInfo
-    | None -> None
 
 /// When inplabOpt is None, we are assuming a branch or fallthrough to the current code location
 ///
@@ -5211,7 +5217,7 @@ and GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree
     CG.SetStack cgbuf stackAtTargets              // Set the expected initial stack.
     match tree with
     | TDBind(bind, rest) ->
-       match inplabOpt with Some inplab -> CG.SetMarkToHere cgbuf inplab | None -> ()
+       cgbuf.SetMarkToHereIfNecessary inplabOpt
        let startScope, endScope as scopeMarks = StartDelayedLocalScope "dtreeBind" cgbuf
        let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
        let sp = GenDebugPointForBind cenv cgbuf bind
@@ -5237,20 +5243,28 @@ and GetTarget (targets:_[]) n =
     if n >= targets.Length then failwith "GetTarget: target not found in decision tree"
     targets.[n]
 
-and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets (targetCounts: Map<int,int>) repeatSP targetInfos sequel =
+/// Generate a success node of a decision trww, binding the variables and going to the target
+/// If inplabOpt is present, this label must get set to the first logical place to execute.
+/// For example, if no variables get bound this can just be set to jump straight to the target.
+and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets (targetCounts: Dictionary<int,int>) repeatSP targetInfos sequel =
     let (TTarget(vs, successExpr, spTarget)) = GetTarget targets targetIdx
-    match TryFindTargetInfo targetInfos targetIdx with
-    | Some (_, targetMarkAfterBinds: Mark, eenvAtTarget, _, _, _, _, _, _, _) ->
+    match IntMap.tryFind targetIdx targetInfos with
+    | Some (targetInfo, isTargetPostponed) ->
+
+        let (_, targetMarkAfterBinds: Mark, eenvAtTarget, _, _, _, _, _, _, _) = targetInfo
+
+        // We have encountered this target before. See if we should generate it now
+        let targetCount = targetCounts.[targetIdx]
+        let generateTargetNow = isTargetPostponed && cenv.opts.localOptimizationsAreOn && targetCount = 1
+        targetCounts.[targetIdx] <- targetCount - 1
 
         // If not binding anything we can go directly to the targetMarkAfterBinds point
         // This is useful to avoid lots of branches e.g. in match A | B | C -> e
         // In this case each case will just go straight to "e"
         if isNil vs then
-            match inplabOpt with
-            | None -> CG.EmitInstr cgbuf (pop 0) Push0 (I_br targetMarkAfterBinds.CodeLabel)
-            | Some inplab -> CG.SetMark cgbuf inplab targetMarkAfterBinds
+            cgbuf.EmitBranchIfNecessary (inplabOpt, targetMarkAfterBinds)
         else
-            match inplabOpt with None -> () | Some inplab -> CG.SetMarkToHere cgbuf inplab
+            cgbuf.SetMarkToHereIfNecessary inplabOpt
             repeatSP()
 
             (vs, es) ||> List.iter2 (fun v e ->
@@ -5260,10 +5274,23 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
                 GenStoreVal cenv cgbuf eenvAtTarget v.Range v)
 
             CG.EmitInstr cgbuf (pop 0) Push0 (I_br targetMarkAfterBinds.CodeLabel)
+        
+        let genTargetInfoOpt =
+            if generateTargetNow then
+                // Here we are generating the target immediately
+                cgbuf.SetMarkToHereIfNecessary inplabOpt
+                Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
+            else
+                None
 
-        targetInfos, None
+        // Update the targetInfos
+        let isTargetStillPostponed = isTargetPostponed && not generateTargetNow
+        let targetInfos = IntMap.add targetIdx (targetInfo, isTargetStillPostponed) targetInfos
+        targetInfos, genTargetInfoOpt
 
     | None ->
+        // We have not encountered this target before. Set up the generation of the target, even if we're
+        // going to postpone it
 
         let targetMarkBeforeBinds = CG.GenerateDelayMark cgbuf "targetBeforeBinds"
         let targetMarkAfterBinds = CG.GenerateDelayMark cgbuf "targetAfterBinds"
@@ -5272,15 +5299,20 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         let eenvAtTarget = AllocStorageForBinds cenv cgbuf scopeMarks eenv binds
         let targetInfo = (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, binds, startScope, endScope)
 
+        let targetCount = targetCounts.[targetIdx]
+
         // In debug mode, postpone all decision tree targets to after the switching.
         // In release mode, if a target is the target of multiple incoming success nodes, postpone it to avoid 
         // making any backward branches
-        let isTargetPostponed =
-            not cenv.opts.localOptimizationsAreOn || 
-            not (targetCounts.ContainsKey targetIdx) || 
-            targetCounts.[targetIdx] <> 1
+        let generateTargetNow = cenv.opts.localOptimizationsAreOn && targetCount = 1
+        targetCounts.[targetIdx] <- targetCount - 1
+
         let genTargetInfoOpt =
-            if isTargetPostponed then
+            if generateTargetNow then
+                // Here we are generating the target immediately
+                cgbuf.SetMarkToHereIfNecessary inplabOpt
+                Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
+            else
                 // Here we are postponing the generation of the target.
                 // If not binding anything we can go directly to the targetMarkAfterBinds point.
                 if isNil vs then
@@ -5288,14 +5320,11 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
                     | None -> CG.EmitInstr cgbuf (pop 0) Push0 (I_br targetMarkAfterBinds.CodeLabel)
                     | Some inplab -> CG.SetMark cgbuf inplab targetMarkAfterBinds
                 else
-                    match inplabOpt with None -> () | Some inplab -> CG.SetMarkToHere cgbuf inplab
+                    cgbuf.SetMarkToHereIfNecessary inplabOpt
                     CG.EmitInstr cgbuf (pop 0) Push0 (I_br targetMarkBeforeBinds.CodeLabel)
                 None
-            else
-                // Here we are generating the target immediately
-                match inplabOpt with None -> () | Some inplab -> CG.SetMarkToHere cgbuf inplab
-                Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
 
+        let isTargetPostponed = not generateTargetNow
         let targetInfos = IntMap.add targetIdx (targetInfo, isTargetPostponed) targetInfos
         targetInfos, genTargetInfoOpt
 
@@ -5325,7 +5354,7 @@ and GenDecisionTreeTarget cenv cgbuf stackAtTargets (targetMarkBeforeBinds, targ
 and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defaultTargetOpt switchm targets targetCounts repeatSP targetInfos sequel contf =
     let g = cenv.g
     let m = e.Range
-    match inplabOpt with None -> () | Some inplab -> CG.SetMarkToHere cgbuf inplab
+    cgbuf.SetMarkToHereIfNecessary inplabOpt
 
     repeatSP()
     match cases with
