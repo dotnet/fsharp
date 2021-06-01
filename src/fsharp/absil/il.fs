@@ -95,8 +95,6 @@ let splitILTypeName (nm: string) =
         let s1, s2 = splitNameAt nm idx
         splitNamespace s1, s2
 
-let emptyStringArray = ([| |] : string[])
-
 // Duplicate of comment in import.fs:
 //   The type names that flow to the point include the "mangled" type names used for static parameters for provided types.
 //   For example,
@@ -111,7 +109,7 @@ let splitILTypeNameWithPossibleStaticArguments (nm: string) =
 
     let nsp, nm =
         match nm.LastIndexOf '.' with
-        | -1 -> emptyStringArray, nm
+        | -1 -> [| |], nm
         | idx ->
             let s1, s2 = splitNameAt nm idx
             splitNamespaceToArray s1, s2
