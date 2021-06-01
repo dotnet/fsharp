@@ -2399,7 +2399,14 @@ module BindingNormalization =
                     match longId with
                     // x.Member in member binding patterns.
                     | [thisId;memberId] -> NormalizeInstanceMemberBinding cenv memberFlags valSynData thisId memberId toolId vis typars args m rhsExpr
-                    | [memberId] -> NormalizeStaticMemberBinding cenv memberFlags valSynData memberId vis typars args m rhsExpr
+                    | [memberId] ->
+                        if memberFlags.IsInstance then
+                            // instance method without adhoc "this" argument
+                            errorR(Error(FSComp.SR.tcInstanceMemberRequiresTarget(), m))
+                            let thisId = ident ("_", m)
+                            NormalizeInstanceMemberBinding cenv memberFlags valSynData thisId memberId toolId vis typars args m rhsExpr
+                        else
+                            NormalizeStaticMemberBinding cenv memberFlags valSynData memberId vis typars args m rhsExpr
                     | _ -> NormalizedBindingPat(pat, rhsExpr, valSynData, typars)
 
             // Object constructors are normalized in TcLetrec
