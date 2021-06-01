@@ -5188,10 +5188,13 @@ and GenJoinPoint cenv cgbuf pos eenv ty m sequel =
 // Accumulate the decision graph as we go
 and GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequel contf =
     let targetCounts = accTargetsOfDecisionTree tree [] |> List.countBy id |> Dictionary.ofList
-    GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv tree targets targetCounts repeatSP (IntMap.empty()) sequel (fun targetInfos ->
+    let targetNext = ref 0 // used to make sure we generate the targets in-order, postponing if necessary
+    GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv tree targets (targetNext, targetCounts) repeatSP (IntMap.empty()) sequel (fun targetInfos ->
         let sortedTargetInfos =
             targetInfos
             |> Seq.sortBy (fun (KeyValue(targetIdx, _)) -> targetIdx)
+            |> Seq.filter (fun (KeyValue(_, (_, isTargetPostponed))) -> isTargetPostponed)
+            |> Seq.map (fun (KeyValue(_, (targetInfo, _))) -> targetInfo)
             |> List.ofSeq
         GenPostponedDecisionTreeTargets cenv cgbuf sortedTargetInfos stackAtTargets sequel contf
     )
@@ -5199,15 +5202,11 @@ and GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeat
 and GenPostponedDecisionTreeTargets cenv cgbuf targetInfos stackAtTargets sequel contf =
     match targetInfos with
     | [] -> contf Fake
-    | (KeyValue(_, (targetInfo, isTargetPostponed))) :: rest ->
-        if isTargetPostponed then
-            let eenvAtTarget, spExprAtTarget, exprAtTarget, sequelAtTarget = GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel
-            GenLinearExpr cenv cgbuf eenvAtTarget spExprAtTarget exprAtTarget sequelAtTarget true (fun Fake ->
-                GenPostponedDecisionTreeTargets cenv cgbuf rest stackAtTargets sequel contf
-            )
-        else
+    | targetInfo :: rest ->
+        let eenvAtTarget, spExprAtTarget, exprAtTarget, sequelAtTarget = GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel
+        GenLinearExpr cenv cgbuf eenvAtTarget spExprAtTarget exprAtTarget sequelAtTarget true (fun Fake ->
             GenPostponedDecisionTreeTargets cenv cgbuf rest stackAtTargets sequel contf
-
+        )
 
 /// When inplabOpt is None, we are assuming a branch or fallthrough to the current code location
 ///
@@ -5243,10 +5242,10 @@ and GetTarget (targets:_[]) n =
     if n >= targets.Length then failwith "GetTarget: target not found in decision tree"
     targets.[n]
 
-/// Generate a success node of a decision trww, binding the variables and going to the target
+/// Generate a success node of a decision tree, binding the variables and going to the target
 /// If inplabOpt is present, this label must get set to the first logical place to execute.
 /// For example, if no variables get bound this can just be set to jump straight to the target.
-and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets (targetCounts: Dictionary<int,int>) repeatSP targetInfos sequel =
+and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets (targetNext: int ref, targetCounts: Dictionary<int,int>) repeatSP targetInfos sequel =
     let (TTarget(vs, successExpr, spTarget)) = GetTarget targets targetIdx
     match IntMap.tryFind targetIdx targetInfos with
     | Some (targetInfo, isTargetPostponed) ->
@@ -5255,7 +5254,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
 
         // We have encountered this target before. See if we should generate it now
         let targetCount = targetCounts.[targetIdx]
-        let generateTargetNow = isTargetPostponed && cenv.opts.localOptimizationsAreOn && targetCount = 1
+        let generateTargetNow = isTargetPostponed && cenv.opts.localOptimizationsAreOn && targetCount = 1 && targetNext.Value = targetIdx
         targetCounts.[targetIdx] <- targetCount - 1
 
         // If not binding anything we can go directly to the targetMarkBeforeBinds point
@@ -5268,13 +5267,19 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
             repeatSP()
 
             (vs, es) ||> List.iter2 (fun v e ->
-                GenBindingRhs cenv cgbuf eenv SPSuppress v e
+
+                // Emit the expression
+                GenBindingRhs cenv cgbuf eenv SPSuppress v e)
+
+            vs |> List.rev |> List.iter (fun v ->
+                // Store the results
                 GenStoreVal cenv cgbuf eenvAtTarget v.Range v)
 
             CG.EmitInstr cgbuf (pop 0) Push0 (I_br targetMarkAfterBinds.CodeLabel)
         
         let genTargetInfoOpt =
             if generateTargetNow then
+                incr targetNext // generate the targets in-order only
                 Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
             else
                 None
@@ -5300,12 +5305,13 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         // In debug mode, postpone all decision tree targets to after the switching.
         // In release mode, if a target is the target of multiple incoming success nodes, postpone it to avoid 
         // making any backward branches
-        let generateTargetNow = cenv.opts.localOptimizationsAreOn && targetCount = 1
+        let generateTargetNow = cenv.opts.localOptimizationsAreOn && targetCount = 1 && targetNext.Value = targetIdx
         targetCounts.[targetIdx] <- targetCount - 1
 
         let genTargetInfoOpt =
             if generateTargetNow then
                 // Here we are generating the target immediately
+                incr targetNext // generate the targets in-order only
                 cgbuf.SetMarkToHereIfNecessary inplabOpt
                 Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
             else
@@ -5513,26 +5519,55 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
              | _ -> failwith "internal error: GenDecisionTreeTest during bool elim"
 
     | _ ->
-        let failure = CG.GenerateDelayMark cgbuf "testFailure"
         match tester with
-        | None ->
-            // generate the expression, then test it for "false"
-            GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, [ I_brcmp (BI_brfalse, failure.CodeLabel) ]))
+        | None _ ->
+            // Check if there is more logic in the decision tree for the failure branch
+            // (and no more logic for the success branch), for example
+            // when emitting the first part of 'expr1 || expr2'.
+            //
+            // If so, emit the failure logic, then came back and do the success target, then
+            // do any postponed failure target.
+            match successTree, failureTree with
+            | TDSuccess _, (TDBind _ | TDSwitch _) ->
+                
+                // OK, there is more logic in the decision tree on the failure branch
+                let success = CG.GenerateDelayMark cgbuf "testSuccess"
+                GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, [ I_brcmp (BI_brtrue, success.CodeLabel) ]))
+                GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv failureTree targets targetCounts repeatSP targetInfos sequel (fun targetInfos ->
+                    GenDecisionTreeAndTargetsInner cenv cgbuf (Some success) stackAtTargets eenv successTree targets targetCounts repeatSP targetInfos sequel contf
+                )
+
+            | _ ->
+
+                // Either we're not yet done with the success branch, or there is no more logic
+                // in the decision tree on the failure branch. Continue doing the success branch
+                // logic first.
+                let failure = CG.GenerateDelayMark cgbuf "testFailure"
+                GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, [ I_brcmp (BI_brfalse, failure.CodeLabel) ]))
+                GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv successTree targets targetCounts repeatSP targetInfos sequel (fun targetInfos ->
+                    GenDecisionTreeAndTargetsInner cenv cgbuf (Some failure) stackAtTargets eenv failureTree targets targetCounts repeatSP targetInfos sequel contf
+                )
 
         // Turn 'isdata' tests that branch into EI_brisdata tests
         | Some (_, _, Choice1Of2 (avoidHelpers, cuspec, idx)) ->
+            let failure = CG.GenerateDelayMark cgbuf "testFailure"
             GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, EraseUnions.mkBrIsData g.ilg false (avoidHelpers, cuspec, idx, failure.CodeLabel)))
 
+            GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv successTree targets targetCounts repeatSP targetInfos sequel (fun targetInfos ->
+                GenDecisionTreeAndTargetsInner cenv cgbuf (Some failure) stackAtTargets eenv failureTree targets targetCounts repeatSP targetInfos sequel contf
+            )
+
         | Some (pops, pushes, i) ->
+            let failure = CG.GenerateDelayMark cgbuf "testFailure"
             GenExpr cenv cgbuf eenv SPSuppress e Continue
             match i with
             | Choice1Of2 (avoidHelpers, cuspec, idx) -> CG.EmitInstrs cgbuf pops pushes (EraseUnions.mkIsData g.ilg (avoidHelpers, cuspec, idx))
             | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i
             CG.EmitInstr cgbuf (pop 1) Push0 (I_brcmp (BI_brfalse, failure.CodeLabel))
 
-        GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv successTree targets targetCounts repeatSP targetInfos sequel (fun targetInfos ->
-            GenDecisionTreeAndTargetsInner cenv cgbuf (Some failure) stackAtTargets eenv failureTree targets targetCounts repeatSP targetInfos sequel contf
-        )
+            GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv successTree targets targetCounts repeatSP targetInfos sequel (fun targetInfos ->
+                GenDecisionTreeAndTargetsInner cenv cgbuf (Some failure) stackAtTargets eenv failureTree targets targetCounts repeatSP targetInfos sequel contf
+            )
 
 /// Generate fixups for letrec bindings
 and GenLetRecFixup cenv cgbuf eenv (ilxCloSpec: IlxClosureSpec, e, ilField: ILFieldSpec, e2, _m) =
