@@ -1949,7 +1949,7 @@ type CodeGenBuffer(m: range,
         | None -> ()
         | Some inplab -> cgbuf.SetMarkToHere inplab
 
-    member cgbuf.EmitBranchIfNecessary (inplabOpt: Mark option, target: Mark) =
+    member cgbuf.SetMarkOrEmitBranchIfNecessary (inplabOpt: Mark option, target: Mark) =
         match inplabOpt with
         | None -> cgbuf.EmitInstr (pop 0, Push0, I_br target.CodeLabel)
         | Some inplab -> cgbuf.SetMark(inplab, target)
@@ -5251,25 +5251,23 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
     match IntMap.tryFind targetIdx targetInfos with
     | Some (targetInfo, isTargetPostponed) ->
 
-        let (_, targetMarkAfterBinds: Mark, eenvAtTarget, _, _, _, _, _, _, _) = targetInfo
+        let (targetMarkBeforeBinds, targetMarkAfterBinds: Mark, eenvAtTarget, _, _, _, _, _, _, _) = targetInfo
 
         // We have encountered this target before. See if we should generate it now
         let targetCount = targetCounts.[targetIdx]
         let generateTargetNow = isTargetPostponed && cenv.opts.localOptimizationsAreOn && targetCount = 1
         targetCounts.[targetIdx] <- targetCount - 1
 
-        // If not binding anything we can go directly to the targetMarkAfterBinds point
+        // If not binding anything we can go directly to the targetMarkBeforeBinds point
         // This is useful to avoid lots of branches e.g. in match A | B | C -> e
         // In this case each case will just go straight to "e"
         if isNil vs then
-            cgbuf.EmitBranchIfNecessary (inplabOpt, targetMarkAfterBinds)
+            cgbuf.SetMarkOrEmitBranchIfNecessary (inplabOpt, targetMarkBeforeBinds)
         else
             cgbuf.SetMarkToHereIfNecessary inplabOpt
             repeatSP()
 
             (vs, es) ||> List.iter2 (fun v e ->
-
-                // Emit the expression
                 GenBindingRhs cenv cgbuf eenv SPSuppress v e
                 GenStoreVal cenv cgbuf eenvAtTarget v.Range v)
 
@@ -5277,8 +5275,6 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         
         let genTargetInfoOpt =
             if generateTargetNow then
-                // Here we are generating the target immediately
-                cgbuf.SetMarkToHereIfNecessary inplabOpt
                 Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
             else
                 None
@@ -5314,14 +5310,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
                 Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
             else
                 // Here we are postponing the generation of the target.
-                // If not binding anything we can go directly to the targetMarkAfterBinds point.
-                if isNil vs then
-                    match inplabOpt with
-                    | None -> CG.EmitInstr cgbuf (pop 0) Push0 (I_br targetMarkAfterBinds.CodeLabel)
-                    | Some inplab -> CG.SetMark cgbuf inplab targetMarkAfterBinds
-                else
-                    cgbuf.SetMarkToHereIfNecessary inplabOpt
-                    CG.EmitInstr cgbuf (pop 0) Push0 (I_br targetMarkBeforeBinds.CodeLabel)
+                cgbuf.SetMarkOrEmitBranchIfNecessary (inplabOpt, targetMarkBeforeBinds)
                 None
 
         let isTargetPostponed = not generateTargetNow
