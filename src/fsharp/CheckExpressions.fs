@@ -2402,7 +2402,7 @@ module BindingNormalization =
                     | [memberId] ->
                         if memberFlags.IsInstance then
                             // instance method without adhoc "this" argument
-                            errorR(Error(FSComp.SR.tcInstanceMemberRequiresTarget(), m))
+                            errorR(Error(FSComp.SR.tcInstanceMemberRequiresTarget(), memberId.idRange))
                             let thisId = ident ("_", m)
                             NormalizeInstanceMemberBinding cenv memberFlags valSynData thisId memberId toolId vis typars args m rhsExpr
                         else
