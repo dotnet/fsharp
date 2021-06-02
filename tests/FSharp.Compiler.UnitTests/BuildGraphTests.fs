@@ -50,12 +50,12 @@ module BuildGraphTests =
             } |> NodeCode.StartAsTask
 
         resetEventInAsync.WaitOne() |> ignore
-        Thread.Sleep(1000) // Give it just enough time so that two requests are waiting
         resetEvent.Set() |> ignore
         try
-            task1.Wait()
-            task2.Wait()
+            task1.Wait(1000) |> ignore
+            task2.Wait() |> ignore
         with
+        | :? TimeoutException -> reraise()
         | _ -> ()
 
     [<Fact>]
@@ -163,7 +163,6 @@ module BuildGraphTests =
 
         let task =
             node {
-                do! NodeCode.Sleep(1000) // Some buffer time
                 cts.Cancel()
                 resetEvent.Set() |> ignore
             }
@@ -171,7 +170,7 @@ module BuildGraphTests =
 
         let ex =
             try
-                Async.RunSynchronously(graphNode.GetValue() |> Async.AwaitNode, cancellationToken = cts.Token)
+                NodeCode.RunImmediate(graphNode.GetValue(), ct = cts.Token)
                 |> ignore
                 failwith "Should have canceled"
             with
@@ -179,7 +178,7 @@ module BuildGraphTests =
                 ex
 
         Assert.shouldBeTrue(ex <> null)
-        try task.Wait() with | _ -> ()
+        try task.Wait(1000) |> ignore with | :? TimeoutException -> reraise() | _ -> ()
 
     [<Fact>]
     let ``Many requests to get a value asynchronously might evaluate the computation more than once even when some requests get canceled``() =
@@ -214,7 +213,6 @@ module BuildGraphTests =
                 NodeCode.StartAsTask(work)
                 |> tasks.Add
 
-        Thread.Sleep(1000) // Buffer some time
         cts.Cancel()
         resetEvent.Set() |> ignore
         NodeCode.RunImmediate(work)
@@ -226,7 +224,7 @@ module BuildGraphTests =
 
         tasks
         |> Seq.iter (fun x -> 
-            try x.Wait() with | _ -> ())
+            try x.Wait(1000) |> ignore with | :? TimeoutException -> reraise() | _ -> ())
 
     [<Fact>]
     let ``No-RetryCompute - Many requests to get a value asynchronously should only evaluate the computation once even when some requests get canceled``() =
@@ -261,7 +259,6 @@ module BuildGraphTests =
                 NodeCode.StartAsTask(work)
                 |> tasks.Add
 
-        Thread.Sleep(1000) // Buffer some time
         cts.Cancel()
         resetEvent.Set() |> ignore
         NodeCode.RunImmediate(work)
@@ -273,4 +270,4 @@ module BuildGraphTests =
 
         tasks
         |> Seq.iter (fun x -> 
-            try x.Wait() with | _ -> ())
+            try x.Wait(1000) |> ignore with | :? TimeoutException -> reraise() | _ -> ())
