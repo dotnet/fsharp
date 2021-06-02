@@ -11,10 +11,13 @@
     <OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
     <OtherFlags>$(OtherFlags) --define:PREVIEW</OtherFlags>
 
-    <!-- By default this will compile with the proto compiler -->
+    <!-- By default this project will compile with the proto compiler -->
+    <!-- Uncommenting this will build with a previous installed compiler  -->
+    <!--
     <FscToolPath>C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\CommonExtensions\Microsoft\FSharp</FscToolPath>
     <FscToolExe>fsc.exe</FscToolExe>
     <DotnetFscCompilerPath></DotnetFscCompilerPath>
+    -->
   </PropertyGroup>
 
   <ItemGroup>
