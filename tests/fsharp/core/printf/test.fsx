@@ -137,7 +137,7 @@ let _ = test "cewoui2B" (lazy(sprintf "%X" 0xffffffff)) "FFFFFFFF"
 let _ = test "cewoui2N" (lazy(sprintf "%X" (System.Int32.MinValue+1))) "80000001"
 let _ = test "cewoui2M" (lazy(sprintf "%X" System.Int32.MaxValue)) "7FFFFFFF"
 let _ = test "cewoui2," (lazy(sprintf "%X" System.UInt64.MaxValue)) "FFFFFFFFFFFFFFFF"
-let _ = test "cewoui2." (lazy(sprintf "%X" System.Int64.MinValue)) "FFFFFFFFFFFFFFFF"
+let _ = test "cewoui2." (lazy(sprintf "%X" System.Int64.MinValue)) "8000000000000000"
 
 let _ = test "cewou44a" (lazy(sprintf "%u" 0)) "0"
 let _ = test "cewou44b" (lazy(sprintf "%u" 5)) "5"
