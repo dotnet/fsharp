@@ -23,7 +23,7 @@ type WpfNavigableTextRunViewElementFactory
     ) =
     let styles = Microsoft.VisualStudio.FSharp.UIResources.NavStyles()
     interface IViewElementFactory with
-        override __.CreateViewElement<'TView when 'TView: not struct>(textView:ITextView, model:obj) : 'TView =
+        override _.CreateViewElement<'TView when 'TView: not struct>(textView:ITextView, model:obj) : 'TView =
             if not (model :? NavigableTextRun) || typeof<'TView> <> typeof<UIElement> then
                 failwith <| sprintf "Invalid type conversion.  Supported conversion is `%s` to `%s`." typeof<NavigableTextRun>.Name typeof<UIElement>.Name
 

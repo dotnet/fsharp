@@ -36,13 +36,15 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
     do
         miscFilesWorkspace.DocumentOpened.Add(fun args ->
             let document = args.Document
+
             if document.Project.Language = FSharpConstants.FSharpLanguageName && workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath).Length = 0 then
                 files.[document.FilePath] <- createProjectContext document.FilePath
         )
 
         workspace.DocumentOpened.Add(fun args ->
             let document = args.Document
-            if document.Project.Language = FSharpConstants.FSharpLanguageName && document.Project.Name <> FSharpConstants.FSharpMiscellaneousFilesName then
+            if document.Project.Language = FSharpConstants.FSharpLanguageName && 
+               not document.Project.IsFSharpMiscellaneousOrMetadata then
                 match files.TryRemove(document.FilePath) with
                 | true, projectContext ->
                     optionsManager.ClearSingleFileOptionsCache(document.Id)
@@ -52,11 +54,13 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
 
         workspace.DocumentClosed.Add(fun args ->
             let document = args.Document
-            match files.TryRemove(document.FilePath) with
-            | true, projectContext ->
-                optionsManager.ClearSingleFileOptionsCache(document.Id)
-                projectContext.Dispose()
-            | _ -> ()
+            if document.Project.Language = FSharpConstants.FSharpLanguageName && 
+               document.Project.IsFSharpMiscellaneousOrMetadata then
+                match files.TryRemove(document.FilePath) with
+                | true, projectContext ->
+                    optionsManager.ClearSingleFileOptionsCache(document.Id)
+                    projectContext.Dispose()
+                | _ -> ()
         )
 
         do
@@ -64,23 +68,23 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
 
     interface IVsRunningDocTableEvents with
 
-        member __.OnAfterAttributeChange(_, _) = VSConstants.E_NOTIMPL
+        member _.OnAfterAttributeChange(_, _) = VSConstants.E_NOTIMPL
 
-        member __.OnAfterDocumentWindowHide(_, _) = VSConstants.E_NOTIMPL
+        member _.OnAfterDocumentWindowHide(_, _) = VSConstants.E_NOTIMPL
 
-        member __.OnAfterFirstDocumentLock(_, _, _, _) = VSConstants.E_NOTIMPL
+        member _.OnAfterFirstDocumentLock(_, _, _, _) = VSConstants.E_NOTIMPL
 
-        member __.OnAfterSave(_) = VSConstants.E_NOTIMPL
+        member _.OnAfterSave(_) = VSConstants.E_NOTIMPL
 
-        member __.OnBeforeDocumentWindowShow(_, _, _) = VSConstants.E_NOTIMPL
+        member _.OnBeforeDocumentWindowShow(_, _, _) = VSConstants.E_NOTIMPL
 
-        member __.OnBeforeLastDocumentUnlock(_, _, _, _) = VSConstants.E_NOTIMPL
+        member _.OnBeforeLastDocumentUnlock(_, _, _, _) = VSConstants.E_NOTIMPL
 
     interface IVsRunningDocTableEvents2 with
 
-        member __.OnAfterAttributeChange(_, _) = VSConstants.E_NOTIMPL
+        member _.OnAfterAttributeChange(_, _) = VSConstants.E_NOTIMPL
 
-        member __.OnAfterAttributeChangeEx(_, grfAttribs, _, _, pszMkDocumentOld, _, _, pszMkDocumentNew) = 
+        member _.OnAfterAttributeChangeEx(_, grfAttribs, _, _, pszMkDocumentOld, _, _, pszMkDocumentNew) = 
             // Handles renaming of a misc file
             if (grfAttribs &&& (uint32 __VSRDTATTRIB.RDTA_MkDocument)) <> 0u && files.ContainsKey(pszMkDocumentOld) then
                 match files.TryRemove(pszMkDocumentOld) with
@@ -101,12 +105,12 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
                 | _ -> ()
             VSConstants.S_OK
 
-        member __.OnAfterDocumentWindowHide(_, _) = VSConstants.E_NOTIMPL
+        member _.OnAfterDocumentWindowHide(_, _) = VSConstants.E_NOTIMPL
 
-        member __.OnAfterFirstDocumentLock(_, _, _, _) = VSConstants.E_NOTIMPL
+        member _.OnAfterFirstDocumentLock(_, _, _, _) = VSConstants.E_NOTIMPL
 
-        member __.OnAfterSave(_) = VSConstants.E_NOTIMPL
+        member _.OnAfterSave(_) = VSConstants.E_NOTIMPL
 
-        member __.OnBeforeDocumentWindowShow(_, _, _) = VSConstants.E_NOTIMPL
+        member _.OnBeforeDocumentWindowShow(_, _, _) = VSConstants.E_NOTIMPL
 
-        member __.OnBeforeLastDocumentUnlock(_, _, _, _) = VSConstants.E_NOTIMPL
+        member _.OnBeforeLastDocumentUnlock(_, _, _, _) = VSConstants.E_NOTIMPL

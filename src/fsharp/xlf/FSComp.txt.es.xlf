@@ -17,6 +17,16 @@
         <target state="translated">La característica "{0}" requiere la biblioteca de F# para la versión de lenguaje {1} o superior.</target>
         <note />
       </trans-unit>
+      <trans-unit id="containerDeprecated">
+        <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
+        <target state="translated">El elemento "AssemblyKeyNameAttribute" está en desuso. Use "AssemblyKeyFileAttribute" en su lugar.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="containerSigningUnsupportedOnThisPlatform">
+        <source>Key container signing is not supported on this platform.</source>
+        <target state="translated">La firma del contenedor de claves no se admite en esta plataforma.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">Sobrecargas disponibles:\n{0}</target>
@@ -94,7 +104,7 @@
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
-        <target state="new">more types support units of measure</target>
+        <target state="translated">más tipos admiten las unidades de medida</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
@@ -142,6 +152,11 @@
         <target state="translated">administración de paquetes</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePrintfBinaryFormat">
+        <source>binary formatting for integers</source>
+        <target state="new">binary formatting for integers</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
         <target state="translated">relajación de espacio en blanco</target>
@@ -155,6 +170,11 @@
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolación de cadena</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStructActivePattern">
+        <source>struct representation for active patterns</source>
+        <target state="new">struct representation for active patterns</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -237,6 +257,11 @@
         <target state="translated">El encabezado de los recursos que comienza en el desplazamiento {0} está mal formado.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAllSigs">
+        <source>Print the inferred interfaces of all compilation files to associated signature files</source>
+        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Mostrar los valores permitidos para la versión de idioma, especificar la versión de idioma como "latest" "preview"</target>
@@ -254,7 +279,12 @@
       </trans-unit>
       <trans-unit id="optsVersion">
         <source>Display compiler version banner and exit</source>
-        <target state="new">Display compiler version banner and exit</target>
+        <target state="translated">Mostrar el banner de versión del compilador y salir</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsWin32icon">
+        <source>Specify a Win32 icon file (.ico)</source>
+        <target state="new">Specify a Win32 icon file (.ico)</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -289,7 +319,7 @@
       </trans-unit>
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
+        <target state="translated">Token inesperado en la definición de tipo. Se esperaba "=" después del tipo "{0}".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -310,6 +340,21 @@
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
         <source>#i is not supported by the registered PackageManagers</source>
         <target state="translated">Los elementos PackageManager registrados no admiten #i</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDetermined">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
+        <target state="translated">No se pudo determinar el SDK de .NET para este script. Si el script está en un directorio que usa una instancia de "global.json", asegúrese de que el SDK de .NET pertinente esté instalado. La salida de "{0} --version" en el directorio "{1}" era "{2}", con el código de salida "{3}".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedNoHost">
+        <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
+        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedUnexpected">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
+        <target state="translated">No se pudo determinar el SDK de .NET para este script. Si el script está en un directorio que usa una instancia de "global.json", asegúrese de que el SDK de .NET pertinente esté instalado. Error inesperado: "{0}".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -365,6 +410,11 @@
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">No se puede combinar use! con and!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
+        <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
+        <target state="translated">Una declaración [&lt;Literal&gt;] no puede usar un modelo activo para su identificador</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
@@ -514,7 +564,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="new">All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
+        <target state="translated">Todas las ramas de una expresión de coincidencia de patrón deben devolver valores del mismo tipo. La primera rama devolvió un valor de tipo "{0}", pero esta rama devolvió un valor de tipo "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -2729,7 +2779,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
         <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
-        <target state="translated">Solo se admiten unidades de medida en los tipos float, float32, decimal y de entero firmado.</target>
+        <target state="translated">Las unidades de medida solo se admiten en los tipos float, float32, decimal y de entero.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">
@@ -2753,8 +2803,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMemberKindPropertyGetSetNotExpected">
-        <source>MemberKind.PropertyGetSet only expected in parse trees</source>
-        <target state="translated">MemberKind.PropertyGetSet se espera solo en árboles de análisis.</target>
+        <source>SynMemberKind.PropertyGetSet only expected in parse trees</source>
+        <target state="translated">SynMemberKind.PropertyGetSet se espera solo en árboles de análisis.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainValues">
@@ -6339,7 +6389,7 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeZip">
         <source>{0} var in collection</source>
-        <target state="translated">Variable {0} de la colección</target>
+        <target state="translated">{0} var in collection</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBinaryOperatorRequiresVariable">

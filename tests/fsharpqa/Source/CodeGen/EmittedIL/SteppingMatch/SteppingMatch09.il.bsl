@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly SteppingMatch09
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.SteppingMatch09
 {
-  // Offset: 0x00000000 Length: 0x00000318
+  // Offset: 0x00000000 Length: 0x0000030C
 }
 .mresource public FSharpOptimizationData.SteppingMatch09
 {
-  // Offset: 0x00000320 Length: 0x000000EB
+  // Offset: 0x00000310 Length: 0x000000EB
 }
 .module SteppingMatch09.dll
-// MVID: {59B19213-4935-D6AC-A745-03831392B159}
+// MVID: {5FCFFD1E-4935-D6AC-A745-03831EFDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00390000
+// Image base: 0x05580000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -54,6 +54,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit GenericInner@15
          extends [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc
   {
+    .field static assembly initonly class SteppingMatch09/GenericInner@15 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -80,6 +81,18 @@
       IL_0006:  box        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!T>,int32>
       IL_000b:  ret
     } // end of method GenericInner@15::Specialize
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void SteppingMatch09/GenericInner@15::.ctor()
+      IL_0005:  stsfld     class SteppingMatch09/GenericInner@15 SteppingMatch09/GenericInner@15::@_instance
+      IL_000a:  ret
+    } // end of method GenericInner@15::.cctor
 
   } // end of class GenericInner@15
 
@@ -112,7 +125,7 @@
       .maxstack  6
       .locals init ([0] class SteppingMatch09/GenericInner@15 V_0)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 16,16 : 6,21 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SteppingMatch\\SteppingMatch09.fs'
+      .line 16,16 : 6,21 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\SteppingMatch\\SteppingMatch09.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldfld      class SteppingMatch09/GenericInner@15 class SteppingMatch09/GenericInner@15T<!T>::self0@
       IL_0006:  stloc.0
@@ -138,6 +151,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit NonGenericInner@25
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,int32>
   {
+    .field static assembly initonly class SteppingMatch09/NonGenericInner@25 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -172,6 +186,16 @@
       IL_000e:  ldc.i4.2
       IL_000f:  ret
     } // end of method NonGenericInner@25::Invoke
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void SteppingMatch09/NonGenericInner@25::.ctor()
+      IL_0005:  stsfld     class SteppingMatch09/NonGenericInner@25 SteppingMatch09/NonGenericInner@25::@_instance
+      IL_000a:  ret
+    } // end of method NonGenericInner@25::.cctor
 
   } // end of class NonGenericInner@25
 
@@ -260,7 +284,7 @@
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc GenericInner,
              [1] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> V_1)
     .line 100001,100001 : 0,0 ''
-    IL_0000:  newobj     instance void SteppingMatch09/GenericInner@15::.ctor()
+    IL_0000:  ldsfld     class SteppingMatch09/GenericInner@15 SteppingMatch09/GenericInner@15::@_instance
     IL_0005:  stloc.0
     .line 20,20 : 3,20 ''
     IL_0006:  ldloc.0
@@ -280,7 +304,7 @@
     .maxstack  4
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,int32> NonGenericInner)
     .line 100001,100001 : 0,0 ''
-    IL_0000:  newobj     instance void SteppingMatch09/NonGenericInner@25::.ctor()
+    IL_0000:  ldsfld     class SteppingMatch09/NonGenericInner@25 SteppingMatch09/NonGenericInner@25::@_instance
     IL_0005:  stloc.0
     .line 29,29 : 3,23 ''
     IL_0006:  ldloc.0

@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.CodeAnalysis
 
 open System.Threading
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 
 /// Represents the capability to schedule work in the compiler service operations queue for the compilation thread
 type internal IReactorOperations = 
@@ -28,7 +28,8 @@ type internal Reactor =
 
     /// Set the background building function, which is called repeatedly
     /// until it returns 'false'.  If None then no background operation is used.
-    member SetBackgroundOp : ( (* userOpName:*) string * (* opName: *) string * (* opArg: *) string *  (CompilationThreadToken -> CancellationToken -> bool)) option -> unit
+    /// The operation is an Eventually which can be run in time slices.
+    member SetBackgroundOp : ( (* userOpName:*) string * (* opName: *) string * (* opArg: *) string * (CompilationThreadToken -> Eventually<unit>)) option -> unit
 
     /// Cancel any work being don by the background building function.
     member CancelBackgroundOp : unit -> unit

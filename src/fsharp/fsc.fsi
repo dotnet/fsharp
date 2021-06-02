@@ -2,17 +2,15 @@
 
 module internal FSharp.Compiler.Driver 
 
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
-open FSharp.Compiler.CheckExpressions
-open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -22,49 +20,29 @@ type ErrorLoggerProvider =
     new : unit -> ErrorLoggerProvider
     abstract CreateErrorLoggerUpToMaxErrors : tcConfigBuilder : TcConfigBuilder * exiter : Exiter -> ErrorLogger
 
-type StrongNameSigningInfo 
+/// The default ErrorLoggerProvider implementation, reporting messages to the Console up to the maxerrors maximum
+type ConsoleLoggerProvider = 
+    new : unit -> ConsoleLoggerProvider
+    inherit ErrorLoggerProvider
 
-val EncodeInterfaceData: tcConfig:TcConfig * tcGlobals:TcGlobals * exportRemapping:Remap * generatedCcu: CcuThunk * outfile: string * isIncrementalBuild: bool -> ILAttribute list * ILResource list
-
-val ValidateKeySigningAttributes : tcConfig:TcConfig * tcGlobals:TcGlobals * TopAttribs -> StrongNameSigningInfo
-
-val GetStrongNameSigner : StrongNameSigningInfo -> ILStrongNameSigner option
-
-/// Process the given set of command line arguments
-val internal ProcessCommandLineFlags : TcConfigBuilder * setProcessThreadLocals:(TcConfigBuilder -> unit) * lcidFromCodePage : int option * argv:string[] -> string list
-
-//---------------------------------------------------------------------------
-// The entry point used by fsc.exe
-
-val typecheckAndCompile : 
-    ctok: CompilationThreadToken *
-    argv : string[] * 
-    legacyReferenceResolver: ReferenceResolver.Resolver * 
-    bannerAlreadyPrinted : bool * 
-    reduceMemoryUsage: ReduceMemoryFlag * 
-    defaultCopyFSharpCore: CopyFSharpCoreFlag * 
-    exiter : Exiter *
-    loggerProvider: ErrorLoggerProvider *
-    tcImportsCapture: (TcImports -> unit) option *
-    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
-      -> unit
-
-val mainCompile : 
+/// The main (non-incremental) compilation entry point used by fsc.exe
+val mainCompile: 
     ctok: CompilationThreadToken *
     argv: string[] * 
-    legacyReferenceResolver: ReferenceResolver.Resolver * 
+    legacyReferenceResolver: LegacyReferenceResolver * 
     bannerAlreadyPrinted: bool * 
     reduceMemoryUsage: ReduceMemoryFlag * 
     defaultCopyFSharpCore: CopyFSharpCoreFlag * 
     exiter: Exiter * 
     loggerProvider: ErrorLoggerProvider * 
     tcImportsCapture: (TcImports -> unit) option *
-    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
+    dynamicAssemblyCreator: (TcConfig * TcGlobals * string * ILModuleDef -> unit) option
       -> unit
 
-val compileOfAst : 
+/// An additional compilation entry point used by FSharp.Compiler.Service taking syntax trees as input
+val compileOfAst: 
     ctok: CompilationThreadToken *
-    legacyReferenceResolver: ReferenceResolver.Resolver * 
+    legacyReferenceResolver: LegacyReferenceResolver * 
     reduceMemoryUsage: ReduceMemoryFlag * 
     assemblyName:string * 
     target:CompilerTarget * 
@@ -76,7 +54,7 @@ val compileOfAst :
     loggerProvider: ErrorLoggerProvider * 
     inputs:ParsedInput list *
     tcImportsCapture : (TcImports -> unit) option *
-    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
+    dynamicAssemblyCreator: (TcConfig * TcGlobals * string * ILModuleDef -> unit) option
       -> unit
 
 /// Part of LegacyHostedCompilerForTesting
@@ -86,14 +64,3 @@ type InProcErrorLoggerProvider =
     member CapturedWarnings : Diagnostic[]
     member CapturedErrors : Diagnostic[]
 
-/// The default ErrorLogger implementation, reporting messages to the Console up to the maxerrors maximum
-type ConsoleLoggerProvider = 
-    new : unit -> ConsoleLoggerProvider
-    inherit ErrorLoggerProvider
-
-// For unit testing
-module internal MainModuleBuilder =
-    
-    val fileVersion: findStringAttr: (string -> string option) -> assemblyVersion: ILVersionInfo -> ILVersionInfo
-    val productVersion: findStringAttr: (string -> string option) -> fileVersion: ILVersionInfo -> string
-    val productVersionToILVersionInfo: string -> ILVersionInfo

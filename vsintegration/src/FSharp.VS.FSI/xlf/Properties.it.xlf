@@ -12,6 +12,11 @@
         <target state="translated">Se impostato su true, e il computer corrente è a 64 bit, eseguire F# Interactive come processo a 64 bit. In caso contrario, F# Interactive è un processo a 32 bit.</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpInteractiveMisc">
+        <source>Misc</source>
+        <target state="translated">Varie</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
         <source>F# Interactive options</source>
         <target state="translated">Opzioni di F# Interactive</target>
@@ -20,11 +25,6 @@
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
         <target state="translated">Argomenti aggiuntivi della riga di comando passati all'eseguibile F# Interactive da Visual Studio. Se è abilitato il debug di script, i flag di ottimizzazione e debug vengono ignorati.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpInteractiveMisc">
-        <source>Misc</source>
-        <target state="translated">Varie</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreview">
@@ -65,6 +65,16 @@
       <trans-unit id="FSharpInteractiveDebugging">
         <source>Debugging</source>
         <target state="translated">Debug</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCore">
+        <source>Use .NET Core Scripting</source>
+        <target state="translated">Usa script di .NET Core</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCoreDescr">
+        <source>Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</source>
+        <target state="translated">Abilita la modifica e l'esecuzione di script .NET Core per tutti gli script F# e la finestra F# Interactive</target>
         <note />
       </trans-unit>
     </body>

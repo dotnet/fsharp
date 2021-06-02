@@ -12,6 +12,11 @@
         <target state="translated">如果設為 true，並且目前電腦為 64 位元，則 F# 互動會當做 64 位元處理序來執行 (反之，F# 互動則為 32 位元處理序)。</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpInteractiveMisc">
+        <source>Misc</source>
+        <target state="translated">其他</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
         <source>F# Interactive options</source>
         <target state="translated">F# 互動選項</target>
@@ -20,11 +25,6 @@
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
         <target state="translated">由 Visual Studio 額外傳遞給 F# 互動可執行檔的命令列引數。(若啟用指令碼偵錯，則會忽略最佳化及偵錯旗標)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpInteractiveMisc">
-        <source>Misc</source>
-        <target state="translated">其他</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreview">
@@ -65,6 +65,16 @@
       <trans-unit id="FSharpInteractiveDebugging">
         <source>Debugging</source>
         <target state="translated">偵錯</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCore">
+        <source>Use .NET Core Scripting</source>
+        <target state="translated">使用 .NET Core 指令碼</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCoreDescr">
+        <source>Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</source>
+        <target state="translated">為所有 F# 指令碼及 F# 互動視窗啟用 .NET Core 指令碼編輯與執行</target>
         <note />
       </trans-unit>
     </body>

@@ -4,7 +4,17 @@
     <body>
       <trans-unit id="AddMissingEqualsToTypeDefinition">
         <source>Add missing '=' to type definition</source>
-        <target state="new">Add missing '=' to type definition</target>
+        <target state="translated">Adicionar o '=' ausente à definição de tipo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddMissingFunKeyword">
+        <source>Add missing 'fun' keyword</source>
+        <target state="translated">Adicionar palavra-chave 'fun' ausente</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddMissingInstanceMemberParameter">
+        <source>Add missing instance member parameter</source>
+        <target state="new">Add missing instance member parameter</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewKeyword">
@@ -12,19 +22,29 @@
         <target state="translated">Adicionar a palavra-chave 'new'</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddTypeAnnotation">
+        <source>Add type annotation</source>
+        <target state="translated">Adicionar uma anotação de tipo</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
-        <target state="new">Convert to Anonymous Record</target>
+        <target state="translated">Converter em Registro Anônimo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToNotEqualsEqualityExpression">
+        <source>Use '&lt;&gt;' for inequality check</source>
+        <target state="translated">Usar '&lt;&gt;' para a verificação de desigualdade</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
         <source>Use '=' for equality check</source>
-        <target state="new">Use '=' for equality check</target>
+        <target state="translated">Usar '=' para verificação de igualdade</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangePrefixNegationToInfixSubtraction">
         <source>Use subtraction instead of negation</source>
-        <target state="new">Use subtraction instead of negation</target>
+        <target state="translated">Use a subtração em vez da negação</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
@@ -59,12 +79,42 @@
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
         <source>Make declaration 'mutable'</source>
-        <target state="new">Make declaration 'mutable'</target>
+        <target state="translated">Fazer com que a declaração seja 'mutable'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MakeOuterBindingRecursive">
+        <source>Make '{0}' recursive</source>
+        <target state="translated">Tornar '{0}' recursiva</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">Prefixo '{0}' sem sublinhado</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveReturn">
+        <source>Remove 'return'</source>
+        <target state="translated">Remover 'return'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveReturnBang">
+        <source>Remove 'return!'</source>
+        <target state="translated">Remover 'return!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnusedBinding">
+        <source>Remove unused binding</source>
+        <target state="new">Remove unused binding</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveYield">
+        <source>Remove 'yield'</source>
+        <target state="translated">Remover 'yield'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveYieldBang">
+        <source>Remove 'yield!'</source>
+        <target state="translated">Remover 'yield!'</target>
         <note />
       </trans-unit>
       <trans-unit id="RenameValueToUnderscore">
@@ -197,29 +247,44 @@
         <target state="translated">Formatação</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseFSharpLambda">
+        <source>Use F# lambda syntax</source>
+        <target state="translated">Usar a sintaxe lambda F#</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">
         <source>Use '&lt;-' to mutate value</source>
-        <target state="new">Use '&lt;-' to mutate value</target>
+        <target state="translated">Usar '&lt;-' para modificar o valor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseNameof">
+        <source>Use 'nameof'</source>
+        <target state="new">Use 'nameof'</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
-        <target state="new">Use 'upcast'</target>
+        <target state="translated">Usar 'upcast'</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastOperator">
         <source>Use ':&gt;' operator</source>
-        <target state="new">Use ':&gt;' operator</target>
+        <target state="translated">Usar o operador ':&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="UseNotForNegation">
         <source>Use 'not' to negate expression</source>
-        <target state="new">Use 'not' to negate expression</target>
+        <target state="translated">Use 'not' para negar a expressão</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseValueInsteadOfDeref">
+        <source>Use '.Value' to dereference expression</source>
+        <target state="new">Use '.Value' to dereference expression</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">
         <source>Wrap expression in parentheses</source>
-        <target state="new">Wrap expression in parentheses</target>
+        <target state="translated">Coloque a expressão entre parênteses</target>
         <note />
       </trans-unit>
     </body>

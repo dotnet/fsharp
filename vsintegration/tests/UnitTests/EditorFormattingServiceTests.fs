@@ -8,7 +8,7 @@ open NUnit.Framework
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis.Formatting
 
 [<TestFixture>]
@@ -26,7 +26,6 @@ type EditorFormattingServiceTests()  =
         LoadTime = DateTime.MaxValue
         OriginalLoadReferences = []
         UnresolvedReferences = None
-        ExtraProjectInfo = None
         Stamp = None
     }
 
@@ -95,7 +94,7 @@ marker4"""
 
         let clipboard = prefix + """[<Class>]
         type SomeNameHere () =
-            member __.Test ()"""
+            member _.Test ()"""
 
         let start = """
 
@@ -112,7 +111,7 @@ let foo =
     printfn "Something here"
     [<Class>]
     type SomeNameHere () =
-        member __.Test ()
+        member _.Test ()
 
 somethingElseHere
 """
@@ -144,7 +143,7 @@ somethingElseHere
 
         let clipboard = prefix + """[<Class>]
         type SomeNameHere () =
-            member __.Test ()"""
+            member _.Test ()"""
 
         let start = """
 $
@@ -158,7 +157,7 @@ somethingElseHere
         let expected = """
 [<Class>]
 type SomeNameHere () =
-    member __.Test ()
+    member _.Test ()
 
 let foo =
     printfn "Something here"
@@ -189,7 +188,7 @@ somethingElseHere
 
         let clipboard = """[<Class>]
         type SomeNameHere () =
-            member __.Test ()"""
+            member _.Test ()"""
 
         let start = """
 
@@ -206,7 +205,7 @@ let foo =
     printfn "Something here"
     [<Class>]
     type SomeNameHere () =
-        member __.Test ()
+        member _.Test ()
 
 somethingElseHere
 """

@@ -5,27 +5,29 @@ module internal FSharp.Compiler.TypedTreePickle
 open System.Collections.Generic
 open System.Text
 
+open FSharp.Compiler.IO
 open Internal.Utilities
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
+open Internal.Utilities.Library.Extras.Bits
+open Internal.Utilities.Rational
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Lib.Bits
-open FSharp.Compiler.Range
-open FSharp.Compiler.Rational
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text.Position
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.XmlDoc
-
 
 let verbose = false
 
@@ -941,7 +943,7 @@ let u_ILPublicKey st =
     | 1 -> u_bytes st |> PublicKeyToken
     | _ -> ufailwith st "u_ILPublicKey"
 
-let u_ILVersion st = 
+let u_ILVersion st =
     let (major, minor, build, revision) = u_tup4 u_uint16 u_uint16 u_uint16 u_uint16 st
     ILVersionInfo(major, minor, build, revision)
 
@@ -1331,7 +1333,7 @@ let p_namemap p = p_Map p_string p
 let u_Map_core uk uv n st =
     Map.ofSeq (seq { for _ in 1..n -> (uk st, uv st) })
 
-let u_Map uk uv st = 
+let u_Map uk uv st =
     let n = u_int st
     u_Map_core uk uv n st
 
@@ -1449,12 +1451,12 @@ let p_kind x st =
 
 let p_member_kind x st =
     p_byte (match x with
-            | MemberKind.Member -> 0
-            | MemberKind.PropertyGet  -> 1
-            | MemberKind.PropertySet -> 2
-            | MemberKind.Constructor -> 3
-            | MemberKind.ClassConstructor -> 4
-            | MemberKind.PropertyGetSet -> pfailwith st "pickling: MemberKind.PropertyGetSet only expected in parse trees") st
+            | SynMemberKind.Member -> 0
+            | SynMemberKind.PropertyGet  -> 1
+            | SynMemberKind.PropertySet -> 2
+            | SynMemberKind.Constructor -> 3
+            | SynMemberKind.ClassConstructor -> 4
+            | SynMemberKind.PropertyGetSet -> pfailwith st "pickling: SynMemberKind.PropertyGetSet only expected in parse trees") st
 
 let u_kind st =
     match u_byte st with
@@ -1464,14 +1466,14 @@ let u_kind st =
 
 let u_member_kind st =
     match u_byte st with
-    | 0 -> MemberKind.Member
-    | 1 -> MemberKind.PropertyGet
-    | 2 -> MemberKind.PropertySet
-    | 3 -> MemberKind.Constructor
-    | 4 -> MemberKind.ClassConstructor
+    | 0 -> SynMemberKind.Member
+    | 1 -> SynMemberKind.PropertyGet
+    | 2 -> SynMemberKind.PropertySet
+    | 3 -> SynMemberKind.Constructor
+    | 4 -> SynMemberKind.ClassConstructor
     | _ -> ufailwith st "u_member_kind"
 
-let p_MemberFlags x st =
+let p_MemberFlags (x: SynMemberFlags) st =
     p_tup6 p_bool p_bool p_bool p_bool p_bool p_member_kind
         (x.IsInstance,
          false (* _x3UnusedBoolInFormat *),
@@ -1479,7 +1481,7 @@ let p_MemberFlags x st =
          x.IsOverrideOrExplicitImpl,
          x.IsFinal,
          x.MemberKind) st
-let u_MemberFlags st =
+let u_MemberFlags st : SynMemberFlags=
     let x2, _x3UnusedBoolInFormat, x4, x5, x6, x7 = u_tup6 u_bool u_bool u_bool u_bool u_bool u_member_kind st
     { IsInstance=x2
       IsDispatchSlot=x4
@@ -2441,7 +2443,7 @@ and u_dtree_discrim st =
 
 and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, DebugPointForTarget.No))
 
-and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a, b, NoDebugPointAtStickyBinding)
+and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a, b, DebugPointAtBinding.NoneAtSticky)
 
 and u_lval_op_kind st =
     match u_byte st with
@@ -2642,7 +2644,7 @@ and u_expr st =
             let c = u_targets st
             let d = u_dummy_range st
             let e = u_ty st
-            Expr.Match (NoDebugPointAtStickyBinding, a, b, c, d, e)
+            Expr.Match (DebugPointAtBinding.NoneAtSticky, a, b, c, d, e)
     | 10 -> let b = u_ty st
             let c = (u_option u_Val) st
             let d = u_expr st
@@ -2666,7 +2668,7 @@ and u_expr st =
     | 14 ->
         let traitInfo = u_trait st
         let m = u_dummy_range st
-        Expr.WitnessArg (traitInfo, m) 
+        Expr.WitnessArg (traitInfo, m)
     | _ -> ufailwith st "u_expr"
 
 and p_static_optimization_constraint x st =

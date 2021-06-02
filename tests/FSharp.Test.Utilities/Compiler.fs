@@ -3,17 +3,21 @@
 namespace FSharp.Test.Utilities
 
 open FSharp.Compiler.Interactive.Shell
-open FSharp.Compiler.Scripting
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.IO
+open FSharp.Compiler.Diagnostics
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Assert
 open FSharp.Test.Utilities.Utilities
+open FSharp.Test.ScriptHelpers
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open NUnit.Framework
 open System
 open System.Collections.Immutable
 open System.IO
+open System.Text
+open System.Text.RegularExpressions
+
 
 module rec Compiler =
 
@@ -98,7 +102,9 @@ module rec Compiler =
     let private getSource (src: TestType) : string =
         match src with
         | Text t -> t
-        | Path p -> System.IO.File.ReadAllText p
+        | Path p ->
+            use stream = FileSystem.OpenFileForReadShim(p)
+            stream.ReadAllText()
 
     let private fsFromString (source: string) (kind: SourceKind) : FSharpCompilationSource =
         match source with
@@ -118,29 +124,29 @@ module rec Compiler =
         | null -> failwith "Source cannot be null"
         | _ ->
             { Source          = Text source
-              LangVersion     = CSharpLanguageVersion.CSharp8
-              TargetFramework = TargetFramework.NetCoreApp31
+              LangVersion     = CSharpLanguageVersion.CSharp9
+              TargetFramework = TargetFramework.Current
               Name            = None
               References      = [] }
 
-    let private fromFSharpErrorInfo (errors: FSharpErrorInfo[]) : ErrorInfo list =
-        let toErrorInfo (e: FSharpErrorInfo) : ErrorInfo =
+    let private fromFSharpDiagnostic (errors: FSharpDiagnostic[]) : ErrorInfo list =
+        let toErrorInfo (e: FSharpDiagnostic) : ErrorInfo =
             let errorNumber = e.ErrorNumber
             let severity = e.Severity
 
-            let error = if severity = FSharpErrorSeverity.Warning then Warning errorNumber else Error errorNumber
+            let error = if severity = FSharpDiagnosticSeverity.Warning then Warning errorNumber else Error errorNumber
 
             { Error   = error
               Range   =
-                  { StartLine   = e.StartLineAlternate
+                  { StartLine   = e.StartLine
                     StartColumn = e.StartColumn
-                    EndLine     = e.EndLineAlternate
+                    EndLine     = e.EndLine
                     EndColumn   = e.EndColumn }
               Message = e.Message }
 
         errors
         |> List.ofArray
-        |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
+        |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
         |> List.map toErrorInfo
 
     let private partitionErrors diagnostics = diagnostics |> List.partition (fun e -> match e.Error with Error _ -> true | _ -> false)
@@ -164,6 +170,16 @@ module rec Compiler =
 
     let CSharp (source: string) : CompilationUnit =
         csFromString source |> CS
+
+    let asFsx (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS src -> FS { src with SourceKind = SourceKind.Fsx }
+        | _ -> failwith "Only F# compilation can be of type Fsx."
+
+    let asFs (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS src -> FS { src with SourceKind = SourceKind.Fs }
+        | _ -> failwith "Only F# compilation can be of type Fs."
 
     let withName (name: string) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -261,9 +277,9 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings : TestResult =
 
-        let ((err: FSharpErrorInfo[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
+        let ((err: FSharpDiagnostic[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
-        let diagnostics = err |> fromFSharpErrorInfo
+        let diagnostics = err |> fromFSharpDiagnostic
 
         let result =
             { OutputPath   = None
@@ -354,7 +370,7 @@ module rec Compiler =
         let parseResults = CompilerAssert.Parse source
         let failed = parseResults.ParseHadErrors
 
-        let diagnostics =  parseResults.Errors |> fromFSharpErrorInfo
+        let diagnostics =  parseResults.Diagnostics |> fromFSharpDiagnostic
 
         let result =
             { OutputPath   = None
@@ -373,21 +389,21 @@ module rec Compiler =
         | FS fs -> parseFSharp fs
         | _ -> failwith "Parsing only supported for F#."
 
-    let private typecheckFSharpSourceAndReturnErrors (fsSource: FSharpCompilationSource) : FSharpErrorInfo [] =
+    let private typecheckFSharpSourceAndReturnErrors (fsSource: FSharpCompilationSource) : FSharpDiagnostic [] =
         let source = getSource fsSource.Source
         let options = fsSource.Options |> Array.ofList
 
         let name = match fsSource.Name with | None -> "test.fs" | Some n -> n
 
-        let (err: FSharpErrorInfo []) = CompilerAssert.TypeCheckWithOptionsAndName options name source
+        let (err: FSharpDiagnostic []) = CompilerAssert.TypeCheckWithOptionsAndName options name source
 
         err
 
     let private typecheckFSharpSource (fsSource: FSharpCompilationSource) : TestResult =
 
-        let (err: FSharpErrorInfo []) = typecheckFSharpSourceAndReturnErrors fsSource
+        let (err: FSharpDiagnostic []) = typecheckFSharpSourceAndReturnErrors fsSource
 
-        let diagnostics = err |> fromFSharpErrorInfo
+        let diagnostics = err |> fromFSharpDiagnostic
 
         let result =
             { OutputPath   = None
@@ -411,6 +427,17 @@ module rec Compiler =
     let typecheck (cUnit: CompilationUnit) : TestResult =
         match cUnit with
         | FS fs -> typecheckFSharp fs
+        | _ -> failwith "Typecheck only supports F#"
+
+    let typecheckResults (cUnit: CompilationUnit) : FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults =
+        match cUnit with
+        | FS fsSource ->
+            let source = getSource fsSource.Source
+            let options = fsSource.Options |> Array.ofList
+
+            let name = match fsSource.Name with | None -> "test.fs" | Some n -> n
+
+            CompilerAssert.TypeCheck(options, name, source)
         | _ -> failwith "Typecheck only supports F#"
 
     let run (result: TestResult) : TestResult =
@@ -437,9 +464,9 @@ module rec Compiler =
 
         use script = new FSharpScript(additionalArgs=options)
 
-        let ((evalresult: Result<FsiValue option, exn>), (err: FSharpErrorInfo[])) = script.Eval(source)
+        let ((evalresult: Result<FsiValue option, exn>), (err: FSharpDiagnostic[])) = script.Eval(source)
 
-        let diagnostics = err |> fromFSharpErrorInfo
+        let diagnostics = err |> fromFSharpDiagnostic
 
         let result =
             { OutputPath   = None
@@ -489,9 +516,9 @@ module rec Compiler =
         | _ -> failwith "FSI running only supports F#."
 
 
-    let private createBaselineErrors (baseline: Baseline) actualErrors extension : unit =
+    let private createBaselineErrors (baseline: Baseline) (actualErrors: string) extension : unit =
         match baseline.SourceFilename with
-        | Some f -> File.WriteAllText(Path.ChangeExtension(f, extension), actualErrors)
+        | Some f -> FileSystem.OpenFileForWriteShim(Path.ChangeExtension(f, extension)).Write(actualErrors)
         | _ -> ()
 
     let private verifyFSBaseline (fs) : unit =
@@ -581,7 +608,6 @@ module rec Compiler =
             for exp in expected do
                 if not (List.exists (fun (el: ErrorInfo) -> (getErrorNumber el.Error) = exp) source) then
                     failwith (sprintf "Mismatch in ErrorNumber, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
-            assertErrorsLength source expected
 
         let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: ErrorInfo list) : unit =
             let errors = source |> List.map (fun error -> { error with Range = adjustRange error.Range libAdjust })
@@ -593,8 +619,8 @@ module rec Compiler =
             // TODO: Check all "categories", collect all results and print alltogether.
             checkEqual "Errors count"  expected.Length errors.Length
 
-            List.zip errors expected
-            |> List.iter (fun (actualError, expectedError) ->
+            (errors, expected)
+            ||> List.iter2 (fun actualError expectedError ->
                            let { Error = actualError; Range = actualRange; Message = actualMessage } = actualError
                            let { Error = expectedError; Range = expectedRange; Message = expectedMessage } = expectedError
                            checkEqual "Error" expectedError actualError
@@ -682,6 +708,23 @@ module rec Compiler =
         let private checkErrorMessages (messages: string list) (selector: Output -> ErrorInfo list) (result: TestResult) : TestResult =
             match result with
             | Success r | Failure r -> assertErrorMessages (selector r) messages
+            result
+
+        let private diagnosticMatches (pattern: string) (diagnostics: ErrorInfo list) : bool =
+            diagnostics |> List.exists (fun d -> Regex.IsMatch(d.Message, pattern))
+
+        let withDiagnosticMessageMatches (pattern: string) (result: TestResult) : TestResult =
+            match result with
+            | Success r | Failure r ->
+                if not <| diagnosticMatches pattern r.Diagnostics then
+                    failwith "Expected diagnostic message pattern was not found in compilation diagnostics."
+            result
+
+        let withDiagnosticMessageDoesntMatch (pattern: string) (result: TestResult) : TestResult =
+            match result with
+            | Success r | Failure r ->
+                if diagnosticMatches pattern r.Diagnostics then
+                    failwith "Diagnostic message pattern was not expected, but was present."
             result
 
         let withMessages (messages: string list) (result: TestResult) : TestResult =

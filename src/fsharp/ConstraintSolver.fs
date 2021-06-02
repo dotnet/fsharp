@@ -43,10 +43,12 @@
 module internal FSharp.Compiler.ConstraintSolver
 
 open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
+open Internal.Utilities.Rational
 
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
@@ -54,13 +56,13 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Lib
 open FSharp.Compiler.MethodCalls
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.Range
-open FSharp.Compiler.Rational
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -76,27 +78,27 @@ open FSharp.Compiler.TypeRelations
 let compgenId = mkSynId range0 unassignedTyparName
 
 let NewCompGenTypar (kind, rigid, staticReq, dynamicReq, error) = 
-    Construct.NewTypar(kind, rigid, Typar(compgenId, staticReq, true), error, dynamicReq, [], false, false) 
+    Construct.NewTypar(kind, rigid, SynTypar(compgenId, staticReq, true), error, dynamicReq, [], false, false) 
     
 let AnonTyparId m = mkSynId m unassignedTyparName
 
 let NewAnonTypar (kind, m, rigid, var, dyn) = 
-    Construct.NewTypar (kind, rigid, Typar(AnonTyparId m, var, true), false, dyn, [], false, false)
+    Construct.NewTypar (kind, rigid, SynTypar(AnonTyparId m, var, true), false, dyn, [], false, false)
     
 let NewNamedInferenceMeasureVar (_m, rigid, var, id) = 
-    Construct.NewTypar(TyparKind.Measure, rigid, Typar(id, var, false), false, TyparDynamicReq.No, [], false, false) 
+    Construct.NewTypar(TyparKind.Measure, rigid, SynTypar(id, var, false), false, TyparDynamicReq.No, [], false, false) 
 
 let NewInferenceMeasurePar () =
-    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, false)
+    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, false)
 
 let NewErrorTypar () =
-    NewCompGenTypar (TyparKind.Type, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
+    NewCompGenTypar (TyparKind.Type, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, true)
 
 let NewErrorMeasureVar () =
-    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
+    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, true)
 
 let NewInferenceType () =
-    mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
+    mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false))
 
 let NewErrorType () =
     mkTyparTy (NewErrorTypar ())
@@ -104,7 +106,7 @@ let NewErrorType () =
 let NewErrorMeasure () = Measure.Var (NewErrorMeasureVar ())
 
 let NewByRefKindInferenceType (g: TcGlobals) m = 
-    let tp = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, HeadTypeStaticReq, true), false, TyparDynamicReq.No, [], false, false)
+    let tp = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.HeadType, true), false, TyparDynamicReq.No, [], false, false)
     if g.byrefkind_InOut_tcr.CanDeref then
         tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, []), m)]
     mkTyparTy tp
@@ -193,7 +195,7 @@ type ContextInfo =
 type OverloadInformation = 
     {
         methodSlot: CalledMeth<Expr>
-        amap : ImportMap
+        infoReader : InfoReader
         error: exn
     }
 
@@ -378,15 +380,6 @@ let IsNonDecimalNumericType g ty = isIntegerTy g ty || isFpTy g ty
 let IsNumericType g ty = IsNonDecimalNumericType g ty || isDecimalTy g ty
 
 let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
-
-// Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
-let GetMeasureOfType g ty =
-    match ty with 
-    | AppTy g (tcref, [tyarg]) ->
-        match stripTyEqns g tyarg with  
-        | TType_measure ms when not (measureEquiv g ms Measure.One) -> Some (tcref, ms)
-        | _ -> None
-    | _ -> None
 
 let IsCharOrStringType g ty = isCharTy g ty || isStringTy g ty
 
@@ -617,8 +610,8 @@ and SolveTypStaticReqTypar (csenv: ConstraintSolverEnv) trace req (tpr: Typar) =
 
 and SolveTypStaticReq (csenv: ConstraintSolverEnv) trace req ty =
     match req with 
-    | NoStaticReq -> CompleteD
-    | HeadTypeStaticReq -> 
+    | TyparStaticReq.None -> CompleteD
+    | TyparStaticReq.HeadType -> 
         // requires that a type constructor be known at compile time 
         match stripTyparEqns ty with
         | TType_measure ms ->
@@ -1204,7 +1197,7 @@ and DepthCheck ndeep m =
 
 // If this is a type that's parameterized on a unit-of-measure (expected to be numeric), unify its measure with 1
 and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
-    match GetMeasureOfType csenv.g ty with
+    match getMeasureOfType csenv.g ty with
     | Some (tcref, _) -> 
         SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty (mkAppTy tcref [TType_measure Measure.One])
     | None ->
@@ -1244,7 +1237,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
         | _ -> do! ErrorD (ConstraintSolverError(FSComp.SR.csExpectedArguments(), m, m2))
     // Trait calls are only supported on pseudo type (variables) 
     for e in tys do
-        do! SolveTypStaticReq csenv trace HeadTypeStaticReq e
+        do! SolveTypStaticReq csenv trace TyparStaticReq.HeadType e
     
     let argtys = if memFlags.IsInstance then List.tail traitObjAndArgTys else traitObjAndArgTys 
 
@@ -1287,12 +1280,12 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                      //   - Neither type contributes any methods OR
                      //   - We have the special case "decimal<_> * decimal". In this case we have some 
                      //     possibly-relevant methods from "decimal" but we ignore them in this case.
-                     (isNil minfos || (Option.isSome (GetMeasureOfType g argty1) && isDecimalTy g argty2)) in
+                     (isNil minfos || (Option.isSome (getMeasureOfType g argty1) && isDecimalTy g argty2)) in
 
                    checkRuleAppliesInPreferenceToMethods argty1 argty2 || 
                    checkRuleAppliesInPreferenceToMethods argty2 argty1) ->
                    
-          match GetMeasureOfType g argty1 with
+          match getMeasureOfType g argty1 with
           | Some (tcref, ms1) -> 
             let ms2 = freshMeasure ()
             do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 (mkAppTy tcref [TType_measure ms2])
@@ -1301,7 +1294,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
           | _ ->
 
-            match GetMeasureOfType g argty2 with
+            match getMeasureOfType g argty2 with
             | Some (tcref, ms2) -> 
               let ms1 = freshMeasure ()
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty1 (mkAppTy tcref [TType_measure ms1]) 
@@ -1430,7 +1423,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
       | _, _, false, "Sqrt", [argty1] 
           when isFpTy g argty1 ->
-          match GetMeasureOfType g argty1 with
+          match getMeasureOfType g argty1 with
             | Some (tcref, _) -> 
               let ms1 = freshMeasure () 
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty1 (mkAppTy tcref [TType_measure (Measure.Prod (ms1, ms1))])
@@ -1479,7 +1472,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
       | _, _, false, "Atan2", [argty1; argty2] 
           when isFpTy g argty1 -> 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 argty1
-          match GetMeasureOfType g argty1 with
+          match getMeasureOfType g argty1 with
           | None -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
           | Some (tcref, _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty (mkAppTy tcref [TType_measure Measure.One])
           return TTraitBuiltIn
@@ -1708,7 +1701,7 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
             let m = csenv.m
             let minfos = 
                 match memFlags.MemberKind with
-                | MemberKind.Constructor ->
+                | SynMemberKind.Constructor ->
                     tys |> List.map (GetIntrinsicConstructorInfosOfType csenv.SolverState.InfoReader m)
                 | _ ->
                     tys |> List.map (GetIntrinsicMethInfosOfType csenv.SolverState.InfoReader (Some nm) AccessibleFromSomeFSharpCode AllowMultiIntfInstantiations.Yes IgnoreOverrides m)
@@ -2402,6 +2395,7 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
     let amap = csenv.amap
     let m    = csenv.m
     let denv = csenv.DisplayEnv
+    let infoReader = csenv.InfoReader
 
     match (calledMethGroup |> List.partition (CalledMeth.GetMethod >> IsMethInfoAccessible amap m ad)), 
           (calledMethGroup |> List.partition (fun cmeth -> cmeth.HasCorrectObjArgs(m))), 
@@ -2426,7 +2420,7 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
     // One method, incorrect name/arg assignment 
     | _, _, _, _, ([], [cmeth]) -> 
         let minfo = cmeth.Method
-        let msgNum, msgText = FSComp.SR.csRequiredSignatureIs(NicePrint.stringOfMethInfo amap m denv minfo)
+        let msgNum, msgText = FSComp.SR.csRequiredSignatureIs(NicePrint.stringOfMethInfo infoReader m denv minfo)
         match cmeth.UnassignedNamedArgs with 
         | CallerNamedArg(id, _) :: _ -> 
             if minfo.IsConstructor then
@@ -2444,7 +2438,7 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
         let minfo = cmeth.Method
         let nReqd = cmeth.TotalNumUnnamedCalledArgs
         let nActual = cmeth.TotalNumUnnamedCallerArgs
-        let signature = NicePrint.stringOfMethInfo amap m denv minfo
+        let signature = NicePrint.stringOfMethInfo infoReader m denv minfo
         if nActual = nReqd then 
             let nreqdTyArgs = cmeth.NumCalledTyArgs
             let nactualTyArgs = cmeth.NumCallerTyArgs
@@ -2533,7 +2527,7 @@ and ResolveOverloading
          reqdRetTyOpt    // The expected return type, if known 
      =
     let g = csenv.g
-    let amap = csenv.amap
+    let infoReader = csenv.InfoReader
     let m    = csenv.m
     let denv = csenv.DisplayEnv
     let isOpConversion = methodName = "op_Explicit" || methodName = "op_Implicit"
@@ -2628,7 +2622,7 @@ and ResolveOverloading
                                              calledMeth) with 
                             | OkResult _ -> None
                             | ErrorResult(_warnings, exn) ->
-                                Some {methodSlot = calledMeth; amap = amap; error = exn })
+                                Some {methodSlot = calledMeth; infoReader = infoReader; error = exn })
 
                 None, ErrorD (failOverloading (NoOverloadsFound (methodName, errors, cx))), NoTrace
 
@@ -2805,8 +2799,8 @@ and ResolveOverloading
                     let methods = 
                         let getMethodSlotsAndErrors methodSlot errors =
                             [ match errors with
-                              | [] -> yield { methodSlot = methodSlot; error = Unchecked.defaultof<exn>; amap = amap }
-                              | errors -> for error in errors do yield { methodSlot = methodSlot; error = error; amap = amap } ]
+                              | [] -> yield { methodSlot = methodSlot; error = Unchecked.defaultof<exn>; infoReader = infoReader }
+                              | errors -> for error in errors do yield { methodSlot = methodSlot; error = error; infoReader = infoReader } ]
 
 
                         // use the most precise set
@@ -3113,12 +3107,11 @@ let CreateCodegenState tcVal g amap =
       InfoReader = new InfoReader(g, amap) }
 
 /// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
-let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
+let CodegenWitnessExprForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
     let css = CreateCodegenState tcVal g amap
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
-    let sln = GenWitnessExpr amap g m traitInfo argExprs
-    return sln
+    return GenWitnessExpr amap g m traitInfo argExprs
   }
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
@@ -3132,7 +3125,7 @@ let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
   }
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
-let CodegenWitnessesForTraitWitness tcVal g amap m traitInfo = trackErrors {
+let CodegenWitnessArgForTraitConstraint tcVal g amap m traitInfo = trackErrors {
     let css = CreateCodegenState tcVal g amap
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo

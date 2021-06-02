@@ -5,12 +5,14 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.ComponentModel.Composition
 open System.Diagnostics
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis
+open FSharp.NativeInterop
 open Microsoft.CodeAnalysis
-open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices
-open FSharp.NativeInterop
+open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 #nowarn "9" // NativePtr.toNativeInt
@@ -22,8 +24,11 @@ type internal FSharpCheckerProvider
     (
         analyzerService: IFSharpDiagnosticAnalyzerService,
         [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace,
+        projectContextFactory: IWorkspaceProjectContextFactory,
         settings: EditorOptions
     ) =
+
+    let metadataAsSource = FSharpMetadataAsSourceService(projectContextFactory)
 
     let tryGetMetadataSnapshot (path, timeStamp) = 
         try
@@ -40,14 +45,13 @@ type internal FSharpCheckerProvider
             let objToHold = box md
 
             // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
-            Debug.Assert((FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
+            // Debug.Assert((FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
 
             Some (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
         with ex -> 
             // We catch all and let the backup routines in the F# compiler find the error
             Assert.Exception(ex)
             None 
-
 
     let checker = 
         lazy
@@ -66,22 +70,26 @@ type internal FSharpCheckerProvider
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,
             // we request Roslyn to reanalyze that individual file.
-            checker.BeforeBackgroundFileCheck.Add(fun (fileName, _extraProjectInfo) ->  
-                async {
-                    try 
-                        let solution = workspace.CurrentSolution
-                        let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
-                        if not documentIds.IsEmpty then 
-                            let documentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
-                            for documentId in documentIdsFiltered do
-                                Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
-                            if documentIdsFiltered.Length > 0 then 
-                                analyzerService.Reanalyze(workspace,documentIds=documentIdsFiltered)
-                    with ex -> 
-                        Assert.Exception(ex)
-                } |> Async.StartImmediate
+            checker.BeforeBackgroundFileCheck.Add(fun (fileName, _extraProjectInfo) ->
+                // Only do this for scripts as misc script Rolsyn projects do not understand the dependencies of the script. e.x "#r "../test.dll"", "#load "test2.fsx""
+                if isScriptFile fileName then
+                    async {
+                        try 
+                            let solution = workspace.CurrentSolution
+                            let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
+                            if not documentIds.IsEmpty then 
+                                let documentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
+                                for documentId in documentIdsFiltered do
+                                    Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
+                                if documentIdsFiltered.Length > 0 then 
+                                    analyzerService.Reanalyze(workspace,documentIds=documentIdsFiltered)
+                        with ex -> 
+                            Assert.Exception(ex)
+                    } |> Async.StartImmediate
             )
             checker
 
     member this.Checker = checker.Value
+
+    member _.MetadataAsSource = metadataAsSource
 

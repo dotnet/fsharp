@@ -5,22 +5,25 @@ module internal FSharp.Compiler.MethodCalls
 
 open Internal.Utilities
 
+open Internal.Utilities.Library 
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Lib
+open FSharp.Compiler.IO
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -209,10 +212,15 @@ let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnown
                 // If neither and we are at the end of overload resolution then use the Nullable
                 elif enforceNullableOptionalsKnownTypes then 
                     calledArgTy
-                // If at the beginning of inference then use a type variable
+                // If at the beginning of inference then use a type variable.
                 else 
-                    let compgenId = mkSynId range0 unassignedTyparName
-                    mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
+                    match calledArg.OptArgInfo with
+                    // If inference has not solved the kind of Nullable on the called arg and is not optional then use this.
+                    | NotOptional when isTyparTy g (destNullableTy g calledArgTy) ->
+                        calledArgTy
+                    | _ ->
+                        let compgenId = mkSynId range0 unassignedTyparName
+                        mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false))
             else
                 calledArgTy
 
@@ -478,34 +486,34 @@ type CalledMeth<'T>
 
     member x.amap = infoReader.amap
 
-      /// the method we're attempting to call 
+    /// The method we're attempting to call 
     member x.Method = minfo
 
-      /// the instantiation of the method we're attempting to call 
+    /// The instantiation of the method we're attempting to call 
     member x.CalledTyArgs = calledTyArgs
 
     member x.AllCalledArgs = fullCurriedCalledArgs
 
-      /// the instantiation of the method we're attempting to call 
+    /// The instantiation of the method we're attempting to call 
     member x.CalledTyparInst = 
         let tps = minfo.FormalMethodTypars 
         if tps.Length = calledTyArgs.Length then mkTyparInst tps calledTyArgs else []
 
-      /// the formal instantiation of the method we're attempting to call 
+    /// The formal instantiation of the method we're attempting to call 
     member x.CallerTyArgs = callerTyArgs
 
-      /// The types of the actual object arguments, if any
+    /// The types of the actual object arguments, if any
     member x.CallerObjArgTys = callerObjArgTys
 
-      /// The argument analysis for each set of curried arguments
+    /// The argument analysis for each set of curried arguments
     member x.ArgSets = argSets
 
-      /// return type after implicit deference of byref returns is taken into account
+    /// The return type after implicit deference of byref returns is taken into account
     member x.CalledReturnTypeAfterByrefDeref = 
         let retTy = methodRetTy
         if isByrefTy g retTy then destByrefTy g retTy else retTy
 
-      /// return type after tupling of out args is taken into account
+    /// Return type after tupling of out args is taken into account
     member x.CalledReturnTypeAfterOutArgTupling = 
         let retTy = x.CalledReturnTypeAfterByrefDeref
         if isNil unnamedCalledOutArgs then 
@@ -515,22 +523,22 @@ type CalledMeth<'T>
             if isUnitTy g retTy then mkRefTupledTy g outArgTys
             else mkRefTupledTy g (retTy :: outArgTys)
 
-      /// named setters
+    /// Named setters
     member x.AssignedItemSetters = assignedNamedProps
 
-      /// the property related to the method we're attempting to call, if any  
+    /// The property related to the method we're attempting to call, if any  
     member x.AssociatedPropertyInfo = pinfoOpt
 
-      /// unassigned args
+    /// Unassigned args
     member x.UnassignedNamedArgs = unassignedNamedItems
 
-      /// args assigned to specify values for attribute fields and properties (these are not necessarily "property sets")
+    /// Args assigned to specify values for attribute fields and properties (these are not necessarily "property sets")
     member x.AttributeAssignedNamedArgs = attributeAssignedNamedItems
 
-      /// unnamed called optional args: pass defaults for these
+    /// Unnamed called optional args: pass defaults for these
     member x.UnnamedCalledOptArgs = unnamedCalledOptArgs
 
-      /// unnamed called out args: return these as part of the return tuple
+    /// Unnamed called out args: return these as part of the return tuple
     member x.UnnamedCalledOutArgs = unnamedCalledOutArgs
 
     static member GetMethod (x: CalledMeth<'T>) = x.Method
@@ -747,10 +755,6 @@ let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m objArgs f =
     let e, ety = f ccallInfo objArgs
     wrap e, ety
 
-//-------------------------------------------------------------------------
-// Build method calls.
-//------------------------------------------------------------------------- 
-
 /// Build an expression node that is a call to a .NET method. 
 let BuildILMethInfoCall g amap m isProp (minfo: ILMethInfo) valUseFlags minst direct args = 
     let valu = isStructTy g minfo.ApparentEnclosingType
@@ -763,7 +767,7 @@ let BuildILMethInfoCall g amap m isProp (minfo: ILMethInfo) valUseFlags minst di
     let ilMethRef = minfo.ILMethodRef
     let newobj = ctor && (match valUseFlags with NormalValUse -> true | _ -> false)
     let exprTy = if ctor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnTy(amap, m, minst)
-    let retTy = if not ctor && ilMethRef.ReturnType = ILType.Void then [] else [exprTy]
+    let retTy = if not ctor && (stripILModifiedFromTy ilMethRef.ReturnType) = ILType.Void then [] else [exprTy]
     let isDllImport = minfo.IsDllImport g
     Expr.Op (TOp.ILCall (useCallvirt, isProtected, valu, newobj, valUseFlags, isProp, isDllImport, ilMethRef, minfo.DeclaringTypeInst, minst, retTy), [], args, m),
     exprTy
@@ -785,7 +789,7 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
             match arity, args with 
             | (0|1), [] when typeEquiv g (domainOfFunTy g fty) g.unit_ty -> mkUnit g m, (args, rangeOfFunTy g fty)
             | 0, (arg :: argst) -> 
-                let msg = Layout.showL (Layout.sepListL (Layout.rightL (Layout.TaggedTextOps.tagText ";")) (List.map exprL args))
+                let msg = LayoutRender.showL (Layout.sepListL (Layout.rightL (TaggedText.tagText ";")) (List.map exprL args))
                 warning(InternalError(sprintf "Unexpected zero arity, args = %s" msg, m))
                 arg, (argst, rangeOfFunTy g fty)
             | 1, (arg :: argst) -> arg, (argst, rangeOfFunTy g fty)
@@ -1513,7 +1517,7 @@ module ProvidedMethodCalls =
                 let testExpr = exprToExpr test
                 let ifTrueExpr = exprToExpr thenBranch
                 let ifFalseExpr = exprToExpr elseBranch
-                let te = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
+                let te = mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
                 None, (te, tyOfExpr g te)
             | ProvidedVarExpr providedVar ->
                 let _, vTe = varToExpr (exprType.PApply((fun _ -> providedVar), m))
@@ -1688,7 +1692,7 @@ module ProvidedMethodCalls =
             | true, v -> v
             | _ ->
                 let typeProviderDesignation = ExtensionTyping.DisplayNameOfTypeProvider (pe.TypeProvider, m)
-                error(NumberedError(FSComp.SR.etIncorrectParameterExpression(typeProviderDesignation, vRaw.Name), m))
+                error(Error(FSComp.SR.etIncorrectParameterExpression(typeProviderDesignation, vRaw.Name), m))
                 
         and exprToExpr expr =
             let _, (resExpr, _) = exprToExprAndWitness false expr

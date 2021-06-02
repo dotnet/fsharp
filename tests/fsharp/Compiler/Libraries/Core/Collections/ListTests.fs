@@ -4,7 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 open FSharp.Test.Utilities
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Diagnostics
 
 [<TestFixture>]
 module ``List Tests`` =
@@ -18,7 +18,7 @@ module ``List Tests`` =
             """
 List.hd [1] |> ignore
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             39
             (2, 6, 2, 8)
             "The value, constructor, namespace or type 'hd' is not defined."
@@ -34,7 +34,7 @@ List.hd [1] |> ignore
             """
 List.tl [1] |> ignore
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             39
             (2, 6, 2, 8)
             "The value, constructor, namespace or type 'tl' is not defined."

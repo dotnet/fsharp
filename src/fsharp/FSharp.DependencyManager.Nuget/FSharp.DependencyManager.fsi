@@ -4,8 +4,8 @@ namespace FSharp.DependencyManager.Nuget
 
 module internal FSharpDependencyManager =
     val formatPackageReference: PackageReference -> seq<string>
-    val parsePackageReference: scriptExt: string -> string list -> PackageReference list * string option option
-    val parsePackageDirective: scriptExt: string -> (string * string) list -> PackageReference list * string option option
+    val parsePackageReference: scriptExt: string -> string list -> PackageReference list * string option option * int option
+    val parsePackageDirective: scriptExt: string -> (string * string) list -> PackageReference list * string option option * int option
 
 /// The results of ResolveDependencies
 [<Class>]
@@ -41,7 +41,7 @@ type ResolveDependenciesResult =
 
 [<DependencyManagerAttribute>]
 type FSharpDependencyManager =
-    new: outputDir:string option -> FSharpDependencyManager
+    new: outputDirectory:string option -> FSharpDependencyManager
 
     member Name: string
 
@@ -49,4 +49,4 @@ type FSharpDependencyManager =
 
     member HelpMessages:string[]
 
-    member ResolveDependencies: scriptExt: string * packageManagerTextLines: (string * string) seq * targetFrameworkMoniker: string * runtimeIdentifier: string -> obj
+    member ResolveDependencies: scriptDirectory: string * scriptName: string * scriptExt: string * packageManagerTextLines: (string * string) seq * targetFrameworkMoniker: string * runtimeIdentifier: string * timeout: int-> obj

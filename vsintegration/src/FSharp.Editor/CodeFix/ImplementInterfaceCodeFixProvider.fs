@@ -13,9 +13,13 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
 open FSharp.Compiler
-open FSharp.Compiler.Range
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 [<NoEquality; NoComparison>]
 type internal InterfaceState =
@@ -39,12 +43,12 @@ type internal FSharpImplementInterfaceCodeFixProvider
     let queryInterfaceState appendBracketAt (pos: pos) (tokens: Tokenizer.SavedTokenInfo[]) (ast: ParsedInput) =
         asyncMaybe {
             let line = pos.Line - 1
-            let! iface = InterfaceStubGenerator.tryFindInterfaceDeclaration pos ast
+            let! iface = InterfaceStubGenerator.TryFindInterfaceDeclaration pos ast
             let endPosOfWidth =
                 tokens 
                 |> Array.tryPick (fun (t: Tokenizer.SavedTokenInfo) ->
                         if t.Tag = FSharpTokenTag.WITH || t.Tag = FSharpTokenTag.OWITH then
-                            Some (Pos.fromZ line (t.RightColumn + 1))
+                            Some (Position.fromZ line (t.RightColumn + 1))
                         else None)
             let appendBracketAt =
                 match iface, appendBracketAt with
@@ -57,7 +61,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
         lineStr.Length - lineStr.TrimStart(' ').Length
         
     let inferStartColumn indentSize state (sourceText: SourceText) = 
-        match InterfaceStubGenerator.getMemberNameAndRanges state.InterfaceData with
+        match InterfaceStubGenerator.GetMemberNameAndRanges state.InterfaceData with
         | (_, range) :: _ ->
             let lineStr = sourceText.Lines.[range.StartLine-1].ToString()
             getLineIdent lineStr
@@ -82,7 +86,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
         let defaultBody = "raise (System.NotImplementedException())"
         let typeParams = state.InterfaceData.TypeParameters
         let stub = 
-            let stub = InterfaceStubGenerator.formatInterface 
+            let stub = InterfaceStubGenerator.FormatInterface 
                            startColumn indentSize typeParams objectIdentifier defaultBody
                            displayContext implementedMemberSignatures entity verboseMode
             stub.TrimEnd(Environment.NewLine.ToCharArray())
@@ -102,12 +106,12 @@ type internal FSharpImplementInterfaceCodeFixProvider
             sourceText.WithChanges(stubChange)
 
     let registerSuggestions (context: CodeFixContext, results: FSharpCheckFileResults, state: InterfaceState, displayContext, entity, indentSize) =
-        if InterfaceStubGenerator.hasNoInterfaceMember entity then 
+        if InterfaceStubGenerator.HasNoInterfaceMember entity then 
             ()
         else
-            let membersAndRanges = InterfaceStubGenerator.getMemberNameAndRanges state.InterfaceData
-            let interfaceMembers = InterfaceStubGenerator.getInterfaceMembers entity
-            let hasTypeCheckError = results.Errors |> Array.exists (fun e -> e.Severity = FSharpErrorSeverity.Error)                
+            let membersAndRanges = InterfaceStubGenerator.GetMemberNameAndRanges state.InterfaceData
+            let interfaceMembers = InterfaceStubGenerator.GetInterfaceMembers entity
+            let hasTypeCheckError = results.Diagnostics |> Array.exists (fun e -> e.Severity = FSharpDiagnosticSeverity.Error)                
             // This comparison is a bit expensive
             if hasTypeCheckError && List.length membersAndRanges <> Seq.length interfaceMembers then    
                 let diagnostics = context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray
@@ -122,7 +126,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                                         let lineStr = sourceText.Lines.[range.EndLine-1].ToString()
                                         results.GetSymbolUseAtLocation(range.EndLine, range.EndColumn, lineStr, [name])
                                     let! implementedMemberSignatures =
-                                        InterfaceStubGenerator.getImplementedMemberSignatures getMemberByLocation displayContext state.InterfaceData    
+                                        InterfaceStubGenerator.GetImplementedMemberSignatures getMemberByLocation displayContext state.InterfaceData    
                                     let newSourceText = applyImplementInterface sourceText state displayContext implementedMemberSignatures entity indentSize verboseMode
                                     return context.Document.WithText(newSourceText)
                                 } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
@@ -134,14 +138,14 @@ type internal FSharpImplementInterfaceCodeFixProvider
             else 
                 ()
             
-    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
-    override __.RegisterCodeFixesAsync context : Task =
+    override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document, context.CancellationToken, userOpName)
             let cancellationToken = context.CancellationToken
             let! sourceText = context.Document.GetTextAsync(cancellationToken)
-            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(context.Document, projectOptions, sourceText = sourceText, userOpName = userOpName)
+            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(context.Document, projectOptions, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition context.Span.Start
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             // Notice that context.Span doesn't return reliable ranges to find tokens at exact positions.
@@ -161,7 +165,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                | _ -> acc
             let! token = tryFindIdentifierToken None 0
             let fixupPosition = textLine.Start + token.RightColumn
-            let interfacePos = Pos.fromZ textLine.LineNumber token.RightColumn
+            let interfacePos = Position.fromZ textLine.LineNumber token.RightColumn
             // We rely on the observation that the lastChar of the context should be '}' if that character is present
             let appendBracketAt =
                 match sourceText.[context.Span.End-1] with
@@ -178,7 +182,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
             let! entity, displayContext = 
                 match symbolUse.Symbol with
                 | :? FSharpEntity as entity -> 
-                    if InterfaceStubGenerator.isInterface entity then
+                    if InterfaceStubGenerator.IsInterface entity then
                         Some (entity, symbolUse.DisplayContext)
                     else None
                 | _ -> None

@@ -5,102 +5,96 @@
 // type checking and intellisense-like environment-reporting.
 //--------------------------------------------------------------------------
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Diagnostics
 
 open System
-open System.IO
+
+open Internal.Utilities.Library  
+open Internal.Utilities.Library.Extras
 
 open FSharp.Core.Printf
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal.Library  
-open FSharp.Compiler.AbstractIL.Diagnostics 
-
-open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerDiagnostics
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Infos
-open FSharp.Compiler.Layout
-open FSharp.Compiler.Layout.TaggedTextOps
-open FSharp.Compiler.Lib
-open FSharp.Compiler.NameResolution
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
-open FSharp.Compiler.TypedTree
-open FSharp.Compiler.TypedTreeBasics
-open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals 
-open FSharp.Compiler.XmlDoc
+open FSharp.Compiler.Xml
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Position
+open FSharp.Compiler.Text.Range
 
-module EnvMisc2 =
-    let maxMembers = GetEnvInteger "FCS_MaxMembersInQuickInfo" 10
-
-//----------------------------------------------------------------------------
-// Object model for diagnostics
-
-[<RequireQualifiedAccess>]
-type FSharpErrorSeverity = 
-    | Warning 
-    | Error
-
-module FSharpErrorInfo =
-    let [<Literal>] ObsoleteMessage = "Use FSharpErrorInfo.Range. This API will be removed in a future update."
-
-type FSharpErrorInfo(m: range, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) =
+type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: string, subcategory: string, errorNum: int, numberPrefix: string) =
     member _.Range = m
+
     member _.Severity = severity
+
     member _.Message = message
+
     member _.Subcategory = subcategory
+
     member _.ErrorNumber = errorNum
 
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.Start = m.Start
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.End = m.End
+    member _.ErrorNumberPrefix = numberPrefix
 
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartLine = Line.toZ m.Start.Line
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartLineAlternate = m.Start.Line
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndLine = Line.toZ m.End.Line
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndLineAlternate = m.End.Line
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartColumn = m.Start.Column
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndColumn = m.End.Column
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.FileName = m.FileName
+    member _.ErrorNumberText = numberPrefix + errorNum.ToString("0000")
+
+    member _.Start = m.Start
+
+    member _.End = m.End
+
+    member _.StartLine = m.Start.Line
+
+    member _.EndLine = m.End.Line
+    
+    member _.StartColumn = m.Start.Column
+
+    member _.EndColumn = m.End.Column
+
+    member _.FileName = m.FileName
 
     member _.WithStart newStart =
         let m = mkFileIndexRange m.FileIndex newStart m.End
-        FSharpErrorInfo(m, severity, message, subcategory, errorNum)
+        FSharpDiagnostic(m, severity, message, subcategory, errorNum, numberPrefix)
 
     member _.WithEnd newEnd =
         let m = mkFileIndexRange m.FileIndex m.Start newEnd
-        FSharpErrorInfo(m, severity, message, subcategory, errorNum)
+        FSharpDiagnostic(m, severity, message, subcategory, errorNum, numberPrefix)
 
     override _.ToString() =
         let fileName = m.FileName
         let s = m.Start
         let e = m.End
-        let severity = if severity=FSharpErrorSeverity.Warning then "warning" else "error"
+        let severity = if severity=FSharpDiagnosticSeverity.Warning then "warning" else "error"
         sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
 
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromException(exn, isError, fallbackRange: range, suggestNames: bool) =
+    static member CreateFromException(exn, severity, fallbackRange: range, suggestNames: bool) =
         let m = match GetRangeOfDiagnostic exn with Some m -> m | None -> fallbackRange 
-        let severity = if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning
         let msg = bufs (fun buf -> OutputPhasedDiagnostic buf exn false suggestNames)
         let errorNum = GetDiagnosticNumber exn
-        FSharpErrorInfo(m, severity, msg, exn.Subcategory(), errorNum)
+        FSharpDiagnostic(m, severity, msg, exn.Subcategory(), errorNum, "FS")
 
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromExceptionAndAdjustEof(exn, isError, fallbackRange: range, (linesCount: int, lastLength: int), suggestNames: bool) =
-        let r = FSharpErrorInfo.CreateFromException(exn, isError, fallbackRange, suggestNames)
+    static member CreateFromExceptionAndAdjustEof(exn, severity, fallbackRange: range, (linesCount: int, lastLength: int), suggestNames: bool) =
+        let r = FSharpDiagnostic.CreateFromException(exn, severity, fallbackRange, suggestNames)
 
         // Adjust to make sure that errors reported at Eof are shown at the linesCount
-        let startline, schange = min (r.Range.StartLine, false) (linesCount, true)
-        let endline, echange = min (r.Range.EndLine, false)   (linesCount, true)
+        let startline, schange = min (Line.toZ r.Range.StartLine, false) (linesCount, true)
+        let endline, echange = min (Line.toZ r.Range.EndLine, false)  (linesCount, true)
         
         if not (schange || echange) then r
         else
             let r = if schange then r.WithStart(mkPos startline lastLength) else r
-            if echange then r.WithEnd(mkPos  endline (1 + lastLength)) else r
+            if echange then r.WithEnd(mkPos endline (1 + lastLength)) else r
 
+    static member NewlineifyErrorString(message) = ErrorLogger.NewlineifyErrorString(message)
+
+    static member NormalizeErrorString(text) = ErrorLogger.NormalizeErrorString(text)
     
+    static member Create(severity: FSharpDiagnosticSeverity, message: string, number: int, range: range, ?numberPrefix: string, ?subcategory: string) =
+        let subcategory = defaultArg subcategory BuildPhaseSubcategory.TypeCheck
+        let numberPrefix = defaultArg numberPrefix "FS"
+        FSharpDiagnostic(range, severity, message, subcategory, number, numberPrefix)
+
 /// Use to reset error and warning handlers            
 [<Sealed>]
 type ErrorScope()  = 
@@ -110,16 +104,19 @@ type ErrorScope()  =
     let unwindEL =        
         PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> 
             { new ErrorLogger("ErrorScope") with 
-                member x.DiagnosticSink(exn, isError) = 
-                      let err = FSharpErrorInfo.CreateFromException(exn, isError, range.Zero, false)
+                member x.DiagnosticSink(exn, severity) = 
+                      let err = FSharpDiagnostic.CreateFromException(exn, severity, range.Zero, false)
                       errors <- err :: errors
-                      if isError && firstError.IsNone then 
+                      if severity = FSharpDiagnosticSeverity.Error && firstError.IsNone then 
                           firstError <- Some err.Message
                 member x.ErrorCount = errors.Length })
         
-    member x.Errors = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Error)
-    member x.Warnings = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Warning)
+    member x.Errors = errors |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Error)
+
+    member x.Warnings = errors |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Warning)
+
     member x.Diagnostics = errors
+
     member x.TryGetFirstErrorText() =
         match x.Errors with 
         | error :: _ -> Some error.Message
@@ -163,25 +160,25 @@ type ErrorScope()  =
             | None -> err ""
 
 /// An error logger that capture errors, filtering them according to warning levels etc.
-type internal CompilationErrorLogger (debugName: string, options: FSharpErrorSeverityOptions) = 
+type internal CompilationErrorLogger (debugName: string, options: FSharpDiagnosticOptions) = 
     inherit ErrorLogger("CompilationErrorLogger("+debugName+")")
             
     let mutable errorCount = 0
     let diagnostics = new ResizeArray<_>()
 
-    override x.DiagnosticSink(exn, isError) = 
-        if isError || ReportWarningAsError options exn then
-            diagnostics.Add(exn, FSharpErrorSeverity.Error)
+    override x.DiagnosticSink(exn, severity) = 
+        if severity = FSharpDiagnosticSeverity.Error || ReportWarningAsError options exn then
+            diagnostics.Add(exn, FSharpDiagnosticSeverity.Error)
             errorCount <- errorCount + 1
-        else if ReportWarning options exn then
-            diagnostics.Add(exn, FSharpErrorSeverity.Warning)
+        elif ReportWarning options exn then
+            diagnostics.Add(exn, FSharpDiagnosticSeverity.Warning)
 
     override x.ErrorCount = errorCount
 
-    member x.GetErrors() = diagnostics.ToArray()
+    member x.GetDiagnostics() = diagnostics.ToArray()
 
 
-/// This represents the global state established as each task function runs as part of the build.
+/// This represents the thread-local state established as each task function runs as part of the build.
 ///
 /// Use to reset error and warning handlers.
 type CompilationGlobalsScope(errorLogger: ErrorLogger, phase: BuildPhase) = 
@@ -193,15 +190,19 @@ type CompilationGlobalsScope(errorLogger: ErrorLogger, phase: BuildPhase) =
             unwindBP.Dispose()         
             unwindEL.Dispose()
 
-module ErrorHelpers =                            
-    let ReportError (options, allErrors, mainInputFileName, fileInfo, (exn, sev), suggestNames) = 
-        [ let isError = (sev = FSharpErrorSeverity.Error) || ReportWarningAsError options exn                
-          if (isError || ReportWarning options exn) then 
+module DiagnosticHelpers =                            
+
+    let ReportDiagnostic (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, fileInfo, (exn, severity), suggestNames) = 
+        [ let severity = 
+               if (severity = FSharpDiagnosticSeverity.Error) then severity 
+               elif ReportWarningAsError options exn then FSharpDiagnosticSeverity.Error
+               else severity
+          if (severity = FSharpDiagnosticSeverity.Error || ReportWarning options exn) then 
             let oneError exn =
                 [ // We use the first line of the file as a fallbackRange for reporting unexpected errors.
                   // Not ideal, but it's hard to see what else to do.
                   let fallbackRange = rangeN mainInputFileName 1
-                  let ei = FSharpErrorInfo.CreateFromExceptionAndAdjustEof (exn, isError, fallbackRange, fileInfo, suggestNames)
+                  let ei = FSharpDiagnostic.CreateFromExceptionAndAdjustEof (exn, severity, fallbackRange, fileInfo, suggestNames)
                   let fileName = ei.Range.FileName
                   if allErrors || fileName = mainInputFileName || fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation then
                       yield ei ]
@@ -211,119 +212,51 @@ module ErrorHelpers =
             for e in relatedErrors do 
                 yield! oneError e ]
 
-    let CreateErrorInfos (options, allErrors, mainInputFileName, errors, suggestNames) = 
+    let CreateDiagnostics (options, allErrors, mainInputFileName, errors, suggestNames) = 
         let fileInfo = (Int32.MaxValue, Int32.MaxValue)
-        [| for (exn, isError) in errors do 
-              yield! ReportError (options, allErrors, mainInputFileName, fileInfo, (exn, isError), suggestNames) |]
+        [| for (exn, severity) in errors do 
+              yield! ReportDiagnostic (options, allErrors, mainInputFileName, fileInfo, (exn, severity), suggestNames) |]
                             
 
-//----------------------------------------------------------------------------
-// Object model for tooltips and helpers for their generation from items
+namespace FSharp.Compiler.Symbols
 
-type public Layout = Internal.Utilities.StructuredFormat.Layout
+open System
+open System.IO
+
+open Internal.Utilities.Library  
+open Internal.Utilities.Library.Extras
+open FSharp.Core.Printf
+open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL.Diagnostics 
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Infos
+open FSharp.Compiler.IO 
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text.Layout
+open FSharp.Compiler.Text.TaggedText
+open FSharp.Compiler.Xml
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TcGlobals 
 
 /// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
 [<RequireQualifiedAccess>]
 type FSharpXmlDoc =
     | None
-    | Text of unprocessedLines: string[] * elaboratedXmlLines: string[]
-    | XmlDocFileSignature of (*File and Signature*) string * string
+    | FromXmlText of XmlDoc
+    | FromXmlFile of dllName: string * xmlSig: string
 
-/// A single data tip display element
-[<RequireQualifiedAccess>]
-type FSharpToolTipElementData<'T> = 
-    { MainDescription:  'T 
-      XmlDoc: FSharpXmlDoc
-      /// typar instantiation text, to go after xml
-      TypeMapping: 'T list
-      Remarks: 'T option
-      ParamName : string option }
-    static member Create(layout:'T, xml, ?typeMapping, ?paramName, ?remarks) = 
-        { MainDescription=layout; XmlDoc=xml; TypeMapping=defaultArg typeMapping []; ParamName=paramName; Remarks=remarks }
-
-/// A single data tip display element
-[<RequireQualifiedAccess>]
-type FSharpToolTipElement<'T> = 
-    | None
-
-    /// A single type, method, etc with comment. May represent a method overload group.
-    | Group of FSharpToolTipElementData<'T> list
-
-    /// An error occurred formatting this element
-    | CompositionError of string
-
-    static member Single(layout, xml, ?typeMapping, ?paramName, ?remarks) = 
-        Group [ FSharpToolTipElementData<'T>.Create(layout, xml, ?typeMapping=typeMapping, ?paramName=paramName, ?remarks=remarks) ]
-
-/// A single data tip display element with where text is expressed as string
-type public FSharpToolTipElement = FSharpToolTipElement<string>
-
-
-/// A single data tip display element with where text is expressed as <see cref="Layout"/>
-type public FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
-
-/// Information for building a data tip box.
-type FSharpToolTipText<'T> = 
-    /// A list of data tip elements to display.
-    | FSharpToolTipText of FSharpToolTipElement<'T> list  
-
-type public FSharpToolTipText = FSharpToolTipText<string>
-type public FSharpStructuredToolTipText = FSharpToolTipText<Layout>
-
-module Tooltips =
-    let ToFSharpToolTipElement tooltip = 
-        match tooltip with
-        | FSharpStructuredToolTipElement.None -> 
-            FSharpToolTipElement.None
-        | FSharpStructuredToolTipElement.Group l -> 
-            FSharpToolTipElement.Group(l |> List.map(fun x -> 
-                { MainDescription=showL x.MainDescription
-                  XmlDoc=x.XmlDoc
-                  TypeMapping=List.map showL x.TypeMapping
-                  ParamName=x.ParamName
-                  Remarks= Option.map showL x.Remarks }))
-        | FSharpStructuredToolTipElement.CompositionError text -> 
-            FSharpToolTipElement.CompositionError text
-
-    let ToFSharpToolTipText (FSharpStructuredToolTipText.FSharpToolTipText text) = 
-        FSharpToolTipText(List.map ToFSharpToolTipElement text)
-    
-
-[<RequireQualifiedAccess>]
-type CompletionItemKind =
-    | Field
-    | Property
-    | Method of isExtension : bool
-    | Event
-    | Argument
-    | CustomOperation
-    | Other
-
-type UnresolvedSymbol =
-    { FullName: string
-      DisplayName: string
-      Namespace: string[] }
-
-type CompletionItem =
-    { ItemWithInst: ItemWithInst
-      Kind: CompletionItemKind
-      IsOwnMember: bool
-      MinorPriority: int
-      Type: TyconRef option
-      Unresolved: UnresolvedSymbol option }
-    member x.Item = x.ItemWithInst.Item
-      
+module EnvMisc2 =
+    let maxMembers = GetEnvInteger "FCS_MaxMembersInQuickInfo" 10
 
 [<AutoOpen>]
 module internal SymbolHelpers = 
-    let OutputFullName isListItem ppF fnF r = 
-      // Only display full names in quick info, not declaration lists or method lists
-      if not isListItem then 
-        match ppF r with 
-        | None -> emptyL
-        | Some _ -> wordL (tagText (FSComp.SR.typeInfoFullName())) ^^ RightL.colon ^^ (fnF r)
-      else emptyL
-          
+
     let rangeOfValRef preferFlag (vref: ValRef) =
         match preferFlag with 
         | None -> vref.Range 
@@ -335,7 +268,6 @@ module internal SymbolHelpers =
         | None -> eref.Range 
         | Some false -> eref.DefinitionRange 
         | Some true -> eref.SigRange
-
    
     let rangeOfPropInfo preferFlag (pinfo: PropInfo) =
         match pinfo with
@@ -418,7 +350,6 @@ module internal SymbolHelpers =
             |> Option.bind ccuOfValRef 
             |> Option.orElseWith (fun () -> minfo.DeclaringTyconRef |> computeCcuOfTyconRef)
 
-
     let rec ccuOfItem (g: TcGlobals) d = 
         match d with
         | Item.Value vref | Item.CustomBuilder (_, vref) -> ccuOfValRef vref 
@@ -488,150 +419,30 @@ module internal SymbolHelpers =
                   yield ParamNameAndType(argInfo.Name, ty) ]
         | _ -> []
 
-    // Find the name of the metadata file for this external definition 
-    let metaInfoOfEntityRef (infoReader: InfoReader) m tcref = 
-        let g = infoReader.g
-        match tcref with 
-        | ERefLocal _ -> None
-        | ERefNonLocal nlref -> 
-            // Generalize to get a formal signature 
-            let formalTypars = tcref.Typars m
-            let formalTypeInst = generalizeTypars formalTypars
-            let ty = TType_app(tcref, formalTypeInst)
-            if isILAppTy g ty then
-                let formalTypeInfo = ILTypeInfo.FromType g ty
-                Some(nlref.Ccu.FileName, formalTypars, formalTypeInfo)
-            else None
-
     let mkXmlComment thing =
         match thing with
-        | Some (Some fileName, xmlDocSig) -> FSharpXmlDoc.XmlDocFileSignature(fileName, xmlDocSig)
+        | Some (Some fileName, xmlDocSig) -> FSharpXmlDoc.FromXmlFile(fileName, xmlDocSig)
         | _ -> FSharpXmlDoc.None
 
-    let GetXmlDocSigOfEntityRef infoReader m (eref: EntityRef) = 
-        if eref.IsILTycon then 
-            match metaInfoOfEntityRef infoReader m eref  with
-            | None -> None
-            | Some (ccuFileName, _, formalTypeInfo) -> Some(ccuFileName, "T:"+formalTypeInfo.ILTypeRef.FullName)
-        else
-            let ccuFileName = libFileOfEntityRef eref
-            let m = eref.Deref
-            if m.XmlDocSig = "" then
-                m.XmlDocSig <- XmlDocSigOfEntity eref
-            Some (ccuFileName, m.XmlDocSig)
-
-    let GetXmlDocSigOfScopedValRef g (tcref: TyconRef) (vref: ValRef) = 
-        let ccuFileName = libFileOfEntityRef tcref
-        let v = vref.Deref
-        if v.XmlDocSig = "" && v.HasDeclaringEntity then
-            let ap = buildAccessPath vref.TopValDeclaringEntity.CompilationPathOpt
-            let path =
-                if vref.TopValDeclaringEntity.IsModule then
-                    let sep = if ap.Length > 0 then "." else ""
-                    ap + sep + vref.TopValDeclaringEntity.CompiledName
-                else
-                    ap
-            v.XmlDocSig <- XmlDocSigOfVal g false path v
-        Some (ccuFileName, v.XmlDocSig)                
-
-    let GetXmlDocSigOfRecdFieldInfo (rfinfo: RecdFieldInfo) = 
-        let tcref = rfinfo.TyconRef
-        let ccuFileName = libFileOfEntityRef tcref 
-        if rfinfo.RecdField.XmlDocSig = "" then
-            rfinfo.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfinfo.Name]
-        Some (ccuFileName, rfinfo.RecdField.XmlDocSig)            
-
-    let GetXmlDocSigOfUnionCaseInfo (ucinfo: UnionCaseInfo) = 
-        let tcref =  ucinfo.TyconRef
-        let ccuFileName = libFileOfEntityRef tcref
-        if  ucinfo.UnionCase.XmlDocSig = "" then
-            ucinfo.UnionCase.XmlDocSig <- XmlDocSigOfUnionCase [tcref.CompiledRepresentationForNamedType.FullName; ucinfo.Name]
-        Some (ccuFileName, ucinfo.UnionCase.XmlDocSig)
-
-    let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) = 
-        let amap = infoReader.amap
-        match minfo with
-        | FSMeth (g, _, vref, _) ->
-            GetXmlDocSigOfScopedValRef g minfo.DeclaringTyconRef vref
-        | ILMeth (g, ilminfo, _) ->            
-            let actualTypeName = ilminfo.DeclaringTyconRef.CompiledRepresentationForNamedType.FullName
-            let fmtps = ilminfo.FormalMethodTypars            
-            let genArity = if fmtps.Length=0 then "" else sprintf "``%d" fmtps.Length
-
-            match metaInfoOfEntityRef infoReader m ilminfo.DeclaringTyconRef  with 
-            | None -> None
-            | Some (ccuFileName, formalTypars, formalTypeInfo) ->
-                let filminfo = ILMethInfo(g, formalTypeInfo.ToType, None, ilminfo.RawMetadata, fmtps) 
-                let args = 
-                    match ilminfo.IsILExtensionMethod with
-                    | true -> filminfo.GetRawArgTypes(amap, m, minfo.FormalMethodInst)
-                    | false -> filminfo.GetParamTypes(amap, m, minfo.FormalMethodInst)
-
-                // http://msdn.microsoft.com/en-us/library/fsbx0t7x.aspx
-                // If the name of the item itself has periods, they are replaced by the hash-sign ('#'). 
-                // It is assumed that no item has a hash-sign directly in its name. For example, the fully 
-                // qualified name of the String constructor would be "System.String.#ctor".
-                let normalizedName = ilminfo.ILName.Replace(".", "#")
-
-                Some (ccuFileName, "M:"+actualTypeName+"."+normalizedName+genArity+XmlDocArgsEnc g (formalTypars, fmtps) args)
-        | DefaultStructCtor _ -> None
-#if !NO_EXTENSIONTYPING
-        | ProvidedMeth _ -> None
-#endif
-
-    let GetXmlDocSigOfValRef g (vref: ValRef) =
-        if not vref.IsLocalRef then
-            let ccuFileName = vref.nlr.Ccu.FileName
-            let v = vref.Deref
-            if v.XmlDocSig = "" && v.HasDeclaringEntity then
-                v.XmlDocSig <- XmlDocSigOfVal g false vref.TopValDeclaringEntity.CompiledRepresentationForNamedType.Name v
-            Some (ccuFileName, v.XmlDocSig)
-        else 
-            None
-
-    let GetXmlDocSigOfProp infoReader m (pinfo: PropInfo) =
-        let g = pinfo.TcGlobals
-        match pinfo with 
-#if !NO_EXTENSIONTYPING
-        | ProvidedProp _ -> None // No signature is possible. If an xml comment existed it would have been returned by PropInfo.XmlDoc in infos.fs
-#endif
-        | FSProp _ as fspinfo -> 
-            match fspinfo.ArbitraryValRef with 
-            | None -> None
-            | Some vref -> GetXmlDocSigOfScopedValRef g pinfo.DeclaringTyconRef vref
-        | ILProp(ILPropInfo(_, pdef)) -> 
-            match metaInfoOfEntityRef infoReader m pinfo.DeclaringTyconRef with
-            | Some (ccuFileName, formalTypars, formalTypeInfo) ->
-                let filpinfo = ILPropInfo(formalTypeInfo, pdef)
-                Some (ccuFileName, "P:"+formalTypeInfo.ILTypeRef.FullName+"."+pdef.Name+XmlDocArgsEnc g (formalTypars, []) (filpinfo.GetParamTypes(infoReader.amap, m)))
-            | _ -> None
-
-    let GetXmlDocSigOfEvent infoReader m (einfo: EventInfo) =
-        match einfo with
-        | ILEvent _ ->
-            match metaInfoOfEntityRef infoReader m einfo.DeclaringTyconRef with 
-            | Some (ccuFileName, _, formalTypeInfo) -> 
-                Some(ccuFileName, "E:"+formalTypeInfo.ILTypeRef.FullName+"."+einfo.EventName)
-            | _ -> None
-        | _ -> None
-
-    let GetXmlDocSigOfILFieldInfo infoReader m (finfo: ILFieldInfo) =
-        match metaInfoOfEntityRef infoReader m finfo.DeclaringTyconRef with
-        | Some (ccuFileName, _, formalTypeInfo) ->
-            Some(ccuFileName, "F:"+formalTypeInfo.ILTypeRef.FullName+"."+finfo.FieldName)
-        | _ -> None
+    let GetXmlDocFromLoader (infoReader: InfoReader) xmlDoc =
+        match xmlDoc with
+        | FSharpXmlDoc.None
+        | FSharpXmlDoc.FromXmlText _ -> xmlDoc
+        | FSharpXmlDoc.FromXmlFile(dllName, xmlSig) ->
+            TryFindXmlDocByAssemblyNameAndSig infoReader (Path.GetFileNameWithoutExtension dllName) xmlSig
+            |> Option.map FSharpXmlDoc.FromXmlText
+            |> Option.defaultValue xmlDoc
 
     /// This function gets the signature to pass to Visual Studio to use its lookup functions for .NET stuff. 
     let GetXmlDocHelpSigOfItemForLookup (infoReader: InfoReader) m d = 
         let g = infoReader.g
-                
         match d with
         | Item.ActivePatternCase (APElemRef(_, vref, _, _))        
         | Item.Value vref | Item.CustomBuilder (_, vref) -> 
             mkXmlComment (GetXmlDocSigOfValRef g vref)
-        | Item.UnionCase  (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseInfo ucinfo)
+        | Item.UnionCase  (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseRef ucinfo.UnionCaseRef)
         | Item.ExnCase tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
-        | Item.RecdField rfinfo -> mkXmlComment (GetXmlDocSigOfRecdFieldInfo rfinfo)
+        | Item.RecdField rfinfo -> mkXmlComment (GetXmlDocSigOfRecdFieldRef rfinfo.RecdFieldRef)
         | Item.NewDef _ -> FSharpXmlDoc.None
         | Item.ILField finfo -> mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader m finfo)
         | Item.Types(_, ((TType_app(tcref, _)) :: _)) ->  mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
@@ -648,18 +459,18 @@ module internal SymbolHelpers =
             match argContainer with 
             | ArgumentContainer.Method minfo -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
             | ArgumentContainer.Type tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
-        | Item.UnionCaseField (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseInfo ucinfo)
+        | Item.UnionCaseField (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseRef ucinfo.UnionCaseRef)
         |  _ -> FSharpXmlDoc.None
+
+        |> GetXmlDocFromLoader infoReader
 
     /// Produce an XmlComment with a signature or raw text, given the F# comment and the item
     let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d = 
         match xmlDoc with 
         | Some xmlDoc when not xmlDoc.IsEmpty  -> 
-            FSharpXmlDoc.Text (xmlDoc.UnprocessedLines, xmlDoc.GetElaboratedXmlLines())
+            FSharpXmlDoc.FromXmlText xmlDoc
         | _ -> GetXmlDocHelpSigOfItemForLookup infoReader m d
 
-    let mutable ToolTipFault  = None
-    
     let GetXmlCommentForMethInfoItem infoReader m d (minfo: MethInfo) = 
         if minfo.HasDirectXmlComment || minfo.XmlDoc.NonEmpty then
             GetXmlCommentForItemAux (Some minfo.XmlDoc) infoReader m d 
@@ -669,27 +480,6 @@ module internal SymbolHelpers =
     let FormatTyparMapping denv (prettyTyparInst: TyparInst) = 
         [ for (tp, ty) in prettyTyparInst -> 
             wordL (tagTypeParameter ("'" + tp.DisplayName))  ^^ wordL (tagText (FSComp.SR.descriptionWordIs())) ^^ NicePrint.layoutType denv ty  ]
-
-    /// Generate the structured tooltip for a method info
-    let FormatOverloadsToList (infoReader: InfoReader) m denv (item: ItemWithInst) minfos : FSharpStructuredToolTipElement = 
-        ToolTipFault |> Option.iter (fun msg -> 
-           let exn = Error((0, msg), range.Zero)
-           let ph = PhasedDiagnostic.Create(exn, BuildPhase.TypeCheck)
-           simulateError ph)
-        
-        let layouts = 
-            [ for minfo in minfos -> 
-                let prettyTyparInst, layout = NicePrint.prettyLayoutOfMethInfoFreeStyle infoReader.amap m denv item.TyparInst minfo
-                let xml = GetXmlCommentForMethInfoItem infoReader m item.Item minfo
-                let tpsL = FormatTyparMapping denv prettyTyparInst
-                FSharpToolTipElementData<_>.Create(layout, xml, tpsL) ]
- 
-        FSharpStructuredToolTipElement.Group layouts
-
-        
-    let pubpathOfValRef (v: ValRef) = v.PublicPath        
-    let pubpathOfTyconRef (x: TyconRef) = x.PublicPath
-
 
     let (|ItemWhereTypIsPreferred|_|) item = 
         match item with 
@@ -771,17 +561,17 @@ module internal SymbolHelpers =
               | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref1, n1))), Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref2, n2))) -> 
                   (tyconRefEq g tcref1 tcref2) && (n1 = n2) // there is no direct function as in the previous case
               | Item.Property(_, pi1s), Item.Property(_, pi2s) -> 
-                  List.zip pi1s pi2s |> List.forall(fun (pi1, pi2) -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
+                  (pi1s, pi2s) ||> List.forall2 (fun pi1 pi2 -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
               | Item.Event evt1, Item.Event evt2 -> 
                   EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2
               | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) ->
                  anonInfoEquiv anon1 anon2 && i1 = i2
               | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) -> 
-                  List.zip meths1 meths2 
-                  |> List.forall (fun (minfo1, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
+                  (meths1, meths2)
+                  ||> List.forall2 (fun minfo1 minfo2 -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
               | Item.UnqualifiedType tcRefs1, Item.UnqualifiedType tcRefs2 ->
-                  List.zip tcRefs1 tcRefs2
-                  |> List.forall (fun (tcRef1, tcRef2) -> tyconRefEq g tcRef1 tcRef2)
+                  (tcRefs1, tcRefs2)
+                  ||> List.forall2 (fun tcRef1 tcRef2 -> tyconRefEq g tcRef1 tcRef2)
               | Item.Types(_, [TType.TType_app(tcRef1, _)]), Item.UnqualifiedType([tcRef2]) -> tyconRefEq g tcRef1 tcRef2
               | Item.UnqualifiedType([tcRef1]), Item.Types(_, [TType.TType_app(tcRef2, _)]) -> tyconRefEq g tcRef1 tcRef2
               | _ -> false)
@@ -815,14 +605,6 @@ module internal SymbolHelpers =
               | Item.UnqualifiedType(tcref :: _) -> hash tcref.LogicalName
               | _ -> failwith "unreachable") }
 
-    let CompletionItemDisplayPartialEquality g = 
-        let itemComparer = ItemDisplayPartialEquality g
-  
-        { new IPartialEqualityComparer<CompletionItem> with
-            member x.InEqualityRelation item = itemComparer.InEqualityRelation item.Item
-            member x.Equals(item1, item2) = itemComparer.Equals(item1.Item, item2.Item)
-            member x.GetHashCode item = itemComparer.GetHashCode(item.Item) }
-
     let ItemWithTypeDisplayPartialEquality g = 
         let itemComparer = ItemDisplayPartialEquality g
         
@@ -831,23 +613,10 @@ module internal SymbolHelpers =
             member x.Equals((item1, _), (item2, _)) = itemComparer.Equals(item1, item2)
             member x.GetHashCode ((item, _)) = itemComparer.GetHashCode item }
     
-    // Remove items containing the same module references
-    let RemoveDuplicateModuleRefs modrefs  = 
-        modrefs |> IPartialEqualityComparer.partialDistinctBy 
-                      { new IPartialEqualityComparer<ModuleOrNamespaceRef> with
-                          member x.InEqualityRelation _ = true
-                          member x.Equals(item1, item2) = (fullDisplayTextOfModRef item1 = fullDisplayTextOfModRef item2)
-                          member x.GetHashCode item = hash item.Stamp  }
-
     /// Remove all duplicate items
     let RemoveDuplicateItems g (items: ItemWithInst list) =     
         if isNil items then items else
         items |> IPartialEqualityComparer.partialDistinctBy (IPartialEqualityComparer.On (fun item -> item.Item) (ItemDisplayPartialEquality g))
-
-    /// Remove all duplicate items
-    let RemoveDuplicateCompletionItems g items =     
-        if isNil items then items else
-        items |> IPartialEqualityComparer.partialDistinctBy (CompletionItemDisplayPartialEquality g) 
 
     let IsExplicitlySuppressed (g: TcGlobals) (item: Item) = 
         // This may explore assemblies that are not in the reference set.
@@ -874,13 +643,8 @@ module internal SymbolHelpers =
     let RemoveExplicitlySuppressed (g: TcGlobals) (items: ItemWithInst list) =
         items |> List.filter (fun item -> not (IsExplicitlySuppressed g item.Item))
 
-    /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
-    let RemoveExplicitlySuppressedCompletionItems (g: TcGlobals) (items: CompletionItem list) = 
-        items |> List.filter (fun item -> not (IsExplicitlySuppressed g item.Item))
-
     let SimplerDisplayEnv denv = 
-        { denv with suppressInlineKeyword=true
-                    shortConstraints=true
+        { denv with shortConstraints=true
                     showConstraintTyparAnnotations=false
                     abbreviateAdditionalConstraints=false
                     suppressNestedTypes=true
@@ -1008,6 +772,8 @@ module internal SymbolHelpers =
         |  _ -> 
             GetXmlCommentForItemAux None infoReader m item
 
+        |> GetXmlDocFromLoader infoReader
+
     let IsAttribute (infoReader: InfoReader) item =
         try
             let g = infoReader.g
@@ -1019,280 +785,6 @@ module internal SymbolHelpers =
                 Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
             | _ -> false
         with _ -> false
-
-    /// Output the quick info information of a language item
-    let rec FormatItemDescriptionToToolTipElement isListItem (infoReader: InfoReader) m denv (item: ItemWithInst) = 
-        let g = infoReader.g
-        let amap = infoReader.amap
-        let denv = SimplerDisplayEnv denv 
-        let xml = GetXmlCommentForItem infoReader m item.Item
-        match item.Item with
-        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) -> 
-            // operator with solution
-            FormatItemDescriptionToToolTipElement isListItem infoReader m denv { item with Item = Item.Value vref }
-
-        | Item.Value vref | Item.CustomBuilder (_, vref) ->            
-            let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv item.TyparInst vref.Deref
-            let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
-            let tpsL = FormatTyparMapping denv prettyTyparInst
-            FSharpStructuredToolTipElement.Single(resL, xml, tpsL, remarks=remarks)
-
-        // Union tags (constructors)
-        | Item.UnionCase(ucinfo, _) -> 
-            let uc = ucinfo.UnionCase 
-            let rty = generalizedTyconRef ucinfo.TyconRef
-            let recd = uc.RecdFields 
-            let layout = 
-                wordL (tagText (FSComp.SR.typeInfoUnionCase())) ^^
-                NicePrint.layoutTyconRef denv ucinfo.TyconRef ^^
-                sepL (tagPunctuation ".") ^^
-                wordL (tagUnionCase (DecompileOpName uc.Id.idText) |> mkNav uc.DefinitionRange) ^^
-                RightL.colon ^^
-                (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv recd ^^ WordL.arrow) ^^
-                NicePrint.layoutType denv rty
-            FSharpStructuredToolTipElement.Single (layout, xml)
-
-        // Active pattern tag inside the declaration (result)             
-        | Item.ActivePatternResult(apinfo, ty, idx, _) ->
-            let items = apinfo.ActiveTags
-            let layout = 
-                wordL (tagText ((FSComp.SR.typeInfoActivePatternResult()))) ^^
-                wordL (tagActivePatternResult (List.item idx items) |> mkNav apinfo.Range) ^^
-                RightL.colon ^^
-                NicePrint.layoutType denv ty
-            FSharpStructuredToolTipElement.Single (layout, xml)
-
-        // Active pattern tags 
-        | Item.ActivePatternCase apref -> 
-            let v = apref.ActivePatternVal
-            // Format the type parameters to get e.g. ('a -> 'a) rather than ('?1234 -> '?1234)
-            let tau = v.TauType
-            // REVIEW: use _cxs here
-            let (prettyTyparInst, ptau), _cxs = PrettyTypes.PrettifyInstAndType denv.g (item.TyparInst, tau)
-            let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout v
-            let layout =
-                wordL (tagText (FSComp.SR.typeInfoActiveRecognizer())) ^^
-                wordL (tagActivePatternCase apref.Name |> mkNav v.DefinitionRange) ^^
-                RightL.colon ^^
-                NicePrint.layoutType denv ptau
-
-            let tpsL = FormatTyparMapping denv prettyTyparInst
-
-            FSharpStructuredToolTipElement.Single (layout, xml, tpsL, remarks=remarks)
-
-        // F# exception names
-        | Item.ExnCase ecref -> 
-            let layout = NicePrint.layoutExnDef denv ecref.Deref
-            let remarks= OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
-            FSharpStructuredToolTipElement.Single (layout, xml, remarks=remarks)
-
-        | Item.RecdField rfinfo when rfinfo.TyconRef.IsExceptionDecl ->
-            let ty, _ = PrettyTypes.PrettifyType g rfinfo.FieldType
-            let id = rfinfo.RecdField.Id
-            let layout =
-                wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
-                wordL (tagParameter id.idText) ^^
-                RightL.colon ^^
-                NicePrint.layoutType denv ty
-            FSharpStructuredToolTipElement.Single (layout, xml, paramName = id.idText)
-
-        // F# record field names
-        | Item.RecdField rfinfo ->
-            let rfield = rfinfo.RecdField
-            let ty, _cxs = PrettyTypes.PrettifyType g rfinfo.FieldType
-            let layout = 
-                NicePrint.layoutTyconRef denv rfinfo.TyconRef ^^
-                SepL.dot ^^
-                wordL (tagRecordField (DecompileOpName rfield.Name) |> mkNav rfield.DefinitionRange) ^^
-                RightL.colon ^^
-                NicePrint.layoutType denv ty ^^
-                (
-                    match rfinfo.LiteralValue with
-                    | None -> emptyL
-                    | Some lit -> try WordL.equals ^^  NicePrint.layoutConst denv.g ty lit with _ -> emptyL
-                )
-            FSharpStructuredToolTipElement.Single (layout, xml)
-
-        | Item.UnionCaseField (ucinfo, fieldIndex) ->
-            let rfield = ucinfo.UnionCase.GetFieldByIndex(fieldIndex)
-            let fieldTy, _ = PrettyTypes.PrettifyType g rfield.rfield_type
-            let id = rfield.Id
-            let layout =
-                wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
-                wordL (tagParameter id.idText) ^^
-                RightL.colon ^^
-                NicePrint.layoutType denv fieldTy
-            FSharpStructuredToolTipElement.Single (layout, xml, paramName = id.idText)
-
-        // Not used
-        | Item.NewDef id -> 
-            let layout = 
-                wordL (tagText (FSComp.SR.typeInfoPatternVariable())) ^^
-                wordL (tagUnknownEntity id.idText)
-            FSharpStructuredToolTipElement.Single (layout, xml)
-
-        // .NET fields
-        | Item.ILField finfo ->
-            let layout = 
-                wordL (tagText (FSComp.SR.typeInfoField())) ^^
-                NicePrint.layoutType denv finfo.ApparentEnclosingAppType ^^
-                SepL.dot ^^
-                wordL (tagField finfo.FieldName) ^^
-                RightL.colon ^^
-                NicePrint.layoutType denv (finfo.FieldType(amap, m)) ^^
-                (
-                    match finfo.LiteralValue with
-                    | None -> emptyL
-                    | Some v ->
-                        WordL.equals ^^
-                        try NicePrint.layoutConst denv.g (finfo.FieldType(infoReader.amap, m)) (CheckExpressions.TcFieldInit m v) with _ -> emptyL
-                )
-            FSharpStructuredToolTipElement.Single (layout, xml)
-
-        // .NET events
-        | Item.Event einfo ->
-            let rty = PropTypOfEventInfo infoReader m AccessibleFromSomewhere einfo
-            let rty, _cxs = PrettyTypes.PrettifyType g rty
-            let layout =
-                wordL (tagText (FSComp.SR.typeInfoEvent())) ^^
-                NicePrint.layoutTyconRef denv einfo.ApparentEnclosingTyconRef ^^
-                SepL.dot ^^
-                wordL (tagEvent einfo.EventName) ^^
-                RightL.colon ^^
-                NicePrint.layoutType denv rty
-            FSharpStructuredToolTipElement.Single (layout, xml)
-
-        // F# and .NET properties
-        | Item.Property(_, pinfo :: _) -> 
-            let layout = NicePrint.prettyLayoutOfPropInfoFreeStyle  g amap m denv pinfo
-            FSharpStructuredToolTipElement.Single (layout, xml)
-
-        // Custom operations in queries
-        | Item.CustomOperation (customOpName, usageText, Some minfo) -> 
-
-            // Build 'custom operation: where (bool)
-            //        
-            //        Calls QueryBuilder.Where'
-            let layout = 
-                wordL (tagText (FSComp.SR.typeInfoCustomOperation())) ^^
-                RightL.colon ^^
-                (
-                    match usageText() with
-                    | Some t -> wordL (tagText t)
-                    | None ->
-                        let argTys = ParamNameAndTypesOfUnaryCustomOperation g minfo |> List.map (fun (ParamNameAndType(_, ty)) -> ty)
-                        let argTys, _ = PrettyTypes.PrettifyTypes g argTys 
-                        wordL (tagMethod customOpName) ^^ sepListL SepL.space (List.map (fun ty -> LeftL.leftParen ^^ NicePrint.layoutType denv ty ^^ SepL.rightParen) argTys)
-                ) ^^
-                SepL.lineBreak ^^ SepL.lineBreak  ^^
-                wordL (tagText (FSComp.SR.typeInfoCallsWord())) ^^
-                NicePrint.layoutTyconRef denv minfo.ApparentEnclosingTyconRef ^^
-                SepL.dot ^^
-                wordL (tagMethod minfo.DisplayName)
-
-            FSharpStructuredToolTipElement.Single (layout, xml)
-
-        // F# constructors and methods
-        | Item.CtorGroup(_, minfos) 
-        | Item.MethodGroup(_, minfos, _) ->
-            FormatOverloadsToList infoReader m denv item minfos
-        
-        // The 'fake' zero-argument constructors of .NET interfaces.
-        // This ideally should never appear in intellisense, but we do get here in repros like:
-        //     type IFoo = abstract F : int
-        //     type II = IFoo  // remove 'type II = ' and quickly hover over IFoo before it gets squiggled for 'invalid use of interface type'
-        // and in that case we'll just show the interface type name.
-        | Item.FakeInterfaceCtor ty ->
-           let ty, _ = PrettyTypes.PrettifyType g ty
-           let layout = NicePrint.layoutTyconRef denv (tcrefOfAppTy g ty)
-           FSharpStructuredToolTipElement.Single(layout, xml)
-        
-        // The 'fake' representation of constructors of .NET delegate types
-        | Item.DelegateCtor delty -> 
-           let delty, _cxs = PrettyTypes.PrettifyType g delty
-           let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
-           let layout =
-               NicePrint.layoutTyconRef denv (tcrefOfAppTy g delty) ^^
-               LeftL.leftParen ^^
-               NicePrint.layoutType denv fty ^^
-               RightL.rightParen
-           FSharpStructuredToolTipElement.Single(layout, xml)
-
-        // Types.
-        | Item.Types(_, ((TType_app(tcref, _)) :: _))
-        | Item.UnqualifiedType (tcref :: _) -> 
-            let denv = { denv with shortTypeNames = true  }
-            let layout = NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere m (* width *) tcref.Deref
-            let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
-            FSharpStructuredToolTipElement.Single (layout, xml, remarks=remarks)
-
-        // F# Modules and namespaces
-        | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
-            //let os = StringBuilder()
-            let modrefs = modrefs |> RemoveDuplicateModuleRefs
-            let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
-            let kind = 
-                if definiteNamespace then FSComp.SR.typeInfoNamespace()
-                elif modrefs |> List.forall (fun modref -> modref.IsModule) then FSComp.SR.typeInfoModule()
-                else FSComp.SR.typeInfoNamespaceOrModule()
-            
-            let layout = 
-                wordL (tagKeyword kind) ^^
-                (if definiteNamespace then tagNamespace (fullDisplayTextOfModRef modref) else (tagModule modref.DemangledModuleOrNamespaceName)
-                 |> mkNav modref.DefinitionRange
-                 |> wordL)
-            if not definiteNamespace then
-                let namesToAdd = 
-                    ([], modrefs) 
-                    ||> Seq.fold (fun st modref -> 
-                        match fullDisplayTextOfParentOfModRef modref with 
-                        | ValueSome txt -> txt :: st 
-                        | _ -> st) 
-                    |> Seq.mapi (fun i x -> i, x) 
-                    |> Seq.toList
-                let layout =
-                    layout ^^
-                    (
-                        if not (List.isEmpty namesToAdd) then
-                            SepL.lineBreak ^^
-                            List.fold ( fun s (i, txt) ->
-                                s ^^
-                                SepL.lineBreak ^^
-                                wordL (tagText ((if i = 0 then FSComp.SR.typeInfoFromFirst else FSComp.SR.typeInfoFromNext) txt))
-                            ) emptyL namesToAdd 
-                        else 
-                            emptyL
-                    )
-                FSharpStructuredToolTipElement.Single (layout, xml)
-            else
-                FSharpStructuredToolTipElement.Single (layout, xml)
-
-        | Item.AnonRecdField(anon, argTys, i, _) -> 
-            let argTy = argTys.[i]
-            let nm = anon.SortedNames.[i]
-            let argTy, _ = PrettyTypes.PrettifyType g argTy
-            let layout =
-                wordL (tagText (FSComp.SR.typeInfoAnonRecdField())) ^^
-                wordL (tagRecordField nm) ^^
-                RightL.colon ^^
-                NicePrint.layoutType denv argTy
-            FSharpStructuredToolTipElement.Single (layout, FSharpXmlDoc.None)
-            
-        // Named parameters
-        | Item.ArgName (id, argTy, _) -> 
-            let argTy, _ = PrettyTypes.PrettifyType g argTy
-            let layout =
-                wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
-                wordL (tagParameter id.idText) ^^
-                RightL.colon ^^
-                NicePrint.layoutType denv argTy
-            FSharpStructuredToolTipElement.Single (layout, xml, paramName = id.idText)
-            
-        | Item.SetterArg (_, item) -> 
-            FormatItemDescriptionToToolTipElement isListItem infoReader m denv (ItemWithNoInst item)
-
-        |  _ -> 
-            FSharpStructuredToolTipElement.None
 
 #if !NO_EXTENSIONTYPING
 
@@ -1327,7 +819,6 @@ module internal SymbolHelpers =
                     None
             | _ -> None
         | _ -> None
-
 
     let (|ItemIsProvidedMethodWithStaticArguments|_|) item =
         match item with
@@ -1505,15 +996,9 @@ module internal SymbolHelpers =
         | Item.ActivePatternResult _ // "let (|Foo|Bar|) = .. Fo$o ..." - no keyword
             ->  None
 
-
-    /// Format the structured version of a tooltip for an item
-    let FormatStructuredDescriptionOfItem isDecl infoReader m denv item = 
-        ErrorScope.Protect m 
-            (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader m denv item)
-            (fun err -> FSharpStructuredToolTipElement.CompositionError err)
-
     /// Get rid of groups of overloads an replace them with single items.
     let FlattenItems g (m: range) item =
+        ignore m
         match item with 
         | Item.MethodGroup(nm, minfos, orig) -> minfos |> List.map (fun minfo -> Item.MethodGroup(nm, [minfo], orig))  
         | Item.CtorGroup(nm, cinfos) -> cinfos |> List.map (fun minfo -> Item.CtorGroup(nm, [minfo])) 

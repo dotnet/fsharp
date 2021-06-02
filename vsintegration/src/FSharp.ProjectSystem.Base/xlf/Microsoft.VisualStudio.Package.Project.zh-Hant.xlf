@@ -1,0 +1,820 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="zh-Hant" original="../Microsoft.VisualStudio.Package.Project.resx">
+    <body>
+      <trans-unit id="AddToNullProjectError">
+        <source>Failed to add file '{0}' to project as project is null.</source>
+        <target state="translated">無法將檔案 '{0}' 加入專案，因為專案是 null。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Advanced">
+        <source>Advanced</source>
+        <target state="translated">進階</target>
+        <note>Project Property Page Caption</note>
+      </trans-unit>
+      <trans-unit id="ReferenceCouldNotBeAdded">
+        <source>A reference to '{0}' could not be added.</source>
+        <target state="translated">無法加入對 '{0}' 的參考。</target>
+        <note>ReferenceCouldNotBeAdded error message</note>
+      </trans-unit>
+      <trans-unit id="ReferenceAlreadyExists">
+        <source>A reference to '{0}' could not be added. A reference to the component '{1}' already exists in the project.</source>
+        <target state="translated">無法加入 '{0}' 的參考。至 '{1}' 元件的參考已經存在於專案中</target>
+        <note>ReferenceAlreadyExists error message</note>
+      </trans-unit>
+      <trans-unit id="ReferenceWithAssemblyNameAlreadyExists">
+        <source>A reference to '{0}' (with assembly name '{1}') could not be added. A reference to the component '{2}' with the same assembly name already exists in the project.</source>
+        <target state="translated">無法加入 '{0}' (組入名稱為 '{1}') 的參考。此專案中已經有相同組件名稱之元件 '{2}' 的參考。</target>
+        <note>ReferenceAlreadyExists error message</note>
+      </trans-unit>
+      <trans-unit id="AttributeLoad">
+        <source>Could not load attribute '{0}' from project file '{1}'.</source>
+        <target state="translated">無法從專案檔 '{1}' 載入屬性 '{0}'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BuildAction">
+        <source>Build Action</source>
+        <target state="translated">建置動作</target>
+        <note>Project Build Property Name</note>
+      </trans-unit>
+      <trans-unit id="BuildActionDescription">
+        <source>How the file relates to the build and deployment process</source>
+        <target state="translated">檔案與組建和部署處理關聯的方式</target>
+        <note>Project Build Property Description</note>
+      </trans-unit>
+      <trans-unit id="BuildVerbosity">
+        <source>Verbosity</source>
+        <target state="translated">詳細資訊</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BuildVerbosityDescription">
+        <source>Specify how much information is included in the build output</source>
+        <target state="translated">指定組建輸出中要包含多少資訊</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cli1">
+        <source>ECMA-335 CLI compatible framework (location must be provided)</source>
+        <target state="translated">ECMA-335 CLI 相容架構 (必須提供位置)</target>
+        <note>Target platform drop down option</note>
+      </trans-unit>
+      <trans-unit id="Compile">
+        <source>Compile</source>
+        <target state="translated">編譯</target>
+        <note>Build Action - drop down option</note>
+      </trans-unit>
+      <trans-unit id="ConfirmExtensionChange">
+        <source>If you change a file name extension, the file may become unusable. Are you sure you want to change it?</source>
+        <target state="translated">如果變更副檔名，檔案可能變成無法使用。確定要變更嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotAddFileThatIsOpenInEditor">
+        <source>A file with name '{0}' already exists and is open in an editor. Please give a unique name to the item you are adding, or delete the existing item first.</source>
+        <target state="translated">已經有名稱為 '{0}' 的檔案，而且已經在編輯器中開啟。請為所要加入的項目指定唯一的名稱，或者先刪除現有的同名項目。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CanNotSaveFileNotOpeneInEditor">
+        <source>Cannot save '{0}' as it is not open in the editor.</source>
+        <target state="translated">因為 '{0}' 不是在編輯器中開啟的，所以無法儲存。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Content">
+        <source>Content</source>
+        <target state="translated">內容</target>
+        <note>Build Action - drop down option</note>
+      </trans-unit>
+      <trans-unit id="CopyToLocal">
+        <source>Copy Local</source>
+        <target state="translated">複製到本機</target>
+        <note>File property</note>
+      </trans-unit>
+      <trans-unit id="CopyToLocalDescription">
+        <source>Indicates whether the reference will be copied to the output directory.</source>
+        <target state="translated">表示是否將參考複製到輸出目錄。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Detailed">
+        <source>Detailed</source>
+        <target state="translated">詳細</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Diagnostic">
+        <source>Diagnostic</source>
+        <target state="translated">診斷</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DirectoryExistError">
+        <source>Directory already exists</source>
+        <target state="translated">目錄已經存在</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EditorViewError">
+        <source>Error opening specified view '{0}' using editor '{1}'</source>
+        <target state="translated">使用編輯器 '{1}' 開啟指定的檢視 '{0}' 時發生錯誤</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EmbeddedResource">
+        <source>Embedded Resource</source>
+        <target state="translated">內嵌資源</target>
+        <note>Build Action - drop down option</note>
+      </trans-unit>
+      <trans-unit id="Error">
+        <source>error</source>
+        <target state="translated">錯誤</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorInvalidFileName">
+        <source>Files and folders cannot be:
+- Empty strings 
+- System reserved names, including 'CON', 'AUX', PRN', 'COM1' or 'LPT2' 
+- contain only '.'
+- have any of the following characters: / ? : &amp;  \ * " &lt; &gt; | # %</source>
+        <target state="translated">檔案與資料夾不可為:
+- 空字串 
+- 系統保留名稱，包括 'CON'、'AUX'、'PRN'、'COM1' 或 'LPT2' 
+- 只有 '.'
+- 有下列任一字元: / ? : &amp;  \ * " &lt; &gt; | # %</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorInvalidProjectName">
+        <source>The name you provided is not a valid project name.</source>
+        <target state="translated">您提供的名稱不是有效的專案名稱。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorMsBuildRegistration">
+        <source>MSBuild path not found in registry. Please reinstall to fix the problem.</source>
+        <target state="translated">在登錄中找不到 MSBuild 路徑。請重新安裝以解決問題。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorSaving">
+        <source>Error Saving File</source>
+        <target state="translated">儲存檔案時發生錯誤</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Exe">
+        <source>Console Application</source>
+        <target state="translated">主控台應用程式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExpectedObjectOfType">
+        <source>Expecting object of type {0}.</source>
+        <target state="translated">必須是類型 {0} 的物件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FailedToRetrieveProperties">
+        <source>Failed to retrieve msbuild property {0} from the project file.</source>
+        <target state="translated">無法從專案檔擷取 msbuild 屬性 {0}。</target>
+        <note>The exception message thrown when getting a property from msbuild fails.</note>
+      </trans-unit>
+      <trans-unit id="FileAlreadyExists">
+        <source>A file with the same name '{0}' already exists. Do you want to overwrite it?</source>
+        <target state="translated">已經存在相同名稱 '{0}' 的檔案。您要覆寫它嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileAlreadyExistsAndCannotBeRenamed">
+        <source>A file with the same name '{0}' already exists.</source>
+        <target state="translated">已經存在相同名稱 '{0}' 的檔案。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileAlreadyExistsCaption">
+        <source>Destination File Exists</source>
+        <target state="translated">目的檔案已經存在</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileAlreadyInProject">
+        <source>A file of this name is already part of the project. Do you want to overwrite it?</source>
+        <target state="translated">此名稱的檔案已經是專案的一部分。要覆寫嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileAlreadyInProjectCaption">
+        <source>Destination File Exists</source>
+        <target state="translated">目的檔案已經存在</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBeRenamedToAnExistingFile">
+        <source>A file or folder with the name '{0}' already exists on disk at this location. Please choose another name.</source>
+        <target state="translated">磁碟的這個位置已經有名稱為 '{0}' 的檔案或資料夾存在。請選擇其他名稱。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCopyError">
+        <source>Error Copying File</source>
+        <target state="translated">複製檔案時發生錯誤</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileName">
+        <source>File Name</source>
+        <target state="translated">檔案名稱</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileNameCannotContainALeadingPeriod">
+        <source>File and folder names cannot contain a leading period.</source>
+        <target state="translated">檔案和資料夾名稱不可以包含前置句號。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileNameDescription">
+        <source>The name of the file or folder</source>
+        <target state="translated">檔案或資料夾的名稱</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderName">
+        <source>Folder Name</source>
+        <target state="translated">資料夾名稱</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderNameDescription">
+        <source>Name of this folder</source>
+        <target state="translated">此資料夾的名稱</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FullPath">
+        <source>Full Path</source>
+        <target state="translated">完整路徑</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FullPathDescription">
+        <source>Location of the file</source>
+        <target state="translated">檔案的位置</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ItemDoesNotExistInProjectDirectory">
+        <source>The item '{0}' does not exist in the project directory. It may have been moved, renamed or deleted.</source>
+        <target state="translated">項目 '{0}' 不存在專案目錄中。可能已經移動、重新命名或刪除。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LinkedItemsAreNotSupported">
+        <source>Cannot save '{0}' outside the project directory. Linked items are not supported.</source>
+        <target state="translated">無法將 '{0}' 儲存在專案目錄外。不支援連結項目。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Library">
+        <source>Class Library</source>
+        <target state="translated">類別庫</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Minimal">
+        <source>Minimal</source>
+        <target state="translated">最小</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Misc">
+        <source>Misc</source>
+        <target state="translated">其他</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="None">
+        <source>None</source>
+        <target state="translated">無</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Normal">
+        <source>Normal</source>
+        <target state="translated">NORMAL</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PasteFailed">
+        <source>Item is not available or corrupted and thus cannot be pasted.</source>
+        <target state="translated">項目無法使用或已經損毀，所以無法貼上。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Program">
+        <source>Program</source>
+        <target state="translated">程式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project">
+        <source>Project</source>
+        <target state="translated">專案</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectContainsCircularReferences">
+        <source>A reference to library '{0}' cannot be added. Adding this project as a reference would cause a circular dependency. </source>
+        <target state="translated">無法加入程式庫 '{0}' 的參考。以參考方式加入此專案將導致循環相依性。 </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFile">
+        <source>Project File</source>
+        <target state="translated">專案檔</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFileDescription">
+        <source>The name of the file containing build, configuration, and other information about the project.</source>
+        <target state="translated">包含組建、組態以及其他專案相關資訊之檔案的名稱。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolder">
+        <source>Project Folder</source>
+        <target state="translated">專案資料夾</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolderDescription">
+        <source>The absolute location of the project.</source>
+        <target state="translated">專案的絕對位置。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Quiet">
+        <source>Quiet</source>
+        <target state="translated">無訊息</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RefName">
+        <source>(Name)</source>
+        <target state="translated">(名稱)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferencesNodeName">
+        <source>References</source>
+        <target state="translated">參考</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RefNameDescription">
+        <source>Display name of the reference</source>
+        <target state="translated">參考的顯示名稱</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RenameFolder">
+        <source>Rename directory failed. {0}</source>
+        <target state="translated">重新命名目錄失敗。{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RTL">
+        <source>RTL_False</source>
+        <target state="translated">RTL_False</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SaveCaption">
+        <source>Save?</source>
+        <target state="translated">儲存嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SaveModifiedDocuments">
+        <source>Do you want to save modified documents?</source>
+        <target state="translated">您要儲存修改過的文件嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SaveOfProjectFileOutsideCurrentDirectory">
+        <source>The project file can only be saved into the project location '{0}'.</source>
+        <target state="translated">專案檔只能儲存至專案位置 '{0}'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StandardEditorViewError">
+        <source>Error opening specified view '{0}' using standard editor.</source>
+        <target state="translated">使用標準編輯器開啟指定的檢視 '{0}' 時發生錯誤。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="URL">
+        <source>URL</source>
+        <target state="translated">URL</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseOfDeletedItemError">
+        <source>You are trying to use an item that has already been deleted or that does not exist.</source>
+        <target state="translated">您嘗試使用的項目已遭到刪除或不存在。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="v1">
+        <source>Microsoft .Net Framework v1.0</source>
+        <target state="translated">Microsoft .Net Framework v1.0</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="v11">
+        <source>Microsoft .Net Framework v1.1</source>
+        <target state="translated">Microsoft .Net Framework v1.1</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="v2">
+        <source>Microsoft .Net Framework v2.0</source>
+        <target state="translated">Microsoft .Net Framework v2.0</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Warning">
+        <source>warning</source>
+        <target state="translated">警告</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WinExe">
+        <source>Windows Application</source>
+        <target state="translated">Windows 應用程式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidAutomationObject">
+        <source>Automation object invalid.</source>
+        <target state="translated">Automation 物件無效。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CancelQueryEdit">
+        <source>The command you are attempting cannot be completed because the file '{0}' that must be modified cannot be changed. If the file is under source control, you may want to check it out; if the file is read-only on disk, you may want to change its attributes.</source>
+        <target state="translated">您嘗試執行的命令無法完成，因為無法變更必須要被修改的檔案 '{0}'。如果此檔案是在原始檔控制之下，您需要將它簽出; 如果它在磁碟上是唯讀檔案，您需要變更它的屬性。</target>
+        <note>MsgBox</note>
+      </trans-unit>
+      <trans-unit id="ParameterMustBeAValidGuid">
+        <source>Parameter must be a valid guid.</source>
+        <target state="translated">參數必須是有效的 GUID。</target>
+        <note>Error message in the ArgumentException for a  parameter that is not a valid guid.</note>
+      </trans-unit>
+      <trans-unit id="InvalidLoggerType">
+        <source>Invalid logger type\nExpected: {0}\nReceived: {1}</source>
+        <target state="translated">無效的記錄器類型\n必須是: {0}\n已收到: {1}</target>
+        <note>Error message thrown for when an  invalid logger type is set.</note>
+      </trans-unit>
+      <trans-unit id="InvalidParameter">
+        <source>InvalidParameter</source>
+        <target state="translated">InvalidParameter</target>
+        <note>Generic error message for invalid parameters.</note>
+      </trans-unit>
+      <trans-unit id="ParameterCannotBeNullOrEmpty">
+        <source>ParameterCannotBeNullOEmpty</source>
+        <target state="translated">ParameterCannotBeNullOEmpty</target>
+        <note>Error message for string parameters that cannot be null or empty.</note>
+      </trans-unit>
+      <trans-unit id="ParameterMustBeAValidItemId">
+        <source>Parameter must be a valid item identifier.</source>
+        <target state="translated">參數必須是有效的項目識別項。</target>
+        <note>Error message thrown when an invalid item id is retrieved.</note>
+      </trans-unit>
+      <trans-unit id="FileProperties">
+        <source>File Properties</source>
+        <target state="translated">檔案屬性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderProperties">
+        <source>Folder Properties</source>
+        <target state="translated">資料夾屬性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectProperties">
+        <source>Project Properties</source>
+        <target state="translated">專案屬性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceProperties">
+        <source>Reference Properties</source>
+        <target state="translated">參考屬性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileOrFolderAlreadyExists">
+        <source>A file or folder with the name '{0}' already exists on disk at this location. Please choose another name.</source>
+        <target state="translated">磁碟的這個位置已經有名稱為 '{0}' 的檔案或資料夾存在。請選擇其他名稱。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderCannotBeRenamed">
+        <source>This folder cannot be renamed to '{0}' as it already exists on disk.\n\nOnly empty folders can be renamed to existing folders. This folder contains files within it on disk.</source>
+        <target state="translated">因為此資料夾已存在於磁碟，所以無法將其重新命名為 '{0}'。\n\n只有空的資料夾可重新命名為現有的資料夾。此資料夾包含位於磁碟的檔案。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BuildCaption">
+        <source>Build</source>
+        <target state="translated">建置</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputPath">
+        <source>Output Path</source>
+        <target state="translated">輸出路徑</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputPathDescription">
+        <source>The path to the primary output</source>
+        <target state="translated">主要輸出的路徑</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PathTooLong">
+        <source>The complete path to '{0}' exceeds the maximum number of characters permitted by the file system.</source>
+        <target state="translated">'{0}' 的完整路徑超過檔案系統允許的最大字元數。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CustomTool">
+        <source>Custom Tool</source>
+        <target state="translated">自訂工具</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CustomToolDescription">
+        <source>Specifies the tool that transforms a file at design time and places the output of that transformation into another file. For example, a dataset (.xsd) file comes with a default custom tool.</source>
+        <target state="translated">指定於設計階段轉換檔案並將轉換的輸出放置到其他檔案的工具。例如，資料集 (.xsd) 檔案隨附預設自訂工具。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CustomToolNamespace">
+        <source>Custom Tool Namespace</source>
+        <target state="translated">自訂工具命名空間</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CustomToolNamespaceDescription">
+        <source>The namespace into which the output of the custom tool is placed.</source>
+        <target state="translated">自訂工具產生的輸出所放置的命名空間。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputBuilt">
+        <source>Primary Output</source>
+        <target state="translated">主要輸出</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputContentFiles">
+        <source>Content Files</source>
+        <target state="translated">內容檔</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputDocumentation">
+        <source>Documentation Files</source>
+        <target state="translated">文件檔</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputLocalizedResourceDlls">
+        <source>Localized Resources</source>
+        <target state="translated">當地語系化資源</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputSourceFiles">
+        <source>Source Files</source>
+        <target state="translated">原始程式檔</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputSymbols">
+        <source>Debug Symbols</source>
+        <target state="translated">偵錯符號</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputXmlSerializer">
+        <source>XML Serialization Assemblies</source>
+        <target state="translated">XML 序列化組件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputBuiltDescription">
+        <source>Contains the DLL or EXE built by the project.</source>
+        <target state="translated">包含專案所建置的 DLL 或 EXE。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputContentFilesDescription">
+        <source>Contains all content files in the project.</source>
+        <target state="translated">包含專案中所有內容檔。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputDocumentationDescription">
+        <source>Contains the XML Documentation files for the project.</source>
+        <target state="translated">包含專案的 XML 文件檔案。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputLocalizedResourceDllsDescription">
+        <source>Contains the satellite assemblies for each culture's resources.</source>
+        <target state="translated">包含每個文化特性資源的附屬組件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputSourceFilesDescription">
+        <source>Contains all source files in the project.</source>
+        <target state="translated">包含專案中所有原始程式檔。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputSymbolsDescription">
+        <source>Contains the debugging files for the project.</source>
+        <target state="translated">包含專案的偵錯檔案。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputXmlSerializerDescription">
+        <source>Contains the XML serialization assemblies for the project.</source>
+        <target state="translated">包含專案的 XML 序列化組件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QueryReloadNestedProject">
+        <source>The project file '{0}' has been modified outside of Visual Studio.  Do you want to reload the project?</source>
+        <target state="translated">專案檔 '{0}' 已在 Visual Studio 之外修改過。您要重新載入專案嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NestedProjectFailedToReload">
+        <source>The nested project has failed to reload.</source>
+        <target state="translated">巢狀專案無法重新載入。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileOrFolderCannotBeFound">
+        <source>The item '{0}' cannot be found on disk, either because it has been renamed, deleted, or moved to a new location.</source>
+        <target state="translated">在磁碟上找不到項目 '{0}'，因為該項目已經重新命名、遭到刪除或移動至新位置。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorReferenceCouldNotBeAdded">
+        <source>A reference to {0} could not be added. Please make sure that the file is accessible, and that it is a valid assembly or COM component.</source>
+        <target state="translated">無法加入 {0} 的參考。請確定這是個可存取的檔案，且是有效組件或 COM 元件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsImport">
+        <source>An 'Import' of the file '{1}' was found in the project file '{0}'. This file is not registered as a safe file to import, and could contain targets and tasks that are harmful.  If this imported file is indeed considered safe, then it can be registered by writing to the registry key {2}.</source>
+        <target state="translated">在專案檔 '{0}' 中找到檔案 '{1}' 的 'Import'。這個檔案並未註冊為安全的匯入檔案，可能包含具有傷害性的目標和工作。如果這個匯入檔案確實是安全無虞的，則可以寫入登錄機碼 {2} 以進行註冊。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsUserImport">
+        <source>An 'Import' of the file '{1}' was found in the user project file '{0}'.  All imports in user project files are considered unsafe.</source>
+        <target state="translated">在使用者專案檔 '{0}' 中找到檔案 '{1}' 的 'Import'。系統會將使用者專案檔中的所有匯入視為不安全。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsItem">
+        <source>One or more items named '{1}' were found in the project file '{0}'. These items normally should not be specified in the project file. They can change the way targets and tasks are executed during project load, and this could have harmful effects.</source>
+        <target state="translated">在專案檔 '{0}' 中找到一個或多個名為 '{1}' 的項目。這些項目通常不應在專案檔中指定。它們可以在專案載入期間變更目標和工作的執行方式，而這可能會造成有害的效果。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsProperty">
+        <source>A property named '{1}' was found in the project file '{0}'.  This property normally should not be specified in the project file.  Its value can change the way targets and tasks are executed during project load, and this could have harmful effects.</source>
+        <target state="translated">在專案檔 '{0}' 中找到名為 '{1}' 的屬性。這個屬性通常不應在專案檔中指定。它的值可以在專案載入期間變更目標和工作的執行方式，而這可能會造成有害的效果。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsUsingTask">
+        <source>A 'UsingTask' tag which registers the '{1}' task was found in the project file '{0}'.  'UsingTask' tags in the project file take precedence over those in the imported .TARGETS files, and therefore could be used to execute arbitrary code during an otherwise unmodified build process.</source>
+        <target state="translated">在專案檔 '{0}' 中找到註冊 '{1}' 工作的 'UsingTask' 標記。專案檔中的 'UsingTask' 標記會比匯入的 .TARGETS 檔案內容優先考慮，因此可以用來在其他未經修改的建置程序期間執行任意程式碼。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsTarget">
+        <source>A 'Target' named '{1}' was found in the project file '{0}'.  The tasks within this target could contain arbitrary code and may get executed as soon as the project is loaded in the IDE.</source>
+        <target state="translated">在專案檔 '{0}' 中找到名為 '{1}' 的 'Target'。這個目標內的工作可能包含任意程式碼，並可能在專案載入於 IDE 時立刻執行。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsItemLocation">
+        <source>An item referring to the file '{1}' was found in the project file '{0}'.  Since this file is located within a system directory, root directory, or network share, it could be harmful to write to this file.</source>
+        <target state="translated">在專案檔 '{0}' 中找到參考檔案 '{1}' 的項目。由於這個檔案是位在系統目錄、根目錄或網路共用中，所以寫入這個檔案可能會造成損害。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectLocationNotTrusted">
+        <source>The project location is not trusted:{0}{0}{1}{0}{0}Running the application may result in security exceptions when it attempts to perform actions which require full trust.{0}{0}Click OK to ignore and continue.</source>
+        <target state="translated">專案位置不受信任:{0}{0}{1}{0}{0}執行應用程式時若嘗試執行需要完全信任的動作，可能會產生安全性例外狀況。{0}{0}按一下 [確定] 以忽略並繼續。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BuildEventError">
+        <source>Exception was thrown during BuildBegin event\n{0}</source>
+        <target state="translated">BuildBegin 事件期間發生例外狀況\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CopyAlways">
+        <source>Copy always</source>
+        <target state="translated">永遠複製</target>
+        <note>CopyToOutputDirectory - drop down option</note>
+      </trans-unit>
+      <trans-unit id="CopyToOutputDirectory">
+        <source>Copy to Output Directory</source>
+        <target state="translated">複製到輸出目錄</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CopyToOutputDirectoryDescription">
+        <source>Specifies the source file will be copied to the output directory</source>
+        <target state="translated">指定是否要將原始程式檔複製到輸出目錄</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CopyIfNewer">
+        <source>Copy if newer</source>
+        <target state="translated">有更新時才複製</target>
+        <note>CopyToOutputDirectory - drop down option</note>
+      </trans-unit>
+      <trans-unit id="DoNotCopy">
+        <source>Do not copy</source>
+        <target state="translated">不要複製</target>
+        <note>CopyToOutputDirectory - drop down option</note>
+      </trans-unit>
+      <trans-unit id="SpecificVersion">
+        <source>Specific Version</source>
+        <target state="translated">特定版本</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SpecificVersionDescription">
+        <source>Indicates whether this reference is to a specific version of an assembly.</source>
+        <target state="translated">指出這個參考是否指向某一組件的特定版本。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NoZeroImpactProjects">
+        <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
+        <target state="translated">Microsoft Visual F# 不支援零影響專案。若要從這個專案範本建立 F# 專案，您可以前往 Visual Studio 功能表 [工具]、[選項...]、[專案和方案]、[一般]，然後選取標記為 [建立時儲存新專案]，或在這個專案範本的 .vstemplate 檔案的 &lt;TemplateData&gt; 區段中指定 &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt;，然後重試這項作業。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NoWildcardsInProject">
+        <source>"Cannot open F# project '{0}'. \nThis project uses wildcards in item specification: \n'{2}' for item type '{1}'\n\nWildcards in F# projects are not currently supported.</source>
+        <target state="translated">"無法開啟 F# 專案 '{0}'。\n此專案在項目規格中使用萬用字元: \n'{2}' (項目類型 '{1}')\n\nF# 專案中目前不支援萬用字元。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotAddItemToProjectWithWildcards">
+        <source>"Cannot add file {3} to F# project '{0}'. \nThis project uses wildcards in item specification: \n'{2}' for item type '{1}'\n\nWildcards in F# projects are not currently supported.</source>
+        <target state="translated">"無法新增檔案 {3} 至 F# 專案 '{0}'。\n此專案在項目規格中使用萬用字元: \n'{2}' (項目類型 '{1}')\n\nF# 專案中目前不支援萬用字元。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpgradeCannotOpenProjectFileForEdit">
+        <source>Cannot open project file for edit.</source>
+        <target state="translated">無法開啟專案檔進行編輯。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpgradeNoNeedToUpgradeAfterCheckout">
+        <source>Project file was checked out and is already upgraded.</source>
+        <target state="translated">專案檔已簽出，而且已經升級。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotStartLibraries">
+        <source>A project with an Output Type of Class Library cannot be started directly.\n\nIn order to debug this project, add an executable project to this solution which references the library project. Set the executable project as the startup project.</source>
+        <target state="translated">無法直接啟動輸出類型為類別庫的專案。\n\n為了偵錯此專案，請將可執行檔專案加入這個參考程式庫專案的方案，然後再將這個可執行檔專案設定為啟始專案。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidOutputPath">
+        <source>The entered path is not a valid output path</source>
+        <target state="translated">輸入的路徑不是有效的輸出路徑</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectRefOnlyExeOrDll">
+        <source>The project {0} cannot be referenced. An assembly must have a 'dll' or 'exe' extension in order to be referenced.</source>
+        <target state="translated">無法參考專案 {0}。組件必須有 'dll' 或 'exe' 的副檔名才能參考。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotBuildWhenBuildInProgress">
+        <source>Cannot start a build, because another build is already in progress.</source>
+        <target state="translated">無法啟動建置，因為另一個建置已經在進行中。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WorkingDirectoryNotExists">
+        <source>The working directory does not exist:\n'{0}'.</source>
+        <target state="translated">工作目錄不存在:\n'{0}'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectReferencesDifferentFramework">
+        <source>A reference to library '{0}' cannot be added. This project targets a different framework ({2}) from the current project ({1}).</source>
+        <target state="translated">無法加入程式庫 '{0}' 的參考。這個專案目標設定的 Framework ({2}) 與目前專案的目標設定 ({1}) 不同。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotLoadUnknownTargetFrameworkProject">
+        <source>The project '{0}' is targeting '{1}'; however, the target framework is not installed on the machine.</source>
+        <target state="translated">專案 '{0}' 目標設定為 '{1}'; 但是，電腦上未安裝目標 Framework。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductName">
+        <source>F#</source>
+        <target state="translated">F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectReferencesHigherVersionWarning">
+        <source>The referenced project '{0}' is targeting a higher framework version ({1}) than this project’s current target framework version ({2}). This may lead to build failures if types from assemblies outside this project’s target framework are used by any project in the dependency chain.</source>
+        <target state="translated">參考的專案 '{0}' 目標設定的 Framework 版本 ({1}) 比這個專案的目前目標 Framework 版本 ({2}) 高。如果相依性鏈結中的任何專案使用這個專案的目標 Framework 以外的組件中的類型，可能導致組建失敗。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectConversionNotRequired">
+        <source>The project file does not require conversion.</source>
+        <target state="translated">專案檔不需要轉換。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConversionNotRequired">
+        <source>No Conversion Required</source>
+        <target state="translated">不需要轉換</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorMakingProjectBackup">
+        <source>Error creating backup of project file: {0}</source>
+        <target state="translated">建立專案檔備份時發生錯誤: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectBackupSuccessful">
+        <source>Project file successfully backed up as {0}</source>
+        <target state="translated">專案檔已成功備份為 {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BackupNameConflict">
+        <source>Backup file name conflict. Renaming file to: {0}</source>
+        <target state="translated">備份檔名衝突。將檔案重新命名為: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectContainsLinkedFile">
+        <source>Backed up project may not build. Project contains linked file: {0}</source>
+        <target state="translated">無法建置備份專案。專案包含連結的檔案: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorMakingBackup">
+        <source>Failed to backup file as {0}</source>
+        <target state="translated">無法將檔案備份為 {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BackupSuccessful">
+        <source>File successfully backed up as {0}</source>
+        <target state="translated">檔案已成功備份為 {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Identity">
+        <source>Identity</source>
+        <target state="translated">識別</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IdentityDescription">
+        <source>Security identity of the referenced assembly.</source>
+        <target state="translated">被參考之組件的安全性識別。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Path">
+        <source>Path</source>
+        <target state="translated">路徑</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PathDescription">
+        <source>Location of file being referenced.</source>
+        <target state="translated">所參考檔案的位置。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Version">
+        <source>Version</source>
+        <target state="translated">版本</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CopyOf">
+        <source>Copy of {0}</source>
+        <target state="translated">{0} 的複本</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CopyOf2">
+        <source>Copy ({0}) of {1}</source>
+        <target state="translated">{1} 的複本 ({0})</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

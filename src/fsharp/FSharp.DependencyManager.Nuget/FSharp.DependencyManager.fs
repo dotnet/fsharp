@@ -51,7 +51,7 @@ module FSharpDependencyManager =
             | _ -> ()
         }
 
-    let parsePackageReferenceOption scriptExt (setBinLogPath: string option option -> unit) (line: string) =
+    let parsePackageReferenceOption scriptExt (setBinLogPath: string option option -> unit) (setTimeout: int option -> unit) (line: string) =
         let validatePackageName package packageName =
             if String.Compare(packageName, package, StringComparison.OrdinalIgnoreCase) = 0 then
                 raise (ArgumentException(SR.cantReferenceSystemPackage(packageName)))
@@ -80,6 +80,16 @@ module FSharpDependencyManager =
                 | Some "restoresources", Some v -> Some { current with RestoreSources = concat current.RestoreSources v } |> parsePackageReferenceOption' rest implicitArgumentCount
                 | Some "restoresources", None -> raise (ArgumentException(SR.requiresAValue("RestoreSources")))
                 | Some "script", Some v -> Some { current with Script = v } |> parsePackageReferenceOption' rest implicitArgumentCount
+                | Some "timeout", None -> raise (ArgumentException(SR.missingTimeoutValue()))
+                | Some "timeout", value ->
+                    match value with
+                    | Some v when v.GetType() = typeof<string> ->
+                        let parsed, value = Int32.TryParse(v)
+                        if parsed && value >= 0 then setTimeout (Some (Int32.Parse v))
+                        elif v = "none" then setTimeout (Some -1)
+                        else raise (ArgumentException(SR.invalidTimeoutValue(v)))
+                    | _ -> setTimeout None // auto-generated logging location
+                    parsePackageReferenceOption' rest implicitArgumentCount packageReference
                 | Some "bl", value ->
                     match value with
                     | Some v when v.ToLowerInvariant() = "true" -> setBinLogPath (Some None)      // auto-generated logging location
@@ -97,6 +107,9 @@ module FSharpDependencyManager =
                         // to reference a package named 'bl' they still have the 'Include=bl' syntax as a fallback.
                         setBinLogPath (Some None) // auto-generated logging location
                         parsePackageReferenceOption' rest implicitArgumentCount packageReference
+                    | "timeout" ->
+                        // bare timeout is invalid
+                        raise (ArgumentException(SR.missingTimeoutValue()))
                     | _ ->
                         match implicitArgumentCount with
                         | 0 -> addInclude v
@@ -109,21 +122,23 @@ module FSharpDependencyManager =
 
     let parsePackageReference scriptExt (lines: string list) =
         let mutable binLogPath = None
+        let mutable timeout = None
         lines
-        |> List.choose (fun line -> parsePackageReferenceOption scriptExt (fun p -> binLogPath <- p) line)
+        |> List.choose (fun line -> parsePackageReferenceOption scriptExt (fun p -> binLogPath <- p) (fun t -> timeout <- t) line)
         |> List.distinct
-        |> (fun l -> l, binLogPath)
+        |> (fun l -> l, binLogPath, timeout)
 
     let parsePackageDirective scriptExt (lines: (string * string) list) =
         let mutable binLogPath = None
+        let mutable timeout = None
         lines
         |> List.map(fun (directive, line) ->
             match directive with
             | "i" -> sprintf "RestoreSources=%s" line
             | _ -> line)
-        |> List.choose (fun line -> parsePackageReferenceOption scriptExt (fun p -> binLogPath <- p) line)
+        |> List.choose (fun line -> parsePackageReferenceOption scriptExt (fun p -> binLogPath <- p) (fun t -> timeout <- t) line)
         |> List.distinct
-        |> (fun l -> l, binLogPath)
+        |> (fun l -> l, binLogPath, timeout)
 
 /// The results of ResolveDependencies
 type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) =
@@ -157,13 +172,13 @@ type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: s
     member _.Roots = roots
 
 [<DependencyManagerAttribute>] 
-type FSharpDependencyManager (outputDir:string option) =
+type FSharpDependencyManager (outputDirectory:string option) =
 
     let key = "nuget"
     let name = "MsBuild Nuget DependencyManager"
-    let scriptsPath =
+    let workingDirectory =
         let path = Path.Combine(Path.GetTempPath(), key, Process.GetCurrentProcess().Id.ToString() + "--"+ Guid.NewGuid().ToString())
-        match outputDir with
+        match outputDirectory with
         | None -> path
         | Some v -> Path.Combine(path, v)
 
@@ -172,8 +187,8 @@ type FSharpDependencyManager (outputDir:string option) =
     let deleteScripts () =
         try
 #if !Debug
-            if Directory.Exists(scriptsPath) then
-                Directory.Delete(scriptsPath, true)
+            if Directory.Exists(workingDirectory) then
+                Directory.Delete(workingDirectory, true)
 #else
             ()
 #endif
@@ -181,8 +196,8 @@ type FSharpDependencyManager (outputDir:string option) =
 
     let deleteAtExit =
         try
-            if not (File.Exists(scriptsPath)) then
-                Directory.CreateDirectory(scriptsPath) |> ignore
+            if not (Directory.Exists(workingDirectory)) then
+                Directory.CreateDirectory(workingDirectory) |> ignore
             true
         with | _ -> false
 
@@ -193,14 +208,14 @@ type FSharpDependencyManager (outputDir:string option) =
             sw.WriteLine(body)
         with | _ -> ()
 
-    let prepareDependencyResolutionFiles (scriptExt: string, packageManagerTextLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string): PackageBuildResolutionResult =
+    let prepareDependencyResolutionFiles (scriptExt: string, directiveLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string, timeout: int): PackageBuildResolutionResult =
         let scriptExt =
             match scriptExt with
             | ".csx" -> csxExt
             | _ -> fsxExt
 
-        let packageReferences, binLogPath =
-            packageManagerTextLines
+        let packageReferences, binLogPath, package_timeout =
+            directiveLines
             |> List.ofSeq
             |> FSharpDependencyManager.parsePackageDirective scriptExt
 
@@ -211,9 +226,8 @@ type FSharpDependencyManager (outputDir:string option) =
 
         let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
 
-        let projectPath = Path.Combine(scriptsPath, "Project.fsproj")
+        let projectPath = Path.Combine(workingDirectory, "Project.fsproj")
 
-        // Generate project files
         let generateAndBuildProjectArtifacts =
             let writeFile path body =
                 if not (generatedScripts.ContainsKey(body.GetHashCode().ToString())) then
@@ -225,8 +239,12 @@ type FSharpDependencyManager (outputDir:string option) =
                                    .Replace("$(PACKAGEREFERENCES)", packageReferenceText)
                                    .Replace("$(SCRIPTEXTENSION)", scriptExt)
 
+            let timeout =
+                match package_timeout with
+                | Some _ -> package_timeout
+                | None -> Some timeout
             writeFile projectPath generateProjBody
-            buildProject projectPath binLogPath
+            buildProject projectPath binLogPath timeout
 
         generateAndBuildProjectArtifacts
 
@@ -242,24 +260,27 @@ type FSharpDependencyManager (outputDir:string option) =
         sprintf """    #r "nuget:FSharp.Data";;                      // %s 'FSharp.Data' %s""" (SR.loadNugetPackage()) (SR.highestVersion())
         |]
 
-    member this.ResolveDependencies(scriptExt: string, packageManagerTextLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string) : obj =
+    member this.ResolveDependencies(scriptDirectory: string, scriptName: string, scriptExt: string, packageManagerTextLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string, timeout: int) : obj =
+        ignore scriptName
         let poundRprefix  =
             match scriptExt with
             | ".csx" -> "#r \""
             | _ -> "#r @\""
 
         let generateAndBuildProjectArtifacts =
-            let resolutionResult = prepareDependencyResolutionFiles (scriptExt, packageManagerTextLines, targetFrameworkMoniker, runtimeIdentifier)
+            let configIncludes = generateSourcesFromNugetConfigs scriptDirectory workingDirectory timeout
+            let directiveLines = Seq.append packageManagerTextLines configIncludes
+            let resolutionResult = prepareDependencyResolutionFiles (scriptExt, directiveLines, targetFrameworkMoniker, runtimeIdentifier, timeout)
             match resolutionResult.resolutionsFile with
             | Some file ->
                 let resolutions = getResolutionsFromFile file
                 let references = (findReferencesFromResolutions resolutions) |> Array.toSeq
                 let scripts =
-                    let scriptPath = resolutionResult.projectPath + scriptExt
-                    let scriptBody =  makeScriptFromReferences references poundRprefix
-                    emitFile scriptPath scriptBody
+                    let generatedScriptPath = resolutionResult.projectPath + scriptExt
+                    let generatedScriptBody =  makeScriptFromReferences references poundRprefix
+                    emitFile generatedScriptPath generatedScriptBody
                     let loads = (findLoadsFromResolutions resolutions) |> Array.toList
-                    List.concat [ [scriptPath]; loads] |> List.toSeq
+                    List.concat [ [generatedScriptPath]; loads] |> List.toSeq
                 let includes = (findIncludesFromResolutions resolutions) |> Array.toSeq
 
                 ResolveDependenciesResult(resolutionResult.success, resolutionResult.stdOut, resolutionResult.stdErr, references, scripts, includes)

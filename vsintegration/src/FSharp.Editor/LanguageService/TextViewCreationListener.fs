@@ -58,6 +58,6 @@ type TextViewCreationListener [<ImportingConstructor>] (adaptersFactory: IVsEdit
 
     interface IVsTextViewCreationListener with
 
-        member __.VsTextViewCreated(textViewAdapter) =
+        member _.VsTextViewCreated(textViewAdapter) =
             let _textView = adaptersFactory.GetWpfTextView(textViewAdapter)
             initKeyBindings textViewAdapter

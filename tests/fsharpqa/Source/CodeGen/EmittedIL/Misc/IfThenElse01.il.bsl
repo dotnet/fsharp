@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly IfThenElse01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.IfThenElse01
 {
-  // Offset: 0x00000000 Length: 0x00000201
+  // Offset: 0x00000000 Length: 0x000001FD
 }
 .mresource public FSharpOptimizationData.IfThenElse01
 {
   // Offset: 0x00000208 Length: 0x00000092
 }
 .module IfThenElse01.dll
-// MVID: {59B19213-2D6C-0B5D-A745-03831392B159}
+// MVID: {5FCFFD09-2D6C-0B5D-A745-038309FDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00BD0000
+// Image base: 0x067C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -58,6 +58,7 @@
     .class auto ansi serializable sealed nested assembly beforefieldinit f5@5
            extends [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc
     {
+      .field static assembly initonly class IfThenElse01/M/f5@5 @_instance
       .method assembly specialname rtspecialname 
               instance void  .ctor() cil managed
       {
@@ -84,6 +85,18 @@
         IL_0006:  box        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,!!a>>>>
         IL_000b:  ret
       } // end of method f5@5::Specialize
+
+      .method private specialname rtspecialname static 
+              void  .cctor() cil managed
+      {
+        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        // Code size       11 (0xb)
+        .maxstack  10
+        IL_0000:  newobj     instance void IfThenElse01/M/f5@5::.ctor()
+        IL_0005:  stsfld     class IfThenElse01/M/f5@5 IfThenElse01/M/f5@5::@_instance
+        IL_000a:  ret
+      } // end of method f5@5::.cctor
 
     } // end of class f5@5
 
@@ -119,7 +132,7 @@
         .maxstack  7
         .locals init ([0] class IfThenElse01/M/f5@5 V_0)
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 5,5 : 48,63 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\IfThenElse01.fs'
+        .line 5,5 : 48,63 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\IfThenElse01.fs'
         IL_0000:  ldarg.0
         IL_0001:  ldfld      class IfThenElse01/M/f5@5 class IfThenElse01/M/f5@5T<!a>::self0@
         IL_0006:  stloc.0
@@ -152,7 +165,7 @@
                [3] int32 V_3,
                [4] int32 V_4)
       .line 100001,100001 : 0,0 ''
-      IL_0000:  newobj     instance void IfThenElse01/M/f5@5::.ctor()
+      IL_0000:  ldsfld     class IfThenElse01/M/f5@5 IfThenElse01/M/f5@5::@_instance
       IL_0005:  stloc.0
       .line 6,6 : 9,25 ''
       IL_0006:  ldloc.0

@@ -13,9 +13,9 @@ open Microsoft.VisualStudio.OLE.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.TextManager.Interop
+open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Utilities
-open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.EditorServices
 
 type internal XmlDocCommandFilter 
      (
@@ -23,7 +23,7 @@ type internal XmlDocCommandFilter
         filePath: string, 
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager,
-        workspace: VisualStudioWorkspaceImpl
+        workspace: VisualStudioWorkspace
      ) =
 
     static let userOpName = "XmlDocCommand"
@@ -51,7 +51,7 @@ type internal XmlDocCommandFilter
             ErrorHandler.ThrowOnFailure errorCode |> ignore
 
     interface IOleCommandTarget with
-        member __.Exec(pguidCmdGroup: byref<Guid>, nCmdID: uint32, nCmdexecopt: uint32, pvaIn: IntPtr, pvaOut: IntPtr) =
+        member _.Exec(pguidCmdGroup: byref<Guid>, nCmdID: uint32, nCmdexecopt: uint32, pvaIn: IntPtr, pvaOut: IntPtr) =
             if pguidCmdGroup = VSConstants.VSStd2K && nCmdID = uint32 VSConstants.VSStd2KCmdID.TYPECHAR then
                 match getTypedChar pvaIn with
                 | ('/' | '<') as lastChar ->
@@ -60,7 +60,7 @@ type internal XmlDocCommandFilter
                     let curLine = wpfTextView.Caret.Position.BufferPosition.GetContainingLine().GetText()
                     let lineWithLastCharInserted = curLine.Insert (indexOfCaret, string lastChar)
 
-                    match XmlDocComment.isBlank lineWithLastCharInserted with
+                    match XmlDocComment.IsBlank lineWithLastCharInserted with
                     | Some i when i = indexOfCaret ->
                         asyncMaybe {
                             try
@@ -68,9 +68,10 @@ type internal XmlDocCommandFilter
                                 let curLineNum = wpfTextView.Caret.Position.BufferPosition.GetContainingLine().LineNumber + 1
                                 let! document = document.Value
                                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, CancellationToken.None, userOpName)
-                                let! sourceText = document.GetTextAsync(CancellationToken.None)
-                                let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
-                                let xmlDocables = XmlDocParser.getXmlDocables (sourceText.ToFSharpSourceText(), Some parsedInput) 
+                                let! cancellationToken = Async.CancellationToken |> liftAsync
+                                let! sourceText = document.GetTextAsync(cancellationToken)
+                                let! parseResults = checker.ParseDocument(document, parsingOptions, userOpName)
+                                let xmlDocables = XmlDocParser.GetXmlDocables (sourceText.ToFSharpSourceText(), parseResults.ParseTree) 
                                 let xmlDocablesBelowThisLine = 
                                     // +1 because looking below current line for e.g. a 'member'
                                     xmlDocables |> List.filter (fun (XmlDocable(line,_indent,_paramNames)) -> line = curLineNum+1) 
@@ -106,28 +107,24 @@ type internal XmlDocCommandFilter
             else
                 VSConstants.E_FAIL
 
-        member __.QueryStatus(pguidCmdGroup: byref<Guid>, cCmds: uint32, prgCmds: OLECMD [], pCmdText: IntPtr) =
+        member _.QueryStatus(pguidCmdGroup: byref<Guid>, cCmds: uint32, prgCmds: OLECMD [], pCmdText: IntPtr) =
             if not (isNull nextTarget) then
                 nextTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText)
             else
                 VSConstants.E_FAIL
 
-// Disabled:
-// - https://github.com/Microsoft/visualfsharp/issues/6076
-// - The feature does not work; it should probably use an exposed Roslyn API of some sort
-// - Despite not working, it is a source of UI delays
-//[<Export(typeof<IWpfTextViewCreationListener>)>]
-//[<ContentType(FSharpConstants.FSharpContentTypeName)>]
-//[<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
+[<Export(typeof<IWpfTextViewCreationListener>)>]
+[<ContentType(FSharpConstants.FSharpContentTypeName)>]
+[<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
 type internal XmlDocCommandFilterProvider 
     [<ImportingConstructor>] 
     (checkerProvider: FSharpCheckerProvider,
      projectInfoManager: FSharpProjectOptionsManager,
-     workspace: VisualStudioWorkspaceImpl,
+     workspace: VisualStudioWorkspace,
      textDocumentFactoryService: ITextDocumentFactoryService,
      editorFactory: IVsEditorAdaptersFactoryService) =
     interface IWpfTextViewCreationListener with
-        member __.TextViewCreated(textView) = 
+        member _.TextViewCreated(textView) = 
             match editorFactory.GetViewAdapter(textView) with
             | null -> ()
             | textViewAdapter ->

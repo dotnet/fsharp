@@ -9,10 +9,10 @@ open System.Diagnostics
 open System.Threading
 
 open Microsoft.CodeAnalysis
-open FSharp.Compiler.Range
 open System.Runtime.Caching
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Text
 
 type private PerDocumentSavedData = { Hash: int; Diagnostics: ImmutableArray<Diagnostic> }
 
@@ -34,10 +34,12 @@ type internal SimplifyNameDiagnosticAnalyzer
     interface IFSharpSimplifyNameDiagnosticAnalyzer with
 
         member _.AnalyzeSemanticsAsync(descriptor, document: Document, cancellationToken: CancellationToken) =
+            if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then Tasks.Task.FromResult(ImmutableArray.Empty)
+            else
+
             asyncMaybe {
                 do! Option.guard document.FSharpOptions.CodeFixes.SimplifyName
                 do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
-                do! Async.Sleep DefaultTuning.SimplifyNameInitialDelay |> liftAsync 
                 let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let textVersionHash = textVersion.GetHashCode()
@@ -49,7 +51,7 @@ type internal SimplifyNameDiagnosticAnalyzer
                     | _ ->
                         let! sourceText = document.GetTextAsync()
                         let checker = checkerProvider.Checker
-                        let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName=userOpName)
+                        let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName=userOpName)
                         let! result = SimplifyNames.getSimplifiableNames(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
                         let mutable diag = ResizeArray()
                         for r in result do

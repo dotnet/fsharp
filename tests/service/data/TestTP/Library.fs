@@ -35,17 +35,17 @@ module Helper =
         static member DoNothingGeneric(x:'T) = ()
         [<CompiledName "DoNothingReally">]
         static member DoNothingWithCompiledName() = ()
-        member __.InstanceDoNothing() = ()
-        member __.InstanceDoNothingOneArg(x:int) = ()
-        member __.InstanceDoNothingOneArg(x:string) = ()
-        member __.InstanceDoNothingTwoArg(c:C, x:int) = ()
-        member __.InstanceDoNothingTwoArgCurried(c:C) (x:int) = ()
-        member __.InstanceDoNothingGeneric(x:'T) = ()
+        member _.InstanceDoNothing() = ()
+        member _.InstanceDoNothingOneArg(x:int) = ()
+        member _.InstanceDoNothingOneArg(x:string) = ()
+        member _.InstanceDoNothingTwoArg(c:C, x:int) = ()
+        member _.InstanceDoNothingTwoArgCurried(c:C) (x:int) = ()
+        member _.InstanceDoNothingGeneric(x:'T) = ()
         [<CompiledName "DoNothingReallyInst">]
-        member __.InstanceDoNothingWithCompiledName() = ()
-        override __.VirtualDoNothing() = ()
+        member _.InstanceDoNothingWithCompiledName() = ()
+        override _.VirtualDoNothing() = ()
 
-        member __.Property with get() = p and set v = p <- v
+        member _.Property with get() = p and set v = p <- v
         member val AutoProperty = 0 with get, set
         static member val StaticAutoProperty = 0 with get, set
 
@@ -57,10 +57,10 @@ module Helper =
         static member DoNothingOneArg(x:int) = ()
         static member DoNothingTwoArg(c:C, x:int) = ()
         static member DoNothingGeneric(x:'T) = ()
-        member __.InstanceDoNothing() = ()
-        member __.InstanceDoNothingOneArg(x:int) = ()
-        member __.InstanceDoNothingTwoArg(c:C, x:int) = ()
-        member __.InstanceDoNothingGeneric(x:'U) = ()
+        member _.InstanceDoNothing() = ()
+        member _.InstanceDoNothingOneArg(x:int) = ()
+        member _.InstanceDoNothingTwoArg(c:C, x:int) = ()
+        member _.InstanceDoNothingGeneric(x:'U) = ()
 
     type R = { A : int; mutable B : int }
 

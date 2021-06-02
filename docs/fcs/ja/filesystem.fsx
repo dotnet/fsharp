@@ -17,13 +17,12 @@ FileSystemの設定
 以下の例ではディスクからの読み取りを行うような実装をファイルシステムに設定しています:
 *)
 #r "FSharp.Compiler.Service.dll"
-open System
 open System.IO
-open System.Collections.Generic
 open System.Text
-open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.IO
 
-let defaultFileSystem = Shim.FileSystem
+let defaultFileSystem = FileSystem
 
 let fileName1 = @"c:\mycode\test1.fs" // 注意: 実際には存在しないファイルのパス
 let fileName2 = @"c:\mycode\test2.fs" // 注意: 実際には存在しないファイルのパス
@@ -91,7 +90,7 @@ let B = File1.A + File1.A"""
             defaultFileSystem.AssemblyLoad assemblyName 
 
 let myFileSystem = MyFileSystem()
-Shim.FileSystem <- MyFileSystem() 
+FileSystem <- MyFileSystem() 
 
 (**
 
@@ -99,7 +98,7 @@ FileSystemによるコンパイルの実行
 --------------------------------
 
 *)
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 
 let checker = FSharpChecker.Create()
 let projectOptions = 
@@ -126,7 +125,6 @@ let projectOptions =
       ProjectId = None
       SourceFiles = [| fileName1; fileName2 |]
       OriginalLoadReferences = []
-      ExtraProjectInfo=None
       Stamp = None
       OtherOptions = allFlags 
       ReferencedProjects=[| |]
@@ -137,7 +135,7 @@ let projectOptions =
 
 let results = checker.ParseAndCheckProject(projectOptions) |> Async.RunSynchronously
 
-results.Errors
+results.Diagnostics
 results.AssemblySignature.Entities.Count //2
 results.AssemblySignature.Entities.[0].MembersFunctionsAndValues.Count //1
 results.AssemblySignature.Entities.[0].MembersFunctionsAndValues.[0].DisplayName // "B"

@@ -6,12 +6,11 @@
 
 module internal FSharp.Compiler.TypedTreeBasics
 
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TypedTree
 
 #if DEBUG
@@ -97,7 +96,6 @@ let typarEq (lv1: Typar) (lv2: Typar) = (lv1.Stamp = lv2.Stamp)
 /// Equality on type variables, implemented as reference equality. This should be equivalent to using typarEq.
 let typarRefEq (tp1: Typar) (tp2: Typar) = (tp1 === tp2)
 
-
 /// Equality on value specs, implemented as reference equality
 let valEq (lv1: Val) (lv2: Val) = (lv1 === lv2)
 
@@ -172,6 +170,7 @@ let (|VRefLocal|VRefNonLocal|) (x: ValRef) =
     | _ -> VRefNonLocal x.nlr
 
 let mkNonLocalValRef mp id = VRefNonLocal {EnclosingEntity = ERefNonLocal mp; ItemKey=id }
+
 let mkNonLocalValRefPreResolved x mp id = VRefNonLocalPreResolved x {EnclosingEntity = ERefNonLocal mp; ItemKey=id }
 
 let ccuOfValRef vref =  

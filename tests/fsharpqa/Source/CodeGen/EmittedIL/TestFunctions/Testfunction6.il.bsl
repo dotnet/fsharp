@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 5:0:0:0
 }
 .assembly TestFunction6
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.TestFunction6
 {
-  // Offset: 0x00000000 Length: 0x00000205
+  // Offset: 0x00000000 Length: 0x000001F9
 }
 .mresource public FSharpOptimizationData.TestFunction6
 {
-  // Offset: 0x00000210 Length: 0x00000088
+  // Offset: 0x00000200 Length: 0x00000088
 }
 .module TestFunction6.exe
-// MVID: {5B17FC67-6591-8929-A745-038367FC175B}
+// MVID: {5FCFFD21-6591-8929-A745-038321FDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03360000
+// Image base: 0x05A30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -54,6 +54,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit f@11
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>
   {
+    .field static assembly initonly class TestFunction6/f@11 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -73,7 +74,7 @@
       .maxstack  6
       .locals init ([0] int32 y)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 11,11 : 8,31 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction6.fs'
+      .line 11,11 : 8,31 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction6.fs'
       IL_0000:  call       int32 TestFunction6::TestFunction1()
       IL_0005:  stloc.0
       .line 12,12 : 8,23 ''
@@ -87,6 +88,16 @@
       IL_0018:  add
       IL_0019:  ret
     } // end of method f@11::Invoke
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void TestFunction6/f@11::.ctor()
+      IL_0005:  stsfld     class TestFunction6/f@11 TestFunction6/f@11::@_instance
+      IL_000a:  ret
+    } // end of method f@11::.cctor
 
   } // end of class f@11
 
@@ -117,7 +128,7 @@
     .maxstack  5
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> f)
     .line 100001,100001 : 0,0 ''
-    IL_0000:  newobj     instance void TestFunction6/f@11::.ctor()
+    IL_0000:  ldsfld     class TestFunction6/f@11 TestFunction6/f@11::@_instance
     IL_0005:  stloc.0
     .line 14,14 : 5,14 ''
     IL_0006:  ldloc.0

@@ -3,8 +3,9 @@
 module internal FSharp.Compiler.CheckComputationExpressions
 
 open FSharp.Compiler.CheckExpressions
-open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 
 val TcSequenceExpressionEntry: cenv:TcFileState -> env:TcEnv -> overallTy:TType -> tpenv:UnscopedTyparEnv -> isArrayOrList:bool * isNotNakedRefCell:bool ref * comp:SynExpr -> m:range -> Expr * UnscopedTyparEnv    

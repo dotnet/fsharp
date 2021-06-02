@@ -4,14 +4,14 @@
 /// constraint solving and method overload resolution.
 module internal FSharp.Compiler.TypeRelations
 
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open Internal.Utilities.Collections
+open Internal.Utilities.Library 
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Infos
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Infos
 
 /// Implements a :> b without coercion based on finalized (no type variable) types
 // Note: This relation is approximate and not part of the language specification. 
@@ -124,7 +124,6 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
          ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m 
              |> List.exists (TypeFeasiblySubsumesType (ndeep+1) g amap m ty1 NoCoerce))
                    
-
 /// Choose solutions for Expr.TyChoose type "hidden" variables introduced
 /// by letrec nodes. Also used by the pattern match compiler to choose type
 /// variables when compiling patterns at generalized bindings.
@@ -225,7 +224,6 @@ let ChooseTyparSolutionsForFreeChoiceTypars g amap e =
         instExpr g tpenv e1
 
     | _ -> e
-                 
 
 /// Break apart lambdas. Needs ChooseTyparSolutionsForFreeChoiceTypars because it's used in
 /// PostTypeCheckSemanticChecks before we've eliminated these nodes.
@@ -280,7 +278,6 @@ let IteratedAdjustArityOfLambda g amap topValInfo e =
         errorR(InternalError(sprintf "IteratedAdjustArityOfLambda, List.length arities = %d, List.length vsl = %d" arities.Length vsl.Length, body.Range))
     let vsl, body = IteratedAdjustArityOfLambdaBody g arities vsl body
     tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty
-
 
 /// "Single Feasible Type" inference
 /// Look for the unique supertype of ty2 for which ty2 :> ty1 might feasibly hold

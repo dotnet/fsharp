@@ -4,7 +4,17 @@
     <body>
       <trans-unit id="AddMissingEqualsToTypeDefinition">
         <source>Add missing '=' to type definition</source>
-        <target state="new">Add missing '=' to type definition</target>
+        <target state="translated">Přidejte do definice typu chybějící =.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddMissingFunKeyword">
+        <source>Add missing 'fun' keyword</source>
+        <target state="translated">Přidat chybějící klíčové slovo fun</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddMissingInstanceMemberParameter">
+        <source>Add missing instance member parameter</source>
+        <target state="new">Add missing instance member parameter</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewKeyword">
@@ -12,19 +22,29 @@
         <target state="translated">Přidejte klíčové slovo new.</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddTypeAnnotation">
+        <source>Add type annotation</source>
+        <target state="translated">Přidat anotaci typu</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
-        <target state="new">Convert to Anonymous Record</target>
+        <target state="translated">Převést na anonymní záznam</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToNotEqualsEqualityExpression">
+        <source>Use '&lt;&gt;' for inequality check</source>
+        <target state="translated">Pro kontrolu nerovnosti použijte &lt;&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
         <source>Use '=' for equality check</source>
-        <target state="new">Use '=' for equality check</target>
+        <target state="translated">Pro kontrolu rovnosti použijte =.</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangePrefixNegationToInfixSubtraction">
         <source>Use subtraction instead of negation</source>
-        <target state="new">Use subtraction instead of negation</target>
+        <target state="translated">Použít místo negace odčítání</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
@@ -59,12 +79,42 @@
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
         <source>Make declaration 'mutable'</source>
-        <target state="new">Make declaration 'mutable'</target>
+        <target state="translated">Nastavte deklaraci jako mutable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MakeOuterBindingRecursive">
+        <source>Make '{0}' recursive</source>
+        <target state="translated">Nastavit {0} jako rekurzivní</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">Před {0} vložte podtržítko.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveReturn">
+        <source>Remove 'return'</source>
+        <target state="translated">Odebrat return</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveReturnBang">
+        <source>Remove 'return!'</source>
+        <target state="translated">Odebrat return!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnusedBinding">
+        <source>Remove unused binding</source>
+        <target state="new">Remove unused binding</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveYield">
+        <source>Remove 'yield'</source>
+        <target state="translated">Odebrat yield</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveYieldBang">
+        <source>Remove 'yield!'</source>
+        <target state="translated">Odebrat yield!</target>
         <note />
       </trans-unit>
       <trans-unit id="RenameValueToUnderscore">
@@ -197,29 +247,44 @@
         <target state="translated">Formátování</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseFSharpLambda">
+        <source>Use F# lambda syntax</source>
+        <target state="translated">Použít syntaxi lambda jazyka F#</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">
         <source>Use '&lt;-' to mutate value</source>
-        <target state="new">Use '&lt;-' to mutate value</target>
+        <target state="translated">Pokud chcete změnit hodnotu, použijte &lt;-.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseNameof">
+        <source>Use 'nameof'</source>
+        <target state="new">Use 'nameof'</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
-        <target state="new">Use 'upcast'</target>
+        <target state="translated">Použijte upcast</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastOperator">
         <source>Use ':&gt;' operator</source>
-        <target state="new">Use ':&gt;' operator</target>
+        <target state="translated">Použijte operátor :&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="UseNotForNegation">
         <source>Use 'not' to negate expression</source>
-        <target state="new">Use 'not' to negate expression</target>
+        <target state="translated">Negovat výraz pomocí not</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseValueInsteadOfDeref">
+        <source>Use '.Value' to dereference expression</source>
+        <target state="new">Use '.Value' to dereference expression</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">
         <source>Wrap expression in parentheses</source>
-        <target state="new">Wrap expression in parentheses</target>
+        <target state="translated">Uzavřít výraz do závorek</target>
         <note />
       </trans-unit>
     </body>

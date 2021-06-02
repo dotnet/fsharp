@@ -6,6 +6,7 @@
 namespace FSharp.Core.UnitTests.Operators
 
 open System
+open System.Text
 open System.Globalization
 open System.Threading
 
@@ -740,6 +741,26 @@ type OperatorsModule2() =
         
     [<Fact>]
     member _.string() =
+
+        let result = Operators.string null
+        Assert.AreEqual("", result)
+
+        let nullStr:string = null
+        let result = Operators.string nullStr
+        Assert.AreEqual("", result)
+
+        let result = Operators.string null
+        Assert.AreEqual("", result)
+
+        let result = Operators.string (null:string)
+        Assert.AreEqual("", result)
+
+        let result = Operators.string (null:StringBuilder)
+        Assert.AreEqual("", result)
+
+        let result = Operators.string (null:IFormattable)
+        Assert.AreEqual("", result)
+
         // value type
         let result = Operators.string 100
         Assert.AreEqual("100", result)
@@ -786,6 +807,8 @@ type OperatorsModule2() =
 
         // reset the culture
         Thread.CurrentThread.CurrentCulture <- currentCI
+
+
 
     [<Fact>]
     member _.``string: don't raise FS0670 anymore``() =

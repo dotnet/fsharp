@@ -27,7 +27,7 @@ open UnitTests.TestLib.ProjectSystem
 type public AssemblyResolverTestFixture () =
 
     [<OneTimeSetUp>]
-    member public __.Init () = AssemblyResolver.addResolver ()
+    member public _.Init () = AssemblyResolver.addResolver ()
 
 [<TestFixture>][<Category "ProjectSystem">]
 type Config() = 

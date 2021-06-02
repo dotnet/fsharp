@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="CommandLineArgsLabel.Text">
         <source>Comma&amp;nd line arguments:</source>
-        <target state="translated">命令行参数(&amp;N): </target>
+        <target state="translated">命令行参数(&amp;N):</target>
         <note />
       </trans-unit>
       <trans-unit id="WorkingDirLabel.Text">

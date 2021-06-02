@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="AddSvcRefDlg_PleaseWait">
         <source>Please wait for service information to be downloaded or click Stop.</source>
-        <target state="translated">サービス情報がダウンロードされるまでお待ちください。または [停止]5D; をクリックしてください。</target>
+        <target state="translated">サービス情報がダウンロードされるまでお待ちください。または [停止] をクリックしてください。</target>
         <note />
       </trans-unit>
       <trans-unit id="ReferenceGroup_FailedToGetReferencedAssembliesFromProject">

@@ -22,9 +22,14 @@
         <target state="translated">Nepovedlo se načíst službu jazyka F#.</target>
         <note />
       </trans-unit>
+      <trans-unit id="sessionInitialMessageNetCore">
+        <source>Welcome to F# Interactive for .NET Core in Visual Studio. To execute code, either\n  1. Use 'Send to Interactive' (Alt-Enter or right-click) from an F# script. The F# Interactive process will\n     use any global.json settings associated with that script.\n  2. Press 'Enter' to start. The F# Interactive process will use default settings.</source>
+        <target state="translated">Vítá vás F# Interactive pro .NET Core v sadě Visual Studio. Kód spustíte těmito způsoby:\n  1. Ve skriptu F # použijte možnost Odeslat do interaktivního okna (Alt-Enter nebo kliknutí pravým tlačítkem).\n     Proces F# Interactive použije případné nastavení global.js přidružené k tomuto skriptu.\n  2. Začněte tím, že stisknete Enter. Proces F# Interactive použije výchozí nastavení.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="sessionTerminationDetected">
-        <source>Session termination detected. Press Enter to restart.</source>
-        <target state="translated">Zjistilo se ukončení relace. Pokračovat můžete stisknutím klávesy Enter.</target>
+        <source>Session termination detected.</source>
+        <target state="translated">Zjistilo se ukončení relace.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsharpInteractive">

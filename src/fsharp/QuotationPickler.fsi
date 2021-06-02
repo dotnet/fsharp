@@ -4,26 +4,22 @@
 module internal FSharp.Compiler.QuotationPickler
 #nowarn "1178" // The struct, record or union type 'internal_instr_extension' is not structurally comparable because the type
 
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Bytes
-open FSharp.Compiler 
-open FSharp.Compiler.Lib
-
 type TypeData 
-type TypeVarData =  { tvName: string }
+
+type TypeVarData = { tvName: string }
 
 type NamedTypeData = 
     /// Indicates an F# 4.0+ reference into the supplied table of type definition references, ultimately resolved by TypeRef/TypeDef data 
     | Idx of int
     /// Indicates an F# 3.0+ reference to a named type in an assembly loaded by name
-    | Named of (* tcName: *) string *  (* tcAssembly:  *) string 
-
+    | Named of tcName: string *  tcAssembly:  string 
 
 val mkVarTy : int -> TypeData 
+
 val mkFunTy : (TypeData * TypeData) -> TypeData
+
 val mkArrayTy : (int * TypeData ) -> TypeData 
+
 val mkILNamedTy : (NamedTypeData * TypeData list) -> TypeData 
 
 type ExprData
@@ -31,19 +27,19 @@ type ExprData
 type VarData 
 
 type CtorData = 
-    { ctorParent: NamedTypeData; 
-      ctorArgTypes: TypeData list; }
+    { ctorParent: NamedTypeData 
+      ctorArgTypes: TypeData list }
 
 type MethodData = 
-    { methParent: NamedTypeData;
-      methName: string;
-      methArgTypes: TypeData list;
-      methRetType: TypeData; 
+    { methParent: NamedTypeData
+      methName: string
+      methArgTypes: TypeData list
+      methRetType: TypeData 
       numGenericArgs: int }
 
 type ModuleDefnData = 
-    { Module: NamedTypeData;
-      Name: string;
+    { Module: NamedTypeData
+      Name: string
       IsProperty: bool }
 
 type MethodBaseData = 

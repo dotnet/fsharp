@@ -243,10 +243,49 @@
   <data name="ChangePrefixNegationToInfixSubtraction" xml:space="preserve">
     <value>Use subtraction instead of negation</value>
   </data>
+  <data name="RemoveReturn" xml:space="preserve">
+    <value>Remove 'return'</value>
+  </data>
+  <data name="RemoveReturnBang" xml:space="preserve">
+    <value>Remove 'return!'</value>
+  </data>
+  <data name="RemoveYield" xml:space="preserve">
+    <value>Remove 'yield'</value>
+  </data>
+  <data name="RemoveYieldBang" xml:space="preserve">
+    <value>Remove 'yield!'</value>
+  </data>
   <data name="ConvertToAnonymousRecord" xml:space="preserve">
     <value>Convert to Anonymous Record</value>
   </data>
   <data name="UseMutationWhenValueIsMutable" xml:space="preserve">
     <value>Use '&lt;-' to mutate value</value>
+  </data>
+  <data name="AddMissingFunKeyword" xml:space="preserve">
+    <value>Add missing 'fun' keyword</value>
+  </data>
+  <data name="UseFSharpLambda" xml:space="preserve">
+    <value>Use F# lambda syntax</value>
+  </data>
+  <data name="MakeOuterBindingRecursive" xml:space="preserve">
+    <value>Make '{0}' recursive</value>
+  </data>
+  <data name="ConvertToNotEqualsEqualityExpression" xml:space="preserve">
+    <value>Use '&lt;&gt;' for inequality check</value>
+  </data>
+  <data name="UseValueInsteadOfDeref" xml:space="preserve">
+    <value>Use '.Value' to dereference expression</value>
+  </data>
+  <data name="AddTypeAnnotation" xml:space="preserve">
+    <value>Add type annotation</value>
+  </data>
+  <data name="RemoveUnusedBinding" xml:space="preserve">
+    <value>Remove unused binding</value>
+  </data>
+  <data name="AddMissingInstanceMemberParameter" xml:space="preserve">
+    <value>Add missing instance member parameter</value>
+  </data>
+  <data name="UseNameof" xml:space="preserve">
+    <value>Use 'nameof'</value>
   </data>
 </root>

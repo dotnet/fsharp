@@ -22,9 +22,14 @@
         <target state="translated">無法載入 F# 語言服務</target>
         <note />
       </trans-unit>
+      <trans-unit id="sessionInitialMessageNetCore">
+        <source>Welcome to F# Interactive for .NET Core in Visual Studio. To execute code, either\n  1. Use 'Send to Interactive' (Alt-Enter or right-click) from an F# script. The F# Interactive process will\n     use any global.json settings associated with that script.\n  2. Press 'Enter' to start. The F# Interactive process will use default settings.</source>
+        <target state="translated">歡迎使用 Visual Studio 中 .NET Core 的 F# 互動。若要執行程式碼，請選用其中一種方式:\n  1. 從 F# 指令碼使用 [傳送到互動] (按 Alt-Enter 鍵或滑鼠右鍵)。F# 互動處理序將會\n     使用任何與該指令碼相關的 global.json 設定。\n  2. 按下 'Enter' 鍵即可開始。F# 互動處理序將使用預設設定。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="sessionTerminationDetected">
-        <source>Session termination detected. Press Enter to restart.</source>
-        <target state="translated">偵測到工作階段終止。請按 Enter 重新啟動。</target>
+        <source>Session termination detected.</source>
+        <target state="translated">偵測到工作階段終止。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsharpInteractive">

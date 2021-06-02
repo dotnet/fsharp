@@ -6,29 +6,30 @@
 module internal FSharp.Compiler.Optimizer
 
 open Internal.Utilities
-open Internal.Utilities.StructuredFormat
-
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Layout
-open FSharp.Compiler.Layout.TaggedTextOps
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Layout
+open FSharp.Compiler.Text.LayoutRender
+open FSharp.Compiler.Text.TaggedText
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypedTreePickle
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic
@@ -77,7 +78,7 @@ type ExprValueInfo =
   /// SizeValue(size, value)
   /// 
   /// Records size info (maxDepth) for an ExprValueInfo 
-  | SizeValue of int * ExprValueInfo        
+  | SizeValue of size: int * ExprValueInfo        
 
   /// ValValue(vref, value)
   ///
@@ -102,10 +103,10 @@ type ExprValueInfo =
   ///             the number of args in each bunch. NOTE: This include type arguments.
   ///    expr: The value, a lambda term.
   ///    ty: The type of lambda term
-  | CurriedLambdaValue of Unique * int * int * Expr * TType
+  | CurriedLambdaValue of id: Unique * arity: int * size: int * value: Expr * TType
 
   /// ConstExprValue(size, value)
-  | ConstExprValue of int * Expr
+  | ConstExprValue of size: int * value: Expr
 
 type ValInfo =
     { ValMakesNoCriticalTailcalls: bool
@@ -396,7 +397,7 @@ type cenv =
       emitTailcalls: bool
       
       /// cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
-      casApplied : Dictionary<Stamp, bool>
+      casApplied: Dictionary<Stamp, bool>
     }
 
     override x.ToString() = "<cenv>"
@@ -512,28 +513,19 @@ let mkValInfo info (v: Val) = { ValExprInfo=info.Info; ValMakesNoCriticalTailcal
 (* Bind a value *)
 let BindInternalLocalVal cenv (v: Val) vval env = 
     let vval = if v.IsMutable then UnknownValInfo else vval
-#if CHECKED
-#else
+
     match vval.ValExprInfo with 
     | UnknownValue -> env
-    | _ -> 
-#endif
+    | _ ->
         cenv.localInternalVals.[v.Stamp] <- vval
         env
         
 let BindExternalLocalVal cenv (v: Val) vval env = 
-#if CHECKED
-    CheckInlineValueIsComplete v vval
-#endif
-
     let vval = if v.IsMutable then {vval with ValExprInfo=UnknownValue } else vval
-    let env = 
-#if CHECKED
-#else
+    let env =
         match vval.ValExprInfo with 
         | UnknownValue -> env  
-        | _ -> 
-#endif
+        | _ ->
             { env with localExternalVals=env.localExternalVals.Add (v.Stamp, vval) }
     // If we're compiling fslib then also bind the value as a non-local path to 
     // allow us to resolve the compiler-non-local-references that arise from env.fs
@@ -560,21 +552,14 @@ let rec BindValsInModuleOrNamespace cenv (mval: LazyModuleInfo) env =
     env
 
 let inline BindInternalValToUnknown cenv v env = 
-#if CHECKED
-    BindInternalLocalVal cenv v UnknownValue env
-#else
     ignore cenv 
     ignore v
     env
-#endif
+
 let inline BindInternalValsToUnknown cenv vs env = 
-#if CHECKED
-    List.foldBack (BindInternalValToUnknown cenv) vs env
-#else
     ignore cenv
     ignore vs
     env
-#endif
 
 let BindTypeVar tyv typeinfo env = { env with typarInfos= (tyv, typeinfo) :: env.typarInfos } 
 
@@ -605,9 +590,6 @@ let GetInfoForLocalValue cenv env (v: Val) m =
             | None -> 
                 if v.MustInline then
                     errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
-#if CHECKED
-                warning(Error(FSComp.SR.optLocalValueNotFoundDuringOptimization(v.DisplayName), m)) 
-#endif
                 UnknownValInfo 
 
 let TryGetInfoForCcu env (ccu: CcuThunk) = env.globalModuleInfos.TryFind(ccu.AssemblyName)
@@ -1252,17 +1234,17 @@ let RemapOptimizationInfo g tmenv =
 let AbstractAndRemapModulInfo msg g m (repackage, hidden) info =
     let mrpi = mkRepackageRemapping repackage
 #if DEBUG
-    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data prior to trim: \n%s\n" msg outputRange m (Layout.showL (Display.squashTo 192 (moduleInfoL g info)))
+    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data prior to trim: \n%s\n" msg outputRange m (showL (Display.squashTo 192 (moduleInfoL g info)))
 #else
     ignore (msg, m)
 #endif
     let info = info |> AbstractLazyModulInfoByHiding false hidden
 #if DEBUG
-    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after trim:\n%s\n" msg outputRange m (Layout.showL (Display.squashTo 192 (moduleInfoL g info)))
+    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after trim:\n%s\n" msg outputRange m (showL (Display.squashTo 192 (moduleInfoL g info)))
 #endif
     let info = info |> RemapOptimizationInfo g mrpi
 #if DEBUG
-    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after remap:\n%s\n" msg outputRange m (Layout.showL (Display.squashTo 192 (moduleInfoL g info)))
+    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after remap:\n%s\n" msg outputRange m (showL (Display.squashTo 192 (moduleInfoL g info)))
 #endif
     info
 
@@ -1627,6 +1609,10 @@ let rec RearrangeTupleBindings expr fin =
         | Some b -> Some (mkLetBind m bind b)
         | None -> None
     | Expr.Op (TOp.Tuple tupInfo, _, _, _) when not (evalTupInfoIsStruct tupInfo) -> Some (fin expr)
+    | Expr.Sequential (e1, e2, kind, sp, m) ->
+        match RearrangeTupleBindings e2 fin with
+        | Some b -> Some (Expr.Sequential (e1, b, kind, sp, m))
+        | None -> None
     | _ -> None
 
 let ExpandStructuralBinding cenv expr =
@@ -2284,6 +2270,14 @@ and OptimizeFastIntegerForLoop cenv env (spStart, v, e1, dir, e2, e3, m) =
 
             mkLdlen cenv.g (e2R.Range) arre, CSharpForLoopUp
 
+        | FSharpForLoopUp, Expr.Op (TOp.ILAsm ([ (AI_sub | AI_sub_ovf)], _), _, [Expr.Op (TOp.ILCall(_,_,_,_,_,_,_, mth, _,_,_), _, [arre], _) as lenOp; Expr.Const (Const.Int32 1, _, _)], _) 
+                  when 
+                        mth.Name = "get_Length" && (mth.DeclaringTypeRef.FullName = "System.Span`1" || mth.DeclaringTypeRef.FullName = "System.ReadOnlySpan`1") 
+                        && not (snd(OptimizeExpr cenv env arre)).HasEffect -> 
+
+            lenOp, CSharpForLoopUp
+
+
         // detect upwards for loops with constant bounds, but not MaxValue!
         | FSharpForLoopUp, Expr.Const (Const.Int32 n, _, _) 
                   when n < System.Int32.MaxValue -> 
@@ -2456,7 +2450,7 @@ and OptimizeWhileLoop cenv env (spWhile, marker, e1, e2, m) =
 and OptimizeTraitCall cenv env (traitInfo, args, m) =
 
     // Resolve the static overloading early (during the compulsory rewrite phase) so we can inline. 
-    match ConstraintSolver.CodegenWitnessForTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
+    match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
 
     | OkResult (_, Some expr) -> OptimizeExpr cenv env expr
 

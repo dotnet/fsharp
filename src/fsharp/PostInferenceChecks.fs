@@ -7,21 +7,22 @@ module internal FSharp.Compiler.PostTypeCheckSemanticChecks
 open System
 open System.Collections.Generic
 
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -98,7 +99,7 @@ type env =
       isInAppExpr: bool
     } 
 
-    override __.ToString() = "<env>"
+    override _.ToString() = "<env>"
 
 let BindTypar env (tp: Typar) = 
     { env with 
@@ -1693,21 +1694,24 @@ and CheckAttribArgExpr cenv env expr =
   
 and CheckAttribs cenv env (attribs: Attribs) = 
     if isNil attribs then () else
-    let tcrefs = [ for (Attrib(tcref, _, _, _, _, _, m)) in attribs -> (tcref, m) ]
+    let tcrefs = [ for (Attrib(tcref, _, _, _, gs, _, m)) in attribs -> (tcref, gs, m) ]
 
     // Check for violations of allowMultiple = false
     let duplicates = 
         tcrefs
-        |> Seq.groupBy (fun (tcref, _) -> tcref.Stamp) 
+        |> Seq.groupBy (fun (tcref, gs, _) ->
+            // Don't allow CompiledNameAttribute on both a property and its getter/setter (see E_CompiledName test)
+            if tyconRefEq cenv.g cenv.g.attrib_CompiledNameAttribute.TyconRef tcref then (tcref.Stamp, false) else
+            (tcref.Stamp, gs)) 
         |> Seq.map (fun (_, elems) -> List.last (List.ofSeq elems), Seq.length elems) 
         |> Seq.filter (fun (_, count) -> count > 1) 
         |> Seq.map fst 
         |> Seq.toList
         // Filter for allowMultiple = false
-        |> List.filter (fun (tcref, m) -> TryFindAttributeUsageAttribute cenv.g m tcref <> Some true)
+        |> List.filter (fun (tcref, _, m) -> TryFindAttributeUsageAttribute cenv.g m tcref <> Some true)
 
     if cenv.reportErrors then 
-       for (tcref, m) in duplicates do
+       for (tcref, _, m) in duplicates do
           errorR(Error(FSComp.SR.chkAttrHasAllowMultiFalse(tcref.DisplayName), m))
     
     attribs |> List.iter (CheckAttrib cenv env) 
@@ -1737,6 +1741,7 @@ and AdjustAccess isHidden (cpath: unit -> CompilationPath) access =
         access
 
 and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as bind) : Limit =
+    let vref = mkLocalValRef v
     let g = cenv.g
     let isTop = Option.isSome bind.Var.ValReprInfo
     //printfn "visiting %s..." v.DisplayName
@@ -1744,9 +1749,9 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
     let env = { env with external = env.external || g.attrib_DllImportAttribute |> Option.exists (fun attr -> HasFSharpAttribute g attr v.Attribs) }
 
     // Check that active patterns don't have free type variables in their result
-    match TryGetActivePatternInfo (mkLocalValRef v) with 
+    match TryGetActivePatternInfo vref with 
     | Some _apinfo when _apinfo.ActiveTags.Length > 1 -> 
-        if doesActivePatternHaveFreeTypars g (mkLocalValRef v) then
+        if doesActivePatternHaveFreeTypars g vref then
            errorR(Error(FSComp.SR.activePatternChoiceHasFreeTypars(v.LogicalName), v.Range))
     | _ -> ()
     
@@ -1763,7 +1768,7 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
     // Check accessibility
     if (v.IsMemberOrModuleBinding || v.IsMember) && not v.IsIncrClassGeneratedMember then 
         let access =  AdjustAccess (IsHiddenVal env.sigToImplRemapInfo v) (fun () -> v.TopValDeclaringEntity.CompilationPath) v.Accessibility
-        CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv v) access v.Range v.Type
+        CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv cenv.infoReader vref) access v.Range v.Type
     
     let env = if v.IsConstructor && not v.IsIncrClassConstructor then { env with ctorLimitedZone=true } else env
 
@@ -1820,7 +1825,7 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
     match v.MemberInfo with 
     | Some memberInfo when not v.IsIncrClassGeneratedMember -> 
         match memberInfo.MemberFlags.MemberKind with 
-        | (MemberKind.PropertySet | MemberKind.PropertyGet)  ->
+        | (SynMemberKind.PropertySet | SynMemberKind.PropertyGet)  ->
             // These routines raise errors for ill-formed properties
             v |> ReturnTypeOfPropertyVal g |> ignore
             v |> ArgInfosOfPropertyVal g |> ignore
@@ -2151,8 +2156,8 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
             if ( (pinfo.HasGetter && 
                   pinfo.HasSetter && 
-                  let setterArgs = pinfo.DropGetter.GetParamTypes(cenv.amap, m)
-                  let getterArgs = pinfo.DropSetter.GetParamTypes(cenv.amap, m)
+                  let setterArgs = pinfo.DropGetter().GetParamTypes(cenv.amap, m)
+                  let getterArgs = pinfo.DropSetter().GetParamTypes(cenv.amap, m)
                   setterArgs.Length <> getterArgs.Length)
                 || 
                  (let nargs = pinfo.GetParamTypes(cenv.amap, m).Length
@@ -2163,8 +2168,8 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             // Check to see if the signatures of the both getter and the setter imply the same property type
 
             if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer then
-                let ty1 = pinfo.DropSetter.GetPropertyType(cenv.amap, m)
-                let ty2 = pinfo.DropGetter.GetPropertyType(cenv.amap, m)
+                let ty1 = pinfo.DropSetter().GetPropertyType(cenv.amap, m)
+                let ty2 = pinfo.DropGetter().GetPropertyType(cenv.amap, m)
                 if not (typeEquivAux EraseNone cenv.amap.g ty1 ty2) then
                     errorR(Error(FSComp.SR.chkGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
 
@@ -2185,7 +2190,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     match parentMethsOfSameName |> List.tryFind (checkForDup EraseAll) with
                     | None -> ()
                     | Some minfo ->
-                        let mtext = NicePrint.stringOfMethInfo cenv.amap m cenv.denv minfo
+                        let mtext = NicePrint.stringOfMethInfo cenv.infoReader m cenv.denv minfo
                         if parentMethsOfSameName |> List.exists (checkForDup EraseNone) then 
                             warning(Error(FSComp.SR.tcNewMemberHidesAbstractMember mtext, m))
                         else

@@ -12,6 +12,11 @@
         <target state="translated">如果设为 true，且当前计算机是 64 位的，则将 F# 交互窗口作为 64 位进程运行。(否则，F# 交互为 32 位进程。)</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpInteractiveMisc">
+        <source>Misc</source>
+        <target state="translated">杂项</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
         <source>F# Interactive options</source>
         <target state="translated">F# 交互窗口选项</target>
@@ -20,11 +25,6 @@
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
         <target state="translated">其他命令行参数传递到 Visual Studio 执行的 F# 交互窗口可执行文件。(若已启动脚本调试，则忽略优化和调试标志)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpInteractiveMisc">
-        <source>Misc</source>
-        <target state="translated">杂项</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreview">
@@ -65,6 +65,16 @@
       <trans-unit id="FSharpInteractiveDebugging">
         <source>Debugging</source>
         <target state="translated">正在调试</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCore">
+        <source>Use .NET Core Scripting</source>
+        <target state="translated">使用 .NET Core 脚本</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCoreDescr">
+        <source>Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</source>
+        <target state="translated">对所有 F# 脚本和 F# 交互窗口启用 .NET Core 脚本编辑和执行</target>
         <note />
       </trans-unit>
     </body>

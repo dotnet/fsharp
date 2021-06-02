@@ -13,8 +13,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
-        <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
-        <target state="translated">Der Vorgang ist fehlgeschlagen. Der Fehlertext wurde im Fehlerstream ausgegeben. Verwenden Sie EvalInteractionNonThrowing, EvalScriptNonThrowing oder EvalExpressionNonThrowing, um die entsprechende FSharpErrorInfo zurückzugeben.</target>
+        <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
+        <target state="translated">Fehler beim Vorgang. Der Fehlertext wurde im Fehlerstream ausgegeben. Verwenden Sie "EvalInteractionNonThrowing", "EvalScriptNonThrowing" oder "EvalExpressionNonThrowing", um die entsprechende FSharpDiagnostic zurückzugeben.</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
@@ -29,27 +29,27 @@
       </trans-unit>
       <trans-unit id="fsiInputFiles">
         <source>- INPUT FILES -</source>
-        <target state="translated">– EINGABEDATEIEN –</target>
+        <target state="translated">- EINGABEDATEIEN -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiCodeGeneration">
         <source>- CODE GENERATION -</source>
-        <target state="translated">– CODEGENERIERUNG –</target>
+        <target state="translated">- CODEGENERIERUNG -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiErrorsAndWarnings">
         <source>- ERRORS AND WARNINGS -</source>
-        <target state="translated">– FEHLER UND WARNUNGEN –</target>
+        <target state="translated">- FEHLER UND WARNUNGEN -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLanguage">
         <source>- LANGUAGE -</source>
-        <target state="translated">– SPRACHE –</target>
+        <target state="translated">- SPRACHE -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiMiscellaneous">
         <source>- MISCELLANEOUS -</source>
-        <target state="translated">– VERSCHIEDENES –</target>
+        <target state="translated">- VERSCHIEDENES -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiAdvanced">

@@ -1,7 +1,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
 open System.IO
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
@@ -15,9 +15,8 @@ module QuickInfo =
 let internal GetQuickInfo (project:FSharpProject) (fileName:string) (caretPosition:int) =
     async {
         let code = File.ReadAllText(fileName)
-        let sourceText = SourceText.From(code)
-        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId()) // only used for caching purposes
-        return! FSharpAsyncQuickInfoSource.ProvideQuickInfo(checker, documentId, sourceText, fileName, caretPosition, FSharpParsingOptions.Default, project.Options, 0, LanguageServicePerformanceOptions.Default)
+        let document, _ = RoslynTestHelpers.CreateDocument(fileName, code)
+        return! FSharpAsyncQuickInfoSource.ProvideQuickInfo(checker, document, caretPosition, FSharpParsingOptions.Default, project.Options, LanguageServicePerformanceOptions.Default)
     } |> Async.RunSynchronously
 
 let GetQuickInfoText (project:FSharpProject) (fileName:string) (caretPosition:int) =
@@ -26,8 +25,8 @@ let GetQuickInfoText (project:FSharpProject) (fileName:string) (caretPosition:in
     | Some (quickInfo) ->
         let documentationBuilder =
             { new IDocumentationBuilder with
-                override __.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
-                override __.AppendDocumentation(_, _, _, _, _, _, _) = ()
+                override _.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
+                override _.AppendDocumentation(_, _, _, _, _, _, _) = ()
             }
         let mainDescription, docs = FSharpAsyncQuickInfoSource.BuildSingleQuickInfoItem documentationBuilder quickInfo
         let mainTextItems =

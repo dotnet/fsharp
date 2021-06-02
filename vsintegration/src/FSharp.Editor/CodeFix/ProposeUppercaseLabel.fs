@@ -6,7 +6,7 @@ open System.Composition
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Diagnostics
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ProposeUpperCaseLabel"); Shared>]
 type internal FSharpProposeUpperCaseLabelCodeFixProvider
@@ -19,13 +19,13 @@ type internal FSharpProposeUpperCaseLabelCodeFixProvider
     let fixableDiagnosticIds = ["FS0053"]
     static let userOpName = "ProposeUpperCaseLabel"
         
-    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
-    override __.RegisterCodeFixesAsync context : Task =
+    override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             let textChanger (originalText: string) = originalText.[0].ToString().ToUpper() + originalText.Substring(1)
             let! solutionChanger, originalText = SymbolHelpers.changeAllSymbolReferences(context.Document, context.Span, textChanger, projectInfoManager, checkerProvider.Checker, userOpName)
-            let title = CompilerDiagnostics.getErrorMessage (ReplaceWithSuggestion <| textChanger originalText)
+            let title = CompilerDiagnostics.GetErrorMessage (FSharpDiagnosticKind.ReplaceWithSuggestion <| textChanger originalText)
             context.RegisterCodeFix(
                 CodeAction.Create(title, solutionChanger, title),
                 context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray)

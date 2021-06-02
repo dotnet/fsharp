@@ -3,7 +3,7 @@
 open System
 open System.IO
 open System.Xml.Linq
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 
 module FileSystemHelpers =
     let safeDeleteFile (path: string) =
@@ -81,7 +81,6 @@ module internal ProjectOptionsBuilder =
                 LoadTime = DateTime.MaxValue
                 OriginalLoadReferences = []
                 UnresolvedReferences = None
-                ExtraProjectInfo = None
                 Stamp = None
             }
         {
@@ -125,7 +124,7 @@ module internal ProjectOptionsBuilder =
                 let otherOptions = Array.append projectOptions.Options.OtherOptions binaryRefs
                 { projectOptions with
                     Options = { projectOptions.Options with
-                        ReferencedProjects = referenceList
+                        ReferencedProjects = referenceList |> Array.map FSharpReferencedProject.CreateFSharp
                         OtherOptions = otherOptions
                     }
                 })

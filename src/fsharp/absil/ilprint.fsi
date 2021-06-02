@@ -3,9 +3,7 @@
 /// Printer for the abstract syntax.
 module internal FSharp.Compiler.AbstractIL.ILAsciiWriter 
 
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Internal 
 open System.IO
 
 #if DEBUG

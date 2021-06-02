@@ -17,6 +17,16 @@
         <target state="translated">Für das Feature "{0}" ist die F#-Bibliothek für die Sprachversion {1} oder höher erforderlich.</target>
         <note />
       </trans-unit>
+      <trans-unit id="containerDeprecated">
+        <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
+        <target state="translated">"AssemblyKeyNameAttribute" gilt als veraltet. Verwenden Sie stattdessen "AssemblyKeyFileAttribute".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="containerSigningUnsupportedOnThisPlatform">
+        <source>Key container signing is not supported on this platform.</source>
+        <target state="translated">Das Signieren von Schlüsselcontainern wird auf dieser Plattform nicht unterstützt.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">Verfügbare Überladungen:\n{0}</target>
@@ -94,7 +104,7 @@
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
-        <target state="new">more types support units of measure</target>
+        <target state="translated">Maßeinheitenunterstützung durch weitere Typen</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
@@ -142,6 +152,11 @@
         <target state="translated">Paketverwaltung</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePrintfBinaryFormat">
+        <source>binary formatting for integers</source>
+        <target state="new">binary formatting for integers</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
         <target state="translated">Lockerung für Leerraum</target>
@@ -155,6 +170,11 @@
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">Zeichenfolgeninterpolation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStructActivePattern">
+        <source>struct representation for active patterns</source>
+        <target state="new">struct representation for active patterns</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -237,6 +257,11 @@
         <target state="translated">Der Ressourcenheader, der am Offset {0} beginnt, ist fehlerhaft formatiert.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAllSigs">
+        <source>Print the inferred interfaces of all compilation files to associated signature files</source>
+        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Zeigen Sie die zulässigen Werte für die Sprachversion an. Geben Sie die Sprachversion als "latest" oder "preview" an.</target>
@@ -254,7 +279,12 @@
       </trans-unit>
       <trans-unit id="optsVersion">
         <source>Display compiler version banner and exit</source>
-        <target state="new">Display compiler version banner and exit</target>
+        <target state="translated">Banner zur Compilerversion anzeigen und beenden</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsWin32icon">
+        <source>Specify a Win32 icon file (.ico)</source>
+        <target state="new">Specify a Win32 icon file (.ico)</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -289,7 +319,7 @@
       </trans-unit>
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
+        <target state="translated">Unerwartetes Token in Typdefinition. Nach Typ "{0}" wurde "=" erwartet.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -310,6 +340,21 @@
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
         <source>#i is not supported by the registered PackageManagers</source>
         <target state="translated">#i wird von den registrierten PackageManagers nicht unterstützt.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDetermined">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
+        <target state="translated">Das .NET SDK für dieses Skript konnte nicht ermittelt werden. Wenn sich das Skript in einem Verzeichnis mit "global.json" befindet, stellen Sie sicher, dass das entsprechende .NET SDK installiert ist. Ausgabe von "{0} --version" im Verzeichnis "{1}": {2}. Exitcode: {3}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedNoHost">
+        <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
+        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedUnexpected">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
+        <target state="translated">Das .NET SDK für dieses Skript konnte nicht ermittelt werden. Wenn sich das Skript in einem Verzeichnis mit "global.json" befindet, stellen Sie sicher, dass das entsprechende .NET SDK installiert ist. Unerwarteter Fehler: {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -365,6 +410,11 @@
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">"use!" darf nicht mit "and!" kombiniert werden.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
+        <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
+        <target state="translated">Eine [&lt;Literal&gt;]-Deklaration kann kein aktives Muster für ihren Bezeichner verwenden.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
@@ -2729,7 +2779,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
         <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
-        <target state="translated">Maßeinheiten werden nur für die Typen "float", "float32", "decimal" und "signed integer" unterstützt.</target>
+        <target state="translated">Maßeinheiten werden nur für die Typen "float", "float32", "decimal" und "integer" unterstützt.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">
@@ -2753,8 +2803,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMemberKindPropertyGetSetNotExpected">
-        <source>MemberKind.PropertyGetSet only expected in parse trees</source>
-        <target state="translated">MemberKind.PropertyGetSet wird nur in Analysestrukturen erwartet.</target>
+        <source>SynMemberKind.PropertyGetSet only expected in parse trees</source>
+        <target state="translated">"SynMemberKind.PropertyGetSet" wird nur in Analysestrukturen erwartet.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainValues">
@@ -4804,7 +4854,7 @@
       </trans-unit>
       <trans-unit id="optsHelpBannerInputFiles">
         <source>- INPUT FILES -</source>
-        <target state="translated">– EINGABEDATEIEN –</target>
+        <target state="translated">- EINGABEDATEIEN -</target>
         <note />
       </trans-unit>
       <trans-unit id="optsHelpBannerResources">
@@ -4824,17 +4874,17 @@
       </trans-unit>
       <trans-unit id="optsHelpBannerMisc">
         <source>- MISCELLANEOUS -</source>
-        <target state="translated">– VERSCHIEDENES –</target>
+        <target state="translated">- VERSCHIEDENES -</target>
         <note />
       </trans-unit>
       <trans-unit id="optsHelpBannerLanguage">
         <source>- LANGUAGE -</source>
-        <target state="translated">– SPRACHE –</target>
+        <target state="translated">- SPRACHE -</target>
         <note />
       </trans-unit>
       <trans-unit id="optsHelpBannerErrsAndWarns">
         <source>- ERRORS AND WARNINGS -</source>
-        <target state="translated">– FEHLER UND WARNUNGEN –</target>
+        <target state="translated">- FEHLER UND WARNUNGEN -</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownArgumentToTheTestSwitch">
@@ -6119,7 +6169,7 @@
       </trans-unit>
       <trans-unit id="etUnexpectedNullFromProvidedTypeMember">
         <source>Unexpected 'null' return value from provided type '{0}' member '{1}'</source>
-        <target state="translated">Unerwarteter NULL-Rückgabewert vom angegebenen Typ '{0}' Member '{1}':</target>
+        <target state="translated">Unerwarteter NULL-Rückgabewert vom angegebenen Typ '{0}' Member '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="etUnexpectedExceptionFromProvidedMemberMember">
@@ -6339,7 +6389,7 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeZip">
         <source>{0} var in collection</source>
-        <target state="translated">{0}-Variable in der Sammlung</target>
+        <target state="translated">{0} var in collection</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBinaryOperatorRequiresVariable">
