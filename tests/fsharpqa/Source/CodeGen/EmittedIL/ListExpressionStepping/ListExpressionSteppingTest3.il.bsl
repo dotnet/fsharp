@@ -36,13 +36,13 @@
   // Offset: 0x00000280 Length: 0x000000AF
 }
 .module ListExpressionSteppingTest3.exe
-// MVID: {60B68B7E-AE45-39B4-A745-03837E8BB660}
+// MVID: {60B78A57-AE45-39B4-A745-0383578AB760}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x064B0000
+// Image base: 0x06EB0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -55,205 +55,48 @@
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto autochar serializable sealed nested assembly beforefieldinit specialname f2@7
-           extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>>
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-      .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x
-      .field public int32 pc
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> current
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .method public specialname rtspecialname 
-              instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x,
-                                   int32 pc,
-                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> current) cil managed
-      {
-        // Code size       28 (0x1c)
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldarg.1
-        IL_0002:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::x
-        IL_0007:  ldarg.0
-        IL_0008:  ldarg.2
-        IL_0009:  stfld      int32 ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::pc
-        IL_000e:  ldarg.0
-        IL_000f:  ldarg.3
-        IL_0010:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::current
-        IL_0015:  ldarg.0
-        IL_0016:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>>::.ctor()
-        IL_001b:  ret
-      } // end of method f2@7::.ctor
-
-      .method public strict virtual instance int32 
-              GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>>& next) cil managed
-      {
-        // Code size       112 (0x70)
-        .maxstack  6
-        .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ListExpressionStepping\\ListExpressionSteppingTest3.fs'
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::pc
-        IL_0006:  ldc.i4.1
-        IL_0007:  sub
-        IL_0008:  switch     ( 
-                              IL_0017,
-                              IL_001a)
-        IL_0015:  br.s       IL_001d
-
-        .line 100001,100001 : 0,0 ''
-        IL_0017:  nop
-        IL_0018:  br.s       IL_005d
-
-        .line 100001,100001 : 0,0 ''
-        IL_001a:  nop
-        IL_001b:  br.s       IL_0067
-
-        .line 100001,100001 : 0,0 ''
-        IL_001d:  nop
-        .line 7,7 : 17,23 ''
-        IL_001e:  ldarg.0
-        IL_001f:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::x
-        IL_0024:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
-        IL_0029:  ldc.i4.4
-        IL_002a:  bge.s      IL_0060
-
-        .line 8,8 : 14,20 ''
-        IL_002c:  ldarg.0
-        IL_002d:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::x
-        IL_0032:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
-        IL_0037:  nop
-        .line 9,9 : 14,29 ''
-        IL_0038:  ldstr      "hello"
-        IL_003d:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-        IL_0042:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-        IL_0047:  pop
-        IL_0048:  ldarg.0
-        IL_0049:  ldc.i4.1
-        IL_004a:  stfld      int32 ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::pc
-        .line 10,10 : 14,21 ''
-        IL_004f:  ldarg.0
-        IL_0050:  ldarg.0
-        IL_0051:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::x
-        IL_0056:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::current
-        IL_005b:  ldc.i4.1
-        IL_005c:  ret
-
-        .line 100001,100001 : 0,0 ''
-        IL_005d:  nop
-        IL_005e:  br.s       IL_001e
-
-        IL_0060:  ldarg.0
-        IL_0061:  ldc.i4.2
-        IL_0062:  stfld      int32 ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::pc
-        IL_0067:  ldarg.0
-        IL_0068:  ldnull
-        IL_0069:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::current
-        IL_006e:  ldc.i4.0
-        IL_006f:  ret
-      } // end of method f2@7::GenerateNext
-
-      .method public strict virtual instance void 
-              Close() cil managed
-      {
-        // Code size       8 (0x8)
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldc.i4.2
-        IL_0002:  stfld      int32 ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::pc
-        IL_0007:  ret
-      } // end of method f2@7::Close
-
-      .method public strict virtual instance bool 
-              get_CheckClose() cil managed
-      {
-        // Code size       39 (0x27)
-        .maxstack  8
-        .line 100001,100001 : 0,0 ''
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::pc
-        IL_0006:  switch     ( 
-                              IL_0019,
-                              IL_001c,
-                              IL_001f)
-        IL_0017:  br.s       IL_0022
-
-        .line 100001,100001 : 0,0 ''
-        IL_0019:  nop
-        IL_001a:  br.s       IL_0025
-
-        .line 100001,100001 : 0,0 ''
-        IL_001c:  nop
-        IL_001d:  br.s       IL_0023
-
-        .line 100001,100001 : 0,0 ''
-        IL_001f:  nop
-        IL_0020:  br.s       IL_0025
-
-        .line 100001,100001 : 0,0 ''
-        IL_0022:  nop
-        IL_0023:  ldc.i4.0
-        IL_0024:  ret
-
-        IL_0025:  ldc.i4.0
-        IL_0026:  ret
-      } // end of method f2@7::get_CheckClose
-
-      .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> 
-              get_LastGenerated() cil managed
-      {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       7 (0x7)
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::current
-        IL_0006:  ret
-      } // end of method f2@7::get_LastGenerated
-
-      .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>> 
-              GetFreshEnumerator() cil managed
-      {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       14 (0xe)
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::x
-        IL_0006:  ldc.i4.0
-        IL_0007:  ldnull
-        IL_0008:  newobj     instance void ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
-                                                                                                               int32,
-                                                                                                               class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
-        IL_000d:  ret
-      } // end of method f2@7::GetFreshEnumerator
-
-    } // end of class f2@7
-
     .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>> 
             f2() cil managed
     {
-      // Code size       23 (0x17)
-      .maxstack  5
-      .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x)
-      .line 6,6 : 9,22 ''
+      // Code size       60 (0x3c)
+      .maxstack  4
+      .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x,
+               [1] valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>> V_1)
+      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+      .line 6,6 : 9,22 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ListExpressionStepping\\ListExpressionSteppingTest3.fs'
       IL_0000:  ldc.i4.0
       IL_0001:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
       IL_0006:  stloc.0
       .line 7,10 : 9,23 ''
-      IL_0007:  ldloc.0
-      IL_0008:  ldc.i4.0
-      IL_0009:  ldnull
-      IL_000a:  newobj     instance void ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
-                                                                                                             int32,
-                                                                                                             class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
-      IL_000f:  tail.
-      IL_0011:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-      IL_0016:  ret
+      IL_0007:  nop
+      .line 7,7 : 11,23 ''
+      IL_0008:  ldloc.0
+      IL_0009:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
+      IL_000e:  ldc.i4.4
+      IL_000f:  bge.s      IL_0034
+
+      .line 8,8 : 14,20 ''
+      IL_0011:  ldloc.0
+      IL_0012:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
+      IL_0017:  nop
+      .line 9,9 : 14,29 ''
+      IL_0018:  ldstr      "hello"
+      IL_001d:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+      IL_0022:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+      IL_0027:  pop
+      .line 10,10 : 14,21 ''
+      IL_0028:  ldloca.s   V_1
+      IL_002a:  ldloc.0
+      IL_002b:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>>::Add(!0)
+      IL_0030:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0031:  nop
+      IL_0032:  br.s       IL_0007
+
+      .line 7,10 : 9,23 ''
+      IL_0034:  ldloca.s   V_1
+      IL_0036:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>>::Close()
+      IL_003b:  ret
     } // end of method ListExpressionSteppingTest3::f2
 
   } // end of class ListExpressionSteppingTest3

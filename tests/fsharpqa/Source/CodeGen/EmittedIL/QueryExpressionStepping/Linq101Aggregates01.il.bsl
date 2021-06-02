@@ -50,13 +50,13 @@
   // Offset: 0x000005F0 Length: 0x00000211
 }
 .module Linq101Aggregates01.exe
-// MVID: {60B68B80-D281-4783-A745-0383808BB660}
+// MVID: {60B78A59-D281-4783-A745-0383598AB760}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06B70000
+// Image base: 0x06380000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -156,10 +156,10 @@
       .line 12,12 : 9,33 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
+      .line 13,13 : 9,17 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101Aggregates01/uniqueFactors@12::pc
-      .line 13,13 : 9,17 ''
       IL_005e:  ldarg.0
       IL_005f:  ldloc.1
       IL_0060:  stfld      int32 Linq101Aggregates01/uniqueFactors@12::current
@@ -460,10 +460,10 @@
       .line 21,21 : 9,28 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
+      .line 22,22 : 9,16 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101Aggregates01/numSum@21::pc
-      .line 22,22 : 9,16 ''
       IL_005e:  ldarg.0
       IL_005f:  ldloc.1
       IL_0060:  stfld      int32 Linq101Aggregates01/numSum@21::current
@@ -802,10 +802,10 @@
       .line 30,30 : 9,26 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
+      .line 31,31 : 9,25 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101Aggregates01/totalChars@30::pc
-      .line 31,31 : 9,25 ''
       IL_005e:  ldarg.0
       IL_005f:  ldloc.1
       IL_0060:  stfld      string Linq101Aggregates01/totalChars@30::current
@@ -1271,10 +1271,10 @@
       .line 42,42 : 13,26 ''
       IL_0056:  ldloc.0
       IL_0057:  stloc.1
+      .line 43,43 : 13,33 ''
       IL_0058:  ldarg.0
       IL_0059:  ldc.i4.2
       IL_005a:  stfld      int32 Linq101Aggregates01/sum@42::pc
-      .line 43,43 : 13,33 ''
       IL_005f:  ldarg.0
       IL_0060:  ldloc.1
       IL_0061:  stfld      class [Utils]Utils/Product Linq101Aggregates01/sum@42::current
@@ -1793,10 +1793,10 @@
       .line 49,49 : 22,41 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
+      .line 49,49 : 42,49 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101Aggregates01/minNum@49::pc
-      .line 49,49 : 42,49 ''
       IL_005e:  ldarg.0
       IL_005f:  ldloc.1
       IL_0060:  stfld      int32 Linq101Aggregates01/minNum@49::current
@@ -2135,10 +2135,10 @@
       .line 52,52 : 28,45 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
+      .line 52,52 : 46,60 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101Aggregates01/shortestWord@52::pc
-      .line 52,52 : 46,60 ''
       IL_005e:  ldarg.0
       IL_005f:  ldloc.1
       IL_0060:  stfld      string Linq101Aggregates01/shortestWord@52::current
@@ -2604,10 +2604,10 @@
       .line 59,59 : 27,40 ''
       IL_0056:  ldloc.0
       IL_0057:  stloc.1
+      .line 59,59 : 41,58 ''
       IL_0058:  ldarg.0
       IL_0059:  ldc.i4.2
       IL_005a:  stfld      int32 Linq101Aggregates01/min@59::pc
-      .line 59,59 : 41,58 ''
       IL_005f:  ldarg.0
       IL_0060:  ldloc.1
       IL_0061:  stfld      class [Utils]Utils/Product Linq101Aggregates01/min@59::current
@@ -3206,10 +3206,10 @@
       .line 69,69 : 40,53 ''
       IL_0056:  ldloc.0
       IL_0057:  stloc.1
+      .line 69,69 : 54,79 ''
       IL_0058:  ldarg.0
       IL_0059:  ldc.i4.2
       IL_005a:  stfld      int32 Linq101Aggregates01/cheapestProducts@69::pc
-      .line 69,69 : 54,79 ''
       IL_005f:  ldarg.0
       IL_0060:  ldloc.1
       IL_0061:  stfld      class [Utils]Utils/Product Linq101Aggregates01/cheapestProducts@69::current
@@ -3682,10 +3682,10 @@
       .line 74,74 : 22,41 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
+      .line 74,74 : 42,49 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101Aggregates01/maxNum@74::pc
-      .line 74,74 : 42,49 ''
       IL_005e:  ldarg.0
       IL_005f:  ldloc.1
       IL_0060:  stfld      int32 Linq101Aggregates01/maxNum@74::current
@@ -4024,10 +4024,10 @@
       .line 77,77 : 29,46 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
+      .line 77,77 : 47,61 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101Aggregates01/longestLength@77::pc
-      .line 77,77 : 47,61 ''
       IL_005e:  ldarg.0
       IL_005f:  ldloc.1
       IL_0060:  stfld      string Linq101Aggregates01/longestLength@77::current
@@ -4493,10 +4493,10 @@
       .line 84,84 : 42,55 ''
       IL_0056:  ldloc.0
       IL_0057:  stloc.1
+      .line 84,84 : 56,73 ''
       IL_0058:  ldarg.0
       IL_0059:  ldc.i4.2
       IL_005a:  stfld      int32 Linq101Aggregates01/mostExpensivePrice@84::pc
-      .line 84,84 : 56,73 ''
       IL_005f:  ldarg.0
       IL_0060:  ldloc.1
       IL_0061:  stfld      class [Utils]Utils/Product Linq101Aggregates01/mostExpensivePrice@84::current
@@ -5077,10 +5077,10 @@
       .line 93,93 : 32,45 ''
       IL_0056:  ldloc.0
       IL_0057:  stloc.1
+      .line 93,93 : 46,63 ''
       IL_0058:  ldarg.0
       IL_0059:  ldc.i4.2
       IL_005a:  stfld      int32 Linq101Aggregates01/maxPrice@93::pc
-      .line 93,93 : 46,63 ''
       IL_005f:  ldarg.0
       IL_0060:  ldloc.1
       IL_0061:  stfld      class [Utils]Utils/Product Linq101Aggregates01/maxPrice@93::current
@@ -5430,10 +5430,10 @@
       .line 94,94 : 45,58 ''
       IL_0056:  ldloc.0
       IL_0057:  stloc.1
+      .line 94,94 : 59,89 ''
       IL_0058:  ldarg.0
       IL_0059:  ldc.i4.2
       IL_005a:  stfld      int32 Linq101Aggregates01/mostExpensiveProducts@94::pc
-      .line 94,94 : 59,89 ''
       IL_005f:  ldarg.0
       IL_0060:  ldloc.1
       IL_0061:  stfld      class [Utils]Utils/Product Linq101Aggregates01/mostExpensiveProducts@94::current
@@ -5911,10 +5911,10 @@
       .line 100,100 : 26,46 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
+      .line 100,100 : 47,58 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101Aggregates01/averageNum@100::pc
-      .line 100,100 : 47,58 ''
       IL_005e:  ldarg.0
       IL_005f:  ldloc.1
       IL_0060:  stfld      float64 Linq101Aggregates01/averageNum@100::current
@@ -6477,10 +6477,10 @@
       .line 115,115 : 36,49 ''
       IL_0056:  ldloc.0
       IL_0057:  stloc.1
+      .line 115,115 : 50,71 ''
       IL_0058:  ldarg.0
       IL_0059:  ldc.i4.2
       IL_005a:  stfld      int32 Linq101Aggregates01/averagePrice@115::pc
-      .line 115,115 : 50,71 ''
       IL_005f:  ldarg.0
       IL_0060:  ldloc.1
       IL_0061:  stfld      class [Utils]Utils/Product Linq101Aggregates01/averagePrice@115::current

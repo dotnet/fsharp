@@ -2356,6 +2356,12 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
 
     ProcessDebugPointForExpr cenv cgbuf sp expr
 
+    match (if compileSequenceExpressions then LowerComputedListOrArrayExpr cenv.tcVal g cenv.amap expr else None) with
+    | Some altExpr ->
+        GenExpr cenv cgbuf eenv sp altExpr sequel
+        true
+    | None ->
+
     match (if compileSequenceExpressions then ConvertSequenceExprToObject g cenv.amap expr else None) with
     | Some info ->
         GenSequenceExpr cenv cgbuf eenv info sequel
@@ -3828,6 +3834,7 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resty, spTry, spFin
        let sp =
            match spFinally with
            | DebugPointAtFinally.Yes m -> CG.EmitSeqPoint cgbuf m; SPAlways
+           | DebugPointAtFinally.Body -> SPAlways
            | DebugPointAtFinally.No -> SPSuppress
 
        GenExpr cenv cgbuf eenvinner sp handlerExpr (LeaveHandler (true, whereToSave, afterHandler))
@@ -3949,12 +3956,13 @@ and GenWhileLoop cenv cgbuf eenv (spWhile, e1, e2, m) sequel =
     let finish = CG.GenerateDelayMark cgbuf "while_finish"
     let startTest = CG.GenerateMark cgbuf "startTest"
 
-    match spWhile with
-    | DebugPointAtWhile.Yes spStart -> CG.EmitSeqPoint cgbuf spStart
-    | DebugPointAtWhile.No -> ()
+    let spCondition =
+        match spWhile with
+        | DebugPointAtWhile.Yes spStart -> CG.EmitSeqPoint cgbuf spStart; SPSuppress
+        | DebugPointAtWhile.No -> SPSuppress
 
     // SEQUENCE POINTS: Emit a sequence point to cover all of 'while e do'
-    GenExpr cenv cgbuf eenv SPSuppress e1 (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse, finish.CodeLabel) ]))
+    GenExpr cenv cgbuf eenv spCondition e1 (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse, finish.CodeLabel) ]))
 
     GenExpr cenv cgbuf eenv SPAlways e2 (DiscardThen (Br startTest))
     CG.SetMarkToHere cgbuf finish

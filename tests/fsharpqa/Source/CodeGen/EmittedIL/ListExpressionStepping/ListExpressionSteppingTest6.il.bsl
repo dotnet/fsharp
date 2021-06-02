@@ -36,13 +36,13 @@
   // Offset: 0x00000298 Length: 0x000000BC
 }
 .module ListExpressionSteppingTest6.exe
-// MVID: {60B68B7E-98A2-AB14-A745-03837E8BB660}
+// MVID: {60B78A57-98A2-AB14-A745-0383578AB760}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07460000
+// Image base: 0x06F80000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -55,420 +55,6 @@
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto autochar serializable sealed nested assembly beforefieldinit specialname f7@7
-           extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-      .field public class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> 'enum'
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .field public class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> enum0
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .field public int32 pc
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .field public int32 current
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .method public specialname rtspecialname 
-              instance void  .ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> 'enum',
-                                   class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> enum0,
-                                   int32 pc,
-                                   int32 current) cil managed
-      {
-        // Code size       36 (0x24)
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldarg.1
-        IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::'enum'
-        IL_0007:  ldarg.0
-        IL_0008:  ldarg.2
-        IL_0009:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::enum0
-        IL_000e:  ldarg.0
-        IL_000f:  ldarg.3
-        IL_0010:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
-        IL_0015:  ldarg.0
-        IL_0016:  ldarg.s    current
-        IL_0018:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::current
-        IL_001d:  ldarg.0
-        IL_001e:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
-        IL_0023:  ret
-      } // end of method f7@7::.ctor
-
-      .method public strict virtual instance int32 
-              GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
-      {
-        // Code size       294 (0x126)
-        .maxstack  6
-        .locals init ([0] int32 x,
-                 [1] int32 V_1)
-        .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ListExpressionStepping\\ListExpressionSteppingTest6.fs'
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
-        IL_0006:  ldc.i4.1
-        IL_0007:  sub
-        IL_0008:  switch     ( 
-                              IL_0023,
-                              IL_0026,
-                              IL_0029,
-                              IL_002f,
-                              IL_0035)
-        IL_0021:  br.s       IL_003b
-
-        .line 100001,100001 : 0,0 ''
-        IL_0023:  nop
-        IL_0024:  br.s       IL_008f
-
-        .line 100001,100001 : 0,0 ''
-        IL_0026:  nop
-        IL_0027:  br.s       IL_008c
-
-        .line 100001,100001 : 0,0 ''
-        IL_0029:  nop
-        IL_002a:  br         IL_00fc
-
-        .line 100001,100001 : 0,0 ''
-        IL_002f:  nop
-        IL_0030:  br         IL_00f9
-
-        .line 100001,100001 : 0,0 ''
-        IL_0035:  nop
-        IL_0036:  br         IL_011d
-
-        .line 100001,100001 : 0,0 ''
-        IL_003b:  nop
-        .line 7,9 : 11,21 ''
-        IL_003c:  ldarg.0
-        IL_003d:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6::get_es()
-        IL_0042:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-        IL_0047:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::'enum'
-        IL_004c:  ldarg.0
-        IL_004d:  ldc.i4.1
-        IL_004e:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
-        .line 7,9 : 11,21 ''
-        IL_0053:  ldarg.0
-        IL_0054:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::'enum'
-        IL_0059:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-        IL_005e:  brfalse.s  IL_008f
-
-        IL_0060:  ldarg.0
-        IL_0061:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::'enum'
-        IL_0066:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-        IL_006b:  stloc.0
-        .line 8,8 : 14,29 ''
-        IL_006c:  ldstr      "hello"
-        IL_0071:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-        IL_0076:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-        IL_007b:  pop
-        IL_007c:  ldarg.0
-        IL_007d:  ldc.i4.2
-        IL_007e:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
-        .line 9,9 : 14,21 ''
-        IL_0083:  ldarg.0
-        IL_0084:  ldloc.0
-        IL_0085:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::current
-        IL_008a:  ldc.i4.1
-        IL_008b:  ret
-
-        .line 100001,100001 : 0,0 ''
-        IL_008c:  nop
-        IL_008d:  br.s       IL_0053
-
-        IL_008f:  ldarg.0
-        IL_0090:  ldc.i4.5
-        IL_0091:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
-        .line 7,9 : 11,21 ''
-        IL_0096:  ldarg.0
-        IL_0097:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::'enum'
-        IL_009c:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-        IL_00a1:  nop
-        IL_00a2:  ldarg.0
-        IL_00a3:  ldnull
-        IL_00a4:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::'enum'
-        .line 10,12 : 11,21 ''
-        IL_00a9:  ldarg.0
-        IL_00aa:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6::get_es()
-        IL_00af:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-        IL_00b4:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::enum0
-        IL_00b9:  ldarg.0
-        IL_00ba:  ldc.i4.3
-        IL_00bb:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
-        .line 10,12 : 11,21 ''
-        IL_00c0:  ldarg.0
-        IL_00c1:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::enum0
-        IL_00c6:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-        IL_00cb:  brfalse.s  IL_00fc
-
-        IL_00cd:  ldarg.0
-        IL_00ce:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::enum0
-        IL_00d3:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-        IL_00d8:  stloc.1
-        .line 11,11 : 14,31 ''
-        IL_00d9:  ldstr      "goodbye"
-        IL_00de:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-        IL_00e3:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-        IL_00e8:  pop
-        IL_00e9:  ldarg.0
-        IL_00ea:  ldc.i4.4
-        IL_00eb:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
-        .line 12,12 : 14,21 ''
-        IL_00f0:  ldarg.0
-        IL_00f1:  ldloc.1
-        IL_00f2:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::current
-        IL_00f7:  ldc.i4.1
-        IL_00f8:  ret
-
-        .line 100001,100001 : 0,0 ''
-        IL_00f9:  nop
-        IL_00fa:  br.s       IL_00c0
-
-        IL_00fc:  ldarg.0
-        IL_00fd:  ldc.i4.5
-        IL_00fe:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
-        .line 10,12 : 11,21 ''
-        IL_0103:  ldarg.0
-        IL_0104:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::enum0
-        IL_0109:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-        IL_010e:  nop
-        IL_010f:  ldarg.0
-        IL_0110:  ldnull
-        IL_0111:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::enum0
-        IL_0116:  ldarg.0
-        IL_0117:  ldc.i4.5
-        IL_0118:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
-        IL_011d:  ldarg.0
-        IL_011e:  ldc.i4.0
-        IL_011f:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::current
-        IL_0124:  ldc.i4.0
-        IL_0125:  ret
-      } // end of method f7@7::GenerateNext
-
-      .method public strict virtual instance void 
-              Close() cil managed
-      {
-        // Code size       173 (0xad)
-        .maxstack  6
-        .locals init ([0] class [mscorlib]System.Exception V_0,
-                 [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-                 [2] class [mscorlib]System.Exception e)
-        .line 100001,100001 : 0,0 ''
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
-        IL_0006:  ldc.i4.5
-        IL_0007:  sub
-        IL_0008:  switch     ( 
-                              IL_0013)
-        IL_0011:  br.s       IL_0019
-
-        .line 100001,100001 : 0,0 ''
-        IL_0013:  nop
-        IL_0014:  br         IL_00a4
-
-        .line 100001,100001 : 0,0 ''
-        IL_0019:  nop
-        .try
-        {
-          IL_001a:  ldarg.0
-          IL_001b:  ldfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
-          IL_0020:  switch     ( 
-                                IL_003f,
-                                IL_0042,
-                                IL_0045,
-                                IL_0048,
-                                IL_004b,
-                                IL_004e)
-          IL_003d:  br.s       IL_0051
-
-          .line 100001,100001 : 0,0 ''
-          IL_003f:  nop
-          IL_0040:  br.s       IL_007e
-
-          .line 100001,100001 : 0,0 ''
-          IL_0042:  nop
-          IL_0043:  br.s       IL_006a
-
-          .line 100001,100001 : 0,0 ''
-          IL_0045:  nop
-          IL_0046:  br.s       IL_0069
-
-          .line 100001,100001 : 0,0 ''
-          IL_0048:  nop
-          IL_0049:  br.s       IL_0053
-
-          .line 100001,100001 : 0,0 ''
-          IL_004b:  nop
-          IL_004c:  br.s       IL_0052
-
-          .line 100001,100001 : 0,0 ''
-          IL_004e:  nop
-          IL_004f:  br.s       IL_007e
-
-          .line 100001,100001 : 0,0 ''
-          IL_0051:  nop
-          .line 100001,100001 : 0,0 ''
-          IL_0052:  nop
-          IL_0053:  ldarg.0
-          IL_0054:  ldc.i4.5
-          IL_0055:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
-          IL_005a:  ldarg.0
-          IL_005b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::enum0
-          IL_0060:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-          IL_0065:  nop
-          .line 100001,100001 : 0,0 ''
-          IL_0066:  nop
-          IL_0067:  br.s       IL_007e
-
-          .line 100001,100001 : 0,0 ''
-          IL_0069:  nop
-          IL_006a:  ldarg.0
-          IL_006b:  ldc.i4.5
-          IL_006c:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
-          IL_0071:  ldarg.0
-          IL_0072:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::'enum'
-          IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-          IL_007c:  nop
-          .line 100001,100001 : 0,0 ''
-          IL_007d:  nop
-          IL_007e:  ldarg.0
-          IL_007f:  ldc.i4.5
-          IL_0080:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
-          IL_0085:  ldarg.0
-          IL_0086:  ldc.i4.0
-          IL_0087:  stfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::current
-          IL_008c:  ldnull
-          IL_008d:  stloc.1
-          IL_008e:  leave.s    IL_009c
-
-        }  // end .try
-        catch [mscorlib]System.Object 
-        {
-          IL_0090:  castclass  [mscorlib]System.Exception
-          IL_0095:  stloc.2
-          .line 7,9 : 11,21 ''
-          IL_0096:  ldloc.2
-          IL_0097:  stloc.0
-          IL_0098:  ldnull
-          IL_0099:  stloc.1
-          IL_009a:  leave.s    IL_009c
-
-          .line 100001,100001 : 0,0 ''
-        }  // end handler
-        IL_009c:  ldloc.1
-        IL_009d:  pop
-        .line 100001,100001 : 0,0 ''
-        IL_009e:  nop
-        IL_009f:  br         IL_0000
-
-        IL_00a4:  ldloc.0
-        IL_00a5:  ldnull
-        IL_00a6:  cgt.un
-        IL_00a8:  brfalse.s  IL_00ac
-
-        .line 100001,100001 : 0,0 ''
-        IL_00aa:  ldloc.0
-        IL_00ab:  throw
-
-        .line 100001,100001 : 0,0 ''
-        IL_00ac:  ret
-      } // end of method f7@7::Close
-
-      .method public strict virtual instance bool 
-              get_CheckClose() cil managed
-      {
-        // Code size       66 (0x42)
-        .maxstack  5
-        .line 100001,100001 : 0,0 ''
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
-        IL_0006:  switch     ( 
-                              IL_0025,
-                              IL_0028,
-                              IL_002b,
-                              IL_002e,
-                              IL_0031,
-                              IL_0034)
-        IL_0023:  br.s       IL_0037
-
-        .line 100001,100001 : 0,0 ''
-        IL_0025:  nop
-        IL_0026:  br.s       IL_0040
-
-        .line 100001,100001 : 0,0 ''
-        IL_0028:  nop
-        IL_0029:  br.s       IL_003e
-
-        .line 100001,100001 : 0,0 ''
-        IL_002b:  nop
-        IL_002c:  br.s       IL_003c
-
-        .line 100001,100001 : 0,0 ''
-        IL_002e:  nop
-        IL_002f:  br.s       IL_003a
-
-        .line 100001,100001 : 0,0 ''
-        IL_0031:  nop
-        IL_0032:  br.s       IL_0038
-
-        .line 100001,100001 : 0,0 ''
-        IL_0034:  nop
-        IL_0035:  br.s       IL_0040
-
-        .line 100001,100001 : 0,0 ''
-        IL_0037:  nop
-        IL_0038:  ldc.i4.1
-        IL_0039:  ret
-
-        IL_003a:  ldc.i4.1
-        IL_003b:  ret
-
-        IL_003c:  ldc.i4.1
-        IL_003d:  ret
-
-        IL_003e:  ldc.i4.1
-        IL_003f:  ret
-
-        IL_0040:  ldc.i4.0
-        IL_0041:  ret
-      } // end of method f7@7::get_CheckClose
-
-      .method public strict virtual instance int32 
-              get_LastGenerated() cil managed
-      {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       7 (0x7)
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::current
-        IL_0006:  ret
-      } // end of method f7@7::get_LastGenerated
-
-      .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> 
-              GetFreshEnumerator() cil managed
-      {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       10 (0xa)
-        .maxstack  8
-        IL_0000:  ldnull
-        IL_0001:  ldnull
-        IL_0002:  ldc.i4.0
-        IL_0003:  ldc.i4.0
-        IL_0004:  newobj     instance void ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                                               class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                                               int32,
-                                                                                                               int32)
-        IL_0009:  ret
-      } // end of method f7@7::GetFreshEnumerator
-
-    } // end of class f7@7
-
     .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
             get_es() cil managed
     {
@@ -481,20 +67,133 @@
     .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
             f7() cil managed
     {
-      // Code size       17 (0x11)
-      .maxstack  8
+      // Code size       186 (0xba)
+      .maxstack  4
+      .locals init ([0] valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
+               [1] class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> V_1,
+               [2] class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> V_2,
+               [3] int32 x,
+               [4] class [mscorlib]System.IDisposable V_4,
+               [5] class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> V_5,
+               [6] class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> V_6,
+               [7] int32 V_7,
+               [8] class [mscorlib]System.IDisposable V_8)
+      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+      .line 7,12 : 9,23 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ListExpressionStepping\\ListExpressionSteppingTest6.fs'
+      IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6::get_es()
+      IL_0005:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
+      IL_000a:  stloc.1
+      .line 7,7 : 11,25 ''
+      .try
+      {
+        IL_000b:  ldloc.1
+        IL_000c:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+        IL_0011:  brfalse.s  IL_0036
+
+        IL_0013:  ldloc.1
+        IL_0014:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
+        IL_0019:  stloc.3
+        .line 8,8 : 14,29 ''
+        IL_001a:  ldstr      "hello"
+        IL_001f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+        IL_0024:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+        IL_0029:  pop
+        .line 9,9 : 14,21 ''
+        IL_002a:  ldloca.s   V_0
+        IL_002c:  ldloc.3
+        IL_002d:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+        IL_0032:  nop
+        .line 100001,100001 : 0,0 ''
+        IL_0033:  nop
+        IL_0034:  br.s       IL_000b
+
+        IL_0036:  ldnull
+        IL_0037:  stloc.2
+        IL_0038:  leave.s    IL_0053
+
+        .line 7,9 : 11,21 ''
+      }  // end .try
+      finally
+      {
+        IL_003a:  ldloc.1
+        IL_003b:  isinst     [mscorlib]System.IDisposable
+        IL_0040:  stloc.s    V_4
+        IL_0042:  ldloc.s    V_4
+        IL_0044:  brfalse.s  IL_0050
+
+        .line 100001,100001 : 0,0 ''
+        IL_0046:  ldloc.s    V_4
+        IL_0048:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
+        IL_004d:  ldnull
+        IL_004e:  pop
+        IL_004f:  endfinally
+        .line 100001,100001 : 0,0 ''
+        IL_0050:  ldnull
+        IL_0051:  pop
+        IL_0052:  endfinally
+        .line 100001,100001 : 0,0 ''
+      }  // end handler
+      IL_0053:  ldloc.2
+      IL_0054:  pop
+      IL_0055:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6::get_es()
+      IL_005a:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
+      IL_005f:  stloc.s    V_5
+      .line 10,10 : 11,25 ''
+      .try
+      {
+        IL_0061:  ldloc.s    V_5
+        IL_0063:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+        IL_0068:  brfalse.s  IL_0090
+
+        IL_006a:  ldloc.s    V_5
+        IL_006c:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
+        IL_0071:  stloc.s    V_7
+        .line 11,11 : 14,31 ''
+        IL_0073:  ldstr      "goodbye"
+        IL_0078:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+        IL_007d:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+        IL_0082:  pop
+        .line 12,12 : 14,21 ''
+        IL_0083:  ldloca.s   V_0
+        IL_0085:  ldloc.s    V_7
+        IL_0087:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+        IL_008c:  nop
+        .line 100001,100001 : 0,0 ''
+        IL_008d:  nop
+        IL_008e:  br.s       IL_0061
+
+        IL_0090:  ldnull
+        IL_0091:  stloc.s    V_6
+        IL_0093:  leave.s    IL_00af
+
+        .line 10,12 : 11,21 ''
+      }  // end .try
+      finally
+      {
+        IL_0095:  ldloc.s    V_5
+        IL_0097:  isinst     [mscorlib]System.IDisposable
+        IL_009c:  stloc.s    V_8
+        IL_009e:  ldloc.s    V_8
+        IL_00a0:  brfalse.s  IL_00ac
+
+        .line 100001,100001 : 0,0 ''
+        IL_00a2:  ldloc.s    V_8
+        IL_00a4:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
+        IL_00a9:  ldnull
+        IL_00aa:  pop
+        IL_00ab:  endfinally
+        .line 100001,100001 : 0,0 ''
+        IL_00ac:  ldnull
+        IL_00ad:  pop
+        IL_00ae:  endfinally
+        .line 100001,100001 : 0,0 ''
+      }  // end handler
+      IL_00af:  ldloc.s    V_6
+      IL_00b1:  pop
       .line 7,12 : 9,23 ''
-      IL_0000:  ldnull
-      IL_0001:  ldnull
-      IL_0002:  ldc.i4.0
-      IL_0003:  ldc.i4.0
-      IL_0004:  newobj     instance void ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                                             class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                                             int32,
-                                                                                                             int32)
-      IL_0009:  tail.
-      IL_000b:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-      IL_0010:  ret
+      IL_00b2:  ldloca.s   V_0
+      IL_00b4:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+      IL_00b9:  ret
     } // end of method ListExpressionSteppingTest6::f7
 
     .property class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>

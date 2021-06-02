@@ -45,13 +45,13 @@
   // Offset: 0x000003D0 Length: 0x0000012E
 }
 .module Linq101Where01.exe
-// MVID: {60B68B80-FF23-CD21-A745-0383808BB660}
+// MVID: {60B78A59-FF23-CD21-A745-0383598AB760}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06C60000
+// Image base: 0x06550000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -788,10 +788,10 @@
       IL_0054:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Where01/'shortDigits@52-2'::'enum'
       IL_0059:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
       IL_005e:  stloc.0
+      .line 52,52 : 16,17 ''
       IL_005f:  ldarg.0
       IL_0060:  ldc.i4.2
       IL_0061:  stfld      int32 Linq101Where01/'shortDigits@52-2'::pc
-      .line 52,52 : 16,17 ''
       IL_0066:  ldarg.0
       IL_0067:  ldloc.0
       IL_0068:  stfld      string Linq101Where01/'shortDigits@52-2'::current
