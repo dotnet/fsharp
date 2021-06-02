@@ -10877,9 +10877,6 @@ and TcLetrec overridesOK cenv env tpenv (binds, bindsm, scopem) =
     // Typecheck bindings
     let uncheckedRecBindsTable = uncheckedRecBinds |> List.map (fun rbind -> rbind.RecBindingInfo.Val.Stamp, rbind) |> Map.ofList
 
-    // Typecheck bindings
-    let uncheckedRecBindsTable = uncheckedRecBinds |> List.map (fun rbind -> rbind.RecBindingInfo.Val.Stamp, rbind) |> Map.ofList
-
     let (_, generalizedRecBinds, preGeneralizationRecBinds, tpenv, _) =
         ((env, [], [], tpenv, uncheckedRecBindsTable), uncheckedRecBinds) ||> List.fold (TcLetrecBinding (cenv, envRec, scopem, [], None))
 
