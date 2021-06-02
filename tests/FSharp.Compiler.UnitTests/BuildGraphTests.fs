@@ -58,7 +58,7 @@ module BuildGraphTests =
         with
         | _ -> ()
 
-    [<Fact(Skip = "Re-enable when a linux CI passes")>]
+    [<Fact>]
     let ``Many requests to get a value asynchronously should only evaluate the computation once``() =
         let requests = 10000
         let mutable computationCount = 0
@@ -76,7 +76,7 @@ module BuildGraphTests =
 
         Assert.shouldBe 1 computationCount
 
-    [<Fact(Skip = "Re-enable when a linux CI passes")>]
+    [<Fact>]
     let ``Many requests to get a value asynchronously should get the correct value``() =
         let requests = 10000
 
@@ -106,7 +106,7 @@ module BuildGraphTests =
 
         Assert.shouldBeFalse weak.IsAlive
 
-    [<Fact(Skip = "Re-enable when a linux CI passes")>]
+    [<Fact>]
     let ``Many requests to get a value asynchronously should have its computation cleaned up by the GC``() =
         let requests = 10000
 
@@ -181,7 +181,7 @@ module BuildGraphTests =
         Assert.shouldBeTrue(ex <> null)
         try task.Wait() with | _ -> ()
 
-    [<Fact(Skip = "Re-enable when a linux CI passes")>]
+    [<Fact>]
     let ``Many requests to get a value asynchronously might evaluate the computation more than once even when some requests get canceled``() =
         let requests = 10000
         let resetEvent = new ManualResetEvent(false)
@@ -228,7 +228,7 @@ module BuildGraphTests =
         |> Seq.iter (fun x -> 
             try x.Wait() with | _ -> ())
 
-    [<Fact(Skip = "Re-enable when a linux CI passes")>]
+    [<Fact>]
     let ``No-RetryCompute - Many requests to get a value asynchronously should only evaluate the computation once even when some requests get canceled``() =
         let requests = 10000
         let resetEvent = new ManualResetEvent(false)
