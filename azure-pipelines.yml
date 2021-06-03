@@ -469,12 +469,12 @@ stages:
     queue: BuildPool.Windows.10.Amd64.VS2017.Open
   timeoutInMinutes: 90
   steps:
-    - template: eng/common/checkout-windows-task.yml
+    - template: eng/pipelines/checkout-windows-task.yml
 
     - script: eng/test-determinism.cmd -configuration Debug
       displayName: Build - Validate determinism
 
-    - template: eng/common/publish-logs.yml
+    - template: eng/pipelines/publish-logs.yml
       parameters:
         jobName: Correctness_Determinism
         configuration: Debug
