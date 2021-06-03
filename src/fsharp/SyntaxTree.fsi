@@ -239,7 +239,6 @@ type DebugPointAtSequential =
 [<RequireQualifiedAccess>]
 type DebugPointAtTry =
     | Yes of range: range
-    // Used for "use" and "for"
     | Body
     | No
 
@@ -255,6 +254,7 @@ type DebugPointAtWith =
 [<RequireQualifiedAccess>]
 type DebugPointAtFinally =
     | Yes of range: range
+    | Body
     | No
 
 /// Represents whether a debug point should be present for the 'for' in a 'for...' loop,

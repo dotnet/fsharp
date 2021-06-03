@@ -31,6 +31,7 @@
     <Compile Include="Compiler\CodeGen\EmittedIL\ComputationExpressionOptimizations.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\DelegateAndFuncOptimizations.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticLinkTests.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\ComputedListExpressions.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\Mutation.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\CeEdiThrow.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\TaskGeneratedCode.fs" />

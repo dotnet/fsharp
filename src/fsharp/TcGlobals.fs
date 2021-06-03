@@ -1002,11 +1002,15 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.fslib_IDelegateEvent_tcr      = v_fslib_IDelegateEvent_tcr
   member _.seq_tcr        = v_seq_tcr
   member val seq_base_tcr = mk_MFCompilerServices_tcref fslibCcu "GeneratedSequenceBase`1"
+  member val ListCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ListCollector`1"
+  member val ArrayCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ArrayCollector`1"
   member g.mk_GeneratedSequenceBase_ty seqElemTy = TType_app(g.seq_base_tcr,[seqElemTy])
   member val ResumableStateMachine_tcr = mk_MFCompilerServices_tcref fslibCcu "ResumableStateMachine`1"
   member g.mk_ResumableStateMachine_ty dataTy = TType_app(g.ResumableStateMachine_tcr,[dataTy])
   member val IResumableStateMachine_tcr = mk_MFCompilerServices_tcref fslibCcu "IResumableStateMachine`1"
   member g.mk_IResumableStateMachine_ty dataTy = TType_app(g.IResumableStateMachine_tcr,[dataTy])
+  member g.mk_ListCollector_ty seqElemTy = TType_app(g.ListCollector_tcr,[seqElemTy])
+  member g.mk_ArrayCollector_ty seqElemTy = TType_app(g.ArrayCollector_tcr,[seqElemTy])
   member val byrefkind_In_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "In"
   member val byrefkind_Out_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "Out"
   member val byrefkind_InOut_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "InOut"
@@ -1206,6 +1210,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_CallerLineNumberAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerLineNumberAttribute"
   member val attrib_CallerFilePathAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
   member val attrib_CallerMemberNameAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
+  member val attrib_SkipLocalsInitAttribute  = findSysAttrib "System.Runtime.CompilerServices.SkipLocalsInitAttribute"
 
   member val attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
   member val attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"
@@ -1433,6 +1438,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val query_select_vref          = ValRefForIntrinsic v_query_select_value_info
   member val query_where_vref           = ValRefForIntrinsic v_query_where_value_info
   member val query_zero_vref            = ValRefForIntrinsic v_query_zero_value_info
+  member val seq_to_list_vref            = ValRefForIntrinsic v_seq_to_list_info
+  member val seq_to_array_vref            = ValRefForIntrinsic v_seq_to_array_info
 
   member _.seq_collect_info           = v_seq_collect_info
   member _.seq_using_info             = v_seq_using_info

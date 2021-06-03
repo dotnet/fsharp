@@ -194,6 +194,7 @@ type DebugPointAtWith =
 [<RequireQualifiedAccess>]
 type DebugPointAtFinally =
     | Yes of range: range
+    | Body
     | No
 
 [<RequireQualifiedAccess>]
