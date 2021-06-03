@@ -505,10 +505,16 @@ type AsyncType() =
 #endif
           Task.Factory.StartNew(Func<unit>(fun () -> while not token.IsCancellationRequested do ()), token)
         let cancelled = ref true
-        let a = async {
+        let a = 
+            async {
+                try
                     use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
                     let! v = Async.AwaitTask(t)
                     return v
+                // AwaitTask raises TaskCanceledException when it is canceled
+                with
+                   :? TaskCanceledException -> 
+                      return ()
             }
         Async.Start a
         cts.Cancel()
@@ -557,10 +563,16 @@ type AsyncType() =
         use t =
 #endif
             Task.Factory.StartNew(Action(fun () -> while not token.IsCancellationRequested do ()), token)
-        let a = async {
+        let a =
+            async {
+                try
                     use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
                     let! v = Async.AwaitTask(t)
                     return v
+                // AwaitTask raises TaskCanceledException when it is canceled
+                with
+                   :? TaskCanceledException -> 
+                      return ()
             }
         Async.Start a
         cts.Cancel()
