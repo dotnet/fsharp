@@ -165,7 +165,7 @@ match ret_attrs, binding_attrs with
 [<return:Struct>]
 let (|Foo|_|) x = ValueNone
             """
-            [|(FSharpErrorSeverity.Error, 3350, (3, 5, 3, 16),
+            [|(FSharpDiagnosticSeverity.Error, 3350, (3, 5, 3, 16),
                    "Feature 'struct representation for active patterns' is not available in F# 5.0. Please use language version 'preview' or greater.")|]
 
     [<Test>]
@@ -175,9 +175,9 @@ let (|Foo|_|) x = ValueNone
 [<Struct>]
 let (|Foo|_|) x = ValueNone
 """
-            [|(FSharpErrorSeverity.Error, 842, (2, 3, 2, 9),
+            [|(FSharpDiagnosticSeverity.Error, 842, (2, 3, 2, 9),
                "This attribute is not valid for use on this language element");
-              (FSharpErrorSeverity.Error, 1, (3, 5, 3, 16),
+              (FSharpDiagnosticSeverity.Error, 1, (3, 5, 3, 16),
                "This expression was expected to have type
     ''a option'    
 but here has type
@@ -196,10 +196,10 @@ let f x = x
 [<return:Struct>]
 let (|A|B|) x = A
 """
-            [|(FSharpErrorSeverity.Error, 3384, (3, 5, 3, 6),
+            [|(FSharpDiagnosticSeverity.Error, 3384, (3, 5, 3, 6),
                "The use of '[<Struct>]' on values, functions and methods is only allowed on partial active pattern definitions")
-              (FSharpErrorSeverity.Error, 3384, (6, 5, 6, 8),
+              (FSharpDiagnosticSeverity.Error, 3384, (6, 5, 6, 8),
                "The use of '[<Struct>]' on values, functions and methods is only allowed on partial active pattern definitions")
-              (FSharpErrorSeverity.Error, 3384, (9, 5, 9, 14),
+              (FSharpDiagnosticSeverity.Error, 3384, (9, 5, 9, 14),
                "The use of '[<Struct>]' on values, functions and methods is only allowed on partial active pattern definitions")|]
 
