@@ -459,22 +459,3 @@ stages:
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'
-
-#---------------------------------------------------------------------------------------------------------------------#
-#                                                   Correctness jobs                                                  #
-#---------------------------------------------------------------------------------------------------------------------#
-- job: Correctness_Determinism
-  pool:
-    name: NetCorePublic-Pool
-    queue: BuildPool.Windows.10.Amd64.VS2017.Open
-  timeoutInMinutes: 90
-  steps:
-    - template: eng/pipelines/checkout-windows-task.yml
-
-    - script: eng/test-determinism.cmd -configuration Debug
-      displayName: Build - Validate determinism
-
-    - template: eng/pipelines/publish-logs.yml
-      parameters:
-        jobName: Correctness_Determinism
-        configuration: Debug
