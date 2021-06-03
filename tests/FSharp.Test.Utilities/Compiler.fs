@@ -365,6 +365,15 @@ module rec Compiler =
         | CS cs -> compileCSharp cs
         | _ -> failwith "TODO"
 
+    let getAssemblyInBytes (result: TestResult) =
+        match result with
+        | Success output ->
+            match output.OutputPath with
+            | Some filePath -> File.ReadAllBytes(filePath)
+            | _ -> failwith "Output path not found."
+        | _ ->
+            failwith "Compilation has errors."
+
     let private parseFSharp (fsSource: FSharpCompilationSource) : TestResult =
         let source = getSource fsSource.Source
         let parseResults = CompilerAssert.Parse source

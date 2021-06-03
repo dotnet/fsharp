@@ -918,7 +918,7 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
                 let referenceAssemblyAttribOpt =
                     tcGlobals.iltyp_ReferenceAssemblyAttributeOpt
                     |> Option.map (fun ilTy ->
-                        mkILCustomAttribute tcGlobals.ilg (ilTy.TypeRef, [], [], [])
+                        mkILCustomAttribute (ilTy.TypeRef, [], [], [])
                     )
                 try
                     use stream =

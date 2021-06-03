@@ -294,6 +294,7 @@ module Nested =
         |> ignore
 
     [<Test>]
+    // TODO: This currently passes, but it's technically wrong as the parameter names for the generated Equality and Comparison functions are not the same. Does this matter?
     let ``Simple reference assembly with nested module with type should have expected IL``() =
         let src =
             """
@@ -648,3 +649,45 @@ module Nested =
     }"""
         ]
         |> ignore
+
+    [<Test>]
+    let ``Simple reference assembly should be deterministic``() =
+        let result1 =
+            let src1 =
+                """
+module ReferenceAssembly
+
+open System
+
+let test() =
+    Console.WriteLine("Hello World!")
+                """
+
+            FSharp src1
+            |> withOptions ["--refonly";"--deterministic"]
+            |> compile
+            |> shouldSucceed
+            |> getAssemblyInBytes
+
+        let result2 =
+            let src2 =
+                """
+module ReferenceAssembly
+
+open System
+
+let test() =
+    Console.WriteLine("Hello World!")
+                """
+
+            FSharp src2
+            |> withOptions ["--refonly";"--deterministic"]
+            |> compile
+            |> shouldSucceed
+            |> getAssemblyInBytes
+
+        Assert.AreEqual(result1.Length, result2.Length)
+        let areExactlySame =
+            (result1, result2)
+            ||> Array.forall2((=))
+        Assert.True(areExactlySame)
