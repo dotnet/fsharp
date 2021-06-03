@@ -2,7 +2,9 @@
 param([string]$configuration = "Debug",
       [string]$msbuildEngine = "vs",
       [string]$altRootDrive = "q:",
-      [switch]$help)
+      [switch]$help,
+      [switch]$norestore,
+      [switch]$rebuild)
 
 Set-StrictMode -version 2.0
 $ErrorActionPreference = "Stop"
