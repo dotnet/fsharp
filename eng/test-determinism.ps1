@@ -360,7 +360,7 @@ try {
 
   $bootstrapDir = Make-BootstrapBuild
 
- # Run-Test
+  Run-Test
   exit 0
 }
 catch {
