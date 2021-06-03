@@ -35,7 +35,7 @@ function Run-Build([string]$rootDir, [string]$logFileName) {
   $stopWatch.Stop()
   Write-Host "Cleaning took $($stopWatch.Elapsed)"
 
-  $solution = Join-Path $rootDir "VisualFSharp.sln"
+  $solution = Join-Path $rootDir "FSharp.sln"
 
   $toolsetBuildProj = InitializeToolset
 
@@ -146,8 +146,7 @@ function Test-MapContents($dataMap) {
   # Test for some well known binaries
   $list = @(
     "FSharp.Core.dll",
-    "FSharp.Compiler.Service.dll",
-    "FSharp.Editor.dll")
+    "FSharp.Compiler.Service.dll")
 
   foreach ($fileName in $list) { 
     $found = $false
@@ -273,8 +272,7 @@ try {
   $nodeReuse = $false
   $properties = @()
 
-  $script:bootstrapConfiguration = "Release"
-  $bootstrapDir = Make-BootstrapBuild
+  Exec-Script "$RepoRoot\eng\Build.ps1" "-bootstrap"
 
   Run-Test
   exit 0
@@ -284,10 +282,5 @@ catch {
   Write-Host $_.Exception
   Write-Host $_.ScriptStackTrace
   exit 1
-}
-finally {
-  Write-Host "Stopping VBCSCompiler"
-  Get-Process VBCSCompiler -ErrorAction SilentlyContinue | Stop-Process
-  Write-Host "Stopped VBCSCompiler"
 }
 
