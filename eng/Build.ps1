@@ -57,6 +57,7 @@ param (
     [switch]$testVs,
     [switch]$testAll,
     [switch]$testpack,
+    [switch]$testDeterminism,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
     [switch]$sourceBuild,
@@ -100,6 +101,7 @@ function Print-Usage() {
     Write-Host "  -testScripting            Run Scripting tests"
     Write-Host "  -testVs                   Run F# editor unit tests"
     Write-Host "  -testpack                 Verify built packages"
+    Write-Host "  -testDeterminism          Verify deterministic builds"
     Write-Host "  -officialSkipTests <bool> Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
@@ -536,6 +538,10 @@ try {
     if ($testVs -and -not $noVisualStudio) {
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\GetTypesVS.UnitTests\GetTypesVS.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\GetTypesVS.UnitTests"
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\VisualFSharp.UnitTests"
+    }
+
+    if ($testDeterminism -and -not $noVisualStudio) {
+
     }
 
     # verify nupkgs have access to the source code
