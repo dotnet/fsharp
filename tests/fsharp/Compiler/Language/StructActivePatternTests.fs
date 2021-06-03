@@ -175,7 +175,7 @@ let (|Foo|_|) x = ValueNone
 [<Struct>]
 let (|Foo|_|) x = ValueNone
 """
-            [|(FSharpDiagnosticSeverity.Error, 842, (2, 1, 3, 16),
+            [|(FSharpDiagnosticSeverity.Error, 842, (2, 1, 3, 9),
                "This attribute is not valid for use on this language element");
               (FSharpDiagnosticSeverity.Error, 1, (2, 1, 3, 16),
                "This expression was expected to have type
@@ -196,10 +196,10 @@ let f x = x
 [<return:Struct>]
 let (|A|B|) x = A
 """
-            [|(FSharpDiagnosticSeverity.Error, 3384, (2, 1, 3, 6),
+            [|(FSharpDiagnosticSeverity.Error, 3385, (2, 1, 3, 6),
                "The use of '[<Struct>]' on values, functions and methods is only allowed on partial active pattern definitions")
-              (FSharpDiagnosticSeverity.Error, 3384, (5, 1, 6, 8),
+              (FSharpDiagnosticSeverity.Error, 3385, (5, 1, 6, 8),
                "The use of '[<Struct>]' on values, functions and methods is only allowed on partial active pattern definitions")
-              (FSharpDiagnosticSeverity.Error, 3384, (8, 1, 9, 14),
+              (FSharpDiagnosticSeverity.Error, 3385, (8, 1, 9, 14),
                "The use of '[<Struct>]' on values, functions and methods is only allowed on partial active pattern definitions")|]
 
