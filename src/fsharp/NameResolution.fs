@@ -85,8 +85,13 @@ let TryFindTypeWithRecdField (modref: ModuleOrNamespaceRef) (id: Ident) =
 let ActivePatternElemsOfValRef g (vref: ValRef) =
     match TryGetActivePatternInfo vref with
     | Some apinfo ->
-        let _, apReturnTy = stripFunTy g vref.TauType
-        let isStructRetTy = isStructTy g apReturnTy
+        
+        let isStructRetTy = 
+            if apinfo.IsTotal then
+                false
+            else
+                let _, apReturnTy = stripFunTy g vref.TauType
+                isStructTy g apReturnTy
         apinfo.ActiveTags |> List.mapi (fun i _ -> APElemRef(apinfo, vref, i, isStructRetTy))
     | None -> []
 
