@@ -492,7 +492,8 @@ type AsyncType() =
               }
         Async.RunSynchronously(a) |> Assert.True
 
-    [<Fact>]
+    // test is flaky: https://github.com/dotnet/fsharp/issues/11586
+    //[<Fact>]
     member this.TaskAsyncValueCancellation () =
         use ewh = new ManualResetEvent(false)
         let cts = new CancellationTokenSource()
