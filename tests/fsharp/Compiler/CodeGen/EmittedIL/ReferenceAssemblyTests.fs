@@ -4,6 +4,9 @@ namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open System.IO
 open System.Reflection
+open System.Reflection.Metadata
+open System.Reflection.PortableExecutable
+open System.Collections.Immutable
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Compiler
 open NUnit.Framework
@@ -686,8 +689,13 @@ let test() =
             |> shouldSucceed
             |> getAssemblyInBytes
 
-        Assert.AreEqual(result1.Length, result2.Length)
-        let areExactlySame =
-            (result1, result2)
-            ||> Array.forall2((=))
-        Assert.True(areExactlySame)
+        use reader1 = new PEReader(result1.ToImmutableArray())
+        use reader2 = new PEReader(result2.ToImmutableArray())
+        let reader1 = reader1.GetMetadataReader()
+        let reader2 = reader2.GetMetadataReader()
+
+        let mvid1 = reader1.GetModuleDefinition().Mvid |> reader1.GetGuid
+        let mvid2 = reader2.GetModuleDefinition().Mvid |> reader2.GetGuid
+
+        // Two identical compilations should produce the same MVID
+        Assert.AreEqual(mvid1, mvid2)
