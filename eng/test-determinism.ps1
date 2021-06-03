@@ -35,7 +35,7 @@ function Run-Build([string]$rootDir, [string]$logFileName) {
   $stopWatch.Stop()
   Write-Host "Cleaning took $($stopWatch.Elapsed)"
 
-  $solution = Join-Path $rootDir "FSharp.sln"
+  $solution = Join-Path $rootDir "VisualFSharp.sln"
 
   $toolsetBuildProj = InitializeToolset
 
@@ -90,7 +90,7 @@ function Get-FilesToProcess([string]$rootDir) {
     }
 
     $fileId = $filePath.Substring($objDir.Length).Replace("\", ".").TrimStart(".")
-    $fileHash = (Get-FileHash $filePath -algorithm MD5).Hash
+    $fileHash = (Get-FileHash $filePath -algorithm SHA512).Hash
 
     $data = @{}
     $data.Hash = $fileHash
@@ -242,15 +242,15 @@ function Run-Test() {
   # Run another build in a different source location and verify that path mapping 
   # allows the build to be identical.  To do this we'll copy the entire source 
   # tree under the artifacts\q directory and run a build from there.
-  Write-Host "Building in a different directory"
-  Exec-Command "subst" "$altRootDrive $(Split-Path -parent $RepoRoot)"
-  try {
-    $altRootDir = Join-Path "$($altRootDrive)\" (Split-Path -leaf $RepoRoot)
-    Test-Build -rootDir $altRootDir -dataMap $dataMap -logFileName "test2"
-  }
-  finally {
-    Exec-Command "subst" "$altRootDrive /d"
-  }
+  # Write-Host "Building in a different directory"
+  # Exec-Command "subst" "$altRootDrive $(Split-Path -parent $RepoRoot)"
+  # try {
+  #   $altRootDir = Join-Path "$($altRootDrive)\" (Split-Path -leaf $RepoRoot)
+  #   Test-Build -rootDir $altRootDir -dataMap $dataMap -logFileName "test2"
+  # }
+  # finally {
+  #   Exec-Command "subst" "$altRootDrive /d"
+  # }
 }
 
 try {
