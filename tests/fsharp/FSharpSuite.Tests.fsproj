@@ -27,6 +27,7 @@
     <Compile Include="tests.fs" />
     <Compile Include="Compiler\Service\MultiProjectTests.fs" />
     <Compile Include="Compiler\Service\SignatureGenerationTests.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\DeterministicTests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticMember.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticLinkTests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\ComputedListExpressions.fs" />
