@@ -2,9 +2,7 @@
 param([string]$configuration = "Debug",
       [string]$msbuildEngine = "vs",
       [string]$altRootDrive = "q:",
-      [switch]$help,
-      [switch]$norestore,
-      [switch]$rebuild)
+      [switch]$help)
 
 Set-StrictMode -version 2.0
 $ErrorActionPreference = "Stop"
@@ -255,7 +253,7 @@ function Run-Test() {
 }
 
 try {
-  . (Join-Path $PSScriptRoot "build-utils.ps1")
+  . (Join-Path $PSScriptRoot "Build.ps1")
 
   # Create all of the logging directories
   $errorDir = Join-Path $LogDir "DeterminismFailures"
