@@ -404,7 +404,7 @@ let checkInputFile (tcConfig: TcConfig) filename =
 
 let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked) =
     // Get a stream reader for the file
-    use fileStream = FileSystem.OpenFileForReadShim(filename).AsStream()
+    use fileStream = FileSystem.OpenFileForReadShim(filename)
     use reader = fileStream.GetReader(tcConfig.inputCodePage, retryLocked)
 
     // Set up the LexBuffer for the file

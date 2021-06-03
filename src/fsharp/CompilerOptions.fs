@@ -183,7 +183,7 @@ module ResponseFile =
             | s -> Some (ResponseFileLine.CompilerOptionSpec (s.Trim()))
 
         try
-            use stream = FileSystem.OpenFileForReadShim(path).AsReadOnlyStream()
+            use stream = FileSystem.OpenFileForReadShim(path)
             use reader = new StreamReader(stream, true)
             let data =
                 seq { while not reader.EndOfStream do yield reader.ReadLine () }

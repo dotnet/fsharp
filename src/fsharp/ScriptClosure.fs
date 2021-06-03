@@ -190,7 +190,7 @@ module ScriptPreprocessClosure =
     let ClosureSourceOfFilename(filename, m, inputCodePage, parseRequired) =
         try
             let filename = FileSystem.GetFullPathShim filename
-            use stream = FileSystem.OpenFileForReadShim(filename).AsReadOnlyStream()
+            use stream = FileSystem.OpenFileForReadShim(filename)
             use reader =
                 match inputCodePage with
                 | None -> new StreamReader(stream, true)
@@ -273,7 +273,7 @@ module ScriptPreprocessClosure =
                                         for line in result.StdOut do Console.Out.WriteLine(line)
                                         for line in result.StdError do Console.Error.WriteLine(line)
 
-                                    packageReferences.[m] <- [ for script in result.SourceFiles do yield! FileSystem.OpenFileForReadShim(script).AsReadOnlyStream().ReadLines() ]
+                                    packageReferences.[m] <- [ for script in result.SourceFiles do yield! FileSystem.OpenFileForReadShim(script).ReadLines() ]
                                     if not (Seq.isEmpty result.Roots) then
                                         let tcConfigB = tcConfig.CloneToBuilder()
                                         for folder in result.Roots do
@@ -288,7 +288,8 @@ module ScriptPreprocessClosure =
                                         tcConfig <- TcConfig.Create(tcConfigB, validate = false)
 
                                     for script in result.SourceFiles do
-                                        let scriptText = FileSystem.OpenFileForReadShim(script).AsReadOnlyStream().ReadAllText()
+                                        use stream = FileSystem.OpenFileForReadShim(script)
+                                        let scriptText = stream.ReadAllText()
                                         loadScripts.Add script |> ignore
                                         let iSourceText = SourceText.ofString scriptText
                                         yield! loop (ClosureSource(script, m, iSourceText, true))
