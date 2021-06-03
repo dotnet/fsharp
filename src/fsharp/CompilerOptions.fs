@@ -183,7 +183,7 @@ module ResponseFile =
             | s -> Some (ResponseFileLine.CompilerOptionSpec (s.Trim()))
 
         try
-            use stream = FileSystem.OpenFileForReadShim(path).AsReadOnlyStream()
+            use stream = FileSystem.OpenFileForReadShim(path)
             use reader = new StreamReader(stream, true)
             let data =
                 seq { while not reader.EndOfStream do yield reader.ReadLine () }
@@ -1292,9 +1292,7 @@ let compilingFsLibFlag (tcConfigB: TcConfigBuilder) =
         ("compiling-fslib", tagNone,
          OptionUnit (fun () ->
             tcConfigB.compilingFslib <- true
-            tcConfigB.TurnWarningOff(rangeStartup, "42")
-            ErrorLogger.reportLibraryOnlyFeatures <- false
-            IlxSettings.ilxCompilingFSharpCoreLib <- true),
+            tcConfigB.TurnWarningOff(rangeStartup, "42")),
          Some(InternalCommandLineOption("--compiling-fslib", rangeCmdArgs)), None)
 
 let compilingFsLib20Flag =

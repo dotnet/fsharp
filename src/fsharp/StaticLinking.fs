@@ -191,7 +191,7 @@ let StaticLinkILModules (tcConfig:TcConfig, ilGlobals, tcImports, ilxMainModule,
                     TypeDefs = mkILTypeDefs (topTypeDef :: List.concat normalTypeDefs)
                     Resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList)
                     NativeResources = savedNativeResources }
-            Morphs.morphILTypeRefsInILModuleMemoized ilGlobals typeForwarding.TypeForwardILTypeRef main
+            Morphs.morphILTypeRefsInILModuleMemoized typeForwarding.TypeForwardILTypeRef main
 
         ilxMainModule, rewriteExternalRefsToLocalRefs
 
@@ -384,7 +384,7 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
                                    yield (ILTypeRef.Create(ILScopeRef.Local, k.Enclosing, k.Name), v) ]
 
                     let ilModule =
-                        ilModule |> Morphs.morphILTypeRefsInILModuleMemoized ilGlobals (fun tref ->
+                        ilModule |> Morphs.morphILTypeRefsInILModuleMemoized (fun tref ->
                                 if debugStaticLinking then printfn "deciding whether to rewrite type ref %A" tref.QualifiedName
                                 let ok, v = ilAssemStaticLinkMap.TryGetValue tref
                                 if ok then
@@ -517,6 +517,6 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
                           error (Error(FSComp.SR.fscStaticLinkingNoProfileMismatches(), rangeCmdArgs))
                       scopeRef
                   let rewriteAssemblyRefsToMatchLibraries = NormalizeAssemblyRefs (ctok, ilGlobals, tcImports)
-                  Morphs.morphILTypeRefsInILModuleMemoized ilGlobals (Morphs.morphILScopeRefsInILTypeRef (validateTargetPlatform >> rewriteExternalRefsToLocalRefs >> rewriteAssemblyRefsToMatchLibraries)) ilxMainModule
+                  Morphs.morphILTypeRefsInILModuleMemoized (Morphs.morphILScopeRefsInILTypeRef (validateTargetPlatform >> rewriteExternalRefsToLocalRefs >> rewriteAssemblyRefsToMatchLibraries)) ilxMainModule
 
             ilxMainModule)
