@@ -45,13 +45,13 @@
   // Offset: 0x00000390 Length: 0x0000011E
 }
 .module Linq101SetOperators01.exe
-// MVID: {5FCFFD0D-4EE5-349F-A745-03830DFDCF5F}
+// MVID: {60A8401D-4EE5-349F-A745-03831D40A860}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05230000
+// Image base: 0x06AC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -157,10 +157,10 @@
       .line 13,13 : 9,33 ''
       IL_005b:  ldloc.0
       IL_005c:  stloc.1
+      .line 14,14 : 9,17 ''
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
       IL_005f:  stfld      int32 Linq101SetOperators01/uniqueFactors@13::pc
-      .line 14,14 : 9,17 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
       IL_0066:  stfld      int32 Linq101SetOperators01/uniqueFactors@13::current
@@ -530,10 +530,10 @@
       IL_005a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/categoryNames@23::'enum'
       IL_005f:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
       IL_0064:  stloc.0
+      .line 23,23 : 16,26 ''
       IL_0065:  ldarg.0
       IL_0066:  ldc.i4.2
       IL_0067:  stfld      int32 Linq101SetOperators01/categoryNames@23::pc
-      .line 23,23 : 16,26 ''
       IL_006c:  ldarg.0
       IL_006d:  ldloc.0
       IL_006e:  callvirt   instance string [Utils]Utils/Product::get_Category()
@@ -904,10 +904,10 @@
       IL_005d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/productFirstChars@33::'enum'
       IL_0062:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
       IL_0067:  stloc.0
+      .line 33,33 : 29,30 ''
       IL_0068:  ldarg.0
       IL_0069:  ldc.i4.2
       IL_006a:  stfld      int32 Linq101SetOperators01/productFirstChars@33::pc
-      .line 33,33 : 29,30 ''
       IL_006f:  ldarg.0
       IL_0070:  ldloc.0
       IL_0071:  callvirt   instance string [Utils]Utils/Product::get_ProductName()
@@ -1280,10 +1280,10 @@
       IL_005d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer> Linq101SetOperators01/customerFirstChars@39::'enum'
       IL_0062:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer>::get_Current()
       IL_0067:  stloc.0
+      .line 39,39 : 29,30 ''
       IL_0068:  ldarg.0
       IL_0069:  ldc.i4.2
       IL_006a:  stfld      int32 Linq101SetOperators01/customerFirstChars@39::pc
-      .line 39,39 : 29,30 ''
       IL_006f:  ldarg.0
       IL_0070:  ldloc.0
       IL_0071:  callvirt   instance string [Utils]Utils/Customer::get_CompanyName()

@@ -45,13 +45,13 @@
   // Offset: 0x00000388 Length: 0x00000127
 }
 .module Linq101ElementOperators01.exe
-// MVID: {5FCFFD0D-19D7-C20D-A745-03830DFDCF5F}
+// MVID: {60A8401D-19D7-C20D-A745-03831D40A860}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05A30000
+// Image base: 0x06CA0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -157,10 +157,10 @@
       .line 12,12 : 9,29 ''
       IL_005b:  ldloc.0
       IL_005c:  stloc.1
+      .line 13,13 : 9,33 ''
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
       IL_005f:  stfld      int32 Linq101ElementOperators01/products12@12::pc
-      .line 13,13 : 9,33 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
       IL_0066:  stfld      class [Utils]Utils/Product Linq101ElementOperators01/products12@12::current
@@ -528,10 +528,10 @@
       .line 22,22 : 9,28 ''
       IL_005b:  ldloc.0
       IL_005c:  stloc.1
+      .line 23,23 : 9,28 ''
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
       IL_005f:  stfld      int32 Linq101ElementOperators01/startsWithO@22::pc
-      .line 23,23 : 9,28 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
       IL_0066:  stfld      string Linq101ElementOperators01/startsWithO@22::current
@@ -900,10 +900,10 @@
       .line 31,31 : 9,28 ''
       IL_005b:  ldloc.0
       IL_005c:  stloc.1
+      .line 32,32 : 9,22 ''
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
       IL_005f:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::pc
-      .line 32,32 : 9,22 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
       IL_0066:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::current
@@ -1230,10 +1230,10 @@
       .line 52,52 : 9,29 ''
       IL_005b:  ldloc.0
       IL_005c:  stloc.1
+      .line 53,53 : 9,22 ''
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
       IL_005f:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::pc
-      .line 53,53 : 9,22 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
       IL_0066:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::current

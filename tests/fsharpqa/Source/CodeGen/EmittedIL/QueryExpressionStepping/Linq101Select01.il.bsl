@@ -45,13 +45,13 @@
   // Offset: 0x00000648 Length: 0x00000204
 }
 .module Linq101Select01.exe
-// MVID: {5FCFFD0D-6057-8F80-A745-03830DFDCF5F}
+// MVID: {60A8401D-6057-8F80-A745-03831D40A860}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x053E0000
+// Image base: 0x070C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -200,10 +200,10 @@
       IL_005a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Select01/numsPlusOne@13::'enum'
       IL_005f:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
       IL_0064:  stloc.0
+      .line 13,13 : 17,22 ''
       IL_0065:  ldarg.0
       IL_0066:  ldc.i4.2
       IL_0067:  stfld      int32 Linq101Select01/numsPlusOne@13::pc
-      .line 13,13 : 17,22 ''
       IL_006c:  ldarg.0
       IL_006d:  ldloc.0
       IL_006e:  ldc.i4.1
@@ -575,10 +575,10 @@
       IL_005a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Select01/productNames@22::'enum'
       IL_005f:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
       IL_0064:  stloc.0
+      .line 22,22 : 17,30 ''
       IL_0065:  ldarg.0
       IL_0066:  ldc.i4.2
       IL_0067:  stfld      int32 Linq101Select01/productNames@22::pc
-      .line 22,22 : 17,30 ''
       IL_006c:  ldarg.0
       IL_006d:  ldloc.0
       IL_006e:  callvirt   instance string [Utils]Utils/Product::get_ProductName()
@@ -949,10 +949,10 @@
       IL_005a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Select01/textNums@30::'enum'
       IL_005f:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
       IL_0064:  stloc.0
+      .line 30,30 : 17,28 ''
       IL_0065:  ldarg.0
       IL_0066:  ldc.i4.2
       IL_0067:  stfld      int32 Linq101Select01/textNums@30::pc
-      .line 30,30 : 17,28 ''
       IL_006c:  ldarg.0
       IL_006d:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Select01::get_strings()
       IL_0072:  ldloc.0
@@ -1324,10 +1324,10 @@
       IL_005d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Select01/upperLowerWords@39::'enum'
       IL_0062:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
       IL_0067:  stloc.0
+      .line 39,39 : 16,40 ''
       IL_0068:  ldarg.0
       IL_0069:  ldc.i4.2
       IL_006a:  stfld      int32 Linq101Select01/upperLowerWords@39::pc
-      .line 39,39 : 16,40 ''
       IL_006f:  ldarg.0
       IL_0070:  ldloc.0
       IL_0071:  callvirt   instance string [mscorlib]System.String::ToUpper()
@@ -1702,10 +1702,10 @@
       IL_005d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Select01/digitOddEvens@46::'enum'
       IL_0062:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
       IL_0067:  stloc.0
+      .line 46,46 : 17,41 ''
       IL_0068:  ldarg.0
       IL_0069:  ldc.i4.2
       IL_006a:  stfld      int32 Linq101Select01/digitOddEvens@46::pc
-      .line 46,46 : 17,41 ''
       IL_006f:  ldarg.0
       IL_0070:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Select01::get_strings()
       IL_0075:  ldloc.0
@@ -2084,10 +2084,10 @@
       IL_005d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Select01/productInfos@53::'enum'
       IL_0062:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
       IL_0067:  stloc.0
+      .line 53,53 : 17,55 ''
       IL_0068:  ldarg.0
       IL_0069:  ldc.i4.2
       IL_006a:  stfld      int32 Linq101Select01/productInfos@53::pc
-      .line 53,53 : 17,55 ''
       IL_006f:  ldarg.0
       IL_0070:  ldloc.0
       IL_0071:  callvirt   instance string [Utils]Utils/Product::get_ProductName()
