@@ -2344,7 +2344,7 @@ type FSharpCheckProjectResults
             let referenceAssemblyAttribOpt =
                 tcGlobals.iltyp_ReferenceAssemblyAttributeOpt
                 |> Option.map (fun ilTy ->
-                    mkILCustomAttribute tcGlobals.ilg (ilTy.TypeRef, [], [], [])
+                    mkILCustomAttribute (ilTy.TypeRef, [], [], [])
                 )
 
             try
