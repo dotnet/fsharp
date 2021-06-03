@@ -36,13 +36,13 @@
   // Offset: 0x00000278 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest3.exe
-// MVID: {5F972A56-2432-943F-A745-0383562A975F}
+// MVID: {60B8D5B9-2432-943F-A745-0383B9D5B860}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x09100000
+// Image base: 0x05780000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -119,7 +119,7 @@
 
         .line 100001,100001 : 0,0 ''
         IL_0021:  nop
-        .line 6,6 : 21,27 ''
+        .line 6,6 : 15,27 ''
         IL_0022:  ldarg.0
         IL_0023:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest3/SeqExpressionSteppingTest3/f2@6::x
         IL_0028:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
@@ -136,10 +136,10 @@
         IL_0041:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
         IL_0046:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
         IL_004b:  pop
+        .line 9,9 : 18,25 ''
         IL_004c:  ldarg.0
         IL_004d:  ldc.i4.1
         IL_004e:  stfld      int32 SeqExpressionSteppingTest3/SeqExpressionSteppingTest3/f2@6::pc
-        .line 9,9 : 18,25 ''
         IL_0053:  ldarg.0
         IL_0054:  ldarg.0
         IL_0055:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest3/SeqExpressionSteppingTest3/f2@6::x

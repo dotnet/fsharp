@@ -205,9 +205,10 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
                         error (Error (FSComp.SR.ilreadFileChanged fileName, range0))
 
                     let bytes =
+                        use stream = FileSystem.OpenFileForReadShim(fileName)
                         match chunk with
-                        | None -> FileSystem.OpenFileForReadShim(fileName).ReadAllBytes()
-                        | Some(start, length) -> FileSystem.OpenFileForReadShim(fileName).ReadBytes(start, length)
+                        | None -> stream.ReadAllBytes()
+                        | Some(start, length) -> stream.ReadBytes(start, length)
 
                     tg <- bytes
 
@@ -1419,14 +1420,12 @@ let readStringHeap (ctxt: ILMetadataReader) idx = ctxt.readStringHeap idx
 
 let readStringHeapOption (ctxt: ILMetadataReader) idx = if idx = 0 then None else Some (readStringHeap ctxt idx)
 
-let emptyByteArray: byte[] = [||]
-
 let readBlobHeapUncached ctxtH idx =
     let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     // valid index lies in range [1..streamSize)
     // NOTE: idx cannot be 0 - Blob\String heap has first empty element that mdv one byte 0
-    if idx <= 0 || idx >= ctxt.blobsStreamSize then emptyByteArray
+    if idx <= 0 || idx >= ctxt.blobsStreamSize then [| |]
     else seekReadBlob mdv (ctxt.blobsStreamPhysicalLoc + idx)
 
 let readBlobHeap (ctxt: ILMetadataReader) idx = ctxt.readBlobHeap idx
@@ -3919,14 +3918,16 @@ let createByteFileChunk opts fileName chunk =
         WeakByteFile(fileName, chunk) :> BinaryFile
     else
         let bytes =
+            use stream = FileSystem.OpenFileForReadShim(fileName)
             match chunk with
-            | None -> FileSystem.OpenFileForReadShim(fileName).ReadAllBytes()
-            | Some(start, length) -> FileSystem.OpenFileForReadShim(fileName).ReadBytes(start, length)
+            | None -> stream.ReadAllBytes()
+            | Some(start, length) -> stream.ReadBytes(start, length)
 
         ByteFile(fileName, bytes) :> BinaryFile
 
 let createMemoryMapFile fileName =
-    let byteMem = FileSystem.OpenFileForReadShim(fileName, useMemoryMappedFile = true)
+    let stream = FileSystem.OpenFileForReadShim(fileName, useMemoryMappedFile = true)
+    let byteMem = stream.AsByteMemory()
 
     let safeHolder =
         { new obj() with
@@ -3935,7 +3936,7 @@ let createMemoryMapFile fileName =
           interface IDisposable with
             member x.Dispose() =
                 GC.SuppressFinalize x
-                byteMem.AsStream().Dispose()
+                stream.Dispose()
                 stats.memoryMapFileClosedCount <- stats.memoryMapFileClosedCount + 1 }
 
     stats.memoryMapFileOpenedCount <- stats.memoryMapFileOpenedCount + 1
@@ -4051,7 +4052,8 @@ let OpenILModuleReader fileName opts =
         // still use an in-memory ByteFile
         let pefile =
             if not runningOnMono && (alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath) then
-                ByteMemoryFile(fullPath, FileSystem.OpenFileForReadShim(fullPath)) :> BinaryFile
+                let _, pefile = createMemoryMapFile fullPath
+                pefile
             else
                 createByteFileChunk opts fullPath None
 

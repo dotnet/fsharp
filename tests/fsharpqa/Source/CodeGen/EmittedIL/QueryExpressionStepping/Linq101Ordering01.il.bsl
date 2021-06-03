@@ -40,13 +40,13 @@
   // Offset: 0x000003B8 Length: 0x00000134
 }
 .module Linq101Ordering01.exe
-// MVID: {5FCFFD0D-649A-6956-A745-03830DFDCF5F}
+// MVID: {60A8401D-649A-6956-A745-03831D40A860}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06F50000
+// Image base: 0x04DA0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -152,10 +152,10 @@
       .line 11,11 : 9,26 ''
       IL_005b:  ldloc.0
       IL_005c:  stloc.1
+      .line 12,12 : 9,17 ''
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
       IL_005f:  stfld      int32 Linq101Ordering01/sortedWords@11::pc
-      .line 12,12 : 9,17 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
       IL_0066:  stfld      string Linq101Ordering01/sortedWords@11::current
@@ -520,10 +520,10 @@
       .line 18,18 : 9,26 ''
       IL_005b:  ldloc.0
       IL_005c:  stloc.1
+      .line 19,19 : 9,26 ''
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
       IL_005f:  stfld      int32 Linq101Ordering01/sortedWords2@18::pc
-      .line 19,19 : 9,26 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
       IL_0066:  stfld      string Linq101Ordering01/sortedWords2@18::current
@@ -1009,10 +1009,10 @@
       .line 44,44 : 9,29 ''
       IL_005b:  ldloc.0
       IL_005c:  stloc.1
+      .line 45,45 : 9,40 ''
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
       IL_005f:  stfld      int32 Linq101Ordering01/sortedProducts2@44::pc
-      .line 45,45 : 9,40 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
       IL_0066:  stfld      class [Utils]Utils/Product Linq101Ordering01/sortedProducts2@44::current
@@ -1379,10 +1379,10 @@
       .line 52,52 : 9,27 ''
       IL_005b:  ldloc.0
       IL_005c:  stloc.1
+      .line 53,53 : 9,24 ''
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
       IL_005f:  stfld      int32 Linq101Ordering01/sortedDigits@52::pc
-      .line 53,53 : 9,24 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
       IL_0066:  stfld      string Linq101Ordering01/sortedDigits@52::current

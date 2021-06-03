@@ -25,6 +25,7 @@ type LanguageFeature =
     | OverloadsForCustomOperations
     | ExpandedMeasurables
     | NullnessChecking
+    | PrintfBinaryFormat
 
 /// LanguageVersion management
 type LanguageVersion =

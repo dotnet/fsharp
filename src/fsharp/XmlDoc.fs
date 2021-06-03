@@ -265,7 +265,7 @@ type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option
                         | Some doc -> Some doc
                         | _ ->
                             let doc = XmlDocument()
-                            use xmlStream = FileSystem.OpenFileForReadShim(xmlFileName).AsStream()
+                            use xmlStream = FileSystem.OpenFileForReadShim(xmlFileName)
                             doc.Load(xmlStream)
                             cache.Put((), cacheKey, doc)
                             Some doc

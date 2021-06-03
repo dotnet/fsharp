@@ -368,6 +368,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_decimal_ty      = mkSysNonGenericTy sys "Decimal"
   let v_unit_ty         = mkNonGenericTy v_unit_tcr_nice
   let v_system_Type_ty = mkSysNonGenericTy sys "Type"
+  let v_Array_tcref = findSysTyconRef sys "Array"
 
 
   let v_system_Reflection_MethodInfo_ty = mkSysNonGenericTy ["System";"Reflection"] "MethodInfo"
@@ -1034,6 +1035,11 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.fslib_IDelegateEvent_tcr      = v_fslib_IDelegateEvent_tcr
   member _.seq_tcr        = v_seq_tcr
   member val seq_base_tcr = mk_MFCompilerServices_tcref fslibCcu "GeneratedSequenceBase`1"
+  member val ListCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ListCollector`1"
+  member val ArrayCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ArrayCollector`1"
+  member g.mk_GeneratedSequenceBase_ty seqElemTy = TType_app(g.seq_base_tcr, [seqElemTy], v_knownWithoutNull)
+  member g.mk_ListCollector_ty seqElemTy = TType_app(g.ListCollector_tcr, [seqElemTy], v_knownWithoutNull)
+  member g.mk_ArrayCollector_ty seqElemTy = TType_app(g.ArrayCollector_tcr, [seqElemTy], v_knownWithoutNull)
   member val byrefkind_In_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "In"
   member val byrefkind_Out_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "Out"
   member val byrefkind_InOut_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "InOut"
@@ -1135,7 +1141,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member _.system_Reflection_MethodInfo_ty = v_system_Reflection_MethodInfo_ty
 
-  member val system_Array_tcref  = findSysTyconRef sys "Array"
+  member val system_Array_tcref = v_Array_tcref
   member val system_Object_tcref  = findSysTyconRef sys "Object"
   member val system_Value_tcref = findSysTyconRef sys "ValueType"
   member val system_Void_tcref    = findSysTyconRef sys "Void"
@@ -1230,6 +1236,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_CallerLineNumberAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerLineNumberAttribute"
   member val attrib_CallerFilePathAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
   member val attrib_CallerMemberNameAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
+  member val attrib_SkipLocalsInitAttribute  = findSysAttrib "System.Runtime.CompilerServices.SkipLocalsInitAttribute"
 
   member val attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
   member val attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"
@@ -1455,6 +1462,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val query_select_vref          = ValRefForIntrinsic v_query_select_value_info
   member val query_where_vref           = ValRefForIntrinsic v_query_where_value_info
   member val query_zero_vref            = ValRefForIntrinsic v_query_zero_value_info
+  member val seq_to_list_vref            = ValRefForIntrinsic v_seq_to_list_info
+  member val seq_to_array_vref            = ValRefForIntrinsic v_seq_to_array_info
 
   member _.seq_collect_info           = v_seq_collect_info
   member _.seq_using_info             = v_seq_using_info
@@ -1544,6 +1553,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member g.generateWitnesses =
       compilingFslib ||
       ((ValRefForIntrinsic g.call_with_witnesses_info).TryDeref.IsSome && langVersion.SupportsFeature LanguageFeature.WitnessPassing)
+
+  /// Indicates if we can use System.Array.Empty when emitting IL for empty array literals
+  member val isArrayEmptyAvailable = v_Array_tcref.ILTyconRawMetadata.Methods.FindByName "Empty" |> List.isEmpty |> not
 
   member _.FindSysTyconRef path nm = findSysTyconRef path nm
 

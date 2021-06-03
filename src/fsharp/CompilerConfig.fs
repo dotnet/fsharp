@@ -138,7 +138,7 @@ type VersionFlag =
              if not(FileSystem.FileExistsShim s) then
                  errorR(Error(FSComp.SR.buildInvalidVersionFile s, rangeStartup)); "0.0.0.0"
              else
-                 use fs = FileSystem.OpenFileForReadShim(s).AsReadOnlyStream()
+                 use fs = FileSystem.OpenFileForReadShim(s)
                  use is = new StreamReader(fs)
                  is.ReadLine()
          | VersionNone -> "0.0.0.0"
@@ -753,7 +753,7 @@ type TcConfigBuilder =
         let absolutePath = ComputeMakePathAbsolute pathIncludedFrom path
         let ok =
             let existsOpt =
-                try Some(Directory.Exists absolutePath)
+                try Some(FileSystem.DirectoryExistsShim absolutePath)
                 with e -> warning(Error(FSComp.SR.buildInvalidSearchDirectory path, m)); None
             match existsOpt with
             | Some exists ->
@@ -1070,7 +1070,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 let clrRoot = tcConfig.MakePathAbsolute x
                 yield clrRoot
                 let clrFacades = Path.Combine(clrRoot, "Facades")
-                if Directory.Exists(clrFacades) then yield clrFacades
+                if FileSystem.DirectoryExistsShim(clrFacades) then yield clrFacades
 
             | None ->
 // "there is no really good notion of runtime directory on .NETCore"
@@ -1089,13 +1089,13 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                     //
                     // In the current way of doing things, F# Interactive refers to implementation assemblies.
                     yield runtimeRoot
-                    if Directory.Exists runtimeRootFacades then
+                    if FileSystem.DirectoryExistsShim runtimeRootFacades then
                         yield runtimeRootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
-                    if Directory.Exists runtimeRootWPF then
+                    if FileSystem.DirectoryExistsShim runtimeRootWPF then
                         yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
 
                     match tcConfig.FxResolver.GetFrameworkRefsPackDirectory() with
-                    | Some path when Directory.Exists(path) ->
+                    | Some path when FileSystem.DirectoryExistsShim(path) ->
                         yield path
                     | _ -> ()
 
@@ -1107,16 +1107,16 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         // On Mono, the default references come from the implementation assemblies.
                         // This is because we have had trouble reliably using MSBuild APIs to compute DotNetFrameworkReferenceAssembliesRootDirectory on Mono.
                         yield runtimeRoot
-                        if Directory.Exists runtimeRootFacades then
+                        if FileSystem.DirectoryExistsShim runtimeRootFacades then
                             yield runtimeRootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
-                        if Directory.Exists runtimeRootWPF then
+                        if FileSystem.DirectoryExistsShim runtimeRootWPF then
                             yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
                         // On Mono we also add a default reference to the 4.5-api and 4.5-api/Facades directories.
                         let runtimeRootApi = runtimeRootWithoutSlash + "-api"
                         let runtimeRootApiFacades = Path.Combine(runtimeRootApi, "Facades")
-                        if Directory.Exists runtimeRootApi then
+                        if FileSystem.DirectoryExistsShim runtimeRootApi then
                             yield runtimeRootApi
-                        if Directory.Exists runtimeRootApiFacades then
+                        if FileSystem.DirectoryExistsShim runtimeRootApiFacades then
                              yield runtimeRootApiFacades
                     else
 #endif
@@ -1127,10 +1127,10 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         let frameworkRootVersion = Path.Combine(frameworkRoot, tcConfig.targetFrameworkVersion)
                         yield frameworkRootVersion
                         let facades = Path.Combine(frameworkRootVersion, "Facades")
-                        if Directory.Exists facades then
+                        if FileSystem.DirectoryExistsShim facades then
                             yield facades
                         match tcConfig.FxResolver.GetFrameworkRefsPackDirectory() with
-                        | Some path when Directory.Exists(path) ->
+                        | Some path when FileSystem.DirectoryExistsShim(path) ->
                             yield path
                         | _ -> ()
                   ]

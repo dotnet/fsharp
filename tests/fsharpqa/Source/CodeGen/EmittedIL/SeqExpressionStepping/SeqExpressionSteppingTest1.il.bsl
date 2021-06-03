@@ -36,13 +36,13 @@
   // Offset: 0x00000268 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest1.exe
-// MVID: {5F972A56-2432-947D-A745-0383562A975F}
+// MVID: {60B8D5B9-2432-947D-A745-0383B9D5B860}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06790000
+// Image base: 0x071D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -114,10 +114,10 @@
 
         .line 100001,100001 : 0,0 ''
         IL_0021:  nop
+        .line 6,6 : 15,22 ''
         IL_0022:  ldarg.0
         IL_0023:  ldc.i4.1
         IL_0024:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
-        .line 6,6 : 15,22 ''
         IL_0029:  ldarg.0
         IL_002a:  ldc.i4.1
         IL_002b:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::current

@@ -969,6 +969,9 @@ and IlxGenEnv =
 
       /// Are we inside of a recursive let binding, while loop, or a for loop?
       isInLoop: bool
+
+      /// Indicates that the .locals init flag should be set on a method and all its nested methods and lambdas
+      initLocals: bool
     }
 
     override _.ToString() = "<IlxGenEnv>"
@@ -2107,7 +2110,7 @@ let CodeGenMethod cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs,
     let maxStack = maxStack + 2
 
     // Build an Abstract IL method
-    instrs, mkILMethodBody (true, locals, maxStack, code, sourceRange)
+    instrs, mkILMethodBody (eenv.initLocals, locals, maxStack, code, sourceRange)
 
 let StartDelayedLocalScope nm cgbuf =
     let startScope = CG.GenerateDelayMark cgbuf ("start_" + nm)
@@ -2347,6 +2350,12 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
     let g = cenv.g
 
     ProcessDebugPointForExpr cenv cgbuf sp expr
+
+    match (if compileSequenceExpressions then LowerComputedListOrArrayExpr cenv.tcVal g cenv.amap expr else None) with
+    | Some altExpr ->
+        GenExpr cenv cgbuf eenv sp altExpr sequel
+        true
+    | None ->
 
     match (if compileSequenceExpressions then ConvertSequenceExprToObject g cenv.amap expr else None) with
     | Some info ->
@@ -2895,12 +2904,16 @@ and GenNewArraySimple cenv cgbuf eenv (elems, elemTy, m) sequel =
     let ilElemTy = GenType cenv.amap m eenv.tyenv elemTy
     let ilArrTy = mkILArr1DTy ilElemTy
 
-    CG.EmitInstrs cgbuf (pop 0) (Push [ilArrTy]) [ (AI_ldc (DT_I4, ILConst.I4 (elems.Length))); I_newarr (ILArrayShape.SingleDimensional, ilElemTy) ]
-    elems |> List.iteri (fun i e ->
-        CG.EmitInstrs cgbuf (pop 0) (Push [ilArrTy; cenv.g.ilg.typ_Int32]) [ AI_dup; (AI_ldc (DT_I4, ILConst.I4 i)) ]
-        GenExpr cenv cgbuf eenv SPSuppress e Continue
-        CG.EmitInstr cgbuf (pop 3) Push0 (I_stelem_any (ILArrayShape.SingleDimensional, ilElemTy)))
-
+    if List.isEmpty elems && cenv.g.isArrayEmptyAvailable then
+        mkNormalCall (mkILMethSpecInTy (cenv.g.ilg.typ_Array, ILCallingConv.Static, "Empty", [], mkILArr1DTy (mkILTyvarTy 0us), [ilElemTy]))
+        |> CG.EmitInstr cgbuf (pop 0) (Push [ilArrTy])
+    else
+        CG.EmitInstrs cgbuf (pop 0) (Push [ilArrTy]) [ (AI_ldc (DT_I4, ILConst.I4 (elems.Length))); I_newarr (ILArrayShape.SingleDimensional, ilElemTy) ]
+        elems |> List.iteri (fun i e ->
+            CG.EmitInstrs cgbuf (pop 0) (Push [ilArrTy; cenv.g.ilg.typ_Int32]) [ AI_dup; (AI_ldc (DT_I4, ILConst.I4 i)) ]
+            GenExpr cenv cgbuf eenv SPSuppress e Continue
+            CG.EmitInstr cgbuf (pop 3) Push0 (I_stelem_any (ILArrayShape.SingleDimensional, ilElemTy)))
+  
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenNewArray cenv cgbuf eenv (elems: Expr list, elemTy, m) sequel =
@@ -3816,6 +3829,7 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resty, spTry, spFin
        let sp =
            match spFinally with
            | DebugPointAtFinally.Yes m -> CG.EmitSeqPoint cgbuf m; SPAlways
+           | DebugPointAtFinally.Body -> SPAlways
            | DebugPointAtFinally.No -> SPSuppress
 
        GenExpr cenv cgbuf eenvinner sp handlerExpr (LeaveHandler (true, whereToSave, afterHandler))
@@ -3937,12 +3951,13 @@ and GenWhileLoop cenv cgbuf eenv (spWhile, e1, e2, m) sequel =
     let finish = CG.GenerateDelayMark cgbuf "while_finish"
     let startTest = CG.GenerateMark cgbuf "startTest"
 
-    match spWhile with
-    | DebugPointAtWhile.Yes spStart -> CG.EmitSeqPoint cgbuf spStart
-    | DebugPointAtWhile.No -> ()
+    let spCondition =
+        match spWhile with
+        | DebugPointAtWhile.Yes spStart -> CG.EmitSeqPoint cgbuf spStart; SPSuppress
+        | DebugPointAtWhile.No -> SPSuppress
 
     // SEQUENCE POINTS: Emit a sequence point to cover all of 'while e do'
-    GenExpr cenv cgbuf eenv SPSuppress e1 (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse, finish.CodeLabel) ]))
+    GenExpr cenv cgbuf eenv spCondition e1 (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse, finish.CodeLabel) ]))
 
     GenExpr cenv cgbuf eenv SPAlways e2 (DiscardThen (Br startTest))
     CG.SetMarkToHere cgbuf finish
@@ -5607,7 +5622,8 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) star
     | Some _, Some e -> cgbuf.mgbuf.AddReflectedDefinition(vspec, e)
     | _ -> ()
 
-    let eenv = {eenv with letBoundVars= (mkLocalValRef vspec) :: eenv.letBoundVars}
+    let eenv = { eenv with letBoundVars = (mkLocalValRef vspec) :: eenv.letBoundVars;
+                           initLocals = eenv.initLocals && (match vspec.ApparentEnclosingEntity with Parent ref -> not (HasFSharpAttribute g g.attrib_SkipLocalsInitAttribute ref.Attribs) | _ -> true) }
 
     let access = ComputeMethodAccessRestrictedBySig eenv vspec
 
@@ -6179,6 +6195,7 @@ and GenMethodForBinding
         let eenvForMeth = eenvForMeth |> AddStorageForLocalWitnesses (methLambdaWitnessInfos |> List.mapi (fun i w -> (w, Arg (numArgsUsed+i))))
         let numArgsUsed = numArgsUsed + methLambdaWitnessInfos.Length
         let eenvForMeth = eenvForMeth |> AddStorageForLocalVals cenv.g (List.mapi (fun i v -> (v, Arg (numArgsUsed+i))) nonUnitNonSelfMethodVars)
+        let eenvForMeth = if eenvForMeth.initLocals && HasFSharpAttribute g g.attrib_SkipLocalsInitAttribute v.Attribs then { eenvForMeth with initLocals = false } else eenvForMeth
         eenvForMeth
 
     let tailCallInfo =
@@ -6951,7 +6968,7 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
 
     let eenvinner =
         if mspec.IsNamespace then eenv else
-        {eenv with cloc = CompLocForFixedModule cenv.opts.fragName qname.Text mspec }
+        { eenv with cloc = CompLocForFixedModule cenv.opts.fragName qname.Text mspec; initLocals = eenv.initLocals && not (HasFSharpAttribute cenv.g cenv.g.attrib_SkipLocalsInitAttribute mspec.Attribs) }
 
     // Create the class to hold the contents of this module. No class needed if
     // we're compiling it as a namespace.
@@ -8043,7 +8060,8 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
       innerVals = []
       sigToImplRemapInfo = [] (* "module remap info" *)
       withinSEH = false
-      isInLoop = false }
+      isInLoop = false
+      initLocals = true }
 
 type IlxGenResults =
     { ilTypeDefs: ILTypeDef list
