@@ -253,6 +253,86 @@ function Run-Test() {
   # }
 }
 
+function Test-IsAdmin {
+    ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+}
+
+function TryDownloadDotnetFrameworkSdk() {
+    # If we are not running as admin user, don't bother grabbing ndp sdk -- since we don't need sn.exe
+    $isAdmin = Test-IsAdmin
+    Write-Host "TryDownloadDotnetFrameworkSdk -- Test-IsAdmin = '$isAdmin'"
+    if ($isAdmin -eq $true)
+    {
+        # Get program files(x86) location
+        if (${env:ProgramFiles(x86)} -eq $null) {
+            $programFiles = $env:ProgramFiles
+        }
+        else {
+            $programFiles = ${env:ProgramFiles(x86)}
+        }
+
+        # Get windowsSDK location for x86
+        $windowsSDK_ExecutablePath_x86 = $env:WindowsSDK_ExecutablePath_x86
+        $newWindowsSDK_ExecutablePath_x86 = Join-Path "$programFiles" "Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools"
+
+        if ($windowsSDK_ExecutablePath_x86 -eq $null) {
+            $snPathX86 = Join-Path $newWindowsSDK_ExecutablePath_x86 "sn.exe"
+        }
+        else {
+            $snPathX86 = Join-Path $windowsSDK_ExecutablePath_x86 "sn.exe"
+            $snPathX86Exists = Test-Path $snPathX86 -PathType Leaf
+            if ($snPathX86Exists -ne $true) {
+                $windowsSDK_ExecutablePath_x86 = null
+                $snPathX86 = Join-Path $newWindowsSDK_ExecutablePath_x86 "sn.exe"
+            }
+        }
+
+        $windowsSDK_ExecutablePath_x64 = $env:WindowsSDK_ExecutablePath_x64
+        $newWindowsSDK_ExecutablePath_x64 = Join-Path "$programFiles" "Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64"
+
+        if ($windowsSDK_ExecutablePath_x64 -eq $null) {
+            $snPathX64 = Join-Path $newWindowsSDK_ExecutablePath_x64 "sn.exe"
+        }
+        else {
+            $snPathX64 = Join-Path $windowsSDK_ExecutablePath_x64 "sn.exe"
+            $snPathX64Exists = Test-Path $snPathX64 -PathType Leaf
+            if ($snPathX64Exists -ne $true) {
+                $windowsSDK_ExecutablePath_x86 = null
+                $snPathX64 = Join-Path $newWindowsSDK_ExecutablePath_x64 "sn.exe"
+            }
+        }
+
+        $snPathX86Exists = Test-Path $snPathX86 -PathType Leaf
+        Write-Host "pre-dl snPathX86Exists : $snPathX86Exists - '$snPathX86'"
+        if ($snPathX86Exists -ne $true) {
+            DownloadDotnetFrameworkSdk
+        }
+
+        $snPathX86Exists = Test-Path $snPathX86 -PathType Leaf
+        if ($snPathX86Exists -eq $true) {
+            if ($windowsSDK_ExecutablePath_x86 -ne $newWindowsSDK_ExecutablePath_x86) {
+                $windowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
+                # x86 environment variable
+                Write-Host "set WindowsSDK_ExecutablePath_x86=$WindowsSDK_ExecutablePath_x86"
+                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x86","$newWindowsSDK_ExecutablePath_x86",[System.EnvironmentVariableTarget]::Machine)
+                $env:WindowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
+            }
+        }
+
+        # Also update environment variable for x64
+        $snPathX64Exists = Test-Path $snPathX64 -PathType Leaf
+        if ($snPathX64Exists -eq $true) {
+            if ($windowsSDK_ExecutablePath_x64 -ne $newWindowsSDK_ExecutablePath_x64) {
+                $windowsSDK_ExecutablePath_x64 = $newWindowsSDK_ExecutablePath_x64
+                # x64 environment variable
+                Write-Host "set WindowsSDK_ExecutablePath_x64=$WindowsSDK_ExecutablePath_x64"
+                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x64","$newWindowsSDK_ExecutablePath_x64",[System.EnvironmentVariableTarget]::Machine)
+                $env:WindowsSDK_ExecutablePath_x64 = $newWindowsSDK_ExecutablePath_x64
+            }
+        }
+    }
+}
+
 try {
   . (Join-Path $PSScriptRoot "build-utils.ps1")
 
@@ -274,9 +354,13 @@ try {
   $script:bootstrap = $true
   $script:bootstrapConfiguration = "Proto"
 
+  $buildTool = InitializeBuildTool
+  $toolsetBuildProj = InitializeToolset
+  TryDownloadDotnetFrameworkSdk
+
   $bootstrapDir = Make-BootstrapBuild
 
-  Run-Test
+ # Run-Test
   exit 0
 }
 catch {
