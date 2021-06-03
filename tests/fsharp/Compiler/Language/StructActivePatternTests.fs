@@ -175,7 +175,7 @@ let (|Foo|_|) x = ValueNone
 [<Struct>]
 let (|Foo|_|) x = ValueNone
 """
-            [|(FSharpDiagnosticSeverity.Error, 842, (2, 1, 3, 9),
+            [|(FSharpDiagnosticSeverity.Error, 842, (2, 3, 2, 9),
                "This attribute is not valid for use on this language element");
               (FSharpDiagnosticSeverity.Error, 1, (2, 1, 3, 16),
                "This expression was expected to have type
