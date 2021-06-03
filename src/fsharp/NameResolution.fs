@@ -83,10 +83,11 @@ let TryFindTypeWithRecdField (modref: ModuleOrNamespaceRef) (id: Ident) =
 
 /// Get the active pattern elements defined by a given value, if any
 let ActivePatternElemsOfValRef g (vref: ValRef) =
-    let _, apReturnTy = stripFunTy g vref.TauType
-    let isStructRetTy = isStructTy g apReturnTy
     match TryGetActivePatternInfo vref with
-    | Some apinfo -> apinfo.ActiveTags |> List.mapi (fun i _ -> APElemRef(apinfo, vref, i, isStructRetTy))
+    | Some apinfo ->
+        let _, apReturnTy = stripFunTy g vref.TauType
+        let isStructRetTy = isStructTy g apReturnTy
+        apinfo.ActiveTags |> List.mapi (fun i _ -> APElemRef(apinfo, vref, i, isStructRetTy))
     | None -> []
 
 /// Try to make a reference to a value in a module.
