@@ -511,10 +511,10 @@ type AsyncType() =
                     use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
                     let! v = Async.AwaitTask(t)
                     return v
-                // AwaitTask raises TaskCanceledException when it is canceled
+                // AwaitTask raises TaskCanceledException when it is canceled, it is a valid result of this test
                 with
                    :? TaskCanceledException -> 
-                      return ()
+                      ewh.Set() |> ignore // this is ok
             }
         Async.Start a
         cts.Cancel()
@@ -569,10 +569,10 @@ type AsyncType() =
                     use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
                     let! v = Async.AwaitTask(t)
                     return v
-                // AwaitTask raises TaskCanceledException when it is canceled
+                // AwaitTask raises TaskCanceledException when it is canceled, it is a valid result of this test
                 with
                    :? TaskCanceledException -> 
-                      return ()
+                      ewh.Set() |> ignore // this is ok
             }
         Async.Start a
         cts.Cancel()
