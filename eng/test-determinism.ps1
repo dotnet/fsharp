@@ -254,7 +254,7 @@ function Run-Test() {
 }
 
 try {
-  . (Join-Path $PSScriptRoot "Build.ps1")
+  . (Join-Path $PSScriptRoot "build-utils.ps1")
 
   # Create all of the logging directories
   $errorDir = Join-Path $LogDir "DeterminismFailures"
@@ -271,8 +271,10 @@ try {
   $officialBuildId = ""
   $nodeReuse = $false
   $properties = @()
+  $script:bootstrap = $true
+  $script:bootstrapConfiguration = "Proto"
 
-  Exec-Script "$RepoRoot\eng\Build.ps1"
+  $bootstrapDir = Make-BootstrapBuild
 
   Run-Test
   exit 0
