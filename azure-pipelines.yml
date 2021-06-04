@@ -342,15 +342,16 @@ stages:
           pool:
             vmImage: windows-latest
           steps:
-            - template: eng/pipelines/checkout-windows-task.yml
+          - checkout: self
+          clean: true
 
-            - script: eng/test-determinism.cmd -configuration Debug
-              displayName: Build - Validate determinism
+          - script: eng/test-determinism.cmd -configuration Debug
+            displayName: Build - Validate determinism
 
-            - template: eng/pipelines/publish-logs.yml
-              parameters:
-                jobName: Correctness_Determinism
-                configuration: Debug
+          - template: eng/pipelines/publish-logs.yml
+            parameters:
+              jobName: Correctness_Determinism
+              configuration: Debug
 
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
