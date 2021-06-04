@@ -5633,13 +5633,7 @@ and GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel =
        | DebugPointForTarget.No -> cgbuf.EmitStartOfHiddenCode()
 
     CG.SetMarkToHere cgbuf startScope
-    let binds = 
-        match flags with 
-        | None -> mkInvisibleBinds vs es
-        | Some stateVarFlags -> 
-             (vs, es, stateVarFlags) 
-             |||> List.zip3 
-             |> List.choose (fun (v, e, flag) -> if flag then None else Some (mkInvisibleBind v e))
+    let binds = mkInvisibleBinds vs es
     GenBindings cenv cgbuf eenvAtTarget binds flags
     CG.SetMarkToHere cgbuf targetMarkAfterBinds
     CG.SetStack cgbuf stackAtTargets
