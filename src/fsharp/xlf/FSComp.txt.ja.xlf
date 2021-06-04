@@ -177,6 +177,11 @@
         <target state="translated">文字列の補間</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStructActivePattern">
+        <source>struct representation for active patterns</source>
+        <target state="new">struct representation for active patterns</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
         <target state="translated">for ループのワイルド カード</target>
@@ -5987,6 +5992,16 @@
         <target state="translated">アセンブリ '{0}' はコマンド ラインに一覧表示されます。アセンブリは '-r' などのコマンド ライン フラグを使用して参照する必要があります。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidStructReturn">
+        <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
+        <target state="new">The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidTypeArgumentCount">
+        <source>The number of type arguments did not match: '{0}' given, '{1}' expected. This may be related to a previously reported error.</source>
+        <target state="new">The number of type arguments did not match: '{0}' given, '{1}' expected. This may be related to a previously reported error.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fscRemotingError">
         <source>The resident compilation service was not used because a problem occured in communicating with the server.</source>
         <target state="translated">サーバーとの通信で問題が発生したため、常駐コンパイル サービスが使用されませんでした。</target>
@@ -6270,11 +6285,6 @@
       <trans-unit id="tcInferredGenericTypeGivesRiseToInconsistency">
         <source>The function or member '{0}' is used in a way that requires further type annotations at its definition to ensure consistency of inferred types. The inferred signature is '{1}'.</source>
         <target state="translated">現在使用されている関数またはメンバー '{0}' では、推論された型の一貫性を確保するために、さらに型の注釈が必要です。推論されたシグネチャは '{1}' です。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcInvalidTypeArgumentCount">
-        <source>The number of type arguments did not match: '{0}' given, '{1}' expected. This may be related to a previously reported error.</source>
-        <target state="translated">型引数の数が一致しません: 指定されているのは '{0}' 個ですが、'{1}' 個にする必要があります。このエラーは、前に報告されたエラーに関係する場合があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotOverrideSealedMethod">
