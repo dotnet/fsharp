@@ -50,6 +50,11 @@ val node : NodeCodeBuilder
 [<AbstractClass;Sealed>]
 type NodeCode =
 
+    /// Only used for testing, do not use
+    static member RunImmediate: computation: NodeCode<'T> * ct: CancellationToken -> 'T
+
+    /// Used in places where we don't care about cancellation, e.g. the command line compiler
+    /// and F# Interactive
     static member RunImmediateWithoutCancellation: computation: NodeCode<'T> -> 'T
 
     static member CancellationToken: NodeCode<CancellationToken>

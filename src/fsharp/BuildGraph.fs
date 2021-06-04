@@ -105,7 +105,7 @@ type NodeCode private () =
     static let cancellationToken =
         Node(wrapThreadStaticInfo Async.CancellationToken)
 
-    static member RunImmediateWithoutCancellation (computation: NodeCode<'T>) =
+    static member RunImmediate (computation: NodeCode<'T>, ct: CancellationToken) =
         let errorLogger = CompileThreadStatic.ErrorLogger
         let phase = CompileThreadStatic.BuildPhase
         try
@@ -116,13 +116,16 @@ type NodeCode private () =
                         CompileThreadStatic.BuildPhase <- phase
                         return! computation |> Async.AwaitNodeCode
                     }
-                Async.StartImmediateAsTask(work, cancellationToken=CancellationToken.None).Result
+                Async.StartImmediateAsTask(work, cancellationToken=ct).Result
             finally
                 CompileThreadStatic.ErrorLogger <- errorLogger
                 CompileThreadStatic.BuildPhase <- phase
         with
         | :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
             raise(ex.InnerExceptions.[0])
+
+    static member RunImmediateWithoutCancellation (computation: NodeCode<'T>) =
+        NodeCode.RunImmediate(computation, CancellationToken.None)
 
     static member StartAsTask_ForTesting (computation: NodeCode<'T>, ?ct: CancellationToken) =
         let errorLogger = CompileThreadStatic.ErrorLogger

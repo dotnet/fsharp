@@ -22,7 +22,7 @@ module BuildGraphTests =
     [<Fact>]
     let ``Intialization of graph node should not have a computed value``() =
         let node = GraphNode(node { return 1 })
-        Assert.shouldBeTrue(node.TryGetValue().IsNone)
+        Assert.shouldBeTrue(node.TryPeekValue().IsNone)
         Assert.shouldBeFalse(node.HasValue)
 
     [<Fact>]
@@ -33,21 +33,21 @@ module BuildGraphTests =
         let graphNode = 
             GraphNode(node { 
                 resetEventInAsync.Set() |> ignore
-                let! _ = NodeCode.AwaitWaitHandle(resetEvent)
+                let! _ = NodeCode.AwaitWaitHandle_ForTesting(resetEvent)
                 return 1 
             })
 
         let task1 =
             node {
-                let! _ = graphNode.GetValue()
+                let! _ = graphNode.GetOrComputeValue()
                 ()
-            } |> NodeCode.StartAsTask
+            } |> NodeCode.StartAsTask_ForTesting
 
         let task2 =
             node {
-                let! _ = graphNode.GetValue()
+                let! _ = graphNode.GetOrComputeValue()
                 ()
-            } |> NodeCode.StartAsTask
+            } |> NodeCode.StartAsTask_ForTesting
 
         resetEventInAsync.WaitOne() |> ignore
         resetEvent.Set() |> ignore
@@ -69,7 +69,7 @@ module BuildGraphTests =
                 return 1 
             })
 
-        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetValue() |> Async.AwaitNode))
+        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNode))
 
         Async.RunSynchronously(work)
         |> ignore
@@ -82,7 +82,7 @@ module BuildGraphTests =
 
         let graphNode = GraphNode(node { return 1 })
 
-        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetValue() |> Async.AwaitNode))
+        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNode))
 
         let result = Async.RunSynchronously(work)
 
@@ -99,7 +99,7 @@ module BuildGraphTests =
 
         Assert.shouldBeTrue weak.IsAlive
 
-        NodeCode.RunImmediateWithoutCancellation(graphNode.GetValue())
+        NodeCode.RunImmediateWithoutCancellation(graphNode.GetOrComputeValue())
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -116,7 +116,7 @@ module BuildGraphTests =
         
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunSynchronously(Async.Parallel(Array.init requests (fun _ -> graphNode.GetValue() |> Async.AwaitNode)))
+        Async.RunSynchronously(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNode)))
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -135,7 +135,7 @@ module BuildGraphTests =
         let work =
             node {
                 cts.Cancel()
-                return! graphNode.GetValue()
+                return! graphNode.GetOrComputeValue()
             }
 
         let ex =
@@ -155,7 +155,7 @@ module BuildGraphTests =
 
         let graphNode = 
             GraphNode(node { 
-                let! _ = NodeCode.AwaitWaitHandle(resetEvent)
+                let! _ = NodeCode.AwaitWaitHandle_ForTesting(resetEvent)
                 return 1 
             })
 
@@ -166,11 +166,11 @@ module BuildGraphTests =
                 cts.Cancel()
                 resetEvent.Set() |> ignore
             }
-            |> NodeCode.StartAsTask
+            |> NodeCode.StartAsTask_ForTesting
 
         let ex =
             try
-                NodeCode.RunImmediateWithoutCancellation(graphNode.GetValue(), ct = cts.Token)
+                NodeCode.RunImmediate(graphNode.GetOrComputeValue(), ct = cts.Token)
                 |> ignore
                 failwith "Should have canceled"
             with
@@ -190,7 +190,7 @@ module BuildGraphTests =
         let graphNode = 
             GraphNode(node { 
                 computationCountBeforeSleep <- computationCountBeforeSleep + 1
-                let! _ = NodeCode.AwaitWaitHandle(resetEvent)
+                let! _ = NodeCode.AwaitWaitHandle_ForTesting(resetEvent)
                 computationCount <- computationCount + 1
                 return 1 
             })
@@ -199,7 +199,7 @@ module BuildGraphTests =
 
         let work = 
             node { 
-                let! _ = graphNode.GetValue()
+                let! _ = graphNode.GetOrComputeValue()
                 ()
             }
 
@@ -207,10 +207,10 @@ module BuildGraphTests =
 
         for i = 0 to requests - 1 do
             if i % 10 = 0 then
-                NodeCode.StartAsTask(work, ct = cts.Token)
+                NodeCode.StartAsTask_ForTesting(work, ct = cts.Token)
                 |> tasks.Add
             else
-                NodeCode.StartAsTask(work)
+                NodeCode.StartAsTask_ForTesting(work)
                 |> tasks.Add
 
         cts.Cancel()
@@ -236,7 +236,7 @@ module BuildGraphTests =
         let graphNode = 
             GraphNode(false, node { 
                 computationCountBeforeSleep <- computationCountBeforeSleep + 1
-                let! _ = NodeCode.AwaitWaitHandle(resetEvent)
+                let! _ = NodeCode.AwaitWaitHandle_ForTesting(resetEvent)
                 computationCount <- computationCount + 1
                 return 1 
             })
@@ -245,7 +245,7 @@ module BuildGraphTests =
 
         let work = 
             node { 
-                let! _ = graphNode.GetValue()
+                let! _ = graphNode.GetOrComputeValue()
                 ()
             }
 
@@ -253,10 +253,10 @@ module BuildGraphTests =
 
         for i = 0 to requests - 1 do
             if i % 10 = 0 then
-                NodeCode.StartAsTask(work, ct = cts.Token)
+                NodeCode.StartAsTask_ForTesting(work, ct = cts.Token)
                 |> tasks.Add
             else
-                NodeCode.StartAsTask(work)
+                NodeCode.StartAsTask_ForTesting(work)
                 |> tasks.Add
 
         cts.Cancel()
