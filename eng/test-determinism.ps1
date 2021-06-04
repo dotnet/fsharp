@@ -90,7 +90,7 @@ function Get-FilesToProcess([string]$rootDir) {
     }
 
     $fileId = $filePath.Substring($objDir.Length).Replace("\", ".").TrimStart(".")
-    $fileHash = (Get-FileHash $filePath -algorithm SHA512).Hash
+    $fileHash = (Get-FileHash $filePath -algorithm SHA1).Hash
 
     $data = @{}
     $data.Hash = $fileHash
