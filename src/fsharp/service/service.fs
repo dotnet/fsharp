@@ -350,11 +350,11 @@ type BackgroundCompiler(
                  areSame =  FSharpProjectOptions.AreSameForChecking, 
                  areSimilar =  FSharpProjectOptions.UseSameProject)
 
-    let tryGetBuilderLazy options =
+    let tryGetBuilderNode options =
         incrementalBuildersCache.TryGet (AnyCallerThread, options)
 
     let tryGetBuilder options : NodeCode<(IncrementalBuilder option * FSharpDiagnostic[])> option =
-        tryGetBuilderLazy options
+        tryGetBuilderNode options
         |> Option.map (fun x -> x.GetOrComputeValue())
 
     let tryGetSimilarBuilder options : NodeCode<(IncrementalBuilder option * FSharpDiagnostic[])> option =
@@ -365,22 +365,22 @@ type BackgroundCompiler(
         incrementalBuildersCache.TryGetAny (AnyCallerThread, options)
         |> Option.map (fun x -> x.GetOrComputeValue())
 
-    let createBuilderLazy (options, userOpName, ct: CancellationToken) =
+    let createBuilderNode (options, userOpName, ct: CancellationToken) =
         lock gate (fun () ->
             if ct.IsCancellationRequested then
                 GraphNode(node { return None, [||] })
             else
-                let getBuilderLazy = 
+                let getBuilderNode = 
                     GraphNode(CreateOneIncrementalBuilder(options, userOpName))
-                incrementalBuildersCache.Set (AnyCallerThread, options, getBuilderLazy)
-                getBuilderLazy
+                incrementalBuildersCache.Set (AnyCallerThread, options, getBuilderNode)
+                getBuilderNode
         )
 
     let createAndGetBuilder (options, userOpName) =
         node {
             let! ct = NodeCode.CancellationToken
-            let getBuilderLazy = createBuilderLazy (options, userOpName, ct)
-            return! getBuilderLazy.GetOrComputeValue()
+            let getBuilderNode = createBuilderNode (options, userOpName, ct)
+            return! getBuilderNode.GetOrComputeValue()
         }
 
     let getOrCreateBuilder (options, userOpName) : NodeCode<(IncrementalBuilder option * FSharpDiagnostic[])> =
@@ -437,15 +437,15 @@ type BackgroundCompiler(
              areSimilar=AreSubsumable3)
 
     /// Should be a fast operation. Ensures that we have only one async lazy object per file and its hash.
-    let getCheckFileAsyncLazy   (parseResults,
-                                 sourceText,
-                                 fileName,
-                                 options,
-                                 _fileVersion,
-                                 builder,
-                                 tcPrior,
-                                 tcInfo,
-                                 creationDiags) (onComplete) =
+    let getCheckFileNode (parseResults,
+                          sourceText,
+                          fileName,
+                          options,
+                          _fileVersion,
+                          builder,
+                          tcPrior,
+                          tcInfo,
+                          creationDiags) (onComplete) =
 
         parseCacheLock.AcquireLock (fun ltok -> 
             let key = (fileName, sourceText.GetHashCode() |> int64, options)
@@ -605,7 +605,7 @@ type BackgroundCompiler(
             | Some (_, results) -> return FSharpCheckFileAnswer.Succeeded results
             | _ ->
                 let lazyCheckFile =
-                    getCheckFileAsyncLazy 
+                    getCheckFileNode 
                         (parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
                         (fun () ->
                             Interlocked.Increment(&actualCheckFileCount) |> ignore
@@ -918,7 +918,7 @@ type BackgroundCompiler(
 
     /// Get the timestamp that would be on the output if fully built immediately
     member private _.TryGetLogicalTimeStampForProject(cache, options) =
-        match tryGetBuilderLazy options with
+        match tryGetBuilderNode options with
         | Some lazyWork -> 
             match lazyWork.TryPeekValue() with
             | ValueSome (Some builder, _) ->
@@ -995,25 +995,25 @@ type BackgroundCompiler(
           }
           |> Cancellable.toAsync
             
-    member bc.InvalidateConfiguration(options : FSharpProjectOptions, userOpName) =
+    member bc.InvalidateConfiguration(options: FSharpProjectOptions, userOpName) =
         if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
-            let _ = createBuilderLazy (options, userOpName, CancellationToken.None)
+            let _ = createBuilderNode (options, userOpName, CancellationToken.None)
             ()
 
-    member bc.ClearCache(options : FSharpProjectOptions seq, _userOpName) =
+    member bc.ClearCache(options: seq<FSharpProjectOptions>, _userOpName) =
         lock gate (fun () ->
             options
             |> Seq.iter (fun options -> incrementalBuildersCache.RemoveAnySimilar(AnyCallerThread, options))
         )
 
-    member _.NotifyProjectCleaned (options : FSharpProjectOptions, userOpName) =
+    member _.NotifyProjectCleaned (options: FSharpProjectOptions, userOpName) =
         async {
             let! ct = Async.CancellationToken
             // If there was a similar entry (as there normally will have been) then re-establish an empty builder .  This 
             // is a somewhat arbitrary choice - it will have the effect of releasing memory associated with the previous 
             // builder, but costs some time.
             if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
-                let _ = createBuilderLazy (options, userOpName, ct)
+                let _ = createBuilderNode (options, userOpName, ct)
                 ()
         }
 

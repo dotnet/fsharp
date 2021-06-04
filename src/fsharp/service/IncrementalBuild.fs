@@ -261,38 +261,30 @@ type BoundModel private (tcConfig: TcConfig,
         | Some tcInfoState -> TcInfoNode.FromState(tcInfoState)
         | _ ->
             let fullGraphNode =
-                GraphNode(
-                    node {
-                        match! this.TypeCheck(false) with
-                        | FullState(tcInfo, tcInfoExtras) -> return tcInfo, tcInfoExtras
-                        | PartialState(tcInfo) -> return tcInfo, emptyTcInfoExtras
-                    }
-                )
+                GraphNode(node {
+                    match! this.TypeCheck(false) with
+                    | FullState(tcInfo, tcInfoExtras) -> return tcInfo, tcInfoExtras
+                    | PartialState(tcInfo) -> return tcInfo, emptyTcInfoExtras
+                })
 
             let partialGraphNode =              
-                if enablePartialTypeChecking then
-                    GraphNode(
-                        node {
-                            // Optimization so we have less of a chance to duplicate work.
-                            if fullGraphNode.IsComputing then
-                                let! tcInfo, _ = fullGraphNode.GetOrComputeValue()
-                                return tcInfo
-                            else
-                                match fullGraphNode.TryPeekValue() with
-                                | ValueSome(tcInfo, _) -> return tcInfo
-                                | _ ->
-                                    match! this.TypeCheck(true) with
-                                    | FullState(tcInfo, _) -> return tcInfo
-                                    | PartialState(tcInfo) -> return tcInfo
-                        }
-                    )
-                else
-                    GraphNode(
-                        node {
+                GraphNode(node {
+                    if enablePartialTypeChecking then
+                        // Optimization so we have less of a chance to duplicate work.
+                        if fullGraphNode.IsComputing then
                             let! tcInfo, _ = fullGraphNode.GetOrComputeValue()
                             return tcInfo
-                        }
-                    )
+                        else
+                            match fullGraphNode.TryPeekValue() with
+                            | ValueSome(tcInfo, _) -> return tcInfo
+                            | _ ->
+                                match! this.TypeCheck(true) with
+                                | FullState(tcInfo, _) -> return tcInfo
+                                | PartialState(tcInfo) -> return tcInfo
+                    else
+                        let! tcInfo, _ = fullGraphNode.GetOrComputeValue()
+                        return tcInfo
+                    })
 
             TcInfoNode(partialGraphNode, fullGraphNode)
 
@@ -598,45 +590,44 @@ type FrameworkImportsCache(size) =
     member _.Clear() = frameworkTcImportsCache.Clear AnyCallerThread
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
-    member _.Get(tcConfig: TcConfig) =
-      node {
-        // Split into installed and not installed.
-        let frameworkDLLs, nonFrameworkResolutions, unresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
+    member _.GetNode(tcConfig: TcConfig, frameworkDLLs: AssemblyResolution list, nonFrameworkResolutions: AssemblyResolution list) =
         let frameworkDLLsKey =
             frameworkDLLs
             |> List.map (fun ar->ar.resolvedPath) // The cache key. Just the minimal data.
             |> List.sort  // Sort to promote cache hits.
 
-        let! tcGlobals, frameworkTcImports =
-          node {
-            // Prepare the frameworkTcImportsCache
-            //
-            // The data elements in this key are very important. There should be nothing else in the TcConfig that logically affects
-            // the import of a set of framework DLLs into F# CCUs. That is, the F# CCUs that result from a set of DLLs (including
-            // FSharp.Core.dll and mscorlib.dll) must be logically invariant of all the other compiler configuration parameters.
-            let key = (frameworkDLLsKey,
-                        tcConfig.primaryAssembly.Name,
-                        tcConfig.GetTargetFrameworkDirectories(),
-                        tcConfig.fsharpBinariesDir,
-                        tcConfig.langVersion.SpecifiedVersion)
+        // Prepare the frameworkTcImportsCache
+        //
+        // The data elements in this key are very important. There should be nothing else in the TcConfig that logically affects
+        // the import of a set of framework DLLs into F# CCUs. That is, the F# CCUs that result from a set of DLLs (including
+        // FSharp.Core.dll and mscorlib.dll) must be logically invariant of all the other compiler configuration parameters.
+        let key = (frameworkDLLsKey,
+                    tcConfig.primaryAssembly.Name,
+                    tcConfig.GetTargetFrameworkDirectories(),
+                    tcConfig.fsharpBinariesDir,
+                    tcConfig.langVersion.SpecifiedVersion)
 
-            let lazyWork =
-                lock gate (fun () ->
-                    match frameworkTcImportsCache.TryGet (AnyCallerThread, key) with
-                    | Some lazyWork -> lazyWork
-                    | None ->
-                        let work =
-                            node {
-                                let tcConfigP = TcConfigProvider.Constant tcConfig
-                                return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
-                            }
-                        let lazyWork = GraphNode(work)
-                        frameworkTcImportsCache.Put(AnyCallerThread, key, lazyWork)
-                        lazyWork
-                )
+        let node =
+            lock gate (fun () ->
+                match frameworkTcImportsCache.TryGet (AnyCallerThread, key) with
+                | Some lazyWork -> lazyWork
+                | None ->
+                    let lazyWork = GraphNode(node {
+                        let tcConfigP = TcConfigProvider.Constant tcConfig
+                        return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
+                    })
+                    frameworkTcImportsCache.Put(AnyCallerThread, key, lazyWork)
+                    lazyWork
+            )
+        node
 
-            return! lazyWork.GetOrComputeValue()
-          }
+    /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
+    member this.Get(tcConfig: TcConfig) =
+      node {
+        // Split into installed and not installed.
+        let frameworkDLLs, nonFrameworkResolutions, unresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
+        let node = this.GetNode(tcConfig, frameworkDLLs, nonFrameworkResolutions)
+        let! tcGlobals, frameworkTcImports = node.GetOrComputeValue()
         return tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolved
       }
 
@@ -984,12 +975,10 @@ type IncrementalBuilder(
             | 0 (* first file *) -> initialBoundModel
             | _ -> boundModels.[i - 1]
         let syntaxTree = GetSyntaxTree fileInfo
-        GraphNode(
-            node {
-                let! prevBoundModel = prevBoundModelGraphNode.GetOrComputeValue()
-                return! TypeCheckTask enablePartialTypeChecking prevBoundModel syntaxTree
-            }
-        )
+        GraphNode(node {
+            let! prevBoundModel = prevBoundModelGraphNode.GetOrComputeValue()
+            return! TypeCheckTask enablePartialTypeChecking prevBoundModel syntaxTree
+        })
 
     let rec createFinalizeBoundModelGraphNode (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) =
         GraphNode(node {
