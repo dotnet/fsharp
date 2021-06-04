@@ -437,7 +437,7 @@ module internal SymbolHelpers =
     let GetXmlDocHelpSigOfItemForLookup (infoReader: InfoReader) m d = 
         let g = infoReader.g
         match d with
-        | Item.ActivePatternCase (APElemRef(_, vref, _))        
+        | Item.ActivePatternCase (APElemRef(_, vref, _, _))        
         | Item.Value vref | Item.CustomBuilder (_, vref) -> 
             mkXmlComment (GetXmlDocSigOfValRef g vref)
         | Item.UnionCase  (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseRef ucinfo.UnionCaseRef)
@@ -554,7 +554,7 @@ module internal SymbolHelpers =
                     MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
               | (Item.Value vref1 | Item.CustomBuilder (_, vref1)), (Item.Value vref2 | Item.CustomBuilder (_, vref2)) -> 
                   valRefEq g vref1 vref2
-              | Item.ActivePatternCase(APElemRef(_apinfo1, vref1, idx1)), Item.ActivePatternCase(APElemRef(_apinfo2, vref2, idx2)) ->
+              | Item.ActivePatternCase(APElemRef(_apinfo1, vref1, idx1, _)), Item.ActivePatternCase(APElemRef(_apinfo2, vref2, idx2, _)) ->
                   idx1 = idx2 && valRefEq g vref1 vref2
               | Item.UnionCase(UnionCaseInfo(_, ur1), _), Item.UnionCase(UnionCaseInfo(_, ur2), _) -> 
                   g.unionCaseRefEq ur1 ur2
@@ -595,7 +595,7 @@ module internal SymbolHelpers =
               | Item.MethodGroup(_, meths, _) -> meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0
               | Item.CtorGroup(name, meths) -> name.GetHashCode() + (meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0)
               | (Item.Value vref | Item.CustomBuilder (_, vref)) -> hash vref.LogicalName
-              | Item.ActivePatternCase(APElemRef(_apinfo, vref, idx)) -> hash (vref.LogicalName, idx)
+              | Item.ActivePatternCase(APElemRef(_apinfo, vref, idx, _)) -> hash (vref.LogicalName, idx)
               | Item.ExnCase tcref -> hash tcref.LogicalName
               | Item.UnionCase(UnionCaseInfo(_, UnionCaseRef(tcref, n)), _) -> hash(tcref.Stamp, n)
               | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref, n))) -> hash(tcref.Stamp, n)

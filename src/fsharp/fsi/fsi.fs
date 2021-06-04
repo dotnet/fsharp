@@ -1661,7 +1661,7 @@ type internal FsiDynamicCompiler
             let moduleOrNamespace, v, impl = mkBoundValueTypedImpl istate.tcGlobals range0 qualifiedName.Text name ty
             let tcEnvAtEndOfLastInput =
                 CheckDeclarations.AddLocalSubModule tcGlobals amap range0 istate.tcState.TcEnvFromImpls moduleOrNamespace
-                |> CheckExpressions.AddLocalVal TcResultsSink.NoSink range0 v
+                |> CheckExpressions.AddLocalVal tcGlobals TcResultsSink.NoSink range0 v
 
             // Generate IL for the given typled impl and create new interactive state.
             let ilxGenerator = istate.ilxGenerator
@@ -2131,7 +2131,7 @@ type internal FsiInteractionProcessor
     let ChangeDirectory (path:string) m =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
         let path = tcConfig.MakePathAbsolute path
-        if Directory.Exists(path) then
+        if FileSystem.DirectoryExistsShim(path) then
             tcConfigB.implicitIncludeDir <- path
         else
             error(Error(FSIstrings.SR.fsiDirectoryDoesNotExist(path),m))
@@ -2472,7 +2472,7 @@ type internal FsiInteractionProcessor
               // An included script file may contain maybe several interaction blocks.
               // We repeatedly parse and process these, until an error occurs.
 
-                use fileStream = FileSystem.OpenFileForReadShim(sourceFile).AsStream()
+                use fileStream = FileSystem.OpenFileForReadShim(sourceFile)
                 use reader = fileStream.GetReader(tcConfigB.inputCodePage, false)
 
                 let tokenizer = fsiStdinLexerProvider.CreateIncludedScriptLexer (sourceFile, reader, errorLogger)

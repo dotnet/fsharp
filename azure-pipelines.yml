@@ -240,7 +240,7 @@ stages:
               ArtifactName: 'Windows $(_configuration) $(_testKind) test logs'
               publishLocation: Container
             continueOnError: true
-            condition: eq(variables['_testKind'], 'testFSharpQA')
+            condition: failed()
           - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
             displayName: Dump NuGet cache contents
             condition: failed()
@@ -283,6 +283,14 @@ stages:
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Test Logs
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
+              ArtifactName: 'Linux $(_BuildConfig) test logs'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
           - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
             displayName: Dump NuGet cache contents
             condition: failed()
@@ -315,6 +323,14 @@ stages:
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Test Logs
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
+              ArtifactName: 'MacOS $(_BuildConfig) test logs'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
           - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
             displayName: Dump NuGet cache contents
             condition: failed()
