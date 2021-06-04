@@ -37,8 +37,6 @@ function Run-Build([string]$rootDir, [string]$logFileName) {
 
   $solution = Join-Path $rootDir "VisualFSharp.sln"
 
-  $toolsetBuildProj = InitializeToolset
-
   if ($logFileName -eq "") {
     $logFileName = [IO.Path]::GetFileNameWithoutExtension($projectFilePath)
   }

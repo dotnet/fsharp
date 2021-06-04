@@ -338,6 +338,17 @@ stages:
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
 
+        # End to end build2
+        - job: EndToEndBuildTests2
+          pool:
+            vmImage: windows-latest
+          steps:
+          - checkout: self
+            clean: true
+          - script: .\Build.cmd -c Release
+          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
+            displayName: End to end build tests
+
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
         #  pool:
