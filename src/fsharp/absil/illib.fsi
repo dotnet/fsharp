@@ -253,6 +253,7 @@ module internal String =
 
 module internal Dictionary =
     val inline newWithSize : size:int -> Dictionary<'a,'b> when 'a: equality
+    val inline ofList : xs: ('Key * 'Value) list -> Dictionary<'Key,'Value> when 'Key: equality
 
 [<Extension; Class>]
 type internal DictionaryExtensions =

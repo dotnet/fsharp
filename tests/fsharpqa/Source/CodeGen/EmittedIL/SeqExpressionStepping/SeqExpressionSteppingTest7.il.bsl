@@ -63,7 +63,7 @@
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> 
           f<a>() cil managed
   {
-    // Code size       63 (0x3f)
+    // Code size       59 (0x3b)
     .maxstack  5
     .locals init ([0] valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<!!a> V_0,
              [1] string V_1)
@@ -74,41 +74,37 @@
     IL_000a:  nop
     .line 5,5 : 26,30 ''
     IL_000b:  ldc.i4.1
-    IL_000c:  brfalse.s  IL_0010
-
-    IL_000e:  br.s       IL_0012
-
-    IL_0010:  br.s       IL_0035
+    IL_000c:  brfalse.s  IL_0031
 
     .line 5,5 : 44,55 ''
-    IL_0012:  ldstr      ""
-    IL_0017:  stloc.1
-    IL_0018:  ldloca.s   V_0
-    IL_001a:  ldc.i4.0
-    IL_001b:  brfalse.s  IL_0025
+    IL_000e:  ldstr      ""
+    IL_0013:  stloc.1
+    IL_0014:  ldloca.s   V_0
+    IL_0016:  ldc.i4.0
+    IL_0017:  brfalse.s  IL_0021
 
-    IL_001d:  ldnull
-    IL_001e:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<!!a>
-    IL_0023:  br.s       IL_002c
+    IL_0019:  ldnull
+    IL_001a:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<!!a>
+    IL_001f:  br.s       IL_0028
 
-    IL_0025:  ldloc.1
-    IL_0026:  call       class [mscorlib]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
-    IL_002b:  throw
+    IL_0021:  ldloc.1
+    IL_0022:  call       class [mscorlib]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
+    IL_0027:  throw
 
-    IL_002c:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<!!a>::AddMany(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_0028:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<!!a>::AddMany(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_002d:  nop
+    .line 100001,100001 : 0,0 ''
+    IL_002e:  nop
+    IL_002f:  br.s       IL_0033
+
+    .line 5,5 : 14,36 ''
     IL_0031:  nop
     .line 100001,100001 : 0,0 ''
     IL_0032:  nop
-    IL_0033:  br.s       IL_0037
-
-    .line 5,5 : 14,36 ''
-    IL_0035:  nop
-    .line 100001,100001 : 0,0 ''
-    IL_0036:  nop
     .line 5,5 : 12,57 ''
-    IL_0037:  ldloca.s   V_0
-    IL_0039:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<!!a>::Close()
-    IL_003e:  ret
+    IL_0033:  ldloca.s   V_0
+    IL_0035:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<!!a>::Close()
+    IL_003a:  ret
   } // end of method SeqExpressionSteppingTest7::f
 
   .property class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>
