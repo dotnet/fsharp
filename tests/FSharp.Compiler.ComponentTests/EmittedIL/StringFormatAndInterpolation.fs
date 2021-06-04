@@ -18,6 +18,9 @@ let printed () = printf $"printed no hole"
          |> compile
          |> shouldSucceed
          |> verifyIL ["""
+IL_0000:  ldstr      "no hole"
+IL_0005:  ret"""
+                      """
 IL_0000:  ldstr      "printed no hole"
 IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
 IL_000a:  stloc.0
