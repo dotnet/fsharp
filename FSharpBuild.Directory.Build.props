@@ -20,7 +20,7 @@
     <ProtoOutputPath>$(ArtifactsDir)\Bootstrap</ProtoOutputPath>
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
     <WarningsAsErrors>1182;0025;$(WarningsAsErrors)</WarningsAsErrors>
-    <OtherFlags>$(OtherFlags) --nowarn:3384 --deterministic</OtherFlags>
+    <OtherFlags>$(OtherFlags) --nowarn:3384</OtherFlags>
   </PropertyGroup>
 
   <!-- nuget -->
