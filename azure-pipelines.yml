@@ -339,7 +339,7 @@ stages:
             displayName: End to end build tests
 
         # Determinism
-        - job: Determinism-Debug
+        - job: Determinism
           pool:
             vmImage: windows-latest
           steps:
