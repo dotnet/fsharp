@@ -36,13 +36,13 @@
   // Offset: 0x000001F8 Length: 0x0000007B
 }
 .module GenIter03.exe
-// MVID: {60A8401B-F77C-DC98-A745-03831B40A860}
+// MVID: {60B78A57-F77C-DC98-A745-0383578AB760}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06A00000
+// Image base: 0x057E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -54,7 +54,7 @@
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
           squaresOfOneToTenC() cil managed
   {
-    // Code size       87 (0x57)
+    // Code size       83 (0x53)
     .maxstack  5
     .locals init ([0] valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
              [1] class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> V_1,
@@ -94,7 +94,7 @@
 
       IL_002c:  ldnull
       IL_002d:  stloc.2
-      IL_002e:  leave.s    IL_004d
+      IL_002e:  leave.s    IL_0049
 
       .line 4,4 : 30,55 ''
     }  // end .try
@@ -104,30 +104,26 @@
       IL_0031:  isinst     [mscorlib]System.IDisposable
       IL_0036:  stloc.s    V_4
       IL_0038:  ldloc.s    V_4
-      IL_003a:  brfalse.s  IL_003e
-
-      IL_003c:  br.s       IL_0040
-
-      IL_003e:  br.s       IL_004a
+      IL_003a:  brfalse.s  IL_0046
 
       .line 100001,100001 : 0,0 ''
-      IL_0040:  ldloc.s    V_4
-      IL_0042:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
-      IL_0047:  ldnull
-      IL_0048:  pop
-      IL_0049:  endfinally
+      IL_003c:  ldloc.s    V_4
+      IL_003e:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
+      IL_0043:  ldnull
+      IL_0044:  pop
+      IL_0045:  endfinally
       .line 100001,100001 : 0,0 ''
-      IL_004a:  ldnull
-      IL_004b:  pop
-      IL_004c:  endfinally
+      IL_0046:  ldnull
+      IL_0047:  pop
+      IL_0048:  endfinally
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_004d:  ldloc.2
-    IL_004e:  pop
+    IL_0049:  ldloc.2
+    IL_004a:  pop
     .line 4,4 : 28,57 ''
-    IL_004f:  ldloca.s   V_0
-    IL_0051:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-    IL_0056:  ret
+    IL_004b:  ldloca.s   V_0
+    IL_004d:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_0052:  ret
   } // end of method GenIter03::squaresOfOneToTenC
 
 } // end of class GenIter03

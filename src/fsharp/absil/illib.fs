@@ -606,6 +606,12 @@ module String =
 module Dictionary = 
     let inline newWithSize (size: int) = Dictionary<_, _>(size, HashIdentity.Structural)
 
+    let inline ofList (xs: ('Key * 'Value) list) = 
+        let t = Dictionary<_, _>(List.length xs, HashIdentity.Structural)
+        for (k,v) in xs do
+           t.Add(k,v)
+        t
+
 [<Extension>]
 type DictionaryExtensions() =
 
