@@ -3153,7 +3153,7 @@ and TryOptimizeDecisionTreeTest cenv test vinfo =
     | DecisionTreeTest.IsNull, StripConstValue c2 -> Some(c2=Const.Zero)
     | DecisionTreeTest.IsInst (_srcty1, _tgty1), _ -> None
     // These should not occur in optimization
-    | DecisionTreeTest.ActivePatternCase (_, _, _vrefOpt1, _, _), _ -> None
+    | DecisionTreeTest.ActivePatternCase _, _ -> None
     | _ -> None
 
 /// Optimize/analyze a switch construct from pattern matching 

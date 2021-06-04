@@ -762,7 +762,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member x.ActivePatternCases =
         protect <| fun () -> 
-            ActivePatternElemsOfModuleOrNamespace x.Entity
+            ActivePatternElemsOfModuleOrNamespace cenv.g x.Entity
             |> Map.toList
             |> List.map (fun (_, apref) ->
                 let item = Item.ActivePatternCase apref
