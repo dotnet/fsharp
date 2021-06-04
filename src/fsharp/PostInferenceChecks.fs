@@ -1995,7 +1995,7 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
         
     let topValInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData 
 
-    // If the method has ResumableCode argument or return attribute it must be inline
+    // If the method has ResumableCode argument or return type it must be inline
     // unless warning is suppressed (user must know what they're doing).
     //
     // If the method has ResumableCode return attribute we check the body w.r.t. that

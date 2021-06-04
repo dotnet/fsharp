@@ -36,10 +36,14 @@ type StateMachineConversionFirstPhaseResult =
      thisVars: ValRef list
 
      /// The vars captured by the non-synchronous resumable path
-     asyncVars: FreeVars
+     resumableVars: FreeVars
    }
 
+#if DEBUG
 let sm_verbose = try System.Environment.GetEnvironmentVariable("FSharp_StateMachineVerbose") <> null with _ -> false
+#else
+let sm_verbose = false
+#endif
 
 let rec (|OptionalResumeAtExpr|) g expr =
     match expr with
@@ -84,12 +88,11 @@ let RepresentBindingAsStateVar (bind: Binding) (res2: StateMachineConversionFirs
         phase2 = (fun ctxt ->
             let generate2 = res2.phase2 ctxt
             let generate =
-                //mkCompGenSequential m
-                    (mkSequential sp m
-                        (mkValSet spm vref e)
-                        generate2)
-                    // TODO: zero out the current value to free up its memory - but return type is not unit...
-                  //  (mkValSet m vref (mkDefault (m, vref.Type)))
+                mkSequential sp m
+                    (mkValSet spm vref e)
+                    (mkCompGenThenDoSequential m
+                        generate2
+                        (mkValSet m vref (mkDefault (m, vref.Type))))
             generate )
         stateVars = vref :: res2.stateVars }
 
@@ -134,7 +137,7 @@ let rec IsStateMachineExpr g overallExpr =
             match altExpr with 
             | None -> r
             | Some e -> Some (Some (mkLetBind m defn e))
-    // Recognise 'if useResumableCode ...'
+    // Recognise 'if __useResumableCode ...'
     | IfUseResumableStateMachinesExpr g (thenExpr, elseExpr) -> 
         match IsStateMachineExpr g thenExpr with
         | None -> None
@@ -183,9 +186,9 @@ type LowerStateMachine(g: TcGlobals) =
             let envR = { env with ResumableCodeDefns = env.ResumableCodeDefns.Add defn.Var defn.Expr }
             BindResumableCodeDefinitions envR bodyExpr
 
-         // Eliminate 'if useResumableCode ...'
+         // Eliminate 'if __useResumableCode ...'
          | IfUseResumableStateMachinesExpr g (thenExpr, _) ->
-            if sm_verbose then printfn "eliminating 'if useResumableCode...'"
+            if sm_verbose then printfn "eliminating 'if __useResumableCode...'"
             BindResumableCodeDefinitions env thenExpr
 
          | _ ->
@@ -437,7 +440,7 @@ type LowerStateMachine(g: TcGlobals) =
             | ResumableCodeInvoke g (_, _, _, m, _) ->
                 Result.Error (FSComp.SR.reprResumableCodeInvokeNotReduced(m.ToShortString()))
 
-            // Eliminate 'if useResumableCode ...' within.  
+            // Eliminate 'if __useResumableCode ...' within.  
             | IfUseResumableStateMachinesExpr g (thenExpr, _) -> 
                 ConvertResumableCode env pcValInfo thenExpr
 
@@ -498,7 +501,7 @@ type LowerStateMachine(g: TcGlobals) =
                   entryPoints = []
                   stateVars = []
                   thisVars = []
-                  asyncVars = emptyFreeVars }
+                  resumableVars = emptyFreeVars }
                 |> Result.Ok
 
         if sm_verbose then 
@@ -506,7 +509,7 @@ type LowerStateMachine(g: TcGlobals) =
             | Result.Ok res -> 
                 printfn "-------------------"
                 printfn "Phase 1 Done for %s" (DebugPrint.showExpr g res.phase1)
-                printfn "Phase 1 Done, asyncVars = %A" (res.asyncVars.FreeLocals |> Zset.elements |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
+                printfn "Phase 1 Done, resumableVars = %A" (res.resumableVars.FreeLocals |> Zset.elements |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
                 printfn "Phase 1 Done, stateVars = %A" (res.stateVars |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
                 printfn "Phase 1 Done, thisVars = %A" (res.thisVars |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
                 printfn "-------------------"
@@ -525,7 +528,7 @@ type LowerStateMachine(g: TcGlobals) =
 
         match resNone, resSome with 
         | Result.Ok resNone, Result.Ok resSome ->
-            let asyncVars = unionFreeVars (freeInExpr CollectLocals resNone.phase1) resSome.asyncVars 
+            let resumableVars = unionFreeVars (freeInExpr CollectLocals resNone.phase1) resSome.resumableVars 
             let m = someBranchExpr.Range
             let recreate reenterLabOpt e1 e2 = 
                 let lab = (match reenterLabOpt with Some l -> l | _ -> IL.generateCodeLabel())
@@ -539,7 +542,7 @@ type LowerStateMachine(g: TcGlobals) =
               entryPoints= resSome.entryPoints @ [reenterPC] @ resNone.entryPoints
               stateVars = resSome.stateVars @ resNone.stateVars 
               thisVars = resSome.thisVars @ resNone.thisVars
-              asyncVars = asyncVars }
+              resumableVars = resumableVars }
             |> Result.Ok
         | Result.Error err, _ | _, Result.Error err -> Result.Error err
 
@@ -559,7 +562,7 @@ type LowerStateMachine(g: TcGlobals) =
               entryPoints = []
               stateVars = []
               thisVars = []
-              asyncVars = emptyFreeVars }
+              resumableVars = emptyFreeVars }
             |> Result.Ok
         | _ -> 
             Result.Error(FSComp.SR.reprResumableCodeContainsDynamicResumeAtInBody())
@@ -571,13 +574,13 @@ type LowerStateMachine(g: TcGlobals) =
         let res2 = ConvertResumableCode env pcValInfo e2
         match res1, res2 with 
         | Result.Ok res1, Result.Ok res2 ->
-            let asyncVars =
+            let resumableVars =
                 if res1.entryPoints.IsEmpty then
                     // res1 is synchronous
-                    res2.asyncVars
+                    res2.resumableVars
                 else
                     // res1 is not synchronous. All of 'e2' is needed after resuming at any of the labels
-                    unionFreeVars res1.asyncVars (freeInExpr CollectLocals res2.phase1)
+                    unionFreeVars res1.resumableVars (freeInExpr CollectLocals res2.phase1)
 
             { phase1 = recreate res1.phase1 res2.phase1
               phase2 = (fun ctxt ->
@@ -588,7 +591,7 @@ type LowerStateMachine(g: TcGlobals) =
               entryPoints= res1.entryPoints @ res2.entryPoints
               stateVars = res1.stateVars @ res2.stateVars
               thisVars = res1.thisVars @ res2.thisVars
-              asyncVars = asyncVars }
+              resumableVars = resumableVars }
             |> Result.Ok
         | Result.Error err, _ | _, Result.Error err -> Result.Error err
 
@@ -601,7 +604,7 @@ type LowerStateMachine(g: TcGlobals) =
         | Result.Ok resg, Result.Ok resb ->
             let eps = resg.entryPoints @ resb.entryPoints
             // All free variables get captured if there are any entrypoints at all
-            let asyncVars = if eps.IsEmpty then emptyFreeVars else unionFreeVars (freeInExpr CollectLocals resg.phase1) (freeInExpr CollectLocals resb.phase1)
+            let resumableVars = if eps.IsEmpty then emptyFreeVars else unionFreeVars (freeInExpr CollectLocals resg.phase1) (freeInExpr CollectLocals resb.phase1)
             { phase1 = mkWhile g (sp1, sp2, resg.phase1, resb.phase1, m)
               phase2 = (fun ctxt -> 
                     let egR = resg.phase2 ctxt
@@ -617,7 +620,7 @@ type LowerStateMachine(g: TcGlobals) =
               entryPoints= eps
               stateVars = resg.stateVars @ resb.stateVars 
               thisVars = resg.thisVars @ resb.thisVars
-              asyncVars = asyncVars }
+              resumableVars = resumableVars }
             |> Result.Ok
         | Result.Error err, _ | _, Result.Error err -> Result.Error err
 
@@ -639,7 +642,7 @@ type LowerStateMachine(g: TcGlobals) =
                   entryPoints= eps
                   stateVars = res1.stateVars @ res2.stateVars 
                   thisVars = res1.thisVars @ res2.thisVars
-                  asyncVars = emptyFreeVars (* eps is empty, hence synchronous, no capture *)  }
+                  resumableVars = emptyFreeVars (* eps is empty, hence synchronous, no capture *)  }
                 |> Result.Ok
         | Result.Error err, _ | _, Result.Error err -> Result.Error err
 
@@ -670,7 +673,7 @@ type LowerStateMachine(g: TcGlobals) =
                   entryPoints= eps
                   stateVars = res1.stateVars @ res2.stateVars @ res3.stateVars
                   thisVars = res1.thisVars @ res2.thisVars @ res3.thisVars
-                  asyncVars = emptyFreeVars (* eps is empty, hence synchronous, no capture *) }
+                  resumableVars = emptyFreeVars (* eps is empty, hence synchronous, no capture *) }
                 |> Result.Ok
         | Result.Error err, _, _ | _, Result.Error err, _ | _, _, Result.Error err -> Result.Error err
 
@@ -719,7 +722,7 @@ type LowerStateMachine(g: TcGlobals) =
               entryPoints= resBody.entryPoints @ resFilter.entryPoints @ resHandler.entryPoints 
               stateVars = resBody.stateVars @ resFilter.stateVars @ resHandler.stateVars
               thisVars = resBody.thisVars @ resFilter.thisVars @ resHandler.thisVars
-              asyncVars = unionFreeVars resBody.asyncVars (unionFreeVars(freeInExpr CollectLocals resFilter.phase1) (freeInExpr CollectLocals resHandler.phase1)) }
+              resumableVars = unionFreeVars resBody.resumableVars (unionFreeVars(freeInExpr CollectLocals resFilter.phase1) (freeInExpr CollectLocals resHandler.phase1)) }
             |> Result.Ok
         | Result.Error err, _, _ | _, Result.Error err, _ | _, _, Result.Error err -> Result.Error err
 
@@ -735,33 +738,33 @@ type LowerStateMachine(g: TcGlobals) =
             let tglArray = tglArray |> Array.map (function Result.Ok v -> v | _ -> failwith "unreachable")
             let tgl = tglArray |> Array.toList 
             let entryPoints = tgl |> List.collect (fun res -> res.entryPoints)
-            let asyncVars =
+            let resumableVars =
                 (emptyFreeVars, Array.zip targets tglArray)
                 ||> Array.fold (fun fvs ((TTarget(_vs, _, _spTarget, _)), res) ->
-                    if res.entryPoints.IsEmpty then fvs else unionFreeVars fvs res.asyncVars)
+                    if res.entryPoints.IsEmpty then fvs else unionFreeVars fvs res.resumableVars)
             let stateVars = 
                 (targets, tglArray) ||> Array.zip |> Array.toList |> List.collect (fun (TTarget(vs, _, _, _), res) -> 
-                    let stateVars = vs |> List.filter (fun v -> res.asyncVars.FreeLocals.Contains(v)) |> List.map mkLocalValRef 
+                    let stateVars = vs |> List.filter (fun v -> res.resumableVars.FreeLocals.Contains(v)) |> List.map mkLocalValRef 
                     stateVars @ res.stateVars)
             let thisVars = tglArray |> Array.toList |> List.collect (fun res -> res.thisVars) 
             { phase1 = 
                 let gtgs =
                     (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, spTarget, _)) res -> 
-                        let flags = vs |> List.map (fun v -> res.asyncVars.FreeLocals.Contains(v)) 
+                        let flags = vs |> List.map (fun v -> res.resumableVars.FreeLocals.Contains(v)) 
                         TTarget(vs, res.phase1, spTarget, Some flags))
                 primMkMatch (spBind, exprm, dtreeR, gtgs, m, ty)
 
               phase2 = (fun ctxt ->
                             let gtgs =
                                 (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, spTarget, _)) res ->
-                                    let flags = vs |> List.map (fun v -> res.asyncVars.FreeLocals.Contains(v)) 
+                                    let flags = vs |> List.map (fun v -> res.resumableVars.FreeLocals.Contains(v)) 
                                     TTarget(vs, res.phase2 ctxt, spTarget, Some flags))
                             let generate = primMkMatch (spBind, exprm, dtreeR, gtgs, m, ty)
                             generate)
 
               entryPoints = entryPoints
               stateVars = stateVars
-              asyncVars = asyncVars 
+              resumableVars = resumableVars 
               thisVars = thisVars }
             |> Result.Ok
         | _ -> tglArray |> Array.find (function Result.Ok _ -> false | Result.Error _ -> true) 
@@ -788,7 +791,7 @@ type LowerStateMachine(g: TcGlobals) =
             //    ... sm ....
             // However the 'sm' won't be set on that path.
             if bind.Var.IsCompiledAsTopLevel || 
-                not (resBody.asyncVars.FreeLocals.Contains(bind.Var)) || 
+                not (resBody.resumableVars.FreeLocals.Contains(bind.Var)) || 
                 bind.Var.LogicalName.StartsWith stackVarPrefix then
                 if sm_verbose then printfn "LetExpr (non-control-flow, rewrite rhs, RepresentBindingAsTopLevelOrLocal)" 
                 RepresentBindingAsTopLevelOrLocal bind resBody m

@@ -6823,6 +6823,10 @@ let mkSequential spSeq m e1 e2 = Expr.Sequential (e1, e2, NormalSeq, spSeq, m)
 
 let mkCompGenSequential m e1 e2 = mkSequential DebugPointAtSequential.StmtOnly m e1 e2
 
+let mkThenDoSequential spSeq m e1 e2 = Expr.Sequential (e1, e2, ThenDoSeq, spSeq, m)
+
+let mkCompGenThenDoSequential m e1 e2 = mkThenDoSequential DebugPointAtSequential.StmtOnly m e1 e2
+
 let rec mkSequentials spSeq g m es = 
     match es with 
     | [e] -> e 

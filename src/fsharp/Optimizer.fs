@@ -2349,7 +2349,7 @@ and OptimizeLinearExpr cenv env expr contf =
     let expr = if cenv.settings.ExpandStructuralValues() then ExpandStructuralBinding cenv expr else expr 
     let expr = stripExpr expr
 
-    // Matching on 'match __resumableEntry() with ...` is really a first-class lanugage construct which we 
+    // Matching on 'match __resumableEntry() with ...` is really a first-class language construct which we 
     // don't optimize separately
     match expr with 
     | ResumableEntryMatchExpr cenv.g (noneBranchExpr, someVar, someBranchExpr, rebuild) -> 
@@ -2909,7 +2909,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
 // This is useful in DSLs that compute functions and weave them together with user code, e.g.
 // inline F# computation expressions.
 //
-// The case of 'match' is prarticularly awkward because we are cloning 'args' on the right.  We want to avoid
+// The case of 'match' is particularly awkward because we are cloning 'args' on the right.  We want to avoid
 // this in the common case, so we first collect up all the "function holes" 
 //     (let x = 1 in <hole>) 
 //     (let rec binds in <hole>) 

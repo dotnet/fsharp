@@ -229,21 +229,21 @@ let (|SeqElemTy|_|) g amap m ty =
 /// expressions: one for 'MoveNext' and one for 'Dispose'.
 let ConvertSequenceExprToObject g amap overallExpr =
     /// Implement a decision to represent a 'let' binding as a non-escaping local variable (rather than a state machine variable)
-    let RepresentBindingAsLocal (bind: Binding) res2 m =
+    let RepresentBindingAsLocal (bind: Binding) resBody m =
         if verbose then 
             printfn "LowerSeq: found local variable %s" bind.Var.DisplayName
 
-        { res2 with
+        { resBody with
             phase2 = (fun ctxt ->
-                let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
-                let generate = mkLetBind m bind generate2
-                let dispose = dispose2
-                let checkDispose = checkDispose2
+                let generateBody, disposeBody, checkDisposeBody = resBody.phase2 ctxt
+                let generate = mkLetBind m bind generateBody
+                let dispose = disposeBody
+                let checkDispose = checkDisposeBody
                 generate, dispose, checkDispose)
-            stateVars = res2.stateVars }
+            stateVars = resBody.stateVars }
 
     /// Implement a decision to represent a 'let' binding as a state machine variable
-    let RepresentBindingAsStateMachineLocal (bind: Binding) res2 m =
+    let RepresentBindingAsStateMachineLocal (bind: Binding) resBody m =
         if verbose then 
             printfn "LowerSeq: found state variable %s" bind.Var.DisplayName
 
@@ -253,31 +253,31 @@ let ConvertSequenceExprToObject g amap overallExpr =
             | DebugPointAtBinding.Yes m -> DebugPointAtSequential.Both, m
             | _ -> DebugPointAtSequential.StmtOnly, e.Range
         let vref = mkLocalValRef v
-        { res2 with
+        { resBody with
             phase2 = (fun ctxt ->
-                let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
+                let generateBody, disposeBody, checkDisposeBody = resBody.phase2 ctxt
                 let generate =
-                    mkCompGenSequential m
-                        (mkSequential sp m
+                    mkSequential sp m
+                        (mkCompGenSequential m
                             (mkValSet spm vref e)
-                            generate2)
+                            generateBody)
                         // zero out the current value to free up its memory
                         (mkValSet m vref (mkDefault (m, vref.Type)))
-                let dispose = dispose2
-                let checkDispose = checkDispose2
+                let dispose = disposeBody
+                let checkDispose = checkDisposeBody
                 generate, dispose, checkDispose)
-            stateVars = vref :: res2.stateVars }
+            stateVars = vref :: resBody.stateVars }
 
-    let RepresentBindingsAsLifted mkBinds res2 =
+    let RepresentBindingsAsLifted mkBinds resBody =
         if verbose then 
             printfn "found top level let  "
 
-        { res2 with
+        { resBody with
             phase2 = (fun ctxt ->
-                let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
-                let generate = mkBinds generate2
-                let dispose = dispose2
-                let checkDispose = checkDispose2
+                let generateBody, disposeBody, checkDisposeBody = resBody.phase2 ctxt
+                let generate = mkBinds generateBody
+                let dispose = disposeBody
+                let checkDispose = checkDisposeBody
                 generate, dispose, checkDispose) }
 
     let rec ConvertSeqExprCode
@@ -297,7 +297,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
             let label = IL.generateCodeLabel()
             Some { phase2 = (fun (pcVar, currVar, _nextv, pcMap) ->
                         let generate =
-                            mkSequential DebugPointAtSequential.Both m
+                            mkSequential DebugPointAtSequential.StmtOnly m
                                 (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
                                 (mkCompGenSequential m
                                     (mkValSet m currVar e)
@@ -478,17 +478,17 @@ let ConvertSequenceExprToObject g amap overallExpr =
               // Restriction: compilation of sequence expressions containing non-toplevel constrained generic functions is not supported
               when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericConstraints g bind.Var) ->
 
-            let resBody = ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel bodyExpr
-            match resBody with
-            | Some res2 ->
+            let resBodyOpt = ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel bodyExpr
+            match resBodyOpt with
+            | Some resBody ->
                 if bind.Var.IsCompiledAsTopLevel then
-                    Some (RepresentBindingsAsLifted (mkLetBind m bind) res2)
-                elif not (res2.asyncVars.FreeLocals.Contains(bind.Var)) then
+                    Some (RepresentBindingsAsLifted (mkLetBind m bind) resBody)
+                elif not (resBody.asyncVars.FreeLocals.Contains(bind.Var)) then
                     // printfn "found state variable %s" bind.Var.DisplayName
-                    Some (RepresentBindingAsLocal bind res2 m)
+                    Some (RepresentBindingAsLocal bind resBody m)
                 else
                     // printfn "found state variable %s" bind.Var.DisplayName
-                    Some (RepresentBindingAsStateMachineLocal bind res2 m)
+                    Some (RepresentBindingAsStateMachineLocal bind resBody m)
             | None ->
                 None
 
@@ -598,9 +598,9 @@ let ConvertSequenceExprToObject g amap overallExpr =
                         let label = IL.generateCodeLabel()
                         Some { phase2 = (fun (pcVar, _currv, nextVar, pcMap) ->
                                     let generate =
-                                        mkCompGenSequential m
+                                        mkSequential DebugPointAtSequential.StmtOnly m
                                             (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
-                                            (mkSequential DebugPointAtSequential.Both m
+                                            (mkCompGenSequential m
                                                 (mkAddrSet m nextVar arbitrarySeqExpr)
                                                 (mkCompGenSequential m
                                                     (Expr.Op (TOp.Return, [], [mkTwo g m], m))

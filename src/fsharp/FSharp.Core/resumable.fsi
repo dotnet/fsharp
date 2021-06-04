@@ -10,6 +10,7 @@ open System.Runtime.CompilerServices
 
 /// Acts as a template for struct state machines introduced by __stateMachine, and also as a reflective implementation
 [<Struct; NoComparison; NoEquality>]
+[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type ResumableStateMachine<'Data> =
 
     /// When statically compiled, holds the data for the state machine
@@ -20,7 +21,9 @@ type ResumableStateMachine<'Data> =
     [<DefaultValue(false)>]
     val mutable ResumptionPoint: int
 
-    /// Represents the delegated runtime continuation for a resumable state machine created dynamically
+    /// <summary>Represents the delegated runtime continuation for a resumable state machine created dynamically</summary>
+    /// <remarks>This field is removed from state machines generated using '__stateMachine'. Resumable code
+    /// used in state machines which accesses this field will raise a runtime exception.</remarks>
     [<DefaultValue(false)>]
     val mutable ResumptionDynamicInfo: ResumptionDynamicInfo<'Data>
 
@@ -28,7 +31,9 @@ type ResumableStateMachine<'Data> =
 
     interface IAsyncStateMachine
 
-and IResumableStateMachine<'Data> =
+and 
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    IResumableStateMachine<'Data> =
     /// Get the resumption point of the state machine
     abstract ResumptionPoint: int
 
@@ -137,7 +142,7 @@ type MoveNextMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>>
 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type SetStateMachineMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> * IAsyncStateMachine -> unit
 
-/// Defines the implementation of the code reun after the creation of a struct state machine.
+/// Defines the implementation of the code run after the creation of a struct state machine.
 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>> -> 'Result
 

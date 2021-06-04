@@ -1755,6 +1755,10 @@ val mkSequential: DebugPointAtSequential -> range -> Expr -> Expr -> Expr
 
 val mkCompGenSequential: range -> Expr -> Expr -> Expr
 
+val mkThenDoSequential: DebugPointAtSequential -> range -> Expr -> Expr -> Expr
+
+val mkCompGenThenDoSequential: range -> Expr -> Expr -> Expr
+
 val mkSequentials: DebugPointAtSequential -> TcGlobals -> range -> Exprs -> Expr   
 
 val mkRecordExpr: TcGlobals -> RecordConstructionInfo * TyconRef * TypeInst * RecdFieldRef list * Exprs * range -> Expr

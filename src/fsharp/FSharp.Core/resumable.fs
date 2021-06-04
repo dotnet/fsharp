@@ -268,7 +268,7 @@ module ResumableCode =
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
-    let inline TryFinally (body: ResumableCode<'Data, 'T>, [<InlineIfLambda>] compensation: ResumableCode<'Data,unit>) =
+    let inline TryFinally (body: ResumableCode<'Data, 'T>, compensation: ResumableCode<'Data,unit>) =
         ResumableCode<'Data, 'T>(fun sm ->
             if __useResumableCode then 
                 //-- RESUMABLE CODE START

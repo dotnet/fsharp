@@ -89,7 +89,7 @@ namespace Microsoft.FSharp.Control
         /// Specifies a unit of task code which excuted using try/finally semantics
         /// </summary>
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        member inline TryFinally: body: TaskCode<'TOverall, 'T> * compensation: (unit -> unit) -> TaskCode<'TOverall, 'T>
+        member inline TryFinally: body: TaskCode<'TOverall, 'T> * [<InlineIfLambda>] compensation: (unit -> unit) -> TaskCode<'TOverall, 'T>
     
         /// <summary>
         /// Specifies a unit of task code which excuted using try/with semantics
@@ -208,41 +208,41 @@ namespace Microsoft.FSharp.Control.TaskBuilderExtensions
             /// satisfying the GetAwaiter pattern and calls a continuation.
             /// </summary>
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            member inline Bind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter, 'TOverall > :
+            member inline Bind< ^TaskLike, 'TResult1, 'TResult2, ^Awaiter, 'TOverall > :
                 task: ^TaskLike *
-                continuation: ( ^TResult1 -> TaskCode<'TOverall, 'TResult2>)
+                continuation: ( 'TResult1 -> TaskCode<'TOverall, 'TResult2>)
                     -> TaskCode<'TOverall, 'TResult2>
                     when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                     and ^Awaiter :> ICriticalNotifyCompletion
                     and ^Awaiter: (member get_IsCompleted:  unit -> bool)
-                    and ^Awaiter: (member GetResult:  unit ->  ^TResult1) 
+                    and ^Awaiter: (member GetResult:  unit ->  'TResult1) 
 
             /// <summary>
             /// Specifies a unit of task code which draws its result from a task-like value
             /// satisfying the GetAwaiter pattern.
             /// </summary>
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            member inline ReturnFrom< ^TaskLike, ^Awaiter, ^T> : 
+            member inline ReturnFrom< ^TaskLike, ^Awaiter, 'T> : 
                 task: ^TaskLike
-                    -> TaskCode< ^T, ^T > 
+                    -> TaskCode< 'T, 'T > 
                     when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                     and ^Awaiter :> ICriticalNotifyCompletion
                     and ^Awaiter: (member get_IsCompleted: unit -> bool)
-                    and ^Awaiter: (member GetResult: unit ->  ^T)
+                    and ^Awaiter: (member GetResult: unit ->  'T)
 
             /// <summary>
             /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
             /// </summary>
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            static member inline BindDynamic< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter, 'TOverall > :
+            static member inline BindDynamic< ^TaskLike, 'TResult1, 'TResult2, ^Awaiter, 'TOverall > :
                 sm: byref<TaskStateMachine<'TOverall>> *
                 task: ^TaskLike *
-                continuation: ( ^TResult1 -> TaskCode<'TOverall, 'TResult2>)
+                continuation: ( 'TResult1 -> TaskCode<'TOverall, 'TResult2>)
                     -> bool
                     when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                     and ^Awaiter :> ICriticalNotifyCompletion
                     and ^Awaiter: (member get_IsCompleted:  unit -> bool)
-                    and ^Awaiter: (member GetResult:  unit ->  ^TResult1) 
+                    and ^Awaiter: (member GetResult:  unit ->  'TResult1) 
 
             /// <summary>
             /// Specifies a unit of task code which binds to the resource implementing IDisposable and disposes it synchronously

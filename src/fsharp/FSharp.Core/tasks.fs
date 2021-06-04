@@ -137,6 +137,7 @@ namespace Microsoft.FSharp.Control
             let resumptionInfo = 
                 { new TaskResumptionDynamicInfo<'T>(initialResumptionFunc) with 
                     member info.MoveNext(sm) = 
+                        let mutable savedExn = null
                         try
                             sm.ResumptionDynamicInfo.ResumptionData <- null
                             let step = info.ResumptionFunc.Invoke(&sm) 
@@ -148,7 +149,12 @@ namespace Microsoft.FSharp.Control
                                 sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
 
                         with exn ->
-                            sm.Data.MethodBuilder.SetException exn
+                            savedExn <- exn
+                        // Run SetException outside the stack unwind, see https://github.com/dotnet/roslyn/issues/26567
+                        match savedExn with 
+                        | null -> ()
+                        | exn -> sm.Data.MethodBuilder.SetException exn
+
                     member _.SetStateMachine(sm, state) =
                         sm.Data.MethodBuilder.SetStateMachine(state)
                     }
@@ -163,12 +169,17 @@ namespace Microsoft.FSharp.Control
                     (MoveNextMethodImpl<_>(fun sm -> 
                         //-- RESUMABLE CODE START
                         __resumeAt sm.ResumptionPoint 
+                        let mutable __stack_exn : Exception = null
                         try
                             let __stack_code_fin = code.Invoke(&sm)
                             if __stack_code_fin then
                                 sm.Data.MethodBuilder.SetResult(sm.Data.Result)
                         with exn ->
-                            sm.Data.MethodBuilder.SetException exn
+                            __stack_exn <- exn
+                        // Run SetException outside the stack unwind, see https://github.com/dotnet/roslyn/issues/26567
+                        match __stack_exn with
+                        | null -> ()
+                        | exn -> sm.Data.MethodBuilder.SetException exn
                         //-- RESUMABLE CODE END
                     ))
                     (SetStateMachineMethodImpl<_>(fun sm state -> sm.Data.MethodBuilder.SetStateMachine(state)))
@@ -247,18 +258,18 @@ namespace Microsoft.FSharp.Control.TaskBuilderExtensions
         // Low priority extensions
         type TaskBuilderBase with
 
-            static member inline BindDynamic< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall
+            static member inline BindDynamic< ^TaskLike, 'TResult1, 'TResult2, ^Awaiter , 'TOverall
                                                 when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                                 and ^Awaiter :> ICriticalNotifyCompletion
                                                 and ^Awaiter: (member get_IsCompleted:  unit -> bool)
-                                                and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>
-                        (sm: byref<_>, task: ^TaskLike, continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : bool =
+                                                and ^Awaiter: (member GetResult:  unit ->  'TResult1)>
+                        (sm: byref<_>, task: ^TaskLike, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : bool =
 
                     let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
 
                     let cont = 
                         (TaskResumptionFunc<'TOverall>( fun sm -> 
-                            let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
+                            let result = (^Awaiter : (member GetResult : unit -> 'TResult1)(awaiter))
                             (continuation result).Invoke(&sm)))
 
                     // shortcut to continue immediately
@@ -269,12 +280,12 @@ namespace Microsoft.FSharp.Control.TaskBuilderExtensions
                         sm.ResumptionDynamicInfo.ResumptionFunc <- cont
                         false
 
-            member inline _.Bind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall
+            member inline _.Bind< ^TaskLike, 'TResult1, 'TResult2, ^Awaiter , 'TOverall
                                                 when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                                 and ^Awaiter :> ICriticalNotifyCompletion
                                                 and ^Awaiter: (member get_IsCompleted:  unit -> bool)
-                                                and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>
-                        (task: ^TaskLike, continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
+                                                and ^Awaiter: (member GetResult:  unit ->  'TResult1)>
+                        (task: ^TaskLike, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
 
                 TaskCode<'TOverall, _>(fun sm -> 
                     if __useResumableCode then 
@@ -290,22 +301,22 @@ namespace Microsoft.FSharp.Control.TaskBuilderExtensions
                             __stack_fin <- __stack_yield_fin
                     
                         if __stack_fin then 
-                            let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
+                            let result = (^Awaiter : (member GetResult : unit -> 'TResult1)(awaiter))
                             (continuation result).Invoke(&sm)
                         else
                             sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                             false
                     else
-                        TaskBuilderBase.BindDynamic< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall>(&sm, task, continuation)
+                        TaskBuilderBase.BindDynamic< ^TaskLike, 'TResult1, 'TResult2, ^Awaiter , 'TOverall>(&sm, task, continuation)
                     //-- RESUMABLE CODE END
                 )
 
-            member inline this.ReturnFrom< ^TaskLike, ^Awaiter, ^T
+            member inline this.ReturnFrom< ^TaskLike, ^Awaiter, 'T
                                                   when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                                   and ^Awaiter :> ICriticalNotifyCompletion
                                                   and ^Awaiter: (member get_IsCompleted: unit -> bool)
-                                                  and ^Awaiter: (member GetResult: unit ->  ^T)>
-                    (task: ^TaskLike) : TaskCode< ^T,  ^T> =
+                                                  and ^Awaiter: (member GetResult: unit ->  'T)>
+                    (task: ^TaskLike) : TaskCode< 'T,  'T> =
 
                 this.Bind(task, (fun v -> this.Return v))
 
@@ -361,7 +372,8 @@ namespace Microsoft.FSharp.Control.TaskBuilderExtensions
 
     module MediumPriority = 
         open HighPriority
-        // High priority extensions
+
+        // Medium priority extensions
         type TaskBuilderBase with
             member inline this.Bind (computation: Async<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
                 this.Bind (Async.StartAsTask computation, continuation)
