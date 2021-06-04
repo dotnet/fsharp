@@ -8,6 +8,7 @@ open System.Threading.Tasks
 open System.Diagnostics
 open System.Globalization
 open FSharp.Compiler.ErrorLogger
+open Internal.Utilities.Library
 
 /// This represents the thread-local state established as each task function runs as part of the build.
 ///
@@ -41,7 +42,7 @@ let wrapThreadStaticInfo computation =
 
 type Async<'T> with
 
-    static member AwaitNode(node: NodeCode<'T>) =
+    static member AwaitNodeCode(node: NodeCode<'T>) =
         match node with
         | Node(computation) -> wrapThreadStaticInfo computation
 
@@ -90,7 +91,7 @@ type NodeCodeBuilder() =
                 CompileThreadStatic.ErrorLogger <- value.ErrorLogger
                 CompileThreadStatic.BuildPhase <- value.Phase
                 try
-                    return! binder value |> Async.AwaitNode
+                    return! binder value |> Async.AwaitNodeCode
                 finally
                     (value :> IDisposable).Dispose()
             }
@@ -104,7 +105,7 @@ type NodeCode private () =
     static let cancellationToken =
         Node(wrapThreadStaticInfo Async.CancellationToken)
 
-    static member RunImmediate (computation: NodeCode<'T>, ?ct: CancellationToken) =
+    static member RunImmediateWithoutCancellation (computation: NodeCode<'T>) =
         let errorLogger = CompileThreadStatic.ErrorLogger
         let phase = CompileThreadStatic.BuildPhase
         try
@@ -113,9 +114,9 @@ type NodeCode private () =
                     async {
                         CompileThreadStatic.ErrorLogger <- errorLogger
                         CompileThreadStatic.BuildPhase <- phase
-                        return! computation |> Async.AwaitNode
+                        return! computation |> Async.AwaitNodeCode
                     }
-                Async.StartImmediateAsTask(work, cancellationToken=defaultArg ct CancellationToken.None).Result
+                Async.StartImmediateAsTask(work, cancellationToken=CancellationToken.None).Result
             finally
                 CompileThreadStatic.ErrorLogger <- errorLogger
                 CompileThreadStatic.BuildPhase <- phase
@@ -123,7 +124,7 @@ type NodeCode private () =
         | :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
             raise(ex.InnerExceptions.[0])
 
-    static member StartAsTask (computation: NodeCode<'T>, ?ct: CancellationToken) =
+    static member StartAsTask_ForTesting (computation: NodeCode<'T>, ?ct: CancellationToken) =
         let errorLogger = CompileThreadStatic.ErrorLogger
         let phase = CompileThreadStatic.BuildPhase
         try
@@ -131,7 +132,7 @@ type NodeCode private () =
                 async {
                     CompileThreadStatic.ErrorLogger <- errorLogger
                     CompileThreadStatic.BuildPhase <- phase
-                    return! computation |> Async.AwaitNode
+                    return! computation |> Async.AwaitNodeCode
                 }
             Async.StartAsTask(work, cancellationToken=defaultArg ct CancellationToken.None)
         finally
@@ -139,6 +140,9 @@ type NodeCode private () =
             CompileThreadStatic.BuildPhase <- phase
 
     static member CancellationToken = cancellationToken
+
+    static member FromCancellable(computation: Cancellable<'T>) = 
+        Node(wrapThreadStaticInfo (Cancellable.toAsync computation))
 
     static member AwaitAsync(computation: Async<'T>) = 
         Node(wrapThreadStaticInfo computation)
@@ -149,7 +153,7 @@ type NodeCode private () =
     static member AwaitTask(task: Task) =
         Node(wrapThreadStaticInfo(Async.AwaitTask task))
 
-    static member AwaitWaitHandle(waitHandle: WaitHandle) =
+    static member AwaitWaitHandle_ForTesting(waitHandle: WaitHandle) =
         Node(wrapThreadStaticInfo (Async.AwaitWaitHandle(waitHandle)))
 
     static member Sleep(ms: int) =
@@ -230,7 +234,7 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
                                 replyChannel.Reply(Ok cachedResult.Result)
                             else
                                 // This computation can only be canceled if the requestCount reaches zero.
-                                let! result = computation |> Async.AwaitNode
+                                let! result = computation |> Async.AwaitNodeCode
                                 cachedResult <- Task.FromResult(result)
                                 cachedResultNode <- node { return result }
                                 computation <- Unchecked.defaultof<_>
@@ -253,7 +257,7 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
         else
             Unchecked.defaultof<_>
 
-    member _.GetValue() =
+    member _.GetOrComputeValue() =
         // fast path
         if isCachedResultNodeNotNull() then
             cachedResultNode
@@ -346,7 +350,7 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
                                         agent <- Unchecked.defaultof<_>
             }
 
-        member _.TryGetValue() = 
+        member _.TryPeekValue() = 
             match cachedResult with
             | null -> ValueNone
             | _ -> ValueSome cachedResult.Result

@@ -99,7 +99,7 @@ module BuildGraphTests =
 
         Assert.shouldBeTrue weak.IsAlive
 
-        NodeCode.RunImmediate(graphNode.GetValue())
+        NodeCode.RunImmediateWithoutCancellation(graphNode.GetValue())
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -140,7 +140,7 @@ module BuildGraphTests =
 
         let ex =
             try
-                NodeCode.RunImmediate(work, ct = cts.Token)
+                NodeCode.RunImmediateWithoutCancellation(work, ct = cts.Token)
                 |> ignore
                 failwith "Should have canceled"
             with
@@ -170,7 +170,7 @@ module BuildGraphTests =
 
         let ex =
             try
-                NodeCode.RunImmediate(graphNode.GetValue(), ct = cts.Token)
+                NodeCode.RunImmediateWithoutCancellation(graphNode.GetValue(), ct = cts.Token)
                 |> ignore
                 failwith "Should have canceled"
             with
@@ -215,7 +215,7 @@ module BuildGraphTests =
 
         cts.Cancel()
         resetEvent.Set() |> ignore
-        NodeCode.RunImmediate(work)
+        NodeCode.RunImmediateWithoutCancellation(work)
         |> ignore
 
         Assert.shouldBeTrue cts.IsCancellationRequested
@@ -261,7 +261,7 @@ module BuildGraphTests =
 
         cts.Cancel()
         resetEvent.Set() |> ignore
-        NodeCode.RunImmediate(work)
+        NodeCode.RunImmediateWithoutCancellation(work)
         |> ignore
 
         Assert.shouldBeTrue cts.IsCancellationRequested

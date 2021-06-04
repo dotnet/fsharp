@@ -6,6 +6,7 @@ open System
 open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.ErrorLogger
+open Internal.Utilities.Library
 
 /// This represents the global state established as each task function runs as part of the build.
 ///
@@ -19,7 +20,7 @@ type NodeCode<'T>
 
 type Async<'T> with
 
-    static member AwaitNode: node: NodeCode<'T> -> Async<'T>
+    static member AwaitNodeCode: node: NodeCode<'T> -> Async<'T>
 
 [<Sealed>]
 type NodeCodeBuilder =
@@ -49,23 +50,27 @@ val node : NodeCodeBuilder
 [<AbstractClass;Sealed>]
 type NodeCode =
 
-    static member RunImmediate : computation: NodeCode<'T> * ?ct: CancellationToken -> 'T
+    static member RunImmediateWithoutCancellation: computation: NodeCode<'T> -> 'T
 
-    static member StartAsTask : computation: NodeCode<'T> * ?ct: CancellationToken -> Task<'T>
+    static member CancellationToken: NodeCode<CancellationToken>
 
-    static member CancellationToken : NodeCode<CancellationToken>
+    static member Sequential: computations: NodeCode<'T> seq -> NodeCode<'T []>
 
-    static member Sequential : computations: NodeCode<'T> seq -> NodeCode<'T []>
+    /// Execute the cancellable computation synchronously using the ambient cancellation token of
+    /// the NodeCode.
+    static member FromCancellable: computation: Cancellable<'T> -> NodeCode<'T>
 
-    static member AwaitWaitHandle : waitHandle: WaitHandle -> NodeCode<bool>
+    /// Only used for testing, do not use
+    static member StartAsTask_ForTesting: computation: NodeCode<'T> * ?ct: CancellationToken -> Task<'T>
 
-    static member Sleep : ms: int -> NodeCode<unit>
+    /// Only used for testing, do not use
+    static member AwaitWaitHandle_ForTesting: waitHandle: WaitHandle -> NodeCode<bool>
 
 [<RequireQualifiedAccess>]
 module internal GraphNode =
 
     /// Allows to specify the language for error messages
-    val SetPreferredUILang : preferredUiLang: string option -> unit
+    val SetPreferredUILang: preferredUiLang: string option -> unit
 
 /// Lazily evaluate the computation asynchronously, then strongly cache the result.
 /// Once the result has been cached, the computation function will also be removed, or 'null'ed out, 
@@ -73,17 +78,16 @@ module internal GraphNode =
 [<Sealed>]
 type internal GraphNode<'T> =
 
-    /// <param name="retryCompute">When set to 'true', subsequent requesters will retry the computation if the first-in request cancels.
-    ///     Retrying computations will have better callstacks.</param>
-    /// <param name="computation">The computation code to run.</param>
-    new : retryCompute: bool * computation: NodeCode<'T> -> GraphNode<'T>
+    /// - retryCompute - When set to 'true', subsequent requesters will retry the computation if the first-in request cancels. Retrying computations will have better callstacks.
+    /// - computation - The computation code to run.
+    new: retryCompute: bool * computation: NodeCode<'T> -> GraphNode<'T>
 
     /// By default, 'retryCompute' is 'true'.
     new : computation: NodeCode<'T> -> GraphNode<'T>
 
-    member GetValue: unit -> NodeCode<'T>
+    member GetOrComputeValue: unit -> NodeCode<'T>
 
-    member TryGetValue: unit -> 'T voption
+    member TryPeekValue: unit -> 'T voption
 
     member HasValue: bool
 

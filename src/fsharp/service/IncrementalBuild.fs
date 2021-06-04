@@ -275,10 +275,10 @@ type BoundModel private (tcConfig: TcConfig,
                         node {
                             // Optimization so we have less of a chance to duplicate work.
                             if fullGraphNode.IsComputing then
-                                let! tcInfo, _ = fullGraphNode.GetValue()
+                                let! tcInfo, _ = fullGraphNode.GetOrComputeValue()
                                 return tcInfo
                             else
-                                match fullGraphNode.TryGetValue() with
+                                match fullGraphNode.TryPeekValue() with
                                 | ValueSome(tcInfo, _) -> return tcInfo
                                 | _ ->
                                     match! this.TypeCheck(true) with
@@ -289,7 +289,7 @@ type BoundModel private (tcConfig: TcConfig,
                 else
                     GraphNode(
                         node {
-                            let! tcInfo, _ = fullGraphNode.GetValue()
+                            let! tcInfo, _ = fullGraphNode.GetOrComputeValue()
                             return tcInfo
                         }
                     )
@@ -336,7 +336,7 @@ type BoundModel private (tcConfig: TcConfig,
             let newTcInfoStateOpt =
                 match tcInfoNode with
                 | TcInfoNode(_, fullGraphNode) -> 
-                    let tcInfo, _ = fullGraphNode.TryGetValue().Value
+                    let tcInfo, _ = fullGraphNode.TryPeekValue().Value
                     Some(PartialState tcInfo)
 
             BoundModel(
@@ -383,11 +383,11 @@ type BoundModel private (tcConfig: TcConfig,
                     match tcInfoNode with
                     | TcInfoNode(partialGraphNode, fullGraphNode) ->
                         if fullGraphNode.HasValue then
-                            let! tcInfo, tcInfoExtras = fullGraphNode.GetValue()
+                            let! tcInfo, tcInfoExtras = fullGraphNode.GetOrComputeValue()
                             let finishTcInfo = createFinish tcInfo
                             return FullState(finishTcInfo, tcInfoExtras)
                         else
-                            let! tcInfo = partialGraphNode.GetValue()
+                            let! tcInfo = partialGraphNode.GetOrComputeValue()
                             let finishTcInfo = createFinish tcInfo
                             return PartialState(finishTcInfo)
                 }
@@ -413,15 +413,15 @@ type BoundModel private (tcConfig: TcConfig,
     member this.GetTcInfo() =
         match tcInfoNode with
         | TcInfoNode(partialGraphNode, _) -> 
-            partialGraphNode.GetValue()
+            partialGraphNode.GetOrComputeValue()
 
     member this.TryTcInfo =
         match tcInfoNode with
         | TcInfoNode(partialGraphNode, fullGraphNode) ->
-            match partialGraphNode.TryGetValue() with
+            match partialGraphNode.TryPeekValue() with
             | ValueSome tcInfo -> Some tcInfo
             | _ ->
-                match fullGraphNode.TryGetValue() with
+                match fullGraphNode.TryPeekValue() with
                 | ValueSome(tcInfo, _) -> Some tcInfo
                 | _ -> None
 
@@ -429,14 +429,14 @@ type BoundModel private (tcConfig: TcConfig,
         match tcInfoNode with
         | TcInfoNode(_, fullGraphNode) ->
             node {
-                let! _, tcInfoExtras = fullGraphNode.GetValue()
+                let! _, tcInfoExtras = fullGraphNode.GetOrComputeValue()
                 return tcInfoExtras
             }
 
     member this.GetTcInfoWithExtras() =
         match tcInfoNode with
         | TcInfoNode(_, fullGraphNode) ->
-            fullGraphNode.GetValue()
+            fullGraphNode.GetOrComputeValue()
 
     member private this.TypeCheck (partialCheck: bool) : NodeCode<TcInfoState> =
         match partialCheck, tcInfoStateOpt with
@@ -464,108 +464,96 @@ type BoundModel private (tcConfig: TcConfig,
                     let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, capturingErrorLogger)
                     use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
 
-                    return! node {
-                        beforeFileChecked.Trigger filename
-                        let prevModuleNamesDict = prevTcInfo.moduleNamesDict
-                        let prevTcState = prevTcInfo.tcState
-                        let prevTcErrorsRev = prevTcInfo.tcErrorsRev
-                        let prevTcDependencyFiles = prevTcInfo.tcDependencyFiles
+                    beforeFileChecked.Trigger filename
+                    let prevModuleNamesDict = prevTcInfo.moduleNamesDict
+                    let prevTcState = prevTcInfo.tcState
+                    let prevTcErrorsRev = prevTcInfo.tcErrorsRev
+                    let prevTcDependencyFiles = prevTcInfo.tcDependencyFiles
                         
-                        ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filename, tcImports.DependencyProvider) |> ignore
-                        let sink = TcResultsSinkImpl(tcGlobals)
-                        let hadParseErrors = not (Array.isEmpty parseErrors)
-                        let input, moduleNamesDict = DeduplicateParsedInputModuleName prevModuleNamesDict input
+                    ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filename, tcImports.DependencyProvider) |> ignore
+                    let sink = TcResultsSinkImpl(tcGlobals)
+                    let hadParseErrors = not (Array.isEmpty parseErrors)
+                    let input, moduleNamesDict = DeduplicateParsedInputModuleName prevModuleNamesDict input
                         
-                        Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
+                    Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
                         
-                        let! ct = NodeCode.CancellationToken
-                        let (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
-                            let res =
-                                eventually {
-                                    return!
-                                        TypeCheckOneInputEventually
-                                            ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0),
-                                                tcConfig, tcImports,
-                                                tcGlobals,
-                                                None,
-                                                (if partialCheck then TcResultsSink.NoSink else TcResultsSink.WithSink sink),
-                                                prevTcState, input,
-                                                partialCheck)
-                                } 
-                                |> Eventually.reusing (fun () -> new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) :> IDisposable)
-                                |> Eventually.force ct
-                            match res with
-                            | ValueOrCancelled.Cancelled ex -> raise ex
-                            | ValueOrCancelled.Value res -> res
-                            
+                    let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
+                        TypeCheckOneInput
+                            ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0),
+                                tcConfig, tcImports,
+                                tcGlobals,
+                                None,
+                                (if partialCheck then TcResultsSink.NoSink else TcResultsSink.WithSink sink),
+                                prevTcState, input,
+                                partialCheck)
+                        |> NodeCode.FromCancellable        
                         
-                        Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
+                    Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
                         
-                        fileChecked.Trigger filename
-                        let newErrors = Array.append parseErrors (capturingErrorLogger.GetDiagnostics())
+                    fileChecked.Trigger filename
+                    let newErrors = Array.append parseErrors (capturingErrorLogger.GetDiagnostics())
                         
-                        let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls
+                    let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls
                         
-                        let tcInfo =
+                    let tcInfo =
+                        {
+                            tcState = tcState
+                            tcEnvAtEndOfFile = tcEnvAtEndOfFile
+                            moduleNamesDict = moduleNamesDict
+                            latestCcuSigForFile = Some ccuSigForFile
+                            tcErrorsRev = newErrors :: prevTcErrorsRev
+                            topAttribs = Some topAttribs
+                            tcDependencyFiles = filename :: prevTcDependencyFiles
+                            sigNameOpt =
+                                match input with
+                                | ParsedInput.SigFile(ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
+                                    Some(fileName, qualName)
+                                | _ ->
+                                    None
+                        }
+                        
+                    if partialCheck then
+                        return PartialState tcInfo
+                    else
+                        let! prevTcInfoOptional = prevTcInfoExtras
+                        // Build symbol keys
+                        let itemKeyStore, semanticClassification =
+                            if enableBackgroundItemKeyStoreAndSemanticClassification then
+                                Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
+                                let sResolutions = sink.GetResolutions()
+                                let builder = ItemKeyStoreBuilder()
+                                let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with
+                                                                    member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Position.posEq s1 s2 && Position.posEq e1 e2
+                                                                    member _.GetHashCode o = o.GetHashCode() })
+                                sResolutions.CapturedNameResolutions
+                                |> Seq.iter (fun cnr ->
+                                    let r = cnr.Range
+                                    if preventDuplicates.Add struct(r.Start, r.End) then
+                                        builder.Write(cnr.Range, cnr.Item))
+                        
+                                let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
+                        
+                                let sckBuilder = SemanticClassificationKeyStoreBuilder()
+                                sckBuilder.WriteAll semanticClassification
+                        
+                                let res = builder.TryBuildAndReset(), sckBuilder.TryBuildAndReset()
+                                Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
+                                res
+                            else
+                                None, None
+                        
+                        let tcInfoExtras =
                             {
-                                tcState = tcState
-                                tcEnvAtEndOfFile = tcEnvAtEndOfFile
-                                moduleNamesDict = moduleNamesDict
-                                latestCcuSigForFile = Some ccuSigForFile
-                                tcErrorsRev = newErrors :: prevTcErrorsRev
-                                topAttribs = Some topAttribs
-                                tcDependencyFiles = filename :: prevTcDependencyFiles
-                                sigNameOpt =
-                                    match input with
-                                    | ParsedInput.SigFile(ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
-                                        Some(fileName, qualName)
-                                    | _ ->
-                                        None
+                                /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
+                                latestImplFile = if keepAssemblyContents then implFile else None
+                                tcResolutionsRev = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty) :: prevTcInfoOptional.tcResolutionsRev
+                                tcSymbolUsesRev = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: prevTcInfoOptional.tcSymbolUsesRev
+                                tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: prevTcInfoOptional.tcOpenDeclarationsRev
+                                itemKeyStore = itemKeyStore
+                                semanticClassificationKeyStore = semanticClassification
                             }
                         
-                        if partialCheck then
-                            return PartialState tcInfo
-                        else
-                            let! prevTcInfoOptional = prevTcInfoExtras
-                            // Build symbol keys
-                            let itemKeyStore, semanticClassification =
-                                if enableBackgroundItemKeyStoreAndSemanticClassification then
-                                    Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
-                                    let sResolutions = sink.GetResolutions()
-                                    let builder = ItemKeyStoreBuilder()
-                                    let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with
-                                                                        member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Position.posEq s1 s2 && Position.posEq e1 e2
-                                                                        member _.GetHashCode o = o.GetHashCode() })
-                                    sResolutions.CapturedNameResolutions
-                                    |> Seq.iter (fun cnr ->
-                                        let r = cnr.Range
-                                        if preventDuplicates.Add struct(r.Start, r.End) then
-                                            builder.Write(cnr.Range, cnr.Item))
-                        
-                                    let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
-                        
-                                    let sckBuilder = SemanticClassificationKeyStoreBuilder()
-                                    sckBuilder.WriteAll semanticClassification
-                        
-                                    let res = builder.TryBuildAndReset(), sckBuilder.TryBuildAndReset()
-                                    Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
-                                    res
-                                else
-                                    None, None
-                        
-                            let tcInfoExtras =
-                                {
-                                    /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
-                                    latestImplFile = if keepAssemblyContents then implFile else None
-                                    tcResolutionsRev = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty) :: prevTcInfoOptional.tcResolutionsRev
-                                    tcSymbolUsesRev = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: prevTcInfoOptional.tcSymbolUsesRev
-                                    tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: prevTcInfoOptional.tcOpenDeclarationsRev
-                                    itemKeyStore = itemKeyStore
-                                    semanticClassificationKeyStore = semanticClassification
-                                }
-                        
-                            return FullState(tcInfo, tcInfoExtras)
-                    }
+                        return FullState(tcInfo, tcInfoExtras)
             }
 
     static member Create(tcConfig: TcConfig,
@@ -647,7 +635,7 @@ type FrameworkImportsCache(size) =
                         lazyWork
                 )
 
-            return! lazyWork.GetValue()
+            return! lazyWork.GetOrComputeValue()
           }
         return tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolved
       }
@@ -926,8 +914,7 @@ type IncrementalBuilder(
             try
                 let tcState, tcAssemblyExpr, ccuContents = TypeCheckClosedInputSetFinish (mimpls, tcState)
 
-                let generatedCcu =
-                    { tcState.Ccu with target = { tcState.Ccu.target with Contents = ccuContents } }
+                let generatedCcu = tcState.Ccu.CloneWithFinalizedContents(ccuContents)
 
                 // Compute the identity of the generated assembly based on attributes, options etc.
                 // Some of this is duplicated from fsc.fs
@@ -999,7 +986,7 @@ type IncrementalBuilder(
         let syntaxTree = GetSyntaxTree fileInfo
         GraphNode(
             node {
-                let! prevBoundModel = prevBoundModelGraphNode.GetValue()
+                let! prevBoundModel = prevBoundModelGraphNode.GetOrComputeValue()
                 return! TypeCheckTask enablePartialTypeChecking prevBoundModel syntaxTree
             }
         )
@@ -1007,10 +994,10 @@ type IncrementalBuilder(
     let rec createFinalizeBoundModelGraphNode (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) =
         GraphNode(node {
             // Compute last bound model then get all the evaluated models.
-            let! _ = boundModels.[boundModels.Count - 1].GetValue()
+            let! _ = boundModels.[boundModels.Count - 1].GetOrComputeValue()
             let boundModels =
                 boundModels
-                |> Seq.map (fun x -> x.TryGetValue().Value)
+                |> Seq.map (fun x -> x.TryPeekValue().Value)
                 |> ImmutableArray.CreateRange
 
             let! result = FinalizeTypeCheckTask boundModels
@@ -1023,7 +1010,7 @@ type IncrementalBuilder(
         let stamp = StampFileNameTask cache fileInfo
 
         if currentStamp <> stamp then
-            match state.boundModels.[slot].TryGetValue() with
+            match state.boundModels.[slot].TryPeekValue() with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
             | ValueSome(boundModel) when enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
                 let newBoundModel = boundModel.ClearTcInfoExtras()
@@ -1090,7 +1077,7 @@ type IncrementalBuilder(
             state
 
     let tryGetSlot (state: IncrementalBuilderState) slot =
-        match state.boundModels.[slot].TryGetValue() with
+        match state.boundModels.[slot].TryPeekValue() with
         | ValueSome boundModel ->
             (boundModel, state.stampedFileNames.[slot])
             |> Some
@@ -1110,7 +1097,7 @@ type IncrementalBuilder(
             if targetSlot < 0 then
                 return Some(initialBoundModel, DateTime.MinValue)
             else
-                let! boundModel = state.boundModels.[targetSlot].GetValue()
+                let! boundModel = state.boundModels.[targetSlot].GetOrComputeValue()
                 return Some(boundModel, state.stampedFileNames.[targetSlot])
         }
 
@@ -1198,7 +1185,7 @@ type IncrementalBuilder(
       node {
         let cache = TimeStampCache defaultTimeStamp // One per step
         do! checkFileTimeStamps cache
-        let! _ = currentState.finalizedBoundModel.GetValue()
+        let! _ = currentState.finalizedBoundModel.GetOrComputeValue()
         projectChecked.Trigger()
       }
 
@@ -1270,7 +1257,7 @@ type IncrementalBuilder(
       node {
         let cache = TimeStampCache(defaultTimeStamp)
         do! checkFileTimeStamps cache
-        let! result = currentState.finalizedBoundModel.GetValue()
+        let! result = currentState.finalizedBoundModel.GetOrComputeValue()
         match result with
         | ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp) ->
             return PartialCheckResults (boundModel, timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt

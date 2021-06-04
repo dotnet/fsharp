@@ -48,8 +48,6 @@ open FSharp.Core.CompilerServices
 
 let (++) x s = x @ [s]
 
-let assemblyResolutionGate = obj()
-
 //----------------------------------------------------------------------------
 // Signature and optimization data blobs
 //--------------------------------------------------------------------------
@@ -285,6 +283,13 @@ type CcuLoadFailureAction =
     | RaiseError
     | ReturnNone
 
+type TcImportsLockToken() =
+   interface LockToken
+
+type TcImportsLock = Lock<TcImportsLockToken>   
+
+let RequireTcImportsLock (_tcitok: TcImportsLockToken, _thingProtected: 'T) = ()
+
 type TcConfig with
 
     member tcConfig.TryResolveLibWithDirectories (r: AssemblyReference) =
@@ -323,12 +328,10 @@ type TcConfig with
                     not (Range.equals r rangeCmdArgs) &&
                     FileSystem.IsPathRootedShim r.FileName
 
-                lock assemblyResolutionGate (fun () ->
-                    if isPoundRReference m then
-                        tcConfig.GetSearchPathsForLibraryFiles() @ [Path.GetDirectoryName(m.FileName)]
-                    else
-                        tcConfig.GetSearchPathsForLibraryFiles()
-                )
+                if isPoundRReference m then
+                    tcConfig.GetSearchPathsForLibraryFiles() @ [Path.GetDirectoryName(m.FileName)]
+                else
+                    tcConfig.GetSearchPathsForLibraryFiles()
 
             let resolved = TryResolveFileUsingPaths(searchPaths, m, nm)
             match resolved with
@@ -366,7 +369,7 @@ type TcConfig with
         | None ->
             match ccuLoadFailureAction with
             | CcuLoadFailureAction.RaiseError ->
-                let searchMessage = String.concat "\n " (lock assemblyResolutionGate (fun () -> tcConfig.GetSearchPathsForLibraryFiles()))
+                let searchMessage = String.concat "\n " (tcConfig.GetSearchPathsForLibraryFiles())
                 raise (FileNameNotResolved(nm, searchMessage, m))
             | CcuLoadFailureAction.ReturnNone -> None
 
@@ -402,18 +405,16 @@ type TcConfig with
             | Some IA64 -> "ia64"
 
         try
-            lock assemblyResolutionGate (fun () ->
-                tcConfig.legacyReferenceResolver.Impl.Resolve
-                   (tcConfig.resolutionEnvironment,
-                    references,
-                    tcConfig.targetFrameworkVersion,
-                    tcConfig.GetTargetFrameworkDirectories(),
-                    targetProcessorArchitecture,
-                    tcConfig.fsharpBinariesDir, // FSharp binaries directory
-                    tcConfig.includes, // Explicit include directories
-                    tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)
-                    logMessage showMessages, logDiagnostic showMessages)
-            )
+            tcConfig.legacyReferenceResolver.Impl.Resolve
+                (tcConfig.resolutionEnvironment,
+                references,
+                tcConfig.targetFrameworkVersion,
+                tcConfig.GetTargetFrameworkDirectories(),
+                targetProcessorArchitecture,
+                tcConfig.fsharpBinariesDir, // FSharp binaries directory
+                tcConfig.includes, // Explicit include directories
+                tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)
+                logMessage showMessages, logDiagnostic showMessages)
         with
             | LegacyResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(), errorAndWarningRange))
 
@@ -559,9 +560,7 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                 successes, failures
             else
                 // we don't want to do assembly resolution concurrently, we assume MSBuild doesn't handle this
-                lock assemblyResolutionGate (fun () ->
-                    TcConfig.TryResolveLibsUsingMSBuildRules (tcConfig, assemblyList, rangeStartup, ResolveAssemblyReferenceMode.ReportErrors)
-                )
+                TcConfig.TryResolveLibsUsingMSBuildRules (tcConfig, assemblyList, rangeStartup, ResolveAssemblyReferenceMode.ReportErrors)
         TcAssemblyResolutions(tcConfig, resolved, unresolved @ knownUnresolved)
 
     static member GetAllDllReferences (tcConfig: TcConfig) = [
@@ -602,21 +601,22 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
 #if DEBUG
         let mutable itFailed = false
         let addedText = "\nIf you want to debug this right now, attach a debugger, and put a breakpoint in 'CompileOps.fs' near the text '!itFailed', and you can re-step through the assembly resolution logic."
-        unresolved
-        |> List.iter (fun (UnresolvedAssemblyReference(referenceText, _ranges)) ->
+
+        for (UnresolvedAssemblyReference(referenceText, _ranges)) in unresolved do
             if referenceText.Contains("mscorlib") then
                 System.Diagnostics.Debug.Assert(false, sprintf "whoops, did not resolve mscorlib: '%s'%s" referenceText addedText)
-                itFailed <- true)
-        frameworkDLLs
-        |> List.iter (fun x ->
+                itFailed <- true
+
+        for x in frameworkDLLs do
             if not(FileSystem.IsPathRootedShim(x.resolvedPath)) then
                 System.Diagnostics.Debug.Assert(false, sprintf "frameworkDLL should be absolute path: '%s'%s" x.resolvedPath addedText)
-                itFailed <- true)
-        nonFrameworkReferences
-        |> List.iter (fun x ->
+                itFailed <- true
+
+        for x in nonFrameworkReferences do
             if not(FileSystem.IsPathRootedShim(x.resolvedPath)) then
                 System.Diagnostics.Debug.Assert(false, sprintf "nonFrameworkReference should be absolute path: '%s'%s" x.resolvedPath addedText)
-                itFailed <- true)
+                itFailed <- true
+
         if itFailed then
             // idea is, put a breakpoint here and then step through
             let assemblyList = TcAssemblyResolutions.GetAllDllReferences tcConfig
@@ -767,17 +767,31 @@ type RawFSharpAssemblyData (ilModule: ILModuleDef, ilAssemblyRefs) =
 //--------------------------------------------------------------------------
 
 [<Sealed>]
-type TcImportsSafeDisposal(disposeActions: ResizeArray<unit -> unit>,disposeTypeProviderActions: ResizeArray<unit -> unit>) =
+type TcImportsSafeDisposal(tciLock: TcImportsLock, disposeActions: ResizeArray<unit -> unit>,disposeTypeProviderActions: ResizeArray<unit -> unit>) =
 
     let mutable isDisposed = false
 
     let dispose () =
+      tciLock.AcquireLock (fun tcitok -> 
+
+        RequireTcImportsLock (tcitok, isDisposed)
+        RequireTcImportsLock (tcitok, disposeTypeProviderActions)
+        RequireTcImportsLock (tcitok, disposeActions)
+
         // disposing deliberately only closes this tcImports, not the ones up the chain
         isDisposed <- true
         if verbose then
             dprintf "disposing of TcImports, %d binaries\n" disposeActions.Count
-        for action in disposeTypeProviderActions do action()
-        for action in disposeActions do action()
+        
+        let actions1 = disposeTypeProviderActions |> Seq.toArray
+        let actions2 = disposeActions |> Seq.toArray
+
+        disposeTypeProviderActions.Clear()
+        disposeActions.Clear()
+
+        for action in actions1 do action()
+        for action in actions2 do action()
+      )
 
     override _.Finalize() =
         dispose ()
@@ -800,10 +814,12 @@ type TcImportsDllInfoHack =
         FileName: string
     }
 
-and TcImportsWeakHack (tcImports: WeakReference<TcImports>) =
+and TcImportsWeakHack (tciLock: TcImportsLock, tcImports: WeakReference<TcImports>) =
     let mutable dllInfos: TcImportsDllInfoHack list = []
 
     member _.SetDllInfos (value: ImportedBinary list) =
+      tciLock.AcquireLock <| fun tcitok ->
+        RequireTcImportsLock(tcitok, dllInfos)
         dllInfos <- value |> List.map (fun x -> { FileName = x.FileName })
 
     member _.Base: TcImportsWeakHack option =
@@ -831,29 +847,28 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #endif
        =
 
+    let tciLock = TcImportsLock()
+
+    //---- Start protected by tciLock -------
     let mutable resolutions = initialResolutions
-    let mutable importsBase: TcImports option = importsBase
     let mutable dllInfos: ImportedBinary list = []
     let mutable dllTable: NameMap<ImportedBinary> = NameMap.empty
     let mutable ccuInfos: ImportedAssembly list = []
     let mutable ccuTable: NameMap<ImportedAssembly> = NameMap.empty
-
-    /// ccuThunks is a ConcurrentDictionary thus threadsafe
-    /// the key is a ccuThunk object, the value is a (unit->unit) func that when executed
-    /// the func is used to fix up the func and operates on data captured at the time the func is created.
-    /// func() is captured during phase2() of RegisterAndPrepareToImportReferencedDll(..) and PrepareToImportReferencedFSharpAssembly ( .. )
-    let mutable ccuThunks = new ConcurrentDictionary<CcuThunk, (unit -> unit)>()
-
+    let mutable ccuThunks = ResizeArray<CcuThunk * (unit -> unit)>()
     let disposeActions = ResizeArray()
-    let mutable disposed = false
-    let mutable tcGlobals = None
     let disposeTypeProviderActions = ResizeArray()
+
 #if !NO_EXTENSIONTYPING
-    let mutable generatedTypeRoots = new System.Collections.Generic.Dictionary<ILTypeRef, int * ProviderGeneratedType>()
-    let mutable tcImportsWeak = TcImportsWeakHack (WeakReference<_> this)
+    let mutable generatedTypeRoots = new Dictionary<ILTypeRef, int * ProviderGeneratedType>()
+    let tcImportsWeak = TcImportsWeakHack (tciLock, WeakReference<_> this)
 #endif
 
-    let disposal = new TcImportsSafeDisposal(disposeActions, disposeTypeProviderActions)
+    let disposal = new TcImportsSafeDisposal(tciLock, disposeActions, disposeTypeProviderActions)
+    //---- End protected by tciLock -------
+
+    let mutable disposed = false // this doesn't need locking, it's only for debugging
+    let mutable tcGlobals = None // this doesn't need locking, it's set during construction of the TcImports
 
     let CheckDisposed() =
         if disposed then assert false
@@ -862,24 +877,22 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         CheckDisposed()
         (disposal :> IDisposable).Dispose()
 
-    // This is used to fixe up unresolved ccuThunks that were created during assembly import.
-    // the ccuThunks dictionary is a ConcurrentDictionary and thus threadsafe.
-    // Algorithm:
     //   Get a snapshot of the current unFixedUp ccuThunks.
     //   for each of those thunks, remove them from the dictionary, so any parallel threads can't do this work
     //      If it successfully removed it from the dictionary then do the fixup
     //          If the thunk remains unresolved add it back to the ccuThunks dictionary for further processing
     //      If not then move on to the next thunk
     let fixupOrphanCcus () =
-        let keys = ccuThunks.Keys
-        for ccuThunk in keys do
-            match ccuThunks.TryRemove(ccuThunk) with
-            | true, func ->
+      tciLock.AcquireLock <| fun tcitok ->
+        RequireTcImportsLock(tcitok, ccuThunks)
+        let contents = ccuThunks |> Seq.toArray
+        let unsuccessful =
+            [ for (ccuThunk, func) in contents do
                 if ccuThunk.IsUnresolvedReference then
                     func()
                 if ccuThunk.IsUnresolvedReference then
-                    ccuThunks.TryAdd(ccuThunk, func) |> ignore
-            | _ -> ()
+                    yield (ccuThunk, func) ]
+        ccuThunks <- ResizeArray (unsuccessful)
 
     let availableToOptionalCcu = function
         | ResolvedCcu ccu -> Some ccu
@@ -900,16 +913,20 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         | None -> false
 
     member internal tcImports.Base =
-            CheckDisposed()
-            importsBase
+        CheckDisposed()
+        importsBase
 
     member tcImports.CcuTable =
-            CheckDisposed()
-            ccuTable
+      tciLock.AcquireLock <| fun tcitok ->
+        RequireTcImportsLock(tcitok, ccuTable)
+        CheckDisposed()
+        ccuTable
 
     member tcImports.DllTable =
-            CheckDisposed()
-            dllTable
+      tciLock.AcquireLock <| fun tcitok ->
+        RequireTcImportsLock(tcitok, dllTable)
+        CheckDisposed()
+        dllTable
 
 #if !NO_EXTENSIONTYPING
     member tcImports.Weak =
@@ -918,13 +935,19 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #endif
 
     member tcImports.RegisterCcu ccuInfo =
+      tciLock.AcquireLock <| fun tcitok ->
         CheckDisposed()
+        RequireTcImportsLock(tcitok, ccuInfos)
+        RequireTcImportsLock(tcitok, ccuTable)
         ccuInfos <- ccuInfos ++ ccuInfo
         // Assembly Ref Resolution: remove this use of ccu.AssemblyName
         ccuTable <- NameMap.add (ccuInfo.FSharpViewOfMetadata.AssemblyName) ccuInfo ccuTable
 
     member tcImports.RegisterDll dllInfo =
+      tciLock.AcquireLock <| fun tcitok ->
         CheckDisposed()
+        RequireTcImportsLock(tcitok, dllInfos)
+        RequireTcImportsLock(tcitok, dllTable)
         dllInfos <- dllInfos ++ dllInfo
 #if !NO_EXTENSIONTYPING
         tcImportsWeak.SetDllInfos dllInfos
@@ -932,13 +955,17 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         dllTable <- NameMap.add (getNameOfScopeRef dllInfo.ILScopeRef) dllInfo dllTable
 
     member tcImports.GetDllInfos() : ImportedBinary list =
+      tciLock.AcquireLock <| fun tcitok ->
         CheckDisposed()
+        RequireTcImportsLock(tcitok, dllInfos)
         match importsBase with
-        | Some importsBase-> importsBase.GetDllInfos() @ dllInfos
+        | Some importsBase -> importsBase.GetDllInfos() @ dllInfos
         | None -> dllInfos
 
     member tcImports.AllAssemblyResolutions() =
+      tciLock.AcquireLock <| fun tcitok ->
         CheckDisposed()
+        RequireTcImportsLock(tcitok, resolutions)
         let ars = resolutions.GetAssemblyResolutions()
         match importsBase with
         | Some importsBase-> importsBase.AllAssemblyResolutions() @ ars
@@ -965,13 +992,17 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         | None -> error(Error(FSComp.SR.buildCouldNotResolveAssembly assemblyName, m))
 
     member tcImports.GetImportedAssemblies() =
+      tciLock.AcquireLock <| fun tcitok ->
         CheckDisposed()
+        RequireTcImportsLock(tcitok, ccuInfos)
         match importsBase with
-        | Some importsBase-> List.append (importsBase.GetImportedAssemblies()) ccuInfos
+        | Some importsBase -> List.append (importsBase.GetImportedAssemblies()) ccuInfos
         | None -> ccuInfos
 
     member tcImports.GetCcusExcludingBase() =
+      tciLock.AcquireLock <| fun tcitok ->
         CheckDisposed()
+        RequireTcImportsLock(tcitok, ccuInfos)
         ccuInfos |> List.map (fun x -> x.FSharpViewOfMetadata)
 
     member tcImports.GetCcusInDeclOrder() =
@@ -1101,15 +1132,19 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             true, dllinfo.ProviderGeneratedStaticLinkMap
 
     member tcImports.RecordGeneratedTypeRoot root =
+      tciLock.AcquireLock <| fun tcitok ->
         // checking if given ProviderGeneratedType was already recorded before (probably for another set of static parameters)
         let (ProviderGeneratedType(_, ilTyRef, _)) = root
         let index =
+            RequireTcImportsLock(tcitok, generatedTypeRoots)
             match generatedTypeRoots.TryGetValue ilTyRef with
             | true, (index, _) -> index
             | false, _ -> generatedTypeRoots.Count
         generatedTypeRoots.[ilTyRef] <- (index, root)
 
     member tcImports.ProviderGeneratedTypeRoots =
+      tciLock.AcquireLock <| fun tcitok ->
+        RequireTcImportsLock(tcitok, generatedTypeRoots)
         generatedTypeRoots.Values
         |> Seq.sortBy fst
         |> Seq.map snd
@@ -1117,7 +1152,9 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #endif
 
     member private tcImports.AttachDisposeAction action =
+      tciLock.AcquireLock <| fun tcitok ->
         CheckDisposed()
+        RequireTcImportsLock(tcitok, disposeActions)
         disposeActions.Add action
 
 #if !NO_EXTENSIONTYPING
@@ -1530,9 +1567,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                             let fixupThunk () = data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false)))
 
                             // Make a note of all ccuThunks that may still need to be fixed up when other dlls are loaded
-                            for ccuThunk in data.FixupThunks do
-                                if ccuThunk.IsUnresolvedReference then
-                                    ccuThunks.TryAdd(ccuThunk, fun () -> fixupThunk () |> ignore) |> ignore
+                            tciLock.AcquireLock (fun tcitok ->
+                                RequireTcImportsLock(tcitok, ccuThunks)
+                                for ccuThunk in data.FixupThunks do
+                                    if ccuThunk.IsUnresolvedReference then
+                                        ccuThunks.Add(ccuThunk, fun () -> fixupThunk () |> ignore) |> ignore
+                            )
 
                             if verbose then dprintf "found optimization data for CCU %s\n" ccuName
                             Some (fixupThunk ()))
@@ -1571,7 +1611,9 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 fixupThunk()
                 for ccuThunk in data.FixupThunks do
                     if ccuThunk.IsUnresolvedReference then
-                        ccuThunks.TryAdd(ccuThunk, fixupThunk) |> ignore
+                      tciLock.AcquireLock <| fun tcitok ->
+                        RequireTcImportsLock(tcitok, ccuThunks)
+                        ccuThunks.Add(ccuThunk, fixupThunk) |> ignore
                 )
 #if !NO_EXTENSIONTYPING
             ccuRawDataAndInfos |> List.iter (fun (_, _, phase2) -> phase2())
@@ -1679,7 +1721,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 | OkResult (warns, res) ->
                     ReportWarnings warns
                     tcImports.RegisterAndImportReferencedAssemblies(ctok, res) 
-                    |> NodeCode.RunImmediate 
+                    |> NodeCode.RunImmediateWithoutCancellation 
                     |> ignore
                     true
                 | ErrorResult (_warns, _err) ->
@@ -1701,14 +1743,21 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
     /// Only used by F# Interactive
     member tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName (simpleAssemName) : string option =
+      tciLock.AcquireLock <| fun tcitok ->
+        RequireTcImportsLock(tcitok, resolutions)
         resolutions.TryFindBySimpleAssemblyName (simpleAssemName) |> Option.map (fun r -> r.resolvedPath)
 
     /// Only used by F# Interactive
     member tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(assemblyRef: ILAssemblyRef) : string option =
+      tciLock.AcquireLock <| fun tcitok ->
+        RequireTcImportsLock(tcitok, resolutions)
         resolutions.TryFindByExactILAssemblyRef (assemblyRef) |> Option.map (fun r -> r.resolvedPath)
 
     member tcImports.TryResolveAssemblyReference(ctok, assemblyReference: AssemblyReference, mode: ResolveAssemblyReferenceMode) : OperationResult<AssemblyResolution list> =
+      tciLock.AcquireLock <| fun tcitok ->
         let tcConfig = tcConfigP.Get ctok
+
+        RequireTcImportsLock(tcitok, resolutions)
         // First try to lookup via the original reference text.
         match resolutions.TryFindByOriginalReference assemblyReference with
         | Some assemblyResolution ->
@@ -1918,7 +1967,7 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, referenceRa
     let resolutions = CommitOperationResult(tcImports.TryResolveAssemblyReference(ctok, AssemblyReference(referenceRange, file, None), ResolveAssemblyReferenceMode.ReportErrors))
     let dllinfos, ccuinfos = 
         tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions) 
-        |> NodeCode.RunImmediate
+        |> NodeCode.RunImmediateWithoutCancellation
 
     let asms =
         ccuinfos |> List.map (function

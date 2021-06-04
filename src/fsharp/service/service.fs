@@ -355,15 +355,15 @@ type BackgroundCompiler(
 
     let tryGetBuilder options : NodeCode<(IncrementalBuilder option * FSharpDiagnostic[])> option =
         tryGetBuilderLazy options
-        |> Option.map (fun x -> x.GetValue())
+        |> Option.map (fun x -> x.GetOrComputeValue())
 
     let tryGetSimilarBuilder options : NodeCode<(IncrementalBuilder option * FSharpDiagnostic[])> option =
         incrementalBuildersCache.TryGetSimilar (AnyCallerThread, options)
-        |> Option.map (fun x -> x.GetValue())
+        |> Option.map (fun x -> x.GetOrComputeValue())
 
     let tryGetAnyBuilder options : NodeCode<(IncrementalBuilder option * FSharpDiagnostic[])> option =
         incrementalBuildersCache.TryGetAny (AnyCallerThread, options)
-        |> Option.map (fun x -> x.GetValue())
+        |> Option.map (fun x -> x.GetOrComputeValue())
 
     let createBuilderLazy (options, userOpName, ct: CancellationToken) =
         lock gate (fun () ->
@@ -380,7 +380,7 @@ type BackgroundCompiler(
         node {
             let! ct = NodeCode.CancellationToken
             let getBuilderLazy = createBuilderLazy (options, userOpName, ct)
-            return! getBuilderLazy.GetValue()
+            return! getBuilderLazy.GetOrComputeValue()
         }
 
     let getOrCreateBuilder (options, userOpName) : NodeCode<(IncrementalBuilder option * FSharpDiagnostic[])> =
@@ -518,7 +518,7 @@ type BackgroundCompiler(
 
             match cachedResultsOpt with
             | Some cachedResults ->
-                match! cachedResults.GetValue() with
+                match! cachedResults.GetOrComputeValue() with
                 | Some (parseResults, checkResults,_,priorTimeStamp) 
                         when 
                         (match builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename with 
@@ -611,7 +611,7 @@ type BackgroundCompiler(
                             Interlocked.Increment(&actualCheckFileCount) |> ignore
                         )
 
-                match! lazyCheckFile.GetValue() with
+                match! lazyCheckFile.GetOrComputeValue() with
                 | Some (_, results, _, _) -> return FSharpCheckFileAnswer.Succeeded results
                 | _ -> 
                     // Remove the result from the cache as it wasn't successful.
@@ -848,7 +848,7 @@ type BackgroundCompiler(
             let resOpt = parseCacheLock.AcquireLock(fun ltok -> checkFileInProjectCache.TryGet(ltok,(filename,hash,options)))
             match resOpt with
             | Some res ->
-                match res.TryGetValue() with
+                match res.TryPeekValue() with
                 | ValueSome resOpt -> 
                     match resOpt with
                     | Some(a,b,c,_) -> Some(a,b,c)
@@ -920,7 +920,7 @@ type BackgroundCompiler(
     member private _.TryGetLogicalTimeStampForProject(cache, options) =
         match tryGetBuilderLazy options with
         | Some lazyWork -> 
-            match lazyWork.TryGetValue() with
+            match lazyWork.TryPeekValue() with
             | ValueSome (Some builder, _) ->
                 Some(builder.GetLogicalTimeStampForProject(cache))
             | _ ->
@@ -1172,12 +1172,12 @@ type FSharpChecker(legacyReferenceResolver,
     member _.GetBackgroundParseResultsForFileInProject (filename,options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.GetBackgroundParseResultsForFileInProject(filename, options, userOpName)
-        |> Async.AwaitNode
+        |> Async.AwaitNodeCode
         
     member _.GetBackgroundCheckResultsForFileInProject (filename,options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.GetBackgroundCheckResultsForFileInProject(filename,options, userOpName)
-        |> Async.AwaitNode
+        |> Async.AwaitNodeCode
         
     /// Try to get recent approximate type check results for a file. 
     member _.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, ?sourceText, ?userOpName: string) =
@@ -1313,7 +1313,7 @@ type FSharpChecker(legacyReferenceResolver,
     member _.CheckFileInProjectAllowingStaleCachedResults(parseResults:FSharpParseFileResults, filename:string, fileVersion:int, source:string, options:FSharpProjectOptions, ?userOpName: string) =        
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.CheckFileInProjectAllowingStaleCachedResults(parseResults,filename,fileVersion,SourceText.ofString source,options,userOpName)
-        |> Async.AwaitNode
+        |> Async.AwaitNodeCode
 
     /// Typecheck a source code file, returning a handle to the results of the 
     /// parse including the reconstructed types in the file.
@@ -1321,7 +1321,7 @@ type FSharpChecker(legacyReferenceResolver,
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
         backgroundCompiler.CheckFileInProject(parseResults,filename,fileVersion,sourceText,options,userOpName)
-        |> Async.AwaitNode
+        |> Async.AwaitNodeCode
 
     /// Typecheck a source code file, returning a handle to the results of the 
     /// parse including the reconstructed types in the file.
@@ -1329,26 +1329,26 @@ type FSharpChecker(legacyReferenceResolver,
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
         backgroundCompiler.ParseAndCheckFileInProject(filename, fileVersion, sourceText, options, userOpName)
-        |> Async.AwaitNode
+        |> Async.AwaitNodeCode
             
     member ic.ParseAndCheckProject(options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
         backgroundCompiler.ParseAndCheckProject(options, userOpName)
-        |> Async.AwaitNode
+        |> Async.AwaitNodeCode
 
     member ic.FindBackgroundReferencesInFile(filename:string, options: FSharpProjectOptions, symbol: FSharpSymbol, ?canInvalidateProject: bool, ?userOpName: string) =
         let canInvalidateProject = defaultArg canInvalidateProject true
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
         backgroundCompiler.FindReferencesInFile(filename, options, symbol, canInvalidateProject, userOpName)
-        |> Async.AwaitNode
+        |> Async.AwaitNodeCode
 
     member ic.GetBackgroundSemanticClassificationForFile(filename:string, options: FSharpProjectOptions, ?userOpName) =
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
         backgroundCompiler.GetSemanticClassificationForFile(filename, options, userOpName)
-        |> Async.AwaitNode
+        |> Async.AwaitNodeCode
 
     /// For a given script file, get the ProjectOptions implied by the #load closure
     member _.GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?assumeDotNetFramework, ?sdkDirOverride, ?optionsStamp: int64, ?userOpName: string) = 
