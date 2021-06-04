@@ -5589,7 +5589,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
                  |||> List.zip3 
                  |> List.choose (fun (v, e, flag) -> if flag then None else Some (mkInvisibleBind v e))
         let eenvAtTarget = AllocStorageForBinds cenv cgbuf scopeMarks eenv binds
-        let targetInfo = (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, binds, flags, startScope, endScope)
+        let targetInfo = (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, es, flags, startScope, endScope)
 
         let targetCount = targetCounts.[targetIdx]
 
@@ -5615,7 +5615,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         targetInfos, genTargetInfoOpt
 
 and GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel =
-    let (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, binds, flags, startScope, endScope) = targetInfo
+    let (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, es, flags, startScope, endScope) = targetInfo
     CG.SetMarkToHere cgbuf targetMarkBeforeBinds
     let spExpr = (match spTarget with DebugPointForTarget.Yes -> SPAlways | DebugPointForTarget.No _ -> SPSuppress)
 
@@ -5633,6 +5633,13 @@ and GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel =
        | DebugPointForTarget.No -> cgbuf.EmitStartOfHiddenCode()
 
     CG.SetMarkToHere cgbuf startScope
+    let binds = 
+        match flags with 
+        | None -> mkInvisibleBinds vs es
+        | Some stateVarFlags -> 
+             (vs, es, stateVarFlags) 
+             |||> List.zip3 
+             |> List.choose (fun (v, e, flag) -> if flag then None else Some (mkInvisibleBind v e))
     GenBindings cenv cgbuf eenvAtTarget binds flags
     CG.SetMarkToHere cgbuf targetMarkAfterBinds
     CG.SetStack cgbuf stackAtTargets
