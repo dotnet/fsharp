@@ -17,11 +17,6 @@
         <target state="new">Add missing instance member parameter</target>
         <note />
       </trans-unit>
-      <trans-unit id="AddNewKeyword">
-        <source>Add 'new' keyword</source>
-        <target state="translated">Schlüsselwort "new" hinzufügen</target>
-        <note />
-      </trans-unit>
       <trans-unit id="AddTypeAnnotation">
         <source>Add type annotation</source>
         <target state="translated">Typanmerkung hinzufügen</target>

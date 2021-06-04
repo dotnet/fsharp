@@ -3402,11 +3402,6 @@
         <target state="translated">Nie można utworzyć wystąpień tego typu, ponieważ został on oznaczony jako abstrakcyjny lub nie wszystkie metody mają implementacje. Zamiast tego rozważ użycie wyrażenia obiektu „{{ new ... with ... }}”.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcIDisposableTypeShouldUseNew">
-        <source>It is recommended that objects supporting the IDisposable interface are created using the syntax 'new Type(args)', rather than 'Type(args)' or 'Type' as a function value representing the constructor, to indicate that resources may be owned by the generated value</source>
-        <target state="translated">Zaleca się, aby obiekty obsługujące interfejs IDisposable były tworzone przy użyciu składni „new Type(args)”, a nie „Type(args)” lub „Type” jako wartości funkcji reprezentującej konstruktor, w celu określenia, że zasoby mogą należeć do wygenerowanej wartości</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcSyntaxCanOnlyBeUsedToCreateObjectTypes">
         <source>'{0}' may only be used to construct object types</source>
         <target state="translated">Składnia „{0}” może być używana tylko w celu tworzenia typów obiektów</target>

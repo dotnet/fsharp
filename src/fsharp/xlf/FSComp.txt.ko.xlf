@@ -3402,11 +3402,6 @@
         <target state="translated">이 형식의 인스턴스가 abstract로 표시되었거나 메서드 중 일부에 구현이 지정되지 않았으므로 해당 인스턴스를 만들 수 없습니다. 대신 개체 식 '{{ new ... with ... }}'를 사용하세요.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcIDisposableTypeShouldUseNew">
-        <source>It is recommended that objects supporting the IDisposable interface are created using the syntax 'new Type(args)', rather than 'Type(args)' or 'Type' as a function value representing the constructor, to indicate that resources may be owned by the generated value</source>
-        <target state="translated">IDisposable 인터페이스를 지원하는 개체는 생성 값이 리소스를 소유할 수도 있다는 것을 표시하기 위해 생성자를 나타내는 함수 값으로 'Type(args)' 또는 'Type'이 아니라 'new Type(args)' 구문을 사용하여 만드는 것이 좋습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcSyntaxCanOnlyBeUsedToCreateObjectTypes">
         <source>'{0}' may only be used to construct object types</source>
         <target state="translated">'{0}'은(는) 개체 형식을 생성하는 데에만 사용할 수 있습니다.</target>

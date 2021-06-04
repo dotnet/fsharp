@@ -3402,11 +3402,6 @@
         <target state="translated">Non è possibile creare istanze di questo tipo perché è stato contrassegnato come astratto oppure non a tutti i metodi sono state assegnate implementazioni. Provare a usare invece un'espressione di oggetto '{{ new ... with ... }}'.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcIDisposableTypeShouldUseNew">
-        <source>It is recommended that objects supporting the IDisposable interface are created using the syntax 'new Type(args)', rather than 'Type(args)' or 'Type' as a function value representing the constructor, to indicate that resources may be owned by the generated value</source>
-        <target state="translated">Per indicare che le risorse possono essere di proprietà del valore generato, è consigliabile usare la sintassi 'new Type(args)', invece di 'Type(args)' o di 'Type' come valore della funzione che rappresenta il costruttore, per creare oggetti che supportano l'interfaccia IDisposable</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcSyntaxCanOnlyBeUsedToCreateObjectTypes">
         <source>'{0}' may only be used to construct object types</source>
         <target state="translated">'{0}' è utilizzabile solo per costruire tipi di oggetto</target>

@@ -3402,11 +3402,6 @@
         <target state="translated">Instance tohoto typu se nedají vytvořit, a to buď proto, že je tento typ označený jako abstraktní, nebo proto, že jste neimplementovali všechny metody. Zvažte možnost použít místo toho objektový výraz {{ new ... with ... }}.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcIDisposableTypeShouldUseNew">
-        <source>It is recommended that objects supporting the IDisposable interface are created using the syntax 'new Type(args)', rather than 'Type(args)' or 'Type' as a function value representing the constructor, to indicate that resources may be owned by the generated value</source>
-        <target state="translated">Doporučuje se, aby se objekty, které podporují rozhraní IDisposable, vytvářely pomocí syntaxe new Type(args) a ne Type(args) nebo Type jako hodnota funkce představující konstruktor. Tím se určí, že prostředky může vlastnit generovaná hodnota.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcSyntaxCanOnlyBeUsedToCreateObjectTypes">
         <source>'{0}' may only be used to construct object types</source>
         <target state="translated">{0} se dá použít jenom k vytvoření objektových typů.</target>

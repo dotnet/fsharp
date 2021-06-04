@@ -3397,11 +3397,6 @@
         <target state="translated">abstract とマークされているか、一部のメソッドが実装されていないため、この型のインスタンスを作成できません。代わりにオブジェクト式 '{{ new ... with ... }}' を使用してください。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcIDisposableTypeShouldUseNew">
-        <source>It is recommended that objects supporting the IDisposable interface are created using the syntax 'new Type(args)', rather than 'Type(args)' or 'Type' as a function value representing the constructor, to indicate that resources may be owned by the generated value</source>
-        <target state="translated">IDisposable インターフェイスをサポートするオブジェクトは、コンストラクターを表す関数値として 'Type(args)' や 'Type' ではなく 'new Type(args)' の構文を使用して作成することをお勧めします。これは、リソースが生成された値に所有される可能性があることを示すためです</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcSyntaxCanOnlyBeUsedToCreateObjectTypes">
         <source>'{0}' may only be used to construct object types</source>
         <target state="translated">'{0}' は、オブジェクト型を構築するときにのみ使用できます</target>

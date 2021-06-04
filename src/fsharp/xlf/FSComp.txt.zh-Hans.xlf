@@ -3402,11 +3402,6 @@
         <target state="translated">无法创建此类型的实例，因为已将此类型标记为抽象的或者没有为所有方法给定实现。请考虑改用对象表达式“{{ new ... with ... }}”。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcIDisposableTypeShouldUseNew">
-        <source>It is recommended that objects supporting the IDisposable interface are created using the syntax 'new Type(args)', rather than 'Type(args)' or 'Type' as a function value representing the constructor, to indicate that resources may be owned by the generated value</source>
-        <target state="translated">建议通过将语法 "new Type(args)"(而非 "Type(args)" 或 "Type")用作表示构造函数的函数值来创建支持 IDisposable 接口的对象，以指示生成的值可拥有该资源</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcSyntaxCanOnlyBeUsedToCreateObjectTypes">
         <source>'{0}' may only be used to construct object types</source>
         <target state="translated">“{0}”只能用于构造对象类型</target>

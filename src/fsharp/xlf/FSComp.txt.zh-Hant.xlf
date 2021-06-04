@@ -3402,11 +3402,6 @@
         <target state="translated">無法建立這種類型的執行個體，因為它已標記為抽象或不是所有方法都有實作。請考慮改用物件運算式 '{{ new ... with ... }}'。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcIDisposableTypeShouldUseNew">
-        <source>It is recommended that objects supporting the IDisposable interface are created using the syntax 'new Type(args)', rather than 'Type(args)' or 'Type' as a function value representing the constructor, to indicate that resources may be owned by the generated value</source>
-        <target state="translated">建議不要使用 'Type(args)' 或 'Type' 做為函式值來代表建構函式，而應使用 'new Type(args)' 來建立支援 IDisposable 介面的物件，以表示資源可由產生的值擁有</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcSyntaxCanOnlyBeUsedToCreateObjectTypes">
         <source>'{0}' may only be used to construct object types</source>
         <target state="translated">'{0}' 只能用來建構物件類型</target>

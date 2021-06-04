@@ -6068,10 +6068,10 @@ and TcNewExpr cenv env tpenv objTy mObjTyOpt superInit arg mWholeExprOrObjTy =
         if not (isAppTy cenv.g objTy) && not (isAnyTupleTy cenv.g objTy) then error(Error(FSComp.SR.tcNamedTypeRequired(if superInit then "inherit" else "new"), mWholeExprOrObjTy))
         let item = ForceRaise (ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mWholeExprOrObjTy ad objTy)
 
-        TcCtorCall false cenv env tpenv objTy objTy mObjTyOpt item superInit [arg] mWholeExprOrObjTy [] None
+        TcCtorCall cenv env tpenv objTy objTy mObjTyOpt item superInit [arg] mWholeExprOrObjTy [] None
 
 /// Check an 'inheritedTys declaration in an implicit or explicit class
-and TcCtorCall isNaked cenv env tpenv overallTy objTy mObjTyOpt item superInit args mWholeCall delayed afterTcOverloadResolutionOpt =
+and TcCtorCall cenv env tpenv overallTy objTy mObjTyOpt item superInit args mWholeCall delayed afterTcOverloadResolutionOpt =
     let ad = env.AccessRights
     let isSuperInit = (if superInit then CtorValUsedAsSuperInit else NormalValUse)
     let mItem = match mObjTyOpt with Some m -> m | None -> mWholeCall
@@ -6082,8 +6082,6 @@ and TcCtorCall isNaked cenv env tpenv overallTy objTy mObjTyOpt item superInit a
     match item, args with
     | Item.CtorGroup(methodName, minfos), _ ->
         let meths = List.map (fun minfo -> minfo, None) minfos
-        if isNaked && TypeFeasiblySubsumesType 0 cenv.g cenv.amap mWholeCall cenv.g.system_IDisposable_ty NoCoerce objTy then
-            warning(Error(FSComp.SR.tcIDisposableTypeShouldUseNew(), mWholeCall))
 
         // Check the type is not abstract
         // skip this check if this ctor call is either 'inherit(...)' or call is located within constructor shape
@@ -7800,7 +7798,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
         | ((DelayedApp (_, arg, mExprAndArg)) :: otherDelayed) ->
 
             CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTy, env.eAccessRights)
-            TcCtorCall true cenv env tpenv overallTy objTy (Some mItem) item false [arg] mExprAndArg otherDelayed (Some afterResolution)
+            TcCtorCall cenv env tpenv overallTy objTy (Some mItem) item false [arg] mExprAndArg otherDelayed (Some afterResolution)
 
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: (DelayedApp (_, arg, mExprAndArg)) :: otherDelayed) ->
 
@@ -7821,7 +7819,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
                     item, minfos
 
             minfosAfterTyArgs |> List.iter (fun minfo -> UnifyTypes cenv env mExprAndTypeArgs minfo.ApparentEnclosingType objTyAfterTyArgs)
-            TcCtorCall true cenv env tpenv overallTy objTyAfterTyArgs (Some mExprAndTypeArgs) itemAfterTyArgs false [arg] mExprAndArg otherDelayed (Some afterResolution)
+            TcCtorCall cenv env tpenv overallTy objTyAfterTyArgs (Some mExprAndTypeArgs) itemAfterTyArgs false [arg] mExprAndArg otherDelayed (Some afterResolution)
 
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: otherDelayed) ->
 
@@ -7832,11 +7830,11 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
             CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, resolvedItem, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
 
             minfos |> List.iter (fun minfo -> UnifyTypes cenv env mExprAndTypeArgs minfo.ApparentEnclosingType objTy)
-            TcCtorCall true cenv env tpenv overallTy objTy (Some mExprAndTypeArgs) item false [] mExprAndTypeArgs otherDelayed (Some afterResolution)
+            TcCtorCall cenv env tpenv overallTy objTy (Some mExprAndTypeArgs) item false [] mExprAndTypeArgs otherDelayed (Some afterResolution)
 
         | _ ->
 
-            TcCtorCall true cenv env tpenv overallTy objTy (Some mItem) item false [] mItem delayed (Some afterResolution)
+            TcCtorCall cenv env tpenv overallTy objTy (Some mItem) item false [] mItem delayed (Some afterResolution)
 
     | Item.FakeInterfaceCtor _ ->
         error(Error(FSComp.SR.tcInvalidUseOfInterfaceType(), mItem))

@@ -3402,11 +3402,6 @@
         <target state="translated">Bu tür soyut olarak işaretlendiği veya metotlarının tümüne uygulama verilmediği için örnekleri oluşturulamaz. Onun yerine bir nesne ifadesi '{{ new ... with ... }}' kullanmayı düşünün.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcIDisposableTypeShouldUseNew">
-        <source>It is recommended that objects supporting the IDisposable interface are created using the syntax 'new Type(args)', rather than 'Type(args)' or 'Type' as a function value representing the constructor, to indicate that resources may be owned by the generated value</source>
-        <target state="translated">Kaynakların oluşturulan değer tarafından sahiplenilebileceğini belirtmek için, IDisposable arabirimini destekleyen nesnelerin, oluşturucuyu temsil eden bir işlev değeri olarak 'Type(args)' veya 'Type' yerine 'new Type(args)' söz dizimi kullanılarak oluşturulması önerilir</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcSyntaxCanOnlyBeUsedToCreateObjectTypes">
         <source>'{0}' may only be used to construct object types</source>
         <target state="translated">'{0}' yalnızca nesne türlerini oluşturmak için kullanılabilir</target>

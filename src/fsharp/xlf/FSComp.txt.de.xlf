@@ -3402,11 +3402,6 @@
         <target state="translated">Instanzen dieses Typs können nicht erstellt werden, da er als "abstract" markiert wurde oder nicht für alle Methoden Implementierungen vorhanden sind. Verwenden Sie stattdessen einen Objektausdruck "{{ new ... with ... }}".</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcIDisposableTypeShouldUseNew">
-        <source>It is recommended that objects supporting the IDisposable interface are created using the syntax 'new Type(args)', rather than 'Type(args)' or 'Type' as a function value representing the constructor, to indicate that resources may be owned by the generated value</source>
-        <target state="translated">Objekte, die die IDisposable-Schnittstelle unterstützen, sollten mit der Syntax "new Type(args)" statt mit "Type(args)" oder "Type" als Funktionswert für den Konstruktor erstellt werden, um anzugeben, dass die Ressourcen sich möglicherweise im Besitz des generierten Werts befinden.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcSyntaxCanOnlyBeUsedToCreateObjectTypes">
         <source>'{0}' may only be used to construct object types</source>
         <target state="translated">{0} darf nur für Konstruktobjekttypen verwendet werden.</target>
