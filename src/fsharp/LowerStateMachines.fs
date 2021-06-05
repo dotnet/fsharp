@@ -93,8 +93,11 @@ let RepresentBindingAsStateVar g (bind: Binding) (resBody: StateMachineConversio
                     // Within all resumable code, a return value of 'true' indicates success/completion path, when we can clear
                     // state machine locals.
                     (if typeEquiv g (tyOfExpr g generateBody) g.bool_ty then
-                        mkIfThen g m generateBody
-                            (mkValSet m vref (mkDefault (m, vref.Type)))
+                        mkCond DebugPointAtBinding.NoneAtInvisible DebugPointForTarget.No m g.bool_ty generateBody
+                            (mkCompGenSequential m 
+                                (mkValSet m vref (mkDefault (m, vref.Type)))
+                                (mkTrue g m))
+                            (mkFalse g m)
                      else
                         generateBody)
             generate )
