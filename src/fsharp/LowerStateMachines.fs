@@ -73,7 +73,7 @@ let RepresentBindingAsThis (bind: Binding) (res2: StateMachineConversionFirstPha
         phase2 = res2.phase2 }
 
 /// Implement a decision to represent a 'let' binding as a state machine variable
-let RepresentBindingAsStateVar (bind: Binding) (res2: StateMachineConversionFirstPhaseResult) m =
+let RepresentBindingAsStateVar g (bind: Binding) (resBody: StateMachineConversionFirstPhaseResult) m =
     if sm_verbose then 
         printfn "LowerStateMachine: found state variable %s" bind.Var.DisplayName
     
@@ -83,18 +83,22 @@ let RepresentBindingAsStateVar (bind: Binding) (res2: StateMachineConversionFirs
         | DebugPointAtBinding.Yes m -> DebugPointAtSequential.Both, m
         | _ -> DebugPointAtSequential.StmtOnly, e.Range
     let vref = mkLocalValRef v
-    { res2 with
-        phase1 = mkSequential sp m (mkValSet spm vref e) res2.phase1
+    { resBody with
+        phase1 = mkSequential sp m (mkValSet spm vref e) resBody.phase1
         phase2 = (fun ctxt ->
-            let generate2 = res2.phase2 ctxt
+            let generateBody = resBody.phase2 ctxt
             let generate =
                 mkSequential sp m
                     (mkValSet spm vref e)
-                    (mkCompGenThenDoSequential m
-                        generate2
-                        (mkValSet m vref (mkDefault (m, vref.Type))))
+                    // Within all resumable code, a return value of 'true' indicates success/completion path, when we can clear
+                    // state machine locals.
+                    (if typeEquiv g (tyOfExpr g generateBody) g.bool_ty then
+                        mkIfThen g m generateBody
+                            (mkValSet m vref (mkDefault (m, vref.Type)))
+                     else
+                        generateBody)
             generate )
-        stateVars = vref :: res2.stateVars }
+        stateVars = vref :: resBody.stateVars }
 
 let isExpandVar g (v: Val) = 
     isReturnsResumableCodeTy g v.TauType &&
@@ -810,7 +814,7 @@ type LowerStateMachine(g: TcGlobals) =
             else
                 if sm_verbose then printfn "LetExpr (non-control-flow, rewrite rhs, RepresentBindingAsStateVar)" 
                 // printfn "found state variable %s" bind.Var.DisplayName
-                RepresentBindingAsStateVar bind resBody m
+                RepresentBindingAsStateVar g bind resBody m
                 |> Result.Ok
         | Result.Error msg -> 
             Result.Error msg
