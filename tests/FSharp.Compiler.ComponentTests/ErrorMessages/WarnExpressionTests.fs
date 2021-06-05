@@ -64,7 +64,6 @@ let changeProperty() =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 760, Line 4, Col 9, Line 4, Col 30, "It is recommended that objects supporting the IDisposable interface are created using the syntax 'new Type(args)', rather than 'Type(args)' or 'Type' as a function value representing the constructor, to indicate that resources may be owned by the generated value")
             (Warning 20,  Line 8, Col 5, Line 8, Col 21, "The result of this equality expression has type 'bool' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '<-' operator e.g. 'z.Enabled <- expression'.")]
 
     [<Fact>]
