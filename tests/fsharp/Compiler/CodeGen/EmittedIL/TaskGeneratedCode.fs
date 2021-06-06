@@ -1071,7 +1071,11 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
                 """
             ])
 #endif
+
+
 #if NETCOREAPP
+[<TestFixture>]
+module ``Check stack traces`` = 
     [<Test>]
     let ``check stack trace of async exception from task``() =
         let t() =
@@ -1100,6 +1104,7 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
 
 
 // Test that the SRTP Bind on a ValueTask is still generic in the bind type
+[<TestFixture>]
 module ``Check return attributes`` = 
     let incr (x:int) : [<Experimental("a")>] (int -> int) = (fun a -> a + x)
 
@@ -1119,6 +1124,7 @@ module ``Check return attributes`` =
         | _ -> failwith "curried function expected"
 
 
+// Compilation test
 // Test that the SRTP Bind on a ValueTask is still generic in the bind type
 module ``SRTP Bind on a ValueTask is still generic in the bind type (nested)`` =
     let FindAsync() = ValueTask<'T>(Unchecked.defaultof<'T>)
@@ -1130,6 +1136,7 @@ module ``SRTP Bind on a ValueTask is still generic in the bind type (nested)`` =
     let t1 : Task<int voption> = TryFindAsync() // test TryFindAsync is generic
     let t2 : Task<string voption> = TryFindAsync() // test TryFindAsync is generic
     
+// Compilation test
 // Test that the SRTP Bind on a ValueTask is still generic in the bind type
 module ``SRTP Bind on a ValueTask is still generic in the bind type`` =
     let FindAsync() = ValueTask<'T>(Unchecked.defaultof<'T>)
@@ -1137,11 +1144,8 @@ module ``SRTP Bind on a ValueTask is still generic in the bind type`` =
             let! r = FindAsync()
             return r
         }
-    let t1 : Task<int voption> = TryFindAsync() // test TryFindAsync is generic
-    let t2 : Task<string voption> = TryFindAsync() // test TryFindAsync is generic
     
-
-// 
+// Compilation test
 module ``SRTP ReturnFrom on a ValueTask is still generic in the bind type`` =
     let FindAsync() = ValueTask<'T>(Unchecked.defaultof<'T>)
     let TryFindAsync() : Task<'T> = task {
