@@ -80,7 +80,7 @@ type Range =
 
     /// When de-sugaring computation expressions we convert a debug point into a plain range, and then later
     /// recover that the range definitely indicates a debug point.
-    member DebugPointKind: RangeDebugPointKind
+    member internal DebugPointKind: RangeDebugPointKind
 
     /// Convert a range to be synthetic
     member internal MakeSynthetic: unit -> range
