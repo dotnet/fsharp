@@ -257,8 +257,8 @@ let ConvertSequenceExprToObject g amap overallExpr =
             phase2 = (fun ctxt ->
                 let generateBody, disposeBody, checkDisposeBody = resBody.phase2 ctxt
                 let generate =
-                    mkSequential sp m
-                        (mkCompGenSequential m
+                    mkCompGenSequential m
+                        (mkSequential sp m
                             (mkValSet spm vref e)
                             generateBody)
                         // zero out the current value to free up its memory
@@ -297,7 +297,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
             let label = IL.generateCodeLabel()
             Some { phase2 = (fun (pcVar, currVar, _nextv, pcMap) ->
                         let generate =
-                            mkSequential DebugPointAtSequential.StmtOnly m
+                            mkSequential DebugPointAtSequential.Both m
                                 (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
                                 (mkCompGenSequential m
                                     (mkValSet m currVar e)

@@ -1574,7 +1574,6 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3512,reprStateMachineNotCompilableNoAlternative,"This state machine is not statically compilable and no alternative is available. %s. Use an 'if __useResumableCode then <state-machine> else <alternative>' to give an alternative."
 3513,tcResumableCodeInvocation,"Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code."
 reprResumableCodeInvokeNotReduced,"A resumable code invocation at '%s' could not be reduced"
-reprResumableCodeCapturesByref,"A byref may only be used in resumptions if it is precisely the 'this' pointer of the enclosing struct state machine"
 reprResumableCodeContainsLetRec,"A 'let rec' occured in the resumable code specification"
 reprResumableCodeContainsDynamicResumeAtInBody,"A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method"
 reprResumableCodeContainsResumptionInTryFinally,"A try/finally may not contain resumption points"

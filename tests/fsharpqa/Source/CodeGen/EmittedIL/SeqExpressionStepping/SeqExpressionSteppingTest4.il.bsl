@@ -36,13 +36,13 @@
   // Offset: 0x00000268 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest4.exe
-// MVID: {60B78A59-2432-93E0-A745-0383598AB760}
+// MVID: {60BCC37C-2432-93E0-A745-03837CC3BC60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06580000
+// Image base: 0x04DA0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -146,7 +146,6 @@
         IL_004d:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::y
         IL_0052:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
         IL_0057:  nop
-        .line 9,9 : 15,23 ''
         IL_0058:  ldarg.0
         IL_0059:  ldc.i4.1
         IL_005a:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::pc
@@ -167,7 +166,6 @@
         IL_0083:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
         IL_0088:  add
         IL_0089:  stloc.0
-        .line 11,11 : 15,22 ''
         IL_008a:  ldarg.0
         IL_008b:  ldc.i4.2
         IL_008c:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::pc

@@ -45,13 +45,13 @@
   // Offset: 0x000003D8 Length: 0x00000138
 }
 .module Linq101Partitioning01.exe
-// MVID: {60B78A59-B280-A6A2-A745-0383598AB760}
+// MVID: {60BCC37C-B280-A6A2-A745-03837CC3BC60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x069E0000
+// Image base: 0x07230000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -151,7 +151,6 @@
       .line 12,12 : 9,28 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
-      .line 13,13 : 9,15 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101Partitioning01/first3Numbers@12::pc
@@ -189,11 +188,10 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       133 (0x85)
+      // Code size       127 (0x7f)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
-               [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-               [2] class [mscorlib]System.Exception e)
+               [1] class [mscorlib]System.Exception e)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Partitioning01/first3Numbers@12::pc
@@ -205,7 +203,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0013:  nop
-      IL_0014:  br.s       IL_007c
+      IL_0014:  br.s       IL_0076
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
@@ -255,41 +253,34 @@
         IL_005d:  ldarg.0
         IL_005e:  ldc.i4.0
         IL_005f:  stfld      int32 Linq101Partitioning01/first3Numbers@12::current
-        IL_0064:  ldnull
-        IL_0065:  stloc.1
-        IL_0066:  leave.s    IL_0074
+        IL_0064:  leave.s    IL_0070
 
       }  // end .try
       catch [mscorlib]System.Object 
       {
-        IL_0068:  castclass  [mscorlib]System.Exception
-        IL_006d:  stloc.2
+        IL_0066:  castclass  [mscorlib]System.Exception
+        IL_006b:  stloc.1
         .line 12,12 : 9,28 ''
-        IL_006e:  ldloc.2
-        IL_006f:  stloc.0
-        IL_0070:  ldnull
-        IL_0071:  stloc.1
-        IL_0072:  leave.s    IL_0074
+        IL_006c:  ldloc.1
+        IL_006d:  stloc.0
+        IL_006e:  leave.s    IL_0070
 
         .line 100001,100001 : 0,0 ''
       }  // end handler
-      IL_0074:  ldloc.1
-      IL_0075:  pop
-      .line 100001,100001 : 0,0 ''
-      IL_0076:  nop
-      IL_0077:  br         IL_0000
+      IL_0070:  nop
+      IL_0071:  br         IL_0000
 
+      IL_0076:  ldloc.0
+      IL_0077:  ldnull
+      IL_0078:  cgt.un
+      IL_007a:  brfalse.s  IL_007e
+
+      .line 100001,100001 : 0,0 ''
       IL_007c:  ldloc.0
-      IL_007d:  ldnull
-      IL_007e:  cgt.un
-      IL_0080:  brfalse.s  IL_0084
+      IL_007d:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_0082:  ldloc.0
-      IL_0083:  throw
-
-      .line 100001,100001 : 0,0 ''
-      IL_0084:  ret
+      IL_007e:  ret
     } // end of method first3Numbers@12::Close
 
     .method public strict virtual instance bool 
@@ -664,7 +655,6 @@
       .line 29,29 : 9,28 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
-      .line 30,30 : 9,15 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::pc
@@ -702,11 +692,10 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       133 (0x85)
+      // Code size       127 (0x7f)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
-               [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-               [2] class [mscorlib]System.Exception e)
+               [1] class [mscorlib]System.Exception e)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::pc
@@ -718,7 +707,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0013:  nop
-      IL_0014:  br.s       IL_007c
+      IL_0014:  br.s       IL_0076
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
@@ -768,41 +757,34 @@
         IL_005d:  ldarg.0
         IL_005e:  ldc.i4.0
         IL_005f:  stfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::current
-        IL_0064:  ldnull
-        IL_0065:  stloc.1
-        IL_0066:  leave.s    IL_0074
+        IL_0064:  leave.s    IL_0070
 
       }  // end .try
       catch [mscorlib]System.Object 
       {
-        IL_0068:  castclass  [mscorlib]System.Exception
-        IL_006d:  stloc.2
+        IL_0066:  castclass  [mscorlib]System.Exception
+        IL_006b:  stloc.1
         .line 29,29 : 9,28 ''
-        IL_006e:  ldloc.2
-        IL_006f:  stloc.0
-        IL_0070:  ldnull
-        IL_0071:  stloc.1
-        IL_0072:  leave.s    IL_0074
+        IL_006c:  ldloc.1
+        IL_006d:  stloc.0
+        IL_006e:  leave.s    IL_0070
 
         .line 100001,100001 : 0,0 ''
       }  // end handler
-      IL_0074:  ldloc.1
-      IL_0075:  pop
-      .line 100001,100001 : 0,0 ''
-      IL_0076:  nop
-      IL_0077:  br         IL_0000
+      IL_0070:  nop
+      IL_0071:  br         IL_0000
 
+      IL_0076:  ldloc.0
+      IL_0077:  ldnull
+      IL_0078:  cgt.un
+      IL_007a:  brfalse.s  IL_007e
+
+      .line 100001,100001 : 0,0 ''
       IL_007c:  ldloc.0
-      IL_007d:  ldnull
-      IL_007e:  cgt.un
-      IL_0080:  brfalse.s  IL_0084
+      IL_007d:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_0082:  ldloc.0
-      IL_0083:  throw
-
-      .line 100001,100001 : 0,0 ''
-      IL_0084:  ret
+      IL_007e:  ret
     } // end of method allButFirst4Numbers@29::Close
 
     .method public strict virtual instance bool 
@@ -1177,7 +1159,6 @@
       .line 45,45 : 9,28 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
-      .line 46,46 : 9,26 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::pc
@@ -1215,11 +1196,10 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       133 (0x85)
+      // Code size       127 (0x7f)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
-               [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-               [2] class [mscorlib]System.Exception e)
+               [1] class [mscorlib]System.Exception e)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::pc
@@ -1231,7 +1211,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0013:  nop
-      IL_0014:  br.s       IL_007c
+      IL_0014:  br.s       IL_0076
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
@@ -1281,41 +1261,34 @@
         IL_005d:  ldarg.0
         IL_005e:  ldc.i4.0
         IL_005f:  stfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::current
-        IL_0064:  ldnull
-        IL_0065:  stloc.1
-        IL_0066:  leave.s    IL_0074
+        IL_0064:  leave.s    IL_0070
 
       }  // end .try
       catch [mscorlib]System.Object 
       {
-        IL_0068:  castclass  [mscorlib]System.Exception
-        IL_006d:  stloc.2
+        IL_0066:  castclass  [mscorlib]System.Exception
+        IL_006b:  stloc.1
         .line 45,45 : 9,28 ''
-        IL_006e:  ldloc.2
-        IL_006f:  stloc.0
-        IL_0070:  ldnull
-        IL_0071:  stloc.1
-        IL_0072:  leave.s    IL_0074
+        IL_006c:  ldloc.1
+        IL_006d:  stloc.0
+        IL_006e:  leave.s    IL_0070
 
         .line 100001,100001 : 0,0 ''
       }  // end handler
-      IL_0074:  ldloc.1
-      IL_0075:  pop
-      .line 100001,100001 : 0,0 ''
-      IL_0076:  nop
-      IL_0077:  br         IL_0000
+      IL_0070:  nop
+      IL_0071:  br         IL_0000
 
+      IL_0076:  ldloc.0
+      IL_0077:  ldnull
+      IL_0078:  cgt.un
+      IL_007a:  brfalse.s  IL_007e
+
+      .line 100001,100001 : 0,0 ''
       IL_007c:  ldloc.0
-      IL_007d:  ldnull
-      IL_007e:  cgt.un
-      IL_0080:  brfalse.s  IL_0084
+      IL_007d:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_0082:  ldloc.0
-      IL_0083:  throw
-
-      .line 100001,100001 : 0,0 ''
-      IL_0084:  ret
+      IL_007e:  ret
     } // end of method firstNumbersLessThan6@45::Close
 
     .method public strict virtual instance bool 
@@ -1521,7 +1494,6 @@
       .line 52,52 : 9,28 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
-      .line 53,53 : 9,31 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::pc
@@ -1559,11 +1531,10 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       133 (0x85)
+      // Code size       127 (0x7f)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
-               [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-               [2] class [mscorlib]System.Exception e)
+               [1] class [mscorlib]System.Exception e)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::pc
@@ -1575,7 +1546,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0013:  nop
-      IL_0014:  br.s       IL_007c
+      IL_0014:  br.s       IL_0076
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
@@ -1625,41 +1596,34 @@
         IL_005d:  ldarg.0
         IL_005e:  ldc.i4.0
         IL_005f:  stfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::current
-        IL_0064:  ldnull
-        IL_0065:  stloc.1
-        IL_0066:  leave.s    IL_0074
+        IL_0064:  leave.s    IL_0070
 
       }  // end .try
       catch [mscorlib]System.Object 
       {
-        IL_0068:  castclass  [mscorlib]System.Exception
-        IL_006d:  stloc.2
+        IL_0066:  castclass  [mscorlib]System.Exception
+        IL_006b:  stloc.1
         .line 52,52 : 9,28 ''
-        IL_006e:  ldloc.2
-        IL_006f:  stloc.0
-        IL_0070:  ldnull
-        IL_0071:  stloc.1
-        IL_0072:  leave.s    IL_0074
+        IL_006c:  ldloc.1
+        IL_006d:  stloc.0
+        IL_006e:  leave.s    IL_0070
 
         .line 100001,100001 : 0,0 ''
       }  // end handler
-      IL_0074:  ldloc.1
-      IL_0075:  pop
-      .line 100001,100001 : 0,0 ''
-      IL_0076:  nop
-      IL_0077:  br         IL_0000
+      IL_0070:  nop
+      IL_0071:  br         IL_0000
 
+      IL_0076:  ldloc.0
+      IL_0077:  ldnull
+      IL_0078:  cgt.un
+      IL_007a:  brfalse.s  IL_007e
+
+      .line 100001,100001 : 0,0 ''
       IL_007c:  ldloc.0
-      IL_007d:  ldnull
-      IL_007e:  cgt.un
-      IL_0080:  brfalse.s  IL_0084
+      IL_007d:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_0082:  ldloc.0
-      IL_0083:  throw
-
-      .line 100001,100001 : 0,0 ''
-      IL_0084:  ret
+      IL_007e:  ret
     } // end of method allButFirst3Numbers@52::Close
 
     .method public strict virtual instance bool 

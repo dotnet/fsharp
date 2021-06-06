@@ -36,13 +36,13 @@
   // Offset: 0x00000140 Length: 0x00000050
 }
 .module ForLoop02.exe
-// MVID: {608C04FF-1736-791C-A745-0383FF048C60}
+// MVID: {60BCDCE8-1736-791C-A745-0383E8DCBC60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06D90000
+// Image base: 0x068C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

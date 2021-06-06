@@ -357,11 +357,6 @@
         <target state="translated">No se admite el algoritmo '{0}'</target>
         <note />
       </trans-unit>
-      <trans-unit id="reprResumableCodeCapturesByref">
-        <source>A byref may only be used in resumptions if it is precisely the 'this' pointer of the enclosing struct state machine</source>
-        <target state="new">A byref may only be used in resumptions if it is precisely the 'this' pointer of the enclosing struct state machine</target>
-        <note />
-      </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
         <source>A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
         <target state="new">A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</target>

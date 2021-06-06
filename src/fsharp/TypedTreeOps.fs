@@ -5761,6 +5761,8 @@ let rec remarkExpr m x =
     | Expr.Op (op, tinst, args, _) -> 
         let op = 
             match op with 
+            | TOp.For (_, style) -> TOp.For(DebugPointAtFor.No, style)
+            | TOp.While (_, marker) -> TOp.While(DebugPointAtWhile.No, marker)
             | TOp.TryFinally (_, _) -> TOp.TryFinally (DebugPointAtTry.No, DebugPointAtFinally.No)
             | TOp.TryWith (_, _) -> TOp.TryWith (DebugPointAtTry.No, DebugPointAtWith.No)
             | _ -> op
@@ -5795,11 +5797,6 @@ let rec remarkExpr m x =
         //        __stack_savedExn <- ...
         //
         // we suppress the sequence points on the sequentials altogether.
-        //       
-        // Note: the drop-through case of DebugPointAtSequential.StmtOnly has been the existing implementation in other
-        // cases of inlined sequentials, and is dubious - we are skipping the sequence point
-        // at the first expression for no particular reason except we are avoiding laying down multiple
-        // sequence points.  It's likely this should be better as either 'sp' or DebugPointAtSequential.ExprOnly.
         let sp = 
             match sp, e2R with 
             | DebugPointAtSequential.None, _ -> DebugPointAtSequential.None

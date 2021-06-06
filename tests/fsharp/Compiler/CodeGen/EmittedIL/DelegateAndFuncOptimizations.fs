@@ -416,16 +416,18 @@ let ApplyComputedFunction(c: int) =
   IL_001c:  ldc.i4.1
   IL_001d:  sub
   IL_001e:  switch     ( 
-                        IL_002b)
-  IL_0027:  ldloc.0
-  IL_0028:  ldc.i4.3
-  IL_0029:  sub
-  IL_002a:  ret
+                        IL_0029)
+  IL_0027:  br.s       IL_002d
     
-  IL_002b:  ldloc.0
-  IL_002c:  ldc.i4.3
-  IL_002d:  add
-  IL_002e:  ret
+  IL_0029:  ldloc.0
+  IL_002a:  ldc.i4.3
+  IL_002b:  add
+  IL_002c:  ret
+    
+  IL_002d:  ldloc.0
+  IL_002e:  ldc.i4.3
+  IL_002f:  sub
+  IL_0030:  ret
 } 
             """
             ])
@@ -456,34 +458,36 @@ let ApplyComputedFunction(c: int) =
   IL_0001:  ldc.i4.1
   IL_0002:  sub
   IL_0003:  switch     ( 
-                        IL_0025)
-  IL_000c:  ldstr      "b"
-  IL_0011:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-  IL_0016:  stloc.0
-  IL_0017:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
-  IL_001c:  ldloc.0
-  IL_001d:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
-                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-  IL_0022:  pop
-  IL_0023:  br.s       IL_003c
+                        IL_000e)
+  IL_000c:  br.s       IL_0027
     
-  IL_0025:  ldstr      "a"
-  IL_002a:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-  IL_002f:  stloc.0
-  IL_0030:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
-  IL_0035:  ldloc.0
-  IL_0036:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+  IL_000e:  ldstr      "a"
+  IL_0013:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+  IL_0018:  stloc.0
+  IL_0019:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+  IL_001e:  ldloc.0
+  IL_001f:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-  IL_003b:  pop
-  IL_003c:  ldstr      "done!"
-  IL_0041:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-  IL_0046:  stloc.0
-  IL_0047:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
-  IL_004c:  ldloc.0
-  IL_004d:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+  IL_0024:  pop
+  IL_0025:  br.s       IL_003e
+    
+  IL_0027:  ldstr      "b"
+  IL_002c:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+  IL_0031:  stloc.0
+  IL_0032:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+  IL_0037:  ldloc.0
+  IL_0038:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-  IL_0052:  pop
-  IL_0053:  ret
+  IL_003d:  pop
+  IL_003e:  ldstr      "done!"
+  IL_0043:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+  IL_0048:  stloc.0
+  IL_0049:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+  IL_004e:  ldloc.0
+  IL_004f:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+  IL_0054:  pop
+  IL_0055:  ret
 } 
             """
             ])

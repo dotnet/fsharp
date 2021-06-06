@@ -916,7 +916,11 @@ and sequel =
   | EndFilter
 
   /// Exit a 'handler' block. The integer says which local to save result in
-  | LeaveHandler of (bool (* finally? *) * int * Mark)
+  | LeaveHandler of
+      isFinally: bool *
+      whereToSaveOpt: (int * ILType) option *
+      afterHandler: Mark *
+      hasResult: bool
 
   /// Branch to the given mark
   | Br of Mark
@@ -2589,9 +2593,17 @@ and CodeGenMethodForExpr cenv mgbuf (spReq, entryPointInfo, methodName, eenv, al
 // Generate sequels
 //--------------------------------------------------------------------------
 
-(* does the sequel discard its result, and if so what does it do next? *)
+/// Adjust the sequel for an implicit discard (e.g. a discard that occurs by
+/// not generating a 'unit' expression at all)
 and sequelAfterDiscard sequel =
   match sequel with
+   | LeaveHandler (isFinally, whereToSaveResultOpt, afterHandler, true) ->
+      // If we're not saving the result as we leave a handler and we're doing a discard
+      // then we can just adjust the sequel to record the fact we've implicitly done a discard
+      if isFinally || whereToSaveResultOpt.IsNone then
+          Some (LeaveHandler (isFinally, whereToSaveResultOpt, afterHandler, false))
+      else 
+          None
    | DiscardThen sequel -> Some sequel
    | EndLocalScope(sq, mark) -> sequelAfterDiscard sq |> Option.map (fun sq -> EndLocalScope(sq, mark))
    | _ -> None
@@ -2647,12 +2659,17 @@ and GenSequel cenv cloc cgbuf sequel =
          cgbuf.EmitStartOfHiddenCode()
          CG.EmitInstr cgbuf (pop 0) Push0 AI_nop
       CG.EmitInstr cgbuf (pop 0) Push0 (I_br x.CodeLabel)
-  | LeaveHandler (isFinally, whereToSaveResult, x) ->
-      if isFinally then
-        CG.EmitInstr cgbuf (pop 1) Push0 AI_pop
-      else
-        EmitSetLocal cgbuf whereToSaveResult
-      CG.EmitInstr cgbuf (pop 0) Push0 (if isFinally then I_endfinally else I_leave(x.CodeLabel))
+  | LeaveHandler (isFinally, whereToSaveResultOpt, afterHandler, hasResult) ->
+      if hasResult then
+          if isFinally then
+            CG.EmitInstr cgbuf (pop 1) Push0 AI_pop
+          else
+            match whereToSaveResultOpt with
+            | None -> 
+               CG.EmitInstr cgbuf (pop 1) Push0 AI_pop
+            | Some (whereToSaveResult, _) ->
+                EmitSetLocal cgbuf whereToSaveResult
+      CG.EmitInstr cgbuf (pop 0) Push0 (if isFinally then I_endfinally else I_leave(afterHandler.CodeLabel))
   | EndFilter ->
       CG.EmitInstr cgbuf (pop 1) Push0 I_endfilter
   )
@@ -3760,7 +3777,8 @@ and GenIndirectCall cenv cgbuf eenv (functy, tyargs, curriedArgs, m) sequel =
 // Generate try expressions
 //--------------------------------------------------------------------------
 
-and GenTry cenv cgbuf eenv scopeMarks (e1, m, resty, spTry) =
+and GenTry cenv cgbuf eenv scopeMarks (e1, m, resultTy, spTry) =
+    let g = cenv.g
     let sp =
         match spTry with
         | DebugPointAtTry.Yes m -> CG.EmitSeqPoint cgbuf m; SPAlways
@@ -3771,14 +3789,23 @@ and GenTry cenv cgbuf eenv scopeMarks (e1, m, resty, spTry) =
     let startTryMark = CG.GenerateMark cgbuf "startTryMark"
     let endTryMark = CG.GenerateDelayMark cgbuf "endTryMark"
     let afterHandler = CG.GenerateDelayMark cgbuf "afterHandler"
-    let ilResultTy = GenType cenv.amap m eenvinner.tyenv resty
+    let ilResultTyOpt = 
+        if isUnitTy g resultTy then
+            None
+        else
+            Some (GenType cenv.amap m eenvinner.tyenv resultTy)
 
-    let whereToSave, _realloc, eenvinner =
-        // Ensure that we have an g.CompilerGlobalState
-        assert(cenv.g.CompilerGlobalState |> Option.isSome)
-        AllocLocal cenv cgbuf eenvinner true (cenv.g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName ("tryres", m), ilResultTy, false) (startTryMark, endTryMark)
+    let whereToSaveOpt, eenvinner =
+        match ilResultTyOpt with 
+        | None -> None, eenvinner
+        | Some ilResultTy ->
+            // Ensure that we have an g.CompilerGlobalState
+            assert(cenv.g.CompilerGlobalState |> Option.isSome)
+            let whereToSave, _realloc, eenvinner =
+                AllocLocal cenv cgbuf eenvinner true (cenv.g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName ("tryres", m), ilResultTy, false) (startTryMark, endTryMark)
+            Some (whereToSave, ilResultTy), eenvinner
 
-    let exitSequel = LeaveHandler (false, whereToSave, afterHandler)
+    let exitSequel = LeaveHandler (false, whereToSaveOpt, afterHandler, true)
     let eenvinner = {eenvinner with withinSEH = true; exitSequel = exitSequel}
 
     // Generate the body of the try. In the normal case (DebugPointAtTry.Yes) we generate a sequence point
@@ -3788,7 +3815,7 @@ and GenTry cenv cgbuf eenv scopeMarks (e1, m, resty, spTry) =
     GenExpr cenv cgbuf eenvinner sp e1 exitSequel
     CG.SetMarkToHere cgbuf endTryMark
     let tryMarks = (startTryMark.CodeLabel, endTryMark.CodeLabel)
-    whereToSave, eenvinner, stack, tryMarks, afterHandler, ilResultTy
+    whereToSaveOpt, eenvinner, stack, tryMarks, afterHandler
 
 and GenTryWith cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, spWith) sequel =
     let g = cenv.g
@@ -3796,7 +3823,7 @@ and GenTryWith cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, s
     // Save the stack - gross because IL flushes the stack at the exn. handler
     // note: eenvinner notes spill vars are live
     LocalScope "trystack" cgbuf (fun scopeMarks ->
-       let whereToSave, eenvinner, stack, tryMarks, afterHandler, ilResultTy = GenTry cenv cgbuf eenv scopeMarks (e1, m, resty, spTry)
+       let whereToSaveOpt, eenvinner, stack, tryMarks, afterHandler = GenTry cenv cgbuf eenv scopeMarks (e1, m, resty, spTry)
 
        // Now the filter and catch blocks
 
@@ -3843,7 +3870,8 @@ and GenTryWith cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, s
                CG.EmitInstr cgbuf (pop 1) (Push [g.iltyp_Exception]) (I_castclass g.iltyp_Exception)
                GenStoreVal cenv cgbuf eenvinner vh.Range vh
 
-               GenExpr cenv cgbuf eenvinner SPAlways eh (LeaveHandler (false, whereToSave, afterHandler))
+               let exitSequel = LeaveHandler (false, whereToSaveOpt, afterHandler, true)
+               GenExpr cenv cgbuf eenvinner SPAlways eh exitSequel
 
                let endOfHandler = CG.GenerateMark cgbuf "endOfHandler"
                let handlerMarks = (startOfHandler.CodeLabel, endOfHandler.CodeLabel)
@@ -3861,7 +3889,7 @@ and GenTryWith cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, s
 
                GenStoreVal cenv cgbuf eenvinner m vh
 
-               let exitSequel = (LeaveHandler (false, whereToSave, afterHandler))
+               let exitSequel = LeaveHandler (false, whereToSaveOpt, afterHandler, true)
                let eenvinner = { eenvinner with exitSequel = exitSequel }
                GenExpr cenv cgbuf eenvinner SPAlways eh exitSequel
                
@@ -3881,8 +3909,12 @@ and GenTryWith cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, s
        (* Restore the stack and load the result *)
        EmitRestoreStack cgbuf stack (* RESTORE *)
 
-       EmitGetLocal cgbuf ilResultTy whereToSave
-       GenSequel cenv eenv.cloc cgbuf sequel
+       match whereToSaveOpt with
+       | Some (whereToSave, ilResultTy) ->
+           EmitGetLocal cgbuf ilResultTy whereToSave
+           GenSequel cenv eenv.cloc cgbuf sequel
+       | None ->
+           GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
    )
 
 
@@ -3891,7 +3923,7 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resty, spTry, spFin
     // note: eenvinner notes spill vars are live
     LocalScope "trystack" cgbuf (fun scopeMarks ->
 
-       let whereToSave, eenvinner, stack, tryMarks, afterHandler, ilResultTy = GenTry cenv cgbuf eenv scopeMarks (bodyExpr, m, resty, spTry)
+       let whereToSaveOpt, eenvinner, stack, tryMarks, afterHandler = GenTry cenv cgbuf eenv scopeMarks (bodyExpr, m, resty, spTry)
 
        // Now the catch/finally block
        let startOfHandler = CG.GenerateMark cgbuf "startOfHandler"
@@ -3903,7 +3935,8 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resty, spTry, spFin
            | DebugPointAtFinally.Body -> SPAlways
            | DebugPointAtFinally.No -> SPSuppress
 
-       GenExpr cenv cgbuf eenvinner sp handlerExpr (LeaveHandler (true, whereToSave, afterHandler))
+       let exitSequel = LeaveHandler (true, whereToSaveOpt, afterHandler, true)
+       GenExpr cenv cgbuf eenvinner sp handlerExpr exitSequel
        let endOfHandler = CG.GenerateMark cgbuf "endOfHandler"
        let handlerMarks = (startOfHandler.CodeLabel, endOfHandler.CodeLabel)
        cgbuf.EmitExceptionClause
@@ -3916,8 +3949,12 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resty, spTry, spFin
        // Restore the stack and load the result
        cgbuf.EmitStartOfHiddenCode()
        EmitRestoreStack cgbuf stack
-       EmitGetLocal cgbuf ilResultTy whereToSave
-       GenSequel cenv eenv.cloc cgbuf sequel
+       match whereToSaveOpt with
+       | Some (whereToSave, ilResultTy) ->
+           EmitGetLocal cgbuf ilResultTy whereToSave
+           GenSequel cenv eenv.cloc cgbuf sequel
+       | None ->
+           GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
    )
 
 //--------------------------------------------------------------------------
@@ -6998,7 +7035,7 @@ and GenStoreVal cenv cgbuf eenv m (vspec: Val) =
     GenSetStorage vspec.Range cgbuf (StorageForVal cenv.g m vspec eenv)
 
 /// Allocate IL locals
-and AllocLocal cenv cgbuf eenv compgen (v, ty, isFixed) (scopeMarks: Mark * Mark) =
+and AllocLocal cenv cgbuf eenv compgen (v, ty, isFixed) (scopeMarks: Mark * Mark) : int * _ * _ =
      // The debug range for the local
      let ranges = if compgen then [] else [(v, scopeMarks)]
      // Get an index for the local

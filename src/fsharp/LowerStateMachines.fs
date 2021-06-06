@@ -797,23 +797,18 @@ type LowerStateMachine(g: TcGlobals) =
             //    ... await point ...
             //    ... sm ....
             // However the 'sm' won't be set on that path.
-            if bind.Var.IsCompiledAsTopLevel || 
+            if isByrefTy g bind.Var.Type && 
+                (match env.TemplateStructTy with 
+                | None -> false
+                | Some ty -> typeEquiv g ty (destByrefTy g bind.Var.Type)) then
+                RepresentBindingAsThis bind resBody m
+                |> Result.Ok
+            elif bind.Var.IsCompiledAsTopLevel || 
                 not (resBody.resumableVars.FreeLocals.Contains(bind.Var)) || 
                 bind.Var.LogicalName.StartsWith stackVarPrefix then
                 if sm_verbose then printfn "LetExpr (non-control-flow, rewrite rhs, RepresentBindingAsTopLevelOrLocal)" 
                 RepresentBindingAsTopLevelOrLocal bind resBody m
                 |> Result.Ok
-            elif isByrefTy g bind.Var.Type then
-                match env.TemplateStructTy with 
-                | None -> 
-                    Result.Error (FSComp.SR.reprResumableCodeCapturesByref())
-                            
-                | Some ty -> 
-                    if typeEquiv g ty (destByrefTy g bind.Var.Type) then
-                        RepresentBindingAsThis bind resBody m
-                        |> Result.Ok
-                    else
-                        Result.Error (FSComp.SR.reprResumableCodeCapturesByref())
             else
                 if sm_verbose then printfn "LetExpr (non-control-flow, rewrite rhs, RepresentBindingAsStateVar)" 
                 // printfn "found state variable %s" bind.Var.DisplayName

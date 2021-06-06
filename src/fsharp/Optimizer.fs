@@ -1308,10 +1308,15 @@ let IsDiscardableEffectExpr expr =
 /// Checks is a value binding is non-discardable
 let ValueIsUsedOrHasEffect cenv fvs (b: Binding, binfo) =
     let v = b.Var
-    not (cenv.settings.EliminateUnusedBindings()) ||
+    // No discarding for debug code, except InlineIfLambda
+    (not (cenv.settings.EliminateUnusedBindings()) && not v.InlineIfLambda) ||
+    // No discarding for members
     Option.isSome v.MemberInfo ||
+    // No discarding for bindings that have an effect
     (binfo.HasEffect && not (IsDiscardableEffectExpr b.Expr)) ||
+    // No discarding for 'fixed'
     v.IsFixed ||
+    // No discarding for things that are used
     Zset.contains v (fvs())
 
 let rec SplitValuesByIsUsedOrHasEffect cenv fvs x = 

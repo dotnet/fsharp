@@ -36,13 +36,13 @@
   // Offset: 0x00000270 Length: 0x000000AF
 }
 .module ListExpressionSteppingTest5.exe
-// MVID: {60B78A57-CBE3-BFEA-A745-0383578AB760}
+// MVID: {60BCC37B-CBE3-BFEA-A745-03837BC3BC60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06C00000
+// Image base: 0x06B70000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -100,28 +100,28 @@
         IL_0035:  ldloc.s    z
         IL_0037:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
         IL_003c:  nop
-        IL_003d:  ldnull
-        IL_003e:  stloc.2
-        IL_003f:  leave.s    IL_005a
+        IL_003d:  stloc.2
+        IL_003e:  leave.s    IL_0059
 
         .line 13,13 : 11,18 ''
       }  // end .try
       finally
       {
-        IL_0041:  nop
+        IL_0040:  nop
         .line 14,14 : 14,20 ''
-        IL_0042:  ldloc.1
-        IL_0043:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
-        IL_0048:  nop
+        IL_0041:  ldloc.1
+        IL_0042:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
+        IL_0047:  nop
         .line 15,15 : 14,28 ''
-        IL_0049:  ldstr      "done"
-        IL_004e:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-        IL_0053:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-        IL_0058:  pop
-        IL_0059:  endfinally
+        IL_0048:  ldstr      "done"
+        IL_004d:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+        IL_0052:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+        IL_0057:  pop
+        IL_0058:  endfinally
         .line 100001,100001 : 0,0 ''
       }  // end handler
-      IL_005a:  ldloc.2
+      IL_0059:  ldloc.2
+      IL_005a:  pop
       IL_005b:  pop
       .line 6,15 : 9,30 ''
       IL_005c:  ldloca.s   V_0

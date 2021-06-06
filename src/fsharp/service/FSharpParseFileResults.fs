@@ -523,7 +523,9 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                                             | SynInterpolatedStringPart.String _ -> ()
                                             | SynInterpolatedStringPart.FillExpr (fillExpr, _) -> yield fillExpr ]
 
-                  | SynExpr.YieldOrReturn (_, e, _)
+                  | SynExpr.YieldOrReturn (_, e, m) ->
+                      yield! checkRange m
+                      yield! walkExpr false e
                   | SynExpr.YieldOrReturnFrom (_, e, _)
                   | SynExpr.DoBang  (e, _) ->
                       yield! checkRange e.Range
