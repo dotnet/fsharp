@@ -152,9 +152,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LibraryProject", "vsintegra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TutorialProject", "vsintegration\ProjectTemplates\TutorialProject\TutorialProject.csproj", "{2937CBEC-262D-4C94-BE1D-291FAB72E3E8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskPerfCSharp", "tests\fsharp\perf\tasks\TaskPerfCSharp\TaskPerfCSharp.csproj", "{D5ECF8DF-E150-4AE3-B613-AB2B0FFA93E0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskPerfCSharp", "tests\benchmarks\TaskPerfCSharp\TaskPerfCSharp.csproj", "{D5ECF8DF-E150-4AE3-B613-AB2B0FFA93E0}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TaskPerf", "tests\fsharp\perf\tasks\TaskPerf\TaskPerf.fsproj", "{03596D51-754D-4644-8E23-84EC9532ABDC}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TaskPerf", "tests\benchmarks\TaskPerf\TaskPerf.fsproj", "{03596D51-754D-4644-8E23-84EC9532ABDC}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.ComponentTests", "tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj", "{0610FB97-7C15-422A-86FD-32335C6DF14D}"
 EndProject
