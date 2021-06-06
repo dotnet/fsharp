@@ -53,7 +53,7 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTopLevelValuesClassificationType">
-        <source>F# Dispostable Values (top-level)</source>
+        <source>F# Disposable Values (top-level)</source>
         <target state="translated">Освобождаемые значения F# (верхний уровень)</target>
         <note />
       </trans-unit>
