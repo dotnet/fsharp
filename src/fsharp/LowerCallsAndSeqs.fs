@@ -250,8 +250,8 @@ let ConvertSequenceExprToObject g amap overallExpr =
         let (TBind(v, e, sp)) = bind
         let sp, spm =
             match sp with
-            | DebugPointAtBinding.Yes m -> DebugPointAtSequential.Both, m
-            | _ -> DebugPointAtSequential.StmtOnly, e.Range
+            | DebugPointAtBinding.Yes m -> DebugPointAtSequential.SuppressNeither, m
+            | _ -> DebugPointAtSequential.SuppressStmt, e.Range
         let vref = mkLocalValRef v
         { resBody with
             phase2 = (fun ctxt ->
@@ -297,7 +297,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
             let label = IL.generateCodeLabel()
             Some { phase2 = (fun (pcVar, currVar, _nextv, pcMap) ->
                         let generate =
-                            mkSequential DebugPointAtSequential.Both m
+                            mkSequential DebugPointAtSequential.SuppressNeither m
                                 (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
                                 (mkCompGenSequential m
                                     (mkValSet m currVar e)
@@ -339,7 +339,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 Some { phase2 = (fun ctxt ->
                             let generate1, dispose1, checkDispose1 = res1.phase2 ctxt
                             let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
-                            let generate = mkSequential DebugPointAtSequential.Both m generate1 generate2
+                            let generate = mkSequential DebugPointAtSequential.SuppressNeither m generate1 generate2
                             // Order shouldn't matter here, since disposals actions are linked together by goto's  (each ends in a goto).
                             // However leaving as is for now.
                             let dispose = mkCompGenSequential m dispose2 dispose1
@@ -416,7 +416,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                                 let compensation = copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated compensation
                                 mkCompGenSequential m
                                     // set the PC to the inner finally, so that if an exception happens we run the right finally
-                                    (mkSequential DebugPointAtSequential.StmtOnly m
+                                    (mkSequential DebugPointAtSequential.SuppressStmt m
                                         (mkValSet mTry pcVar (mkInt32 g m pcMap.[innerDisposeContinuationLabel]))
                                         generate1 )
                                     // set the PC past the try/finally before trying to run it, to make sure we only run it once
@@ -430,7 +430,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                                     dispose1
                                     // set the PC past the try/finally before trying to run it, to make sure we only run it once
                                     (mkLabelled m innerDisposeContinuationLabel
-                                        (mkSequential DebugPointAtSequential.StmtOnly m
+                                        (mkSequential DebugPointAtSequential.SuppressStmt m
                                             (mkValSet mFinally pcVar (mkInt32 g m pcMap.[currentDisposeContinuationLabel]))
                                             (mkCompGenSequential m
                                                 compensation
@@ -598,7 +598,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                         let label = IL.generateCodeLabel()
                         Some { phase2 = (fun (pcVar, _currv, nextVar, pcMap) ->
                                     let generate =
-                                        mkSequential DebugPointAtSequential.StmtOnly m
+                                        mkSequential DebugPointAtSequential.SuppressStmt m
                                             (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
                                             (mkCompGenSequential m
                                                 (mkAddrSet m nextVar arbitrarySeqExpr)
@@ -874,7 +874,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
             let res2 = ConvertSeqExprCode false isTailcall e2
             match res1, res2 with 
             | Result.Ok (_, e1R), Result.Ok (closed2, e2R) -> 
-                let exprR = mkSequential DebugPointAtSequential.Both m e1R e2R
+                let exprR = mkSequential DebugPointAtSequential.SuppressNeither m e1R e2R
                 Result.Ok (closed2, exprR)
             | Result.Error msg, _ | _, Result.Error msg -> Result.Error msg
 

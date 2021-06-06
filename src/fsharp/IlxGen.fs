@@ -2237,12 +2237,18 @@ let rec FirstEmittedCodeWillBeDebugPoint g sp expr =
         | Expr.LetRec (binds, body, _, _) ->
             binds |> List.exists (BindingEmitsDebugPoint g) ||
             (binds |> List.forall (BindingEmitsNoCode g) && FirstEmittedCodeWillBeDebugPoint g sp body)
-        | Expr.Sequential (_, _, NormalSeq, spSeq, _) ->
+        | Expr.Sequential (stmt1, expr2, NormalSeq, spSeq, _) ->
             match spSeq with
-            | DebugPointAtSequential.Both -> true
-            | DebugPointAtSequential.StmtOnly -> true
-            | DebugPointAtSequential.ExprOnly -> false
-            | DebugPointAtSequential.None -> false
+            | DebugPointAtSequential.SuppressNeither -> FirstEmittedCodeWillBeDebugPoint g sp stmt1
+            | DebugPointAtSequential.SuppressExpr -> FirstEmittedCodeWillBeDebugPoint g sp stmt1
+            | DebugPointAtSequential.SuppressStmt -> FirstEmittedCodeWillBeDebugPoint g sp expr2
+            | DebugPointAtSequential.SuppressBoth -> false
+        | Expr.Sequential (expr1, stmt2, ThenDoSeq, spSeq, _) ->
+            match spSeq with
+            | DebugPointAtSequential.SuppressNeither -> FirstEmittedCodeWillBeDebugPoint g sp expr1
+            | DebugPointAtSequential.SuppressExpr -> FirstEmittedCodeWillBeDebugPoint g sp stmt2
+            | DebugPointAtSequential.SuppressStmt -> FirstEmittedCodeWillBeDebugPoint g sp expr1
+            | DebugPointAtSequential.SuppressBoth -> false
         | Expr.Match (DebugPointAtBinding.Yes _, _, _, _, _, _) -> true
         | Expr.Op ((TOp.TryWith (DebugPointAtTry.Yes _, _)
                   | TOp.TryFinally (DebugPointAtTry.Yes _, _)
@@ -2812,20 +2818,27 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel preSteps (contf: FakeUnit -> Fa
 
         // Compiler generated sequential executions result in suppressions of sequence points on both
         // left and right of the sequence
-        let spAction, spExpr =
+        let spStmt, spExpr =
             (match spSeq with
-             | DebugPointAtSequential.Both -> SPAlways, SPAlways
-             | DebugPointAtSequential.StmtOnly -> SPSuppress, sp
-             | DebugPointAtSequential.ExprOnly -> sp, SPSuppress
-             | DebugPointAtSequential.None -> SPSuppress, SPSuppress)
+             | DebugPointAtSequential.SuppressNeither -> SPAlways, SPAlways
+             | DebugPointAtSequential.SuppressStmt -> SPSuppress, sp
+             | DebugPointAtSequential.SuppressExpr -> sp, SPSuppress
+             | DebugPointAtSequential.SuppressBoth -> SPSuppress, SPSuppress)
         match specialSeqFlag with
         | NormalSeq ->
-            GenExpr cenv cgbuf eenv spAction e1 discard
+            GenExpr cenv cgbuf eenv spStmt e1 discard
             GenLinearExpr cenv cgbuf eenv spExpr e2 sequel true contf
         | ThenDoSeq ->
-            GenExpr cenv cgbuf eenv spExpr e1 Continue
-            GenExpr cenv cgbuf eenv spAction e2 discard
-            GenSequel cenv eenv.cloc cgbuf sequel
+            let g = cenv.g
+            let isUnit = isUnitTy g (tyOfExpr g e1) 
+            if isUnit then
+                GenExpr cenv cgbuf eenv spExpr e1 discard
+                GenExpr cenv cgbuf eenv spStmt e2 discard
+                GenUnitThenSequel cenv eenv e2.Range eenv.cloc cgbuf sequel
+            else
+                GenExpr cenv cgbuf eenv spExpr e1 Continue
+                GenExpr cenv cgbuf eenv spStmt e2 discard
+                GenSequel cenv eenv.cloc cgbuf sequel
             contf Fake
 
     | Expr.Let (bind, body, _, _) ->
@@ -4054,7 +4067,7 @@ and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
 // Generate while-loop
 //--------------------------------------------------------------------------
 
-and GenWhileLoop cenv cgbuf eenv (spWhile, e1, e2, m) sequel =
+and GenWhileLoop cenv cgbuf eenv (spWhile, condExpr, bodyExpr, m) sequel =
     let eenv = SetIsInLoop true eenv
     let finish = CG.GenerateDelayMark cgbuf "while_finish"
     let startTest = CG.GenerateMark cgbuf "startTest"
@@ -4065,9 +4078,9 @@ and GenWhileLoop cenv cgbuf eenv (spWhile, e1, e2, m) sequel =
         | DebugPointAtWhile.No -> SPSuppress
 
     // SEQUENCE POINTS: Emit a sequence point to cover all of 'while e do'
-    GenExpr cenv cgbuf eenv spCondition e1 (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse, finish.CodeLabel) ]))
+    GenExpr cenv cgbuf eenv spCondition condExpr (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse, finish.CodeLabel) ]))
 
-    GenExpr cenv cgbuf eenv SPAlways e2 (DiscardThen (Br startTest))
+    GenExpr cenv cgbuf eenv SPAlways bodyExpr (DiscardThen (Br startTest))
     CG.SetMarkToHere cgbuf finish
 
     // SEQUENCE POINTS: Emit a sequence point to cover 'done' if present
@@ -5686,7 +5699,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
       // optimize a test against a boolean value, i.e. the all-important if-then-else
       | TCase(DecisionTreeTest.Const(Const.Bool b), successTree) :: _ ->
        let failureTree = (match defaultTargetOpt with None -> cases.Tail.Head.CaseTree | Some d -> d)
-       GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e None eenv (if b then successTree else failureTree) (if b then failureTree else successTree) targets targetCounts repeatSP targetInfos sequel contf
+       GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e None false eenv (if b then successTree else failureTree) (if b then failureTree else successTree) targets targetCounts repeatSP targetInfos sequel contf
 
       // // Remove a single test for a union case . Union case tests are always exa
       //| [ TCase(DecisionTreeTest.UnionCase _, successTree) ] when (defaultTargetOpt.IsNone) ->
@@ -5704,7 +5717,17 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
         let idx = c.Index
         let avoidHelpers = entityRefInThisAssembly g.compilingFslib c.TyconRef
         let tester = (Some (pop 1, Push [g.ilg.typ_Bool], Choice1Of2 (avoidHelpers, cuspec, idx)))
-        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e tester eenv successTree failureTree targets targetCounts repeatSP targetInfos sequel contf
+        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e tester false eenv successTree failureTree targets targetCounts repeatSP targetInfos sequel contf
+
+      // Use GenDecisionTreeTest to generate a single test for null (when no box required)
+      | TCase(DecisionTreeTest.IsNull _, successTree) :: rest 
+           when rest.Length = (match defaultTargetOpt with None -> 1 | Some _ -> 0) 
+                && not (isTyparTy g (tyOfExpr g e)) ->
+        let failureTree =
+            match defaultTargetOpt with
+            | None -> rest.Head.CaseTree
+            | Some tg -> tg
+        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e None true eenv successTree failureTree targets targetCounts repeatSP targetInfos sequel contf
 
       | _ ->
         let caseLabels = List.map (fun _ -> CG.GenerateDelayMark cgbuf "switch_case") cases
@@ -5722,7 +5745,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
               | DecisionTreeTest.Const(Const.Zero) ->
                   GenExpr cenv cgbuf eenv SPSuppress e Continue
                   BI_brfalse
-              | DecisionTreeTest.IsNull ->
+              | DecisionTreeTest.IsNull -> 
                   GenExpr cenv cgbuf eenv SPSuppress e Continue
                   let srcTy = tyOfExpr g e
                   if isTyparTy g srcTy then
@@ -5817,7 +5840,7 @@ and GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets
 // Used for the peephole optimization below
 and (|BoolExpr|_|) = function Expr.Const (Const.Bool b1, _, _) -> Some b1 | _ -> None
 
-and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree failureTree targets targetCounts repeatSP targetInfos sequel contf =
+and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester isNullTest eenv successTree failureTree targets targetCounts repeatSP targetInfos sequel contf =
     let g = cenv.g
     match successTree, failureTree with
 
@@ -5825,6 +5848,7 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
     // This comes up in the generated equality functions. REVIEW: do this as a peephole optimization elsewhere
     | TDSuccess(es1, n1),
       TDSuccess(es2, n2) when
+         not isNullTest && 
          isNil es1 && isNil es2 &&
          (match GetTarget targets n1, GetTarget targets n2 with
           | TTarget(_, BoolExpr b1, _, _), TTarget(_, BoolExpr b2, _, _) -> b1 = not b2
@@ -5850,7 +5874,8 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
 
     | _ ->
         match tester with
-        | None _ ->
+        | None ->
+
             // Check if there is more logic in the decision tree for the failure branch
             // (and no more logic for the success branch), for example
             // when emitting the first part of 'expr1 || expr2'.
@@ -5862,7 +5887,8 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
                 
                 // OK, there is more logic in the decision tree on the failure branch
                 let success = CG.GenerateDelayMark cgbuf "testSuccess"
-                GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, [ I_brcmp (BI_brtrue, success.CodeLabel) ]))
+                let testForSuccess = if isNullTest then BI_brfalse else BI_brtrue
+                GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, [ I_brcmp (testForSuccess, success.CodeLabel) ]))
                 GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv failureTree targets targetCounts repeatSP targetInfos sequel (fun targetInfos ->
                     GenDecisionTreeAndTargetsInner cenv cgbuf (Some success) stackAtTargets eenv successTree targets targetCounts repeatSP targetInfos sequel contf
                 )
@@ -5873,7 +5899,8 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
                 // in the decision tree on the failure branch. Continue doing the success branch
                 // logic first.
                 let failure = CG.GenerateDelayMark cgbuf "testFailure"
-                GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, [ I_brcmp (BI_brfalse, failure.CodeLabel) ]))
+                let testForFailure = if isNullTest then BI_brtrue else BI_brfalse
+                GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, [ I_brcmp (testForFailure, failure.CodeLabel) ]))
                 GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv successTree targets targetCounts repeatSP targetInfos sequel (fun targetInfos ->
                     GenDecisionTreeAndTargetsInner cenv cgbuf (Some failure) stackAtTargets eenv failureTree targets targetCounts repeatSP targetInfos sequel contf
                 )

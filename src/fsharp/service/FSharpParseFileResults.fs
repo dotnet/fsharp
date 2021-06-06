@@ -616,8 +616,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                   | SynExpr.SequentialOrImplicitYield (spSeq, e1, e2, _, _)
                   | SynExpr.Sequential (spSeq, _, e1, e2, _) -> 
-                      yield! walkExpr (match spSeq with DebugPointAtSequential.ExprOnly | DebugPointAtSequential.None -> false | _ -> true) e1
-                      yield! walkExpr (match spSeq with DebugPointAtSequential.StmtOnly | DebugPointAtSequential.None -> false | _ -> true) e2
+                      yield! walkExpr (match spSeq with DebugPointAtSequential.SuppressExpr | DebugPointAtSequential.SuppressBoth -> false | _ -> true) e1
+                      yield! walkExpr (match spSeq with DebugPointAtSequential.SuppressStmt | DebugPointAtSequential.SuppressBoth -> false | _ -> true) e2
 
                   | SynExpr.IfThenElse (e1, e2, e3opt, spBind, _, _, _) ->
                       yield! walkBindSeqPt spBind

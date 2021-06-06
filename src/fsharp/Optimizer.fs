@@ -2450,9 +2450,9 @@ and OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, ty) =
     if cenv.settings.EliminateTryWithAndTryFinally () && not e1info.HasEffect then 
         let sp = 
             match spTry with 
-            | DebugPointAtTry.Yes _ -> DebugPointAtSequential.Both 
-            | DebugPointAtTry.Body -> DebugPointAtSequential.Both 
-            | DebugPointAtTry.No -> DebugPointAtSequential.StmtOnly
+            | DebugPointAtTry.Yes _ -> DebugPointAtSequential.SuppressNeither 
+            | DebugPointAtTry.Body -> DebugPointAtSequential.SuppressNeither 
+            | DebugPointAtTry.No -> DebugPointAtSequential.SuppressStmt
         Expr.Sequential (e1R, e2R, ThenDoSeq, sp, m), info 
     else
         mkTryFinally cenv.g (e1R, e2R, m, ty, spTry, spFinally), 
@@ -2528,7 +2528,12 @@ and TryOptimizeVal cenv env (mustInline, inlineIfLambda, valInfoForVal, m) =
         Some (remarkExpr m (copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated expr))
 
     | CurriedLambdaValue (_, _, _, expr, _) when mustInline || inlineIfLambda ->
-        Some (remarkExpr m (copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated expr))
+        let expr2 = copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated expr
+        // 'InlineIfLambda' doesn't erase ranges, e.g. if the lambda is user code.
+        if inlineIfLambda then 
+            Some expr2
+        else
+            Some (remarkExpr m expr2)
 
     | TupleValue _ | UnionCaseValue _ | RecdValue _ when mustInline ->
         failwith "tuple, union and record values cannot be marked 'inline'"

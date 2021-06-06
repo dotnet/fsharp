@@ -72,7 +72,7 @@ namespace Microsoft.FSharp.Control
         /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
         /// to retrieve the step, and in the continuation of the step (if any).
         member inline _.TryFinally (body: TaskCode<'TOverall, 'T>, [<InlineIfLambda>] compensation : unit -> unit) : TaskCode<'TOverall, 'T> =
-            ResumableCode.TryFinally(body, ResumableCode<_,_>(fun _ -> compensation(); true))
+            ResumableCode.TryFinally(body, ResumableCode<_,_>(fun _sm -> compensation(); true))
 
         member inline _.For (sequence : seq<'T>, body : 'T -> TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
             ResumableCode.For(sequence, body)

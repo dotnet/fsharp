@@ -5759,12 +5759,38 @@ let rec remarkExpr m x =
                   List.map (remarkInterfaceImpl m) iimpls, m)
 
     | Expr.Op (op, tinst, args, _) -> 
+
+        // If this is ultimately being inlined as the implementation 
+        // of a 'while'/'for' etc in a computation expression then lay down a
+        // debug point
         let op = 
             match op with 
-            | TOp.For (_, style) -> TOp.For(DebugPointAtFor.No, style)
-            | TOp.While (_, marker) -> TOp.While(DebugPointAtWhile.No, marker)
-            | TOp.TryFinally (_, _) -> TOp.TryFinally (DebugPointAtTry.No, DebugPointAtFinally.No)
-            | TOp.TryWith (_, _) -> TOp.TryWith (DebugPointAtTry.No, DebugPointAtWith.No)
+            | TOp.For (spFor, style) ->
+                let spFor2 = 
+                    match m.DebugPointKind with
+                    | RangeDebugPointKind.For -> DebugPointAtFor.Yes m
+                    | _ -> spFor
+                TOp.For(spFor2, style)
+            | TOp.While (spWhile, marker) -> 
+                let spWhile2 = 
+                    match m.DebugPointKind with
+                    | RangeDebugPointKind.While -> DebugPointAtWhile.Yes m
+                    | _ -> spWhile
+                TOp.While(spWhile2, marker)
+            | TOp.TryFinally (spTry, _) ->
+                let spTry2 = 
+                    match m.DebugPointKind with
+                    | RangeDebugPointKind.Try -> DebugPointAtTry.Yes m
+                    | _ -> spTry
+                // The debug point for the 'finally' is not yet recoverable
+                TOp.TryFinally (spTry2, DebugPointAtFinally.No)
+            | TOp.TryWith (spTry, _) -> 
+                let spTry2 = 
+                    match m.DebugPointKind with
+                    | RangeDebugPointKind.Try -> DebugPointAtTry.Yes m
+                    | _ -> spTry
+                // The debug point for the 'with' is not yet recoverable
+                TOp.TryWith (spTry2, DebugPointAtWith.No)
             | _ -> op
         Expr.Op (op, tinst, remarkExprs m args, m)
 
@@ -5780,29 +5806,25 @@ let rec remarkExpr m x =
         let e1R = remarkExpr m e1
         let e2R = remarkExpr m e2
 
-        // This is to suppress false sequence points when inlining 'TaskBuilder.TryFinally' and 'TaskBuilder.TryWith'
+        // This is to suppress false sequence points when inlining 'ResumableCode.TryWith'
         // It is adhoc and may need to be improved if the library implementation changes
-        // Normally inlining associated all of the inlined code with the expression range of the overall construct,
-        // which for computation expression calls TryFinally and TryWith is the 'try' keyword.
-        // However this is broken when inlining sophisticated control flow as the 'with' and 'finally'
-        // parts of the code get the 'try' keyword as their sequence point range.
         //
-        // Here we use an adhoc rule where inlining
-        //     finally
-        //        compensation()
-        //        reraise()
-        // or
-        //     with exn ->
+        // For this specific code: 
+        //
         //        __stack_caught <- true
         //        __stack_savedExn <- ...
         //
-        // we suppress the sequence points on the sequentials altogether.
+        // we suppress the sequence points on both the sequentials.
+        //
+        // Normally inlining associates all of the inlined code with the expression range of the overall construct,
+        // which for computation expression calls TryFinally and TryWith is the 'try' keyword.
+        // However this is broken when inlining sophisticated control flow as the 'with' and 'finally'
+        // parts of the code get the 'try' keyword as their sequence point range.
         let sp = 
             match sp, e2R with 
-            | DebugPointAtSequential.None, _ -> DebugPointAtSequential.None
-            | _, Expr.Op(TOp.Reraise, _, _, _)  -> DebugPointAtSequential.None
-            | _, Expr.Op(TOp.LValueOp (LSet _, v), _, _, _) when v.DisplayName = "__stack_savedExn" -> DebugPointAtSequential.None
-            | _ -> DebugPointAtSequential.StmtOnly
+            | DebugPointAtSequential.SuppressBoth, _ -> DebugPointAtSequential.SuppressBoth
+            | _, Expr.Op(TOp.LValueOp (LSet _, v), _, _, _) when v.DisplayName = "__stack_savedExn" -> DebugPointAtSequential.SuppressBoth
+            | _ -> DebugPointAtSequential.SuppressStmt
 
         Expr.Sequential (e1R, e2R, dir, sp, m)
 
@@ -6822,11 +6844,11 @@ let mkRefCellContentsRef (g: TcGlobals) = mkRecdFieldRef g.refcell_tcr_canon "co
 
 let mkSequential spSeq m e1 e2 = Expr.Sequential (e1, e2, NormalSeq, spSeq, m)
 
-let mkCompGenSequential m e1 e2 = mkSequential DebugPointAtSequential.StmtOnly m e1 e2
+let mkCompGenSequential m stmt expr = mkSequential DebugPointAtSequential.SuppressStmt m stmt expr
 
-let mkThenDoSequential spSeq m e1 e2 = Expr.Sequential (e1, e2, ThenDoSeq, spSeq, m)
+let mkThenDoSequential spSeq m expr stmt = Expr.Sequential (expr, stmt, ThenDoSeq, spSeq, m)
 
-let mkCompGenThenDoSequential m e1 e2 = mkThenDoSequential DebugPointAtSequential.StmtOnly m e1 e2
+let mkCompGenThenDoSequential m expr stmt = mkThenDoSequential DebugPointAtSequential.SuppressStmt m expr stmt
 
 let rec mkSequentials spSeq g m es = 
     match es with 

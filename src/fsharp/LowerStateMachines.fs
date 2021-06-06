@@ -80,8 +80,8 @@ let RepresentBindingAsStateVar g (bind: Binding) (resBody: StateMachineConversio
     let (TBind(v, e, sp)) = bind
     let sp, spm =
         match sp with
-        | DebugPointAtBinding.Yes m -> DebugPointAtSequential.Both, m
-        | _ -> DebugPointAtSequential.StmtOnly, e.Range
+        | DebugPointAtBinding.Yes m -> DebugPointAtSequential.SuppressNeither, m
+        | _ -> DebugPointAtSequential.SuppressStmt, e.Range
     let vref = mkLocalValRef v
     { resBody with
         phase1 = mkSequential sp m (mkValSet spm vref e) resBody.phase1
@@ -621,7 +621,10 @@ type LowerStateMachine(g: TcGlobals) =
                     let ebR2 = 
                         match pcValInfo with
                         | None -> ebR
-                        | Some ((pcVal, _), _) -> mkCompGenSequential m ebR (mkValSet m (mkLocalValRef pcVal) (mkZero g m))
+                        | Some ((pcVal, _), _) -> 
+                            mkCompGenThenDoSequential m 
+                                ebR 
+                                (mkValSet m (mkLocalValRef pcVal) (mkZero g m))
 
                     mkWhile g (sp1, sp2, egR, ebR2, m))
               entryPoints= eps
@@ -674,7 +677,10 @@ type LowerStateMachine(g: TcGlobals) =
                         let e3R2 = 
                             match pcValInfo with
                             | None -> e3R
-                            | Some ((pcVal, _), _) -> mkCompGenSequential m e3R (mkValSet m (mkLocalValRef pcVal) (mkZero g m))
+                            | Some ((pcVal, _), _) -> 
+                                mkCompGenThenDoSequential m 
+                                    e3R 
+                                    (mkValSet m (mkLocalValRef pcVal) (mkZero g m))
 
                         mkFor g (sp1, v, e1R, sp2, e2R, e3R2, m))
                   entryPoints= eps

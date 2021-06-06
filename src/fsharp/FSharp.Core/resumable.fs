@@ -218,8 +218,7 @@ module ResumableCode =
                     __stack_fin <- __stack_body_fin
                 with exn -> 
                     // Note, remarkExpr in the F# compiler detects this pattern as the code
-                    // is inlined and elides the debug sequence point on either the 'compensation'
-                    // or 'reraise' statement for the code. This is because the inlining will associate
+                    // is inlined and elides the debug sequence point on the code. This is because the inlining will associate
                     // the sequence point with the 'try' of the TryFinally because that is the range
                     // given for the whole expression 
                     //      task.TryWith(....) 
@@ -283,10 +282,10 @@ module ResumableCode =
                     // If we make it to the assignment we prove we've made a step, an early 'ret' exit out of the try/with
                     // may skip this step.
                     __stack_fin <- __stack_body_fin
-                with _ ->
+                with _exn ->
                     // Note, remarkExpr in the F# compiler detects this pattern as the code
                     // is inlined and elides the debug sequence point on either the 'compensation'
-                    // or 'reraise' statement for the code. This is because the inlining will associate
+                    // 'reraise' statement for the code. This is because the inlining will associate
                     // the sequence point with the 'try' of the TryFinally because that is the range
                     // given for the whole expression 
                     //      task.TryFinally(....) 

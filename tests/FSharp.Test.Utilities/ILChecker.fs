@@ -48,7 +48,7 @@ module ILChecker =
 
             let unifyRuntimeAssemblyName ilCode =
                 System.Text.RegularExpressions.Regex.Replace(ilCode,
-                    "\[System.Runtime\]|\[System.Runtime.Extensions\]|\[mscorlib\]","[runtime]",
+                    "\[System.Runtime\]|\[System.Console\]|\[System.Runtime.Extensions\]|\[mscorlib\]","[runtime]",
                     System.Text.RegularExpressions.RegexOptions.Singleline)
 
             let raw = File.ReadAllText(ilFilePath)

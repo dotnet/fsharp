@@ -218,21 +218,21 @@ type DebugPointForTarget =
     | Yes
     | No
 
-/// Represents whether a debug point should be present for either the
+/// Represents whether a debug point should be suppressed for either the
 /// first or second part of a sequential execution, that is whether the
 /// construct corresponds to a debug point in the original source.
 [<RequireQualifiedAccess>]
 type DebugPointAtSequential =
-    | Both
+    | SuppressNeither
 
     // This means "suppress a in 'a;b'" and "suppress b in 'a before b'"
-    | StmtOnly
+    | SuppressStmt
 
     // This means "suppress both"
-    | None
+    | SuppressBoth
 
     // This means "suppress b in 'a;b'" and "suppress a in 'a before b'"
-    | ExprOnly
+    | SuppressExpr
 
 /// Represents whether a debug point should be present for a 'try', that is whether
 /// the construct corresponds to a debug point in the original source.

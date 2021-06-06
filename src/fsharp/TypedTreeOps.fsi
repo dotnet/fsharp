@@ -1759,11 +1759,15 @@ val mkOptionDefaultValue: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkSequential: DebugPointAtSequential -> range -> Expr -> Expr -> Expr
 
-val mkCompGenSequential: range -> Expr -> Expr -> Expr
+val mkThenDoSequential: DebugPointAtSequential -> range -> expr: Expr -> stmt: Expr -> Expr
 
-val mkThenDoSequential: DebugPointAtSequential -> range -> Expr -> Expr -> Expr
+/// This is used for tacking on code _before_ the expression. The SuppressStmt
+/// setting is used for debug points, suppressing the debug points for the statement if possible.
+val mkCompGenSequential: range -> stmt: Expr -> expr: Expr -> Expr
 
-val mkCompGenThenDoSequential: range -> Expr -> Expr -> Expr
+/// This is used for tacking on code _after_ the expression. The SuppressStmt
+/// setting is used for debug points, suppressing the debug points for the statement if possible.
+val mkCompGenThenDoSequential: range -> expr: Expr -> stmt: Expr -> Expr
 
 val mkSequentials: DebugPointAtSequential -> TcGlobals -> range -> Exprs -> Expr   
 

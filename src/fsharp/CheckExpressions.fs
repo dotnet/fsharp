@@ -3525,7 +3525,7 @@ let CheckAndRewriteObjectCtor g env (ctorLambdaExpr: Expr) =
                    let ty = tyOfExpr g recdExpr
                    let thisExpr = mkGetArg0 m ty
                    let setExpr = mkRefCellSet g m ty (exprForValRef m (mkLocalValRef safeInitVal)) thisExpr
-                   Expr.Sequential (recdExpr, setExpr, ThenDoSeq, DebugPointAtSequential.StmtOnly, m)
+                   Expr.Sequential (recdExpr, setExpr, ThenDoSeq, DebugPointAtSequential.SuppressStmt, m)
            let recdExpr =
                match ctorInfo.safeInitInfo with
                | NoSafeInitInfo -> recdExpr
@@ -3534,7 +3534,7 @@ let CheckAndRewriteObjectCtor g env (ctorLambdaExpr: Expr) =
                    let thisExpr = mkGetArg0 m thisTy
                    let thisTyInst = argsOfAppTy g thisTy
                    let setExpr = mkRecdFieldSetViaExprAddr (thisExpr, rfref, thisTyInst, mkOne g m, m)
-                   Expr.Sequential (recdExpr, setExpr, ThenDoSeq, DebugPointAtSequential.StmtOnly, m)
+                   Expr.Sequential (recdExpr, setExpr, ThenDoSeq, DebugPointAtSequential.SuppressStmt, m)
            recdExpr
 
 
@@ -6939,7 +6939,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
         if isFSharpObjModelTy cenv.g overallTy then errorR(Error(FSComp.SR.tcTypeIsNotARecordTypeNeedConstructor(), mWholeExpr))
         elif not (isRecdTy cenv.g overallTy) then errorR(Error(FSComp.SR.tcTypeIsNotARecordType(), mWholeExpr))
 
-    let superTy, tpenv =
+    let superInitOpt, tpenv =
         match inherits, GetSuperTypeOfType cenv.g cenv.amap mWholeExpr overallTy with
         | Some (superTy, arg, m, _, _), Some realSuperTy ->
             // Constructor expression, with an explicit 'inheritedTys clause. Check the inherits clause.
@@ -6958,9 +6958,9 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
     let expr, tpenv = TcRecordConstruction cenv overallTy env tpenv optOrigExprInfo overallTy fldsList mWholeExpr
 
     let expr =
-        match superTy with
+        match superInitOpt with
         | _ when isStructTy cenv.g overallTy -> expr
-        | Some e -> mkCompGenSequential mWholeExpr e expr
+        | Some superInit -> mkCompGenSequential mWholeExpr superInit expr
         | None -> expr
     expr, tpenv
 
@@ -9824,7 +9824,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
         // Don't introduce temporary or 'let' for 'match against wild' or 'match against unit'
 
         | (TPat_wild _ | TPat_const (Const.Unit, _)) when not isUse && not isFixed && isNil generalizedTypars ->
-            let mkSequentialBind (tm, tmty) = (mkSequential DebugPointAtSequential.Both m rhsExpr tm, tmty)
+            let mkSequentialBind (tm, tmty) = (mkSequential DebugPointAtSequential.SuppressNeither m rhsExpr tm, tmty)
             (buildExpr >> mkSequentialBind, env, tpenv)
         | _ ->
 
