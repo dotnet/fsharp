@@ -13,4 +13,4 @@ if /i "%TEST_UPDATE_BSL%" == "1" (
   copy /y "%~n1.il" "%~n1.il.bsl"
 )
 
-exit /b 0
+exit /b 1
