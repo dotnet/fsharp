@@ -5719,8 +5719,9 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
         let tester = (Some (pop 1, Push [g.ilg.typ_Bool], Choice1Of2 (avoidHelpers, cuspec, idx)))
         GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e tester false eenv successTree failureTree targets targetCounts repeatSP targetInfos sequel contf
 
-      // Use GenDecisionTreeTest to generate a single test for null (when no box required)
-      | TCase(DecisionTreeTest.IsNull _, successTree) :: rest 
+      // Use GenDecisionTreeTest to generate a single test for null (when no box required) where the success
+      // is going to the immediate first node in the tree
+      | TCase(DecisionTreeTest.IsNull _, (TDSuccess([], 0) as successTree)) :: rest 
            when rest.Length = (match defaultTargetOpt with None -> 1 | Some _ -> 0) 
                 && not (isTyparTy g (tyOfExpr g e)) ->
         let failureTree =

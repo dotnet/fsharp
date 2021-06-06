@@ -36,13 +36,13 @@
   // Offset: 0x00000780 Length: 0x00000227
 }
 .module CCtorDUWithMember01.exe
-// MVID: {60BD3767-26F1-14EE-A745-03836737BD60}
+// MVID: {60BD4554-26F1-14EE-A745-03835445BD60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06ED0000
+// Image base: 0x04E50000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -423,7 +423,7 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       49 (0x31)
+      // Code size       47 (0x2f)
       .maxstack  4
       .locals init ([0] class CCtorDUWithMember01a/C V_0,
                [1] class CCtorDUWithMember01a/C V_1,
@@ -433,42 +433,40 @@
       IL_0000:  ldarg.0
       IL_0001:  ldnull
       IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0029
+      IL_0004:  brfalse.s  IL_0027
 
       .line 100001,100001 : 0,0 ''
       IL_0006:  ldarg.1
       IL_0007:  isinst     CCtorDUWithMember01a/C
       IL_000c:  stloc.0
       IL_000d:  ldloc.0
-      IL_000e:  brtrue.s   IL_0012
-
-      IL_0010:  br.s       IL_0027
+      IL_000e:  brfalse.s  IL_0025
 
       .line 100001,100001 : 0,0 ''
-      IL_0012:  ldloc.0
-      IL_0013:  stloc.1
-      IL_0014:  ldarg.0
-      IL_0015:  ldfld      int32 CCtorDUWithMember01a/C::_tag
-      IL_001a:  stloc.2
-      IL_001b:  ldloc.1
-      IL_001c:  ldfld      int32 CCtorDUWithMember01a/C::_tag
-      IL_0021:  stloc.3
-      IL_0022:  ldloc.2
-      IL_0023:  ldloc.3
-      IL_0024:  ceq
+      IL_0010:  ldloc.0
+      IL_0011:  stloc.1
+      IL_0012:  ldarg.0
+      IL_0013:  ldfld      int32 CCtorDUWithMember01a/C::_tag
+      IL_0018:  stloc.2
+      IL_0019:  ldloc.1
+      IL_001a:  ldfld      int32 CCtorDUWithMember01a/C::_tag
+      IL_001f:  stloc.3
+      IL_0020:  ldloc.2
+      IL_0021:  ldloc.3
+      IL_0022:  ceq
+      IL_0024:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_0025:  ldc.i4.0
       IL_0026:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0027:  ldc.i4.0
-      IL_0028:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_0029:  ldarg.1
-      IL_002a:  ldnull
-      IL_002b:  cgt.un
-      IL_002d:  ldc.i4.0
-      IL_002e:  ceq
-      IL_0030:  ret
+      IL_0027:  ldarg.1
+      IL_0028:  ldnull
+      IL_0029:  cgt.un
+      IL_002b:  ldc.i4.0
+      IL_002c:  ceq
+      IL_002e:  ret
     } // end of method C::Equals
 
     .method public hidebysig specialname 
@@ -530,7 +528,7 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       22 (0x16)
+      // Code size       20 (0x14)
       .maxstack  4
       .locals init ([0] class CCtorDUWithMember01a/C V_0)
       .line 3,3 : 6,7 ''
@@ -538,19 +536,17 @@
       IL_0001:  isinst     CCtorDUWithMember01a/C
       IL_0006:  stloc.0
       IL_0007:  ldloc.0
-      IL_0008:  brtrue.s   IL_000c
-
-      IL_000a:  br.s       IL_0014
+      IL_0008:  brfalse.s  IL_0012
 
       .line 100001,100001 : 0,0 ''
-      IL_000c:  ldarg.0
-      IL_000d:  ldloc.0
-      IL_000e:  callvirt   instance bool CCtorDUWithMember01a/C::Equals(class CCtorDUWithMember01a/C)
+      IL_000a:  ldarg.0
+      IL_000b:  ldloc.0
+      IL_000c:  callvirt   instance bool CCtorDUWithMember01a/C::Equals(class CCtorDUWithMember01a/C)
+      IL_0011:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_0012:  ldc.i4.0
       IL_0013:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_0014:  ldc.i4.0
-      IL_0015:  ret
     } // end of method C::Equals
 
     .property instance int32 Tag()

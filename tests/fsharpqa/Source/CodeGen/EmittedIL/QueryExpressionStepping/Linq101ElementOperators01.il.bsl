@@ -45,13 +45,13 @@
   // Offset: 0x00000388 Length: 0x00000127
 }
 .module Linq101ElementOperators01.exe
-// MVID: {60BCC37C-19D7-C20D-A745-03837CC3BC60}
+// MVID: {60BD414C-19D7-C20D-A745-03834C41BD60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06D80000
+// Image base: 0x008A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -151,6 +151,7 @@
       .line 12,12 : 9,29 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
+      .line 13,13 : 9,33 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101ElementOperators01/products12@12::pc
@@ -487,6 +488,7 @@
       .line 22,22 : 9,28 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
+      .line 23,23 : 9,28 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101ElementOperators01/startsWithO@22::pc
@@ -824,6 +826,7 @@
       .line 31,31 : 9,28 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
+      .line 32,32 : 9,22 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::pc
@@ -1119,6 +1122,7 @@
       .line 52,52 : 9,29 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
+      .line 53,53 : 9,22 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::pc

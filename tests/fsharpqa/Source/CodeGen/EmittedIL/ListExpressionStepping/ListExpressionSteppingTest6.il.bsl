@@ -36,13 +36,13 @@
   // Offset: 0x00000298 Length: 0x000000BC
 }
 .module ListExpressionSteppingTest6.exe
-// MVID: {60BCC37B-98A2-AB14-A745-03837BC3BC60}
+// MVID: {60BD4553-98A2-AB14-A745-03835345BD60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05390000
+// Image base: 0x04EC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -107,29 +107,29 @@
         IL_0033:  nop
         IL_0034:  br.s       IL_000b
 
-        IL_0036:  stloc.2
-        IL_0037:  leave.s    IL_004e
+        IL_0036:  ldnull
+        IL_0037:  stloc.2
+        IL_0038:  leave.s    IL_004f
 
         .line 7,9 : 11,21 ''
       }  // end .try
       finally
       {
-        IL_0039:  ldloc.1
-        IL_003a:  isinst     [mscorlib]System.IDisposable
-        IL_003f:  stloc.s    V_4
-        IL_0041:  ldloc.s    V_4
-        IL_0043:  brfalse.s  IL_004d
+        IL_003a:  ldloc.1
+        IL_003b:  isinst     [mscorlib]System.IDisposable
+        IL_0040:  stloc.s    V_4
+        IL_0042:  ldloc.s    V_4
+        IL_0044:  brfalse.s  IL_004e
 
         .line 100001,100001 : 0,0 ''
-        IL_0045:  ldloc.s    V_4
-        IL_0047:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
-        IL_004c:  endfinally
-        .line 100001,100001 : 0,0 ''
+        IL_0046:  ldloc.s    V_4
+        IL_0048:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
         IL_004d:  endfinally
         .line 100001,100001 : 0,0 ''
+        IL_004e:  endfinally
+        .line 100001,100001 : 0,0 ''
       }  // end handler
-      IL_004e:  ldloc.2
-      IL_004f:  pop
+      IL_004f:  ldloc.2
       IL_0050:  pop
       IL_0051:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6::get_es()
       IL_0056:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
@@ -158,29 +158,29 @@
         IL_0089:  nop
         IL_008a:  br.s       IL_005d
 
-        IL_008c:  stloc.s    V_6
-        IL_008e:  leave.s    IL_00a6
+        IL_008c:  ldnull
+        IL_008d:  stloc.s    V_6
+        IL_008f:  leave.s    IL_00a7
 
         .line 10,12 : 11,21 ''
       }  // end .try
       finally
       {
-        IL_0090:  ldloc.s    V_5
-        IL_0092:  isinst     [mscorlib]System.IDisposable
-        IL_0097:  stloc.s    V_8
-        IL_0099:  ldloc.s    V_8
-        IL_009b:  brfalse.s  IL_00a5
+        IL_0091:  ldloc.s    V_5
+        IL_0093:  isinst     [mscorlib]System.IDisposable
+        IL_0098:  stloc.s    V_8
+        IL_009a:  ldloc.s    V_8
+        IL_009c:  brfalse.s  IL_00a6
 
         .line 100001,100001 : 0,0 ''
-        IL_009d:  ldloc.s    V_8
-        IL_009f:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
-        IL_00a4:  endfinally
-        .line 100001,100001 : 0,0 ''
+        IL_009e:  ldloc.s    V_8
+        IL_00a0:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
         IL_00a5:  endfinally
         .line 100001,100001 : 0,0 ''
+        IL_00a6:  endfinally
+        .line 100001,100001 : 0,0 ''
       }  // end handler
-      IL_00a6:  ldloc.s    V_6
-      IL_00a8:  pop
+      IL_00a7:  ldloc.s    V_6
       IL_00a9:  pop
       .line 7,12 : 9,23 ''
       IL_00aa:  ldloca.s   V_0

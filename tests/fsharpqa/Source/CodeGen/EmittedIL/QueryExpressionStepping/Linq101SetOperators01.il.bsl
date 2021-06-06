@@ -45,13 +45,13 @@
   // Offset: 0x00000390 Length: 0x0000011E
 }
 .module Linq101SetOperators01.exe
-// MVID: {60BCC37C-4EE5-349F-A745-03837CC3BC60}
+// MVID: {60BD414C-4EE5-349F-A745-03834C41BD60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x04E60000
+// Image base: 0x059D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -151,6 +151,7 @@
       .line 13,13 : 9,33 ''
       IL_0055:  ldloc.0
       IL_0056:  stloc.1
+      .line 14,14 : 9,17 ''
       IL_0057:  ldarg.0
       IL_0058:  ldc.i4.2
       IL_0059:  stfld      int32 Linq101SetOperators01/uniqueFactors@13::pc
@@ -489,6 +490,7 @@
       IL_0054:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/categoryNames@23::'enum'
       IL_0059:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
       IL_005e:  stloc.0
+      .line 23,23 : 16,26 ''
       IL_005f:  ldarg.0
       IL_0060:  ldc.i4.2
       IL_0061:  stfld      int32 Linq101SetOperators01/categoryNames@23::pc
@@ -828,6 +830,7 @@
       IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/productFirstChars@33::'enum'
       IL_005c:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
       IL_0061:  stloc.0
+      .line 33,33 : 29,30 ''
       IL_0062:  ldarg.0
       IL_0063:  ldc.i4.2
       IL_0064:  stfld      int32 Linq101SetOperators01/productFirstChars@33::pc
@@ -1169,6 +1172,7 @@
       IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer> Linq101SetOperators01/customerFirstChars@39::'enum'
       IL_005c:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer>::get_Current()
       IL_0061:  stloc.0
+      .line 39,39 : 29,30 ''
       IL_0062:  ldarg.0
       IL_0063:  ldc.i4.2
       IL_0064:  stfld      int32 Linq101SetOperators01/customerFirstChars@39::pc
