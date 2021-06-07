@@ -72,13 +72,13 @@ type SyntaxVisitorBase<'T>() =
         ignore (path, componentInfo, typeDefnKind, synType, members, range)
         None
 
-    /// VisitRecordDefn overriding behavior when visiting record definitions (by default do nothing)
+    /// VisitRecordDefn allows overriding behavior when visiting record definitions (by default do nothing)
     abstract VisitRecordDefn: path: SyntaxVisitorPath * fields: SynField list * range -> 'T option
     default _.VisitRecordDefn(path, fields, range) =
         ignore (path, fields, range)
         None
 
-    /// VisitUnionDefn overriding behavior when visiting union definitions (by default do nothing)
+    /// VisitUnionDefn allows overriding behavior when visiting union definitions (by default do nothing)
     abstract VisitUnionDefn: path: SyntaxVisitorPath * cases: SynUnionCase list * range -> 'T option
     default _.VisitUnionDefn(path, cases, range) =
         ignore (path, cases, range)
