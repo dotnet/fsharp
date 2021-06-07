@@ -186,3 +186,32 @@ test.fsx(408,40,408,41): typecheck error FS3386: This expression uses an implici
 test.fsx(452,32,452,33): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
 
 test.fsx(454,46,454,47): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(463,18,463,19): typecheck error FS0001: This expression was expected to have type
+    'C'    
+but here has type
+    'int'    
+
+test.fsx(471,18,471,19): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(471,18,471,19): typecheck error FS0044: This construct is deprecated. nope
+
+test.fsx(482,18,482,21): typecheck error FS3387: This expression has type 'B' and is only made compatible with type 'C' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'.
+
+test.fsx(482,18,482,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(482,18,482,21): typecheck error FS3387: This expression has type 'B' and is only made compatible with type 'C' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'.
+
+test.fsx(482,18,482,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(507,18,507,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(507,18,507,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(519,18,519,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(519,18,519,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(538,18,538,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(538,18,538,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.

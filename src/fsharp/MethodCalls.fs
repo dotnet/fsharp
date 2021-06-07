@@ -1094,6 +1094,56 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
                 errorR(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
             mkDefault (m, ty), ty)
 
+let ILFieldStaticChecks g amap infoReader ad m (finfo : ILFieldInfo) =
+    CheckILFieldInfoAccessible g amap m ad finfo
+    if not finfo.IsStatic then error (Error (FSComp.SR.tcFieldIsNotStatic(finfo.FieldName), m))
+
+    // Static IL interfaces fields are not supported in lower F# versions.
+    if isInterfaceTy g finfo.ApparentEnclosingType then    
+        checkLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
+        checkLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+
+    CheckILFieldAttributes g finfo m
+
+let ILFieldInstanceChecks  g amap ad m (finfo : ILFieldInfo) =
+    if finfo.IsStatic then error (Error (FSComp.SR.tcStaticFieldUsedWhenInstanceFieldExpected(), m))
+    CheckILFieldInfoAccessible g amap m ad finfo
+    CheckILFieldAttributes g finfo m
+
+let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
+    if minfo.IsInstance <> isInstance then
+      if isInstance then 
+        error (Error (FSComp.SR.csMethodIsNotAnInstanceMethod(minfo.LogicalName), m))
+      else        
+        error (Error (FSComp.SR.csMethodIsNotAStaticMethod(minfo.LogicalName), m))
+
+    // keep the original accessibility domain to determine type accessibility
+    let adOriginal = ad
+    // Eliminate the 'protected' portion of the accessibility domain for instance accesses    
+    let ad = 
+        match objArgs, ad with 
+        | [objArg], AccessibleFrom(paths, Some tcref) -> 
+            let objArgTy = tyOfExpr g objArg 
+            let ty = generalizedTyconRef tcref
+            // We get to keep our rights if the type we're in subsumes the object argument type
+            if TypeFeasiblySubsumesType 0 g amap m ty CanCoerce objArgTy then
+                ad
+            // We get to keep our rights if this is a base call
+            elif IsBaseCall objArgs then 
+                ad
+            else
+                AccessibleFrom(paths, None) 
+        | _ -> ad
+
+    if not (IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
+      error (Error (FSComp.SR.tcMethodNotAccessible(minfo.LogicalName), m))
+
+    if isAnyTupleTy g minfo.ApparentEnclosingType && not minfo.IsExtensionMember &&
+        (minfo.LogicalName.StartsWithOrdinal("get_Item") || minfo.LogicalName.StartsWithOrdinal("get_Rest")) then
+      warning (Error (FSComp.SR.tcTupleMemberNotNormallyUsed(), m))
+
+    CheckMethInfoAttributes g m tyargsOpt minfo |> CommitOperationResult
+
 //-------------------------------------------------------------------------
 // Adjust caller arguments as part of building a method call
 //------------------------------------------------------------------------- 
@@ -1177,6 +1227,7 @@ let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap infoReade
    else
        match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
        | Some (minfo, _) -> 
+           MethInfoChecks g amap false None [] ad m minfo
            let callExpr, _ = BuildMethodCall tcVal g amap Mutates.NeverMutates m false minfo ValUseFlag.NormalValUse [] [] [expr]
            assert (let resTy = tyOfExpr g callExpr in typeEquiv g reqdTy resTy)
            callExpr
@@ -1925,56 +1976,6 @@ let RecdFieldInstanceChecks g amap ad m (rfinfo: RecdFieldInfo) =
     if rfinfo.IsStatic then error (Error (FSComp.SR.tcStaticFieldUsedWhenInstanceFieldExpected(), m))
     CheckRecdFieldInfoAttributes g rfinfo m |> CommitOperationResult        
     CheckRecdFieldInfoAccessible amap m ad rfinfo
-
-let ILFieldStaticChecks g amap infoReader ad m (finfo : ILFieldInfo) =
-    CheckILFieldInfoAccessible g amap m ad finfo
-    if not finfo.IsStatic then error (Error (FSComp.SR.tcFieldIsNotStatic(finfo.FieldName), m))
-
-    // Static IL interfaces fields are not supported in lower F# versions.
-    if isInterfaceTy g finfo.ApparentEnclosingType then    
-        checkLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
-        checkLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
-
-    CheckILFieldAttributes g finfo m
-
-let ILFieldInstanceChecks  g amap ad m (finfo : ILFieldInfo) =
-    if finfo.IsStatic then error (Error (FSComp.SR.tcStaticFieldUsedWhenInstanceFieldExpected(), m))
-    CheckILFieldInfoAccessible g amap m ad finfo
-    CheckILFieldAttributes g finfo m
-
-let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
-    if minfo.IsInstance <> isInstance then
-      if isInstance then 
-        error (Error (FSComp.SR.csMethodIsNotAnInstanceMethod(minfo.LogicalName), m))
-      else        
-        error (Error (FSComp.SR.csMethodIsNotAStaticMethod(minfo.LogicalName), m))
-
-    // keep the original accessibility domain to determine type accessibility
-    let adOriginal = ad
-    // Eliminate the 'protected' portion of the accessibility domain for instance accesses    
-    let ad = 
-        match objArgs, ad with 
-        | [objArg], AccessibleFrom(paths, Some tcref) -> 
-            let objArgTy = tyOfExpr g objArg 
-            let ty = generalizedTyconRef tcref
-            // We get to keep our rights if the type we're in subsumes the object argument type
-            if TypeFeasiblySubsumesType 0 g amap m ty CanCoerce objArgTy then
-                ad
-            // We get to keep our rights if this is a base call
-            elif IsBaseCall objArgs then 
-                ad
-            else
-                AccessibleFrom(paths, None) 
-        | _ -> ad
-
-    if not (IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
-      error (Error (FSComp.SR.tcMethodNotAccessible(minfo.LogicalName), m))
-
-    if isAnyTupleTy g minfo.ApparentEnclosingType && not minfo.IsExtensionMember &&
-        (minfo.LogicalName.StartsWithOrdinal("get_Item") || minfo.LogicalName.StartsWithOrdinal("get_Rest")) then
-      warning (Error (FSComp.SR.tcTupleMemberNotNormallyUsed(), m))
-
-    CheckMethInfoAttributes g m tyargsOpt minfo |> CommitOperationResult
 
 exception FieldNotMutable of DisplayEnv * RecdFieldRef * range
 

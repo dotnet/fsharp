@@ -66,7 +66,7 @@ module CoreTests =
     [<Test>]
     let ``auto-widen-version-preview-warns-on``() = 
         let cfg = testConfig "core/auto-widen/preview"
-        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --warnon:3386 --warnaserror+" }
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --warnon:3386 --warnaserror+ --define:NEGATIVE" }
         singleVersionedNegTest cfg "preview" "test"
 
     [<Test>]
