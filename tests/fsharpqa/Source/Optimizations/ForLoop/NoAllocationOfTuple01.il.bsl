@@ -36,13 +36,13 @@
   // Offset: 0x000001E0 Length: 0x00000085
 }
 .module NoAllocationOfTuple01.dll
-// MVID: {60BCAF74-13B5-F699-A745-038374AFBC60}
+// MVID: {60BE0580-13B5-F699-A745-03838005BE60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06F40000
+// Image base: 0x05100000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

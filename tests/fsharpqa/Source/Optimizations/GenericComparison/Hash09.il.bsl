@@ -36,13 +36,13 @@
   // Offset: 0x00000888 Length: 0x00000680
 }
 .module Hash09.dll
-// MVID: {60BD42CC-9642-77DB-A745-0383CC42BD60}
+// MVID: {60BE0580-9642-77DB-A745-03838005BE60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x063C0000
+// Image base: 0x06A40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -481,7 +481,7 @@
                                     class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       89 (0x59)
+        // Code size       87 (0x57)
         .maxstack  5
         .locals init ([0] class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
                  [1] class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_1,
@@ -492,53 +492,55 @@
         IL_0000:  ldarg.0
         IL_0001:  ldnull
         IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_0051
+        IL_0004:  brfalse.s  IL_004f
 
         .line 16707566,16707566 : 0,0 ''
         IL_0006:  ldarg.1
         IL_0007:  isinst     class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
         IL_000c:  stloc.0
         IL_000d:  ldloc.0
-        IL_000e:  brtrue.s   IL_0012
+        IL_000e:  brfalse.s  IL_004d
 
-        IL_0010:  br.s       IL_004f
-
+        .line 16707566,16707566 : 0,0 ''
+        IL_0010:  ldarg.0
+        IL_0011:  pop
         .line 16707566,16707566 : 0,0 ''
         IL_0012:  ldarg.0
-        IL_0013:  pop
-        .line 16707566,16707566 : 0,0 ''
-        IL_0014:  ldarg.0
-        IL_0015:  stloc.1
-        IL_0016:  ldloc.0
-        IL_0017:  stloc.2
-        IL_0018:  ldloc.1
-        IL_0019:  ldfld      !0 class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
-        IL_001e:  stloc.3
-        IL_001f:  ldloc.2
-        IL_0020:  ldfld      !0 class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
-        IL_0025:  stloc.s    V_4
-        IL_0027:  ldarg.2
-        IL_0028:  ldloc.3
-        IL_0029:  ldloc.s    V_4
-        IL_002b:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityWithComparerIntrinsic<!a>(class [mscorlib]System.Collections.IEqualityComparer,
+        IL_0013:  stloc.1
+        IL_0014:  ldloc.0
+        IL_0015:  stloc.2
+        IL_0016:  ldloc.1
+        IL_0017:  ldfld      !0 class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
+        IL_001c:  stloc.3
+        IL_001d:  ldloc.2
+        IL_001e:  ldfld      !0 class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
+        IL_0023:  stloc.s    V_4
+        IL_0025:  ldarg.2
+        IL_0026:  ldloc.3
+        IL_0027:  ldloc.s    V_4
+        IL_0029:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityWithComparerIntrinsic<!a>(class [mscorlib]System.Collections.IEqualityComparer,
                                                                                                                                               !!0,
                                                                                                                                               !!0)
-        IL_0030:  brfalse.s  IL_004d
+        IL_002e:  brfalse.s  IL_004b
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0032:  ldloc.1
-        IL_0033:  ldfld      !0 class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
-        IL_0038:  stloc.3
-        IL_0039:  ldloc.2
-        IL_003a:  ldfld      !0 class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
-        IL_003f:  stloc.s    V_4
-        IL_0041:  ldarg.2
-        IL_0042:  ldloc.3
-        IL_0043:  ldloc.s    V_4
-        IL_0045:  tail.
-        IL_0047:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityWithComparerIntrinsic<!a>(class [mscorlib]System.Collections.IEqualityComparer,
+        IL_0030:  ldloc.1
+        IL_0031:  ldfld      !0 class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
+        IL_0036:  stloc.3
+        IL_0037:  ldloc.2
+        IL_0038:  ldfld      !0 class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
+        IL_003d:  stloc.s    V_4
+        IL_003f:  ldarg.2
+        IL_0040:  ldloc.3
+        IL_0041:  ldloc.s    V_4
+        IL_0043:  tail.
+        IL_0045:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityWithComparerIntrinsic<!a>(class [mscorlib]System.Collections.IEqualityComparer,
                                                                                                                                               !!0,
                                                                                                                                               !!0)
+        IL_004a:  ret
+
+        .line 16707566,16707566 : 0,0 ''
+        IL_004b:  ldc.i4.0
         IL_004c:  ret
 
         .line 16707566,16707566 : 0,0 ''
@@ -546,16 +548,12 @@
         IL_004e:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_004f:  ldc.i4.0
-        IL_0050:  ret
-
-        .line 16707566,16707566 : 0,0 ''
-        IL_0051:  ldarg.1
-        IL_0052:  ldnull
-        IL_0053:  cgt.un
-        IL_0055:  ldc.i4.0
-        IL_0056:  ceq
-        IL_0058:  ret
+        IL_004f:  ldarg.1
+        IL_0050:  ldnull
+        IL_0051:  cgt.un
+        IL_0053:  ldc.i4.0
+        IL_0054:  ceq
+        IL_0056:  ret
       } // end of method GenericKey`1::Equals
 
       .method public hidebysig virtual final 
@@ -635,7 +633,7 @@
               instance bool  Equals(object obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       24 (0x18)
+        // Code size       22 (0x16)
         .maxstack  4
         .locals init ([0] class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0)
         .line 4,4 : 10,20 ''
@@ -643,20 +641,18 @@
         IL_0001:  isinst     class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
         IL_0006:  stloc.0
         IL_0007:  ldloc.0
-        IL_0008:  brtrue.s   IL_000c
-
-        IL_000a:  br.s       IL_0016
+        IL_0008:  brfalse.s  IL_0014
 
         .line 16707566,16707566 : 0,0 ''
-        IL_000c:  ldarg.0
-        IL_000d:  ldloc.0
-        IL_000e:  tail.
-        IL_0010:  callvirt   instance bool class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::Equals(class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!0>)
+        IL_000a:  ldarg.0
+        IL_000b:  ldloc.0
+        IL_000c:  tail.
+        IL_000e:  callvirt   instance bool class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::Equals(class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!0>)
+        IL_0013:  ret
+
+        .line 16707566,16707566 : 0,0 ''
+        IL_0014:  ldc.i4.0
         IL_0015:  ret
-
-        .line 16707566,16707566 : 0,0 ''
-        IL_0016:  ldc.i4.0
-        IL_0017:  ret
       } // end of method GenericKey`1::Equals
 
       .property instance int32 Tag()

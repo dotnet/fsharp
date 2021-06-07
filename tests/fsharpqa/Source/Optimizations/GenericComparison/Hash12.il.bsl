@@ -36,13 +36,13 @@
   // Offset: 0x00000A90 Length: 0x00000585
 }
 .module Hash12.dll
-// MVID: {60BD42CC-9661-796E-A745-0383CC42BD60}
+// MVID: {60BE0580-9661-796E-A745-03838005BE60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06BB0000
+// Image base: 0x06940000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -501,7 +501,7 @@
                                     class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       65 (0x41)
+        // Code size       63 (0x3f)
         .maxstack  4
         .locals init ([0] class Hash12/HashMicroPerfAndCodeGenerationTests/Key V_0,
                  [1] class Hash12/HashMicroPerfAndCodeGenerationTests/Key V_1,
@@ -510,37 +510,39 @@
         IL_0000:  ldarg.0
         IL_0001:  ldnull
         IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_0039
+        IL_0004:  brfalse.s  IL_0037
 
         .line 16707566,16707566 : 0,0 ''
         IL_0006:  ldarg.1
         IL_0007:  isinst     Hash12/HashMicroPerfAndCodeGenerationTests/Key
         IL_000c:  stloc.0
         IL_000d:  ldloc.0
-        IL_000e:  brtrue.s   IL_0012
+        IL_000e:  brfalse.s  IL_0035
 
-        IL_0010:  br.s       IL_0037
-
+        .line 16707566,16707566 : 0,0 ''
+        IL_0010:  ldarg.0
+        IL_0011:  pop
         .line 16707566,16707566 : 0,0 ''
         IL_0012:  ldarg.0
-        IL_0013:  pop
-        .line 16707566,16707566 : 0,0 ''
-        IL_0014:  ldarg.0
-        IL_0015:  stloc.1
-        IL_0016:  ldloc.0
-        IL_0017:  stloc.2
-        IL_0018:  ldloc.1
-        IL_0019:  ldfld      int32 Hash12/HashMicroPerfAndCodeGenerationTests/Key::item1
-        IL_001e:  ldloc.2
-        IL_001f:  ldfld      int32 Hash12/HashMicroPerfAndCodeGenerationTests/Key::item1
-        IL_0024:  bne.un.s   IL_0035
+        IL_0013:  stloc.1
+        IL_0014:  ldloc.0
+        IL_0015:  stloc.2
+        IL_0016:  ldloc.1
+        IL_0017:  ldfld      int32 Hash12/HashMicroPerfAndCodeGenerationTests/Key::item1
+        IL_001c:  ldloc.2
+        IL_001d:  ldfld      int32 Hash12/HashMicroPerfAndCodeGenerationTests/Key::item1
+        IL_0022:  bne.un.s   IL_0033
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0026:  ldloc.1
-        IL_0027:  ldfld      int32 Hash12/HashMicroPerfAndCodeGenerationTests/Key::item2
-        IL_002c:  ldloc.2
-        IL_002d:  ldfld      int32 Hash12/HashMicroPerfAndCodeGenerationTests/Key::item2
-        IL_0032:  ceq
+        IL_0024:  ldloc.1
+        IL_0025:  ldfld      int32 Hash12/HashMicroPerfAndCodeGenerationTests/Key::item2
+        IL_002a:  ldloc.2
+        IL_002b:  ldfld      int32 Hash12/HashMicroPerfAndCodeGenerationTests/Key::item2
+        IL_0030:  ceq
+        IL_0032:  ret
+
+        .line 16707566,16707566 : 0,0 ''
+        IL_0033:  ldc.i4.0
         IL_0034:  ret
 
         .line 16707566,16707566 : 0,0 ''
@@ -548,16 +550,12 @@
         IL_0036:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0037:  ldc.i4.0
-        IL_0038:  ret
-
-        .line 16707566,16707566 : 0,0 ''
-        IL_0039:  ldarg.1
-        IL_003a:  ldnull
-        IL_003b:  cgt.un
-        IL_003d:  ldc.i4.0
-        IL_003e:  ceq
-        IL_0040:  ret
+        IL_0037:  ldarg.1
+        IL_0038:  ldnull
+        IL_0039:  cgt.un
+        IL_003b:  ldc.i4.0
+        IL_003c:  ceq
+        IL_003e:  ret
       } // end of method Key::Equals
 
       .method public hidebysig virtual final 
@@ -623,7 +621,7 @@
               instance bool  Equals(object obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       22 (0x16)
+        // Code size       20 (0x14)
         .maxstack  4
         .locals init ([0] class Hash12/HashMicroPerfAndCodeGenerationTests/Key V_0)
         .line 4,4 : 10,13 ''
@@ -631,19 +629,17 @@
         IL_0001:  isinst     Hash12/HashMicroPerfAndCodeGenerationTests/Key
         IL_0006:  stloc.0
         IL_0007:  ldloc.0
-        IL_0008:  brtrue.s   IL_000c
-
-        IL_000a:  br.s       IL_0014
+        IL_0008:  brfalse.s  IL_0012
 
         .line 16707566,16707566 : 0,0 ''
-        IL_000c:  ldarg.0
-        IL_000d:  ldloc.0
-        IL_000e:  callvirt   instance bool Hash12/HashMicroPerfAndCodeGenerationTests/Key::Equals(class Hash12/HashMicroPerfAndCodeGenerationTests/Key)
+        IL_000a:  ldarg.0
+        IL_000b:  ldloc.0
+        IL_000c:  callvirt   instance bool Hash12/HashMicroPerfAndCodeGenerationTests/Key::Equals(class Hash12/HashMicroPerfAndCodeGenerationTests/Key)
+        IL_0011:  ret
+
+        .line 16707566,16707566 : 0,0 ''
+        IL_0012:  ldc.i4.0
         IL_0013:  ret
-
-        .line 16707566,16707566 : 0,0 ''
-        IL_0014:  ldc.i4.0
-        IL_0015:  ret
       } // end of method Key::Equals
 
       .property instance int32 Tag()
@@ -1168,7 +1164,7 @@
                                     class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       140 (0x8c)
+        // Code size       138 (0x8a)
         .maxstack  5
         .locals init ([0] class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys V_0,
                  [1] class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys V_1,
@@ -1183,70 +1179,72 @@
         IL_0000:  ldarg.0
         IL_0001:  ldnull
         IL_0002:  cgt.un
-        IL_0004:  brfalse    IL_0084
+        IL_0004:  brfalse    IL_0082
 
         .line 16707566,16707566 : 0,0 ''
         IL_0009:  ldarg.1
         IL_000a:  isinst     Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys
         IL_000f:  stloc.0
         IL_0010:  ldloc.0
-        IL_0011:  brtrue.s   IL_0015
+        IL_0011:  brfalse.s  IL_0080
 
-        IL_0013:  br.s       IL_0082
-
+        .line 16707566,16707566 : 0,0 ''
+        IL_0013:  ldarg.0
+        IL_0014:  pop
         .line 16707566,16707566 : 0,0 ''
         IL_0015:  ldarg.0
-        IL_0016:  pop
-        .line 16707566,16707566 : 0,0 ''
-        IL_0017:  ldarg.0
-        IL_0018:  stloc.1
-        IL_0019:  ldloc.0
-        IL_001a:  stloc.2
-        IL_001b:  ldloc.1
-        IL_001c:  ldfld      class Hash12/HashMicroPerfAndCodeGenerationTests/Key Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::item1
-        IL_0021:  stloc.3
-        IL_0022:  ldloc.2
-        IL_0023:  ldfld      class Hash12/HashMicroPerfAndCodeGenerationTests/Key Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::item1
-        IL_0028:  stloc.s    V_4
-        IL_002a:  ldloc.3
-        IL_002b:  ldloc.s    V_4
-        IL_002d:  ldarg.2
-        IL_002e:  callvirt   instance bool Hash12/HashMicroPerfAndCodeGenerationTests/Key::Equals(object,
+        IL_0016:  stloc.1
+        IL_0017:  ldloc.0
+        IL_0018:  stloc.2
+        IL_0019:  ldloc.1
+        IL_001a:  ldfld      class Hash12/HashMicroPerfAndCodeGenerationTests/Key Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::item1
+        IL_001f:  stloc.3
+        IL_0020:  ldloc.2
+        IL_0021:  ldfld      class Hash12/HashMicroPerfAndCodeGenerationTests/Key Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::item1
+        IL_0026:  stloc.s    V_4
+        IL_0028:  ldloc.3
+        IL_0029:  ldloc.s    V_4
+        IL_002b:  ldarg.2
+        IL_002c:  callvirt   instance bool Hash12/HashMicroPerfAndCodeGenerationTests/Key::Equals(object,
                                                                                                   class [mscorlib]System.Collections.IEqualityComparer)
-        IL_0033:  brfalse.s  IL_0080
+        IL_0031:  brfalse.s  IL_007e
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0035:  ldloc.1
-        IL_0036:  ldfld      class [mscorlib]System.Tuple`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,class Hash12/HashMicroPerfAndCodeGenerationTests/Key> Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::item2
-        IL_003b:  stloc.s    V_5
-        IL_003d:  ldloc.2
-        IL_003e:  ldfld      class [mscorlib]System.Tuple`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,class Hash12/HashMicroPerfAndCodeGenerationTests/Key> Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::item2
-        IL_0043:  stloc.s    V_6
-        IL_0045:  ldloc.s    V_5
-        IL_0047:  call       instance !0 class [mscorlib]System.Tuple`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,class Hash12/HashMicroPerfAndCodeGenerationTests/Key>::get_Item1()
-        IL_004c:  stloc.3
-        IL_004d:  ldloc.s    V_5
-        IL_004f:  call       instance !1 class [mscorlib]System.Tuple`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,class Hash12/HashMicroPerfAndCodeGenerationTests/Key>::get_Item2()
-        IL_0054:  stloc.s    V_4
-        IL_0056:  ldloc.s    V_6
-        IL_0058:  call       instance !0 class [mscorlib]System.Tuple`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,class Hash12/HashMicroPerfAndCodeGenerationTests/Key>::get_Item1()
-        IL_005d:  stloc.s    V_7
-        IL_005f:  ldloc.s    V_6
-        IL_0061:  call       instance !1 class [mscorlib]System.Tuple`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,class Hash12/HashMicroPerfAndCodeGenerationTests/Key>::get_Item2()
-        IL_0066:  stloc.s    V_8
-        IL_0068:  ldloc.3
-        IL_0069:  ldloc.s    V_7
-        IL_006b:  ldarg.2
-        IL_006c:  callvirt   instance bool Hash12/HashMicroPerfAndCodeGenerationTests/Key::Equals(object,
+        IL_0033:  ldloc.1
+        IL_0034:  ldfld      class [mscorlib]System.Tuple`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,class Hash12/HashMicroPerfAndCodeGenerationTests/Key> Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::item2
+        IL_0039:  stloc.s    V_5
+        IL_003b:  ldloc.2
+        IL_003c:  ldfld      class [mscorlib]System.Tuple`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,class Hash12/HashMicroPerfAndCodeGenerationTests/Key> Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::item2
+        IL_0041:  stloc.s    V_6
+        IL_0043:  ldloc.s    V_5
+        IL_0045:  call       instance !0 class [mscorlib]System.Tuple`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,class Hash12/HashMicroPerfAndCodeGenerationTests/Key>::get_Item1()
+        IL_004a:  stloc.3
+        IL_004b:  ldloc.s    V_5
+        IL_004d:  call       instance !1 class [mscorlib]System.Tuple`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,class Hash12/HashMicroPerfAndCodeGenerationTests/Key>::get_Item2()
+        IL_0052:  stloc.s    V_4
+        IL_0054:  ldloc.s    V_6
+        IL_0056:  call       instance !0 class [mscorlib]System.Tuple`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,class Hash12/HashMicroPerfAndCodeGenerationTests/Key>::get_Item1()
+        IL_005b:  stloc.s    V_7
+        IL_005d:  ldloc.s    V_6
+        IL_005f:  call       instance !1 class [mscorlib]System.Tuple`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,class Hash12/HashMicroPerfAndCodeGenerationTests/Key>::get_Item2()
+        IL_0064:  stloc.s    V_8
+        IL_0066:  ldloc.3
+        IL_0067:  ldloc.s    V_7
+        IL_0069:  ldarg.2
+        IL_006a:  callvirt   instance bool Hash12/HashMicroPerfAndCodeGenerationTests/Key::Equals(object,
                                                                                                   class [mscorlib]System.Collections.IEqualityComparer)
-        IL_0071:  brfalse.s  IL_007e
+        IL_006f:  brfalse.s  IL_007c
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0073:  ldloc.s    V_4
-        IL_0075:  ldloc.s    V_8
-        IL_0077:  ldarg.2
-        IL_0078:  callvirt   instance bool Hash12/HashMicroPerfAndCodeGenerationTests/Key::Equals(object,
+        IL_0071:  ldloc.s    V_4
+        IL_0073:  ldloc.s    V_8
+        IL_0075:  ldarg.2
+        IL_0076:  callvirt   instance bool Hash12/HashMicroPerfAndCodeGenerationTests/Key::Equals(object,
                                                                                                   class [mscorlib]System.Collections.IEqualityComparer)
+        IL_007b:  ret
+
+        .line 16707566,16707566 : 0,0 ''
+        IL_007c:  ldc.i4.0
         IL_007d:  ret
 
         .line 16707566,16707566 : 0,0 ''
@@ -1258,16 +1256,12 @@
         IL_0081:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0082:  ldc.i4.0
-        IL_0083:  ret
-
-        .line 16707566,16707566 : 0,0 ''
-        IL_0084:  ldarg.1
-        IL_0085:  ldnull
-        IL_0086:  cgt.un
-        IL_0088:  ldc.i4.0
-        IL_0089:  ceq
-        IL_008b:  ret
+        IL_0082:  ldarg.1
+        IL_0083:  ldnull
+        IL_0084:  cgt.un
+        IL_0086:  ldc.i4.0
+        IL_0087:  ceq
+        IL_0089:  ret
       } // end of method KeyWithInnerKeys::Equals
 
       .method public hidebysig virtual final 
@@ -1336,7 +1330,7 @@
               instance bool  Equals(object obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       24 (0x18)
+        // Code size       22 (0x16)
         .maxstack  4
         .locals init ([0] class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys V_0)
         .line 5,5 : 10,26 ''
@@ -1344,20 +1338,18 @@
         IL_0001:  isinst     Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys
         IL_0006:  stloc.0
         IL_0007:  ldloc.0
-        IL_0008:  brtrue.s   IL_000c
-
-        IL_000a:  br.s       IL_0016
+        IL_0008:  brfalse.s  IL_0014
 
         .line 16707566,16707566 : 0,0 ''
-        IL_000c:  ldarg.0
-        IL_000d:  ldloc.0
-        IL_000e:  tail.
-        IL_0010:  callvirt   instance bool Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::Equals(class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys)
+        IL_000a:  ldarg.0
+        IL_000b:  ldloc.0
+        IL_000c:  tail.
+        IL_000e:  callvirt   instance bool Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::Equals(class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys)
+        IL_0013:  ret
+
+        .line 16707566,16707566 : 0,0 ''
+        IL_0014:  ldc.i4.0
         IL_0015:  ret
-
-        .line 16707566,16707566 : 0,0 ''
-        IL_0016:  ldc.i4.0
-        IL_0017:  ret
       } // end of method KeyWithInnerKeys::Equals
 
       .property instance int32 Tag()
