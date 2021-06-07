@@ -177,19 +177,6 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpDiagnost
 
     member x.GetDiagnostics() = diagnostics.ToArray()
 
-
-/// This represents the thread-local state established as each task function runs as part of the build.
-///
-/// Use to reset error and warning handlers.
-type CompilationGlobalsScope(errorLogger: ErrorLogger, phase: BuildPhase) = 
-    let unwindEL = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
-    let unwindBP = PushThreadBuildPhaseUntilUnwind phase
-    // Return the disposable object that cleans up
-    interface IDisposable with
-        member d.Dispose() =
-            unwindBP.Dispose()         
-            unwindEL.Dispose()
-
 module DiagnosticHelpers =                            
 
     let ReportDiagnostic (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, fileInfo, (exn, severity), suggestNames) = 

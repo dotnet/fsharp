@@ -1973,8 +1973,6 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] DependencyFiles
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.CodeAnalysis.FSharpChecker
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean ImplicitlyStartBackgroundWork
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean get_ImplicitlyStartBackgroundWork()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Instance
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker get_Instance()
@@ -1982,14 +1980,10 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpP
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.Tokenization.FSharpTokenInfo[][] TokenizeFile(System.String)
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 ActualCheckFileCount
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 ActualParseFileCount
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 CurrentQueueLength
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 MaxMemory
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 PauseBeforeBackgroundWork
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 get_ActualCheckFileCount()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 get_ActualParseFileCount()
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 get_CurrentQueueLength()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 get_MaxMemory()
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 get_PauseBeforeBackgroundWork()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer] CheckFileInProject(FSharp.Compiler.CodeAnalysis.FSharpParseFileResults, System.String, Int32, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults] ParseAndCheckProject(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults] GetBackgroundParseResultsForFileInProject(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
@@ -2018,21 +2012,16 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Mi
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]],System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]] get_BeforeBackgroundFileCheck()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]],System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]] get_FileChecked()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]],System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]] get_FileParsed()
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults,System.Int32]] TryGetRecentCheckResultsForFile(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults,System.Int64]] TryGetRecentCheckResultsForFile(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: System.Tuple`2[FSharp.Compiler.CodeAnalysis.FSharpParsingOptions,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Diagnostics.FSharpDiagnostic]] GetParsingOptionsFromCommandLineArgs(Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: System.Tuple`2[FSharp.Compiler.CodeAnalysis.FSharpParsingOptions,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Diagnostics.FSharpDiagnostic]] GetParsingOptionsFromCommandLineArgs(Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: System.Tuple`2[FSharp.Compiler.CodeAnalysis.FSharpParsingOptions,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Diagnostics.FSharpDiagnostic]] GetParsingOptionsFromProjectOptions(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions)
 FSharp.Compiler.CodeAnalysis.FSharpChecker: System.Tuple`2[FSharp.Compiler.Tokenization.FSharpTokenInfo[],FSharp.Compiler.Tokenization.FSharpTokenizerLexState] TokenizeLine(System.String, FSharp.Compiler.Tokenization.FSharpTokenizerLexState)
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Void CheckProjectInBackground(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearCache(System.Collections.Generic.IEnumerable`1[FSharp.Compiler.CodeAnalysis.FSharpProjectOptions], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateAll()
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateConfiguration(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Void StopBackgroundCompile()
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Void WaitForBackgroundCompile()
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Void set_ImplicitlyStartBackgroundWork(Boolean)
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateConfiguration(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void set_MaxMemory(Int32)
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Void set_PauseBeforeBackgroundWork(Int32)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsBindingALambdaAtPosition(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPosContainedInApplication(FSharp.Compiler.Text.Position)

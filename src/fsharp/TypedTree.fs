@@ -5238,6 +5238,11 @@ type CcuThunk =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
+    /// Used at the end of comppiling an assembly to get a frozen, final stable CCU
+    /// for the compilation which we no longer mutate.
+    member x.CloneWithFinalizedContents(ccuContents) =
+        { x with target = { x.target with Contents = ccuContents } }
+
     override ccu.ToString() = ccu.AssemblyName
 
 /// The result of attempting to resolve an assembly name to a full ccu.

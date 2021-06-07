@@ -56,6 +56,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.XmlDocFileWriter
+open FSharp.Compiler.BuildGraph
 
 //----------------------------------------------------------------------------
 // Reporting - warnings, errors
@@ -195,7 +196,7 @@ let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, a
 /// copied to the output folder, for example (except perhaps FSharp.Core.dll).
 ///
 /// NOTE: there is similar code in IncrementalBuilder.fs and this code should really be reconciled with that
-let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFiles, lexResourceManager, dependencyProvider) =
+let AdjustForScriptCompile(tcConfigB: TcConfigBuilder, commandLineSourceFiles, lexResourceManager, dependencyProvider) =
 
     let combineFilePath file =
         try
@@ -221,7 +222,7 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
         if IsScript filename then
             let closure =
                 LoadClosure.ComputeClosureOfScriptFiles
-                   (ctok, tcConfig, [filename, rangeStartup], CodeContext.Compilation,
+                   (tcConfig, [filename, rangeStartup], CodeContext.Compilation,
                     lexResourceManager, dependencyProvider)
 
             // Record the new references (non-framework) references from the analysis of the script. (The full resolutions are recorded
@@ -466,7 +467,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
         // Rather than start processing, just collect names, then process them.
         try
             let files = ProcessCommandLineFlags (tcConfigB, lcidFromCodePage, argv)
-            AdjustForScriptCompile(ctok, tcConfigB, files, lexResourceManager, dependencyProvider)
+            AdjustForScriptCompile(tcConfigB, files, lexResourceManager, dependencyProvider)
         with e ->
             errorRecovery e rangeStartup
             delayForFlagsLogger.ForwardDelayedDiagnostics tcConfigB
@@ -516,10 +517,12 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     ReportTime tcConfig "Import mscorlib and FSharp.Core.dll"
     let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
 
-    let sysRes, otherRes, knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
+    let sysRes, otherRes, knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
 
     // Import basic assemblies
-    let tcGlobals, frameworkTcImports = TcImports.BuildFrameworkTcImports (ctok, foundationalTcConfigP, sysRes, otherRes) |> Cancellable.runWithoutCancellation
+    let tcGlobals, frameworkTcImports = 
+        TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes)
+        |> NodeCode.RunImmediateWithoutCancellation
 
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
@@ -559,8 +562,8 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     ReportTime tcConfig "Import non-system references"
 
     let tcImports =
-        TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
-        |> Cancellable.runWithoutCancellation
+        TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
+        |> NodeCode.RunImmediateWithoutCancellation
 
     // register tcImports to be disposed in future
     disposables.Register tcImports
@@ -667,10 +670,12 @@ let main1OfAst
     // Resolve assemblies
     ReportTime tcConfig "Import mscorlib and FSharp.Core.dll"
     let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
-    let sysRes, otherRes, knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
+    let sysRes, otherRes, knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
 
     // Import basic assemblies
-    let tcGlobals, frameworkTcImports = TcImports.BuildFrameworkTcImports (ctok, foundationalTcConfigP, sysRes, otherRes) |> Cancellable.runWithoutCancellation
+    let tcGlobals, frameworkTcImports = 
+        TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes) 
+        |> NodeCode.RunImmediateWithoutCancellation
 
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
@@ -683,7 +688,10 @@ let main1OfAst
 
     // Import other assemblies
     ReportTime tcConfig "Import non-system references"
-    let tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)  |> Cancellable.runWithoutCancellation
+
+    let tcImports = 
+        TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider) 
+        |> NodeCode.RunImmediateWithoutCancellation
 
     // register tcImports to be disposed in future
     disposables.Register tcImports
