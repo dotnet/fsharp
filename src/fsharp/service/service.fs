@@ -443,6 +443,7 @@ type BackgroundCompiler(
                           tcInfo,
                           creationDiags) (onComplete) =
 
+        // Here we lock for the creation of the node, not its execution
         parseCacheLock.AcquireLock (fun ltok -> 
             let key = (fileName, sourceText.GetHashCode() |> int64, options)
             match checkFileInProjectCache.TryGet(ltok, key) with
