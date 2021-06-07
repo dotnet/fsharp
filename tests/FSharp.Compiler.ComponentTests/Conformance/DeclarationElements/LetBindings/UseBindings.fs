@@ -9,12 +9,23 @@ open FSharp.Test.Utilities.Xunit.Attributes
 module UseBindings =
 
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../../resources/tests/Conformance/DeclarationElements/LetBindings", Includes=[|"UseBindingDiscard01.fs"|])>]
-    let ``UseBindings - UseBindingDiscard01.fs - `` compilation =
+    let ``UseBindings - UseBindingDiscard01.fs - Compiles`` compilation =
         compilation
         |> asFsx
+        |> withOptions ["--langversion:preview"]
         |> compile
         |> shouldSucceed
         |> ignore
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../../resources/tests/Conformance/DeclarationElements/LetBindings", Includes=[|"UseBindingDiscard01.fs"|])>]
+    let ``UseBindings - UseBindingDiscard01.fs - Bad LangVersion`` compilation =
+        compilation
+        |> asFsx
+        |> withOptions ["--langversion:5.0"]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3350
+        |> withDiagnosticMessageMatches "Feature 'discard pattern in use binding' is not available.*"
 
     [<Fact>]
     let ``Dispose called for discarded value of use binding`` () =

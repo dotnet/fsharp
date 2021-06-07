@@ -9774,6 +9774,8 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
                     let isDiscarded = match checkedPat with TPat_wild _ -> true | _ -> false
                     if not isDiscarded then
                         errorR(Error(FSComp.SR.tcInvalidUseBinding(), m))
+                    else
+                        ErrorLogger.checkLanguageFeatureError cenv.g.langVersion Features.LanguageFeature.UseBindingValueDiscard checkedPat.Range
 
                 elif isFixed then
                     errorR(Error(FSComp.SR.tcInvalidUseBinding(), m))
