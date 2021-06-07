@@ -228,6 +228,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                         async { 
                             try
                                 let! _ = work
+                                ()
                             with
                             | _ ->
                                 ()
