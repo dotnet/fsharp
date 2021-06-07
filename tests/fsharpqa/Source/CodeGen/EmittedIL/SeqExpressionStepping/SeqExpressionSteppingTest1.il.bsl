@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly SeqExpressionSteppingTest1
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.SeqExpressionSteppingTest1
 {
-  // Offset: 0x00000000 Length: 0x00000267
+  // Offset: 0x00000000 Length: 0x00000263
 }
 .mresource public FSharpOptimizationData.SeqExpressionSteppingTest1
 {
-  // Offset: 0x00000270 Length: 0x000000AD
+  // Offset: 0x00000268 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest1.exe
-// MVID: {59B19240-2432-947D-A745-03834092B159}
+// MVID: {60A8401D-2432-947D-A745-03831D40A860}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002D0000
+// Image base: 0x04BF0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -90,7 +90,7 @@
         // Code size       66 (0x42)
         .maxstack  6
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SeqExpressionStepping\\SeqExpressionSteppingTest1.fs'
+        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\SeqExpressionStepping\\SeqExpressionSteppingTest1.fs'
         IL_0000:  ldarg.0
         IL_0001:  ldfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
         IL_0006:  ldc.i4.1
@@ -114,10 +114,10 @@
 
         .line 100001,100001 : 0,0 ''
         IL_0021:  nop
+        .line 6,6 : 15,22 ''
         IL_0022:  ldarg.0
         IL_0023:  ldc.i4.1
         IL_0024:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
-        .line 6,6 : 15,22 ''
         IL_0029:  ldarg.0
         IL_002a:  ldc.i4.1
         IL_002b:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::current
