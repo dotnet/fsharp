@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Compiler.UnitTests
 
@@ -991,6 +991,9 @@ let main _ = 0
             """
 
     [<Test>]
+#if NETCOREAPP
+    [<Ignore("SKIPPED: https://github.com/dotnet/runtime/issues/47663")>]
+#endif
     let LargeRecordWithStringFieldsDoesNotStackOverflow() =
         CompilerAssert.CompileExe
             """
