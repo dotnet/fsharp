@@ -220,20 +220,19 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                 | _ ->
                     ()
 
-                let cts = CancellationTokenSource()
-                let task = 
-                    // This allows a single active background check for an entire script.
-                    let work = checkerProvider.Checker.ParseAndCheckProject(projectOptions, userOpName="tryComputeOptionsBySingleScriptOrFile")
-                    Async.StartAsTask(
-                        async { 
-                            try
-                                let! _ = work
-                                ()
-                            with
-                            | _ ->
-                                ()
-                        }, 
-                        cancellationToken = cts.Token)
+                let cts = new CancellationTokenSource()
+                // This allows a single active background check for an entire script.
+                let work = checkerProvider.Checker.ParseAndCheckProject(projectOptions, userOpName="tryComputeOptionsBySingleScriptOrFile")
+                Async.Start(
+                    async { 
+                        try
+                            let! _ = work
+                            ()
+                        with
+                        | _ ->
+                            ()
+                    }, 
+                    cancellationToken = cts.Token)
                 currentBackgroundScriptProjectCheck <- Some cts
 
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
@@ -380,7 +379,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
                                 reply.Reply None
                             elif document.Project.IsFSharpMiscellaneousOrMetadata then
-                                let! options = tryComputeOptionsByFile document ct userOpName
+                                let! options = tryComputeOptionsBySingleScriptOrFile document ct userOpName
                                 if ct.IsCancellationRequested then
                                     reply.Reply None
                                 else
