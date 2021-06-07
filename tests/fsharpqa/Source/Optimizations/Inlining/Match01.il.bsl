@@ -32,13 +32,13 @@
   // Offset: 0x000006F0 Length: 0x000003B7
 }
 .module Match01.dll
-// MVID: {60BE0580-FAFE-C8E4-A745-03838005BE60}
+// MVID: {60BE1F16-FAFE-C8E4-A745-0383161FBE60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x053B0000
+// Image base: 0x09680000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
