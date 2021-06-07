@@ -37,22 +37,22 @@ let testTask() = task { return 1 }
             (fun verifier -> verifier.VerifyIL [
             """
 .method public strict virtual instance void 
-        MoveNext() cil managed
+MoveNext() cil managed
 {
-  .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext
-  
-  .maxstack  4
-  .locals init (int32 V_0,
-           class [runtime]System.Exception V_1,
-           bool V_2,
-           int32 V_3,
-           class [runtime]System.Exception V_4,
-           class [runtime]System.Exception V_5)
-  IL_0000:  ldarg.0
-  IL_0001:  ldfld      int32 Test/testTask@4::ResumptionPoint
-  IL_0006:  stloc.0
-  .try
-  {
+    .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext
+          
+    .maxstack  4
+    .locals init (int32 V_0,
+                    class [runtime]System.Exception V_1,
+                    bool V_2,
+                    int32 V_3,
+                    class [runtime]System.Exception V_4,
+                    class [runtime]System.Exception V_5)
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld      int32 Test/testTask@4::ResumptionPoint
+    IL_0006:  stloc.0
+    .try
+    {
     IL_0007:  ldc.i4.1
     IL_0008:  stloc.3
     IL_0009:  ldarg.0
@@ -75,31 +75,29 @@ let testTask() = task { return 1 }
     
     IL_0037:  leave.s    IL_0045
     
-  }  
-  catch [runtime]System.Object 
-  {
+    }  
+    catch [runtime]System.Object 
+    {
     IL_0039:  castclass  [runtime]System.Exception
     IL_003e:  stloc.s    V_4
     IL_0040:  ldloc.s    V_4
     IL_0042:  stloc.1
     IL_0043:  leave.s    IL_0045
     
-  }  
-  IL_0045:  ldloc.1
-  IL_0046:  stloc.s    V_5
-  IL_0048:  ldloc.s    V_5
-  IL_004a:  brfalse.s  IL_004e
+    }  
+    IL_0045:  ldloc.1
+    IL_0046:  stloc.s    V_5
+    IL_0048:  ldloc.s    V_5
+    IL_004a:  brtrue.s   IL_004d
     
-  IL_004c:  br.s       IL_004f
+    IL_004c:  ret
     
-  IL_004e:  ret
-    
-  IL_004f:  ldarg.0
-  IL_0050:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
-  IL_0055:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::MethodBuilder
-  IL_005a:  ldloc.s    V_5
-  IL_005c:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::SetException(class [netstandard]System.Exception)
-  IL_0061:  ret
+    IL_004d:  ldarg.0
+    IL_004e:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
+    IL_0053:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::MethodBuilder
+    IL_0058:  ldloc.s    V_5
+    IL_005a:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::SetException(class [netstandard]System.Exception)
+    IL_005f:  ret
 } 
                 """
             ])
@@ -173,18 +171,16 @@ let testTask() = task { return 1 }
   IL_0041:  ldloc.1
   IL_0042:  stloc.3
   IL_0043:  ldloc.3
-  IL_0044:  brfalse.s  IL_0048
+  IL_0044:  brtrue.s   IL_0047
     
-  IL_0046:  br.s       IL_0049
+  IL_0046:  ret
     
-  IL_0048:  ret
-    
-  IL_0049:  ldarg.0
-  IL_004a:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
-  IL_004f:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::MethodBuilder
-  IL_0054:  ldloc.3
-  IL_0055:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::SetException(class [netstandard]System.Exception)
-  IL_005a:  ret
+  IL_0047:  ldarg.0
+  IL_0048:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
+  IL_004d:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::MethodBuilder
+  IL_0052:  ldloc.3
+  IL_0053:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::SetException(class [netstandard]System.Exception)
+  IL_0058:  ret
 } 
                 """
             ])
@@ -423,7 +419,7 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
       IL_001c:  castclass  [runtime]System.Exception
       IL_0021:  stloc.s    V_5
       IL_0023:  ldstr      "finally"
-      IL_0028:  call       void [System.Console]System.Console::WriteLine(string)
+      IL_0028:  call       void [runtime]System.Console::WriteLine(string)
       IL_002d:  ldc.i4.1
       IL_002e:  stloc.s    V_4
       IL_0030:  rethrow
@@ -437,7 +433,7 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
     IL_003c:  brfalse.s  IL_004e
     
     IL_003e:  ldstr      "finally"
-    IL_0043:  call       void [System.Console]System.Console::WriteLine(string)
+    IL_0043:  call       void [runtime]System.Console::WriteLine(string)
     IL_0048:  ldc.i4.1
     IL_0049:  stloc.s    V_4
     IL_004b:  nop
@@ -473,18 +469,16 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
   IL_007f:  ldloc.1
   IL_0080:  stloc.s    V_5
   IL_0082:  ldloc.s    V_5
-  IL_0084:  brfalse.s  IL_0088
+  IL_0084:  brtrue.s   IL_0087
     
-  IL_0086:  br.s       IL_0089
+  IL_0086:  ret
     
-  IL_0088:  ret
-    
-  IL_0089:  ldarg.0
-  IL_008a:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
-  IL_008f:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
-  IL_0094:  ldloc.s    V_5
-  IL_0096:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetException(class [netstandard]System.Exception)
-  IL_009b:  ret
+  IL_0087:  ldarg.0
+  IL_0088:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+  IL_008d:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+  IL_0092:  ldloc.s    V_5
+  IL_0094:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetException(class [netstandard]System.Exception)
+  IL_0099:  ret
 } 
                 """
             ])
@@ -548,7 +542,7 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
       IL_001c:  castclass  [runtime]System.Exception
       IL_0021:  stloc.s    V_5
       IL_0023:  ldstr      "finally"
-      IL_0028:  call       void [System.Console]System.Console::WriteLine(string)
+      IL_0028:  call       void [runtime]System.Console::WriteLine(string)
       IL_002d:  ldc.i4.1
       IL_002e:  stloc.s    V_6
       IL_0030:  rethrow
@@ -562,7 +556,7 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
     IL_003c:  brfalse.s  IL_004e
     
     IL_003e:  ldstr      "finally"
-    IL_0043:  call       void [System.Console]System.Console::WriteLine(string)
+    IL_0043:  call       void [runtime]System.Console::WriteLine(string)
     IL_0048:  ldc.i4.1
     IL_0049:  stloc.s    V_7
     IL_004b:  nop
@@ -598,18 +592,16 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
   IL_007f:  ldloc.1
   IL_0080:  stloc.s    V_9
   IL_0082:  ldloc.s    V_9
-  IL_0084:  brfalse.s  IL_0088
+  IL_0084:  brtrue.s   IL_0087
     
-  IL_0086:  br.s       IL_0089
+  IL_0086:  ret
     
-  IL_0088:  ret
-    
-  IL_0089:  ldarg.0
-  IL_008a:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
-  IL_008f:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
-  IL_0094:  ldloc.s    V_9
-  IL_0096:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetException(class [netstandard]System.Exception)
-  IL_009b:  ret
+  IL_0087:  ldarg.0
+  IL_0088:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+  IL_008d:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+  IL_0092:  ldloc.s    V_9
+  IL_0094:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetException(class [netstandard]System.Exception)
+  IL_0099:  ret
 } 
                 """
             ])
@@ -688,7 +680,7 @@ let testTask() = task { try 1 with e -> System.Console.WriteLine("finally"); 2 }
     IL_0036:  ldloc.s    V_5
     IL_0038:  stloc.s    V_7
     IL_003a:  ldstr      "finally"
-    IL_003f:  call       void [System.Console]System.Console::WriteLine(string)
+    IL_003f:  call       void [runtime]System.Console::WriteLine(string)
     IL_0044:  ldc.i4.1
     IL_0045:  nop
     IL_0046:  br.s       IL_004a
@@ -723,18 +715,16 @@ let testTask() = task { try 1 with e -> System.Console.WriteLine("finally"); 2 }
   IL_0079:  ldloc.1
   IL_007a:  stloc.s    V_5
   IL_007c:  ldloc.s    V_5
-  IL_007e:  brfalse.s  IL_0082
+  IL_007e:  brtrue.s   IL_0081
     
-  IL_0080:  br.s       IL_0083
+  IL_0080:  ret
     
-  IL_0082:  ret
-    
-  IL_0083:  ldarg.0
-  IL_0084:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
-  IL_0089:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
-  IL_008e:  ldloc.s    V_5
-  IL_0090:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetException(class [netstandard]System.Exception)
-  IL_0095:  ret
+  IL_0081:  ldarg.0
+  IL_0082:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+  IL_0087:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+  IL_008c:  ldloc.s    V_5
+  IL_008e:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetException(class [netstandard]System.Exception)
+  IL_0093:  ret
 } 
                 """
             ])
@@ -818,7 +808,7 @@ let testTask() = task { try 1 with e -> System.Console.WriteLine("with"); 2 }
     IL_003a:  ldloc.s    V_8
     IL_003c:  stloc.s    V_9
     IL_003e:  ldstr      "with"
-    IL_0043:  call       void [System.Console]System.Console::WriteLine(string)
+    IL_0043:  call       void [runtime]System.Console::WriteLine(string)
     IL_0048:  ldc.i4.1
     IL_0049:  nop
     IL_004a:  br.s       IL_004e
@@ -853,18 +843,16 @@ let testTask() = task { try 1 with e -> System.Console.WriteLine("with"); 2 }
   IL_007d:  ldloc.1
   IL_007e:  stloc.s    V_11
   IL_0080:  ldloc.s    V_11
-  IL_0082:  brfalse.s  IL_0086
+  IL_0082:  brtrue.s   IL_0085
     
-  IL_0084:  br.s       IL_0087
+  IL_0084:  ret
     
-  IL_0086:  ret
-    
-  IL_0087:  ldarg.0
-  IL_0088:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
-  IL_008d:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
-  IL_0092:  ldloc.s    V_11
-  IL_0094:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetException(class [netstandard]System.Exception)
-  IL_0099:  ret
+  IL_0085:  ldarg.0
+  IL_0086:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+  IL_008b:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+  IL_0090:  ldloc.s    V_11
+  IL_0092:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetException(class [netstandard]System.Exception)
+  IL_0097:  ret
 } 
                 """
             ])
@@ -915,7 +903,7 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
     IL_0019:  brfalse.s  IL_0030
     
     IL_001b:  ldstr      "loop"
-    IL_0020:  call       void [System.Console]System.Console::WriteLine(string)
+    IL_0020:  call       void [runtime]System.Console::WriteLine(string)
     IL_0025:  ldc.i4.1
     IL_0026:  stloc.s    V_4
     IL_0028:  ldloc.s    V_4
@@ -954,18 +942,16 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
   IL_0060:  ldloc.1
   IL_0061:  stloc.s    V_5
   IL_0063:  ldloc.s    V_5
-  IL_0065:  brfalse.s  IL_0069
+  IL_0065:  brtrue.s   IL_0068
     
-  IL_0067:  br.s       IL_006a
+  IL_0067:  ret
     
-  IL_0069:  ret
-    
-  IL_006a:  ldarg.0
-  IL_006b:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@5::Data
-  IL_0070:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
-  IL_0075:  ldloc.s    V_5
-  IL_0077:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetException(class [netstandard]System.Exception)
-  IL_007c:  ret
+  IL_0068:  ldarg.0
+  IL_0069:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@5::Data
+  IL_006e:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+  IL_0073:  ldloc.s    V_5
+  IL_0075:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetException(class [netstandard]System.Exception)
+  IL_007a:  ret
 } 
                 """
             ])
@@ -1016,7 +1002,7 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
     IL_0019:  brfalse.s  IL_0030
     
     IL_001b:  ldstr      "loop"
-    IL_0020:  call       void [System.Console]System.Console::WriteLine(string)
+    IL_0020:  call       void [runtime]System.Console::WriteLine(string)
     IL_0025:  ldc.i4.1
     IL_0026:  stloc.s    V_4
     IL_0028:  ldloc.s    V_4
@@ -1055,18 +1041,16 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
   IL_0060:  ldloc.1
   IL_0061:  stloc.s    V_6
   IL_0063:  ldloc.s    V_6
-  IL_0065:  brfalse.s  IL_0069
+  IL_0065:  brtrue.s   IL_0068
     
-  IL_0067:  br.s       IL_006a
+  IL_0067:  ret
     
-  IL_0069:  ret
-    
-  IL_006a:  ldarg.0
-  IL_006b:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@5::Data
-  IL_0070:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
-  IL_0075:  ldloc.s    V_6
-  IL_0077:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetException(class [netstandard]System.Exception)
-  IL_007c:  ret
+  IL_0068:  ldarg.0
+  IL_0069:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@5::Data
+  IL_006e:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+  IL_0073:  ldloc.s    V_6
+  IL_0075:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetException(class [netstandard]System.Exception)
+  IL_007a:  ret
 } 
                 """
             ])

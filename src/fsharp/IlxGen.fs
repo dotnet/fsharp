@@ -2411,13 +2411,16 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
 
     match LowerStateMachineExpr cenv.g expr with
     | LoweredStateMachineResult.Lowered res ->
+        checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
         GenStructStateMachine cenv cgbuf eenv res sequel
         true
     | LoweredStateMachineResult.UseAlternative (msg, altExpr) ->
+        checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
         warning(Error(FSComp.SR.reprStateMachineNotCompilable(msg), expr.Range))
         GenExpr cenv cgbuf eenv sp altExpr sequel
         true
     | LoweredStateMachineResult.NoAlternative msg ->
+        checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
         errorR(Error(FSComp.SR.reprStateMachineNotCompilableNoAlternative(msg), expr.Range))
         GenDefaultValue cenv cgbuf eenv (tyOfExpr cenv.g expr, expr.Range)
         true

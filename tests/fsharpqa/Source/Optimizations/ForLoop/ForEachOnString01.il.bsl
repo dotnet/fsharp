@@ -41,13 +41,13 @@
   // Offset: 0x00000358 Length: 0x000000FF
 }
 .module ForEachOnString01.dll
-// MVID: {60BE0580-105C-852B-A745-03838005BE60}
+// MVID: {5FCFFFA6-105C-852B-A745-0383A6FFCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06980000
+// Image base: 0x06C70000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
