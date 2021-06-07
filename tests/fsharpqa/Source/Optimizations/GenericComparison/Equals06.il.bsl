@@ -36,13 +36,13 @@
   // Offset: 0x00000890 Length: 0x00000688
 }
 .module Equals06.dll
-// MVID: {60BE0580-0759-31EC-A745-03838005BE60}
+// MVID: {60BE1F16-0759-31EC-A745-0383161FBE60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06CE0000
+// Image base: 0x06DA0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

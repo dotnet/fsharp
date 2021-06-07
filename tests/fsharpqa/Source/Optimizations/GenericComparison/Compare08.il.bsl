@@ -36,13 +36,13 @@
   // Offset: 0x00000230 Length: 0x000000B2
 }
 .module Compare08.dll
-// MVID: {60BE0580-03E7-F88E-A745-03838005BE60}
+// MVID: {60BE1F16-03E7-F88E-A745-0383161FBE60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06DF0000
+// Image base: 0x06D10000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
