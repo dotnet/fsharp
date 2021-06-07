@@ -321,9 +321,10 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
                             // de-sugaring of 'do!' and other CodeCode constructs.
                             let mutable taken = false
                             try
-                                do! semaphore.WaitAsync(ct).ContinueWith(fun _ -> 
-                                         taken <- true)
-                                    |> NodeCode.AwaitTask
+                                do! 
+                                    semaphore.WaitAsync(ct)
+                                     .ContinueWith(fun t -> if t.IsCompleted then taken <- true) 
+                                     |> NodeCode.AwaitTask
 
                                 if isCachedResultNotNull() then
                                     return cachedResult.Result
