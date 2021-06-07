@@ -3980,8 +3980,6 @@ FSharp.Compiler.EditorServices.XmlDocable: Int32 line
 FSharp.Compiler.EditorServices.XmlDocable: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_paramNames()
 FSharp.Compiler.EditorServices.XmlDocable: Microsoft.FSharp.Collections.FSharpList`1[System.String] paramNames
 FSharp.Compiler.EditorServices.XmlDocable: System.String ToString()
-FSharp.Compiler.FxResolverLockToken
-FSharp.Compiler.FxResolverLockToken: Void .ctor()
 FSharp.Compiler.IO.ByteMemory
 FSharp.Compiler.IO.ByteMemory: Byte Item [Int32]
 FSharp.Compiler.IO.ByteMemory: Byte get_Item(Int32)

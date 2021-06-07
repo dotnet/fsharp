@@ -215,8 +215,21 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
     let isCachedResultNotNull() =
         cachedResult <> null
 
+    // retryCompute indicates that we abandon computations when the originator is
+    // cancelled. 
+    //
+    // If retryCompute is 'true', the computation is run directly in the originating requestor's 
+    // thread.  If cancelled, other awaiting computations must restart the computation from scratch.
+    //
+    // If retryCompute is 'false', a MailboxProcessor is used to allow the cancelled originator
+    // to detach from the computation, while other awaiting computations continue to wait on the result.
+    //
+    // Currently, 'retryCompute' = true for all graph nodes. However, the code for we include the 
+    // code to allow 'retryCompute' = false in case it's needed in the future, and ensure it is under independent
+    // unit test.
     let loop (agent: MailboxProcessor<AgentMessage<'T>>) =
         async {
+            assert (not retryCompute)
             try
                 while true do
                     match! agent.Receive() with
@@ -301,9 +314,17 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
                         try
                             let! ct = NodeCode.CancellationToken
                             
-                            do! semaphore.WaitAsync(ct) |> NodeCode.AwaitTask
-
+                            // We must set 'taken' before any implicit cancellation checks
+                            // occur, making sure we are under the protection of the 'try'.
+                            // For example, NodeCode's 'try/finally' (TryFinally) uses async.TryFinally which does
+                            // implicit cancellation checks even before the try is entered, as do the
+                            // de-sugaring of 'do!' and other CodeCode constructs.
+                            let mutable taken = false
                             try
+                                do! semaphore.WaitAsync(ct).ContinueWith(fun _ -> 
+                                         taken <- true)
+                                    |> NodeCode.AwaitTask
+
                                 if isCachedResultNotNull() then
                                     return cachedResult.Result
                                 else
@@ -330,12 +351,14 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
                                     )
                                     return! tcs.Task |> NodeCode.AwaitTask
                             finally
-                                semaphore.Release() |> ignore
+                                if taken then
+                                    semaphore.Release() |> ignore
                         finally
                             lock gate <| fun () ->
                                 requestCount <- requestCount - 1
 
                     | GraphNodeAction.GetValueByAgent -> 
+                        assert (not retryCompute)
                         let mbp, cts = agent
                         try
                             let! ct = NodeCode.CancellationToken
@@ -363,4 +386,4 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
         member _.IsComputing = requestCount > 0
 
     new(computation) =
-        GraphNode(true, computation)
+        GraphNode(retryCompute=true, computation=computation)

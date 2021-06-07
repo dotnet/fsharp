@@ -275,17 +275,13 @@ type BackgroundCompiler(
                         { new IProjectReference with 
                             member x.EvaluateRawContents() = 
                               node {
-                                let! ct = NodeCode.CancellationToken
-                                let ilReaderOpt = delayedReader.TryGetILModuleReader() |> Cancellable.run ct
+                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> NodeCode.FromCancellable
                                 match ilReaderOpt with
-                                | ValueOrCancelled.Cancelled ex -> return raise ex
-                                | ValueOrCancelled.Value ilReaderOpt ->
-                                    match ilReaderOpt with
-                                    | Some ilReader ->
-                                        let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
-                                        return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
-                                    | _ ->
-                                        return None
+                                | Some ilReader ->
+                                    let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
+                                    return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
+                                | _ ->
+                                    return None
                               }
                             member x.TryGetLogicalTimeStamp(_) = stamp |> Some
                             member x.FileName = nm }
@@ -540,46 +536,37 @@ type BackgroundCompiler(
          tcInfo: TcInfo,
          creationDiags: FSharpDiagnostic[]) : NodeCode<CheckFileCacheValue> = 
 
-        let work =
-            cancellable {
-                // Get additional script #load closure information if applicable.
-                // For scripts, this will have been recorded by GetProjectOptionsFromScript.
-                let tcConfig = tcPrior.TcConfig
-                let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
-
-                let! checkAnswer = 
-                    FSharpCheckFileResults.CheckOneFile
-                        (parseResults,
-                            sourceText,
-                            fileName,
-                            options.ProjectFileName, 
-                            tcConfig,
-                            tcPrior.TcGlobals,
-                            tcPrior.TcImports, 
-                            tcInfo.tcState,
-                            tcInfo.moduleNamesDict,
-                            loadClosure,
-                            tcInfo.TcErrors,
-                            options.IsIncompleteTypeCheckEnvironment, 
-                            options, 
-                            builder, 
-                            Array.ofList tcInfo.tcDependencyFiles, 
-                            creationDiags, 
-                            parseResults.Diagnostics, 
-                            keepAssemblyContents,
-                            suggestNamesForErrors)
-                GraphNode.SetPreferredUILang tcConfig.preferredUiLang
-                return (parseResults, checkAnswer, sourceText.GetHashCode() |> int64, tcPrior.TimeStamp)
-            }
-
         node {
-            let! ct = NodeCode.CancellationToken
-            match work |> Cancellable.run ct with
-            | ValueOrCancelled.Cancelled ex ->
-                return raise ex
-            | ValueOrCancelled.Value res ->
-                return res
+            // Get additional script #load closure information if applicable.
+            // For scripts, this will have been recorded by GetProjectOptionsFromScript.
+            let tcConfig = tcPrior.TcConfig
+            let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
+
+            let! checkAnswer = 
+                FSharpCheckFileResults.CheckOneFile
+                    (parseResults,
+                        sourceText,
+                        fileName,
+                        options.ProjectFileName, 
+                        tcConfig,
+                        tcPrior.TcGlobals,
+                        tcPrior.TcImports, 
+                        tcInfo.tcState,
+                        tcInfo.moduleNamesDict,
+                        loadClosure,
+                        tcInfo.TcErrors,
+                        options.IsIncompleteTypeCheckEnvironment, 
+                        options, 
+                        builder, 
+                        Array.ofList tcInfo.tcDependencyFiles, 
+                        creationDiags, 
+                        parseResults.Diagnostics, 
+                        keepAssemblyContents,
+                        suggestNamesForErrors) |> NodeCode.FromCancellable
+            GraphNode.SetPreferredUILang tcConfig.preferredUiLang
+            return (parseResults, checkAnswer, sourceText.GetHashCode() |> int64, tcPrior.TimeStamp)
         }
+        
 
     member private bc.CheckOneFileImpl
         (parseResults: FSharpParseFileResults,
@@ -603,8 +590,8 @@ type BackgroundCompiler(
                             Interlocked.Increment(&actualCheckFileCount) |> ignore
                         )
 
-                match! lazyCheckFile.GetOrComputeValue() with
-                | (_, results, _, _) -> return FSharpCheckFileAnswer.Succeeded results
+                let! (_, results, _, _) = lazyCheckFile.GetOrComputeValue()
+                return FSharpCheckFileAnswer.Succeeded results
          }
 
     /// Type-check the result obtained by parsing, but only if the antecedent type checking context is available. 

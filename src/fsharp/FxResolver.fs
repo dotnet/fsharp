@@ -18,10 +18,10 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Text
 open FSharp.Compiler.IO
 
-type FxResolverLockToken() =
+type internal FxResolverLockToken() =
    interface LockToken
 
-type FxResolverLock = Lock<FxResolverLockToken>   
+type internal FxResolverLock = Lock<FxResolverLockToken>   
 
 /// Resolves the references for a chosen or currently-executing framework, for
 ///   - script execution
