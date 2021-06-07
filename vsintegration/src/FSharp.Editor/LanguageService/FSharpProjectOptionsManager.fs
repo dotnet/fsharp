@@ -102,9 +102,6 @@ type private FSharpProjectOptionsMessage =
 type private FSharpProjectOptionsReactor (workspace: Workspace, settings: EditorOptions, _serviceProvider, checkerProvider: FSharpCheckerProvider) =
     let cancellationTokenSource = new CancellationTokenSource()
 
-    // This is the single cancellation token source for a single active background check for an entire script.
-    let mutable currentBackgroundScriptProjectCheck : CancellationTokenSource option = None
-
     // Hack to store command line options from HandleCommandLineChanges
     let cpsCommandLineOptions = ConcurrentDictionary<ProjectId, string[] * string[]>()
 
@@ -211,29 +208,6 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             OriginalLoadReferences = []
                             Stamp = Some(int64 (fileStamp.GetHashCode()))
                         }
-
-                match currentBackgroundScriptProjectCheck with 
-                | Some(cts) ->
-                    cts.Cancel()
-                    cts.Dispose()
-                    currentBackgroundScriptProjectCheck <- None
-                | _ ->
-                    ()
-
-                let cts = new CancellationTokenSource()
-                // This allows a single active background check for an entire script.
-                let work = checkerProvider.Checker.ParseAndCheckProject(projectOptions, userOpName="tryComputeOptionsBySingleScriptOrFile")
-                Async.Start(
-                    async { 
-                        try
-                            let! _ = work
-                            ()
-                        with
-                        | _ ->
-                            ()
-                    }, 
-                    cancellationToken = cts.Token)
-                currentBackgroundScriptProjectCheck <- Some cts
 
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
