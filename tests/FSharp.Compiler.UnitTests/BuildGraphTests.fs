@@ -69,7 +69,7 @@ module BuildGraphTests =
                 return 1 
             })
 
-        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNode))
+        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode))
 
         Async.RunSynchronously(work)
         |> ignore
@@ -82,7 +82,7 @@ module BuildGraphTests =
 
         let graphNode = GraphNode(node { return 1 })
 
-        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNode))
+        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode))
 
         let result = Async.RunSynchronously(work)
 
@@ -116,7 +116,7 @@ module BuildGraphTests =
         
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunSynchronously(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNode)))
+        Async.RunSynchronously(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode)))
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -140,7 +140,7 @@ module BuildGraphTests =
 
         let ex =
             try
-                NodeCode.RunImmediateWithoutCancellation(work, ct = cts.Token)
+                NodeCode.RunImmediate(work, ct = cts.Token)
                 |> ignore
                 failwith "Should have canceled"
             with
