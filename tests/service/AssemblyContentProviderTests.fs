@@ -43,7 +43,7 @@ let (=>) (source: string) (expected: string list) =
                // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
                yield "" |]
 
-    let _, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions) |> Async.RunSynchronously |> Option.get
+    let _, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions) |> Async.RunSynchronously
     
     let checkFileResults =
         match checkFileAnswer with

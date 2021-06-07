@@ -172,7 +172,7 @@ let mkTestFileAndOptions source additionalArgs =
     fileName, options
 
 let parseAndCheckFile fileName source options =
-    match checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunSynchronously |> Option.get with
+    match checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunSynchronously with
     | parseResults, FSharpCheckFileAnswer.Succeeded(checkResults) -> parseResults, checkResults
     | _ -> failwithf "Parsing aborted unexpectedly..."
 
@@ -202,7 +202,7 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
 #endif
 
     let projectOptions = { projectOptions with OtherOptions = Array.append opts projectOptions.OtherOptions }
-    let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, projectOptions) |> Async.RunSynchronously |> Option.get
+    let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, projectOptions) |> Async.RunSynchronously
 
     // if parseResult.Errors.Length > 0 then
     //     printfn "---> Parse Input = %A" input

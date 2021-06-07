@@ -442,7 +442,7 @@ type CompilerAssert private () =
         Option.get assembly
 
     static member Pass (source: string) =
-        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously |> Option.get
+        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
@@ -455,7 +455,7 @@ type CompilerAssert private () =
     static member PassWithOptions options (source: string) =
         let options = { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions}
 
-        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunSynchronously |> Option.get
+        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunSynchronously
 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
@@ -473,7 +473,7 @@ type CompilerAssert private () =
                 0,
                 SourceText.ofString (File.ReadAllText absoluteSourceFile),
                 { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions; SourceFiles = [|sourceFile|] })
-            |> Async.RunSynchronously |> Option.get
+            |> Async.RunSynchronously
 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
@@ -503,7 +503,7 @@ type CompilerAssert private () =
                     0,
                     SourceText.ofString source,
                     { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions; SourceFiles = [|name|] })
-                |> Async.RunSynchronously |> Option.get
+                |> Async.RunSynchronously
 
             if parseResults.Diagnostics.Length > 0 then
                 parseResults.Diagnostics
@@ -523,7 +523,7 @@ type CompilerAssert private () =
                     0,
                     SourceText.ofString source,
                     { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
-                |> Async.RunSynchronously |> Option.get
+                |> Async.RunSynchronously
 
             if parseResults.Diagnostics.Length > 0 then
                 parseResults.Diagnostics
@@ -543,7 +543,7 @@ type CompilerAssert private () =
                 0,
                 SourceText.ofString source,
                 { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
-            |> Async.RunSynchronously |> Option.get
+            |> Async.RunSynchronously
 
         match fileAnswer with
         | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); failwith "Type Checker Aborted"
@@ -565,7 +565,7 @@ type CompilerAssert private () =
                     0,
                     SourceText.ofString source,
                     { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
-                |> Async.RunSynchronously |> Option.get
+                |> Async.RunSynchronously
 
             if parseResults.Diagnostics.Length > 0 then
                 parseResults.Diagnostics

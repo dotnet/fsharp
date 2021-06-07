@@ -63,7 +63,7 @@ let test() =
             |> SourceText.ofString
         let _, checkAnswer = 
             CompilerAssert.Checker.ParseAndCheckFileInProject("test.fs", 0, fsText, fsOptions)
-            |> Async.RunSynchronously |> Option.get
+            |> Async.RunSynchronously
 
 
         match checkAnswer with
