@@ -323,7 +323,10 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
                             try
                                 do! 
                                     semaphore.WaitAsync(ct)
-                                     .ContinueWith(fun t -> if t.IsCompleted then taken <- true) 
+                                     .ContinueWith(
+                                        (fun t -> taken <- true),
+                                        (TaskContinuationOptions.NotOnCanceled ||| TaskContinuationOptions.NotOnFaulted ||| TaskContinuationOptions.ExecuteSynchronously)
+                                     ) 
                                      |> NodeCode.AwaitTask
 
                                 if isCachedResultNotNull() then
