@@ -11,6 +11,7 @@ open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.LanguageServices
+open FSharp.Compiler.CodeAnalysis
 
 [<Sealed>]
 type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
@@ -19,6 +20,7 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
                                      projectContextFactory: IWorkspaceProjectContextFactory,
                                      rdt: IVsRunningDocumentTable) as this =
 
+    let gate = obj()
     let files = ConcurrentDictionary(StringComparer.OrdinalIgnoreCase)
 
     let createSourceCodeKind (filePath: string) =
@@ -31,36 +33,91 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
         let projectContext = projectContextFactory.CreateProjectContext(FSharpConstants.FSharpLanguageName, filePath, filePath, Guid.NewGuid(), null, null)
         projectContext.DisplayName <- FSharpConstants.FSharpMiscellaneousFilesName
         projectContext.AddSourceFile(filePath, sourceCodeKind = createSourceCodeKind filePath)
-        projectContext
+        projectContext, ResizeArray()
 
     do
+        optionsManager.ScriptUpdated.Add(fun scriptProjectOptions ->
+            if scriptProjectOptions.SourceFiles.Length > 0 then
+                // The last file in the project options is the main script file.
+                let filePath = scriptProjectOptions.SourceFiles.[scriptProjectOptions.SourceFiles.Length - 1]
+
+                lock gate (fun () ->
+                    match files.TryGetValue(filePath) with
+                    | true, (projectContext: IWorkspaceProjectContext, currentDepSourceFiles: ResizeArray<_>) -> 
+                    
+                        let depSourceFiles = scriptProjectOptions.SourceFiles |> Array.filter (fun x -> x.Equals(filePath, StringComparison.OrdinalIgnoreCase) |> not)
+
+                        if depSourceFiles.Length <> currentDepSourceFiles.Count ||
+                           (
+                                (currentDepSourceFiles, depSourceFiles) 
+                                ||> Seq.forall2 (fun (x: string) y -> x.Equals(y, StringComparison.OrdinalIgnoreCase))
+                                |> not
+
+                           ) then
+                            currentDepSourceFiles
+                            |> Seq.iter (fun x ->
+                                match files.TryGetValue(x) with
+                                | true, (depProjectContext, _) ->
+                                    projectContext.RemoveProjectReference(depProjectContext)
+                                | _ ->
+                                    ()
+                            )
+
+                            currentDepSourceFiles.Clear()
+                            depSourceFiles
+                            |> Array.iter (fun filePath ->
+                                currentDepSourceFiles.Add(filePath)
+                                match files.TryGetValue(filePath) with
+                                | true, (depProjectContext, _) ->
+                                    projectContext.AddProjectReference(depProjectContext, MetadataReferenceProperties.Assembly)
+                                | _ ->
+                                    let result = createProjectContext filePath
+                                    files.[filePath] <- result
+                                    let depProjectContext, _ = result
+                                    projectContext.AddProjectReference(depProjectContext, MetadataReferenceProperties.Assembly)
+                            )
+
+                    | _ -> ()
+            )
+        )
+
         miscFilesWorkspace.DocumentOpened.Add(fun args ->
             let document = args.Document
 
             if document.Project.Language = FSharpConstants.FSharpLanguageName && workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath).Length = 0 then
-                files.[document.FilePath] <- createProjectContext document.FilePath
+                let filePath = document.FilePath
+                lock gate (fun () ->
+                    if files.ContainsKey(filePath) |> not then
+                        files.[filePath] <- createProjectContext filePath
+                )
         )
 
         workspace.DocumentOpened.Add(fun args ->
             let document = args.Document
             if document.Project.Language = FSharpConstants.FSharpLanguageName && 
                not document.Project.IsFSharpMiscellaneousOrMetadata then
-                match files.TryRemove(document.FilePath) with
-                | true, projectContext ->
-                    optionsManager.ClearSingleFileOptionsCache(document.Id)
-                    projectContext.Dispose()
-                | _ -> ()
+                optionsManager.ClearSingleFileOptionsCache(document.Id)
+
+                lock gate (fun () ->
+                    match files.TryRemove(document.FilePath) with
+                    | true, (projectContext, _) ->
+                        projectContext.Dispose()
+                    | _ -> ()
+                )
         )
 
         workspace.DocumentClosed.Add(fun args ->
             let document = args.Document
             if document.Project.Language = FSharpConstants.FSharpLanguageName && 
                document.Project.IsFSharpMiscellaneousOrMetadata then
-                match files.TryRemove(document.FilePath) with
-                | true, projectContext ->
-                    optionsManager.ClearSingleFileOptionsCache(document.Id)
-                    projectContext.Dispose()
-                | _ -> ()
+                optionsManager.ClearSingleFileOptionsCache(document.Id)
+
+                lock gate (fun () ->
+                    match files.TryRemove(document.FilePath) with
+                    | true, (projectContext, _) ->
+                        projectContext.Dispose()
+                    | _ -> ()
+                )
         )
 
         do
@@ -88,7 +145,7 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
             // Handles renaming of a misc file
             if (grfAttribs &&& (uint32 __VSRDTATTRIB.RDTA_MkDocument)) <> 0u && files.ContainsKey(pszMkDocumentOld) then
                 match files.TryRemove(pszMkDocumentOld) with
-                | true, projectContext ->
+                | true, (projectContext, _) ->
                     let project = workspace.CurrentSolution.GetProject(projectContext.Id)
                     if project <> null then
                         let documentOpt =

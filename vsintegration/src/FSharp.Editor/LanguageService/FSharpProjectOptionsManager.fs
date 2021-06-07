@@ -108,11 +108,13 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
     let legacyProjectSites = ConcurrentDictionary<ProjectId, IProjectSite>()
 
     let cache = ConcurrentDictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
-    let singleFileCache = ConcurrentDictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
+    let singleFileCache = ConcurrentDictionary<DocumentId, Project * VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
 
     // This is used to not constantly emit the same compilation.
     let weakPEReferences = ConditionalWeakTable<Compilation, FSharpReferencedProject>()
     let lastSuccessfulCompilations = ConcurrentDictionary<ProjectId, Compilation>()
+
+    let scriptUpdatedEvent = Event<FSharpProjectOptions>()
 
     let createPEReference (referencedProject: Project) (comp: Compilation) =
         let projectId = referencedProject.Id
@@ -193,6 +195,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
 
                 let projectOptions =
                     if isScriptFile document.FilePath then
+                        scriptUpdatedEvent.Trigger(scriptProjectOptions)
                         scriptProjectOptions
                     else
                         {
@@ -211,12 +214,12 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
 
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-                singleFileCache.[document.Id] <- (fileStamp, parsingOptions, projectOptions)
+                singleFileCache.[document.Id] <- (document.Project, fileStamp, parsingOptions, projectOptions)
 
                 return Some(parsingOptions, projectOptions)
 
-            | true, (fileStamp2, parsingOptions, projectOptions) ->
-                if fileStamp <> fileStamp2 then
+            | true, (oldProject, oldFileStamp, parsingOptions, projectOptions) ->
+                if fileStamp <> oldFileStamp || isProjectInvalidated document.Project oldProject settings ct then
                     singleFileCache.TryRemove(document.Id) |> ignore
                     return! tryComputeOptionsBySingleScriptOrFile document ct userOpName
                 else
@@ -407,7 +410,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     legacyProjectSites.TryRemove(projectId) |> ignore
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
                     match singleFileCache.TryRemove(documentId) with
-                    | true, (_, _, projectOptions) ->
+                    | true, (_, _, _, projectOptions) ->
                         lastSuccessfulCompilations.TryRemove(documentId.ProjectId) |> ignore
                         checkerProvider.Checker.ClearCache([projectOptions])
                     | _ ->
@@ -445,6 +448,8 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
         cache.Clear()
         singleFileCache.Clear()
         lastSuccessfulCompilations.Clear()
+
+    member _.ScriptUpdated = scriptUpdatedEvent.Publish
 
     interface IDisposable with
         member _.Dispose() = 
@@ -487,6 +492,8 @@ type internal FSharpProjectOptionsManager
             if proj.Language = LanguageNames.FSharp && proj.IsFSharpMiscellaneousOrMetadata then
                 reactor.ClearSingleFileOptionsCache(doc.Id)
         )
+
+    member _.ScriptUpdated = reactor.ScriptUpdated
 
     member _.SetLegacyProjectSite (projectId, projectSite) =
         reactor.SetLegacyProjectSite (projectId, projectSite)
