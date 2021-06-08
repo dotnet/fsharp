@@ -167,9 +167,9 @@ type SafeUnmanagedMemoryStream =
 type internal MemoryMappedStream(mmf: MemoryMappedFile, length: int64) = 
     inherit Stream()
 
-    member private _.Mmf = mmf
-    
-    member _.ViewStream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
+    let viewStream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
+
+    member _.ViewStream = viewStream
 
     override x.CanRead = x.ViewStream.CanRead
     override x.CanWrite = x.ViewStream.CanWrite
@@ -182,10 +182,14 @@ type internal MemoryMappedStream(mmf: MemoryMappedFile, length: int64) =
     override x.Write(buffer, offset, count) = x.ViewStream.Write(buffer, offset, count)
     override x.Read(buffer, offset, count) = x.ViewStream.Read(buffer, offset, count)
 
-    override x.Dispose disposing =
-        base.Dispose disposing
-        x.Mmf.Dispose()
-        x.ViewStream.Dispose()
+    override x.Finalize() =
+        x.Dispose()
+
+    interface IDisposable with
+        override x.Dispose() =
+            GC.SuppressFinalize x
+            mmf.Dispose()
+            viewStream.Dispose()
 
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
@@ -440,7 +444,7 @@ type DefaultFileSystem() as this =
         if runningOnMono || (not useMemoryMappedFile) then
             fileStream :> Stream
         else
-            use mmf =
+            let mmf =
                 if shouldShadowCopy then
                     let mmf =
                         MemoryMappedFile.CreateNew(
@@ -467,7 +471,6 @@ type DefaultFileSystem() as this =
             if not stream.CanRead then
                 invalidOp "Cannot read file"
             stream :> Stream
-
 
 
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
