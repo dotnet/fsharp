@@ -57,8 +57,15 @@ module private FSharpProjectOptionsHelpers =
         oldProject.Version <> newProject.Version
 
     let hasDependentVersionChanged (oldProject: Project) (newProject: Project) (ct: CancellationToken) =
+        let oldProjectMetadataRefs = oldProject.MetadataReferences
+        let newProjectMetadataRefs = newProject.MetadataReferences
+
+        if oldProjectMetadataRefs.Count <> newProjectMetadataRefs.Count then true
+        else
+
         let oldProjectRefs = oldProject.ProjectReferences
         let newProjectRefs = newProject.ProjectReferences
+
         oldProjectRefs.Count() <> newProjectRefs.Count() ||
         (oldProjectRefs, newProjectRefs)
         ||> Seq.exists2 (fun p1 p2 ->
@@ -68,7 +75,6 @@ module private FSharpProjectOptionsHelpers =
             let p2 = newProject.Solution.GetProject(p2.ProjectId)
             doesProjectIdDiffer || 
             (
-                // For F# projects, just check the version until we have a better in-memory model for them.
                 if p1.Language = LanguageNames.FSharp then
                     p1.Version <> p2.Version
                 else
@@ -157,7 +163,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
             weakPEReferences.Add(comp, fsRefProj)
             fsRefProj
 
-    let rec tryComputeOptionsByFile (document: Document) (ct: CancellationToken) userOpName =
+    let rec tryComputeOptionsBySingleScriptOrFile (document: Document) (ct: CancellationToken) userOpName =
         async {
             let! fileStamp = document.GetTextVersionAsync(ct) |> Async.AwaitTask
             match singleFileCache.TryGetValue(document.Id) with
@@ -203,8 +209,6 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             Stamp = Some(int64 (fileStamp.GetHashCode()))
                         }
 
-                checkerProvider.Checker.CheckProjectInBackground(projectOptions, userOpName="checkOptions")
-
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
                 singleFileCache.[document.Id] <- (fileStamp, parsingOptions, projectOptions)
@@ -214,7 +218,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
             | true, (fileStamp2, parsingOptions, projectOptions) ->
                 if fileStamp <> fileStamp2 then
                     singleFileCache.TryRemove(document.Id) |> ignore
-                    return! tryComputeOptionsByFile document ct userOpName
+                    return! tryComputeOptionsBySingleScriptOrFile document ct userOpName
                 else
                     return Some(parsingOptions, projectOptions)
         }
@@ -277,6 +281,8 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                                 )
                         )
 
+                let! ver = project.GetDependentVersionAsync(ct) |> Async.AwaitTask
+
                 let projectOptions =
                     {
                         ProjectFileName = projectSite.ProjectFileName
@@ -289,7 +295,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                         LoadTime = projectSite.LoadTime
                         UnresolvedReferences = None
                         OriginalLoadReferences = []
-                        Stamp = Some(int64 (project.Version.GetHashCode()))
+                        Stamp = Some(int64 (ver.GetHashCode()))
                     }
 
                 // This can happen if we didn't receive the callback from HandleCommandLineChanges yet.
@@ -318,7 +324,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             lastSuccessfulCompilations.TryRemove(pair.Key) |> ignore
                     )
 
-                    checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompile = false, userOpName = "computeOptions")
+                    checkerProvider.Checker.InvalidateConfiguration(projectOptions, userOpName = "tryComputeOptions")
 
                     let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
@@ -347,7 +353,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
                                 reply.Reply None
                             elif document.Project.IsFSharpMiscellaneousOrMetadata then
-                                let! options = tryComputeOptionsByFile document ct userOpName
+                                let! options = tryComputeOptionsBySingleScriptOrFile document ct userOpName
                                 if ct.IsCancellationRequested then
                                     reply.Reply None
                                 else

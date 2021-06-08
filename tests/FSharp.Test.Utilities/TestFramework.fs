@@ -13,6 +13,8 @@ open FSharp.Compiler.IO
 [<RequireQualifiedAccess>]
 module Commands =
 
+    let gate = obj()
+
     // Execute the process pathToExe passing the arguments: arguments with the working directory: workingDir timeout after timeout milliseconds -1 = wait forever
     // returns exit code, stdio and stderr as string arrays
     let executeProcess pathToExe arguments workingDir timeout =
@@ -64,8 +66,10 @@ module Commands =
                 else
                     workingDir
 
-            File.WriteAllLines(Path.Combine(workingDir', "StandardOutput.txt"), outputList)
-            File.WriteAllLines(Path.Combine(workingDir', "StandardError.txt"), errorsList)
+            lock gate (fun () ->
+                File.WriteAllLines(Path.Combine(workingDir', "StandardOutput.txt"), outputList)
+                File.WriteAllLines(Path.Combine(workingDir', "StandardError.txt"), errorsList)
+            )
     #endif
             p.ExitCode, outputList.ToArray(), errorsList.ToArray()
         | None -> -1, Array.empty, Array.empty

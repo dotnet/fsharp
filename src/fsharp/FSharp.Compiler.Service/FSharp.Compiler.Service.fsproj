@@ -707,6 +707,12 @@
     <Compile Include="..\DependencyManager/DependencyProvider.fs">
       <Link>Driver\DependencyProvider.fs</Link>
     </Compile>
+    <Compile Include="..\BuildGraph.fsi">
+      <Link>Driver\BuildGraph.fsi</Link>
+    </Compile>
+    <Compile Include="..\BuildGraph.fs">
+      <Link>Driver\BuildGraph.fs</Link>
+    </Compile>
     <Compile Include="..\CompilerConfig.fsi">
       <Link>Driver\CompilerConfig.fsi</Link>
     </Compile>
@@ -804,12 +810,6 @@
     </Compile>
     <Compile Include="..\symbols\SymbolPatterns.fs">
       <Link>Symbols/SymbolPatterns.fs</Link>
-    </Compile>
-    <Compile Include="..\service\Reactor.fsi">
-      <Link>Service/Reactor.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\Reactor.fs">
-      <Link>Service/Reactor.fs</Link>
     </Compile>
 
     <!-- the incremental builder and service . -->
