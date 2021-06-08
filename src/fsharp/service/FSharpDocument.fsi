@@ -23,7 +23,7 @@ type FSharpDocument =
 
     abstract internal GetText : unit -> DocumentText
 
-    static member CreateFromFile : filePath: string -> FSharpDocument
+    static member internal CreateFromFile : filePath: string -> FSharpDocument
 
     static member CreateCopyFromFile : filePath: string -> FSharpDocument
 

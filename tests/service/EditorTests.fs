@@ -1436,6 +1436,15 @@ let ``Inherit ctor arg recovery`` () =
     assertHasSymbolUsages ["x"] checkResults
 
 [<Test>]
+let ``Missing this recovery`` () =
+    let _, checkResults = getParseAndCheckResults """
+    type T() =
+        member M() =
+            let x = 1 in ()
+    """
+    assertHasSymbolUsages ["x"] checkResults
+
+[<Test>]
 let ``Brace matching smoke test`` () =
     let input =
       """

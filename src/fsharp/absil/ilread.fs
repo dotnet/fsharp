@@ -1406,14 +1406,12 @@ let readStringHeap (ctxt: ILMetadataReader) idx = ctxt.readStringHeap idx
 
 let readStringHeapOption (ctxt: ILMetadataReader) idx = if idx = 0 then None else Some (readStringHeap ctxt idx)
 
-let emptyByteArray: byte[] = [||]
-
 let readBlobHeapUncached ctxtH idx =
     let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     // valid index lies in range [1..streamSize)
     // NOTE: idx cannot be 0 - Blob\String heap has first empty element that mdv one byte 0
-    if idx <= 0 || idx >= ctxt.blobsStreamSize then emptyByteArray
+    if idx <= 0 || idx >= ctxt.blobsStreamSize then [| |]
     else seekReadBlob mdv (ctxt.blobsStreamPhysicalLoc + idx)
 
 let readBlobHeap (ctxt: ILMetadataReader) idx = ctxt.readBlobHeap idx
@@ -3915,7 +3913,6 @@ let createByteFileChunk opts fileName chunk =
 
 let createMemoryMapFile fileName =
     let stream = FileSystem.OpenFileForReadShim(fileName, useMemoryMappedFile = true)
-    let byteMem = stream.AsByteMemory()
 
     let safeHolder =
         { new obj() with
