@@ -122,13 +122,13 @@ type internal PartialCheckResults =
     /// Only use when it's absolutely necessary to get rich information on a file.
     ///
     /// Will return 'None' for enableBackgroundItemKeyStoreAndSemanticClassification=false.
-    member GetOrComputeOptionalItemKeyStore: unit -> NodeCode<ItemKeyStore option>
+    member GetOrComputeItemKeyStoreIfEnabled: unit -> NodeCode<ItemKeyStore option>
 
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
     ///
     /// Will return 'None' for enableBackgroundItemKeyStoreAndSemanticClassification=false.
-    member GetOrComputeOptionalSemanticClassification: unit -> NodeCode<SemanticClassificationKeyStore option>
+    member GetOrComputeSemanticClassificationIfEnabled: unit -> NodeCode<SemanticClassificationKeyStore option>
 
     member TimeStamp: DateTime 
 

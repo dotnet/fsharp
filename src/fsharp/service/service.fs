@@ -747,7 +747,7 @@ type BackgroundCompiler(
             | Some builder -> 
                 if builder.ContainsFile filename then
                     let! checkResults = builder.GetFullCheckResultsAfterFileInProject (filename)
-                    let! keyStoreOpt = checkResults.GetOrComputeOptionalItemKeyStore()
+                    let! keyStoreOpt = checkResults.GetOrComputeItemKeyStoreIfEnabled()
                     match keyStoreOpt with
                     | None -> return Seq.empty
                     | Some reader -> return reader.FindAll symbol.Item
@@ -763,7 +763,7 @@ type BackgroundCompiler(
             | None -> return None
             | Some builder -> 
                 let! checkResults = builder.GetFullCheckResultsAfterFileInProject (filename)
-                let! scopt = checkResults.GetOrComputeOptionalSemanticClassification()
+                let! scopt = checkResults.GetOrComputeSemanticClassificationIfEnabled()
                 match scopt with
                 | None -> return None
                 | Some sc -> return Some (sc.GetView ())

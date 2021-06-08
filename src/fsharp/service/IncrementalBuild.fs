@@ -654,13 +654,13 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime) =
 
     member _.GetOrComputeTcInfoWithExtras() = boundModel.GetOrComputeTcInfoWithExtras()
 
-    member _.GetOrComputeOptionalItemKeyStore() =
+    member _.GetOrComputeItemKeyStoreIfEnabled() =
         node {
             let! info = boundModel.GetOrComputeTcInfoExtras()
             return info.itemKeyStore
         }
 
-    member _.GetOrComputeOptionalSemanticClassification() =
+    member _.GetOrComputeSemanticClassificationIfEnabled() =
         node {
             let! info = boundModel.GetOrComputeTcInfoExtras()
             return info.semanticClassificationKeyStore
