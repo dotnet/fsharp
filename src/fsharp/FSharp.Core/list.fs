@@ -440,9 +440,12 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("GroupBy")>]
         let groupBy (projection:'T->'Key) (list:'T list) =
-            if typeof<'Key>.IsValueType
-                then groupByValueType projection list
-                else groupByRefType   projection list
+            match list with
+            | [] -> []
+            | _ ->
+                if typeof<'Key>.IsValueType
+                    then groupByValueType projection list
+                    else groupByRefType   projection list
 
         [<CompiledName("Partition")>]
         let partition predicate list = Microsoft.FSharp.Primitives.Basics.List.partition predicate list
