@@ -17,16 +17,6 @@ test.fsx(61,30,61,31): typecheck error FS3386: This expression uses an implicit 
 
 test.fsx(61,32,61,33): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'float'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
 
-test.fsx(61,34,61,35): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'float'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
-
-test.fsx(62,30,62,31): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'float32'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
-
-test.fsx(62,32,62,33): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'float32'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
-
-test.fsx(62,34,62,35): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'float32'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
-
-test.fsx(62,36,62,37): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'float32'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
-
 test.fsx(63,22,63,43): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
 
 test.fsx(64,28,64,49): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
@@ -186,3 +176,49 @@ test.fsx(408,40,408,41): typecheck error FS3386: This expression uses an implici
 test.fsx(452,32,452,33): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
 
 test.fsx(454,46,454,47): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'int64'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(463,18,463,19): typecheck error FS0001: This expression was expected to have type
+    'C'    
+but here has type
+    'int'    
+
+test.fsx(471,18,471,19): typecheck error FS3386: This expression uses an implicit conversion to convert type 'int' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(471,18,471,19): typecheck error FS0044: This construct is deprecated. nope
+
+test.fsx(482,18,482,21): typecheck error FS3387: This expression has type 'B' and is only made compatible with type 'C' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'.
+
+test.fsx(482,18,482,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(482,18,482,21): typecheck error FS3387: This expression has type 'B' and is only made compatible with type 'C' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'.
+
+test.fsx(482,18,482,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(507,18,507,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(507,18,507,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(519,18,519,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(519,18,519,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(538,18,538,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(538,18,538,21): typecheck error FS3386: This expression uses an implicit conversion to convert type 'B' to type 'C'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.
+
+test.fsx(543,30,543,31): typecheck error FS0001: This expression was expected to have type
+    'float32'    
+but here has type
+    'int'    
+
+test.fsx(543,32,543,33): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'float32'. This element has type 'int'.
+
+test.fsx(543,34,543,35): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'float32'. This element has type 'int'.
+
+test.fsx(543,36,543,37): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'float32'. This element has type 'int'.
+
+test.fsx(544,14,544,21): typecheck error FS0039: The type 'float64' is not defined. Maybe you want one of the following:
+   float
+   float`1
+   float32
+   float32`1

@@ -17,9 +17,9 @@ neg24.fs(300,29,300,30): typecheck error FS0020: The result of this expression h
 
 neg24.fs(301,17,301,18): typecheck error FS0020: The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.
 
-neg24.fs(302,33,302,34): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'unit'. This element has type 'int'.
+neg24.fs(302,33,302,34): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'unit'. This element has type 'int'.
 
-neg24.fs(302,36,302,37): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'unit'. This element has type 'int'.
+neg24.fs(302,36,302,37): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'unit'. This element has type 'int'.
 
 neg24.fs(304,11,305,32): typecheck error FS0193: Type constraint mismatch. The type 
     'int'    

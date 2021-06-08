@@ -643,6 +643,9 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let FindImplicitConversionsUncached (ad, m, ty) = 
         if isTyparTy g ty then 
             [] 
+        // F# ignores the op_Implicit conversions defined on the 'Option' and 'ValueOption' types
+        elif isOptionTy g ty || isValueOptionTy g ty then
+            []
         else
             this.TryFindIntrinsicMethInfo m ad "op_Implicit" ty
 

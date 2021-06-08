@@ -94,33 +94,33 @@ test.fsx(60,28,60,29): typecheck error FS0001: This expression was expected to h
 but here has type
     'int'    
 
-test.fsx(60,30,60,31): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'int64'. This element has type 'int'.
+test.fsx(60,30,60,31): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'int64'. This element has type 'int'.
 
-test.fsx(60,32,60,33): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'int64'. This element has type 'int'.
+test.fsx(60,32,60,33): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'int64'. This element has type 'int'.
 
-test.fsx(60,34,60,35): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'int64'. This element has type 'int'.
+test.fsx(60,34,60,35): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'int64'. This element has type 'int'.
 
 test.fsx(61,28,61,29): typecheck error FS0001: This expression was expected to have type
     'float'    
 but here has type
     'int'    
 
-test.fsx(61,30,61,31): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'float'. This element has type 'int'.
+test.fsx(61,30,61,31): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'float'. This element has type 'int'.
 
-test.fsx(61,32,61,33): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'float'. This element has type 'int'.
+test.fsx(61,32,61,33): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'float'. This element has type 'int'.
 
-test.fsx(61,34,61,35): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'float'. This element has type 'int'.
+test.fsx(61,34,61,35): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'float'. This element has type 'int'.
 
 test.fsx(62,30,62,31): typecheck error FS0001: This expression was expected to have type
     'float32'    
 but here has type
     'int'    
 
-test.fsx(62,32,62,33): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'float32'. This element has type 'int'.
+test.fsx(62,32,62,33): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'float32'. This element has type 'int'.
 
-test.fsx(62,34,62,35): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'float32'. This element has type 'int'.
+test.fsx(62,34,62,35): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'float32'. This element has type 'int'.
 
-test.fsx(62,36,62,37): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'float32'. This element has type 'int'.
+test.fsx(62,36,62,37): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'float32'. This element has type 'int'.
 
 test.fsx(63,22,63,43): typecheck error FS0001: This expression was expected to have type
     'int64'    
@@ -132,7 +132,7 @@ test.fsx(64,28,64,49): typecheck error FS0001: This expression was expected to h
 but here has type
     'int'    
 
-test.fsx(64,50,64,71): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'int64'. This element has type 'int'.
+test.fsx(64,50,64,71): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'int64'. This element has type 'int'.
 
 test.fsx(67,20,67,23): typecheck error FS0001: This expression was expected to have type
     'obj'    
@@ -424,9 +424,9 @@ test.fsx(246,45,246,46): typecheck error FS0001: This expression was expected to
 but here has type
     'int'    
 
-test.fsx(246,54,246,57): typecheck error FS0001: All branches of a pattern match expression must return values of the same type as the first branch, which here is 'obj'. This branch returns a value of type 'float'.
+test.fsx(246,54,246,57): typecheck error FS0001: All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is 'obj'. This branch returns a value of type 'float'.
 
-test.fsx(246,65,246,68): typecheck error FS0001: All branches of a pattern match expression must return values of the same type as the first branch, which here is 'obj'. This branch returns a value of type 'byte'.
+test.fsx(246,65,246,68): typecheck error FS0001: All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is 'obj'. This branch returns a value of type 'byte'.
 
 test.fsx(248,49,248,50): typecheck error FS0001: This expression was expected to have type
     'obj'    
@@ -585,17 +585,17 @@ but here has type
 
 test.fsx(295,34,295,35): typecheck error FS0001: The 'if' expression needs to have type 'obj' to satisfy context type requirements. It currently has type 'int'.
 
-test.fsx(295,41,295,44): typecheck error FS0001: All branches of an 'if' expression must return values of the same type as the first branch, which here is 'obj'. This branch returns a value of type 'float'.
+test.fsx(295,41,295,44): typecheck error FS0001: All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'obj'. This branch returns a value of type 'float'.
 
 test.fsx(296,35,296,36): typecheck error FS0001: The 'if' expression needs to have type 'obj' to satisfy context type requirements. It currently has type 'int'.
 
-test.fsx(296,42,296,45): typecheck error FS0001: All branches of an 'if' expression must return values of the same type as the first branch, which here is 'obj'. This branch returns a value of type 'float'.
+test.fsx(296,42,296,45): typecheck error FS0001: All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'obj'. This branch returns a value of type 'float'.
 
 test.fsx(297,35,297,36): typecheck error FS0001: The 'if' expression needs to have type 'obj' to satisfy context type requirements. It currently has type 'int'.
 
-test.fsx(297,52,297,55): typecheck error FS0001: All branches of an 'if' expression must return values of the same type as the first branch, which here is 'obj'. This branch returns a value of type 'byte'.
+test.fsx(297,52,297,55): typecheck error FS0001: All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'obj'. This branch returns a value of type 'byte'.
 
-test.fsx(297,61,297,64): typecheck error FS0001: All branches of an 'if' expression must return values of the same type as the first branch, which here is 'obj'. This branch returns a value of type 'float'.
+test.fsx(297,61,297,64): typecheck error FS0001: All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'obj'. This branch returns a value of type 'float'.
 
 test.fsx(300,25,300,26): typecheck error FS0001: This expression was expected to have type
     'obj'    
@@ -617,7 +617,7 @@ test.fsx(306,45,306,46): typecheck error FS0001: This expression was expected to
 but here has type
     'int'    
 
-test.fsx(306,54,306,57): typecheck error FS0001: All branches of a pattern match expression must return values of the same type as the first branch, which here is 'obj'. This branch returns a value of type 'float'.
+test.fsx(306,54,306,57): typecheck error FS0001: All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is 'obj'. This branch returns a value of type 'float'.
 
 test.fsx(309,19,309,20): typecheck error FS0001: This expression was expected to have type
     'obj'    
@@ -626,7 +626,7 @@ but here has type
 
 test.fsx(310,32,310,33): typecheck error FS0001: The 'if' expression needs to have type 'obj' to satisfy context type requirements. It currently has type 'int'.
 
-test.fsx(310,39,310,42): typecheck error FS0001: All branches of an 'if' expression must return values of the same type as the first branch, which here is 'obj'. This branch returns a value of type 'float'.
+test.fsx(310,39,310,42): typecheck error FS0001: All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'obj'. This branch returns a value of type 'float'.
 
 test.fsx(313,37,313,38): typecheck error FS0001: This expression was expected to have type
     'int64'    

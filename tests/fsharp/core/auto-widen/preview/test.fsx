@@ -58,8 +58,8 @@ module IntegerWidening =
     let x0 : int64 = i1 // integer value
     let x1 : int64 = 0 // integer constant
     let x2 : int64 list = [1;2;3;4] // within a list
-    let x3 : float list = [1;2;3;4]
-    let x4 : float32 list = [1;2;3;4]
+    let x3 : float list = [1;2;3;4.0]
+    //let x4 : float32 list = [1;2;3;4]
     let x5 : int64 = System.Int32.MaxValue
     let x6 : int64 list = [System.Int32.MaxValue;System.Int32.MaxValue]
     let f () = 1
@@ -453,6 +453,96 @@ module TestInferObjExprTypeParamFromKNownType =
 
     let x5 : {| A: int64; B: int32 |} = {| A=3; B=3 |}
 
+// These tests are activate for the case where warnings are on
+#if NEGATIVE
+module TestAcessibilityOfOpImplicit =
+    [<Sealed>]
+    type C() = 
+        static member private op_Implicit(x:int) = C()
+        static member M1(C:C) = 1
+    let x = C.M1(2)
+
+module TestObsoleteOfOpImplicit =
+    [<Sealed>]
+    type C() = 
+        [<System.Obsolete("nope")>]
+        static member op_Implicit(x:int) = C()
+        static member M1(C:C) = 1
+    let x = C.M1(2)
+
+module TestAmbiguousOpImplicit =
+    [<Sealed>]
+    type B() = 
+        static member op_Implicit(x:B) = C(2)
+
+    and [<Sealed>] C(x:int) = 
+        static member op_Implicit(x:B) = C(1)
+        static member M1(C:C) = 1
+        member _.Value = x
+    let x = C.M1(B())
+
+#endif
+
+let report_failure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures <- failures @ [s]
+
+let test (s : string) b = 
+    stderr.Write(s)
+    if b then stderr.WriteLine " OK"
+    else report_failure (s)
+
+let check s b1 b2 = test s (b1 = b2)
+
+module TestAmbiguousOpImplicitOkOneIsPrivate =
+    [<Sealed>]
+    type B() = 
+        static member private op_Implicit(x:B) = C(1)
+    
+    and [<Sealed>] C(x:int) = 
+        static member op_Implicit(x:B) = C(2)
+        static member M1(c:C) = c.Value
+        member _.Value = x
+    let x = C.M1(B())
+    check "vewenlwevl" x 2
+
+module TestAmbiguousOpImplicitOkOtherIsPrivate =
+    [<Sealed>]
+    type B() = 
+        static member op_Implicit(x:B) = C(1)
+    
+    and [<Sealed>] C(x:int) = 
+        static member private op_Implicit(x:B) = C(2)
+        static member M1(c:C) = c.Value
+        member _.Value = x
+    let x = C.M1(B())
+    check "vewenlwevl" x 1
+
+#nowarn "1215"
+module TestExtrinsicOpImplicitIgnoredCompletely =
+    [<Sealed>]
+    type B() = class end
+
+    and [<Sealed>] C(x:int) = 
+        static member op_Implicit(x:B) = C(3)
+        static member M1(c:C) = c.Value
+        member _.Value = x
+
+    [<AutoOpen>]
+    module Extensions =
+        type B with
+            // This gets ignored - a warning 1215 is actually reported implying this (ignored above)
+            static member op_Implicit(x:B) = C(1)
+    
+    let x = C.M1(B())
+    check "vewenlwevlce" x 3
+
+#if NEGATIVE
+module TestNoWidening = 
+    let x4 : float32 list = [1;2;3;4]
+    let x5 : float64 list = [1.0f;2.0f;3.0f;4.0f]
+#endif
 printfn "test done"
 
 let aa =
