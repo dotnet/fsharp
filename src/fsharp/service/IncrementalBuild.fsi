@@ -106,25 +106,29 @@ type internal PartialCheckResults =
 
     member TimeStamp: DateTime 
 
-    member TryTcInfo: TcInfo option
+    member TryPeekTcInfo: unit -> TcInfo option
 
     /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
     /// extras will also be available.
-    member GetTcInfo: unit -> NodeCode<TcInfo>
+    member GetOrComputeTcInfo: unit -> NodeCode<TcInfo>
 
     /// Compute both the "TcInfo" and "TcInfoExtras" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetTcInfoWithExtras: unit -> NodeCode<TcInfo * TcInfoExtras>
+    member GetOrComputeTcInfoWithExtras: unit -> NodeCode<TcInfo * TcInfoExtras>
 
     /// Compute the "ItemKeyStore" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member TryGetItemKeyStore: unit -> NodeCode<ItemKeyStore option>
+    ///
+    /// Will return 'None' for enableBackgroundItemKeyStoreAndSemanticClassification=false.
+    member GetOrComputeOptionalItemKeyStore: unit -> NodeCode<ItemKeyStore option>
 
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetSemanticClassification: unit -> NodeCode<SemanticClassificationKeyStore option>
+    ///
+    /// Will return 'None' for enableBackgroundItemKeyStoreAndSemanticClassification=false.
+    member GetOrComputeOptionalSemanticClassifications: unit -> NodeCode<SemanticClassificationKeyStore option>
 
     member TimeStamp: DateTime 
 

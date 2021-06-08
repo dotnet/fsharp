@@ -63,4 +63,4 @@ module internal TcResolutionsExtensions =
     val (|CNR|) : cnr: CapturedNameResolution -> (Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range)
 
     type TcResolutions with
-        member GetSemanticClassification: g: TcGlobals * amap: ImportMap * formatSpecifierLocations: (range * int) [] * range: range option -> SemanticClassificationItem []
+        member GetSemanticClassifications: g: TcGlobals * amap: ImportMap * formatSpecifierLocations: (range * int) [] * range: range option -> SemanticClassificationItem []

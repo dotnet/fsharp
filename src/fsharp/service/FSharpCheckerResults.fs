@@ -1492,8 +1492,8 @@ type internal TypeCheckInfo
     member _.GetFormatSpecifierLocationsAndArity() =
          sSymbolUses.GetFormatSpecifierLocationsAndArity()
 
-    member _.GetSemanticClassification(range: range option) : SemanticClassificationItem [] =
-        sResolutions.GetSemanticClassification(g, amap, sSymbolUses.GetFormatSpecifierLocationsAndArity(), range)
+    member _.GetSemanticClassifications(range: range option) : SemanticClassificationItem [] =
+        sResolutions.GetSemanticClassifications(g, amap, sSymbolUses.GetFormatSpecifierLocationsAndArity(), range)
 
     /// The resolutions in the file
     member _.ScopeResolutions = sResolutions
@@ -2007,11 +2007,11 @@ type FSharpCheckFileResults
             (fun scope ->
                 scope.GetFormatSpecifierLocationsAndArity())
 
-    member _.GetSemanticClassification(range: range option) =
+    member _.GetSemanticClassifications(range: range option) =
         threadSafeOp
             (fun () -> [| |])
             (fun scope ->
-                scope.GetSemanticClassification(range))
+                scope.GetSemanticClassifications(range))
 
     member _.PartialAssemblySignature =
         threadSafeOp
