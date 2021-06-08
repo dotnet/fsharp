@@ -268,8 +268,9 @@ type BoundModel private (tcConfig: TcConfig,
         | _ ->
             let fullGraphNode =
                 GraphNode(node {
-                    let! tcInfoState = this.TypeCheck(false)
-                    return tcInfoState.TcInfo, defaultArg tcInfoState.TcInfoExtras emptyTcInfoExtras
+                    match! this.TypeCheck(false) with
+                    | FullState(tcInfo, tcInfoExtras) -> return tcInfo, tcInfoExtras
+                    | PartialState(tcInfo) -> return tcInfo, emptyTcInfoExtras
                 })
 
             let partialGraphNode =              
@@ -655,13 +656,13 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime) =
 
     member _.GetOrComputeOptionalItemKeyStore() =
         node {
-            let! _, info = boundModel.GetOrComputeTcInfoWithExtras()
+            let! info = boundModel.GetOrComputeTcInfoExtras()
             return info.itemKeyStore
         }
 
-    member _.GetOrComputeOptionalSemanticClassifications() =
+    member _.GetOrComputeOptionalSemanticClassification() =
         node {
-            let! _, info = boundModel.GetOrComputeTcInfoWithExtras()
+            let! info = boundModel.GetOrComputeTcInfoExtras()
             return info.semanticClassificationKeyStore
         }
 

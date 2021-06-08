@@ -763,7 +763,7 @@ type BackgroundCompiler(
             | None -> return None
             | Some builder -> 
                 let! checkResults = builder.GetFullCheckResultsAfterFileInProject (filename)
-                let! scopt = checkResults.GetOrComputeOptionalSemanticClassifications()
+                let! scopt = checkResults.GetOrComputeOptionalSemanticClassification()
                 match scopt with
                 | None -> return None
                 | Some sc -> return Some (sc.GetView ())

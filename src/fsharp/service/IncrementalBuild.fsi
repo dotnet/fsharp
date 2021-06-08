@@ -128,7 +128,7 @@ type internal PartialCheckResults =
     /// Only use when it's absolutely necessary to get rich information on a file.
     ///
     /// Will return 'None' for enableBackgroundItemKeyStoreAndSemanticClassification=false.
-    member GetOrComputeOptionalSemanticClassifications: unit -> NodeCode<SemanticClassificationKeyStore option>
+    member GetOrComputeOptionalSemanticClassification: unit -> NodeCode<SemanticClassificationKeyStore option>
 
     member TimeStamp: DateTime 
 
