@@ -58,8 +58,8 @@ module IntegerWidening =
     let x0 : int64 = i1 // integer value
     let x1 : int64 = 0 // integer constant
     let x2 : int64 list = [1;2;3;4] // within a list
-    let x3 : float list = [1;2;3;4]
-    let x4 : float32 list = [1;2;3;4]
+    let x3 : float list = [1;2;3;4.0]
+    //let x4 : float32 list = [1;2;3;4]
     let x5 : int64 = System.Int32.MaxValue
     let x6 : int64 list = [System.Int32.MaxValue;System.Int32.MaxValue]
     let f () = 1
@@ -538,6 +538,11 @@ module TestExtrinsicOpImplicitIgnoredCompletely =
     let x = C.M1(B())
     check "vewenlwevlce" x 3
 
+#if NEGATIVE
+module TestNoWidening = 
+    let x4 : float32 list = [1;2;3;4]
+    let x5 : float64 list = [1.0f;2.0f;3.0f;4.0f]
+#endif
 printfn "test done"
 
 let aa =

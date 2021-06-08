@@ -299,7 +299,7 @@ module BuilderPositive2 =
 module ListNegative2 = 
     let v4 = [ if true then 1 else yield 2 ] // expect warning about "1" being ignored. There is a 'yield' so statements are statements.
     let l11 = [ 4; yield 1; yield 2 ] // expect warning about "1" being ignored. There is a 'yield' so statements are statements.
-    let l9 = [ printfn "hello"; 1; 2 ] // Note, this is interpreted as a "SimpleSemicolonSequence", so we get "All elements of a list must be of the same type as the first element, which here is 'unit'. This element..."
+    let l9 = [ printfn "hello"; 1; 2 ] // Note, this is interpreted as a "SimpleSemicolonSequence", so we get "All elements of a list must be implicitly convertible to the type of the first element, which here is 'unit'. This element..."
     let v3a : unit list = 
         [ printfn "hello"
           if true then 1 else 2 ] 
