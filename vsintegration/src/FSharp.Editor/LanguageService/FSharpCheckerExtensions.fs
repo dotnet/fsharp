@@ -44,7 +44,7 @@ type FSharpChecker with
 
             let parseAndCheckFile =
                 async {
-                    let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToFSharpSourceText(), options, userOpName=userOpName)
+                    let! (parseResults, checkFileAnswer) = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToFSharpSourceText(), options, userOpName=userOpName)
                     return
                         match checkFileAnswer with
                         | FSharpCheckFileAnswer.Aborted -> 
@@ -55,7 +55,7 @@ type FSharpChecker with
 
             let tryGetFreshResultsWithTimeout() =
                 async {
-                    let! worker = Async.StartChild(parseAndCheckFile, millisecondsTimeout=languageServicePerformanceOptions.TimeUntilStaleCompletion)
+                    let! worker = Async.StartChild(async { try return! parseAndCheckFile with | _ -> return None }, millisecondsTimeout=languageServicePerformanceOptions.TimeUntilStaleCompletion)
                     try
                         return! worker
                     with :? TimeoutException ->

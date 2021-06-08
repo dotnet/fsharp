@@ -47,11 +47,6 @@
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x070C0000
-
-
-// =============== CLASS MEMBERS DECLARATION ===================
-
 .class public abstract auto ansi sealed Decimal01
        extends [mscorlib]System.Object
 {

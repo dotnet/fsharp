@@ -63,7 +63,7 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       40 (0x28)
+    // Code size       36 (0x24)
     .maxstack  4
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_0,
              [1] class [mscorlib]System.Exception V_1,
@@ -75,7 +75,7 @@
     {
       IL_0000:  ldnull
       IL_0001:  stloc.0
-      IL_0002:  leave.s    IL_0025
+      IL_0002:  leave.s    IL_0021
 
       .line 5,5 : 2,6 ''
     }  // end .try
@@ -89,29 +89,25 @@
       IL_000d:  callvirt   instance int32 [mscorlib]System.Object::GetHashCode()
       IL_0012:  ldc.i4.0
       IL_0013:  ceq
-      IL_0015:  brfalse.s  IL_0019
+      IL_0015:  brfalse.s  IL_001d
 
-      IL_0017:  br.s       IL_001b
-
-      IL_0019:  br.s       IL_0021
-
-      IL_001b:  ldloc.1
-      IL_001c:  stloc.3
+      IL_0017:  ldloc.1
+      IL_0018:  stloc.3
       .line 6,6 : 35,37 ''
-      IL_001d:  ldnull
-      IL_001e:  stloc.0
-      IL_001f:  leave.s    IL_0025
+      IL_0019:  ldnull
+      IL_001a:  stloc.0
+      IL_001b:  leave.s    IL_0021
 
       .line 7,7 : 10,12 ''
-      IL_0021:  ldnull
-      IL_0022:  stloc.0
-      IL_0023:  leave.s    IL_0025
+      IL_001d:  ldnull
+      IL_001e:  stloc.0
+      IL_001f:  leave.s    IL_0021
 
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_0025:  ldloc.0
-    IL_0026:  pop
-    IL_0027:  ret
+    IL_0021:  ldloc.0
+    IL_0022:  pop
+    IL_0023:  ret
   } // end of method $TryWith_NoFilterBlocks01::main@
 
 } // end of class '<StartupCode$TryWith_NoFilterBlocks01>'.$TryWith_NoFilterBlocks01

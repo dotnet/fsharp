@@ -80,7 +80,7 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       97 (0x61)
+    // Code size       93 (0x5d)
     .maxstack  5
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> squaresOfOneToTenD,
              [1] valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_1,
@@ -121,7 +121,7 @@
 
       IL_002f:  ldnull
       IL_0030:  stloc.3
-      IL_0031:  leave.s    IL_0050
+      IL_0031:  leave.s    IL_004c
 
       .line 4,4 : 28,53 ''
     }  // end .try
@@ -131,32 +131,28 @@
       IL_0034:  isinst     [mscorlib]System.IDisposable
       IL_0039:  stloc.s    V_5
       IL_003b:  ldloc.s    V_5
-      IL_003d:  brfalse.s  IL_0041
-
-      IL_003f:  br.s       IL_0043
-
-      IL_0041:  br.s       IL_004d
+      IL_003d:  brfalse.s  IL_0049
 
       .line 100001,100001 : 0,0 ''
-      IL_0043:  ldloc.s    V_5
-      IL_0045:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
-      IL_004a:  ldnull
-      IL_004b:  pop
-      IL_004c:  endfinally
+      IL_003f:  ldloc.s    V_5
+      IL_0041:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
+      IL_0046:  ldnull
+      IL_0047:  pop
+      IL_0048:  endfinally
       .line 100001,100001 : 0,0 ''
-      IL_004d:  ldnull
-      IL_004e:  pop
-      IL_004f:  endfinally
+      IL_0049:  ldnull
+      IL_004a:  pop
+      IL_004b:  endfinally
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_0050:  ldloc.3
-    IL_0051:  pop
-    IL_0052:  ldloca.s   V_1
-    IL_0054:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-    IL_0059:  dup
-    IL_005a:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$GenIter04>'.$GenIter04::squaresOfOneToTenD@4
-    IL_005f:  stloc.0
-    IL_0060:  ret
+    IL_004c:  ldloc.3
+    IL_004d:  pop
+    IL_004e:  ldloca.s   V_1
+    IL_0050:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_0055:  dup
+    IL_0056:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$GenIter04>'.$GenIter04::squaresOfOneToTenD@4
+    IL_005b:  stloc.0
+    IL_005c:  ret
   } // end of method $GenIter04::main@
 
 } // end of class '<StartupCode$GenIter04>'.$GenIter04

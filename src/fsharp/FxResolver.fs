@@ -18,6 +18,11 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Text
 open FSharp.Compiler.IO
 
+type internal FxResolverLockToken() =
+   interface LockToken
+
+type internal FxResolverLock = Lock<FxResolverLockToken>   
+
 /// Resolves the references for a chosen or currently-executing framework, for
 ///   - script execution
 ///   - script editing
@@ -26,6 +31,10 @@ open FSharp.Compiler.IO
 ///   - default references for fsc.exe
 ///   - default references for fsi.exe
 type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdkRefs: bool, isInteractive: bool, rangeForErrors: range, sdkDirOverride: string option) =
+
+    let fxlock = FxResolverLock()
+
+    static let RequireFxResolverLock (_fxtok: FxResolverLockToken, _thingProtected: 'T) = ()
 
     /// We only try once for each directory (cleared on solution unload) to prevent conditions where 
     /// we repeatedly try to run dotnet.exe on every keystroke for a script
@@ -776,16 +785,24 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
     member _.GetSystemAssemblies() = systemAssemblies
 
     member _.IsInReferenceAssemblyPackDirectory filename =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
+
         match tryGetNetCoreRefsPackDirectoryRoot() |> replayWarnings with
         | _, Some root ->
             let path = Path.GetDirectoryName(filename)
             path.StartsWith(root, StringComparison.OrdinalIgnoreCase)
         | _ -> false
 
-    member _.TryGetSdkDir() = tryGetSdkDir() |> replayWarnings
+    member _.TryGetSdkDir() =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
+        tryGetSdkDir() |> replayWarnings
 
     /// Gets the selected target framework moniker, e.g netcore3.0, net472, and the running rid of the current machine
     member _.GetTfmAndRid() =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
         // Interactive processes read their own configuration to find the running tfm
 
         let tfm =
@@ -832,12 +849,20 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
     static member ClearStaticCaches() =
         desiredDotNetSdkVersionForDirectoryCache.Clear()
 
-    member _.GetFrameworkRefsPackDirectory() = tryGetSdkRefsPackDirectory() |> replayWarnings
+    member _.GetFrameworkRefsPackDirectory() =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
+        tryGetSdkRefsPackDirectory() |> replayWarnings
 
-    member _.TryGetDesiredDotNetSdkVersionForDirectory() = tryGetDesiredDotNetSdkVersionForDirectoryInfo()
+    member _.TryGetDesiredDotNetSdkVersionForDirectory() =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
+        tryGetDesiredDotNetSdkVersionForDirectoryInfo()
 
     // The set of references entered into the TcConfigBuilder for scripts prior to computing the load closure.
     member _.GetDefaultReferences (useFsiAuxLib) =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
         let defaultReferences =
             if assumeDotNetFramework then
                 getDotNetFrameworkDefaultReferences useFsiAuxLib, assumeDotNetFramework

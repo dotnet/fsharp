@@ -45,13 +45,13 @@
   // Offset: 0x000007B0 Length: 0x0000021F
 }
 .module StaticInit_Struct01.dll
-// MVID: {5F972A68-05F6-D6CB-A745-0383682A975F}
+// MVID: {60B68B90-05F6-D6CB-A745-0383908BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07130000
+// Image base: 0x05BE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -233,32 +233,28 @@
     .method assembly static int32  f() cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       41 (0x29)
+      // Code size       37 (0x25)
       .maxstack  8
       .line 7,7 : 23,37 ''
       IL_0000:  volatile.
       IL_0002:  ldsfld     int32 StaticInit_Struct01/C::init@4
       IL_0007:  ldc.i4.1
-      IL_0008:  bge.s      IL_000c
-
-      IL_000a:  br.s       IL_000e
-
-      IL_000c:  br.s       IL_0017
+      IL_0008:  bge.s      IL_0013
 
       .line 100001,100001 : 0,0 ''
-      IL_000e:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000f:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0010:  nop
+      IL_0011:  br.s       IL_0014
+
+      .line 100001,100001 : 0,0 ''
       IL_0013:  nop
-      .line 100001,100001 : 0,0 ''
-      IL_0014:  nop
-      IL_0015:  br.s       IL_0018
-
-      .line 100001,100001 : 0,0 ''
-      IL_0017:  nop
-      IL_0018:  ldsfld     int32 StaticInit_Struct01/C::x
-      IL_001d:  ldstr      "2"
-      IL_0022:  callvirt   instance int32 [mscorlib]System.String::get_Length()
-      IL_0027:  add
-      IL_0028:  ret
+      IL_0014:  ldsfld     int32 StaticInit_Struct01/C::x
+      IL_0019:  ldstr      "2"
+      IL_001e:  callvirt   instance int32 [mscorlib]System.String::get_Length()
+      IL_0023:  add
+      IL_0024:  ret
     } // end of method C::f
 
     .method public hidebysig virtual final 

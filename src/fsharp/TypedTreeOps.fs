@@ -3317,6 +3317,8 @@ let mkOptionTy (g: TcGlobals) ty = TType_app (g.option_tcr_nice, [ty], g.knownWi
 
 let mkListTy (g: TcGlobals) ty = TType_app (g.list_tcr_nice, [ty], g.knownWithoutNull)
 
+let mkValueOptionTy (g: TcGlobals) ty = TType_app (g.valueoption_tcr_nice, [ty], g.knownWithoutNull)
+
 let mkNullableTy (g: TcGlobals) ty = TType_app (g.system_Nullable_tcref, [ty], g.knownWithoutNull)
 
 let isOptionTy (g: TcGlobals) ty = 
@@ -3382,7 +3384,9 @@ let mkSome g ty arg m = mkUnionCaseExpr(mkSomeCase g, [ty], [arg], m)
 
 let mkNone g ty m = mkUnionCaseExpr(mkNoneCase g, [ty], [], m)
 
-let mkOptionGetValueUnprovenViaAddr g expr ty m = mkUnionCaseFieldGetUnprovenViaExprAddr (expr, mkSomeCase g, [ty], 0, m)
+let mkValueSomeCase (g: TcGlobals) = mkUnionCaseRef g.valueoption_tcr_canon "ValueSome"
+
+let mkAnySomeCase g isStruct = (if isStruct then mkValueSomeCase g else mkSomeCase g)
 
 type ValRef with 
     member vref.IsDispatchSlot = 
@@ -4167,7 +4171,7 @@ module DebugPrint =
         | (DecisionTreeTest.Const c) -> wordL(tagText "is") ^^ constL c
         | (DecisionTreeTest.IsNull ) -> wordL(tagText "isnull")
         | (DecisionTreeTest.IsInst (_, ty)) -> wordL(tagText "isinst") ^^ typeL ty
-        | (DecisionTreeTest.ActivePatternCase (exp, _, _, _, _)) -> wordL(tagText "query") ^^ exprL g exp
+        | (DecisionTreeTest.ActivePatternCase (exp, _, _, _, _, _)) -> wordL(tagText "query") ^^ exprL g exp
         | (DecisionTreeTest.Error _) -> wordL (tagText "error recovery")
  
     and targetL g i (TTarget (argvs, body, _)) =
@@ -4644,7 +4648,7 @@ and accFreeInTest (opts: FreeVarOptions) discrim acc =
     | DecisionTreeTest.Const _
     | DecisionTreeTest.IsNull -> acc
     | DecisionTreeTest.IsInst (srcty, tgty) -> accFreeVarsInTy opts srcty (accFreeVarsInTy opts tgty acc)
-    | DecisionTreeTest.ActivePatternCase (exp, tys, activePatIdentity, _, _) -> 
+    | DecisionTreeTest.ActivePatternCase (exp, tys, _, activePatIdentity, _, _) -> 
         accFreeInExpr opts exp 
             (accFreeVarsInTys opts tys 
                 (Option.foldBack (fun (vref, tinst) acc -> accFreeValRef opts vref (accFreeVarsInTys opts tinst acc)) activePatIdentity acc))
@@ -8579,7 +8583,7 @@ let TryGetActivePatternInfo (vref: ValRef) =
 
 type ActivePatternElemRef with 
     member x.Name = 
-        let (APElemRef(_, vref, n)) = x
+        let (APElemRef(_, vref, n, _)) = x
         match TryGetActivePatternInfo vref with
         | None -> error(InternalError("not an active pattern name", vref.Range))
         | Some apinfo -> 
@@ -8610,12 +8614,14 @@ let mkChoiceCaseRef g m n i =
 type PrettyNaming.ActivePatternInfo with 
     member x.Names = x.ActiveTags
 
-    member apinfo.ResultType g m rtys = 
+    member apinfo.ResultType g m rtys isStruct = 
         let choicety = mkChoiceTy g m rtys
-        if apinfo.IsTotal then choicety else mkOptionTy g choicety
+        if apinfo.IsTotal then choicety 
+        elif isStruct then mkValueOptionTy g choicety
+        else mkOptionTy g choicety
     
-    member apinfo.OverallType g m dty rtys = 
-        mkFunTy g dty (apinfo.ResultType g m rtys)
+    member apinfo.OverallType g m dty rtys isStruct = 
+        mkFunTy g dty (apinfo.ResultType g m rtys isStruct)
 
 //---------------------------------------------------------------------------
 // Active pattern validation

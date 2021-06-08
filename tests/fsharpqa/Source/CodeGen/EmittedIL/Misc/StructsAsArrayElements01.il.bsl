@@ -37,7 +37,7 @@
 }
 .mresource public FSharpOptimizationData.StructsAsArrayElements01
 {
-  // Offset: 0x00000760 Length: 0x0000022C
+  // Offset: 0x00000758 Length: 0x0000022C
 }
 .module StructsAsArrayElements01.dll
 // MVID: {5F972A55-29F3-6E68-A745-0383552A975F}
@@ -70,7 +70,7 @@
             instance int32  CompareTo(valuetype StructsAsArrayElements01/T obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       38 (0x26)
+      // Code size       34 (0x22)
       .maxstack  4
       .locals init ([0] valuetype StructsAsArrayElements01/T& V_0,
                [1] class [mscorlib]System.Collections.IComparer V_1,
@@ -92,19 +92,15 @@
       IL_0018:  ldloc.3
       IL_0019:  bge.s      IL_001d
 
-      IL_001b:  br.s       IL_001f
-
-      IL_001d:  br.s       IL_0021
+      .line 100001,100001 : 0,0 ''
+      IL_001b:  ldc.i4.m1
+      IL_001c:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_001f:  ldc.i4.m1
-      IL_0020:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_0021:  ldloc.2
-      IL_0022:  ldloc.3
-      IL_0023:  cgt
-      IL_0025:  ret
+      IL_001d:  ldloc.2
+      IL_001e:  ldloc.3
+      IL_001f:  cgt
+      IL_0021:  ret
     } // end of method T::CompareTo
 
     .method public hidebysig virtual final 
@@ -126,7 +122,7 @@
                                       class [mscorlib]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       44 (0x2c)
+      // Code size       40 (0x28)
       .maxstack  4
       .locals init ([0] valuetype StructsAsArrayElements01/T V_0,
                [1] valuetype StructsAsArrayElements01/T& V_1,
@@ -151,19 +147,15 @@
       IL_001c:  ldloc.s    V_4
       IL_001e:  bge.s      IL_0022
 
-      IL_0020:  br.s       IL_0024
-
-      IL_0022:  br.s       IL_0026
+      .line 100001,100001 : 0,0 ''
+      IL_0020:  ldc.i4.m1
+      IL_0021:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0024:  ldc.i4.m1
-      IL_0025:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_0026:  ldloc.3
-      IL_0027:  ldloc.s    V_4
-      IL_0029:  cgt
-      IL_002b:  ret
+      IL_0022:  ldloc.3
+      IL_0023:  ldloc.s    V_4
+      IL_0025:  cgt
+      IL_0027:  ret
     } // end of method T::CompareTo
 
     .method public hidebysig virtual final 
