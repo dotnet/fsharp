@@ -171,16 +171,16 @@ type internal MemoryMappedStream(mmf: MemoryMappedFile, length: int64) =
 
     member _.ViewStream = viewStream
 
-    override x.CanRead = x.ViewStream.CanRead
-    override x.CanWrite = x.ViewStream.CanWrite
-    override x.CanSeek = x.ViewStream.CanSeek
-    override x.Position with get() = x.ViewStream.Position and set v = (x.ViewStream.Position <- v)
-    override x.Length = x.ViewStream.Length
-    override x.Flush() = x.ViewStream.Flush()
-    override x.Seek(offset, origin) = x.ViewStream.Seek(offset, origin)
-    override x.SetLength(value) = x.ViewStream.SetLength(value)
-    override x.Write(buffer, offset, count) = x.ViewStream.Write(buffer, offset, count)
-    override x.Read(buffer, offset, count) = x.ViewStream.Read(buffer, offset, count)
+    override x.CanRead = viewStream.CanRead
+    override x.CanWrite = viewStream.CanWrite
+    override x.CanSeek = viewStream.CanSeek
+    override x.Position with get() = viewStream.Position and set v = (viewStream.Position <- v)
+    override x.Length = viewStream.Length
+    override x.Flush() = viewStream.Flush()
+    override x.Seek(offset, origin) = viewStream.Seek(offset, origin)
+    override x.SetLength(value) = viewStream.SetLength(value)
+    override x.Write(buffer, offset, count) = viewStream.Write(buffer, offset, count)
+    override x.Read(buffer, offset, count) = viewStream.Read(buffer, offset, count)
 
     override x.Finalize() =
         x.Dispose()
