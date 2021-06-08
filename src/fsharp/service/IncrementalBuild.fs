@@ -721,23 +721,43 @@ type IncrementalBuilderState =
         finalizedBoundModel: GraphNode<((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime)>
     }
 
-/// Manages an incremental build graph for the build of a single F# project
-type IncrementalBuilder(
-                        initialBoundModel: BoundModel,
-                        tcGlobals,
-                        nonFrameworkAssemblyInputs,
-                        tcConfig: TcConfig,
-                        outfile,
-                        assemblyName,
-                        lexResourceManager,
-                        sourceFiles: ImmutableArray<(range * FSharpDocument * (bool * bool))>,
-                        enablePartialTypeChecking,
-                        beforeFileChecked: Event<string>,
-                        fileChecked: Event<string>,
+type IncrementalBuilderMainState =
+    {
+        initialBoundModel: BoundModel
+        tcGlobals: TcGlobals
+        nonFrameworkAssemblyInputs: (Choice<string, IProjectReference> * (TimeStampCache -> DateTime)) list
+        tcConfig: TcConfig
+        outfile: string
+        assemblyName: string
+        lexResourceManager: Lexhelp.LexResourceManager
+        sourceFiles: ImmutableArray<(range * FSharpDocument * (bool * bool))>
+        enablePartialTypeChecking: bool
+        beforeFileChecked: Event<string>
+        fileChecked: Event<string>
 #if !NO_EXTENSIONTYPING
-                        importsInvalidatedByTypeProvider: Event<unit>,
+        importsInvalidatedByTypeProvider: Event<unit>
 #endif
-                        allDependencies) =
+        allDependencies: string []
+    }
+
+/// Manages an incremental build graph for the build of a single F# project
+type IncrementalBuilder(mainState: IncrementalBuilderMainState) =
+
+    let initialBoundModel = mainState.initialBoundModel
+    let tcGlobals = mainState.tcGlobals
+    let nonFrameworkAssemblyInputs = mainState.nonFrameworkAssemblyInputs
+    let tcConfig = mainState.tcConfig
+    let outfile = mainState.outfile
+    let assemblyName = mainState.assemblyName
+    let lexResourceManager = mainState.lexResourceManager
+    let sourceFiles = mainState.sourceFiles
+    let enablePartialTypeChecking = mainState.enablePartialTypeChecking
+    let beforeFileChecked = mainState.beforeFileChecked
+    let fileChecked = mainState.fileChecked
+#if !NO_EXTENSIONTYPING
+    let importsInvalidatedByTypeProvider = mainState.importsInvalidatedByTypeProvider
+#endif
+    let allDependencies = mainState.allDependencies
 
     let fileParsed = new Event<string>()
     let projectChecked = new Event<unit>()
@@ -1552,21 +1572,23 @@ type IncrementalBuilder(
 
             let builder =
                 new IncrementalBuilder(
-                    initialBoundModel,
-                    tcGlobals,
-                    nonFrameworkAssemblyInputs,
-                    tcConfig,
-                    outfile,
-                    assemblyName,
-                    resourceManager,
-                    (ImmutableArray.CreateRange(sourceFiles)),
-                    enablePartialTypeChecking,
-                    beforeFileChecked,
-                    fileChecked,
+                    {
+                        initialBoundModel = initialBoundModel
+                        tcGlobals = tcGlobals
+                        nonFrameworkAssemblyInputs = nonFrameworkAssemblyInputs
+                        tcConfig = tcConfig
+                        outfile = outfile
+                        assemblyName = assemblyName
+                        lexResourceManager = resourceManager
+                        sourceFiles = (ImmutableArray.CreateRange(sourceFiles))
+                        enablePartialTypeChecking = enablePartialTypeChecking
+                        beforeFileChecked = beforeFileChecked
+                        fileChecked = fileChecked
 #if !NO_EXTENSIONTYPING
-                    importsInvalidatedByTypeProvider,
+                        importsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
 #endif
-                    allDependencies)
+                        allDependencies = allDependencies
+                    })
             return Some builder
           with e ->
             errorRecoveryNoRange e
