@@ -164,6 +164,30 @@ type SafeUnmanagedMemoryStream =
         base.Dispose disposing
         x.holder <- null // Null out so it can be collected.
 
+type internal MemoryMappedStream(mmf: MemoryMappedFile, length: int64) = 
+    inherit Stream()
+
+    member private _.Mmf = mmf
+    
+    member _.ViewStream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
+
+    override x.CanRead = x.ViewStream.CanRead
+    override x.CanWrite = x.ViewStream.CanWrite
+    override x.CanSeek = x.ViewStream.CanSeek
+    override x.Position with get() = x.ViewStream.Position and set v = (x.ViewStream.Position <- v)
+    override x.Length = x.ViewStream.Length
+    override x.Flush() = x.ViewStream.Flush()
+    override x.Seek(offset, origin) = x.ViewStream.Seek(offset, origin)
+    override x.SetLength(value) = x.ViewStream.SetLength(value)
+    override x.Write(buffer, offset, count) = x.ViewStream.Write(buffer, offset, count)
+    override x.Read(buffer, offset, count) = x.ViewStream.Read(buffer, offset, count)
+
+    override x.Dispose disposing =
+        base.Dispose disposing
+        x.Mmf.Dispose()
+        x.ViewStream.Dispose()
+
+
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
     inherit ByteMemory ()
@@ -416,7 +440,7 @@ type DefaultFileSystem() as this =
         if runningOnMono || (not useMemoryMappedFile) then
             fileStream :> Stream
         else
-            let mmf =
+            use mmf =
                 if shouldShadowCopy then
                     let mmf =
                         MemoryMappedFile.CreateNew(
@@ -437,10 +461,14 @@ type DefaultFileSystem() as this =
                         MemoryMappedFileAccess.Read,
                         HandleInheritability.None,
                         leaveOpen=false)
-            let stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
+
+            let stream = new MemoryMappedStream(mmf, length)
+
             if not stream.CanRead then
                 invalidOp "Cannot read file"
             stream :> Stream
+
+
 
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
     default _.OpenFileForWriteShim(filePath: string, ?fileMode: FileMode, ?fileAccess: FileAccess, ?fileShare: FileShare) : Stream =
@@ -654,20 +682,12 @@ module public StreamExtensions =
         /// However, when we use any other stream (FileStream, MemoryStream, etc) - we just read everything from it and expose via ByteArrayMemory.
         member s.AsByteMemory() : ByteMemory =
             match s with
-            | :? MemoryMappedViewStream as mmvs ->
-                let safeHolder =
-                    { new obj() with
-                        override x.Finalize() =
-                            (x :?> IDisposable).Dispose()
-                      interface IDisposable with
-                        member x.Dispose() =
-                            GC.SuppressFinalize x
-                            mmvs.Dispose() }
-                let length = mmvs.Length
+            | :? MemoryMappedStream as mmfs ->
+                let length = mmfs.Length
                 RawByteMemory(
-                    NativePtr.ofNativeInt (mmvs.SafeMemoryMappedViewHandle.DangerousGetHandle()),
+                    NativePtr.ofNativeInt (mmfs.ViewStream.SafeMemoryMappedViewHandle.DangerousGetHandle()),
                     int length,
-                    safeHolder) :> ByteMemory
+                    mmfs) :> ByteMemory
 
             | _ ->
                 let bytes = s.ReadAllBytes()
