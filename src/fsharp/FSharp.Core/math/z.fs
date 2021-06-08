@@ -16,8 +16,6 @@ namespace Microsoft.FSharp.Core
 
     type bigint = System.Numerics.BigInteger
 
-    open System
-    open System.Diagnostics.CodeAnalysis
     open System.Globalization
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
@@ -33,53 +31,44 @@ namespace Microsoft.FSharp.Core
             
             let FromInt64Dynamic (value:int64) : obj = 
                 lock tab64 (fun () -> 
-                    let mutable res = Unchecked.defaultof<_> 
-                    let ok = tab64.TryGetValue(value,&res)
-                    if ok then res else 
+                    let mutable res = Unchecked.defaultof<_>
+                    if tab64.TryGetValue(value,&res) then res else 
                     res <- BigInteger(value)
                     tab64.[value] <- res
-                    res)                 
-
-            let inline get32 (x32:int32) =  FromInt64Dynamic (int64 x32)
-
-            let inline isOX s = not (System.String.IsNullOrEmpty(s)) && s.Length > 2 && s.[0] = '0' && s.[1] = 'x'
+                    res)
             
             let FromZero () : 'T = 
-                (get32 0 :?> 'T)
+                (FromInt64Dynamic 0L :?> 'T)
                 when 'T : BigInteger = BigInteger.Zero 
 
             let FromOne () : 'T = 
-                (get32 1 :?> 'T)
+                (FromInt64Dynamic 1L :?> 'T)
                 when 'T : BigInteger = BigInteger.One
 
             let FromInt32 (value:int32): 'T = 
-                (get32 value :?> 'T)
+                (FromInt64Dynamic (int64 value) :?> 'T)
                 when 'T : BigInteger = new BigInteger(value)
             
             let FromInt64 (value:int64): 'T = 
                 (FromInt64Dynamic value :?> 'T)
                 when 'T : BigInteger = new BigInteger(value)
                 
-            let getParse s = 
+            let FromStringDynamic (text:string) : obj = 
                 lock tabParse (fun () -> 
-                let mutable res = Unchecked.defaultof<_> 
-                let ok = tabParse.TryGetValue(s,&res)
-                if ok then 
+                let mutable res = Unchecked.defaultof<_>
+                if tabParse.TryGetValue(text,&res) then 
                     res 
                 else 
                     let v = 
-                       if  isOX s then 
-                          BigInteger.Parse (s.[2..],NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture)
+                       if isNotNull text && text.Length > 2 && text.[0] = '0' && text.[1] = 'x' then 
+                          BigInteger.Parse (text.[2..],NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture)
                        else
-                          BigInteger.Parse (s,NumberStyles.AllowLeadingSign,CultureInfo.InvariantCulture)
-                    res <-  v
-                    tabParse.[s] <- res
+                          BigInteger.Parse (text,NumberStyles.AllowLeadingSign,CultureInfo.InvariantCulture)
+                    res <- v
+                    tabParse.[text] <- res
                     res)
 
-            let FromStringDynamic (text:string) : obj = 
-                getParse text
-                
             let FromString (text:string) : 'T = 
                 (FromStringDynamic text :?> 'T)
-                when 'T : BigInteger = getParse text
+                when 'T : BigInteger = FromStringDynamic text
 

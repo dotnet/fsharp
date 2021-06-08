@@ -24,8 +24,7 @@ namespace Microsoft.FSharp.Core
     module NumericLiterals =
 
         /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' 
-        module NumericLiteralI = 
-            open System.Numerics
+        module NumericLiteralI =
 
             /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' 
             val FromZero : value:unit -> 'T
