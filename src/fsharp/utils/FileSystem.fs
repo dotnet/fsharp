@@ -416,7 +416,7 @@ type DefaultFileSystem() as this =
         if runningOnMono || (not useMemoryMappedFile) then
             fileStream :> Stream
         else
-            use mmf =
+            let mmf =
                 if shouldShadowCopy then
                     let mmf =
                         MemoryMappedFile.CreateNew(
@@ -425,7 +425,7 @@ type DefaultFileSystem() as this =
                             MemoryMappedFileAccess.Read,
                             MemoryMappedFileOptions.None,
                             HandleInheritability.None)
-                    use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
+                    let stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
                     fileStream.CopyTo(stream)
                     fileStream.Dispose()
                     mmf
@@ -437,9 +437,12 @@ type DefaultFileSystem() as this =
                         MemoryMappedFileAccess.Read,
                         HandleInheritability.None,
                         leaveOpen=false)
+
             let stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
+
             if not stream.CanRead then
                 invalidOp "Cannot read file"
+
             stream :> Stream
 
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
