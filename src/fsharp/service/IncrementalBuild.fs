@@ -527,7 +527,7 @@ type BoundModel private (tcConfig: TcConfig,
                                     if preventDuplicates.Add struct(r.Start, r.End) then
                                         builder.Write(cnr.Range, cnr.Item))
                         
-                                let semanticClassification = sResolutions.GetSemanticClassifications(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
+                                let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
                         
                                 let sckBuilder = SemanticClassificationKeyStoreBuilder()
                                 sckBuilder.WriteAll semanticClassification

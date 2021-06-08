@@ -71,7 +71,7 @@ module TcResolutionsExtensions =
         (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.NameResolutionEnv, cnr.AccessorDomain, cnr.Range)
 
     type TcResolutions with
-        member sResolutions.GetSemanticClassifications(g: TcGlobals, amap: ImportMap, formatSpecifierLocations: (range * int) [], range: range option) : SemanticClassificationItem [] =
+        member sResolutions.GetSemanticClassification(g: TcGlobals, amap: ImportMap, formatSpecifierLocations: (range * int) [], range: range option) : SemanticClassificationItem [] =
             ErrorScope.Protect Range.range0 (fun () ->
                 let (|LegitTypeOccurence|_|) = function
                     | ItemOccurence.UseInType
@@ -379,5 +379,5 @@ module TcResolutionsExtensions =
                 results.ToArray()
                ) 
                (fun msg -> 
-                   Trace.TraceInformation(sprintf "FCS: recovering from error in GetSemanticClassifications: '%s'" msg)
+                   Trace.TraceInformation(sprintf "FCS: recovering from error in GetSemanticClassification: '%s'" msg)
                    Array.empty)
