@@ -143,30 +143,43 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
 type SafeUnmanagedMemoryStream =
     inherit UnmanagedMemoryStream
 
-    val mutable private holder: obj
+    val mutable private holder: IDisposable
     val mutable private isDisposed: bool
+    val mutable private addr: nativeptr<byte>
+    val mutable private length: int64
 
-    new (addr, length, holder) =
+    new (addr: nativeptr<byte>, length: int64, holder: IDisposable) =
         {
             inherit UnmanagedMemoryStream(addr, length)
+            addr = addr
+            length = length
             holder = holder
             isDisposed = false
         }
 
-    new (addr: nativeptr<byte>, length: int64, capacity: int64, access: FileAccess, holder) =
+    new (addr: nativeptr<byte>, length: int64, capacity: int64, access: FileAccess, holder: IDisposable) =
         {
             inherit UnmanagedMemoryStream(addr, length, capacity, access)
+            addr = addr
+            length = length
             holder = holder
             isDisposed = false
         }
+    
+    member x.Address = x.addr
+
+    override x.Length = x.length
 
     override x.Dispose disposing =
         base.Dispose disposing
-        x.holder <- null // Null out so it can be collected.
+        x.holder.Dispose()
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
-type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
+type RawByteMemory(memstream: SafeUnmanagedMemoryStream) =
     inherit ByteMemory ()
+
+    let addr = memstream.Address
+    let length = int memstream.Length
 
     let check i =
         if i < 0 || i >= length then
@@ -175,10 +188,6 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
     let checkCount count =
         if count < 0 then
             raise (ArgumentOutOfRangeException(nameof count, "Count is less than zero."))
-
-    do
-        if length < 0 then
-            raise (ArgumentOutOfRangeException(nameof length))
 
     override _.Item
         with get i =
@@ -236,7 +245,7 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
         if count > 0 then
             check pos
             check (pos + count - 1)
-            RawByteMemory(NativePtr.add addr pos, count, holder) :> ByteMemory
+            RawByteMemory(new SafeUnmanagedMemoryStream(NativePtr.add addr pos, int64 count, memstream)) :> ByteMemory
         else
             ByteArrayMemory(Array.empty, 0, 0) :> ByteMemory
 
@@ -261,13 +270,13 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
 
     override _.AsStream() =
         if length > 0 then
-            new SafeUnmanagedMemoryStream(addr, int64 length, holder) :> Stream
+            memstream :> Stream
         else
             new MemoryStream([||], 0, 0, false) :> Stream
 
     override _.AsReadOnlyStream() =
         if length > 0 then
-            new SafeUnmanagedMemoryStream(addr, int64 length, int64 length, FileAccess.Read, holder) :> Stream
+            new SafeUnmanagedMemoryStream(addr, int64 length, int64 length, FileAccess.Read, memstream) :> Stream
         else
             new MemoryStream([||], 0, 0, false) :> Stream
 
@@ -438,12 +447,20 @@ type DefaultFileSystem() as this =
                         HandleInheritability.None,
                         leaveOpen=false)
 
-            let stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
+            let accessor = mmf.CreateViewAccessor(0L, length, MemoryMappedFileAccess.Read)
 
-            if not stream.CanRead then
+            if not accessor.CanRead then
                 invalidOp "Cannot read file"
 
-            stream :> Stream
+            let addr = NativePtr.ofNativeInt (accessor.SafeMemoryMappedViewHandle.DangerousGetHandle())
+
+            let safeHolder =
+                { new IDisposable with
+                    member x.Dispose() =
+                        mmf.Dispose()
+                        accessor.Dispose() }
+
+            new SafeUnmanagedMemoryStream(addr, length, safeHolder) :> Stream
 
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
     default _.OpenFileForWriteShim(filePath: string, ?fileMode: FileMode, ?fileAccess: FileAccess, ?fileShare: FileShare) : Stream =
@@ -653,25 +670,12 @@ module public StreamExtensions =
             let encoding = defaultArg encoding Encoding.UTF8
             s.ReadLines(encoding) |> Seq.toArray
 
-        /// If we are working with the view stream from mmf, we wrap it in RawByteMemory (which does zero copy, bu just using handle from the views stream).
+        /// If we are working with the stream from MMF, we wrap it in RawByteMemory (which does zero copy, bu just using handle from the views accessor).
         /// However, when we use any other stream (FileStream, MemoryStream, etc) - we just read everything from it and expose via ByteArrayMemory.
         member s.AsByteMemory() : ByteMemory =
             match s with
-            | :? MemoryMappedViewStream as mmvs ->
-                let safeHolder =
-                    { new obj() with
-                        override x.Finalize() =
-                            (x :?> IDisposable).Dispose()
-                      interface IDisposable with
-                        member x.Dispose() =
-                            GC.SuppressFinalize x
-                            mmvs.Dispose() }
-                let length = mmvs.Length
-                RawByteMemory(
-                    NativePtr.ofNativeInt (mmvs.SafeMemoryMappedViewHandle.DangerousGetHandle()),
-                    int length,
-                    safeHolder) :> ByteMemory
-
+            | :? SafeUnmanagedMemoryStream as sums ->
+                RawByteMemory(sums) :> ByteMemory
             | _ ->
                 let bytes = s.ReadAllBytes()
                 let byteArrayMemory = if bytes.Length = 0 then ByteArrayMemory([||], 0, 0) else ByteArrayMemory(bytes, 0, bytes.Length)
@@ -690,10 +694,15 @@ type ByteMemory with
 
     static member FromMemoryMappedFile(mmf: MemoryMappedFile) =
         let accessor = mmf.CreateViewAccessor()
-        RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int accessor.Capacity, (mmf, accessor))
+        let holder =
+            { new IDisposable with
+                member x.Dispose() =
+                    mmf.Dispose() 
+                    accessor.Dispose() }
+        RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int accessor.Capacity, holder)
 
-    static member FromUnsafePointer(addr, length, holder: obj) =
-        RawByteMemory(NativePtr.ofNativeInt addr, length, holder) :> ByteMemory
+    static member FromUnsafePointer(addr, length, holder: IDisposable) =
+        RawByteMemory(new SafeUnmanagedMemoryStream(NativePtr.ofNativeInt addr, int64 length, holder)) :> ByteMemory
 
     static member FromArray(bytes, offset, length) =
         ByteArrayMemory(bytes, offset, length) :> ByteMemory

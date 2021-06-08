@@ -313,7 +313,7 @@ type internal ByteMemory with
 
     /// Creates a ByteMemory object that is backed by a raw pointer.
     /// Use with care.
-    static member FromUnsafePointer: addr: nativeint * length: int * holder: obj -> ByteMemory
+    static member FromUnsafePointer: addr: nativeint * length: int * holder: IDisposable -> ByteMemory
 
     /// Creates a ByteMemory object that is backed by a byte array with the specified offset and length.
     static member FromArray: bytes: byte[] * offset: int * length: int -> ByteMemory

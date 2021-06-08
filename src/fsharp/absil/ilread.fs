@@ -117,19 +117,19 @@ type BinaryFile =
 /// Visual Studio integration. 'obj' must keep the memory alive. The object will capture it and thus also keep the memory alive for
 /// the lifetime of this object.
 type RawMemoryFile =
-    val mutable private holder: obj
+    val mutable private holder: IDisposable
     val mutable private fileName: string
     val mutable private view: ReadOnlyByteMemory
 
-    new (fileName: string, obj: obj, addr: nativeint, length: int) =
+    new (fileName: string, holder: IDisposable, addr: nativeint, length: int) =
         stats.rawMemoryFileCount <- stats.rawMemoryFileCount + 1
         {
-            holder = obj
+            holder = holder
             fileName = fileName
-            view = ByteMemory.FromUnsafePointer(addr, length, obj).AsReadOnly()
+            view = ByteMemory.FromUnsafePointer(addr, length, holder).AsReadOnly()
         }
 
-    new (fileName: string, holder: obj, bmem: ByteMemory) =
+    new (fileName: string, holder: IDisposable, bmem: ByteMemory) =
         {
             holder = holder // gonna be finalized due to how we pass the holder when create RawByteMemory
             fileName = fileName
@@ -166,7 +166,12 @@ type PEFile(fileName: string, peReader: PEReader) as this =
     member _.FileName = fileName
 
     override _.Finalize() =
-        peReader.Dispose()
+        (this :> IDisposable).Dispose()
+
+    interface IDisposable with
+        override this.Dispose() =
+            GC.SuppressFinalize this
+            peReader.Dispose()
 
     interface BinaryFile with
         override _.GetView() =
@@ -3936,7 +3941,7 @@ let OpenILModuleReaderFromBytes fileName assemblyContents options =
 
 let OpenILModuleReaderFromStream fileName (peStream: Stream) options =
     let peReader = new System.Reflection.PortableExecutable.PEReader(peStream, PEStreamOptions.PrefetchEntireImage)
-    let pefile = PEFile(fileName, peReader) :> BinaryFile
+    let pefile = new PEFile(fileName, peReader) :> BinaryFile
     let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, options.pdbDirPath, (options.reduceMemoryUsage = ReduceMemoryFlag.Yes), true)
     new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb)) :> ILModuleReader
 
@@ -3994,7 +3999,18 @@ let OpenILModuleReader fileName opts =
                 // See if tryGetMetadata gives us a BinaryFile for the metadata section alone.
                 let mdfileOpt =
                     match opts.tryGetMetadataSnapshot (fullPath, writeStamp) with
-                    | Some (obj, start, len) -> Some (RawMemoryFile(fullPath, obj, start, len) :> BinaryFile)
+                    | Some (obj, start, len) ->
+                        let mutable holder = obj
+                        let safeHolder =
+                            { new obj() with
+                                override x.Finalize() =
+                                    (x :?> IDisposable).Dispose()
+                              interface IDisposable with
+                                member x.Dispose() =
+                                   GC.SuppressFinalize x
+                                   holder <- null }
+
+                        Some (RawMemoryFile(fullPath, safeHolder, start, len) :> BinaryFile)
                     | None -> None
 
                 // For metadata-only, always use a temporary, short-lived PE file reader, preferably over a memory mapped file.
