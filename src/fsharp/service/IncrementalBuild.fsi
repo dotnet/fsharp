@@ -22,16 +22,17 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
+open FSharp.Compiler.BuildGraph
 
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 
     new : size: int -> FrameworkImportsCache
 
-    member Get : CompilationThreadToken * TcConfig -> Cancellable<TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list>
+    member Get : TcConfig -> NodeCode<TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list>
 
-    member Clear: CompilationThreadToken -> unit
+    member Clear: unit -> unit
 
-    member Downsize: CompilationThreadToken -> unit
+    member Downsize: unit -> unit
   
 /// Used for unit testing
 module internal IncrementalBuilderEventTesting =
@@ -107,32 +108,29 @@ type internal PartialCheckResults =
 
     member TimeStamp: DateTime 
 
+    /// Peek to see the results.
     /// For thread-safe access to pre-computed results
     /// If `enablePartialTypeChecking` is false then extras will be available
-    member TryTcInfoWithOptionalExtras: (TcInfo * TcInfoExtras option) option
+    member TryTcInfoWithOptionalExtras: unit -> (TcInfo * TcInfoExtras option) option
 
     /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
     /// extras will also be available.
-    member GetTcInfoWithOptionalExtras: unit -> Eventually<TcInfo * TcInfoExtras option>
-
-    /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
-    /// extras will also be available.
-    member GetTcInfo: unit -> Eventually<TcInfo>
+    member GetTcInfoWithOptionalExtras: unit -> NodeCode<TcInfo * TcInfoExtras option>
 
     /// Compute both the "TcInfo" and "TcInfoExtras" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetTcInfoWithExtras: unit -> Eventually<TcInfo * TcInfoExtras>
+    member GetTcInfoWithExtras: unit -> NodeCode<TcInfo * TcInfoExtras>
 
     /// Compute the "ItemKeyStore" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member TryGetItemKeyStore: unit -> Eventually<ItemKeyStore option>
+    member TryGetItemKeyStore: unit -> NodeCode<ItemKeyStore option>
 
     /// Compute the "SemanticClassificationKeyStore" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetSemanticClassification: unit -> Eventually<SemanticClassificationKeyStore option>
+    member GetSemanticClassification: unit -> NodeCode<SemanticClassificationKeyStore option>
 
     member TimeStamp: DateTime 
 
@@ -162,15 +160,18 @@ type internal IncrementalBuilder =
       member ProjectChecked : IEvent<unit>
 
 #if !NO_EXTENSIONTYPING
-      /// Raised when a type provider invalidates the build.
-      member ImportsInvalidatedByTypeProvider : IEvent<string>
+      /// Raised when the build is invalidated.
+      member ImportsInvalidatedByTypeProvider : IEvent<unit>
 #endif
+
+      /// Check if one of the build's references is invalidated.
+      member IsReferencesInvalidated : bool
 
       /// The list of files the build depends on
       member AllDependenciesDeprecated : string[]
 
       /// The project build. Return true if the background work is finished.
-      member PopulatePartialCheckingResults: CompilationThreadToken -> Eventually<unit>
+      member PopulatePartialCheckingResults: unit -> NodeCode<unit>
 
       /// Get the preceding typecheck state of a slot, without checking if it is up-to-date w.r.t.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
@@ -186,49 +187,36 @@ type internal IncrementalBuilder =
       /// This is safe for use from non-compiler threads
       member AreCheckResultsBeforeFileInProjectReady: filename:string -> bool
 
-      /// Get the preceding typecheck state of a slot, WITH checking if it is up-to-date w.r.t. However, files will not be parsed or checked.
-      /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available or if it is not up-to-date.
-      ///
-      /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
-      member TryGetCheckResultsBeforeFileInProject: filename: string -> PartialCheckResults option
+      /// Get the preceding typecheck state of a slot. Compute the entire type check of the project up
+      /// to the necessary point if the result is not available. This may be a long-running operation.
+      member GetCheckResultsBeforeFileInProject : filename:string -> NodeCode<PartialCheckResults>
 
       /// Get the preceding typecheck state of a slot. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
-      ///
-      // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string -> Cancellable<PartialCheckResults>
+      /// This will get full type-check info for the file, meaning no partial type-checking.
+      member GetFullCheckResultsBeforeFileInProject : filename:string -> NodeCode<PartialCheckResults>
 
       /// Get the typecheck state after checking a file. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
-      ///
-      // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string -> Cancellable<PartialCheckResults>
+      member GetCheckResultsAfterFileInProject : filename:string -> NodeCode<PartialCheckResults>
 
       /// Get the typecheck state after checking a file. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       /// This will get full type-check info for the file, meaning no partial type-checking.
-      ///
-      // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetFullCheckResultsAfterFileInProject : CompilationThreadToken * filename:string -> Cancellable<PartialCheckResults>
+      member GetFullCheckResultsAfterFileInProject : filename:string -> NodeCode<PartialCheckResults>
 
       /// Get the typecheck result after the end of the last file. The typecheck of the project is not 'completed'.
       /// This may be a long-running operation.
-      ///
-      // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterLastFileInProject : CompilationThreadToken -> Cancellable<PartialCheckResults>
+      member GetCheckResultsAfterLastFileInProject : unit -> NodeCode<PartialCheckResults>
 
       /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
       /// This may be a long-running operation.
-      ///
-      // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Cancellable<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
+      member GetCheckResultsAndImplementationsForProject : unit -> NodeCode<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
 
       /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
       /// This may be a long-running operation.
       /// This will get full type-check info for the project, meaning no partial type-checking.
-      ///
-      // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetFullCheckResultsAndImplementationsForProject : CompilationThreadToken -> Cancellable<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
+      member GetFullCheckResultsAndImplementationsForProject : unit -> NodeCode<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
       member GetLogicalTimeStampForProject: TimeStampCache -> DateTime
@@ -250,7 +238,6 @@ type internal IncrementalBuilder =
       
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:
-          CompilationThreadToken *
           LegacyReferenceResolver *
           defaultFSharpBinariesDir: string * 
           FrameworkImportsCache *
@@ -268,7 +255,7 @@ type internal IncrementalBuilder =
           enableBackgroundItemKeyStoreAndSemanticClassification: bool *
           enablePartialTypeCheckingRequestForChecker: bool *
           dependencyProvider: DependencyProvider option
-             -> Cancellable<IncrementalBuilder option * FSharpDiagnostic[]>
+             -> NodeCode<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.
 module internal IncrementalBuild =
