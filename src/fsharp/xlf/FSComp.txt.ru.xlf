@@ -172,6 +172,11 @@
         <target state="translated">интерполяция строк</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStructActivePattern">
+        <source>struct representation for active patterns</source>
+        <target state="new">struct representation for active patterns</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
         <target state="translated">подстановочный знак в цикле for</target>
@@ -395,6 +400,11 @@
       <trans-unit id="tcInvalidAlignmentInInterpolatedString">
         <source>Invalid alignment in interpolated string</source>
         <target state="translated">Недопустимое выравнивание в интерполированной строке</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidStructReturn">
+        <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
+        <target state="new">The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">

@@ -24,6 +24,7 @@ type LanguageFeature =
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
+    | StructActivePattern
     | PrintfBinaryFormat
 
 /// LanguageVersion management
