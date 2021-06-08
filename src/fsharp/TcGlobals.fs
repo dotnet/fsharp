@@ -299,6 +299,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_fslib_IDelegateEvent_tcr = mk_MFControl_tcref fslibCcu "IDelegateEvent`1"
 
   let v_option_tcr_nice     = mk_MFCore_tcref fslibCcu "option`1"
+  let v_valueoption_tcr_nice = mk_MFCore_tcref fslibCcu "voption`1"
   let v_list_tcr_canon        = mk_MFCollections_tcref fslibCcu "List`1"
   let v_list_tcr_nice            = mk_MFCollections_tcref fslibCcu "list`1"
   let v_lazy_tcr_nice            = mk_MFControl_tcref fslibCcu "Lazy`1"
@@ -351,6 +352,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_decimal_ty      = mkSysNonGenericTy sys "Decimal"
   let v_unit_ty         = mkNonGenericTy v_unit_tcr_nice
   let v_system_Type_ty = mkSysNonGenericTy sys "Type"
+  let v_Array_tcref = findSysTyconRef sys "Array"
 
 
   let v_system_Reflection_MethodInfo_ty = mkSysNonGenericTy ["System";"Reflection"] "MethodInfo"
@@ -761,8 +763,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let mutable generatedAttribsCache = []
   let mutable debuggerBrowsableNeverAttributeCache = None
-  let mkDebuggerNonUserCodeAttribute() = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerNonUserCodeAttribute, [], [], [])
-  let mkCompilerGeneratedAttribute () = mkILCustomAttribute ilg (tref_CompilerGeneratedAttribute, [], [], [])
+  let mkDebuggerNonUserCodeAttribute() = mkILCustomAttribute (findSysILTypeRef tname_DebuggerNonUserCodeAttribute, [], [], [])
+  let mkCompilerGeneratedAttribute () = mkILCustomAttribute (tref_CompilerGeneratedAttribute, [], [], [])
   let compilerGlobalState = CompilerGlobalState()
 
   // Requests attributes to be added to compiler generated methods.
@@ -786,7 +788,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
         let typ_DebuggerBrowsableState =
             let tref = findSysILTypeRef tname_DebuggerBrowsableState
             ILType.Value (mkILNonGenericTySpec tref)
-        mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerBrowsableAttribute, [typ_DebuggerBrowsableState], [ILAttribElem.Int32 n], [])
+        mkILCustomAttribute (findSysILTypeRef tname_DebuggerBrowsableAttribute, [typ_DebuggerBrowsableState], [ILAttribElem.Int32 n], [])
 
   let mkDebuggerBrowsableNeverAttribute() =
       match debuggerBrowsableNeverAttributeCache with
@@ -799,7 +801,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList @ [mkDebuggerBrowsableNeverAttribute()])
   let addPropertyNeverAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addNeverAttrs pdef.CustomAttrs)
   let addFieldNeverAttrs (fdef:ILFieldDef) = fdef.With(customAttrs = addNeverAttrs fdef.CustomAttrs)
-  let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
+  let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
 
   let betterTyconEntries =
      [| "Int32"    , v_int_tcr
@@ -936,6 +938,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.fslibCcu                 = fslibCcu
   member val refcell_tcr_canon    = v_refcell_tcr_canon
   member val option_tcr_canon     = mk_MFCore_tcref     fslibCcu "Option`1"
+  member val valueoption_tcr_canon    = mk_MFCore_tcref     fslibCcu "ValueOption`1"
   member _.list_tcr_canon       = v_list_tcr_canon
   member val set_tcr_canon        = mk_MFCollections_tcref   fslibCcu "Set`1"
   member val map_tcr_canon        = mk_MFCollections_tcref   fslibCcu "Map`2"
@@ -943,6 +946,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val refcell_tcr_nice     = v_refcell_tcr_nice
   member val array_tcr_nice       = v_il_arr_tcr_map.[0]
   member _.option_tcr_nice   = v_option_tcr_nice
+  member _.valueoption_tcr_nice  = v_valueoption_tcr_nice
   member _.list_tcr_nice     = v_list_tcr_nice
   member _.lazy_tcr_nice     = v_lazy_tcr_nice
   member _.format_tcr       = v_format_tcr
@@ -996,6 +1000,11 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.fslib_IDelegateEvent_tcr      = v_fslib_IDelegateEvent_tcr
   member _.seq_tcr        = v_seq_tcr
   member val seq_base_tcr = mk_MFCompilerServices_tcref fslibCcu "GeneratedSequenceBase`1"
+  member val ListCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ListCollector`1"
+  member val ArrayCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ArrayCollector`1"
+  member g.mk_GeneratedSequenceBase_ty seqElemTy = TType_app(g.seq_base_tcr,[seqElemTy])
+  member g.mk_ListCollector_ty seqElemTy = TType_app(g.ListCollector_tcr,[seqElemTy])
+  member g.mk_ArrayCollector_ty seqElemTy = TType_app(g.ArrayCollector_tcr,[seqElemTy])
   member val byrefkind_In_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "In"
   member val byrefkind_Out_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "Out"
   member val byrefkind_InOut_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "InOut"
@@ -1097,7 +1106,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member _.system_Reflection_MethodInfo_ty = v_system_Reflection_MethodInfo_ty
 
-  member val system_Array_tcref  = findSysTyconRef sys "Array"
+  member val system_Array_tcref = v_Array_tcref
   member val system_Object_tcref  = findSysTyconRef sys "Object"
   member val system_Value_tcref = findSysTyconRef sys "ValueType"
   member val system_Void_tcref    = findSysTyconRef sys "Void"
@@ -1192,6 +1201,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_CallerLineNumberAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerLineNumberAttribute"
   member val attrib_CallerFilePathAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
   member val attrib_CallerMemberNameAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
+  member val attrib_SkipLocalsInitAttribute  = findSysAttrib "System.Runtime.CompilerServices.SkipLocalsInitAttribute"
 
   member val attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
   member val attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"
@@ -1419,6 +1429,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val query_select_vref          = ValRefForIntrinsic v_query_select_value_info
   member val query_where_vref           = ValRefForIntrinsic v_query_where_value_info
   member val query_zero_vref            = ValRefForIntrinsic v_query_zero_value_info
+  member val seq_to_list_vref            = ValRefForIntrinsic v_seq_to_list_info
+  member val seq_to_array_vref            = ValRefForIntrinsic v_seq_to_array_info
 
   member _.seq_collect_info           = v_seq_collect_info
   member _.seq_using_info             = v_seq_using_info
@@ -1509,6 +1521,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       compilingFslib ||
       ((ValRefForIntrinsic g.call_with_witnesses_info).TryDeref.IsSome && langVersion.SupportsFeature LanguageFeature.WitnessPassing)
 
+  /// Indicates if we can use System.Array.Empty when emitting IL for empty array literals
+  member val isArrayEmptyAvailable = v_Array_tcref.ILTyconRawMetadata.Methods.FindByName "Empty" |> List.isEmpty |> not
+
   member _.FindSysTyconRef path nm = findSysTyconRef path nm
 
   member _.TryFindSysTyconRef path nm = tryFindSysTyconRef path nm
@@ -1530,17 +1545,17 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member _.AddFieldNeverAttrs mdef = addFieldNeverAttrs mdef
 
-  member _.mkDebuggerHiddenAttribute() = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerHiddenAttribute, [], [], [])
+  member _.mkDebuggerHiddenAttribute() = mkILCustomAttribute (findSysILTypeRef tname_DebuggerHiddenAttribute, [], [], [])
 
-  member _.mkDebuggerDisplayAttribute s = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerDisplayAttribute, [ilg.typ_String], [ILAttribElem.String (Some s)], [])
+  member _.mkDebuggerDisplayAttribute s = mkILCustomAttribute (findSysILTypeRef tname_DebuggerDisplayAttribute, [ilg.typ_String], [ILAttribElem.String (Some s)], [])
 
   member _.DebuggerBrowsableNeverAttribute = mkDebuggerBrowsableNeverAttribute()
 
   member _.mkDebuggerStepThroughAttribute() =
-      mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerStepThroughAttribute, [], [], [])
+      mkILCustomAttribute (findSysILTypeRef tname_DebuggerStepThroughAttribute, [], [], [])
 
   member _.mkDebuggableAttribute (jitOptimizerDisabled) =
-      mkILCustomAttribute ilg (tref_DebuggableAttribute, [ilg.typ_Bool; ilg.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
+      mkILCustomAttribute (tref_DebuggableAttribute, [ilg.typ_Bool; ilg.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
 
   member _.mkDebuggableAttributeV2(jitTracking, ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
         let debuggingMode =
@@ -1549,7 +1564,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
             (if enableEnC then 4 else 0)
         let tref_DebuggableAttribute_DebuggingModes = mkILTyRefInTyRef (tref_DebuggableAttribute, tname_DebuggableAttribute_DebuggingModes)
-        mkILCustomAttribute ilg
+        mkILCustomAttribute
           (tref_DebuggableAttribute, [mkILNonGenericValueTy tref_DebuggableAttribute_DebuggingModes],
            (* See System.Diagnostics.DebuggableAttribute.DebuggingModes *)
            [ILAttribElem.Int32( debuggingMode )], [])

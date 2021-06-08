@@ -37,6 +37,8 @@ type LanguageFeature =
     | OverloadsForCustomOperations
     | ExpandedMeasurables
     | ExtensionConstraintSolutions
+    | StructActivePattern
+    | PrintfBinaryFormat
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -79,6 +81,8 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.ExpandedMeasurables, previewVersion
             LanguageFeature.FromEndSlicing, previewVersion
             LanguageFeature.ExtensionConstraintSolutions, previewVersion
+            LanguageFeature.StructActivePattern, previewVersion
+            LanguageFeature.PrintfBinaryFormat, previewVersion
         ]
 
     let specified =
@@ -153,6 +157,8 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.OverloadsForCustomOperations -> FSComp.SR.featureOverloadsForCustomOperations()
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables()
         | LanguageFeature.ExtensionConstraintSolutions -> FSComp.SR.featureExtensionConstraintSolutions()
+        | LanguageFeature.StructActivePattern -> FSComp.SR.featureStructActivePattern()
+        | LanguageFeature.PrintfBinaryFormat -> FSComp.SR.featurePrintfBinaryFormat()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

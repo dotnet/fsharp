@@ -51,6 +51,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.AbstractIL
 open System.Reflection.PortableExecutable
+open FSharp.Compiler.BuildGraph
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -1871,8 +1872,7 @@ module internal ParseAndCheckFile =
 
                     use _unwind = new CompilationGlobalsScope (errHandler.ErrorLogger, BuildPhase.TypeCheck)
                     let! result =
-                        TypeCheckOneInputAndFinishEventually(checkForErrors, tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
-                        |> Eventually.toCancellable
+                        TypeCheckOneInputAndFinish(checkForErrors, tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
 
                     return result
                 with e ->
@@ -2296,7 +2296,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
 
     let keepAssemblyContents = false
 
-    member _.ParseAndCheckInteraction (ctok, sourceText: ISourceText, ?userOpName: string) =
+    member _.ParseAndCheckInteraction (sourceText: ISourceText, ?userOpName: string) =
         cancellable {
             let userOpName = defaultArg userOpName "Unknown"
             let filename = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
@@ -2316,7 +2316,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                 CompilerOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
 
             let loadClosure =
-                LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
+                LoadClosure.ComputeClosureOfScriptText(legacyReferenceResolver, defaultFSharpBinariesDir,
                     filename, sourceText, CodeContext.Editing,
                     tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib,
                     tcConfig.useSdkRefs, tcConfig.sdkDirOverride, new Lexhelp.LexResourceManager(),

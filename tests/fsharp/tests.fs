@@ -34,6 +34,7 @@ let singleTestBuildAndRun = getTestsDirectory >> singleTestBuildAndRun
 let singleTestBuildAndRunVersion = getTestsDirectory >> singleTestBuildAndRunVersion
 let testConfig = getTestsDirectory >> testConfig
 
+[<NonParallelizable>]
 module CoreTests =
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
@@ -196,7 +197,7 @@ module CoreTests =
     let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_BASIC
 
     [<Test>]
-    let ``printf`` () = singleTestBuildAndRun "core/printf" FSC_BASIC
+    let ``printf`` () = singleTestBuildAndRunVersion "core/printf" FSC_BASIC "preview"
 
     [<Test>]
     let ``printf-interpolated`` () = singleTestBuildAndRunVersion "core/printf-interpolated" FSC_BASIC "preview"
@@ -1932,6 +1933,7 @@ module CoreTests =
 
 #endif
 
+[<NonParallelizable>]
 module VersionTests =
     [<Test>]
     let ``member-selfidentifier-version4.6``() = singleTestBuildAndRunVersion "core/members/self-identifier/version46" FSC_BUILDONLY "4.6"
@@ -1958,6 +1960,7 @@ module VersionTests =
     let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/preview" FSI_BASIC "preview"
 
 #if !NETCOREAPP
+[<NonParallelizable>]
 module ToolsTests =
 
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
@@ -1987,6 +1990,7 @@ module ToolsTests =
     [<Test>]
     let ``eval-FSI_BASIC`` () = singleTestBuildAndRun "tools/eval" FSI_BASIC
 
+[<NonParallelizable>]
 module RegressionTests =
 
     [<Test>]
@@ -2105,6 +2109,7 @@ module RegressionTests =
 
         peverify cfg "test.exe"
 
+[<NonParallelizable>]
 module OptimizationTests =
 
     [<Test>]
@@ -2238,6 +2243,7 @@ module OptimizationTests =
         log "%s" m
 #endif
 
+[<NonParallelizable>]
 module TypecheckTests =
     [<Test>]
     let ``full-rank-arrays`` () =
@@ -3158,7 +3164,7 @@ module TypecheckTests =
     [<Test>]
     let ``type check neg_byref_23`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_23"
 
-
+[<NonParallelizable>]
 module FscTests =
     [<Test>]
     let ``should be raised if AssemblyInformationalVersion has invalid version`` () =
@@ -3228,6 +3234,7 @@ open System.Runtime.InteropServices
 #endif
 
 #if NET472
+[<NonParallelizable>]
 module ProductVersionTest =
 
     let informationalVersionAttrName = typeof<System.Reflection.AssemblyInformationalVersionAttribute>.FullName
@@ -3296,6 +3303,7 @@ module GeneratedSignatureTests =
 #endif
 
 #if !NETCOREAPP
+[<NonParallelizable>]
 module OverloadResolution =
     module ``fsharpqa migrated tests`` =
         let [<Test>] ``Conformance\Expressions\SyntacticSugar (E_Slices01.fs)`` () = singleNegTest (testConfig "conformance/expressions/syntacticsugar") "E_Slices01"

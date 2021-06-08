@@ -87,7 +87,7 @@ let private SimulatedMSBuildResolver =
         member x.HighestInstalledNetFrameworkVersion() =
 
             let root = x.DotNetFrameworkReferenceAssembliesRootDirectory
-            let fwOpt = SupportedDesktopFrameworkVersions |> Seq.tryFind(fun fw -> Directory.Exists(Path.Combine(root, fw) ))
+            let fwOpt = SupportedDesktopFrameworkVersions |> Seq.tryFind(fun fw -> FileSystem.DirectoryExistsShim(Path.Combine(root, fw) ))
             match fwOpt with
             | Some fw -> fw
             | None -> "v4.5"
@@ -201,7 +201,7 @@ let private SimulatedMSBuildResolver =
                         match n.Version, n.GetPublicKeyToken()  with
                         | null, _ | _, null ->
                             let options =
-                                [ if Directory.Exists gac then
+                                [ if FileSystem.DirectoryExistsShim gac then
                                     for gacDir in FileSystem.EnumerateDirectoriesShim gac do
                                         let assemblyDir = Path.Combine(gacDir, n.Name)
                                         if FileSystem.DirectoryExistsShim assemblyDir then
@@ -216,7 +216,7 @@ let private SimulatedMSBuildResolver =
                             |> function None -> () | Some p -> success p
 
                         | v, tok ->
-                            if Directory.Exists gac then
+                            if FileSystem.DirectoryExistsShim gac then
                                 for gacDir in Directory.EnumerateDirectories gac do
                                     //printfn "searching GAC directory: %s" gacDir
                                     let assemblyDir = Path.Combine(gacDir, n.Name)

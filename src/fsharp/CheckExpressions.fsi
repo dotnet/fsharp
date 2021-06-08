@@ -512,13 +512,13 @@ val unionGeneralizedTypars: typarSets:Typar list list -> Typar list
 val AddDeclaredTypars: check: CheckForDuplicateTyparFlag -> typars: Typar list -> env: TcEnv -> TcEnv
 
 /// Add a value to the environment, producing a new environment. Report to the sink.
-val AddLocalVal: NameResolution.TcResultsSink -> scopem: range -> v: Val -> TcEnv -> TcEnv
+val AddLocalVal: g: TcGlobals -> NameResolution.TcResultsSink -> scopem: range -> v: Val -> TcEnv -> TcEnv
 
 /// Add a value to the environment, producing a new environment
-val AddLocalValPrimitive: v: Val -> TcEnv -> TcEnv
+val AddLocalValPrimitive: g: TcGlobals -> v: Val -> TcEnv -> TcEnv
 
 /// Add a list of values to the environment, producing a new environment. Report to the sink.
-val AddLocalVals: tcSink: TcResultsSink -> scopem: range -> vals: Val list -> env: TcEnv -> TcEnv
+val AddLocalVals: g: TcGlobals -> tcSink: TcResultsSink -> scopem: range -> vals: Val list -> env: TcEnv -> TcEnv
 
 /// Set the type of a 'Val' after it has been fully inferred.
 val AdjustRecType: vspec: Val -> vscheme: ValScheme -> unit

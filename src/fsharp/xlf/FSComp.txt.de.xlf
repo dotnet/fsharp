@@ -157,6 +157,11 @@
         <target state="translated">Paketverwaltung</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePrintfBinaryFormat">
+        <source>binary formatting for integers</source>
+        <target state="new">binary formatting for integers</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
         <target state="translated">Lockerung für Leerraum</target>
@@ -170,6 +175,11 @@
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">Zeichenfolgeninterpolation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStructActivePattern">
+        <source>struct representation for active patterns</source>
+        <target state="new">struct representation for active patterns</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -395,6 +405,11 @@
       <trans-unit id="tcInvalidAlignmentInInterpolatedString">
         <source>Invalid alignment in interpolated string</source>
         <target state="translated">Ungültige Ausrichtung in interpolierter Zeichenfolge.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidStructReturn">
+        <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
+        <target state="new">The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
