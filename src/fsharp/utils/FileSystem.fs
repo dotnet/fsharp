@@ -416,7 +416,7 @@ type DefaultFileSystem() as this =
         if runningOnMono || (not useMemoryMappedFile) then
             fileStream :> Stream
         else
-            use mmf =
+            let mmf =
                 if shouldShadowCopy then
                     let mmf =
                         MemoryMappedFile.CreateNew(
