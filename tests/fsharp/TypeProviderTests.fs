@@ -7,7 +7,7 @@
 #load "../FSharp.Test.Utilities/TestFramework.fs"
 #load "single-test.fs"
 #else
-[<NUnit.Framework.Category "Type Provider">]
+[<NUnit.Framework.Category "Type Provider";NUnit.Framework.NonParallelizable>]
 module FSharp.Test.FSharpSuite.TypeProviderTests
 #endif
 
@@ -204,6 +204,7 @@ let helloWorldCSharp () =
 [<TestCase("EVIL_PROVIDER_DoesNotHaveConstructor")>]
 [<TestCase("EVIL_PROVIDER_ConstructorThrows")>]
 [<TestCase("EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments")>]
+[<NonParallelizable>]
 let ``negative type provider tests`` (name:string) =
     let cfg = testConfig "typeProviders/negTests"
     let dir = cfg.Directory

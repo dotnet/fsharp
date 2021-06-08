@@ -5003,8 +5003,8 @@ module TcDeclarations =
 // Bind module types
 //------------------------------------------------------------------------- 
 
-let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synSigDecl: Eventually<TcEnv> =
-  eventually {
+let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synSigDecl: Cancellable<TcEnv> =
+  cancellable {
     try 
         match synSigDecl with 
         | SynModuleSigDecl.Exception (edef, m) ->
@@ -5155,7 +5155,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
 
 
 and TcSignatureElements cenv parent endm env xml mutRecNSInfo defs = 
-    eventually {
+    cancellable {
         // Ensure the .Deref call in UpdateAccModuleOrNamespaceType succeeds 
         if cenv.compilingCanonicalFslibModuleType then 
             let doc = xml.ToXmlDoc(true, Some [])
@@ -5170,10 +5170,10 @@ and TcSignatureElements cenv parent endm env xml mutRecNSInfo defs =
     }
 
 and TcSignatureElementsNonMutRec cenv parent typeNames endm env defs = 
-    Eventually.fold (TcSignatureElementNonMutRec cenv parent typeNames endm) env defs
+    Cancellable.fold (TcSignatureElementNonMutRec cenv parent typeNames endm) env defs
 
 and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (defs: SynModuleSigDecl list) =
-    eventually {
+    cancellable {
         let m = match defs with [] -> m | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
         let scopem = (defs, m) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
 
@@ -5227,7 +5227,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
 
 and TcModuleOrNamespaceSignatureElementsNonMutRec cenv parent env (id, modKind, defs, m: range, xml) =
 
-  eventually {
+  cancellable {
     let endm = m.EndRange // use end of range for errors 
 
     // Create the module type that will hold the results of type checking.... 
@@ -5287,7 +5287,7 @@ let CheckLetOrDoInNamespace binds m =
 
 /// The non-mutually recursive case for a declaration
 let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem env synDecl = 
-  eventually {
+  cancellable {
     cenv.synArgNameGenerator.Reset()
     let tpenv = emptyUnscopedTyparEnv
 
@@ -5468,7 +5468,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
  
 /// The non-mutually recursive case for a sequence of declarations
 and TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm (defsSoFar, env, envAtEnd) (moreDefs: SynModuleDecl list) =
- eventually {
+ cancellable {
     match moreDefs with 
     | (firstDef :: otherDefs) ->
         // Lookahead one to find out the scope of the next declaration.
@@ -5488,7 +5488,7 @@ and TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm (defsSoFar, 
 
 /// The mutually recursive case for a sequence of declarations (and nested modules)
 and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial mutRecNSInfo (defs: SynModuleDecl list) =
- eventually {
+ cancellable {
 
     let m = match defs with [] -> m | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
     let scopem = (defs, m) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
@@ -5578,7 +5578,7 @@ and TcMutRecDefsFinish cenv defs m =
     TMDefRec(true, tycons, binds, m)
 
 and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo defs =
-  eventually {
+  cancellable {
     // Ensure the deref_nlpath call in UpdateAccModuleOrNamespaceType succeeds 
     if cenv.compilingCanonicalFslibModuleType then 
         let doc = xml.ToXmlDoc(true, Some [])
@@ -5798,7 +5798,7 @@ let TypeCheckOneImplFile
 
  let infoReader = InfoReader(g, amap)
 
- eventually {
+ cancellable {
     let cenv = 
         cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, Option.isSome rootSigOpt,
             conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
@@ -5904,7 +5904,7 @@ let TypeCheckOneImplFile
 
 /// Check an entire signature file
 let TypeCheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (_, qualNameOfFile, _, _, sigFileFrags)) = 
- eventually {     
+ cancellable {     
     let cenv = 
         cenv.Create 
             (g, false, niceNameGen, amap, topCcu, true, false, conditionalDefines, tcSink,
