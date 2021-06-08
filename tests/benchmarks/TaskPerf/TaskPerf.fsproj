@@ -4,11 +4,13 @@
     <TargetFramework>net5.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-	<!-- Turn off "57: experimental" -->
-	<!-- Turn off "1204: This function is for use by compiled F# code and should not be used directly" -->
+    <!-- Turn off "This function is for use by compiled F# code and should not be used directly" -->
+	<OtherFlags>$(OtherFlags) --nowarn:1204</OtherFlags>
+    <!-- Turn off "Experimental" -->
+	<OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
     <!-- Turn off 3511: state machine not compilable - expected for inlined functions defining state machine generators -->
     <!-- Turn off 3513: resumable code invocation' - expected for resumable code combinators -->
-    <NoWarn>57;1204;3511;3513</NoWarn>
+	<OtherFlags>$(OtherFlags) --nowarn:3511 --nowarn:3513</OtherFlags>
 	<OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
 	<OtherFlags>$(OtherFlags) --define:PREVIEW</OtherFlags>
   </PropertyGroup>

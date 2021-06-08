@@ -16,9 +16,10 @@
 	<!-- 3390: xmlDocBadlyFormed -->
 	<OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
     <!-- Turn off 57: Use of construct with Experimental attribute -->
+	<OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
     <!-- Turn off 3511: state machine not compilable - expected for inlined functions defining state machine generators -->
     <!-- Turn off 3513: resumable code invocation' - expected for resumable code combinators -->
-	<NoWarn>57;3511;3513</NoWarn>
+	<OtherFlags>$(OtherFlags) --nowarn:3511 --nowarn:3513</OtherFlags>
 	<OtherFlags>$(OtherFlags) --compiling-fslib --compiling-fslib-40 --maxerrors:100 --extraoptimizationloops:1</OtherFlags>
     <!-- preview needed for use of state machines for tasks -->
     <LangVersion>preview</LangVersion>
@@ -33,8 +34,7 @@
     <IsPackable>true</IsPackable>
     <PackageDescription>FSharp.Core redistributables from F# Tools version $(FSCorePackageVersion) For F# $(FSLanguageVersion).  Contains code from the F# Software Foundation.</PackageDescription>
     <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Core-$(FSCoreReleaseNotesVersion)</PackageReleaseNotes>
-  
-</PropertyGroup>
+  </PropertyGroup>
 
   <ItemGroup>
     <EmbeddedResource Update="FSCore.resx">
