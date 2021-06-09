@@ -39,6 +39,7 @@ type LanguageFeature =
     | ExtensionConstraintSolutions
     | StructActivePattern
     | PrintfBinaryFormat
+    | UseBindingValueDiscard
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -83,6 +84,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.ExtensionConstraintSolutions, previewVersion
             LanguageFeature.StructActivePattern, previewVersion
             LanguageFeature.PrintfBinaryFormat, previewVersion
+            LanguageFeature.UseBindingValueDiscard, previewVersion
         ]
 
     let specified =
@@ -159,6 +161,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.ExtensionConstraintSolutions -> FSComp.SR.featureExtensionConstraintSolutions()
         | LanguageFeature.StructActivePattern -> FSComp.SR.featureStructActivePattern()
         | LanguageFeature.PrintfBinaryFormat -> FSComp.SR.featurePrintfBinaryFormat()
+        | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

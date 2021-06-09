@@ -27,6 +27,7 @@ type LanguageFeature =
     | ExtensionConstraintSolutions
     | StructActivePattern
     | PrintfBinaryFormat
+    | UseBindingValueDiscard
 
 /// LanguageVersion management
 type LanguageVersion =
