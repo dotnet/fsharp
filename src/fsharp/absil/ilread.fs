@@ -3911,8 +3911,8 @@ let createByteFileChunk opts fileName chunk =
 
         ByteFile(fileName, bytes) :> BinaryFile
 
-let createMemoryMapFile fileName =
-    let stream = FileSystem.OpenFileForReadShim(fileName, useMemoryMappedFile = true)
+let getBinaryFile fileName useMemoryMappedFile =
+    let stream = FileSystem.OpenFileForReadShim(fileName, useMemoryMappedFile = useMemoryMappedFile)
     let byteMem = stream.AsByteMemory()
 
     let safeHolder =
@@ -3999,7 +3999,7 @@ let OpenILModuleReader fileName opts =
 
                 // For metadata-only, always use a temporary, short-lived PE file reader, preferably over a memory mapped file.
                 // Then use the metadata blob as the long-lived memory resource.
-                let disposer, pefileEager = createMemoryMapFile fullPath
+                let disposer, pefileEager = getBinaryFile fullPath false
                 use _disposer = disposer
                 let (metadataPhysLoc, metadataSize, peinfo, pectxtEager, pevEager, _pdb) = openPEFileReader (fullPath, pefileEager, None, false)
                 let mdfile =
@@ -4038,7 +4038,7 @@ let OpenILModuleReader fileName opts =
         // still use an in-memory ByteFile
         let pefile =
             if not runningOnMono && (alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath) then
-                let _, pefile = createMemoryMapFile fullPath
+                let _, pefile = getBinaryFile fullPath false
                 pefile
             else
                 createByteFileChunk opts fullPath None
