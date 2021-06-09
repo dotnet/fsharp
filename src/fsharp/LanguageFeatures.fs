@@ -40,6 +40,7 @@ type LanguageFeature =
     | ExpandedMeasurables
     | StructActivePattern
     | PrintfBinaryFormat
+    | UseBindingValueDiscard
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -85,6 +86,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.FromEndSlicing, previewVersion
             LanguageFeature.StructActivePattern, previewVersion
             LanguageFeature.PrintfBinaryFormat, previewVersion
+            LanguageFeature.UseBindingValueDiscard, previewVersion
         ]
 
     let specified =
@@ -162,6 +164,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables()
         | LanguageFeature.StructActivePattern -> FSComp.SR.featureStructActivePattern()
         | LanguageFeature.PrintfBinaryFormat -> FSComp.SR.featurePrintfBinaryFormat()
+        | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =
