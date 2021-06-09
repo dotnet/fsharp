@@ -804,7 +804,7 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
       st1.otypars.Size,
       st1.ovals.Size,
       st1.oanoninfos.Size
-    st1.occus, sizes, st1.ostrings, st1.opubpaths, st1.onlerefs, st1.osimpletys, st1.os.GetMemory()
+    st1.occus, sizes, st1.ostrings, st1.opubpaths, st1.onlerefs, st1.osimpletys, st1.os.AsMemory()
 
   let st2 =
    { os = ByteBuffer.Create(100000, useArrayPool = true)
@@ -838,7 +838,7 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
         p_memory
         (stringTab.AsArray, pubpathTab.AsArray, nlerefTab.AsArray, simpleTyTab.AsArray, phase1bytes)
         st2
-    st2.os.GetMemory()
+    st2.os.AsMemory()
 
   let finalBytes = phase2bytes.ToArray()
   (st1.os :> System.IDisposable).Dispose()

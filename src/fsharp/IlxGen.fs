@@ -2029,7 +2029,7 @@ let GenConstArray cenv (cgbuf: CodeGenBuffer) eenv ilElementType (data:'a[]) (wr
     let g = cenv.g
     use buf = ByteBuffer.Create data.Length
     data |> Array.iter (write buf)
-    let bytes = buf.GetMemory().ToArray()
+    let bytes = buf.AsMemory().ToArray()
     let ilArrayType = mkILArr1DTy ilElementType
     if data.Length = 0 then
         CG.EmitInstrs cgbuf (pop 0) (Push [ilArrayType]) [ mkLdcInt32 0; I_newarr (ILArrayShape.SingleDimensional, ilElementType); ]

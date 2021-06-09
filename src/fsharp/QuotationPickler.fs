@@ -374,7 +374,7 @@ module SimplePickle =
               ostrings=Table<_>.Create() }
         let stringTab, phase1bytes =
             p x st1
-            st1.ostrings.AsList, st1.os.GetMemory()
+            st1.ostrings.AsList, st1.os.AsMemory()
 
         let phase2data = (stringTab, phase1bytes)
 
@@ -383,7 +383,7 @@ module SimplePickle =
              ostrings=Table<_>.Create() }
         let phase2bytes =
             p_tup2 (p_list prim_pstring) p_memory phase2data st2
-            st2.os.GetMemory()
+            st2.os.AsMemory()
 
         let finalBytes = phase2bytes.ToArray()
         (st1.os :> IDisposable).Dispose()
