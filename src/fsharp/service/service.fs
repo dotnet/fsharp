@@ -919,6 +919,16 @@ type BackgroundCompiler(
             let _ = createBuilderNode (options, userOpName, CancellationToken.None)
             ()
 
+    member bc.UpdateDocuments(options: FSharpProjectOptions, docs) =
+        let builderNode = getOrCreateBuilder(options, "UpdateDocuments")
+        node {
+            match! builderNode with
+            | Some builder, _ ->
+                builder.UpdateDocuments(docs)
+            | _ ->
+                ()
+        }
+
     member bc.ClearCache(options: seq<FSharpProjectOptions>, _userOpName) =
         lock gate (fun () ->
             options
@@ -1216,6 +1226,10 @@ type FSharpChecker(legacyReferenceResolver,
     member _.InvalidateConfiguration(options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.InvalidateConfiguration(options, userOpName)
+
+    member _.UpdateDocuments(options: FSharpProjectOptions, docs) =
+        backgroundCompiler.UpdateDocuments(options, docs)
+        |> Async.AwaitNodeCode
 
     /// Clear the internal cache of the given projects.
     member _.ClearCache(options: FSharpProjectOptions seq, ?userOpName: string) =

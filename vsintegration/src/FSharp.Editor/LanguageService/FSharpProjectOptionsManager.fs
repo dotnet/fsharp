@@ -96,8 +96,21 @@ module private FSharpProjectOptionsHelpers =
         member this.ToFSharpDocument() =
             let dt = DateTime.UtcNow
             let getTimeStamp = fun () -> dt
+
+            let mutable weakFSharpText = Unchecked.defaultof<_>
             let getSourceText = fun () ->
-                this.GetTextAsync().Result.ToFSharpSourceText()
+                match weakFSharpText with
+                | null ->
+                    let fsharpText = this.GetTextAsync().Result.ToFSharpSourceText()
+                    weakFSharpText <- WeakReference<_>(fsharpText)
+                    fsharpText
+                | _ ->
+                    match weakFSharpText.TryGetTarget() with
+                    | true, fsharpText -> fsharpText
+                    | _ ->
+                        let fsharpText = this.GetTextAsync().Result.ToFSharpSourceText()
+                        weakFSharpText <- WeakReference<_>(fsharpText)
+                        fsharpText
             FSharpDocument.Create(this.FilePath, getTimeStamp, getSourceText)
 
 [<RequireQualifiedAccess>]
@@ -346,19 +359,19 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     cache.TryRemove(projectId) |> ignore
                     return! tryComputeOptions project ct
                 else
+                    let projectChanges = project.GetChanges(oldProject)
+                    let changedDocs = projectChanges.GetChangedDocuments() |> Array.ofSeq
 
+                    if changedDocs.Length > 0 then
+                        let fsharpDocs =
+                            changedDocs
+                            |> Array.map (fun docId -> 
+                                let doc = project.GetDocument(docId)
+                                doc.ToFSharpDocument())
 
-                    //let projectChanges = project.GetChanges(oldProject)
-                    //let changedDocs = projectChanges.GetChangedDocuments() |> Array.ofSeq
+                        do! checkerProvider.Checker.UpdateDocuments(projectOptions, fsharpDocs)
 
-                    //if changedDocs.Length > 0 then
-                    //    changedDocs
-                    //    |> Array.iter (fun docId ->
-                    //        let doc = project.GetDocument(docId)
-                    //        checkerProvider.Checker.UpdateDocument(projectOptions, doc.ToFSharpDocument(), ct)
-                    //    )
-
-                    //    cache.[projectId] <- (project, parsingOptions, projectOptions)
+                        cache.[projectId] <- (project, parsingOptions, projectOptions)
                         
                     return Some(parsingOptions, projectOptions)
         }
