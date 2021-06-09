@@ -8,6 +8,7 @@ open System.IO.MemoryMappedFiles
 open System.Reflection
 open System.Runtime.InteropServices
 open System.Text
+open System.Runtime.CompilerServices
 
 open FSharp.NativeInterop
 
@@ -340,20 +341,48 @@ type internal ByteStream =
 type internal ByteBuffer =
     interface IDisposable
 
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member GetMemory : unit -> ReadOnlyMemory<byte>
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitIntAsByte : int -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitIntsAsBytes : int[] -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitByte : byte -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitBytes : byte[] -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitMemory : ReadOnlyMemory<byte> -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitByteMemory : ReadOnlyByteMemory -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitByteBuffer : ByteBuffer -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitInt32 : int32 -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitInt64 : int64 -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member FixupInt32 : pos: int -> value: int32 -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitInt32AsUInt16 : int32 -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitBoolAsByte : bool -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitUInt16 : uint16 -> unit
+
     member Position : int
     static member Create : int * ?useArrayPool: bool -> ByteBuffer
 

@@ -401,7 +401,7 @@ type IMAGE_RESOURCE_DATA_ENTRY(o: int32, s: int32, c: int32, r: int32) =
     static member Width = 16
 
     member x.toBytes() =
-        let buf = ByteBuffer.Create IMAGE_RESOURCE_DATA_ENTRY.Width
+        use buf = ByteBuffer.Create IMAGE_RESOURCE_DATA_ENTRY.Width
         buf.EmitInt32 offsetToData
         buf.EmitInt32 size
         buf.EmitInt32 codePage

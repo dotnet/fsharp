@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.AbstractIL.ILBinaryWriter
 
+open System
 open System.Collections.Generic
 open System.IO
 
@@ -543,9 +544,15 @@ type cenv =
         cenv.codeChunks.EmitBytes code
         cenv.nextCodeAddr <- cenv.nextCodeAddr + code.Length
 
-    member cenv.GetCode() = cenv.codeChunks.Close()
+    member cenv.GetCode() = cenv.codeChunks.GetMemory().ToArray()
 
     override x.ToString() = "<cenv>"
+
+    interface IDisposable with
+        member this.Dispose() =
+            (this.codeChunks :> IDisposable).Dispose()
+            (this.data :> IDisposable).Dispose()
+            (this.resources :> IDisposable).Dispose()
 
 let FindOrAddSharedRow (cenv: cenv) tbl x = cenv.GetTable(tbl).FindOrAddSharedEntry x
 
@@ -1465,6 +1472,10 @@ type CodeBuffer =
       mutable seh: ExceptionClauseSpec list
       seqpoints: ResizeArray<PdbSequencePoint> }
 
+    interface IDisposable with
+        member this.Dispose() =
+            (this.code :> IDisposable).Dispose()
+
     static member Create _nm =
         { seh = []
           code= ByteBuffer.Create 200
@@ -1534,7 +1545,7 @@ module Codebuf =
     let applyBrFixups (origCode : byte[]) origExnClauses origReqdStringFixups (origAvailBrFixups: Dictionary<ILCodeLabel, int>) origReqdBrFixups origSeqPoints origScopes =
       let orderedOrigReqdBrFixups = origReqdBrFixups |> List.sortBy (fun (_, fixupLoc, _) -> fixupLoc)
 
-      let newCode = ByteBuffer.Create origCode.Length
+      use newCode = ByteBuffer.Create origCode.Length
 
       // Copy over all the code, working out whether the branches will be short
       // or long and adjusting the branch destinations. Record an adjust function to adjust all the other
@@ -1639,7 +1650,7 @@ module Codebuf =
               let (origStartOfNoBranchBlock, _, newStartOfNoBranchBlock) = arr.[i]
               addr - (origStartOfNoBranchBlock - newStartOfNoBranchBlock)
 
-          newCode.Close(),
+          newCode.GetMemory().ToArray(),
           !newReqdBrFixups,
           adjuster
 
@@ -2138,9 +2149,9 @@ module Codebuf =
         localsTree
 
     let EmitTopCode cenv localSigs env nm code =
-        let codebuf = CodeBuffer.Create nm
+        use codebuf = CodeBuffer.Create nm
         let origScopes = emitCode cenv localSigs codebuf env code
-        let origCode = codebuf.code.Close()
+        let origCode = codebuf.code.GetMemory().ToArray()
         let origExnClauses = List.rev codebuf.seh
         let origReqdStringFixups = codebuf.reqdStringFixupsInMethod
         let origAvailBrFixups = codebuf.availBrFixups
@@ -2179,7 +2190,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
 
     let requiredStringFixups, seh, code, seqpoints, scopes = Codebuf.EmitTopCode cenv localSigs env mname il.Code
     let codeSize = code.Length
-    let methbuf = ByteBuffer.Create (codeSize * 3)
+    use methbuf = ByteBuffer.Create (codeSize * 3)
     // Do we use the tiny format?
     if isNil il.Locals && il.MaxStack <= 8 && isNil seh && codeSize < 64 then
         // Use Tiny format
@@ -2189,7 +2200,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
         methbuf.EmitByte (byte codeSize <<< 2 ||| e_CorILMethod_TinyFormat)
         methbuf.EmitBytes code
         methbuf.EmitPadding codePadding
-        0x0, (requiredStringFixups', methbuf.Close()), seqpoints, scopes
+        0x0, (requiredStringFixups', methbuf.GetMemory().ToArray()), seqpoints, scopes
     else
         // Use Fat format
         let flags =
@@ -2263,7 +2274,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
 
         let requiredStringFixups' = (12, requiredStringFixups)
 
-        localToken, (requiredStringFixups', methbuf.Close()), seqpoints, scopes
+        localToken, (requiredStringFixups', methbuf.GetMemory().ToArray()), seqpoints, scopes
 
 // --------------------------------------------------------------------
 // ILFieldDef --> FieldDef Row
@@ -2862,7 +2873,7 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
 let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes) (m : ILModuleDef) cilStartAddress normalizeAssemblyRefs =
     let isDll = m.IsDLL
 
-    let cenv =
+    use cenv =
         { emitTailcalls=emitTailcalls
           deterministic = deterministic
           showTimes=showTimes
@@ -2870,7 +2881,7 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
           desiredMetadataVersion=desiredMetadataVersion
           requiredDataFixups= requiredDataFixups
           requiredStringFixups = []
-          codeChunks=ByteBuffer.Create 40000
+          codeChunks=ByteBuffer.Create(40000, useArrayPool = true)
           nextCodeAddr = cilStartAddress
           data = ByteBuffer.Create 200
           resources = ByteBuffer.Create 200
@@ -2959,8 +2970,8 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
         getUncodedToken TableNames.Event (cenv.eventDefs.GetTableEntry (EventKey (tidx, ed.Name)))) }
     reportTime cenv.showTimes "Finalize Module Generation Results"
     // New return the results
-    let data = cenv.data.Close()
-    let resources = cenv.resources.Close()
+    let data = cenv.data.GetMemory().ToArray()
+    let resources = cenv.resources.GetMemory().ToArray()
     (strings, userStrings, blobs, guids, tables, entryPointToken, code, cenv.requiredStringFixups, data, resources, pdbData, mappings)
 
 
@@ -3230,7 +3241,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
             codedBigness 2 TableNames.AssemblyRef ||
             codedBigness 2 TableNames.TypeRef
 
-        let tablesBuf = ByteBuffer.Create 20000
+        use tablesBuf = ByteBuffer.Create 20000
 
         // Now the coded tables themselves - first the schemata header
         tablesBuf.EmitIntsAsBytes
@@ -3287,7 +3298,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
                     | _ when t <= RowElementTags.ResolutionScopeMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.ResolutionScopeMin) 2 rsBigness n
                     | _ -> failwith "invalid tag in row element"
 
-        tablesBuf.Close()
+        tablesBuf.GetMemory().ToArray()
 
     reportTime showTimes "Write Tables to tablebuf"
 
@@ -3309,7 +3320,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
     reportTime showTimes "Layout Metadata"
 
     let metadata, guidStart =
-      let mdbuf = ByteBuffer.Create 500000
+      use mdbuf = ByteBuffer.Create 500000
       mdbuf.EmitIntsAsBytes
         [| 0x42; 0x53; 0x4a; 0x42 // Magic signature
            0x01; 0x00 // Major version
@@ -3378,7 +3389,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
           mdbuf.EmitIntAsByte 0x00
       reportTime showTimes "Write Blob Stream"
      // Done - close the buffer and return the result.
-      mdbuf.Close(), guidStart
+      mdbuf.GetMemory().ToArray(), guidStart
 
 
    // Now we know the user string tables etc. we can fixup the
