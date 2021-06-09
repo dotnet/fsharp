@@ -721,7 +721,7 @@ type IncrementalBuilderState =
         stampedFileNames: ImmutableArray<DateTime>
         logicalStampedFileNames: ImmutableArray<DateTime>
         stampedReferencedAssemblies: ImmutableArray<DateTime>
-        initialBoundModel: GraphNode<BoundModel>
+     //   initialBoundModel: GraphNode<BoundModel>
         boundModels: ImmutableArray<GraphNode<BoundModel>>
         finalizedBoundModel: GraphNode<((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime)>
     }
@@ -730,6 +730,7 @@ type IncrementalBuilderMainState =
     {
         mutable isImportsInvalidated: bool
         initialBoundModel: BoundModel
+        initialBoundModelNode: GraphNode<BoundModel>
         tcGlobals: TcGlobals
         nonFrameworkAssemblyInputs: (Choice<string, IProjectReference> * (TimeStampCache -> DateTime)) list
         tcConfig: TcConfig
@@ -988,11 +989,11 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
     static let GetSyntaxTree (mainState: IncrementalBuilderMainState) (sourceRange: range, doc: FSharpDocument, isLastCompiland) =
         SyntaxTree(mainState.tcConfig, mainState.fileParsed, mainState.lexResourceManager, sourceRange, doc, isLastCompiland)
 
-    static let createBoundModelGraphNode mainState initialBoundModel (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) i =
+    static let createBoundModelGraphNode mainState (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) i =
         let fileInfo = mainState.sourceFiles.[i]
         let prevBoundModelGraphNode =
             match i with
-            | 0 (* first file *) -> initialBoundModel
+            | 0 (* first file *) -> mainState.initialBoundModelNode
             | _ -> boundModels.[i - 1]
         let syntaxTree = GetSyntaxTree mainState fileInfo
         GraphNode(node {
@@ -1038,7 +1039,7 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
                     let stamp = StampFileNameTask cache mainState.sourceFiles.[slot + j]
                     stampedFileNames.[slot + j] <- stamp
                     logicalStampedFileNames.[slot + j] <- stamp
-                    boundModels.[slot + j] <- createBoundModelGraphNode mainState state.initialBoundModel boundModels (slot + j)
+                    boundModels.[slot + j] <- createBoundModelGraphNode mainState boundModels (slot + j)
 
                 { state with
                     // Something changed, the finalized view of the project must be invalidated.
@@ -1266,7 +1267,6 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
         computeProjectTimeStamp tmpState
 
     member _.TryGetSlotOfFileName(filename: string) =
-        // Get the slot of the given file and force it to build.
         let CompareFileNames (_, f2: FSharpDocument, _) =
             let result =
                    String.Compare(filename, f2.FilePath, StringComparison.CurrentCultureIgnoreCase)=0
@@ -1308,8 +1308,6 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
 
         setCurrentState newState cache CancellationToken.None
 
-    /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
-    /// creates an incremental builder used by the command line compiler.
     static member TryCreateIncrementalBuilderForProjectOptions
                       (legacyReferenceResolver, defaultFSharpBinariesDir,
                        frameworkTcImportsCache: FrameworkImportsCache,
@@ -1540,6 +1538,7 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
                     {
                         isImportsInvalidated = false
                         initialBoundModel = initialBoundModel
+                        initialBoundModelNode = GraphNode(node { return initialBoundModel })
                         tcGlobals = tcGlobals
                         nonFrameworkAssemblyInputs = nonFrameworkAssemblyInputs
                         tcConfig = tcConfig
@@ -1582,15 +1581,13 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
 
 
     new(mainState) =
-        let initialBoundModel = mainState.initialBoundModel
         let sourceFiles = mainState.sourceFiles
 
         let cache = TimeStampCache(defaultTimeStamp)
-        let initialBoundModel = GraphNode(node { return initialBoundModel })
         let boundModels = ImmutableArray.CreateBuilder(sourceFiles.Length)
 
         for slot = 0 to sourceFiles.Length - 1 do
-            boundModels.Add(createBoundModelGraphNode mainState initialBoundModel boundModels slot)
+            boundModels.Add(createBoundModelGraphNode mainState boundModels slot)
 
         let documents = sourceFiles |> Seq.map (fun (_, doc, _) -> doc) |> ImmutableArray.CreateRange
 
@@ -1602,7 +1599,6 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
                 stampedFileNames = Array.init sourceFiles.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
                 logicalStampedFileNames = Array.init sourceFiles.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
                 stampedReferencedAssemblies = Array.init referencedAssemblies.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
-                initialBoundModel = initialBoundModel
                 boundModels = boundModels.ToImmutable()
                 finalizedBoundModel = createFinalizeBoundModelGraphNode mainState boundModels
             }
