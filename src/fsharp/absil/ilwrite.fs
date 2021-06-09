@@ -3241,7 +3241,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
             codedBigness 2 TableNames.AssemblyRef ||
             codedBigness 2 TableNames.TypeRef
 
-        use tablesBuf = ByteBuffer.Create 20000
+        use tablesBuf = ByteBuffer.Create(20000, useArrayPool = true)
 
         // Now the coded tables themselves - first the schemata header
         tablesBuf.EmitIntsAsBytes
@@ -3320,7 +3320,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
     reportTime showTimes "Layout Metadata"
 
     let metadata, guidStart =
-      use mdbuf = ByteBuffer.Create 500000
+      use mdbuf = ByteBuffer.Create(500000, useArrayPool = true)
       mdbuf.EmitIntsAsBytes
         [| 0x42; 0x53; 0x4a; 0x42 // Magic signature
            0x01; 0x00 // Major version
