@@ -2022,6 +2022,14 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearLanguageServiceRootCachesA
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateAll()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateConfiguration(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void set_MaxMemory(Int32)
+FSharp.Compiler.CodeAnalysis.FSharpDocument
+FSharp.Compiler.CodeAnalysis.FSharpDocument: FSharp.Compiler.CodeAnalysis.DocumentText GetText()
+FSharp.Compiler.CodeAnalysis.FSharpDocument: FSharp.Compiler.CodeAnalysis.FSharpDocument Create(System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.Text.ISourceText])
+FSharp.Compiler.CodeAnalysis.FSharpDocument: FSharp.Compiler.CodeAnalysis.FSharpDocument CreateCopyFromFile(System.String)
+FSharp.Compiler.CodeAnalysis.FSharpDocument: System.DateTime TimeStamp
+FSharp.Compiler.CodeAnalysis.FSharpDocument: System.DateTime get_TimeStamp()
+FSharp.Compiler.CodeAnalysis.FSharpDocument: System.String FilePath
+FSharp.Compiler.CodeAnalysis.FSharpDocument: System.String get_FilePath()
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsBindingALambdaAtPosition(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPosContainedInApplication(FSharp.Compiler.Text.Position)
@@ -5154,6 +5162,7 @@ FSharp.Compiler.Syntax.DebugPointAtBinding: Int32 Tag
 FSharp.Compiler.Syntax.DebugPointAtBinding: Int32 get_Tag()
 FSharp.Compiler.Syntax.DebugPointAtBinding: System.String ToString()
 FSharp.Compiler.Syntax.DebugPointAtFinally
+FSharp.Compiler.Syntax.DebugPointAtFinally+Tags: Int32 Body
 FSharp.Compiler.Syntax.DebugPointAtFinally+Tags: Int32 No
 FSharp.Compiler.Syntax.DebugPointAtFinally+Tags: Int32 Yes
 FSharp.Compiler.Syntax.DebugPointAtFinally+Yes: FSharp.Compiler.Text.Range get_range()
@@ -5161,12 +5170,16 @@ FSharp.Compiler.Syntax.DebugPointAtFinally+Yes: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtFinally)
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean IsBody
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean IsNo
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean IsYes
+FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean get_IsBody()
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean get_IsNo()
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean get_IsYes()
+FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally Body
 FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally NewYes(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally No
+FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally get_Body()
 FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally get_No()
 FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally+Tags
 FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally+Yes
@@ -5175,11 +5188,6 @@ FSharp.Compiler.Syntax.DebugPointAtFinally: Int32 GetHashCode(System.Collections
 FSharp.Compiler.Syntax.DebugPointAtFinally: Int32 Tag
 FSharp.Compiler.Syntax.DebugPointAtFinally: Int32 get_Tag()
 FSharp.Compiler.Syntax.DebugPointAtFinally: System.String ToString()
-FSharp.Compiler.Syntax.DebugPointAtFinally+Tags: Int32 Body
-FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean IsBody
-FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean get_IsBody()
-FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally Body
-FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally get_Body()
 FSharp.Compiler.Syntax.DebugPointAtFor
 FSharp.Compiler.Syntax.DebugPointAtFor+Tags: Int32 No
 FSharp.Compiler.Syntax.DebugPointAtFor+Tags: Int32 Yes
