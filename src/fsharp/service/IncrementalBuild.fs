@@ -1267,9 +1267,13 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
         let state = currentState
 
         let newState =
-            (state, docs)
-            ||> Seq.fold (fun state doc ->
-                let slot = this.GetSlotOfFileName doc.FilePath
+            // Sort the documents by slot in order to update in ascending order.
+            let docsWithSlotSorted =
+                docs
+                |> Seq.map (fun doc -> doc, this.GetSlotOfFileName(doc.FilePath))
+                |> Seq.sortBy snd
+            (state, docsWithSlotSorted)
+            ||> Seq.fold (fun state (doc, slot) ->
                 let m, _, isLastCompiland = mainState.sourceFiles.[slot]
                 computeStampedFileName mainState state slot (m, doc, isLastCompiland)
             )
