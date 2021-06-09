@@ -755,7 +755,7 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
     static let defaultTimeStamp = DateTime.UtcNow
 
     /// Get the timestamp of the given file name.
-    static let StampFileNameTask (_cache: TimeStampCache) (_m: range, doc: FSharpDocument, _isLastCompiland) =
+    static let StampFileNameTask (_m: range, doc: FSharpDocument, _isLastCompiland) =
         doc.TimeStamp
 
     /// Timestamps of referenced assemblies are taken from the file's timestamp.
@@ -994,9 +994,9 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
             return result
         })
 
-    and computeStampedFileName mainState (state: IncrementalBuilderState) (cache: TimeStampCache) slot fileInfo =
+    and computeStampedFileName mainState (state: IncrementalBuilderState) slot fileInfo =
         let currentStamp = state.stampedFileNames.[slot]
-        let stamp = StampFileNameTask cache fileInfo
+        let stamp = StampFileNameTask fileInfo
 
         if currentStamp <> stamp then
             match state.boundModels.[slot].TryPeekValue() with
@@ -1005,7 +1005,7 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
                 let newBoundModel = boundModel.ClearTcInfoExtras()
                 { state with
                     boundModels = state.boundModels.RemoveAt(slot).Insert(slot, GraphNode(node { return newBoundModel }))
-                    stampedFileNames = state.stampedFileNames.SetItem(slot, StampFileNameTask cache fileInfo)
+                    stampedFileNames = state.stampedFileNames.SetItem(slot, StampFileNameTask fileInfo)
                 }
             | _ ->
 
@@ -1015,7 +1015,7 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
 
                 // Invalidate the file and all files below it.
                 for j = 0 to stampedFileNames.Count - slot - 1 do
-                    let stamp = StampFileNameTask cache mainState.sourceFiles.[slot + j]
+                    let stamp = StampFileNameTask mainState.sourceFiles.[slot + j]
                     stampedFileNames.[slot + j] <- stamp
                     logicalStampedFileNames.[slot + j] <- stamp
                     boundModels.[slot + j] <- createBoundModelGraphNode mainState boundModels (slot + j)
@@ -1031,16 +1031,17 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
         else
             state
 
-    and computeStampedFileNames mainState state (cache: TimeStampCache) =
+    and computeStampedFileNames mainState state =
         let mutable i = 0
         (state, mainState.sourceFiles)
         ||> Seq.fold (fun state fileInfo ->
-            let newState = computeStampedFileName mainState state cache i fileInfo
+            let newState = computeStampedFileName mainState state i fileInfo
             i <- i + 1
             newState
         )
 
-    and computeStampedReferencedAssemblies (mainState: IncrementalBuilderMainState) state canTriggerInvalidation (cache: TimeStampCache) =
+    and computeStampedReferencedAssemblies (mainState: IncrementalBuilderMainState) state canTriggerInvalidation =
+        let cache = TimeStampCache(defaultTimeStamp)
         let stampedReferencedAssemblies = state.stampedReferencedAssemblies.ToBuilder()
 
         let mutable referencesUpdated = false
@@ -1105,16 +1106,16 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
     let gate = obj ()
     let mutable currentState = state
 
-    let setCurrentState state cache (ct: CancellationToken) =
+    let setCurrentState state (ct: CancellationToken) =
         lock gate (fun () ->
             ct.ThrowIfCancellationRequested()
-            currentState <- computeStampedFileNames mainState state cache
+            currentState <- computeStampedFileNames mainState state
         )
 
-    let checkFileTimeStamps (cache: TimeStampCache) =
+    let checkFileTimeStamps () =
         node {
             let! ct = NodeCode.CancellationToken
-            setCurrentState currentState cache ct
+            setCurrentState currentState ct
         }
 
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
@@ -1137,15 +1138,14 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
         // fast path
         if mainState.isImportsInvalidated then true
         else 
-            computeStampedReferencedAssemblies mainState currentState true (TimeStampCache(defaultTimeStamp)) |> ignore
+            computeStampedReferencedAssemblies mainState currentState true |> ignore
             mainState.isImportsInvalidated
 
     member _.AllDependenciesDeprecated = mainState.allDependencies
 
     member _.PopulatePartialCheckingResults () =
       node {
-        let cache = TimeStampCache defaultTimeStamp // One per step
-        do! checkFileTimeStamps cache
+        do! checkFileTimeStamps ()
         let! _ = currentState.finalizedBoundModel.GetOrComputeValue()
         mainState.projectChecked.Trigger()
       }
@@ -1159,8 +1159,7 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
         | _ -> None
 
     member builder.TryGetCheckResultsBeforeFileInProject (filename) =
-        let cache = TimeStampCache defaultTimeStamp
-        let tmpState = computeStampedFileNames mainState currentState cache
+        let tmpState = computeStampedFileNames mainState currentState
 
         let slotOfFile = builder.GetSlotOfFileName filename
         match tryGetBeforeSlot mainState tmpState slotOfFile with
@@ -1172,8 +1171,7 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
 
     member _.GetCheckResultsBeforeSlotInProject (slotOfFile) =
       node {
-        let cache = TimeStampCache defaultTimeStamp
-        do! checkFileTimeStamps cache
+        do! checkFileTimeStamps()
         let! result = evalUpToTargetSlot mainState currentState (slotOfFile - 1)
         match result with
         | Some (boundModel, timestamp) -> return PartialCheckResults(boundModel, timestamp)
@@ -1182,8 +1180,7 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
 
     member _.GetFullCheckResultsBeforeSlotInProject (slotOfFile) =
       node {
-        let cache = TimeStampCache defaultTimeStamp
-        do! checkFileTimeStamps cache
+        do! checkFileTimeStamps()
         let! result = evalUpToTargetSlot mainState currentState (slotOfFile - 1)
         match result with
         | Some (boundModel, timestamp) -> 
@@ -1216,8 +1213,7 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
 
     member _.GetCheckResultsAndImplementationsForProject() =
       node {
-        let cache = TimeStampCache(defaultTimeStamp)
-        do! checkFileTimeStamps cache
+        do! checkFileTimeStamps()
         let! result = currentState.finalizedBoundModel.GetOrComputeValue()
         match result with
         | ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp) ->
@@ -1232,8 +1228,8 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
             return result
         }
 
-    member _.GetLogicalTimeStampForProject(cache) =
-        let tmpState = computeStampedFileNames mainState currentState cache
+    member _.GetLogicalTimeStampForProject(_cache: TimeStampCache) =
+        let tmpState = computeStampedFileNames mainState currentState
         computeProjectTimeStamp tmpState
 
     member _.TryGetSlotOfFileName(filename: string) =
@@ -1268,15 +1264,15 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
     member this.UpdateDocuments(docs: FSharpDocument seq) =
         let state = currentState
 
-        let cache = TimeStampCache(defaultTimeStamp)
         let newState =
             (state, docs)
             ||> Seq.fold (fun state doc ->
                 let slot = this.GetSlotOfFileName doc.FilePath
-                computeStampedFileName mainState state cache slot mainState.sourceFiles.[slot]
+                let m, _, isLastCompiland = mainState.sourceFiles.[slot]
+                computeStampedFileName mainState state slot (m, doc, isLastCompiland)
             )
 
-        setCurrentState newState cache CancellationToken.None
+        setCurrentState newState CancellationToken.None
 
     static member TryCreateIncrementalBuilderForProjectOptions
                       (legacyReferenceResolver, defaultFSharpBinariesDir,
@@ -1554,7 +1550,6 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
     new(mainState) =
         let sourceFiles = mainState.sourceFiles
 
-        let cache = TimeStampCache(defaultTimeStamp)
         let boundModels = ImmutableArray.CreateBuilder(sourceFiles.Length)
 
         for slot = 0 to sourceFiles.Length - 1 do
@@ -1573,6 +1568,6 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
                 boundModels = boundModels.ToImmutable()
                 finalizedBoundModel = createFinalizeBoundModelGraphNode mainState boundModels
             }
-        let state = computeStampedReferencedAssemblies mainState state false cache
-        let state = computeStampedFileNames mainState state cache
+        let state = computeStampedReferencedAssemblies mainState state false
+        let state = computeStampedFileNames mainState state
         IncrementalBuilder(mainState, state)
