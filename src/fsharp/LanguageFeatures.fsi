@@ -27,6 +27,7 @@ type LanguageFeature =
     | NullnessChecking
     | StructActivePattern
     | PrintfBinaryFormat
+    | UseBindingValueDiscard
 
 /// LanguageVersion management
 type LanguageVersion =

@@ -6,11 +6,9 @@ open System
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.IO
-open System.Xml
-open System.Runtime.InteropServices
 open System.Threading
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
+open Internal.Utilities.Collections
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
@@ -41,8 +39,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.BuildGraph
 
-open Internal.Utilities
-open Internal.Utilities.Collections
 
 [<AutoOpen>]
 module internal IncrementalBuild =
@@ -227,6 +223,16 @@ type TcInfoState =
     | PartialState of TcInfo
     | FullState of TcInfo * TcInfoExtras
 
+    member x.TcInfo =
+        match x with
+        | PartialState tcInfo -> tcInfo
+        | FullState (tcInfo, _) -> tcInfo
+
+    member x.TcInfoExtras =
+        match x with
+        | PartialState _ -> None
+        | FullState (_, tcInfoExtras) -> Some tcInfoExtras
+
 [<NoEquality; NoComparison>]
 type TcInfoNode =
     | TcInfoNode of partial: GraphNode<TcInfo> * full: GraphNode<TcInfo * TcInfoExtras>
@@ -236,9 +242,9 @@ type TcInfoNode =
         | TcInfoNode(_, full) -> full.HasValue
 
     static member FromState(state: TcInfoState) =
-        match state with
-        | PartialState tcInfo -> TcInfoNode(GraphNode(node { return tcInfo }), GraphNode(node { return tcInfo, emptyTcInfoExtras }))
-        | FullState(tcInfo, tcInfoExtras) -> TcInfoNode(GraphNode(node { return tcInfo }), GraphNode(node { return tcInfo, tcInfoExtras }))
+        let tcInfo = state.TcInfo
+        let tcInfoExtras = state.TcInfoExtras
+        TcInfoNode(GraphNode(node { return tcInfo }), GraphNode(node { return tcInfo, defaultArg tcInfoExtras emptyTcInfoExtras }))
 
 /// Bound model of an underlying syntax and typed tree.
 [<Sealed>]
@@ -278,9 +284,8 @@ type BoundModel private (tcConfig: TcConfig,
                             match fullGraphNode.TryPeekValue() with
                             | ValueSome(tcInfo, _) -> return tcInfo
                             | _ ->
-                                match! this.TypeCheck(true) with
-                                | FullState(tcInfo, _) -> return tcInfo
-                                | PartialState(tcInfo) -> return tcInfo
+                                let! tcInfoState = this.TypeCheck(true)
+                                return tcInfoState.TcInfo
                     else
                         let! tcInfo, _ = fullGraphNode.GetOrComputeValue()
                         return tcInfo
@@ -361,7 +366,7 @@ type BoundModel private (tcConfig: TcConfig,
             beforeFileChecked,
             fileChecked,
             tcInfo,
-            this.GetTcInfoExtras(),
+            this.GetOrComputeTcInfoExtras(),
             Some syntaxTree,
             None)
 
@@ -402,12 +407,7 @@ type BoundModel private (tcConfig: TcConfig,
                     Some finishState)
         }
 
-    member this.GetTcInfo() =
-        match tcInfoNode with
-        | TcInfoNode(partialGraphNode, _) -> 
-            partialGraphNode.GetOrComputeValue()
-
-    member this.TryTcInfo =
+    member _.TryPeekTcInfo() =
         match tcInfoNode with
         | TcInfoNode(partialGraphNode, fullGraphNode) ->
             match partialGraphNode.TryPeekValue() with
@@ -417,7 +417,12 @@ type BoundModel private (tcConfig: TcConfig,
                 | ValueSome(tcInfo, _) -> Some tcInfo
                 | _ -> None
 
-    member this.GetTcInfoExtras() : NodeCode<TcInfoExtras> =
+    member _.GetOrComputeTcInfo() =
+        match tcInfoNode with
+        | TcInfoNode(partialGraphNode, _) -> 
+            partialGraphNode.GetOrComputeValue()
+
+    member _.GetOrComputeTcInfoExtras() : NodeCode<TcInfoExtras> =
         match tcInfoNode with
         | TcInfoNode(_, fullGraphNode) ->
             node {
@@ -425,7 +430,7 @@ type BoundModel private (tcConfig: TcConfig,
                 return tcInfoExtras
             }
 
-    member this.GetTcInfoWithExtras() =
+    member _.GetOrComputeTcInfoWithExtras() =
         match tcInfoNode with
         | TcInfoNode(_, fullGraphNode) ->
             fullGraphNode.GetOrComputeValue()
@@ -643,21 +648,21 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime) =
 
     member _.TimeStamp = timeStamp
 
-    member _.TryTcInfo = boundModel.TryTcInfo
+    member _.TryPeekTcInfo() = boundModel.TryPeekTcInfo()
 
-    member _.GetTcInfo() = boundModel.GetTcInfo()
+    member _.GetOrComputeTcInfo() = boundModel.GetOrComputeTcInfo()
 
-    member _.GetTcInfoWithExtras() = boundModel.GetTcInfoWithExtras()
+    member _.GetOrComputeTcInfoWithExtras() = boundModel.GetOrComputeTcInfoWithExtras()
 
-    member _.TryGetItemKeyStore() =
+    member _.GetOrComputeItemKeyStoreIfEnabled() =
         node {
-            let! _, info = boundModel.GetTcInfoWithExtras()
+            let! info = boundModel.GetOrComputeTcInfoExtras()
             return info.itemKeyStore
         }
 
-    member _.GetSemanticClassification() =
+    member _.GetOrComputeSemanticClassificationIfEnabled() =
         node {
-            let! _, info = boundModel.GetTcInfoWithExtras()
+            let! info = boundModel.GetOrComputeTcInfoExtras()
             return info.semanticClassificationKeyStore
         }
 
@@ -864,16 +869,16 @@ type IncrementalBuilder(
     /// Type check all files eagerly.
     let TypeCheckTask partialCheck (prevBoundModel: BoundModel) syntaxTree: NodeCode<BoundModel> =
         node {
-            let! tcInfo = prevBoundModel.GetTcInfo()
+            let! tcInfo = prevBoundModel.GetOrComputeTcInfo()
             let boundModel = prevBoundModel.Next(syntaxTree, tcInfo)
 
             // Eagerly type check
             // We need to do this to keep the expected behavior of events (namely fileChecked) when checking a file/project.
             if partialCheck then
-                let! _ = boundModel.GetTcInfo()
+                let! _ = boundModel.GetOrComputeTcInfo()
                 ()
             else
-                let! _ = boundModel.GetTcInfoWithExtras()
+                let! _ = boundModel.GetOrComputeTcInfoWithExtras()
                 ()
 
             return boundModel
@@ -889,10 +894,10 @@ type IncrementalBuilder(
             boundModels 
             |> Seq.map (fun boundModel -> node { 
                 if enablePartialTypeChecking then
-                    let! tcInfo = boundModel.GetTcInfo()
+                    let! tcInfo = boundModel.GetOrComputeTcInfo()
                     return tcInfo, None
                 else
-                    let! tcInfo, tcInfoExtras = boundModel.GetTcInfoWithExtras()
+                    let! tcInfo, tcInfoExtras = boundModel.GetOrComputeTcInfoWithExtras()
                     return tcInfo, tcInfoExtras.latestImplFile
             })
             |> Seq.map (fun work ->
@@ -908,7 +913,7 @@ type IncrementalBuilder(
         // Get the state at the end of the type-checking of the last file
         let finalBoundModel = boundModels.[boundModels.Length-1]
 
-        let! finalInfo = finalBoundModel.GetTcInfo()
+        let! finalInfo = finalBoundModel.GetOrComputeTcInfo()
 
         // Finish the checking
         let (_tcEnvAtEndOfLastFile, topAttrs, mimpls, _), tcState =
@@ -1228,7 +1233,7 @@ type IncrementalBuilder(
         let! result = evalUpToTargetSlot currentState (slotOfFile - 1)
         match result with
         | Some (boundModel, timestamp) -> 
-            let! _ = boundModel.GetTcInfoExtras()
+            let! _ = boundModel.GetOrComputeTcInfoExtras()
             return PartialCheckResults(boundModel, timestamp)
         | None -> return! failwith "Expected results to be ready. (GetFullCheckResultsBeforeSlotInProject)."
       }
@@ -1269,7 +1274,7 @@ type IncrementalBuilder(
         node {
             let! result = builder.GetCheckResultsAndImplementationsForProject()
             let results, _, _, _ = result
-            let! _ = results.GetTcInfoWithExtras() // Make sure we forcefully evaluate the info
+            let! _ = results.GetOrComputeTcInfoWithExtras() // Make sure we forcefully evaluate the info
             return result
         }
 
