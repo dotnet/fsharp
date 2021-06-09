@@ -779,7 +779,7 @@ type internal ByteBuffer =
             if buf.useArrayPool then
                 ArrayPool.Shared.Return old
 
-    member buf.GetMemory() = 
+    member buf.AsMemory() = 
         buf.CheckDisposed()
         ReadOnlyMemory(buf.bbArray, 0, buf.bbCurrent)
 

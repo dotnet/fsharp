@@ -101,7 +101,7 @@ let usingLexbufForParsing (lexbuf:Lexbuf, filename) f =
 //-----------------------------------------------------------------------
 
 let stringBufferAsString (buf: ByteBuffer) =
-    let buf = buf.GetMemory()
+    let buf = buf.AsMemory()
     if buf.Length % 2 <> 0 then failwith "Expected even number of bytes"
     let chars : char[] = Array.zeroCreate (buf.Length/2)
     for i = 0 to (buf.Length/2) - 1 do
@@ -117,7 +117,7 @@ let stringBufferAsString (buf: ByteBuffer) =
 /// we just take every second byte we stored.  Note all bytes > 127 should have been 
 /// stored using addIntChar 
 let stringBufferAsBytes (buf: ByteBuffer) = 
-    let bytes = buf.GetMemory()
+    let bytes = buf.AsMemory()
     Array.init (bytes.Length / 2) (fun i -> bytes.Span.[i*2]) 
 
 [<Flags>]
@@ -185,7 +185,7 @@ let addByteChar buf (c:char) = addIntChar buf (int32 c % 256)
 
 /// Sanity check that high bytes are zeros. Further check each low byte <= 127 
 let stringBufferIsBytes (buf: ByteBuffer) = 
-    let bytes = buf.GetMemory()
+    let bytes = buf.AsMemory()
     let mutable ok = true 
     for i = 0 to bytes.Length / 2-1 do
         if bytes.Span.[i*2+1] <> 0uy then ok <- false

@@ -342,7 +342,7 @@ type internal ByteBuffer =
     interface IDisposable
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member GetMemory : unit -> ReadOnlyMemory<byte>
+    member AsMemory : unit -> ReadOnlyMemory<byte>
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitIntAsByte : int -> unit

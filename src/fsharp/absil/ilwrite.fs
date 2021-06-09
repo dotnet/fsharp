@@ -48,7 +48,7 @@ let dw0 n = byte (n &&& 0xFFL)
 let bitsOfSingle (x: float32) = System.BitConverter.ToInt32(System.BitConverter.GetBytes x, 0)
 let bitsOfDouble (x: float) = System.BitConverter.DoubleToInt64Bits x
 
-let emitBytesViaBuffer f = use bb = ByteBuffer.Create 10 in f bb; bb.GetMemory().ToArray()
+let emitBytesViaBuffer f = use bb = ByteBuffer.Create 10 in f bb; bb.AsMemory().ToArray()
 
 /// Alignment and padding
 let align alignment n = ((n + alignment - 1) / alignment) * alignment
@@ -544,7 +544,7 @@ type cenv =
         cenv.codeChunks.EmitBytes code
         cenv.nextCodeAddr <- cenv.nextCodeAddr + code.Length
 
-    member cenv.GetCode() = cenv.codeChunks.GetMemory().ToArray()
+    member cenv.GetCode() = cenv.codeChunks.AsMemory().ToArray()
 
     override x.ToString() = "<cenv>"
 
@@ -1650,7 +1650,7 @@ module Codebuf =
               let (origStartOfNoBranchBlock, _, newStartOfNoBranchBlock) = arr.[i]
               addr - (origStartOfNoBranchBlock - newStartOfNoBranchBlock)
 
-          newCode.GetMemory().ToArray(),
+          newCode.AsMemory().ToArray(),
           !newReqdBrFixups,
           adjuster
 
@@ -2151,7 +2151,7 @@ module Codebuf =
     let EmitTopCode cenv localSigs env nm code =
         use codebuf = CodeBuffer.Create nm
         let origScopes = emitCode cenv localSigs codebuf env code
-        let origCode = codebuf.code.GetMemory().ToArray()
+        let origCode = codebuf.code.AsMemory().ToArray()
         let origExnClauses = List.rev codebuf.seh
         let origReqdStringFixups = codebuf.reqdStringFixupsInMethod
         let origAvailBrFixups = codebuf.availBrFixups
@@ -2200,7 +2200,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
         methbuf.EmitByte (byte codeSize <<< 2 ||| e_CorILMethod_TinyFormat)
         methbuf.EmitBytes code
         methbuf.EmitPadding codePadding
-        0x0, (requiredStringFixups', methbuf.GetMemory().ToArray()), seqpoints, scopes
+        0x0, (requiredStringFixups', methbuf.AsMemory().ToArray()), seqpoints, scopes
     else
         // Use Fat format
         let flags =
@@ -2274,7 +2274,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
 
         let requiredStringFixups' = (12, requiredStringFixups)
 
-        localToken, (requiredStringFixups', methbuf.GetMemory().ToArray()), seqpoints, scopes
+        localToken, (requiredStringFixups', methbuf.AsMemory().ToArray()), seqpoints, scopes
 
 // --------------------------------------------------------------------
 // ILFieldDef --> FieldDef Row
@@ -2970,8 +2970,8 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
         getUncodedToken TableNames.Event (cenv.eventDefs.GetTableEntry (EventKey (tidx, ed.Name)))) }
     reportTime cenv.showTimes "Finalize Module Generation Results"
     // New return the results
-    let data = cenv.data.GetMemory().ToArray()
-    let resources = cenv.resources.GetMemory().ToArray()
+    let data = cenv.data.AsMemory().ToArray()
+    let resources = cenv.resources.AsMemory().ToArray()
     (strings, userStrings, blobs, guids, tables, entryPointToken, code, cenv.requiredStringFixups, data, resources, pdbData, mappings)
 
 
@@ -3298,7 +3298,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
                     | _ when t <= RowElementTags.ResolutionScopeMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.ResolutionScopeMin) 2 rsBigness n
                     | _ -> failwith "invalid tag in row element"
 
-        tablesBuf.GetMemory().ToArray()
+        tablesBuf.AsMemory().ToArray()
 
     reportTime showTimes "Write Tables to tablebuf"
 
@@ -3389,7 +3389,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
           mdbuf.EmitIntAsByte 0x00
       reportTime showTimes "Write Blob Stream"
      // Done - close the buffer and return the result.
-      mdbuf.GetMemory().ToArray(), guidStart
+      mdbuf.AsMemory().ToArray(), guidStart
 
 
    // Now we know the user string tables etc. we can fixup the

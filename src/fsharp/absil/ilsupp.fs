@@ -99,7 +99,7 @@ type IMAGE_FILE_HEADER (m: int16, secs: int16, tds: int32, ptst: int32, nos: int
             buf.EmitInt32 numberOfSymbols
             buf.EmitUInt16 (uint16 sizeOfOptionalHeader)
             buf.EmitUInt16 (uint16 characteristics)
-            buf.GetMemory().ToArray()
+            buf.AsMemory().ToArray()
 
 let bytesToIFH (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_FILE_HEADER.Width then
@@ -183,7 +183,7 @@ type IMAGE_SECTION_HEADER(n: int64, ai: int32, va: int32, srd: int32, prd: int32
             buf.EmitUInt16 (uint16 numberOfRelocations)
             buf.EmitUInt16 (uint16 numberOfLineNumbers)
             buf.EmitInt32 characteristics
-            buf.GetMemory().ToArray()
+            buf.AsMemory().ToArray()
 
 
 let bytesToISH (buffer: byte[]) (offset: int) =
@@ -243,7 +243,7 @@ type IMAGE_SYMBOL(n: int64, v: int32, sn: int16, t: int16, sc: byte, nas: byte) 
             buf.EmitUInt16 (uint16 stype)
             buf.EmitByte storageClass
             buf.EmitByte numberOfAuxSymbols
-            buf.GetMemory().ToArray()
+            buf.AsMemory().ToArray()
 
 let bytesToIS (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_SYMBOL.Width then
@@ -284,7 +284,7 @@ type IMAGE_RELOCATION(va: int32, sti: int32, t: int16) =
         buf.EmitInt32 virtualAddress
         buf.EmitInt32 symbolTableIndex
         buf.EmitUInt16 (uint16 ty)
-        buf.GetMemory().ToArray()
+        buf.AsMemory().ToArray()
 
 let bytesToIR (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_RELOCATION.Width then
@@ -335,7 +335,7 @@ type IMAGE_RESOURCE_DIRECTORY(c: int32, tds: int32, mjv: int16, mnv: int16, nne:
         buf.EmitUInt16 (uint16 minorVersion)
         buf.EmitUInt16 (uint16 numberOfNamedEntries)
         buf.EmitUInt16 (uint16 numberOfIdEntries)
-        buf.GetMemory().ToArray()
+        buf.AsMemory().ToArray()
 
 let bytesToIRD (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_RESOURCE_DIRECTORY.Width then
@@ -371,7 +371,7 @@ type IMAGE_RESOURCE_DIRECTORY_ENTRY(n: int32, o: int32) =
         use buf = ByteBuffer.Create IMAGE_RESOURCE_DIRECTORY_ENTRY.Width
         buf.EmitInt32 name
         buf.EmitInt32 offset
-        buf.GetMemory().ToArray()
+        buf.AsMemory().ToArray()
 
 let bytesToIRDE (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_RESOURCE_DIRECTORY_ENTRY.Width then
@@ -476,7 +476,7 @@ type ResFormatHeader() =
         buf.EmitUInt16 (uint16 wLangID)
         buf.EmitInt32 dwVersion
         buf.EmitInt32 dwCharacteristics
-        buf.GetMemory().ToArray()
+        buf.AsMemory().ToArray()
 
 type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLinkedResource: byte[]) =
     let mutable resHdr = ResFormatHeader()
