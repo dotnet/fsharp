@@ -9808,7 +9808,14 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
 
                 let tmp, _ = mkCompGenLocal m "patternInput" (generalizedTypars +-> tauTy)
 
-                if isUse || isFixed then
+                if isUse then
+                    let isDiscarded = match checkedPat with TPat_wild _ -> true | _ -> false
+                    if not isDiscarded then
+                        errorR(Error(FSComp.SR.tcInvalidUseBinding(), m))
+                    else
+                        ErrorLogger.checkLanguageFeatureError cenv.g.langVersion Features.LanguageFeature.UseBindingValueDiscard checkedPat.Range
+
+                elif isFixed then
                     errorR(Error(FSComp.SR.tcInvalidUseBinding(), m))
 
                 // If the overall declaration is declaring statics or a module value, then force the patternInputTmp to also
@@ -9836,6 +9843,8 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
         // Add the dispose of any "use x = ..." to bodyExpr
         let mkCleanup (bodyExpr, bodyExprTy) =
             if isUse && not isFixed then
+                let isDiscarded = match checkedPat2 with TPat_wild _ -> true | _ -> false
+                let allValsDefinedByPattern = if isDiscarded then [patternInputTmp] else allValsDefinedByPattern
                 (allValsDefinedByPattern, (bodyExpr, bodyExprTy)) ||> List.foldBack (fun v (bodyExpr, bodyExprTy) ->
                     AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css v.Range NoTrace cenv.g.system_IDisposable_ty v.Type
                     let cleanupE = BuildDisposableCleanup cenv env m v
