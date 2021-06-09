@@ -66,6 +66,7 @@
     <Compile Include="Conformance\BasicTypeAndModuleDefinitions\RecordTypes.fs" />
     <Compile Include="Conformance\BasicTypeAndModuleDefinitions\UnionTypes.fs" />
     <Compile Include="Conformance\DeclarationElements\LetBindings\TypeFunctions.fs" />
+    <Compile Include="Conformance\DeclarationElements\LetBindings\UseBindings.fs" />
     <Compile Include="Conformance\Expressions\ApplicationExpressions\BasicApplication.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\SequenceIteration.fs" />
