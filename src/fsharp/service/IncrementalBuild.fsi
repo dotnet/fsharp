@@ -111,26 +111,31 @@ type internal PartialCheckResults =
     /// Peek to see the results.
     /// For thread-safe access to pre-computed results
     /// If `enablePartialTypeChecking` is false then extras will be available
-    member TryTcInfoWithOptionalExtras: unit -> (TcInfo * TcInfoExtras option) option
+    member TryPeekTcInfoWithExtras: unit -> (TcInfo * TcInfoExtras) option
+
+    /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
+    /// extras will also be available, otherwise they will be empty
+    /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
+    /// Only use when it's absolutely necessary to get rich information on a file.
+    member GetOrComputeTcInfoWithExtras: unit -> NodeCode<TcInfo * TcInfoExtras>
 
     /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
     /// extras will also be available.
-    member GetTcInfoWithOptionalExtras: unit -> NodeCode<TcInfo * TcInfoExtras option>
-
-    /// Compute both the "TcInfo" and "TcInfoExtras" parts of the results.
-    /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
-    /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetTcInfoWithExtras: unit -> NodeCode<TcInfo * TcInfoExtras>
+    member GetOrComputeTcInfo: unit -> NodeCode<TcInfo>
 
     /// Compute the "ItemKeyStore" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member TryGetItemKeyStore: unit -> NodeCode<ItemKeyStore option>
+    ///
+    /// Will return 'None' for enableBackgroundItemKeyStoreAndSemanticClassification=false.
+    member GetOrComputeItemKeyStoreIfEnabled: unit -> NodeCode<ItemKeyStore option>
 
     /// Compute the "SemanticClassificationKeyStore" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetSemanticClassification: unit -> NodeCode<SemanticClassificationKeyStore option>
+    ///
+    /// Will return 'None' for enableBackgroundItemKeyStoreAndSemanticClassification=false.
+    member GetOrComputeSemanticClassificationIfEnabled: unit -> NodeCode<SemanticClassificationKeyStore option>
 
     member TimeStamp: DateTime 
 
