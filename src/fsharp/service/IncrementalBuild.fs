@@ -760,14 +760,10 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
 #endif
     let allDependencies = mainState.allDependencies
 
-    let fileParsed = new Event<string>()
+    let fileParsed = mainState.fileParsed
     let projectChecked = new Event<unit>()
 
     static let defaultTimeStamp = DateTime.UtcNow
-
-#if !NO_EXTENSIONTYPING
-    do importsInvalidatedByTypeProvider.Publish.Add(fun () -> mainState.isImportsInvalidated <- true)
-#endif
 
     //----------------------------------------------------
     // START OF BUILD TASK FUNCTIONS
@@ -1545,7 +1541,7 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
                 )
 
             let builder =
-                new IncrementalBuilder(
+                let mainState =
                     {
                         isImportsInvalidated = false
                         initialBoundModel = initialBoundModel
@@ -1564,7 +1560,11 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
                         importsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
 #endif
                         allDependencies = allDependencies
-                    })
+                    }
+#if !NO_EXTENSIONTYPING
+                importsInvalidatedByTypeProvider.Publish.Add(fun () -> mainState.isImportsInvalidated <- true)
+#endif
+                new IncrementalBuilder(mainState)
             return Some builder
           with e ->
             errorRecoveryNoRange e
