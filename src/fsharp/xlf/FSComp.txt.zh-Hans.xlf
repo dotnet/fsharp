@@ -97,6 +97,11 @@
         <target state="translated">默认接口成员消耗</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDiscardUseValue">
+        <source>discard pattern in use binding</source>
+        <target state="new">discard pattern in use binding</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
         <target state="translated">无点 float32 文本</target>
