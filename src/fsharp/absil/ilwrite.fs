@@ -47,7 +47,7 @@ let dw0 n = byte (n &&& 0xFFL)
 let bitsOfSingle (x: float32) = System.BitConverter.ToInt32(System.BitConverter.GetBytes x, 0)
 let bitsOfDouble (x: float) = System.BitConverter.DoubleToInt64Bits x
 
-let emitBytesViaBuffer f = let bb = ByteBuffer.Create 10 in f bb; bb.Close()
+let emitBytesViaBuffer f = use bb = ByteBuffer.Create 10 in f bb; bb.GetMemory().ToArray()
 
 /// Alignment and padding
 let align alignment n = ((n + alignment - 1) / alignment) * alignment

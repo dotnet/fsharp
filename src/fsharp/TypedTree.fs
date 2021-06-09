@@ -26,6 +26,7 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
+open FSharp.Compiler.IO
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -4637,7 +4638,7 @@ type TOp =
     | Array
 
     /// Constant byte arrays (used for parser tables and other embedded data)
-    | Bytes of byte[] 
+    | Bytes of byte[]
 
     /// Constant uint16 arrays (used for parser tables)
     | UInt16s of uint16[] 

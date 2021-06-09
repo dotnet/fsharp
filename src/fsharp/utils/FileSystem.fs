@@ -3,7 +3,9 @@ namespace FSharp.Compiler.IO
 open System
 open System.IO
 open System.IO.MemoryMappedFiles
+open System.Buffers
 open System.Reflection
+open System.Threading
 open System.Runtime.InteropServices
 open FSharp.NativeInterop
 open Internal.Utilities.Library
@@ -755,27 +757,45 @@ type internal ByteStream =
 
 
 type internal ByteBuffer =
-    { mutable bbArray: byte[]
+    { useArrayPool: bool
+      mutable isDisposed: bool
+      mutable bbArray: byte[]
       mutable bbCurrent: int }
 
-    member buf.Ensure newSize =
+    member inline private buf.CheckDisposed() =
+        if buf.isDisposed then
+            raise(ObjectDisposedException(nameof(ByteBuffer)))
+
+    member private buf.Ensure newSize =
         let oldBufSize = buf.bbArray.Length
         if newSize > oldBufSize then
             let old = buf.bbArray
-            buf.bbArray <- Bytes.zeroCreate (max newSize (oldBufSize * 2))
+            buf.bbArray <- 
+                if buf.useArrayPool then
+                    ArrayPool.Shared.Rent (max newSize (oldBufSize * 2))
+                else
+                    Bytes.sub old 0 (max newSize (oldBufSize * 2))
             Bytes.blit old 0 buf.bbArray 0 buf.bbCurrent
+            if buf.useArrayPool then
+                ArrayPool.Shared.Return old
 
-    member buf.Close () = Bytes.sub buf.bbArray 0 buf.bbCurrent
+    member buf.GetMemory() = 
+        buf.CheckDisposed()
+        ReadOnlyMemory(buf.bbArray, 0, buf.bbCurrent)
 
     member buf.EmitIntAsByte (i:int) =
+        buf.CheckDisposed()
         let newSize = buf.bbCurrent + 1
         buf.Ensure newSize
         buf.bbArray.[buf.bbCurrent] <- byte i
         buf.bbCurrent <- newSize
 
-    member buf.EmitByte (b:byte) = buf.EmitIntAsByte (int b)
+    member buf.EmitByte (b:byte) = 
+        buf.CheckDisposed()
+        buf.EmitIntAsByte (int b)
 
     member buf.EmitIntsAsBytes (arr:int[]) =
+        buf.CheckDisposed()
         let n = arr.Length
         let newSize = buf.bbCurrent + n
         buf.Ensure newSize
@@ -786,51 +806,89 @@ type internal ByteBuffer =
         buf.bbCurrent <- newSize
 
     member bb.FixupInt32 pos value =
+        bb.CheckDisposed()
         bb.bbArray.[pos] <- (Bytes.b0 value |> byte)
         bb.bbArray.[pos + 1] <- (Bytes.b1 value |> byte)
         bb.bbArray.[pos + 2] <- (Bytes.b2 value |> byte)
         bb.bbArray.[pos + 3] <- (Bytes.b3 value |> byte)
 
     member buf.EmitInt32 n =
+        buf.CheckDisposed()
         let newSize = buf.bbCurrent + 4
         buf.Ensure newSize
         buf.FixupInt32 buf.bbCurrent n
         buf.bbCurrent <- newSize
 
     member buf.EmitBytes (i:byte[]) =
+        buf.CheckDisposed()
         let n = i.Length
         let newSize = buf.bbCurrent + n
         buf.Ensure newSize
         Bytes.blit i 0 buf.bbArray buf.bbCurrent n
         buf.bbCurrent <- newSize
 
+    member buf.EmitMemory (i:ReadOnlyMemory<byte>) =
+        buf.CheckDisposed()
+        let n = i.Length
+        let newSize = buf.bbCurrent + n
+        buf.Ensure newSize
+        i.CopyTo(Memory(buf.bbArray, buf.bbCurrent, n))
+        buf.bbCurrent <- newSize
+
     member buf.EmitByteMemory (i:ReadOnlyByteMemory) =
+        buf.CheckDisposed()
         let n = i.Length
         let newSize = buf.bbCurrent + n
         buf.Ensure newSize
         i.Copy(0, buf.bbArray, buf.bbCurrent, n)
         buf.bbCurrent <- newSize
 
+    member buf.EmitByteBuffer (i:ByteBuffer) =
+        buf.CheckDisposed()
+        let n = i.Position
+        let newSize = buf.bbCurrent + n
+        buf.Ensure newSize
+        Bytes.blit i.bbArray 0 buf.bbArray buf.bbCurrent n
+        buf.bbCurrent <- newSize
+
     member buf.EmitInt32AsUInt16 n =
+        buf.CheckDisposed()
         let newSize = buf.bbCurrent + 2
         buf.Ensure newSize
         buf.bbArray.[buf.bbCurrent] <- (Bytes.b0 n |> byte)
         buf.bbArray.[buf.bbCurrent + 1] <- (Bytes.b1 n |> byte)
         buf.bbCurrent <- newSize
 
-    member buf.EmitBoolAsByte (b:bool) = buf.EmitIntAsByte (if b then 1 else 0)
+    member buf.EmitBoolAsByte (b:bool) = 
+        buf.CheckDisposed()
+        buf.EmitIntAsByte (if b then 1 else 0)
 
-    member buf.EmitUInt16 (x:uint16) = buf.EmitInt32AsUInt16 (int32 x)
+    member buf.EmitUInt16 (x:uint16) = 
+        buf.CheckDisposed()
+        buf.EmitInt32AsUInt16 (int32 x)
 
     member buf.EmitInt64 x =
+        buf.CheckDisposed()
         buf.EmitInt32 (Bytes.dWw0 x)
         buf.EmitInt32 (Bytes.dWw1 x)
 
-    member buf.Position = buf.bbCurrent
+    member buf.Position =
+        buf.CheckDisposed()
+        buf.bbCurrent
 
-    static member Create sz =
-        { bbArray = Bytes.zeroCreate sz
+    static member Create(sz, useArrayPool) =
+        { useArrayPool = defaultArg useArrayPool false
+          isDisposed = false
+          bbArray = ArrayPool.Shared.Rent sz
           bbCurrent = 0 }
+
+    interface IDisposable with
+
+        member this.Dispose() =
+            if not this.isDisposed then
+                this.isDisposed <- true
+                if this.useArrayPool then
+                    ArrayPool.Shared.Return this.bbArray
 
 [<Sealed>]
 type ByteStorage(getByteMemory: unit -> ReadOnlyByteMemory) =

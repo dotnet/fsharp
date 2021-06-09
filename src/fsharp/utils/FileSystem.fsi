@@ -335,14 +335,19 @@ type internal ByteStream =
 #endif
 
 /// Imperative buffers and streams of byte[]
+/// Not thread safe.
 [<Sealed>]
 type internal ByteBuffer =
-    member Close : unit -> byte[]
+    interface IDisposable
+
+    member GetMemory : unit -> ReadOnlyMemory<byte>
     member EmitIntAsByte : int -> unit
     member EmitIntsAsBytes : int[] -> unit
     member EmitByte : byte -> unit
     member EmitBytes : byte[] -> unit
+    member EmitMemory : ReadOnlyMemory<byte> -> unit
     member EmitByteMemory : ReadOnlyByteMemory -> unit
+    member EmitByteBuffer : ByteBuffer -> unit
     member EmitInt32 : int32 -> unit
     member EmitInt64 : int64 -> unit
     member FixupInt32 : pos: int -> value: int32 -> unit
@@ -350,7 +355,7 @@ type internal ByteBuffer =
     member EmitBoolAsByte : bool -> unit
     member EmitUInt16 : uint16 -> unit
     member Position : int
-    static member Create : int -> ByteBuffer
+    static member Create : int * ?useArrayPool: bool -> ByteBuffer
 
 [<Sealed>]
 type internal ByteStorage =
