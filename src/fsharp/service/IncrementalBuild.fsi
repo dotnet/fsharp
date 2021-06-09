@@ -241,7 +241,7 @@ type internal IncrementalBuilder =
           defaultFSharpBinariesDir: string * 
           FrameworkImportsCache *
           loadClosureOpt:LoadClosure option *
-          docs:FSharpDocument list *
+          sourceFiles:string list *
           commandLineArgs:string list *
           projectReferences: IProjectReference list *
           projectDirectory:string *

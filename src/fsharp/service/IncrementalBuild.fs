@@ -1314,7 +1314,7 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
                       (legacyReferenceResolver, defaultFSharpBinariesDir,
                        frameworkTcImportsCache: FrameworkImportsCache,
                        loadClosureOpt: LoadClosure option,
-                       docs: FSharpDocument list,
+                       sourceFiles: string list,
                        commandLineArgs: string list,
                        projectReferences, projectDirectory,
                        useScriptResolutionRules, keepAssemblyContents,
@@ -1326,10 +1326,6 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
                        dependencyProvider) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
-
-      let sourceFiles =
-        docs
-        |> List.map (fun x -> x.FilePath)
 
       node {
 
@@ -1482,17 +1478,11 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
 #endif
 
             // Check for the existence of loaded sources and prepend them to the sources list if present.
-            let sourceFiles = 
-                (
-                    tcConfig.GetAvailableLoadedSources()
-                    |> List.map (fun (m, x) -> m, FSharpDocument.CreateFromFile x)
-                )
-                @ 
-                (docs |> List.map (fun doc -> rangeStartup, doc))
+            let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (sourceFiles |>List.map (fun s -> rangeStartup, s))
 
             // Mark up the source files with an indicator flag indicating if they are the last source file in the project
             let sourceFiles =
-                let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map (fun (_, x) -> x.FilePath))
+                let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)
                 ((sourceFiles, flags) ||> List.map2 (fun (m, nm) flag -> (m, nm, (flag, isExe))))
 
             let basicDependencies =
@@ -1507,8 +1497,8 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
 
             let allDependencies =
                 [| yield! basicDependencies
-                   for (_, doc, _) in sourceFiles do
-                        yield doc.FilePath |]
+                   for (_, f, _) in sourceFiles do
+                        yield f |]
 
             // For scripts, the dependency provider is already available.
             // For projects create a fresh one for the project.
@@ -1540,6 +1530,11 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
                     importsInvalidatedByTypeProvider
                 )
 
+            let sourceFiles =
+                sourceFiles
+                |> Seq.map (fun (m, f, isLastCompiland) -> (m, FSharpDocument.CreateFromFile f, isLastCompiland))
+                |> List.ofSeq
+
             let builder =
                 let mainState =
                     {
@@ -1551,7 +1546,7 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
                         outfile = outfile
                         assemblyName = assemblyName
                         lexResourceManager = resourceManager
-                        sourceFiles = (ImmutableArray.CreateRange(sourceFiles))
+                        sourceFiles = ImmutableArray.CreateRange(sourceFiles)
                         enablePartialTypeChecking = enablePartialTypeChecking
                         beforeFileChecked = beforeFileChecked
                         fileChecked = fileChecked

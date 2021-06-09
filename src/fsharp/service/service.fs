@@ -302,12 +302,8 @@ type BackgroundCompiler(
         let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
 
         let! builderOpt, diagnostics = 
-            let docs =
-                options.SourceFiles
-                |> Seq.map FSharpDocument.CreateFromFile
-                |> List.ofSeq
             IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions
-                  (legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, docs, 
+                  (legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, List.ofArray options.SourceFiles, 
                    Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
                    options.UseScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions,
                    tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses,
