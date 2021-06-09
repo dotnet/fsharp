@@ -838,11 +838,10 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
         p_memory
         (stringTab.AsArray, pubpathTab.AsArray, nlerefTab.AsArray, simpleTyTab.AsArray, phase1bytes)
         st2
-    st2.os.AsMemory()
+    st2.os
 
-  let finalBytes = phase2bytes.ToArray()
+  let finalBytes = phase2bytes
   (st1.os :> System.IDisposable).Dispose()
-  (st2.os :> System.IDisposable).Dispose()
   finalBytes
 
 let check (ilscope: ILScopeRef) (inMap : NodeInTable<_, _>) =

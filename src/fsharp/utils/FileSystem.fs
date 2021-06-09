@@ -319,31 +319,45 @@ type ReadOnlyByteMemory(bytes: ByteMemory) =
 
 [<AutoOpen>]
 module MemoryMappedFileExtensions =
-    type MemoryMappedFile with
-        static member TryFromByteMemory(bytes: ReadOnlyByteMemory) =
-            let length = int64 bytes.Length
-            if length = 0L then
+
+    let private trymmf length copyTo =
+        let length = int64 length
+        if length = 0L then
+            None
+        else
+            if runningOnMono then
+                // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/1024
                 None
             else
-                if runningOnMono then
-                    // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/1024
-                    None
-                else
-                    // Try to create a memory mapped file and copy the contents of the given bytes to it.
-                    // If this fails, then we clean up and return None.
+                // Try to create a memory mapped file and copy the contents of the given bytes to it.
+                // If this fails, then we clean up and return None.
+                try
+                    let mmf = MemoryMappedFile.CreateNew(null, length, MemoryMappedFileAccess.ReadWrite, MemoryMappedFileOptions.None, HandleInheritability.None)
                     try
-                        let mmf = MemoryMappedFile.CreateNew(null, length, MemoryMappedFileAccess.ReadWrite, MemoryMappedFileOptions.None, HandleInheritability.None)
-                        try
-                            use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
-                            bytes.CopyTo stream
-                            Some mmf
-                        with
-                        | _ ->
-                            mmf.Dispose()
-                            None
+                        use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
+                        copyTo stream
+                        Some mmf
                     with
                     | _ ->
+                        mmf.Dispose()
                         None
+                with
+                | _ ->
+                    None
+
+    type MemoryMappedFile with
+        static member TryFromByteMemory(bytes: ReadOnlyByteMemory) =
+            trymmf (int64 bytes.Length) bytes.CopyTo
+
+        static member TryFromMemory(bytes: ReadOnlyMemory<byte>) =
+            let length = int64 bytes.Length
+            trymmf length
+                (fun stream ->
+                    stream.SetLength(stream.Length + length)
+                    let span = Span<byte>(stream.PositionPointer |> NativePtr.toVoidPtr, int length)
+                    bytes.Span.CopyTo(span)
+                    stream.Position <- stream.Position + length
+                )
 
 [<RequireQualifiedAccess>]
 module internal FileSystemUtils =
@@ -917,6 +931,18 @@ type ByteStorage(getByteMemory: unit -> ReadOnlyByteMemory) =
     static member FromByteMemoryAndCopy(bytes: ReadOnlyByteMemory, useBackingMemoryMappedFile: bool) =
         if useBackingMemoryMappedFile then
             match MemoryMappedFile.TryFromByteMemory(bytes) with
+            | Some mmf ->
+                ByteStorage(fun () -> ByteMemory.FromMemoryMappedFile(mmf).AsReadOnly())
+            | _ ->
+                let copiedBytes = ByteMemory.FromArray(bytes.ToArray()).AsReadOnly()
+                ByteStorage.FromByteMemory(copiedBytes)
+        else
+            let copiedBytes = ByteMemory.FromArray(bytes.ToArray()).AsReadOnly()
+            ByteStorage.FromByteMemory(copiedBytes)
+
+    static member FromMemoryAndCopy(bytes: ReadOnlyMemory<byte>, useBackingMemoryMappedFile: bool) =
+        if useBackingMemoryMappedFile then
+            match MemoryMappedFile.TryFromMemory(bytes) with
             | Some mmf ->
                 ByteStorage(fun () -> ByteMemory.FromMemoryMappedFile(mmf).AsReadOnly())
             | _ ->

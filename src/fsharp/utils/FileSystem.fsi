@@ -97,6 +97,7 @@ type internal ReadOnlyByteMemory =
 module internal MemoryMappedFileExtensions =
     type MemoryMappedFile with
         static member TryFromByteMemory : bytes: ReadOnlyByteMemory -> MemoryMappedFile option
+        static member TryFromMemory : bytes: ReadOnlyMemory<byte> -> MemoryMappedFile option
     
 /// Filesystem helpers
 module internal FileSystemUtils =
@@ -399,6 +400,9 @@ type internal ByteStorage =
 
     /// Creates a ByteStorage that has a copy of the given ByteMemory.
     static member FromByteMemoryAndCopy : ReadOnlyByteMemory * useBackingMemoryMappedFile: bool -> ByteStorage
+
+    /// Creates a ByteStorage that has a copy of the given Memory<byte>.
+    static member FromMemoryAndCopy : ReadOnlyMemory<byte> * useBackingMemoryMappedFile: bool -> ByteStorage
 
     /// Creates a ByteStorage that has a copy of the given byte array.
     static member FromByteArrayAndCopy : byte [] * useBackingMemoryMappedFile: bool -> ByteStorage
