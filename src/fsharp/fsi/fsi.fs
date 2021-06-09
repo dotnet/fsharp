@@ -67,6 +67,7 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.BuildGraph
 
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
@@ -1571,7 +1572,7 @@ type internal FsiDynamicCompiler
           let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
           let closure =
-              LoadClosure.ComputeClosureOfScriptFiles(ctok, tcConfig,
+              LoadClosure.ComputeClosureOfScriptFiles(tcConfig,
                  sourceFiles, CodeContext.CompilationAndEvaluation,
                  lexResourceManager, fsiOptions.DependencyProvider)
 
@@ -1898,7 +1899,7 @@ module internal MagicAssemblyResolution =
 
                    // OK, try to resolve as an existing DLL in the resolved reference set.  This does unification by assembly name
                    // once an assembly has been referenced.
-                   let searchResult = tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName (ctok, simpleAssemName)
+                   let searchResult = tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName (simpleAssemName)
 
                    match searchResult with
                    | Some r -> OkResult ([], Choice1Of2 r)
@@ -1940,7 +1941,7 @@ module internal MagicAssemblyResolution =
 #endif
 
                    // As a last resort, try to find the reference without an extension
-                   match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, ILAssemblyRef.Create(simpleAssemName,None,None,false,None,None)) with
+                   match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ILAssemblyRef.Create(simpleAssemName,None,None,false,None,None)) with
                    | Some(resolvedPath) ->
                        OkResult([],Choice1Of2 resolvedPath)
                    | None ->
@@ -2670,11 +2671,11 @@ type internal FsiInteractionProcessor
         let names  = names |> List.filter (fun name -> name.StartsWithOrdinal(stem))
         names
 
-    member _.ParseAndCheckInteraction (ctok, legacyReferenceResolver, istate, text:string) =
+    member _.ParseAndCheckInteraction (legacyReferenceResolver, istate, text:string) =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
-        fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
+        fsiInteractiveChecker.ParseAndCheckInteraction(SourceText.ofString text)
 
 
 //----------------------------------------------------------------------------
@@ -2820,7 +2821,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
       match fsiOptions.WriteReferencesAndExit with
       | Some outFile ->
           let tcConfig = tcConfigP.Get(ctokStartup)
-          let references, _unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(ctokStartup, tcConfig)
+          let references, _unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(tcConfig)
           let lines = [ for r in references -> r.resolvedPath ]
           FileSystem.OpenFileForWriteShim(outFile).WriteAllLines(lines)
           exit 0
@@ -2861,13 +2862,15 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let (tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolvedReferences) =
         try
             let tcConfig = tcConfigP.Get(ctokStartup)
-            checker.FrameworkImportsCache.Get (ctokStartup, tcConfig) |> Cancellable.runWithoutCancellation
+            checker.FrameworkImportsCache.Get (tcConfig)
+            |> NodeCode.RunImmediateWithoutCancellation
         with e ->
             stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 
     let tcImports =
       try
-          TcImports.BuildNonFrameworkTcImports(ctokStartup, tcConfigP, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, fsiOptions.DependencyProvider) |> Cancellable.runWithoutCancellation
+          TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, fsiOptions.DependencyProvider) 
+          |> NodeCode.RunImmediateWithoutCancellation
       with e ->
           stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 
@@ -2888,7 +2891,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | Some assembly -> Some (Choice2Of2 assembly)
         | None ->
 #endif
-        match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef (ctok, aref) with
+        match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef (aref) with
         | Some resolvedPath -> Some (Choice1Of2 resolvedPath)
         | None -> None
 
@@ -2946,8 +2949,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         fsiInteractionProcessor.CompletionsForPartialLID (fsiInteractionProcessor.CurrentState, longIdent)  |> Seq.ofList
 
     member x.ParseAndCheckInteraction(code) =
-        let ctok = AssumeCompilationThreadWithoutEvidence ()
-        fsiInteractionProcessor.ParseAndCheckInteraction (ctok, legacyReferenceResolver, fsiInteractionProcessor.CurrentState, code)
+        fsiInteractionProcessor.ParseAndCheckInteraction (legacyReferenceResolver, fsiInteractionProcessor.CurrentState, code)
         |> Cancellable.runWithoutCancellation
 
     member x.InteractiveChecker = checker
