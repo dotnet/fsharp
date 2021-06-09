@@ -788,7 +788,7 @@ type internal ByteBuffer =
                 if buf.useArrayPool then
                     ArrayPool.Shared.Rent (max newSize (oldBufSize * 2))
                 else
-                    Bytes.sub old 0 (max newSize (oldBufSize * 2))
+                    Bytes.zeroCreate (max newSize (oldBufSize * 2))
             Bytes.blit old 0 buf.bbArray 0 buf.bbCurrent
             if buf.useArrayPool then
                 ArrayPool.Shared.Return old
