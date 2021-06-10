@@ -31,18 +31,22 @@
 {
   // Offset: 0x00000000 Length: 0x0000113D
 }
+.mresource public FSharpSignatureDataB.TopLevelModule
+{
+  // Offset: 0x00001148 Length: 0x00000004
+}
 .mresource public FSharpOptimizationData.TopLevelModule
 {
-  // Offset: 0x00001148 Length: 0x000003FD
+  // Offset: 0x00001150 Length: 0x000003FD
 }
 .module TopLevelModule.dll
-// MVID: {60BE3D8A-37F5-C118-A745-03838A3DBE60}
+// MVID: {60C0F26A-37F5-C118-A745-03836AF2C060}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07250000
+// Image base: 0x04E10000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
