@@ -799,9 +799,8 @@ type BackgroundCompiler(
             let errorOptions = tcProj.TcConfig.errorSeverityOptions
             let fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation
 
-            let! tcInfo, tcInfoExtras = tcProj.GetOrComputeTcInfoWithExtras()
+            let! tcInfo = tcProj.GetOrComputeTcInfo()
 
-            let tcSymbolUses = tcInfoExtras.TcSymbolUses
             let topAttribs = tcInfo.topAttribs
             let tcState = tcInfo.tcState
             let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
@@ -817,7 +816,7 @@ type BackgroundCompiler(
                     keepAssemblyContents,
                     diagnostics, 
                     Some(tcProj.TcGlobals, tcProj.TcImports, tcState.Ccu, tcState.CcuSig, 
-                        tcSymbolUses, topAttribs, tcAssemblyDataOpt, ilAssemRef, 
+                        (Choice1Of2 builder), topAttribs, tcAssemblyDataOpt, ilAssemRef, 
                         tcEnvAtEnd.AccessRights, tcAssemblyExprOpt,
                         Array.ofList tcDependencyFiles,
                         options))

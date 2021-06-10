@@ -103,6 +103,8 @@ type internal PartialCheckResults =
 
     member TryPeekTcInfo: unit -> TcInfo option
 
+    member TryPeekTcInfoWithExtras: unit -> (TcInfo * TcInfoExtras) option
+
     /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
     /// extras will also be available.
     member GetOrComputeTcInfo: unit -> NodeCode<TcInfo>
@@ -172,6 +174,13 @@ type internal IncrementalBuilder =
       ///
       /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
       member GetCheckResultsBeforeFileInProjectEvenIfStale: filename:string -> PartialCheckResults option
+
+      /// Get the typecheck state of a slot, without checking if it is up-to-date w.r.t.
+      /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
+      /// This is a very quick operation.
+      ///
+      /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
+      member GetCheckResultsForFileInProjectEvenIfStale: filename:string -> PartialCheckResults option
 
       /// Get the preceding typecheck state of a slot, but only if it is up-to-date w.r.t.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.

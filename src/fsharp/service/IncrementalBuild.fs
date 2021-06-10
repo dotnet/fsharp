@@ -407,6 +407,13 @@ type BoundModel private (tcConfig: TcConfig,
                 | ValueSome(tcInfo, _) -> Some tcInfo
                 | _ -> None
 
+    member _.TryPeekTcInfoWithExtras() =
+        match tcInfoNode with
+        | TcInfoNode(_, fullGraphNode) ->
+            match fullGraphNode.TryPeekValue() with
+            | ValueSome(tcInfo, tcInfoExtras) -> Some(tcInfo, tcInfoExtras)
+            | _ -> None
+
     member _.GetOrComputeTcInfo() =
         match tcInfoNode with
         | TcInfoNode(partialGraphNode, _) -> 
@@ -636,6 +643,8 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime) =
     member _.TimeStamp = timeStamp
 
     member _.TryPeekTcInfo() = boundModel.TryPeekTcInfo()
+
+    member _.TryPeekTcInfoWithExtras() = boundModel.TryPeekTcInfoWithExtras()
 
     member _.GetOrComputeTcInfo() = boundModel.GetOrComputeTcInfo()
 
@@ -1171,6 +1180,14 @@ type IncrementalBuilder(
     member builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename: PartialCheckResults option  =
         let slotOfFile = builder.GetSlotOfFileName filename
         let result = tryGetBeforeSlot currentState slotOfFile
+
+        match result with
+        | Some (boundModel, timestamp) -> Some (PartialCheckResults (boundModel, timestamp))
+        | _ -> None
+
+    member builder.GetCheckResultsForFileInProjectEvenIfStale filename: PartialCheckResults option  =
+        let slotOfFile = builder.GetSlotOfFileName filename
+        let result = tryGetSlot currentState slotOfFile
 
         match result with
         | Some (boundModel, timestamp) -> Some (PartialCheckResults (boundModel, timestamp))
