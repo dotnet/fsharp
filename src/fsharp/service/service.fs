@@ -799,7 +799,8 @@ type BackgroundCompiler(
             let errorOptions = tcProj.TcConfig.errorSeverityOptions
             let fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation
 
-            let! tcInfo = tcProj.GetOrComputeTcInfo()
+            // Although we do not use 'tcInfoExtras', computing it will make sure we get an extra info.
+            let! tcInfo, _tcInfoExtras = tcProj.GetOrComputeTcInfoWithExtras()
 
             let topAttribs = tcInfo.topAttribs
             let tcState = tcInfo.tcState
