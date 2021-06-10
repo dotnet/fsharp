@@ -1331,7 +1331,7 @@ let rec GetCustomAttrDataAsBlobIdx cenv (data: byte[]) =
 
 and GetCustomAttrRow cenv hca (attr: ILAttribute) =
     let cat = GetMethodRefAsCustomAttribType cenv attr.Method.MethodRef
-    let data = getCustomAttrData cenv.ilg attr
+    let data = getCustomAttrData attr
     for element in attr.Elements do
         match element with
         | ILAttribElem.Type (Some ty) when ty.IsNominal -> GetTypeRefAsTypeRefIdx cenv ty.TypeRef |> ignore
@@ -3720,7 +3720,8 @@ and writeBinaryAndReportMappingsAux (stream: Stream, leaveStreamOpen: bool,
                     resources |> List.map (function
                         | ILNativeResource.Out bytes -> bytes
                         | ILNativeResource.In (fileName, linkedResourceBase, start, len) ->
-                             let linkedResource = FileSystem.OpenFileForReadShim(fileName).ReadBytes(start, len)
+                             use stream = FileSystem.OpenFileForReadShim(fileName)
+                             let linkedResource = stream.ReadBytes(start, len)
                              unlinkResource linkedResourceBase linkedResource)
 
                 begin
@@ -4208,7 +4209,7 @@ and writePdb (dumpDebugInfo, showTimes, portablePDB, embeddedPDB, pdbfile, outfi
             reportTime showTimes "Generate PDB Info"
 
             // Now we have the debug data we can go back and fill in the debug directory in the image
-            let fs2 = FileSystem.OpenFileForWriteShim(outfile, FileMode.Open, FileAccess.Write, FileShare.Read)
+            use fs2 = FileSystem.OpenFileForWriteShim(outfile, FileMode.Open, FileAccess.Write, FileShare.Read)
             let os2 = new BinaryWriter(fs2)
             try
                 // write the IMAGE_DEBUG_DIRECTORY

@@ -12,10 +12,16 @@ open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
 open Internal.Utilities.FSharpEnvironment
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Text
 open FSharp.Compiler.IO
+
+type internal FxResolverLockToken() =
+   interface LockToken
+
+type internal FxResolverLock = Lock<FxResolverLockToken>   
 
 /// Resolves the references for a chosen or currently-executing framework, for
 ///   - script execution
@@ -25,6 +31,10 @@ open FSharp.Compiler.IO
 ///   - default references for fsc.exe
 ///   - default references for fsi.exe
 type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdkRefs: bool, isInteractive: bool, rangeForErrors: range, sdkDirOverride: string option) =
+
+    let fxlock = FxResolverLock()
+
+    static let RequireFxResolverLock (_fxtok: FxResolverLockToken, _thingProtected: 'T) = ()
 
     /// We only try once for each directory (cleared on solution unload) to prevent conditions where 
     /// we repeatedly try to run dotnet.exe on every keystroke for a script
@@ -88,7 +98,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             | Some dotnetHostPath ->
                 try
                     let workingDir =
-                        if Directory.Exists(projectDir) then
+                        if FileSystem.DirectoryExistsShim(projectDir) then
                             Some projectDir
                         else
                             None
@@ -131,8 +141,8 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             let sdksDir = 
                 match getDotnetHostDirectory() with
                 | Some dotnetDir ->
-                    let candidate = Path.GetFullPath(Path.Combine(dotnetDir, "sdk"))
-                    if Directory.Exists(candidate) then Some candidate else None
+                    let candidate = FileSystem.GetFullPathShim(Path.Combine(dotnetDir, "sdk"))
+                    if FileSystem.DirectoryExistsShim(candidate) then Some candidate else None
                 | None -> None
 
             match sdksDir with
@@ -177,13 +187,14 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             | Some dir ->
                 try
                     let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
-                    let dotnetConfig = FileSystem.OpenFileForReadShim(dotnetConfigFile).AsStream().ReadAllText()
+                    use stream = FileSystem.OpenFileForReadShim(dotnetConfigFile)
+                    let dotnetConfig = stream.ReadAllText()
                     let pattern = "\"version\": \""
                     let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
                     let endPos = dotnetConfig.IndexOf("\"", startPos)
                     let ver = dotnetConfig.[startPos..endPos-1]
-                    let path = Path.GetFullPath(Path.Combine(dir, "..", "..", "shared", "Microsoft.NETCore.App", ver))
-                    if Directory.Exists(path) then
+                    let path = FileSystem.GetFullPathShim(Path.Combine(dir, "..", "..", "shared", "Microsoft.NETCore.App", ver))
+                    if FileSystem.DirectoryExistsShim(path) then
                         path, warnings
                     else
                         getRunningImplementationAssemblyDir(), warnings
@@ -322,7 +333,8 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                 | asm ->
                     let depsJsonPath = Path.ChangeExtension(asm.Location, "deps.json")
                     if FileSystem.FileExistsShim(depsJsonPath) then
-                        FileSystem.OpenFileForReadShim(depsJsonPath).AsReadOnlyStream().ReadAllText()
+                        use stream = FileSystem.OpenFileForReadShim(depsJsonPath)
+                        stream.ReadAllText()
                     else
                         ""
             with _ ->
@@ -761,16 +773,24 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
     member _.GetSystemAssemblies() = systemAssemblies
 
     member _.IsInReferenceAssemblyPackDirectory filename =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
+
         match tryGetNetCoreRefsPackDirectoryRoot() |> replayWarnings with
         | _, Some root ->
             let path = Path.GetDirectoryName(filename)
             path.StartsWith(root, StringComparison.OrdinalIgnoreCase)
         | _ -> false
 
-    member _.TryGetSdkDir() = tryGetSdkDir() |> replayWarnings
+    member _.TryGetSdkDir() =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
+        tryGetSdkDir() |> replayWarnings
 
     /// Gets the selected target framework moniker, e.g netcore3.0, net472, and the running rid of the current machine
     member _.GetTfmAndRid() =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
         // Interactive processes read their own configuration to find the running tfm
 
         let tfm =
@@ -783,7 +803,8 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                 match sdkDir with
                 | Some dir ->
                     let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
-                    let dotnetConfig = FileSystem.OpenFileForReadShim(dotnetConfigFile).AsReadOnlyStream().ReadAllText()
+                    use stream = FileSystem.OpenFileForReadShim(dotnetConfigFile)
+                    let dotnetConfig = stream.ReadAllText()
                     let pattern = "\"tfm\": \""
                     let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
                     let endPos = dotnetConfig.IndexOf("\"", startPos)
@@ -816,12 +837,20 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
     static member ClearStaticCaches() =
         desiredDotNetSdkVersionForDirectoryCache.Clear()
 
-    member _.GetFrameworkRefsPackDirectory() = tryGetSdkRefsPackDirectory() |> replayWarnings
+    member _.GetFrameworkRefsPackDirectory() =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
+        tryGetSdkRefsPackDirectory() |> replayWarnings
 
-    member _.TryGetDesiredDotNetSdkVersionForDirectory() = tryGetDesiredDotNetSdkVersionForDirectoryInfo()
+    member _.TryGetDesiredDotNetSdkVersionForDirectory() =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
+        tryGetDesiredDotNetSdkVersionForDirectoryInfo()
 
     // The set of references entered into the TcConfigBuilder for scripts prior to computing the load closure.
     member _.GetDefaultReferences (useFsiAuxLib) =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
         let defaultReferences =
             if assumeDotNetFramework then
                 getDotNetFrameworkDefaultReferences useFsiAuxLib, assumeDotNetFramework

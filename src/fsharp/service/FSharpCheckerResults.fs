@@ -51,6 +51,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.AbstractIL
 open System.Reflection.PortableExecutable
+open FSharp.Compiler.BuildGraph
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -113,17 +114,22 @@ type internal DelayedILModuleReader =
 type FSharpReferencedProject =
     | FSharpReference of projectFileName: string * options: FSharpProjectOptions
     | PEReference of projectFileName: string * stamp: DateTime * delayedReader: DelayedILModuleReader
+    | ILModuleReference of projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader)
 
     member this.FileName =
         match this with
         | FSharpReference(projectFileName=projectFileName)
-        | PEReference(projectFileName=projectFileName) -> projectFileName
+        | PEReference(projectFileName=projectFileName)
+        | ILModuleReference(projectFileName=projectFileName) -> projectFileName
 
     static member CreateFSharp(projectFileName, options) =
         FSharpReference(projectFileName, options)
 
     static member CreatePortableExecutable(projectFileName, stamp, getStream) =
         PEReference(projectFileName, stamp, DelayedILModuleReader(projectFileName, getStream))
+
+    static member CreateFromILModuleReader(projectFileName, getStamp, getReader) =
+        ILModuleReference(projectFileName, getStamp, getReader)
 
     override this.Equals(o) =
         match o with
@@ -133,6 +139,8 @@ type FSharpReferencedProject =
                 projectFileName1 = projectFileName2 && options1 = options2
             | PEReference(projectFileName1, stamp1, _), PEReference(projectFileName2, stamp2, _) ->
                 projectFileName1 = projectFileName2 && stamp1 = stamp2
+            | ILModuleReference(projectFileName1, getStamp1, _), ILModuleReference(projectFileName2, getStamp2, _) ->
+                projectFileName1 = projectFileName2 && (getStamp1()) = (getStamp2())
             | _ ->
                 false
         | _ ->
@@ -1633,7 +1641,7 @@ module internal ParseAndCheckFile =
     let isFeatureSupported (_featureId:LanguageFeature) = true
 
     let createLexbuf sourceText =
-        UnicodeLexing.SourceTextAsLexbuf(isFeatureSupported, sourceText)
+        UnicodeLexing.SourceTextAsLexbuf(true, isFeatureSupported, sourceText)
 
     let matchBraces(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         let delayedLogger = CapturingErrorLogger("matchBraces")
@@ -1864,8 +1872,7 @@ module internal ParseAndCheckFile =
 
                     use _unwind = new CompilationGlobalsScope (errHandler.ErrorLogger, BuildPhase.TypeCheck)
                     let! result =
-                        TypeCheckOneInputAndFinishEventually(checkForErrors, tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
-                        |> Eventually.toCancellable
+                        TypeCheckOneInputAndFinish(checkForErrors, tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
 
                     return result
                 with e ->
@@ -2289,7 +2296,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
 
     let keepAssemblyContents = false
 
-    member _.ParseAndCheckInteraction (ctok, sourceText: ISourceText, ?userOpName: string) =
+    member _.ParseAndCheckInteraction (sourceText: ISourceText, ?userOpName: string) =
         cancellable {
             let userOpName = defaultArg userOpName "Unknown"
             let filename = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
@@ -2309,7 +2316,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                 CompilerOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
 
             let loadClosure =
-                LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
+                LoadClosure.ComputeClosureOfScriptText(legacyReferenceResolver, defaultFSharpBinariesDir,
                     filename, sourceText, CodeContext.Editing,
                     tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib,
                     tcConfig.useSdkRefs, tcConfig.sdkDirOverride, new Lexhelp.LexResourceManager(),
