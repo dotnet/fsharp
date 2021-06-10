@@ -311,4 +311,6 @@ type Document with
                     let fsharpText = this.GetTextAsync().Result.ToFSharpSourceText()
                     weakFSharpText <- WeakReference<_>(fsharpText)
                     fsharpText
-        FSharpDocument.Create(this.FilePath, getTimeStamp, getSourceText)
+
+        let isOpen = this.Project.Solution.Workspace.IsDocumentOpen(this.Id)
+        FSharpDocument.Create(this.FilePath, isOpen, getTimeStamp, getSourceText)

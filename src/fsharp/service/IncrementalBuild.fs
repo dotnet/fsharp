@@ -161,6 +161,8 @@ module IncrementalBuildSyntaxTree =
 
         member _.FileName = filename
 
+        member _.Document = doc
+
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
 [<NoEquality; NoComparison>]
 type TcInfo =
@@ -325,14 +327,10 @@ type BoundModel private (tcConfig: TcConfig,
         | _ ->
             None
 
-    /// If partial type-checking is enabled,
-    ///     this will create a new bound-model that will only have the partial state if the
+    /// This will create a new bound-model that will only have the partial state if the
     ///     the current bound-model has the full state.
     member this.ClearTcInfoExtras() =
-        let hasSig = this.BackingSignature.IsSome
-
-        // If partial checking is enabled and we have a backing sig file, then use the partial state. The partial state contains the sig state.
-        if tcInfoNode.HasFull && enablePartialTypeChecking && hasSig then
+        if tcInfoNode.HasFull then
             // Always invalidate the syntax tree cache.
             let newSyntaxTreeOpt =
                 syntaxTreeOpt
@@ -517,7 +515,7 @@ type BoundModel private (tcConfig: TcConfig,
                                     None
                         }
                         
-                    if partialCheck then
+                    if partialCheck && not syntaxTree.Document.IsOpen then
                         return PartialState tcInfo
                     else
                         let! prevTcInfoOptional = prevTcInfoExtras
@@ -551,8 +549,8 @@ type BoundModel private (tcConfig: TcConfig,
                             {
                                 /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
                                 latestImplFile = if keepAssemblyContents then implFile else None
-                                tcResolutionsRev = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty) :: prevTcInfoOptional.tcResolutionsRev
-                                tcSymbolUsesRev = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: prevTcInfoOptional.tcSymbolUsesRev
+                                tcResolutionsRev = (if keepAllBackgroundResolutions || syntaxTree.Document.IsOpen then sink.GetResolutions() else TcResolutions.Empty) :: prevTcInfoOptional.tcResolutionsRev
+                                tcSymbolUsesRev = (if keepAllBackgroundSymbolUses || syntaxTree.Document.IsOpen then sink.GetSymbolUses() else TcSymbolUses.Empty) :: prevTcInfoOptional.tcSymbolUsesRev
                                 tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: prevTcInfoOptional.tcOpenDeclarationsRev
                                 itemKeyStore = itemKeyStore
                                 semanticClassificationKeyStore = semanticClassification
@@ -1030,7 +1028,28 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
                     boundModels = boundModels.ToImmutable()
                 }
         else
-            state
+            let _, doc, _ = fileInfo
+            let _, currentDoc, _ = state.documents.[slot]
+            if currentDoc.IsOpen && not doc.IsOpen then
+                let state = 
+                    { state with
+                        documents = state.documents.RemoveAt(slot).Insert(slot, fileInfo)
+                    }
+                let currentBoundModel = state.boundModels.[slot]
+                match currentBoundModel.TryPeekValue() with
+                | ValueSome currentBoundModel ->
+                    let boundModel = currentBoundModel.ClearTcInfoExtras()
+                    { state with
+                        boundModels = state.boundModels.RemoveAt(slot).Insert(slot, GraphNode(node { return boundModel }))
+                    }
+                | _ ->
+                    state
+            elif not currentDoc.IsOpen && doc.IsOpen then
+                { state with
+                    documents = state.documents.RemoveAt(slot).Insert(slot, fileInfo)
+                }
+            else
+                state
 
     and computeStampedFileNames mainState state =
         let mutable i = 0
