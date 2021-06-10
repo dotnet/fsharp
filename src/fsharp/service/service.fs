@@ -698,9 +698,9 @@ type BackgroundCompiler(
 
                 let! tcInfo, tcInfoExtras = tcProj.GetOrComputeTcInfoWithExtras()
 
-                let tcResolutionsRev = tcInfoExtras.tcResolutionsRev
-                let tcSymbolUsesRev = tcInfoExtras.tcSymbolUsesRev
-                let tcOpenDeclarationsRev = tcInfoExtras.tcOpenDeclarationsRev
+                let tcResolutions = tcInfoExtras.tcResolutions
+                let tcSymbolUses = tcInfoExtras.tcSymbolUses
+                let tcOpenDeclarations = tcInfoExtras.tcOpenDeclarations
                 let latestCcuSigForFile = tcInfo.latestCcuSigForFile
                 let tcState = tcInfo.tcState
                 let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
@@ -730,12 +730,12 @@ type BackgroundCompiler(
                             tcState.Ccu, 
                             tcProj.TcImports, 
                             tcEnvAtEnd.AccessRights,
-                            List.head tcResolutionsRev, 
-                            List.head tcSymbolUsesRev,
+                            tcResolutions, 
+                            tcSymbolUses,
                             tcEnvAtEnd.NameEnv,
                             loadClosure, 
                             latestImplementationFile,
-                            List.head tcOpenDeclarationsRev) 
+                            tcOpenDeclarations) 
                 return (parseResults, typedResults)
           }
 

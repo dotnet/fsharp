@@ -73,14 +73,9 @@ type internal TcInfo =
 [<NoEquality; NoComparison>]
 type internal TcInfoExtras =
     {
-      /// Accumulated resolutions, last file first
-      tcResolutionsRev: TcResolutions list
-
-      /// Accumulated symbol uses, last file first
-      tcSymbolUsesRev: TcSymbolUses list
-
-      /// Accumulated 'open' declarations, last file first
-      tcOpenDeclarationsRev: OpenDeclaration[] list
+      tcResolutions: TcResolutions
+      tcSymbolUses: TcSymbolUses
+      tcOpenDeclarations: OpenDeclaration[]
 
       /// Result of checking most recent file, if any
       latestImplFile: TypedImplFile option
@@ -92,7 +87,7 @@ type internal TcInfoExtras =
       semanticClassificationKeyStore: SemanticClassificationKeyStore option
     }
 
-    member TcSymbolUses: TcSymbolUses list
+    member TcSymbolUses: TcSymbolUses
 
 /// Represents the state in the incremental graph associated with checking a file
 [<Sealed>]
