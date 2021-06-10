@@ -91,28 +91,6 @@ module private FSharpProjectOptionsHelpers =
         else
             hasProjectVersionChanged
 
-    type Document with
-
-        member this.ToFSharpDocument() =
-            let dt = DateTime.UtcNow
-            let getTimeStamp = fun () -> dt
-
-            let mutable weakFSharpText = Unchecked.defaultof<_>
-            let getSourceText = fun () ->
-                match weakFSharpText with
-                | null ->
-                    let fsharpText = this.GetTextAsync().Result.ToFSharpSourceText()
-                    weakFSharpText <- WeakReference<_>(fsharpText)
-                    fsharpText
-                | _ ->
-                    match weakFSharpText.TryGetTarget() with
-                    | true, fsharpText -> fsharpText
-                    | _ ->
-                        let fsharpText = this.GetTextAsync().Result.ToFSharpSourceText()
-                        weakFSharpText <- WeakReference<_>(fsharpText)
-                        fsharpText
-            FSharpDocument.Create(this.FilePath, getTimeStamp, getSourceText)
-
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
     | TryGetOptionsByDocument of Document * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option> * CancellationToken * userOpName: string

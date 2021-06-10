@@ -57,12 +57,12 @@ type internal FSharpCheckerProvider
             let checker = 
                 FSharpChecker.Create(
                     projectCacheSize = settings.LanguageServicePerformance.ProjectCheckCacheSize, 
-                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundResolutions = true,
                     // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
                     (* , MaxMemory = 2300 *)
                     legacyReferenceResolver=LegacyMSBuildReferenceResolver.getResolver(),
                     tryGetMetadataSnapshot = tryGetMetadataSnapshot,
-                    keepAllBackgroundSymbolUses = false,
+                    keepAllBackgroundSymbolUses = true,
                     enableBackgroundItemKeyStoreAndSemanticClassification = true,
                     enablePartialTypeChecking = true)
             checker
