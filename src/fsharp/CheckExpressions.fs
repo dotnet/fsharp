@@ -4836,16 +4836,29 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             (tpenv, names, takenNames)
         | _ -> failwith "TcPat"
 
-    | SynPat.OptionalVal (id, m) ->
-        errorR (Error (FSComp.SR.tcOptionalArgsOnlyOnMembers (), m))
-        let bindf, names, takenNames = TcPatBindingName cenv env id ty false None topValInfo vFlags (names, takenNames)
-        (fun values -> TPat_as (TPat_wild m, bindf values, m)), (tpenv, names, takenNames)
+    | SynPat.As (p, SynPat.Name (id, isMemberThis, vis, m), _)
+    | SynPat.As (SynPat.Name (id, isMemberThis, vis, m), p, _) ->
+        let bindf, names, takenNames = TcPatBindingName cenv env id ty isMemberThis vis topValInfo vFlags (names, takenNames)
+        let pat', acc = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty p
+        (fun values -> TPat_as (pat' values, bindf values, m)),
+        acc
 
+    | SynPat.As (pat1, pat2, m) ->
+        let pats = [pat1; pat2]
+        let pats', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) (List.map (fun _ -> ty) pats) pats
+        (fun values -> TPat_conjs(List.map (fun f -> f values) pats', m)), acc
+        
     | SynPat.Name (id, isMemberThis, vis, m) ->
         let bindf, names, takenNames = TcPatBindingName cenv env id ty isMemberThis vis topValInfo vFlags (names, takenNames)
         let pat', acc = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty (SynPat.Wild m)
         (fun values -> TPat_as (pat' values, bindf values, m)),
         acc
+
+    | SynPat.OptionalVal (id, m) ->
+        errorR (Error (FSComp.SR.tcOptionalArgsOnlyOnMembers (), m))
+        let bindf, names, takenNames = TcPatBindingName cenv env id ty false None topValInfo vFlags (names, takenNames)
+        (fun values -> TPat_as (TPat_wild m, bindf values, m)), (tpenv, names, takenNames)
+
 
     | SynPat.Typed (p, cty, m) ->
         let cty', tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv cty
@@ -4876,11 +4889,6 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         (fun values -> TPat_disjs ([pat1' values; pat2' values.RightPath], m)), (tpenv, names, takenNames)
 
     | SynPat.Ands (pats, m) ->
-        let pats', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) (List.map (fun _ -> ty) pats) pats
-        (fun values -> TPat_conjs(List.map (fun f -> f values) pats', m)), acc
-
-    | SynPat.As (pat1, pat2, m) ->
-        let pats = [pat1; pat2]
         let pats', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) (List.map (fun _ -> ty) pats) pats
         (fun values -> TPat_conjs(List.map (fun f -> f values) pats', m)), acc
 
