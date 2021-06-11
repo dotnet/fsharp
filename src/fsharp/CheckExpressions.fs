@@ -4831,7 +4831,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         | SynPat.IsInst(_, m) ->
             (fun _ -> TPat_isinst (srcTy, tgtTy, None, m)), (tpenv, names, takenNames)
         | SynPat.As (SynPat.IsInst _, p, m) ->
-            let pat, acc = TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
+            let pat, acc = TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) tgtTy p
             (fun values -> TPat_isinst (srcTy, tgtTy, Some (pat values), m)), acc
         | _ -> failwith "TcPat"
 
