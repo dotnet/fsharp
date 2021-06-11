@@ -1753,10 +1753,10 @@ memberCore:
                          let getset = 
                                let rec go p = 
                                    match p with 
-                                   | SynPat.LongIdent (LongIdentWithDots([id], _), _, _, _, _, _) ->  id.idText
-                                   | SynPat.Name (nm, _, _, _) ->  nm.idText
-                                   | SynPat.Typed (p, _, _) ->  go p
-                                   | SynPat.Attrib (p, _, _) ->  go p
+                                   | SynPat.LongIdent (LongIdentWithDots([id], _), _, _, _, _, _) -> id.idText
+                                   | SynPat.Name (nm, _, _, _) | SynPat.As (_, SynPat.Name (nm, _, _, _), _) -> nm.idText
+                                   | SynPat.Typed (p, _, _) -> go p
+                                   | SynPat.Attrib (p, _, _) -> go p
                                    | _ -> raiseParseErrorAt mBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
                                go pv 
                          if getset = "get" then
@@ -1863,7 +1863,7 @@ memberCore:
                        let lidOuter, lidVisOuter = 
                            match bindingPatOuter with 
                            | SynPat.LongIdent (lid, None, None, SynArgPats.Pats [], lidVisOuter, m) ->  lid, lidVisOuter
-                           | SynPat.Name (id, _, visOuter, m) -> LongIdentWithDots([id], []), visOuter
+                           | SynPat.Name (id, _, visOuter, m) | SynPat.As(_, SynPat.Name (id, _, visOuter, m), _) -> LongIdentWithDots([id], []), visOuter
                            | p -> raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
 
                        // Merge the visibility from the outer point with the inner point, e.g.
@@ -1898,7 +1898,8 @@ memberCore:
                                        args
 //                               let idTool : Ident list = lidOuter |> List.map (fun (li:Ident) -> ident(li.idText, id.idRange)) |> List.rev |> List.take 1
                                SynPat.LongIdent (lidOuter, Some(id), tyargs, SynArgPats.Pats args, mergeLidVisOuter lidVisInner, m)
-                           | SynPat.Name (nm, _, lidVisInner, m) ->  SynPat.LongIdent (lidOuter, None, None, SynArgPats.Pats [], mergeLidVisOuter lidVisInner, m)
+                           | SynPat.Name (nm, _, lidVisInner, m)
+                           | SynPat.As (_, SynPat.Name (nm, _, lidVisInner, m), _) -> SynPat.LongIdent (lidOuter, None, None, SynArgPats.Pats [], mergeLidVisOuter lidVisInner, m)
                            | SynPat.Typed (p, ty, m) ->  SynPat.Typed(go p, ty, m)
                            | SynPat.Attrib (p, attribs, m) ->  SynPat.Attrib(go p, attribs, m)
                            | SynPat.Wild(m) ->  SynPat.Wild(m)

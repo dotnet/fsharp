@@ -9076,8 +9076,8 @@ and CheckRecursiveBindingIds binds =
     for (SynBinding.SynBinding(_, _, _, _, _, _, _, b, _, _, m, _)) in binds do
         let nm =
             match b with
-            | SynPat.Name(id, _, _, _) -> id.idText
-            | SynPat.As(_, SynPat.Name(id, _, _, _), _) -> id.idText
+            | SynPat.Name(id, _, _, _)
+            | SynPat.As(_, SynPat.Name(id, _, _, _), _)
             | SynPat.LongIdent(LongIdentWithDots([id], _), _, _, _, _, _) -> id.idText
             | _ -> ""
         if nm <> "" && not (hashOfBinds.Add nm) then
