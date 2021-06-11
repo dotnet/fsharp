@@ -373,3 +373,45 @@ match A with
         "(7,19--7,20): This expression was expected to have type 'int' but here has type 'string'"
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
+    
+[<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
+let ``As 01 - names and wildcards`` () =
+    let _, checkResults = getParseAndCheckResults """
+match 1 with
+| _ as w -> let x = w + 1 in ()
+
+match 2 with
+| y as _ -> let z = y + 1 in ()
+
+match 3 with
+| a as b -> let c = a + b in ()
+"""
+    assertHasSymbolUsages ["a"; "b"; "c"; "w"; "x"; "y"; "z"] checkResults
+    dumpErrors checkResults |> shouldEqual []
+    
+    
+[<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
+let ``As 02 - type testing`` () =
+    let _, checkResults = getParseAndCheckResults """
+let (|Id|) = id
+match box 1 with
+| :? int as a -> let b = a + 1 in ()
+| :? uint as (c & d) -> let e = c + d + 2u in ()
+| :? int64 as Id f -> let g = f + 3L in ()
+| :? uint64 as Id h & i -> let z = h + 4UL + i in ()
+| :? int8 as Id j as k -> let y = j + 5y + k in () // Only the first "as" will have the derived type
+"""
+    assertHasSymbolUsages (List.map string ['a'..'k']) checkResults
+    dumpErrors checkResults |> shouldEqual [
+        "(7,45--7,46): The type 'obj' does not match the type 'uint64'"
+        "(7,43--7,44): The type 'obj' does not match the type 'uint64'"
+        "(8,43--8,44): The type 'obj' does not match the type 'int8'"
+        "(8,41--8,42): The type 'obj' does not match the type 'int8'"
+        "(3,6--3,11): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+    ]
