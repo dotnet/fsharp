@@ -484,9 +484,7 @@ module ParsedInput =
 
         and walkPatWithKind (kind: EntityKind option) = function
             | SynPat.Ands (pats, _) -> List.tryPick walkPat pats
-            | SynPat.Named(SynPat.Wild nameRange as pat, _, _, _, _) -> 
-                if isPosInRange nameRange then None
-                else walkPat pat
+            | SynPat.As (pat1, pat2, _) -> List.tryPick walkPat [pat1; pat2]
             | SynPat.Typed(pat, t, _) -> walkPat pat |> Option.orElse (walkType t)
             | SynPat.Attrib(pat, Attributes attrs, _) -> walkPat pat |> Option.orElse (List.tryPick walkAttribute attrs)
             | SynPat.Or(pat1, pat2, _) -> List.tryPick walkPat [pat1; pat2]
@@ -987,10 +985,11 @@ module ParsedInput =
                     member _.VisitBinding(_path, defaultTraverse, (SynBinding(headPat = headPat) as synBinding)) = 
                     
                         let visitParam = function
-                            | SynPat.Named (range = range) when rangeContainsPos range pos -> 
+                            | SynPat.Name (range = range)
+                            | SynPat.As (_, SynPat.Name (range = range), _) when rangeContainsPos range pos -> 
                                 // parameter without type hint, no completion
                                 Some CompletionContext.Invalid 
-                            | SynPat.Typed(SynPat.Named(SynPat.Wild range, _, _, _, _), _, _) when rangeContainsPos range pos ->
+                            | SynPat.Typed(SynPat.Name(_, _, _, range), _, _) when rangeContainsPos range pos ->
                                 // parameter with type hint, but we are on its name, no completion
                                 Some CompletionContext.Invalid
                             | _ -> defaultTraverse synBinding
@@ -1015,7 +1014,8 @@ module ParsedInput =
                                     | _ -> visitParam pat
                                 )
                             | _ -> defaultTraverse synBinding
-                        | SynPat.Named(range = range) when rangeContainsPos range pos ->
+                        | SynPat.Name(range = range)
+                        | SynPat.As (_, SynPat.Name (range = range), _) when rangeContainsPos range pos ->
                             // let fo|o = 1
                             Some CompletionContext.Invalid
                         | _ -> defaultTraverse synBinding 
@@ -1200,15 +1200,14 @@ module ParsedInput =
             | SynPat.Tuple (_,pats, _)
             | SynPat.ArrayOrList (_, pats, _)
             | SynPat.Ands (pats, _) -> List.iter walkPat pats
-            | SynPat.Named (pat, ident, _, _, _) ->
-                walkPat pat
-                addIdent ident
+            | SynPat.Name (ident, _, _, _) -> addIdent ident
             | SynPat.Typed (pat, t, _) ->
                 walkPat pat
                 walkType t
             | SynPat.Attrib (pat, Attributes attrs, _) ->
                 walkPat pat
                 List.iter walkAttribute attrs
+            | SynPat.As (pat1, pat2, _)
             | SynPat.Or (pat1, pat2, _) -> List.iter walkPat [pat1; pat2]
             | SynPat.LongIdent (ident, _, typars, ConstructorPats pats, _, _) ->
                 addLongIdentWithDots ident

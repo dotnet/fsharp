@@ -976,8 +976,7 @@ type SynPat =
     | Wild of
         range: range
 
-    | Named of
-        pat: SynPat *
+    | Name of
         ident: Ident *
         isSelfIdentifier: bool *
         accessibility: SynAccess option *
@@ -1000,6 +999,11 @@ type SynPat =
 
     | Ands of
         pats: SynPat list *
+        range: range
+        
+    | As of
+        lhsPat: SynPat *
+        rhsPat: SynPat *
         range: range
 
     | LongIdent of
@@ -1063,9 +1067,10 @@ type SynPat =
       match p with
       | SynPat.Const (range=m)
       | SynPat.Wild (range=m)
-      | SynPat.Named (range=m)
+      | SynPat.Name (range=m)
       | SynPat.Or (range=m)
       | SynPat.Ands (range=m)
+      | SynPat.As (range=m)
       | SynPat.LongIdent (range=m)
       | SynPat.ArrayOrList (range=m)
       | SynPat.Tuple (range=m)

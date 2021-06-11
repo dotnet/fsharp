@@ -1134,9 +1134,8 @@ type SynPat =
     | Wild of
         range: range
 
-    /// A named pattern 'pat as ident'
-    | Named of
-        pat: SynPat *
+    /// A name pattern 'ident'
+    | Name of
         ident: Ident *
         isSelfIdentifier: bool *
         accessibility: SynAccess option *
@@ -1163,6 +1162,12 @@ type SynPat =
     /// A conjunctive pattern 'pat1 & pat2'
     | Ands of
         pats: SynPat list *
+        range: range
+
+    /// A conjunctive pattern 'pat1 as pat2'
+    | As of
+        lhsPat: SynPat *
+        rhsPat: SynPat *
         range: range
 
     /// A long identifier pattern possibly with argument patterns
