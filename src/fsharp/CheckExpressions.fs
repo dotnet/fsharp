@@ -4830,10 +4830,9 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         match pat with
         | SynPat.IsInst(_, m) ->
             (fun _ -> TPat_isinst (srcTy, tgtTy, None, m)), (tpenv, names, takenNames)
-        | SynPat.As (SynPat.IsInst _, SynPat.Name(id, isMemberThis, vis, _), m) ->
-            let bindf, names, takenNames = TcPatBindingName cenv env id tgtTy isMemberThis vis None vFlags (names, takenNames)
-            (fun values -> TPat_isinst (srcTy, tgtTy, Some(bindf values), m)),
-            (tpenv, names, takenNames)
+        | SynPat.As (SynPat.IsInst _, p, m) ->
+            let pat, acc = TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
+            (fun values -> TPat_isinst (srcTy, tgtTy, Some (pat values), m)), acc
         | _ -> failwith "TcPat"
 
     | SynPat.As (p, SynPat.Name (id, isMemberThis, vis, m), _)
