@@ -440,9 +440,63 @@ let ``As 04 - duplicate type testing`` () =
 match Unchecked.defaultof<System.ValueType> with
 | :? System.Enum as (a & b) -> let c = a = b in ()
 | :? System.Enum as (:? System.ConsoleKey as (d & e)) -> let f = d + e + enum 1 in ()
-| _ -> ()
+| g -> ()
 """
-    assertHasSymbolUsages ["a"; "b"; "c"; "d"; "e"; "f"] checkResults
+    assertHasSymbolUsages ["a"; "b"; "c"; "d"; "e"; "f"; "g"] checkResults
     dumpErrors checkResults |> shouldEqual [
         "(4,2--4,85): This rule will never be matched"
     ]
+
+[<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
+let ``As 05 - inferred type testing`` () =
+    let _, checkResults = getParseAndCheckResults """
+match Unchecked.defaultof<obj> with
+| :? _ as a -> let _ = a in ()
+
+match Unchecked.defaultof<int> with
+| :? _ as z -> let _ = z in ()
+"""
+    assertHasSymbolUsages ["a"] checkResults
+    dumpErrors checkResults |> shouldEqual [
+        "(2,6--2,25): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+        "(6,2--6,6): The type 'int' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
+    ]
+
+[<Test>]
+let ``As 06 - completeness`` () =
+    let _, checkResults = getParseAndCheckResults """
+match Unchecked.defaultof<bool> with
+| true as a -> if a then ()
+| b as false -> if not b then ()
+
+match Unchecked.defaultof<bool> with
+| c as true as d -> if c && d then ()
+| e as (f as false) -> if e || f then ()
+
+match Unchecked.defaultof<bool> with
+| (g & h) as (i as true) as (_ as j) -> if g && h && i && j then ()
+| k & l as (m as (false as n)) as (o as _) -> if k || l || m || n || o then ()
+"""
+    assertHasSymbolUsages (List.map string ['a'..'o']) checkResults
+    dumpErrors checkResults |> shouldEqual []
+
+[<Test>]
+let ``As 07 - completeness`` () =
+    let _, checkResults = getParseAndCheckResults """
+match Unchecked.defaultof<bool> with
+| true as a -> if a then ()
+| b as false -> if not b then ()
+
+match Unchecked.defaultof<bool> with
+| c as true as d -> if c && d then ()
+| e as (f as false) -> if e || f then ()
+
+match Unchecked.defaultof<bool> with
+| (g & h) as (i as true) as (_ as j) -> if g && h && i && j then ()
+| k & l as (m as (false as n)) as (o as _) -> if k || l || m || n || o then ()
+"""
+    assertHasSymbolUsages (List.map string ['a'..'o']) checkResults
+    dumpErrors checkResults |> shouldEqual []
