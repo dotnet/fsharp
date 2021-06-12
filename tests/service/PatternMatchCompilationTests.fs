@@ -375,9 +375,6 @@ match A with
     ]
     
 [<Test>]
-#if !NETCOREAPP
-[<Ignore("These tests weren't running on desktop and this test fails")>]
-#endif
 let ``As 01 - names and wildcards`` () =
     let _, checkResults = getParseAndCheckResults """
 match 1 with
@@ -404,7 +401,7 @@ match box 1 with
 | :? int as a -> let b = a + 1 in ()
 | :? uint as (c & d) -> let e = c + d + 2u in ()
 | :? int64 as Id f -> let g = f + 3L in ()
-| :? uint64 as Id h & i -> let z = h + 4UL + i in ()
+| :? uint64 as Id h & i -> let z = h + 4UL + i in () // (:? uint64 as Id h) & (i : obj)
 | :? int8 as Id j as k -> let y = j + 5y + k in () // Only the first "as" will have the derived type
 """
     assertHasSymbolUsages (List.map string ['a'..'k']) checkResults
@@ -414,4 +411,38 @@ match box 1 with
         "(8,43--8,44): The type 'obj' does not match the type 'int8'"
         "(8,41--8,42): The type 'obj' does not match the type 'int8'"
         "(3,6--3,11): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+    ]
+    
+[<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
+let ``As 03 - impossible type testing`` () =
+    let _, checkResults = getParseAndCheckResults """
+match Unchecked.defaultof<System.ValueType> with
+| :? System.Enum as (:? System.ConsoleKey as a) -> let b = a + enum 1 in ()
+| :? System.Enum as (:? System.ConsoleKey as c) -> let d = c + enum 1 in ()
+| :? System.Enum as (:? int as x) -> let w = x + 1 in ()
+| :? string as y -> let z = y + "" in ()
+| _ -> ()
+"""
+    assertHasSymbolUsages ["a"; "b"; "c"; "d"] checkResults
+    dumpErrors checkResults |> shouldEqual [
+        "(5,21--5,27): Type constraint mismatch. The type 'int' is not compatible with type 'System.Enum' "
+    ]
+
+[<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
+let ``As 04 - duplicate type testing`` () =
+    let _, checkResults = getParseAndCheckResults """
+match Unchecked.defaultof<System.ValueType> with
+| :? System.Enum as (a & b) -> let c = a = b in ()
+| :? System.Enum as (:? System.ConsoleKey as (d & e)) -> let f = d + e + enum 1 in ()
+| _ -> ()
+"""
+    assertHasSymbolUsages ["a"; "b"; "c"; "d"; "e"; "f"] checkResults
+    dumpErrors checkResults |> shouldEqual [
+        "(4,2--4,85): This rule will never be matched"
     ]
