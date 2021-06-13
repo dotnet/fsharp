@@ -985,11 +985,11 @@ module ParsedInput =
                     member _.VisitBinding(_path, defaultTraverse, (SynBinding(headPat = headPat) as synBinding)) = 
                     
                         let visitParam = function
-                            | SynPat.Name (range = range)
-                            | SynPat.As (_, SynPat.Name (range = range), _) when rangeContainsPos range pos -> 
+                            | SynPat.Named (range = range)
+                            | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos -> 
                                 // parameter without type hint, no completion
                                 Some CompletionContext.Invalid 
-                            | SynPat.Typed(SynPat.Name(_, _, _, range), _, _) when rangeContainsPos range pos ->
+                            | SynPat.Typed(SynPat.Named(_, _, _, range), _, _) when rangeContainsPos range pos ->
                                 // parameter with type hint, but we are on its name, no completion
                                 Some CompletionContext.Invalid
                             | _ -> defaultTraverse synBinding
@@ -1014,8 +1014,8 @@ module ParsedInput =
                                     | _ -> visitParam pat
                                 )
                             | _ -> defaultTraverse synBinding
-                        | SynPat.Name(range = range)
-                        | SynPat.As (_, SynPat.Name (range = range), _) when rangeContainsPos range pos ->
+                        | SynPat.Named(range = range)
+                        | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos ->
                             // let fo|o = 1
                             Some CompletionContext.Invalid
                         | _ -> defaultTraverse synBinding 
@@ -1200,7 +1200,7 @@ module ParsedInput =
             | SynPat.Tuple (_,pats, _)
             | SynPat.ArrayOrList (_, pats, _)
             | SynPat.Ands (pats, _) -> List.iter walkPat pats
-            | SynPat.Name (ident, _, _, _) -> addIdent ident
+            | SynPat.Named (ident, _, _, _) -> addIdent ident
             | SynPat.Typed (pat, t, _) ->
                 walkPat pat
                 walkType t

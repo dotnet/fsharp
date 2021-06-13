@@ -90,8 +90,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 match headPat with
                 | SynPat.LongIdent (longIdentWithDots, _, _, _, _, _) ->
                     Some longIdentWithDots.Range
-                | SynPat.As (_, SynPat.Name (ident, false, _, _), _)
-                | SynPat.Name (ident, false, _, _) ->
+                | SynPat.As (_, SynPat.Named (ident, false, _, _), _)
+                | SynPat.Named (ident, false, _, _) ->
                     Some ident.idRange
                 | _ ->
                     None

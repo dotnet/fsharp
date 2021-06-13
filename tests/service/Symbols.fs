@@ -372,7 +372,7 @@ module Strings =
                     | SynModuleDecl.Let (bindings = bindings) ->
                         bindings |> List.tryPick (fun binding ->
                             match binding with
-                            | SynBinding.SynBinding (_,_,_,_,_,_,_,(SynPat.Name _|SynPat.As(_,SynPat.Name _,_)),_,e,_,_) -> Some e
+                            | SynBinding.SynBinding (_,_,_,_,_,_,_,(SynPat.Named _|SynPat.As(_,SynPat.Named _,_)),_,e,_,_) -> Some e
                             | _ -> None)
                     | _ -> None))
         | _ -> None

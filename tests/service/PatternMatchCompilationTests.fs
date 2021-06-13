@@ -376,7 +376,7 @@ match A with
     
 [<Test>]
 let ``As 01 - names and wildcards`` () =
-    let _, checkResults = getParseAndCheckResults """
+    let _, checkResults = getParseAndCheckResultsPreview """
 match 1 with
 | _ as w -> let x = w + 1 in ()
 
@@ -395,11 +395,11 @@ match 3 with
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 02 - type testing`` () =
-    let _, checkResults = getParseAndCheckResults """
+    let _, checkResults = getParseAndCheckResultsPreview """
 let (|Id|) = id
 match box 1 with
 | :? int as a -> let b = a + 1 in ()
-| :? uint as (c & d) -> let e = c + d + 2u in ()
+| c & d as :? uint -> let e = c + d + 2u in ()
 | :? int64 as Id f -> let g = f + 3L in ()
 | :? uint64 as Id h & i -> let z = h + 4UL + i in () // (:? uint64 as Id h) & (i : obj)
 | :? int8 as Id j as k -> let y = j + 5y + k in () // Only the first "as" will have the derived type
@@ -418,7 +418,7 @@ match box 1 with
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 03 - impossible type testing`` () =
-    let _, checkResults = getParseAndCheckResults """
+    let _, checkResults = getParseAndCheckResultsPreview """
 match Unchecked.defaultof<System.ValueType> with
 | :? System.Enum as (:? System.ConsoleKey as a) -> let b = a + enum 1 in ()
 | :? System.Enum as (:? System.ConsoleKey as c) -> let d = c + enum 1 in ()
@@ -436,7 +436,7 @@ match Unchecked.defaultof<System.ValueType> with
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 04 - duplicate type testing`` () =
-    let _, checkResults = getParseAndCheckResults """
+    let _, checkResults = getParseAndCheckResultsPreview """
 match Unchecked.defaultof<System.ValueType> with
 | :? System.Enum as (a & b) -> let c = a = b in ()
 | :? System.Enum as (:? System.ConsoleKey as (d & e)) -> let f = d + e + enum 1 in ()
@@ -452,7 +452,7 @@ match Unchecked.defaultof<System.ValueType> with
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 05 - inferred type testing`` () =
-    let _, checkResults = getParseAndCheckResults """
+    let _, checkResults = getParseAndCheckResultsPreview """
 match Unchecked.defaultof<obj> with
 | :? _ as a -> let _ = a in ()
 
@@ -467,7 +467,7 @@ match Unchecked.defaultof<int> with
 
 [<Test>]
 let ``As 06 - completeness`` () =
-    let _, checkResults = getParseAndCheckResults """
+    let _, checkResults = getParseAndCheckResultsPreview """
 match Unchecked.defaultof<bool> with
 | true as a -> if a then ()
 | b as false -> if not b then ()
@@ -484,19 +484,138 @@ match Unchecked.defaultof<bool> with
     dumpErrors checkResults |> shouldEqual []
 
 [<Test>]
-let ``As 07 - completeness`` () =
-    let _, checkResults = getParseAndCheckResults """
-match Unchecked.defaultof<bool> with
-| true as a -> if a then ()
-| b as false -> if not b then ()
-
-match Unchecked.defaultof<bool> with
-| c as true as d -> if c && d then ()
-| e as (f as false) -> if e || f then ()
-
-match Unchecked.defaultof<bool> with
-| (g & h) as (i as true) as (_ as j) -> if g && h && i && j then ()
-| k & l as (m as (false as n)) as (o as _) -> if k || l || m || n || o then ()
+let ``As 07 - syntactical precedence matrix testing right - total patterns`` () =
+    (*
+bindingPattern:
+  | headBindingPattern
+headBindingPattern:
+  | headBindingPattern AS constrPattern 
+  | headBindingPattern BAR headBindingPattern  
+  | headBindingPattern COLON_COLON  headBindingPattern 
+  | tuplePatternElements  %prec pat_tuple 
+  | conjPatternElements   %prec pat_conj
+  | constrPattern 
+constrPattern:
+  | atomicPatternLongIdent explicitValTyparDecls
+  | atomicPatternLongIdent opt_explicitValTyparDecls2 atomicPatsOrNamePatPairs %prec pat_app 
+  | atomicPatternLongIdent opt_explicitValTyparDecls2 HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs
+  | atomicPatternLongIdent opt_explicitValTyparDecls2 HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs
+  | COLON_QMARK atomTypeOrAnonRecdType  %prec pat_isinst
+  | atomicPattern
+atomicPattern:
+  | quoteExpr
+  | CHAR DOT_DOT CHAR
+  | LBRACE recordPatternElementsAux rbrace
+  | LBRACK listPatternElements RBRACK
+  | LBRACK_BAR listPatternElements  BAR_RBRACK
+  | UNDERSCORE
+  | QMARK ident
+  | atomicPatternLongIdent %prec prec_atompat_pathop
+  | constant
+  | FALSE
+  | TRUE
+  | NULL
+  | LPAREN parenPatternBody rparen
+  | LPAREN parenPatternBody recover
+  | LPAREN error rparen
+  | LPAREN recover
+  | STRUCT LPAREN tupleParenPatternElements rparen
+  | STRUCT LPAREN tupleParenPatternElements recover
+  | STRUCT LPAREN error rparen
+  | STRUCT LPAREN recover 
+parenPatternBody: 
+  | parenPattern 
+  | /* EMPTY */
+parenPattern:
+  | parenPattern AS constrPattern
+  | parenPattern BAR parenPattern
+  | tupleParenPatternElements
+  | conjParenPatternElements
+  | parenPattern COLON  typeWithTypeConstraints %prec paren_pat_colon
+  | attributes parenPattern  %prec paren_pat_attribs
+  | parenPattern COLON_COLON  parenPattern
+  | constrPattern
+    *)
+    let _, checkResults = getParseAndCheckResultsPreview $"""
+let (|Id0|) = ignore
+let (|Id1|) = id
+let (|Id2|) _ = id
+type AAA = {{ aaa : int }}
+let a = 1
+let b as c = 2
+let d as e | d & e = 2
+let f as g, h = 3, 4
+let i as j & k = 5
+let l as Id1 m = 6
+let n as Id2 a o = 8
+let p as {{ aaa = q }} = {{ aaa = 9 }}
+let r as _ = 10
+let s as Id0 = 11
+let t as (u) = 12
+let v as struct(w, x) = 13, 14
+let y as z : int = 15{set { 'a'..'x' } - set [ 'p'; 'v' ] |> Set.map (sprintf " + %c") |> System.String.Concat}
+let _ : AAA = p
+let _ : struct(int * int) = v
+()
 """
-    assertHasSymbolUsages (List.map string ['a'..'o']) checkResults
+    assertHasSymbolUsages (List.map string ['a'..'z']) checkResults
     dumpErrors checkResults |> shouldEqual []
+    
+[<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
+let ``As 08 - syntactical precedence matrix testing right - partial patterns`` () =
+    let _, checkResults = getParseAndCheckResultsPreview $"""
+let (|Unit1|_|) x = if System.Random().NextDouble() < 0.5 then Some Unit1 else None
+let (|Unit2|_|) _ = (|Unit1|_|)
+let (|Id1|_|) x = if System.Random().NextDouble() < 0.5 then Some x else None
+let (|Id2|_|) _ = (|Id1|_|)
+let a = 1
+let b as c::d as e = 2::3
+let f as Unit1 = 4
+let g as Unit2 a h = 5
+let i as Id1 j = 4
+let k as Id2 a l = 5
+box 6 |> function
+| m as :? int ->
+box {{| aaa = 7 |}} |> function
+| n as :? {{| aaa : int |}} ->
+let o as [p] = [8]
+let q as [|r|] = [|9|]
+let s as 10 = 10
+let t as false = false
+let u as true = true
+let v as null = null
+let w as (null) = null
+let x as y : int = 15 + a + b + c + f + g + i + j + k + l + m + p + r + s
+let _ : int list = d
+let _ : int list = e
+let _ as () = h
+let _ : {{| aaa : int |}} = n
+let _ : int list = o
+let _ : int[] = q
+let _ : bool = t
+let _ : bool = u
+let _ : obj = v
+let _ : obj = w
+()
+"""
+    assertHasSymbolUsages (List.map string ['a'..'y']) checkResults
+    dumpErrors checkResults |> shouldEqual [
+        "(7,24--7,25): This expression was expected to have type 'int list' but here has type 'int'"
+        "(7,4--7,18): Incomplete pattern matches on this expression. For example, the value '[]' may indicate a case not covered by the pattern(s)."
+        "(8,4--8,14): Incomplete pattern matches on this expression."
+        "(9,4--9,18): Incomplete pattern matches on this expression."
+        "(10,4--10,14): Incomplete pattern matches on this expression."
+        "(11,4--11,16): Incomplete pattern matches on this expression."
+        "(22,4--22,15): Incomplete pattern matches on this expression. For example, the value '( some-non-null-value )' may indicate a case not covered by the pattern(s)."
+        "(21,4--21,13): Incomplete pattern matches on this expression. For example, the value '( some-non-null-value )' may indicate a case not covered by the pattern(s)."
+        "(20,4--20,13): Incomplete pattern matches on this expression. For example, the value 'false' may indicate a case not covered by the pattern(s)."
+        "(19,4--19,14): Incomplete pattern matches on this expression. For example, the value 'true' may indicate a case not covered by the pattern(s)."
+        "(18,4--18,11): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s)."
+        "(17,4--17,14): Incomplete pattern matches on this expression. For example, the value '[|_; _|]' may indicate a case not covered by the pattern(s)."
+        "(16,4--16,12): Incomplete pattern matches on this expression. For example, the value '[_;_]' may indicate a case not covered by the pattern(s)."
+        "(14,21--14,29): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+        "(12,9--12,17): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+    ]
