@@ -566,7 +566,7 @@ let _ : struct(int * int) = v
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 08 - syntactical precedence matrix testing right - partial patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview $"""
+    let _, checkResults = getParseAndCheckResultsPreview """
 let (|Unit1|_|) x = if System.Random().NextDouble() < 0.5 then Some Unit1 else None
 let (|Unit2|_|) _ = (|Unit1|_|)
 let (|Id1|_|) x = if System.Random().NextDouble() < 0.5 then Some x else None
@@ -579,8 +579,8 @@ let i as Id1 j = 4
 let k as Id2 a l = 5
 box 6 |> function
 | m as :? int ->
-box {{| aaa = 7 |}} |> function
-| n as :? {{| aaa : int |}} ->
+box {| aaa = 7 |} |> function
+| n as :? {| aaa : int |} ->
 let o as [p] = [8]
 let q as [|r|] = [|9|]
 let s as 10 = 10
@@ -592,7 +592,7 @@ let x as y : int = 15 + a + b + c + f + g + i + j + k + l + m + p + r + s
 let _ : int list = d
 let _ : int list = e
 let _ as () = h
-let _ : {{| aaa : int |}} = n
+let _ : {| aaa : int |} = n
 let _ : int list = o
 let _ : int[] = q
 let _ : bool = t
@@ -618,4 +618,232 @@ let _ : obj = w
         "(16,4--16,12): Incomplete pattern matches on this expression. For example, the value '[_;_]' may indicate a case not covered by the pattern(s)."
         "(14,21--14,29): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
         "(12,9--12,17): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+    ]
+
+[<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
+let ``As 09 - syntactical precedence matrix testing right - erroneous patterns`` () =
+    let _, checkResults = getParseAndCheckResultsPreview """
+let (|DefinedPattern|) = id
+let a as 1 = true
+let b as true = 2
+let c as :? int = box 3
+let d as :? int = 4
+let e as UndefinedPattern = 5
+let f as DefinedPattern () = 6
+let g as DefinedPattern = 7
+let h as , i = 8
+let j as : k = 9
+let l as :: m = 10
+let n as & o = 11
+let p as | q = 12
+let r as ( s = 13
+let t as ) u = 14
+let v as struct w = 15
+let x as () = y
+let z as
+"""
+    dumpErrors checkResults |> shouldEqual [
+        "(10,9--10,10): Unexpected symbol ',' in binding"
+        "(11,9--11,10): Unexpected symbol ':' in binding"
+        "(12,9--12,11): Unexpected symbol '::' in binding"
+        "(13,9--13,10): Unexpected symbol '&' in binding"
+        "(14,9--14,10): Unexpected symbol '|' in binding"
+        "(15,13--15,14): Unexpected symbol '=' in pattern. Expected ')' or other token."
+        "(15,9--15,10): Unmatched '('"
+        "(16,0--16,3): Possible incorrect indentation: this token is offside of context started at position (15:10). Try indenting this token further or using standard formatting conventions."
+        "(17,16--17,17): Unexpected identifier in pattern. Expected '(' or other token."
+        "(20,0--20,0): Incomplete structured construct at or before this point in binding"
+        "(3,13--3,17): This expression was expected to have type 'int' but here has type 'bool'"
+        "(3,4--3,10): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s)."
+        "(4,16--4,17): This expression was expected to have type 'bool' but here has type 'int'"
+        "(4,4--4,13): Incomplete pattern matches on this expression. For example, the value 'false' may indicate a case not covered by the pattern(s)."
+        "(5,9--5,15): This runtime coercion or type test from type 'a to int involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
+        "(6,9--6,15): This runtime coercion or type test from type 'a to int involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
+        "(8,29--8,30): This expression was expected to have type 'unit' but here has type 'int'"
+        "(9,26--9,27): This expression was expected to have type 'unit' but here has type 'int'"
+        "(18,14--18,15): The value or constructor 'y' is not defined."
+    ]
+
+[<Test>]
+let ``As 10 - syntactical precedence matrix testing left - total patterns`` () =
+    let _, checkResults = getParseAndCheckResultsPreview $"""
+let (|Id0|) = ignore
+let (|Id1|) = id
+let (|Id2|) _ = id
+type AAA = {{ aaa : int }}
+let a = 1
+let b as c = 2
+let d | d as e = 2
+let f, g as h = 3, 4
+let i & j as k = 5
+let Id1 l as m = 6
+let Id2 a n as o = 8
+let {{ aaa = p }} as q = {{ aaa = 9 }}
+let _ as r = 10
+let Id0 as s = 11
+let (t) as u = 12
+let struct(w, v) as x = 13, 14
+let (y : int) as z = 15{set { 'a'..'v' } - set [ 'h'; 'q' ] |> Set.map (sprintf " + %c") |> System.String.Concat}
+let _ : int * int = h
+let _ : AAA = q
+let _ : struct(int * int) = x
+()
+"""
+    assertHasSymbolUsages (List.map string ['a'..'z']) checkResults
+    dumpErrors checkResults |> shouldEqual []
+    
+[<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
+let ``As 11 - syntactical precedence matrix testing left - partial patterns`` () =
+    let _, checkResults = getParseAndCheckResultsPreview """
+let (|Unit1|_|) x = if System.Random().NextDouble() < 0.5 then Some Unit1 else None
+let (|Unit2|_|) _ = (|Unit1|_|)
+let (|Id1|_|) x = if System.Random().NextDouble() < 0.5 then Some x else None
+let (|Id2|_|) _ = (|Id1|_|)
+let a = 1
+let b as (c::d as e) = 2::3
+let Unit1 as f = 4
+let Unit2 a g as h = 5
+let Id1 i as j = 4
+let Id2 a k as l = 5
+box 6 |> function
+| :? int as m ->
+box {| aaa = 7 |} |> function
+| :? {| aaa : int |} as n ->
+let [o] as p = [8]
+let [|q|] as r = [|9|]
+let 10 as s = 10
+let false as t = false
+let true as u = true
+let null as v = null
+let (null) as w = null
+let (x : int) as y = 15 + a + c + f + g + i + j + k + l + m + p + r + s
+let _ : int list = b
+let _ : int list = d
+let _ : int list = e
+let () as _ = h
+let _ : {| aaa : int |} = n
+let _ : int list = o
+let _ : int[] = q
+let _ : bool = t
+let _ : bool = u
+let _ : obj = v
+let _ : obj = w
+()
+"""
+    assertHasSymbolUsages (List.map string ['a'..'y']) checkResults
+    dumpErrors checkResults |> shouldEqual [
+        "(7,26--7,27): This expression was expected to have type 'int list' but here has type 'int'"
+        "(7,4--7,20): Incomplete pattern matches on this expression. For example, the value '[]' may indicate a case not covered by the pattern(s)."
+        "(8,4--8,14): Incomplete pattern matches on this expression."
+        "(9,4--9,18): Incomplete pattern matches on this expression."
+        "(10,4--10,14): Incomplete pattern matches on this expression."
+        "(11,4--11,16): Incomplete pattern matches on this expression."
+        "(23,38--23,39): The type 'unit' does not match the type 'int'"
+        "(27,14--27,15): This expression was expected to have type 'unit' but here has type 'int'"
+        "(29,19--29,20): This expression was expected to have type 'int list' but here has type 'int'"
+        "(30,16--30,17): This expression was expected to have type 'int []' but here has type 'int'"
+        "(22,4--22,15): Incomplete pattern matches on this expression. For example, the value '( some-non-null-value )' may indicate a case not covered by the pattern(s)."
+        "(21,4--21,13): Incomplete pattern matches on this expression. For example, the value '( some-non-null-value )' may indicate a case not covered by the pattern(s)."
+        "(20,4--20,13): Incomplete pattern matches on this expression. For example, the value 'false' may indicate a case not covered by the pattern(s)."
+        "(19,4--19,14): Incomplete pattern matches on this expression. For example, the value 'true' may indicate a case not covered by the pattern(s)."
+        "(18,4--18,11): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s)."
+        "(17,4--17,14): Incomplete pattern matches on this expression. For example, the value '[|_; _|]' may indicate a case not covered by the pattern(s)."
+        "(16,4--16,12): Incomplete pattern matches on this expression. For example, the value '[_;_]' may indicate a case not covered by the pattern(s)."
+        "(14,21--14,29): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+        "(12,9--12,17): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+    ]
+
+[<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
+let ``As 12 - syntactical precedence matrix testing left - erroneous patterns`` () =
+    let _, checkResults = getParseAndCheckResultsPreview """
+let (|DefinedPattern|) = id
+let 1 as a = true
+let true as b = 2
+let :? int as c = box 3
+let :? int as d = 4
+let UndefinedPattern as e = 5
+let DefinedPattern () as f = 6
+let DefinedPattern as g = 7
+let h, as i = 8
+let j : _ as k = 9
+let l :: as m = 10
+let n & as o = 11
+let p | as q = 12
+let r ( as s = 13
+let t ) as u = 14
+let v struct as w = 15
+let () as x = y
+let z as =
+"""
+    dumpErrors checkResults |> shouldEqual [
+        "(10,7--10,9): Unexpected keyword 'as' in binding"
+        "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token."
+        "(12,9--12,11): Unexpected keyword 'as' in binding"
+        "(13,8--13,10): Unexpected keyword 'as' in binding"
+        "(14,8--14,10): Unexpected keyword 'as' in binding"
+        "(15,8--15,10): Unexpected keyword 'as' in pattern. Expected ')' or other token."
+        "(15,6--15,7): Unmatched '('"
+        "(16,0--16,3): Possible incorrect indentation: this token is offside of context started at position (15:7). Try indenting this token further or using standard formatting conventions."
+        "(16,0--16,3): Unexpected keyword 'let' or 'use' in binding. Expected incomplete structured construct at or before this point or other token."
+        "(15,0--15,3): Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword."
+        "(17,0--17,3): Incomplete structured construct at or before this point in implementation file"
+        "(20,0--20,0): Possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this token further or using standard formatting conventions."
+        "(20,0--20,0): Possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this token further or using standard formatting conventions."
+        "(3,13--3,17): This expression was expected to have type 'int' but here has type 'bool'"
+        "(3,4--3,10): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s)."
+        "(4,16--4,17): This expression was expected to have type 'bool' but here has type 'int'"
+        "(4,4--4,13): Incomplete pattern matches on this expression. For example, the value 'false' may indicate a case not covered by the pattern(s)."
+        "(5,4--5,10): This runtime coercion or type test from type 'a to int involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
+        "(6,4--6,10): This runtime coercion or type test from type 'a to int involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
+        "(8,29--8,30): This expression was expected to have type 'unit' but here has type 'int'"
+        "(9,26--9,27): This expression was expected to have type 'unit' but here has type 'int'"
+        "(15,4--15,5): The pattern discriminator 'r' is not defined."
+        "(15,4--15,12): Incomplete pattern matches on this expression."
+    ]
+
+[<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
+let ``As 13 - syntactical precedence matrix testing - valid syntactic patterns that cause type errors later`` () =
+    let _, checkResults = getParseAndCheckResultsPreview """
+type I() = inherit System.Attribute()
+type M() = inherit I()
+let 'a'..'b' as c = 'd'
+let e as 'f'..'g' = 'h'
+let [<I>] j as k = 1
+let l as [<M>] n = 2
+let <@ o @> as p = 3
+let q as <@ r @> = 4
+let <@@ s @@> as t = 5
+let u as <@@ v @@> = 6
+let ?w as x = 7
+let y as ?z = 8
+()
+"""
+    dumpErrors checkResults |> shouldEqual [
+        "(7,9--7,11): Unexpected symbol '[<' in binding"
+        "(4,4--4,12): This construct is deprecated: Character range matches have been removed in F#. Consider using a 'when' pattern guard instead."
+        "(4,4--4,17): Incomplete pattern matches on this expression. For example, the value '' '' may indicate a case not covered by the pattern(s)."
+        "(5,9--5,17): This construct is deprecated: Character range matches have been removed in F#. Consider using a 'when' pattern guard instead."
+        "(5,4--5,17): Incomplete pattern matches on this expression. For example, the value '' '' may indicate a case not covered by the pattern(s)."
+        "(8,4--8,11): This is not a valid pattern"
+        "(8,4--8,16): Incomplete pattern matches on this expression."
+        "(9,9--9,16): This is not a valid pattern"
+        "(9,4--9,16): Incomplete pattern matches on this expression."
+        "(10,4--10,13): This is not a valid pattern"
+        "(10,4--10,18): Incomplete pattern matches on this expression."
+        "(11,9--11,18): This is not a valid pattern"
+        "(11,4--11,18): Incomplete pattern matches on this expression."
+        "(12,4--12,6): Optional arguments are only permitted on type members"
+        "(13,9--13,11): Optional arguments are only permitted on type members"
     ]
