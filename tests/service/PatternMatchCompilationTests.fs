@@ -847,3 +847,21 @@ let y as ?z = 8
         "(12,4--12,6): Optional arguments are only permitted on type members"
         "(13,9--13,11): Optional arguments are only permitted on type members"
     ]
+
+[<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
+let ``As 14 - limit the right of 'as' patterns to only variable patterns in F# 5`` () =
+    let _, checkResults = getParseAndCheckResults """
+let f : obj -> _ =
+    function
+    | :? int as i -> i
+    | :? uint as _ -> 0
+    | a as :? int64 -> -1
+()
+"""
+    assertHasSymbolUsages ["i"] checkResults
+    dumpErrors checkResults |> shouldEqual [
+        "(5,6--5,18): Feature 'non-variable patterns to the right of 'as' patterns' is not available in F# 5.0. Please use language version 'preview' or greater."
+    ]
