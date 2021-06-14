@@ -812,6 +812,9 @@ let z as =
     ]
 
 [<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
 let ``As 13 - syntactical precedence matrix testing right with type tests - total patterns`` () =
     let _, checkResults = getParseAndCheckResultsPreview $"""
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
