@@ -146,7 +146,7 @@ type SafeUnmanagedMemoryStream =
     val mutable private holder: obj
     val mutable private isDisposed: bool
 
-    new (addr, length, holder) =
+    new (addr: nativeptr<byte>, length: int64, holder: obj) =
         {
             inherit UnmanagedMemoryStream(addr, length)
             holder = holder
@@ -160,6 +160,13 @@ type SafeUnmanagedMemoryStream =
             isDisposed = false
         }
 
+    interface IDisposable with
+        override x.Dispose() =
+            x.Dispose(true)
+
+    override x.Finalize() =
+        x.Dispose()
+
     override x.Dispose disposing =
         base.Dispose disposing
         x.holder <- null // Null out so it can be collected.
@@ -167,20 +174,26 @@ type SafeUnmanagedMemoryStream =
 type internal MemoryMappedStream(mmf: MemoryMappedFile, length: int64) = 
     inherit Stream()
 
-    let viewStream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
+    let viewAccessor = mmf.CreateViewAccessor(0L, length, MemoryMappedFileAccess.Read)
 
-    member _.ViewStream = viewStream
+    let stream = 
+        new SafeUnmanagedMemoryStream(
+            NativePtr.ofNativeInt (viewAccessor.SafeMemoryMappedViewHandle.DangerousGetHandle()),
+            length,
+            (mmf, viewAccessor))
 
-    override x.CanRead = viewStream.CanRead
-    override x.CanWrite = viewStream.CanWrite
-    override x.CanSeek = viewStream.CanSeek
-    override x.Position with get() = viewStream.Position and set v = (viewStream.Position <- v)
-    override x.Length = viewStream.Length
-    override x.Flush() = viewStream.Flush()
-    override x.Seek(offset, origin) = viewStream.Seek(offset, origin)
-    override x.SetLength(value) = viewStream.SetLength(value)
-    override x.Write(buffer, offset, count) = viewStream.Write(buffer, offset, count)
-    override x.Read(buffer, offset, count) = viewStream.Read(buffer, offset, count)
+    member _.ViewAccessor = viewAccessor
+
+    override _.CanRead = stream.CanRead
+    override _.CanWrite = stream.CanWrite
+    override _.CanSeek = stream.CanSeek
+    override _.Position with get() = stream.Position and set v = (stream.Position <- v)
+    override _.Length = stream.Length
+    override _.Flush() = stream.Flush()
+    override _.Seek(offset, origin) = stream.Seek(offset, origin)
+    override _.SetLength(value) = stream.SetLength(value)
+    override _.Write(buffer, offset, count) = stream.Write(buffer, offset, count)
+    override _.Read(buffer, offset, count) = stream.Read(buffer, offset, count)
 
     override x.Finalize() =
         x.Dispose()
@@ -188,9 +201,9 @@ type internal MemoryMappedStream(mmf: MemoryMappedFile, length: int64) =
     interface IDisposable with
         override x.Dispose() =
             GC.SuppressFinalize x
+            stream.Dispose()
+            viewAccessor.Dispose()
             mmf.Dispose()
-            viewStream.Dispose()
-
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
@@ -688,7 +701,7 @@ module public StreamExtensions =
             | :? MemoryMappedStream as mmfs ->
                 let length = mmfs.Length
                 RawByteMemory(
-                    NativePtr.ofNativeInt (mmfs.ViewStream.SafeMemoryMappedViewHandle.DangerousGetHandle()),
+                    NativePtr.ofNativeInt (mmfs.ViewAccessor.SafeMemoryMappedViewHandle.DangerousGetHandle()),
                     int length,
                     mmfs) :> ByteMemory
 

@@ -3999,7 +3999,7 @@ let OpenILModuleReader fileName opts =
 
                 // For metadata-only, always use a temporary, short-lived PE file reader, preferably over a memory mapped file.
                 // Then use the metadata blob as the long-lived memory resource.
-                let disposer, pefileEager = getBinaryFile fullPath false
+                let disposer, pefileEager = getBinaryFile fullPath true
                 use _disposer = disposer
                 let (metadataPhysLoc, metadataSize, peinfo, pectxtEager, pevEager, _pdb) = openPEFileReader (fullPath, pefileEager, None, false)
                 let mdfile =
@@ -4038,7 +4038,7 @@ let OpenILModuleReader fileName opts =
         // still use an in-memory ByteFile
         let pefile =
             if not runningOnMono && (alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath) then
-                let _, pefile = getBinaryFile fullPath false
+                let _, pefile = getBinaryFile fullPath true
                 pefile
             else
                 createByteFileChunk opts fullPath None
