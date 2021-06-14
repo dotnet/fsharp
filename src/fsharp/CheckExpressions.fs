@@ -4827,16 +4827,14 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         (fun _ -> TPat_wild m), (tpenv, names, takenNames)
 
     | SynPat.IsInst(cty, m)
-    | SynPat.As (SynPat.IsInst(cty, m), _, _)
-    | SynPat.As (_, SynPat.IsInst(cty, m), _) ->
+    | SynPat.As (SynPat.IsInst(cty, m), _, _) ->
         let srcTy = ty
         let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOKButWarnIfNotRigid CheckCxs ItemOccurence.UseInType env tpenv cty
         TcRuntimeTypeTest (*isCast*)false (*isOperator*)true cenv env.DisplayEnv m tgtTy srcTy
         match pat with
         | SynPat.IsInst(_, m) ->
             (fun _ -> TPat_isinst (srcTy, tgtTy, None, m)), (tpenv, names, takenNames)
-        | SynPat.As (SynPat.IsInst _, p, m)
-        | SynPat.As (p, SynPat.IsInst _, m) ->
+        | SynPat.As (SynPat.IsInst _, p, m) ->
             let pat, acc = TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) tgtTy p
             (fun values -> TPat_isinst (srcTy, tgtTy, Some (pat values), m)), acc
         | _ -> failwith "TcPat"
