@@ -857,14 +857,6 @@ type internal ByteBuffer =
         i.Copy(0, buf.bbArray, buf.bbCurrent, n)
         buf.bbCurrent <- newSize
 
-    member buf.EmitByteBuffer (i:ByteBuffer) =
-        buf.CheckDisposed()
-        let n = i.Position
-        let newSize = buf.bbCurrent + n
-        buf.Ensure newSize
-        Bytes.blit i.bbArray 0 buf.bbArray buf.bbCurrent n
-        buf.bbCurrent <- newSize
-
     member buf.EmitInt32AsUInt16 n =
         buf.CheckDisposed()
         let newSize = buf.bbCurrent + 2

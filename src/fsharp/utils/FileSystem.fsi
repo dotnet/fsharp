@@ -364,9 +364,6 @@ type internal ByteBuffer =
     member EmitByteMemory : ReadOnlyByteMemory -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member EmitByteBuffer : ByteBuffer -> unit
-
-    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitInt32 : int32 -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
