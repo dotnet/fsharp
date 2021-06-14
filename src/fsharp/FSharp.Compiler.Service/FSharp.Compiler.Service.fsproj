@@ -39,6 +39,7 @@
     <NuspecProperty Include="MicrosoftBuildTasksCorePackageVersion=$(MicrosoftBuildTasksCoreVersion)" />
     <NuspecProperty Include="MicrosoftBuildUtilitiesCorePackageVersion=$(MicrosoftBuildUtilitiesCoreVersion)" />
     <NuspecProperty Include="SystemBuffersPackageVersion=$(SystemBuffersVersion)" />
+    <NuspecProperty Include="SystemRuntimeCompilerServicesUnsafePackageVersion=$(SystemRuntimeCompilerServicesUnsafeVersion)" />
     <NuspecProperty Include="SystemCollectionsImmutablePackageVersion=$(SystemCollectionsImmutableVersion)" />
     <NuspecProperty Include="SystemDiagnosticsProcessPackageVersion=$(SystemDiagnosticsProcessVersion)" />
     <NuspecProperty Include="SystemDiagnosticsTraceSourcePackageVersion=$(SystemDiagnosticsTraceSourceVersion)" />
@@ -983,6 +984,7 @@
     <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadVersion)" />
     <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolVersion)" />
     <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />

@@ -10,6 +10,7 @@
             <dependency id="Microsoft.Build.Tasks.Core" version="$MicrosoftBuildTasksCorePackageVersion$" exclude="Build,Analyzers" />
             <dependency id="Microsoft.Build.Utilities.Core" version="$MicrosoftBuildUtilitiesCorePackageVersion$" exclude="Build,Analyzers" />
             <dependency id="System.Buffers" version="$SystemBuffersPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Runtime.CompilerServices.Unsafe" version="$SystemRuntimeCompilerServicesUnsafePackageVersion$" exclude="Build,Analyzers" />
             <dependency id="System.Collections.Immutable" version="$SystemCollectionsImmutablePackageVersion$" exclude="Build,Analyzers" />
             <dependency id="System.Diagnostics.Process" version="$SystemDiagnosticsProcessPackageVersion$" exclude="Build,Analyzers" />
             <dependency id="System.Diagnostics.TraceSource" version="$SystemDiagnosticsTraceSourcePackageVersion$" exclude="Build,Analyzers" />

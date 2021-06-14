@@ -75,6 +75,7 @@
       https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json;
     </RestoreSources>
     <!-- System.* packages -->
+    <SystemRuntimeCompilerServicesUnsafeVersion>4.7.1</SystemRuntimeCompilerServicesUnsafeVersion>
     <SystemBuffersVersion>4.5.1</SystemBuffersVersion>
     <SystemCollectionsImmutableVersion>5.0.0</SystemCollectionsImmutableVersion>
     <SystemConsoleVersion>4.3.0</SystemConsoleVersion>
