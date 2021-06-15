@@ -3657,6 +3657,9 @@ module Optimiations = begin
     let _ = check "opt.oi20c77tb" (0x8000000000000000L >>> 63) (0xFFFFFFFFFFFFFFFFL)
     let _ = check "opt.oi20c77yb" (0x8000000000000000L >>> 64) (0x8000000000000000L)
 
+    let _ = check "opt.oi20c77qc" ('a' + '\025') ('z')
+    let _ = check "opt.oi20c77wc" ('z' - '\025') ('a')
+
 end
 
 
