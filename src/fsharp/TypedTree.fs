@@ -26,7 +26,6 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
-open FSharp.Compiler.IO
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
