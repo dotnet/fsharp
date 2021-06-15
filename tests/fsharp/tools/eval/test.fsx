@@ -1253,7 +1253,6 @@ module EvaluationTests =
         check "vroievr097h" (LanguagePrimitives.CheckedAdditionDynamic 3.0M 4.0M) 7.0M
         check "vroievr097u" (LanguagePrimitives.CheckedAdditionDynamic '3' '\004') '7'
         
-        
         check "vroievr0981" (LanguagePrimitives.SubtractionDynamic 3y 4y) -1y
         check "vroievr0982" (LanguagePrimitives.SubtractionDynamic 3s 4s) -1s
         check "vroievr0983" (LanguagePrimitives.SubtractionDynamic 3 4) -1
@@ -1297,7 +1296,6 @@ module EvaluationTests =
         check "vroievr0912a" (LanguagePrimitives.MultiplyDynamic 3.0 4.0) 12.0
         check "vroievr0912s" (LanguagePrimitives.MultiplyDynamic 3.0f 4.0f) 12.0f
         check "vroievr0912d" (LanguagePrimitives.MultiplyDynamic 3.0M 4.0M) 12.0M
-
 
         check "vroievr0912f" (LanguagePrimitives.CheckedMultiplyDynamic 3y 4y) 12y
         check "vroievr0912g" (LanguagePrimitives.CheckedMultiplyDynamic 3s 4s) 12s
