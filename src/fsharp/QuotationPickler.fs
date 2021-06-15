@@ -246,6 +246,10 @@ let SerializedReflectedDefinitionsResourceNameBase = "ReflectedDefinitions"
 
 let freshVar (n, ty, mut) = { vText=n; vType=ty; vMutable=mut }
 
+/// Arbitrary value
+[<Literal>]
+let PickleBufferCapacity = 100000
+
 module SimplePickle =
 
     type Table<'T> =

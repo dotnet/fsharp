@@ -780,9 +780,13 @@ let p_encoded_simpletyp x st = p_int x st
 let p_encoded_anoninfo x st = p_int x st
 let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs st.osimpletys st.oscope x) st
 
+/// Arbitrary value
+[<Literal>]
+let PickleBufferCapacity = 100000
+
 let pickleObjWithDanglingCcus inMem file g scope p x =
   let st1 =
-      { os = ByteBuffer.Create(100000, useArrayPool = true)
+      { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
         oscope=scope
         occus= Table<_>.Create "occus"
         oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), (fun osgn -> osgn), "otycons")
@@ -807,7 +811,7 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
     st1.occus, sizes, st1.ostrings, st1.opubpaths, st1.onlerefs, st1.osimpletys, st1.os.AsMemory()
 
   let st2 =
-   { os = ByteBuffer.Create(100000, useArrayPool = true)
+   { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
      oscope=scope
      occus= Table<_>.Create "occus (fake)"
      oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), (fun osgn -> osgn), "otycons")

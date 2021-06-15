@@ -48,7 +48,10 @@ let dw0 n = byte (n &&& 0xFFL)
 let bitsOfSingle (x: float32) = System.BitConverter.ToInt32(System.BitConverter.GetBytes x, 0)
 let bitsOfDouble (x: float) = System.BitConverter.DoubleToInt64Bits x
 
-let emitBytesViaBuffer f = use bb = ByteBuffer.Create 10 in f bb; bb.AsMemory().ToArray()
+/// Arbitrary value
+[<Literal>]
+let EmitBytesViaBufferCapacity = 10
+let emitBytesViaBuffer f = use bb = ByteBuffer.Create EmitBytesViaBufferCapacity in f bb; bb.AsMemory().ToArray()
 
 /// Alignment and padding
 let align alignment n = ((n + alignment - 1) / alignment) * alignment
@@ -1453,6 +1456,10 @@ type ExceptionClauseKind =
 
 type ExceptionClauseSpec = (int * int * int * int * ExceptionClauseKind)
 
+/// Arbitrary value
+[<Literal>]
+let CodeBufferCapacity = 200 
+
 type CodeBuffer =
 
     // --------------------------------------------------------------------
@@ -1478,7 +1485,7 @@ type CodeBuffer =
 
     static member Create _nm =
         { seh = []
-          code= ByteBuffer.Create 200
+          code= ByteBuffer.Create CodeBufferCapacity
           reqdBrFixups=[]
           reqdStringFixupsInMethod=[]
           availBrFixups = Dictionary<_, _>(10, HashIdentity.Structural)
@@ -2870,6 +2877,16 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     GenTypeDefsPass4 [] cenv tds
     reportTime cenv.showTimes "Module Generation Pass 4"
 
+/// Arbitrary value
+[<Literal>]
+let CodeChunkCapacity = 40000
+/// Arbitrary value
+[<Literal>]
+let DataCapacity = 200
+/// Arbitrary value
+[<Literal>]
+let ResourceCapacity = 200
+
 let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes) (m : ILModuleDef) cilStartAddress normalizeAssemblyRefs =
     let isDll = m.IsDLL
 
@@ -2881,10 +2898,10 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
           desiredMetadataVersion=desiredMetadataVersion
           requiredDataFixups= requiredDataFixups
           requiredStringFixups = []
-          codeChunks=ByteBuffer.Create(40000, useArrayPool = true)
+          codeChunks=ByteBuffer.Create(CodeChunkCapacity, useArrayPool = true)
           nextCodeAddr = cilStartAddress
-          data = ByteBuffer.Create 200
-          resources = ByteBuffer.Create 200
+          data = ByteBuffer.Create DataCapacity
+          resources = ByteBuffer.Create ResourceCapacity
           tables=
               Array.init 64 (fun i ->
                   if (i = TableNames.AssemblyRef.Index ||
@@ -3013,6 +3030,13 @@ module FileSystemUtilities =
         ignore filename
 #endif
         ()
+
+/// Arbitrary value
+[<Literal>]
+let TableCapacity = 20000
+/// Arbitrary value
+[<Literal>]
+let MetadataCapacity = 500000
 
 let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes) modul cilStartAddress normalizeAssemblyRefs =
 
@@ -3241,7 +3265,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
             codedBigness 2 TableNames.AssemblyRef ||
             codedBigness 2 TableNames.TypeRef
 
-        use tablesBuf = ByteBuffer.Create(20000, useArrayPool = true)
+        use tablesBuf = ByteBuffer.Create(TableCapacity, useArrayPool = true)
 
         // Now the coded tables themselves - first the schemata header
         tablesBuf.EmitIntsAsBytes
@@ -3320,7 +3344,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
     reportTime showTimes "Layout Metadata"
 
     let metadata, guidStart =
-      use mdbuf = ByteBuffer.Create(500000, useArrayPool = true)
+      use mdbuf = ByteBuffer.Create(MetadataCapacity, useArrayPool = true)
       mdbuf.EmitIntsAsBytes
         [| 0x42; 0x53; 0x4a; 0x42 // Magic signature
            0x01; 0x00 // Major version

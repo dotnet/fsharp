@@ -882,11 +882,11 @@ type internal ByteBuffer =
         buf.CheckDisposed()
         buf.bbCurrent
 
-    static member Create(sz, useArrayPool) =
+    static member Create(capacity, useArrayPool) =
         let useArrayPool = defaultArg useArrayPool false
         { useArrayPool = useArrayPool
           isDisposed = false
-          bbArray = if useArrayPool then ArrayPool.Shared.Rent sz else Bytes.zeroCreate sz
+          bbArray = if useArrayPool then ArrayPool.Shared.Rent capacity else Bytes.zeroCreate capacity
           bbCurrent = 0 }
 
     interface IDisposable with

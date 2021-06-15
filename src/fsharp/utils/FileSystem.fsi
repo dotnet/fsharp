@@ -382,7 +382,7 @@ type internal ByteBuffer =
     member EmitUInt16 : uint16 -> unit
 
     member Position : int
-    static member Create : int * ?useArrayPool: bool -> ByteBuffer
+    static member Create : capacity: int * ?useArrayPool: bool -> ByteBuffer
 
 [<Sealed>]
 type internal ByteStorage =
