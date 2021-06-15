@@ -1236,6 +1236,7 @@ module EvaluationTests =
         check "vroievr097q" (LanguagePrimitives.AdditionDynamic 3.0 4.0) 7.0
         check "vroievr097w" (LanguagePrimitives.AdditionDynamic 3.0f 4.0f) 7.0f
         check "vroievr097e" (LanguagePrimitives.AdditionDynamic 3.0M 4.0M) 7.0M
+        check "vroievr097n" (LanguagePrimitives.AdditionDynamic '3' '\004') '7'
 
         check "vroievr097r" (LanguagePrimitives.CheckedAdditionDynamic 3y 4y) 7y
         check "vroievr097t" (LanguagePrimitives.CheckedAdditionDynamic 3s 4s) 7s
@@ -1250,6 +1251,38 @@ module EvaluationTests =
         check "vroievr097f" (LanguagePrimitives.CheckedAdditionDynamic 3.0 4.0) 7.0
         check "vroievr097g" (LanguagePrimitives.CheckedAdditionDynamic 3.0f 4.0f) 7.0f
         check "vroievr097h" (LanguagePrimitives.CheckedAdditionDynamic 3.0M 4.0M) 7.0M
+        check "vroievr097u" (LanguagePrimitives.CheckedAdditionDynamic '3' '\004') '7'
+        
+        
+        check "vroievr0981" (LanguagePrimitives.SubtractionDynamic 3y 4y) -1y
+        check "vroievr0982" (LanguagePrimitives.SubtractionDynamic 3s 4s) -1s
+        check "vroievr0983" (LanguagePrimitives.SubtractionDynamic 3 4) -1
+        check "vroievr0984" (LanguagePrimitives.SubtractionDynamic 3L 4L) -1L
+        check "vroievr0985" (LanguagePrimitives.SubtractionDynamic 3n 4n) -1n
+        check "vroievr0986" (LanguagePrimitives.SubtractionDynamic 3uy 4uy) -1uy
+        check "vroievr0987" (LanguagePrimitives.SubtractionDynamic 3us 4us) -1us
+        check "vroievr0988" (LanguagePrimitives.SubtractionDynamic 3u 4u) -1u
+        check "vroievr0989" (LanguagePrimitives.SubtractionDynamic 3UL 4UL) -1UL
+        check "vroievr0980" (LanguagePrimitives.SubtractionDynamic 3un 4un) -1un
+        check "vroievr098q" (LanguagePrimitives.SubtractionDynamic 3.0 4.0) -1.0
+        check "vroievr098w" (LanguagePrimitives.SubtractionDynamic 3.0f 4.0f) -1.0f
+        check "vroievr098e" (LanguagePrimitives.SubtractionDynamic 3.0M 4.0M) -1.0M
+        check "vroievr098n" (LanguagePrimitives.SubtractionDynamic '3' '\004') '/'
+
+        check "vroievr098r" (LanguagePrimitives.CheckedSubtractionDynamic 3y 4y) -1y
+        check "vroievr098t" (LanguagePrimitives.CheckedSubtractionDynamic 3s 4s) -1s
+        check "vroievr098y" (LanguagePrimitives.CheckedSubtractionDynamic 3 4) -1
+        check "vroievr098u" (LanguagePrimitives.CheckedSubtractionDynamic 3L 4L) -1L
+        check "vroievr098i" (LanguagePrimitives.CheckedSubtractionDynamic 3n 4n) -1n
+        check "vroievr098o" (LanguagePrimitives.CheckedSubtractionDynamic 3uy 4uy) -1uy
+        check "vroievr098p" (LanguagePrimitives.CheckedSubtractionDynamic 3us 4us) -1us
+        check "vroievr098a" (LanguagePrimitives.CheckedSubtractionDynamic 3u 4u) -1u
+        check "vroievr098s" (LanguagePrimitives.CheckedSubtractionDynamic 3UL 4UL) -1UL
+        check "vroievr098d" (LanguagePrimitives.CheckedSubtractionDynamic 3un 4un) -1un
+        check "vroievr098f" (LanguagePrimitives.CheckedSubtractionDynamic 3.0 4.0) -1.0
+        check "vroievr098g" (LanguagePrimitives.CheckedSubtractionDynamic 3.0f 4.0f) -1.0f
+        check "vroievr098h" (LanguagePrimitives.CheckedSubtractionDynamic 3.0M 4.0M) -1.0M
+        check "vroievr098u" (LanguagePrimitives.CheckedSubtractionDynamic '3' '\004') '/'
 
         check "vroievr0912q" (LanguagePrimitives.MultiplyDynamic 3y 4y) 12y
         check "vroievr0912w" (LanguagePrimitives.MultiplyDynamic 3s 4s) 12s
