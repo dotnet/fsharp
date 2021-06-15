@@ -374,7 +374,7 @@ module SimplePickle =
 
     let pickle_obj p x =
         let st1 =
-            { os = ByteBuffer.Create(100000, useArrayPool = true)
+            { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
               ostrings=Table<_>.Create() }
         let stringTab, phase1bytes =
             p x st1
@@ -383,7 +383,7 @@ module SimplePickle =
         let phase2data = (stringTab, phase1bytes)
 
         let st2 =
-           { os = ByteBuffer.Create(100000, useArrayPool = true)
+           { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
              ostrings=Table<_>.Create() }
         let phase2bytes =
             p_tup2 (p_list prim_pstring) p_memory phase2data st2
