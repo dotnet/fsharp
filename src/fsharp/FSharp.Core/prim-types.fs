@@ -3979,6 +3979,7 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint and ^U : unativeint = (# "sub" x y : unativeint #)
              when ^T : int16       and ^U : int16      = (# "conv.i2" (# "sub" x y : int32 #) : int16 #)
              when ^T : uint16      and ^U : uint16     = (# "conv.u2" (# "sub" x y : uint32 #) : uint16 #)
+             when ^T : char        and ^U : char       = (# "conv.u2" (# "sub" x y : uint32 #) : char #)
              when ^T : sbyte       and ^U : sbyte      = (# "conv.i1" (# "sub" x y : int32 #) : sbyte #)
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "sub" x y : uint32 #) : byte #)
              when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Subtraction((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
