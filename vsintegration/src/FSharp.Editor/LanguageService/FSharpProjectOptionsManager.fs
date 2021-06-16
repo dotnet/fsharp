@@ -336,7 +336,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                                 doc.ToFSharpDocument()
                             )
                         
-                        do! checkerProvider.Checker.UpdateDocuments(projectOptions, fsharpDocs)
+                        do! checkerProvider.Checker.UpdateBackgroundDocuments(projectOptions, fsharpDocs)
 
                     let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
@@ -359,7 +359,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                                 let doc = project.GetDocument(docId)
                                 doc.ToFSharpDocument())
 
-                        do! checkerProvider.Checker.UpdateDocuments(projectOptions, fsharpDocs)
+                        do! checkerProvider.Checker.UpdateBackgroundDocuments(projectOptions, fsharpDocs)
 
                         cache.[projectId] <- (project, parsingOptions, projectOptions)
                         

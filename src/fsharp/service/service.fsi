@@ -363,11 +363,11 @@ type public FSharpChecker =
     member InvalidateConfiguration: options: FSharpProjectOptions * ?userOpName: string -> unit
 
     /// <summary>
-    /// This function is called when the documents of a particular project need to be updated in a batch.
+    /// This function is called when the documents of a particular project need to be updated in a batch for the background build.
     /// </summary>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="docs">FSharp documents</param>
-    member UpdateDocuments: options: FSharpProjectOptions * docs: FSharpDocument seq -> Async<unit>
+    member UpdateBackgroundDocuments: options: FSharpProjectOptions * docs: FSharpDocument seq -> Async<unit>
 
     /// <summary>Clear the internal cache of the given projects.</summary>
     /// <param name="options">The given project options.</param>

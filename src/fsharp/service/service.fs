@@ -1227,7 +1227,7 @@ type FSharpChecker(legacyReferenceResolver,
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.InvalidateConfiguration(options, userOpName)
 
-    member _.UpdateDocuments(options: FSharpProjectOptions, docs) =
+    member _.UpdateBackgroundDocuments(options: FSharpProjectOptions, docs) =
         backgroundCompiler.UpdateDocuments(options, docs)
         |> Async.AwaitNodeCode
 
