@@ -698,9 +698,9 @@ type BackgroundCompiler(
 
                 let! tcInfo, tcInfoExtras = tcProj.GetOrComputeTcInfoWithExtras()
 
-                let tcResolutionsRev = tcInfoExtras.tcResolutionsRev
-                let tcSymbolUsesRev = tcInfoExtras.tcSymbolUsesRev
-                let tcOpenDeclarationsRev = tcInfoExtras.tcOpenDeclarationsRev
+                let tcResolutions = tcInfoExtras.tcResolutions
+                let tcSymbolUses = tcInfoExtras.tcSymbolUses
+                let tcOpenDeclarations = tcInfoExtras.tcOpenDeclarations
                 let latestCcuSigForFile = tcInfo.latestCcuSigForFile
                 let tcState = tcInfo.tcState
                 let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
@@ -730,12 +730,12 @@ type BackgroundCompiler(
                             tcState.Ccu, 
                             tcProj.TcImports, 
                             tcEnvAtEnd.AccessRights,
-                            List.head tcResolutionsRev, 
-                            List.head tcSymbolUsesRev,
+                            tcResolutions, 
+                            tcSymbolUses,
                             tcEnvAtEnd.NameEnv,
                             loadClosure, 
                             latestImplementationFile,
-                            List.head tcOpenDeclarationsRev) 
+                            tcOpenDeclarations) 
                 return (parseResults, typedResults)
           }
 
@@ -799,9 +799,9 @@ type BackgroundCompiler(
             let errorOptions = tcProj.TcConfig.errorSeverityOptions
             let fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation
 
-            let! tcInfo, tcInfoExtras = tcProj.GetOrComputeTcInfoWithExtras()
+            // Although we do not use 'tcInfoExtras', computing it will make sure we get an extra info.
+            let! tcInfo, _tcInfoExtras = tcProj.GetOrComputeTcInfoWithExtras()
 
-            let tcSymbolUses = tcInfoExtras.TcSymbolUses
             let topAttribs = tcInfo.topAttribs
             let tcState = tcInfo.tcState
             let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
@@ -817,7 +817,7 @@ type BackgroundCompiler(
                     keepAssemblyContents,
                     diagnostics, 
                     Some(tcProj.TcGlobals, tcProj.TcImports, tcState.Ccu, tcState.CcuSig, 
-                        tcSymbolUses, topAttribs, tcAssemblyDataOpt, ilAssemRef, 
+                        (Choice1Of2 builder), topAttribs, tcAssemblyDataOpt, ilAssemRef, 
                         tcEnvAtEnd.AccessRights, tcAssemblyExprOpt,
                         Array.ofList tcDependencyFiles,
                         options))
