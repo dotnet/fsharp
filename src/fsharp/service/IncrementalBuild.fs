@@ -968,7 +968,7 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
         let syntaxTree = GetSyntaxTree mainState fileInfo
         GraphNode(node {
             let! prevBoundModel = prevBoundModelGraphNode.GetOrComputeValue()
-            return! TypeCheckTask mainState.enablePartialTypeChecking prevBoundModel syntaxTree
+            return! TypeCheckTask (mainState.enablePartialTypeChecking && not syntaxTree.Document.IsOpen) prevBoundModel syntaxTree
         })
 
     static let rec createFinalizeBoundModelGraphNode mainState (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) =
