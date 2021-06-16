@@ -46,19 +46,19 @@ module NativePtr =
     
     [<NoDynamicInvocation>]
     [<CompiledName("GetPointerInlined")>]
-    let inline get (address: nativeptr<'T>) index = (# "ldobj !0" type ('T) (add address index) : 'T #) 
+    let inline get (address: nativeptr<'T>) index = (# "ldobj !0" type('T) (add address index) : 'T #) 
     
     [<NoDynamicInvocation>]
     [<CompiledName("SetPointerInlined")>]
-    let inline set (address: nativeptr<'T>) index (value: 'T) = (# "stobj !0" type ('T) (add address index) value #)  
+    let inline set (address: nativeptr<'T>) index (value: 'T) = (# "stobj !0" type('T) (add address index) value #)  
 
     [<NoDynamicInvocation>]
     [<CompiledName("ReadPointerInlined")>]
-    let inline read (address: nativeptr<'T>) = (# "ldobj !0" type ('T) address : 'T #) 
+    let inline read (address: nativeptr<'T>) = (# "ldobj !0" type('T) address : 'T #) 
     
     [<NoDynamicInvocation>]
     [<CompiledName("WritePointerInlined")>]
-    let inline write (address: nativeptr<'T>) (value : 'T) = (# "stobj !0" type ('T) address value #)  
+    let inline write (address: nativeptr<'T>) (value : 'T) = (# "stobj !0" type('T) address value #)  
     
     [<NoDynamicInvocation>]
     [<CompiledName("StackAllocate")>]
