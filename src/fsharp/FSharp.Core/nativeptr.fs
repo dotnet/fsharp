@@ -60,3 +60,27 @@ module NativePtr =
     [<NoDynamicInvocation>]
     [<CompiledName("ToByRefInlined")>]
     let inline toByRef (address: nativeptr<'T>) : byref<'T> = (# "" address : 'T byref  #)
+    
+    [<NoDynamicInvocation>]
+    [<CompiledName("Zero")>]
+    let inline zero<'T when 'T : unmanaged> : nativeptr<'T> = (# "ldnull" : nativeptr<'T> #)
+    
+    [<NoDynamicInvocation>]
+    [<CompiledName("IsZero")>]
+    let inline isZero<'T when 'T : unmanaged> (ptr : nativeptr<'T>) = (# "ceq" zero<'T> ptr : bool #)
+    
+    [<NoDynamicInvocation>]
+    [<CompiledName("InitializeBlockInlined")>]
+    let inline initBlock (p : nativeptr<'T>) (value : byte) (size : uint32) = (# "initblk" p value size #)
+    
+    [<NoDynamicInvocation>]
+    [<CompiledName("CopyBlockInlined")>]
+    let inline copyBlock (destPtr : nativeptr<'T>) (srcPtr : nativeptr<'T>) (count : int) = (# "cpblk" destPtr srcPtr (count * sizeof<'T>) #)
+    
+    [<NoDynamicInvocation>]
+    [<CompiledName("ClearPointerInlined")>]
+    let inline clear (p : nativeptr<'T>) = (# "initobj !0" type ('T) p #)
+    
+    [<NoDynamicInvocation>]
+    [<CompiledName("CopyPointerInlined")>]
+    let inline copy (destPtr : nativeptr<'T>) (srcPtr : nativeptr<'T>) = (# "copyobj !0" type ('T) destPtr srcPtr #)
