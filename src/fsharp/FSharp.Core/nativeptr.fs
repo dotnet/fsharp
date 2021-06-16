@@ -18,7 +18,7 @@ module NativePtr =
 
     [<NoDynamicInvocation>]
     [<CompiledName("OfNativeIntInlined")>]
-    let inline ofNativeInt (address : nativeint) = (# "" address : nativeptr<'T> #)
+    let inline ofNativeInt (address: nativeint) = (# "" address : nativeptr<'T> #)
     
     [<NoDynamicInvocation>]
     [<CompiledName("ToNativeIntInlined")>]
@@ -42,27 +42,27 @@ module NativePtr =
 
     [<NoDynamicInvocation>]
     [<CompiledName("AddPointerInlined")>]
-    let inline add (address : nativeptr<'T>) (index:int) : nativeptr<'T> = toNativeInt address + nativeint index * (# "sizeof !0" type('T) : nativeint #) |> ofNativeInt
+    let inline add (address: nativeptr<'T>) (index: int) : nativeptr<'T> = toNativeInt address + nativeint index * (# "sizeof !0" type('T) : nativeint #) |> ofNativeInt
     
     [<NoDynamicInvocation>]
     [<CompiledName("GetPointerInlined")>]
-    let inline get (address : nativeptr<'T>) index = (# "ldobj !0" type ('T) (add address index) : 'T #) 
+    let inline get (address: nativeptr<'T>) index = (# "ldobj !0" type ('T) (add address index) : 'T #) 
     
     [<NoDynamicInvocation>]
     [<CompiledName("SetPointerInlined")>]
-    let inline set (address : nativeptr<'T>) index (value : 'T) = (# "stobj !0" type ('T) (add address index) value #)  
+    let inline set (address: nativeptr<'T>) index (value: 'T) = (# "stobj !0" type ('T) (add address index) value #)  
 
     [<NoDynamicInvocation>]
     [<CompiledName("ReadPointerInlined")>]
-    let inline read (address : nativeptr<'T>) = (# "ldobj !0" type ('T) address : 'T #) 
+    let inline read (address: nativeptr<'T>) = (# "ldobj !0" type ('T) address : 'T #) 
     
     [<NoDynamicInvocation>]
     [<CompiledName("WritePointerInlined")>]
-    let inline write (address : nativeptr<'T>) (value : 'T) = (# "stobj !0" type ('T) address value #)  
+    let inline write (address: nativeptr<'T>) (value : 'T) = (# "stobj !0" type ('T) address value #)  
     
     [<NoDynamicInvocation>]
     [<CompiledName("StackAllocate")>]
-    let inline stackalloc (count:int) : nativeptr<'T> = (# "localloc" (count * sizeof<'T>) : nativeptr<'T> #)
+    let inline stackalloc (count: int) : nativeptr<'T> = (# "localloc" (count * sizeof<'T>) : nativeptr<'T> #)
 
     [<NoDynamicInvocation>]
     [<CompiledName("ToByRefInlined")>]
@@ -74,20 +74,20 @@ module NativePtr =
     
     [<NoDynamicInvocation>]
     [<CompiledName("IsNullPointer")>]
-    let inline isNullPtr (address : nativeptr<'T>) = (# "ceq" nullPtr<'T> address : bool #)
+    let inline isNullPtr (address: nativeptr<'T>) = (# "ceq" nullPtr<'T> address : bool #)
     
     [<NoDynamicInvocation>]
     [<CompiledName("ClearPointerInlined")>]
-    let inline clear (address : nativeptr<'T>) = (# "initobj !0" type('T) address #)
+    let inline clear (address: nativeptr<'T>) = (# "initobj !0" type('T) address #)
 
     [<NoDynamicInvocation>]
     [<CompiledName("InitializeBlockInlined")>]
-    let inline initBlock (address : nativeptr<'T>) (value : byte) (count : uint32) = (# "initblk" address value count #)
+    let inline initBlock (address: nativeptr<'T>) (value: byte) (count: uint32) = (# "initblk" address value count #)
     
     [<NoDynamicInvocation>]
     [<CompiledName("CopyPointerInlined")>]
-    let inline copy (destination : nativeptr<'T>) (source : nativeptr<'T>) = (# "cpobj !0" type('T) destination source #)
+    let inline copy (destination: nativeptr<'T>) (source: nativeptr<'T>) = (# "cpobj !0" type('T) destination source #)
     
     [<NoDynamicInvocation>]
     [<CompiledName("CopyBlockInlined")>]
-    let inline copyBlock (destination : nativeptr<'T>) (source : nativeptr<'T>) (count : int) = (# "cpblk" destination source (count * sizeof<'T>) #)
+    let inline copyBlock (destination: nativeptr<'T>) (source: nativeptr<'T>) (count: int) = (# "cpblk" destination source (count * sizeof<'T>) #)
