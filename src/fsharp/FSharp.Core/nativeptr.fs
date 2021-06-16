@@ -16,14 +16,13 @@ open System.Runtime.InteropServices
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NativePtr = 
 
-
     [<NoDynamicInvocation>]
     [<CompiledName("OfNativeIntInlined")>]
-    let inline ofNativeInt (address:nativeint)      = (# "" address : nativeptr<'T> #)
+    let inline ofNativeInt (address : nativeint) = (# "" address : nativeptr<'T> #)
     
     [<NoDynamicInvocation>]
     [<CompiledName("ToNativeIntInlined")>]
-    let inline toNativeInt (address: nativeptr<'T>) = (# "" address : nativeint    #)
+    let inline toNativeInt (address: nativeptr<'T>) = (# "" address : nativeint #)
 
     [<NoDynamicInvocation>]
     [<CompiledName("ToVoidPtrInlined")>]
@@ -67,20 +66,20 @@ module NativePtr =
     
     [<NoDynamicInvocation>]
     [<CompiledName("IsZero")>]
-    let inline isZero<'T when 'T : unmanaged> (ptr : nativeptr<'T>) = (# "ceq" zero<'T> ptr : bool #)
-    
-    [<NoDynamicInvocation>]
-    [<CompiledName("InitializeBlockInlined")>]
-    let inline initBlock (p : nativeptr<'T>) (value : byte) (size : uint32) = (# "initblk" p value size #)
-    
-    [<NoDynamicInvocation>]
-    [<CompiledName("CopyBlockInlined")>]
-    let inline copyBlock (destPtr : nativeptr<'T>) (srcPtr : nativeptr<'T>) (count : int) = (# "cpblk" destPtr srcPtr (count * sizeof<'T>) #)
+    let inline isZero (address : nativeptr<'T>) = (# "ceq" zero<'T> address : bool #)
     
     [<NoDynamicInvocation>]
     [<CompiledName("ClearPointerInlined")>]
-    let inline clear (p : nativeptr<'T>) = (# "initobj !0" type ('T) p #)
+    let inline clear (address : nativeptr<'T>) = (# "initobj !0" type('T) address #)
+
+    [<NoDynamicInvocation>]
+    [<CompiledName("InitializeBlockInlined")>]
+    let inline initBlock (address : nativeptr<'T>) (value : byte) (count : uint32) = (# "initblk" address value count #)
     
     [<NoDynamicInvocation>]
     [<CompiledName("CopyPointerInlined")>]
-    let inline copy (destPtr : nativeptr<'T>) (srcPtr : nativeptr<'T>) = (# "copyobj !0" type ('T) destPtr srcPtr #)
+    let inline copy (destination : nativeptr<'T>) (source : nativeptr<'T>) = (# "cpobj !0" type('T) destination source #)
+    
+    [<NoDynamicInvocation>]
+    [<CompiledName("CopyBlockInlined")>]
+    let inline copyBlock (destination : nativeptr<'T>) (source : nativeptr<'T>) (count : int) = (# "cpblk" destination source (count * sizeof<'T>) #)

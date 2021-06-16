@@ -52,7 +52,6 @@ namespace Microsoft.FSharp.NativeInterop
         /// <returns>The machine address.</returns>
         val inline toNativeInt : address:nativeptr<'T> -> nativeint
 
-
         [<Unverifiable>]
         [<CompiledName("AddPointerInlined")>]
         /// <summary>Returns a typed native pointer by adding index * sizeof&lt;'T&gt; to the 
@@ -118,4 +117,53 @@ namespace Microsoft.FSharp.NativeInterop
         /// <returns>The managed pointer.</returns>
         [<Unverifiable>]
         [<CompiledName("ToByRefInlined")>]
-        val inline toByRef: address: nativeptr<'T> -> byref<'T>        
+        val inline toByRef: address: nativeptr<'T> -> byref<'T>
+        
+        /// <summary>Gets the value of zero for the native pointer.</summary>
+        ///
+        /// <returns>The zero value for the native pointer.</returns>
+        [<Unverifiable>]
+        [<CompiledName("Zero")>]
+        val inline zero<'T when 'T : unmanaged> : nativeptr<'T>
+        
+        /// <summary>Tests whether the given native pointer has the value of zero.</summary>
+        ///
+        /// <param name="address">The input pointer.</param>
+        ///
+        /// <returns>Whether the given native pointer has the value of zero.</returns>
+        [<Unverifiable>]
+        [<CompiledName("IsZero")>]
+        val inline isZero: address: nativeptr<'T> -> bool
+        
+        [<Unverifiable>]
+        [<CompiledName("ClearPointerInlined")>]
+        /// <summary>Clears the value stored at the location of a given native pointer.</summary>
+        ///
+        /// <param name="address">The input pointer.</param>
+        val inline clear : address: nativeptr<'T> -> unit
+
+        [<Unverifiable>]
+        [<CompiledName("InitializeBlockInlined")>]
+        /// <summary>Initializes a specified block of memory starting at a specific address to a given byte count and initial byte value.</summary>
+        ///
+        /// <param name="address">The input pointer.</param>
+        /// <param name="value">The initial byte value.</param>
+        /// <param name="count">The total repeat count of the byte value.</param>
+        val inline initBlock : address: nativeptr<'T> -> value: byte -> count: uint32 -> unit
+
+        [<Unverifiable>]
+        [<CompiledName("CopyPointerInlined")>]
+        /// <summary>Copies a value to a specified destination address from a specified source address.</summary>
+        ///
+        /// <param name="destination">The destination pointer.</param>
+        /// <param name="source">The source pointer.</param>
+        val inline copy : destination: nativeptr<'T> -> source: nativeptr<'T> -> unit
+
+        [<Unverifiable>]
+        [<CompiledName("CopyBlockInlined")>]
+        /// <summary>Copies a block of memory to a specified destination address starting from a specified source address until a specified byte count of (count * sizeof&lt;'T&gt;).</summary>
+        ///
+        /// <param name="destination">The destination pointer.</param>
+        /// <param name="source">The source pointer.</param>
+        /// <param name="count">The source pointer.</param>
+        val inline copyBlock : destination: nativeptr<'T> -> source: nativeptr<'T> -> count: int -> unit
