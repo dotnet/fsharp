@@ -63,3 +63,6 @@ type NativePtr() =
         let nullPtr = NativePtr.ofNativeInt<'T> 0n
         Assert.Equal(NativePtr.nullPtr, nullPtr)
         Assert.True(NativePtr.isNullPtr nullPtr)
+        let notNullPtr = NativePtr.ofNativeInt<'T> 1n
+        Assert.NotEqual(NativePtr.nullPtr, notNullPtr)
+        Assert.False(NativePtr.isNullPtr notNullPtr)
