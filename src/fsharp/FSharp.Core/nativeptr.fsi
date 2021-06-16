@@ -20,19 +20,20 @@ namespace Microsoft.FSharp.NativeInterop
         [<Unverifiable>]
         [<CompiledName("OfNativeIntInlined")>]
         /// <summary>Returns a typed native pointer for a given machine address.</summary>
-        /// <param name="address">The pointer address.</param>
+        ///
+        /// <param name="address">The machine address.</param>
         ///
         /// <returns>A typed pointer.</returns>
-        val inline ofNativeInt : address:nativeint -> nativeptr<'T>
+        val inline ofNativeInt : address: nativeint -> nativeptr<'T>
 
         [<Unverifiable>]
-        [<CompiledName("ToVoidPtrInlined")>]
-        /// <summary>Returns an untyped native pointer for a given typed pointer.</summary>
+        [<CompiledName("ToNativeIntInlined")>]
+        /// <summary>Returns a machine address for a given typed native pointer.</summary>
         ///
-        /// <param name="address">The pointer address.</param>
+        /// <param name="address">The input pointer.</param>
         ///
-        /// <returns>A typed pointer.</returns>
-        val inline toVoidPtr : address:nativeptr<'T> -> voidptr
+        /// <returns>The machine address.</returns>
+        val inline toNativeInt : address: nativeptr<'T> -> nativeint
 
         [<Unverifiable>]
         [<CompiledName("OfVoidPtrInlined")>]
@@ -44,13 +45,31 @@ namespace Microsoft.FSharp.NativeInterop
         val inline ofVoidPtr : address: voidptr -> nativeptr<'T>
 
         [<Unverifiable>]
-        [<CompiledName("ToNativeIntInlined")>]
-        /// <summary>Returns a machine address for a given typed native pointer.</summary>
+        [<CompiledName("ToVoidPtrInlined")>]
+        /// <summary>Returns an untyped native pointer for a given typed pointer.</summary>
         ///
-        /// <param name="address">The input pointer.</param>
+        /// <param name="address">The typed pointer.</param>
         ///
-        /// <returns>The machine address.</returns>
-        val inline toNativeInt : address:nativeptr<'T> -> nativeint
+        /// <returns>An untyped pointer.</returns>
+        val inline toVoidPtr : address: nativeptr<'T> -> voidptr
+
+        [<Unverifiable>]
+        [<CompiledName("OfIlSigPtrInlined")>]
+        /// <summary>Returns a typed native pointer for a Common IL (Intermediate Language) signature pointer.</summary>
+        ///
+        /// <param name="address">The Common IL signature pointer.</param>
+        ///
+        /// <returns>A typed pointer.</returns>
+        val inline ofIlSigPtr : address: ilsigptr<'T> -> nativeptr<'T>
+
+        [<Unverifiable>]
+        [<CompiledName("ToIlSigPtrInlined")>]
+        /// <summary>Returns a Common IL (Intermediate Language) signature pointer for a given typed pointer.</summary>
+        ///
+        /// <param name="address">The pointer address.</param>
+        ///
+        /// <returns>A Common IL signature pointer.</returns>
+        val inline toIlSigPtr : address: nativeptr<'T> -> ilsigptr<'T>
 
         [<Unverifiable>]
         [<CompiledName("AddPointerInlined")>]
@@ -61,7 +80,7 @@ namespace Microsoft.FSharp.NativeInterop
         /// <param name="index">The index by which to offset the pointer.</param>
         ///
         /// <returns>A typed pointer.</returns>
-        val inline add : address:nativeptr<'T> -> index:int -> nativeptr<'T>
+        val inline add : address: nativeptr<'T> -> index: int -> nativeptr<'T>
 
         [<Unverifiable>]
         [<CompiledName("GetPointerInlined")>]
@@ -72,7 +91,7 @@ namespace Microsoft.FSharp.NativeInterop
         /// <param name="index">The index by which to offset the pointer.</param>
         ///
         /// <returns>The value at the pointer address.</returns>
-        val inline get : address:nativeptr<'T> -> index:int -> 'T
+        val inline get : address: nativeptr<'T> -> index: int -> 'T
 
         [<Unverifiable>]
         [<CompiledName("ReadPointerInlined")>]
@@ -81,7 +100,7 @@ namespace Microsoft.FSharp.NativeInterop
         /// <param name="address">The input pointer.</param>
         ///
         /// <returns>The value at the pointer address.</returns>
-        val inline read : address:nativeptr<'T> -> 'T
+        val inline read : address: nativeptr<'T> -> 'T
 
         [<Unverifiable>]
         [<CompiledName("WritePointerInlined")>]
@@ -89,7 +108,7 @@ namespace Microsoft.FSharp.NativeInterop
         ///
         /// <param name="address">The input pointer.</param>
         /// <param name="value">The value to assign.</param>
-        val inline write : address:nativeptr<'T> -> value:'T -> unit
+        val inline write : address: nativeptr<'T> -> value: 'T -> unit
 
         [<Unverifiable>]
         [<CompiledName("SetPointerInlined")>]
@@ -99,7 +118,7 @@ namespace Microsoft.FSharp.NativeInterop
         /// <param name="address">The input pointer.</param>
         /// <param name="index">The index by which to offset the pointer.</param>
         /// <param name="value">The value to assign.</param>
-        val inline set : address:nativeptr<'T> -> index:int -> value:'T -> unit
+        val inline set : address: nativeptr<'T> -> index: int -> value: 'T -> unit
 
         /// <summary>Allocates a region of memory on the stack.</summary>
         ///
@@ -108,7 +127,7 @@ namespace Microsoft.FSharp.NativeInterop
         /// <returns>A typed pointer to the allocated memory.</returns>
         [<Unverifiable>]
         [<CompiledName("StackAllocate")>]
-        val inline stackalloc: count:int -> nativeptr<'T>
+        val inline stackalloc: count: int -> nativeptr<'T>
 
         /// <summary>Converts a given typed native pointer to a managed pointer.</summary>
         ///
