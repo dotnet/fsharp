@@ -4637,7 +4637,7 @@ type TOp =
     | Array
 
     /// Constant byte arrays (used for parser tables and other embedded data)
-    | Bytes of byte[] 
+    | Bytes of byte[]
 
     /// Constant uint16 arrays (used for parser tables)
     | UInt16s of uint16[] 
