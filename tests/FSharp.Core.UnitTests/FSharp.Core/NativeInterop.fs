@@ -44,10 +44,13 @@ type NativePtr() =
         Assert.Equal(i0 + 2n * size, a2 |> NativePtr.toNativeInt)
         Assert.Equal(i0 + 3n * size, a3 |> NativePtr.toNativeInt)
         Assert.Equal(i0 - 5n * size, NativePtr.add a0 -5 |> NativePtr.toNativeInt)
-        Assert.Equal(i0 + 5n * size, NativePtr.add a0 5 |> NativePtr.toVoidPtr |> NativePtr.ofVoidPtr<'T> |> NativePtr.toNativeInt)
-        Assert.Equal(i0 - 5n * size, NativePtr.add a0 -5 |> NativePtr.toVoidPtr |> NativePtr.ofVoidPtr<'T> |> NativePtr.toNativeInt)
-        Assert.Equal(a1, NativePtr.ofIlSigPtr <| (NativePtr.toIlSigPtr a1))
-        Assert.Equal(a1, NativePtr.ofIlSigPtr (NativePtr.toIlSigPtr a1))
+        Assert.Equal(a2,
+            a2
+            |> NativePtr.toVoidPtr
+            |> NativePtr.ofVoidPtr<'T>
+            |> NativePtr.toIlSigPtr
+            |> NativePtr.ofIlSigPtr
+        )
         NativePtr.set a0 3 nusual
         Assert.Equal(nusual, NativePtr.get a0 3)
         Assert.Equal(nusual, NativePtr.get a3 0)
