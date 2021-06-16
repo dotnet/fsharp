@@ -23,14 +23,14 @@ namespace Microsoft.FSharp.NativeInterop
         ///
         /// <param name="address">The machine address.</param>
         ///
-        /// <returns>A typed pointer.</returns>
+        /// <returns>A typed native pointer.</returns>
         val inline ofNativeInt : address: nativeint -> nativeptr<'T>
 
         [<Unverifiable>]
         [<CompiledName("ToNativeIntInlined")>]
         /// <summary>Returns a machine address for a given typed native pointer.</summary>
         ///
-        /// <param name="address">The input pointer.</param>
+        /// <param name="address">The typed native pointer.</param>
         ///
         /// <returns>The machine address.</returns>
         val inline toNativeInt : address: nativeptr<'T> -> nativeint
@@ -39,18 +39,18 @@ namespace Microsoft.FSharp.NativeInterop
         [<CompiledName("OfVoidPtrInlined")>]
         /// <summary>Returns a typed native pointer for a untyped native pointer.</summary>
         ///
-        /// <param name="address">The untyped pointer.</param>
+        /// <param name="address">The untyped native pointer.</param>
         ///
-        /// <returns>A typed pointer.</returns>
+        /// <returns>A typed native pointer.</returns>
         val inline ofVoidPtr : address: voidptr -> nativeptr<'T>
 
         [<Unverifiable>]
         [<CompiledName("ToVoidPtrInlined")>]
-        /// <summary>Returns an untyped native pointer for a given typed pointer.</summary>
+        /// <summary>Returns an untyped native pointer for a given typed native pointer.</summary>
         ///
-        /// <param name="address">The typed pointer.</param>
+        /// <param name="address">The typed native pointer.</param>
         ///
-        /// <returns>An untyped pointer.</returns>
+        /// <returns>An untyped native pointer.</returns>
         val inline toVoidPtr : address: nativeptr<'T> -> voidptr
 
         [<Unverifiable>]
@@ -59,21 +59,21 @@ namespace Microsoft.FSharp.NativeInterop
         ///
         /// <param name="address">The Common IL signature pointer.</param>
         ///
-        /// <returns>A typed pointer.</returns>
+        /// <returns>A typed native pointer.</returns>
         val inline ofIlSigPtr : address: ilsigptr<'T> -> nativeptr<'T>
 
         [<Unverifiable>]
         [<CompiledName("ToIlSigPtrInlined")>]
-        /// <summary>Returns a Common IL (Intermediate Language) signature pointer for a given typed pointer.</summary>
+        /// <summary>Returns a Common IL (Intermediate Language) signature pointer for a given typed native pointer.</summary>
         ///
-        /// <param name="address">The pointer address.</param>
+        /// <param name="address">The typed native pointer.</param>
         ///
         /// <returns>A Common IL signature pointer.</returns>
         val inline toIlSigPtr : address: nativeptr<'T> -> ilsigptr<'T>
 
         /// <summary>Converts a given typed native pointer to a managed pointer.</summary>
         ///
-        /// <param name="address">The input pointer.</param>
+        /// <param name="address">The typed native pointer.</param>
         ///
         /// <returns>The managed pointer.</returns>
         [<Unverifiable>]
