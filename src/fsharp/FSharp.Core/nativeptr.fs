@@ -41,6 +41,10 @@ module NativePtr =
     let inline toIlSigPtr (address: nativeptr<'T>) = (# "" address : ilsigptr<'T> #)
 
     [<NoDynamicInvocation>]
+    [<CompiledName("ToByRefInlined")>]
+    let inline toByRef (address: nativeptr<'T>) : byref<'T> = (# "" address : 'T byref  #)
+
+    [<NoDynamicInvocation>]
     [<CompiledName("AddPointerInlined")>]
     let inline add (address: nativeptr<'T>) (index: int) : nativeptr<'T> = toNativeInt address + nativeint index * (# "sizeof !0" type('T) : nativeint #) |> ofNativeInt
     
@@ -63,10 +67,6 @@ module NativePtr =
     [<NoDynamicInvocation>]
     [<CompiledName("StackAllocate")>]
     let inline stackalloc (count: int) : nativeptr<'T> = (# "localloc" (count * sizeof<'T>) : nativeptr<'T> #)
-
-    [<NoDynamicInvocation>]
-    [<CompiledName("ToByRefInlined")>]
-    let inline toByRef (address: nativeptr<'T>) : byref<'T> = (# "" address : 'T byref  #)
     
     [<NoDynamicInvocation>]
     [<CompiledName("NullPointer")>]

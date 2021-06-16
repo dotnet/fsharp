@@ -71,6 +71,15 @@ namespace Microsoft.FSharp.NativeInterop
         /// <returns>A Common IL signature pointer.</returns>
         val inline toIlSigPtr : address: nativeptr<'T> -> ilsigptr<'T>
 
+        /// <summary>Converts a given typed native pointer to a managed pointer.</summary>
+        ///
+        /// <param name="address">The input pointer.</param>
+        ///
+        /// <returns>The managed pointer.</returns>
+        [<Unverifiable>]
+        [<CompiledName("ToByRefInlined")>]
+        val inline toByRef: address: nativeptr<'T> -> byref<'T>
+
         [<Unverifiable>]
         [<CompiledName("AddPointerInlined")>]
         /// <summary>Returns a typed native pointer by adding index * sizeof&lt;'T&gt; to the 
@@ -128,15 +137,6 @@ namespace Microsoft.FSharp.NativeInterop
         [<Unverifiable>]
         [<CompiledName("StackAllocate")>]
         val inline stackalloc: count: int -> nativeptr<'T>
-
-        /// <summary>Converts a given typed native pointer to a managed pointer.</summary>
-        ///
-        /// <param name="address">The input pointer.</param>
-        ///
-        /// <returns>The managed pointer.</returns>
-        [<Unverifiable>]
-        [<CompiledName("ToByRefInlined")>]
-        val inline toByRef: address: nativeptr<'T> -> byref<'T>
         
         /// <summary>Gets the null native pointer.</summary>
         ///
