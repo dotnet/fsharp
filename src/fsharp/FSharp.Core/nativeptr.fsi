@@ -119,21 +119,21 @@ namespace Microsoft.FSharp.NativeInterop
         [<CompiledName("ToByRefInlined")>]
         val inline toByRef: address: nativeptr<'T> -> byref<'T>
         
-        /// <summary>Gets the value of zero for the native pointer.</summary>
+        /// <summary>Gets the null native pointer.</summary>
         ///
-        /// <returns>The zero value for the native pointer.</returns>
+        /// <returns>The null native pointer.</returns>
         [<Unverifiable>]
-        [<CompiledName("Zero")>]
-        val inline zero<'T when 'T : unmanaged> : nativeptr<'T>
+        [<CompiledName("NullPointer")>]
+        val inline nullPtr<'T when 'T : unmanaged> : nativeptr<'T>
         
-        /// <summary>Tests whether the given native pointer has the value of zero.</summary>
+        /// <summary>Tests whether the given native pointer is null.</summary>
         ///
         /// <param name="address">The input pointer.</param>
         ///
-        /// <returns>Whether the given native pointer has the value of zero.</returns>
+        /// <returns>Whether the given native pointer is null.</returns>
         [<Unverifiable>]
-        [<CompiledName("IsZero")>]
-        val inline isZero: address: nativeptr<'T> -> bool
+        [<CompiledName("IsNullPointer")>]
+        val inline isNullPtr: address: nativeptr<'T> -> bool
         
         [<Unverifiable>]
         [<CompiledName("ClearPointerInlined")>]

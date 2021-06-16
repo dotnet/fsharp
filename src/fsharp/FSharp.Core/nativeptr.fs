@@ -61,12 +61,12 @@ module NativePtr =
     let inline toByRef (address: nativeptr<'T>) : byref<'T> = (# "" address : 'T byref  #)
     
     [<NoDynamicInvocation>]
-    [<CompiledName("Zero")>]
-    let inline zero<'T when 'T : unmanaged> : nativeptr<'T> = (# "ldnull" : nativeptr<'T> #)
+    [<CompiledName("NullPointer")>]
+    let inline nullPtr<'T when 'T : unmanaged> : nativeptr<'T> = (# "ldnull" : nativeptr<'T> #)
     
     [<NoDynamicInvocation>]
-    [<CompiledName("IsZero")>]
-    let inline isZero (address : nativeptr<'T>) = (# "ceq" zero<'T> address : bool #)
+    [<CompiledName("IsNullPointer")>]
+    let inline isNullPtr (address : nativeptr<'T>) = (# "ceq" nullPtr<'T> address : bool #)
     
     [<NoDynamicInvocation>]
     [<CompiledName("ClearPointerInlined")>]
