@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-// Various tests for the Checked module
+// Various tests for the NativeInterop namespace
 
 namespace FSharp.Core.UnitTests.NativeInterop
 
