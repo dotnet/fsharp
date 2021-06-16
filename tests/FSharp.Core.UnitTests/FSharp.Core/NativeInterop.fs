@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-// Various tests for the Checked module
+// Various tests for the NativeInterop namespace
 
 namespace FSharp.Core.UnitTests.NativeInterop
 
@@ -65,3 +65,6 @@ type NativePtr() =
         let nullPtr = NativePtr.ofNativeInt<'T> 0n
         Assert.Equal(NativePtr.nullPtr, nullPtr)
         Assert.True(NativePtr.isNullPtr nullPtr)
+        let notNullPtr = NativePtr.ofNativeInt<'T> 1n
+        Assert.NotEqual(NativePtr.nullPtr, notNullPtr)
+        Assert.False(NativePtr.isNullPtr notNullPtr)
