@@ -142,6 +142,7 @@ namespace Microsoft.FSharp.NativeInterop
         ///
         /// <returns>The null native pointer.</returns>
         [<Unverifiable>]
+        [<GeneralizableValue>]
         [<CompiledName("NullPointer")>]
         val inline nullPtr<'T when 'T : unmanaged> : nativeptr<'T>
         
