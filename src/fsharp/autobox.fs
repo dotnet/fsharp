@@ -25,7 +25,7 @@ type cenv =
 let DecideEscapes syntacticArgs body =
     let cantBeFree v = 
         let passedIn = ListSet.contains valEq v syntacticArgs 
-        not passedIn && (v.IsMutable && v.ValReprInfo.IsNone) 
+        not passedIn && (v.IsMutable && v.ValReprInfo.IsNone) && not (Optimizer.IsOnlyMutableBeforeUse (mkLocalValRef v)) 
 
     let frees = freeInExpr CollectLocals body
     frees.FreeLocals |> Zset.filter cantBeFree 

@@ -1256,7 +1256,7 @@ let AbstractAndRemapModulInfo msg g m (repackage, hidden) info =
 let [<Literal>] suffixForVariablesThatMayNotBeEliminated = "$cont"
 
 /// Indicates a ValRef generated to facilitate tuple eliminations
-let [<Literal>] suffixForTupleElementAssignmentTarget = "tupleElem"
+let [<Literal>] suffixForTupleElementAssignmentTarget = "$tupleElem"
 
 /// Type applications of F# "type functions" may cause side effects, e.g. 
 /// let x<'a> = printfn "hello"; typeof<'a> 
@@ -1278,7 +1278,16 @@ let ValueOfExpr expr =
       ConstExprValue(0, expr)
     else UnknownValue
 
-let IsMutableStructuralBindingForTupleElement (vref: ValRef) = vref.IsCompilerGenerated && vref.DisplayName.EndsWith suffixForTupleElementAssignmentTarget
+let IsMutableStructuralBindingForTupleElement (vref: ValRef) =
+    vref.IsCompilerGenerated &&
+    vref.DisplayName.EndsWith suffixForTupleElementAssignmentTarget
+
+let IsMutableForOutArg (vref: ValRef) =
+    (vref.IsCompilerGenerated && vref.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName))
+
+let IsOnlyMutableBeforeUse (vref: ValRef) =
+    IsMutableStructuralBindingForTupleElement vref || 
+    IsMutableForOutArg vref
 
 //-------------------------------------------------------------------------
 // Dead binding elimination 
@@ -1581,10 +1590,11 @@ let MakeStructuralBindingTemp (v: Val) i (arg: Expr) argTy =
     let v, ve = mkCompGenLocal arg.Range name argTy
     ve, mkCompGenBind v arg
 
-let MakeMutableStructuralBindingForTupleElement (v: Val) i (arg: Expr) argTy =
-    let name = sprintf "%s_%d_%s" v.LogicalName i suffixForTupleElementAssignmentTarget
-    let v, ve = mkMutableCompGenLocal arg.Range name argTy
-    ve, mkCompGenBind v arg
+let MakeMutableStructuralBindingForTupleElement m (v: Val) i argTy =
+    let init = mkDefault (m, argTy)
+    let name = sprintf "%s_%d%s" v.LogicalName i suffixForTupleElementAssignmentTarget
+    let mutv, mutve = mkMutableCompGenLocal m name argTy
+    mutv, mutve, mkCompGenBind mutv init
 
 let ExpandStructuralBindingRaw cenv expr =
     assert cenv.settings.ExpandStructuralValues()
@@ -1689,16 +1699,15 @@ let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
 
     let requisites = lazy (
         let argTys = destRefTupleTy g v.Type
-        let inits = argTys |> List.map (mkNull m)
-        let ves, binds = List.mapi2 (MakeMutableStructuralBindingForTupleElement v) inits argTys |> List.unzip
-        let vrefs = binds |> List.map (fun (TBind (v, _, _)) -> mkLocalValRef v)
-        argTys, ves, binds, vrefs)
+        let mutvs, mutves, mutinits = argTys |> List.mapi (MakeMutableStructuralBindingForTupleElement m v)  |> List.unzip3
+        let mutvrefs = mutvs |> List.map mkLocalValRef
+        argTys, mutves, mutinits, mutvrefs)
 
     match dive g m requisites rhs with
     | Some rewrittenRhs ->
-        let argTys, ves, binds, _ = requisites.Value
-        let rhsAndTupleBinding = mkCompGenSequential m rewrittenRhs (mkRefTupled g m ves argTys)
-        mkLetsBind m binds (mkLet tgtSeqPtOpt m v rhsAndTupleBinding body) |> Some
+        let argTys, mutves, mutinits, _ = requisites.Value
+        let rhsAndTupleBinding = mkCompGenSequential m rewrittenRhs (mkRefTupled g m mutves argTys)
+        mkLetsBind m mutinits (mkLet tgtSeqPtOpt m v rhsAndTupleBinding body) |> Some
     | _ -> None
 
 let ExpandStructuralBinding cenv expr =
@@ -2594,7 +2603,7 @@ and AddValEqualityInfo g m (v: ValRef) info =
     // when their address is passed to the method call. Another exception are mutable variables
     // created for tuple elimination in branching tuple bindings because they are assigned to
     // exactly once.
-    if not v.IsMutable || IsMutableStructuralBindingForTupleElement v || (v.IsCompilerGenerated && v.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)) then 
+    if not v.IsMutable || IsOnlyMutableBeforeUse v then 
         { info with Info = MakeValueInfoForValue g m v info.Info }
     else
         info 
