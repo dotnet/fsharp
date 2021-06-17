@@ -3396,6 +3396,7 @@ module WitnessTests =
               <@@ 1.0f / 4.0f  @@>, true
               <@@ 1 % 4  @@>, true
               <@@ -(4.0M)  @@>, true
+              <@@ 'z' - 'a' @@>, true
 
               <@@ 1y <<< 3  @@>, true
               <@@ 1uy <<< 3  @@>, true
