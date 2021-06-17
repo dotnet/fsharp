@@ -707,3 +707,274 @@ public static int z()
   IL_0013:  add
   IL_0014:  ret
 }""" ]
+
+
+
+
+    [<Fact>]
+    let ``Branching let binding of tuple with capture doesn't promote``() =
+        FSharp """
+module TupleElimination
+open System.Runtime.CompilerServices
+
+let testFunction(a,b) =
+    let x,y = printfn "hello"; b*a,a*b
+    (fun () -> x + y)
+         """
+         |> compile
+         |> shouldSucceed
+         |> verifyIL [
+
+                      """
+.method public static class [runtime]System.Tuple`2<string,int32> 
+        x() cil managed
+{
+    
+  .maxstack  4
+  .locals init (string V_0,
+           int32 V_1,
+           int32 V_2)
+  IL_0000:  call       void TupleElimination::sideEffect()
+  IL_0005:  call       bool TupleElimination::cond()
+  IL_000a:  brfalse.s  IL_0022
+
+  IL_000c:  call       bool TupleElimination::cond()
+  IL_0011:  brfalse.s  IL_0016
+
+  IL_0013:  ldc.i4.1
+  IL_0014:  br.s       IL_0017
+
+  IL_0016:  ldc.i4.3
+  IL_0017:  stloc.2
+  IL_0018:  ldstr      "yep"
+  IL_001d:  stloc.0
+  IL_001e:  ldloc.2
+  IL_001f:  stloc.1
+  IL_0020:  br.s       IL_002e
+
+  IL_0022:  ldstr      ""
+  IL_0027:  stloc.0
+  IL_0028:  call       int32 TupleElimination::f()
+  IL_002d:  stloc.1
+  IL_002e:  ldloc.0
+  IL_002f:  ldloc.1
+  IL_0030:  newobj     instance void class [runtime]System.Tuple`2<string,int32>::.ctor(!0,
+                                                                                                 !1)
+  IL_0035:  ret
+}
+"""
+
+(*
+public static int y()
+{
+    int num;
+    int num2;
+    int num3;
+    if (TupleElimination.cond())
+    {
+        string text = "".ToString();
+        num = 1;
+        num2 = TupleElimination.f();
+        num3 = 3;
+    }
+    else if (TupleElimination.cond())
+    {
+        num = 2;
+        num2 = 2;
+        num3 = 3;
+    }
+    else
+    {
+        switch (1 / 0)
+        {
+        case 1:
+            if (2 / 3 == 1)
+            {
+                num = 5;
+                num2 = 6;
+                num3 = 7;
+            }
+            else
+            {
+                string text = "".ToString();
+                num = 6;
+                num2 = 5;
+                num3 = 4;
+            }
+            break;
+        case 2:
+            num = 6;
+            num2 = 6;
+            num3 = 6;
+            break;
+        case 3:
+            num = TupleElimination.f();
+            num2 = 7;
+            num3 = TupleElimination.f();
+            break;
+        default:
+            num = 8;
+            num2 = TupleElimination.y();
+            num3 = TupleElimination.y();
+            break;
+        }
+    }
+    return num + num2 + 2 * num3;
+}
+*)
+                      """
+.method public static int32  y() cil managed
+{
+
+  .maxstack  5
+  .locals init (int32 V_0,
+           int32 V_1,
+           int32 V_2,
+           string V_3)
+  IL_0000:  ldc.i4.0
+  IL_0001:  stloc.0
+  IL_0002:  ldc.i4.0
+  IL_0003:  stloc.1
+  IL_0004:  ldc.i4.0
+  IL_0005:  stloc.2
+  IL_0006:  call       bool TupleElimination::cond()
+  IL_000b:  brfalse.s  IL_0027
+
+  IL_000d:  ldstr      ""
+  IL_0012:  callvirt   instance string [runtime]System.Object::ToString()
+  IL_0017:  stloc.3
+  IL_0018:  ldc.i4.1
+  IL_0019:  stloc.0
+  IL_001a:  call       int32 TupleElimination::f()
+  IL_001f:  stloc.1
+  IL_0020:  ldc.i4.3
+  IL_0021:  stloc.2
+  IL_0022:  br         IL_0095
+  
+  IL_0027:  call       bool TupleElimination::cond()
+  IL_002c:  brfalse.s  IL_0036
+  
+  IL_002e:  ldc.i4.2
+  IL_002f:  stloc.0
+  IL_0030:  ldc.i4.2
+  IL_0031:  stloc.1
+  IL_0032:  ldc.i4.3
+  IL_0033:  stloc.2
+  IL_0034:  br.s       IL_0095
+  
+  IL_0036:  ldc.i4.1
+  IL_0037:  ldc.i4.0
+  IL_0038:  div
+  IL_0039:  ldc.i4.1
+  IL_003a:  sub
+  IL_003b:  switch     (
+                        IL_004e,
+                        IL_006f,
+                        IL_0077)
+  IL_004c:  br.s       IL_0087
+  
+  IL_004e:  ldc.i4.2
+  IL_004f:  ldc.i4.3
+  IL_0050:  div
+  IL_0051:  ldc.i4.1
+  IL_0052:  bne.un.s   IL_005c
+  
+  IL_0054:  ldc.i4.5
+  IL_0055:  stloc.0
+  IL_0056:  ldc.i4.6
+  IL_0057:  stloc.1
+  IL_0058:  ldc.i4.7
+  IL_0059:  stloc.2
+  IL_005a:  br.s       IL_0095
+  
+  IL_005c:  ldstr      ""
+  IL_0061:  callvirt   instance string [runtime]System.Object::ToString()
+  IL_0066:  stloc.3
+  IL_0067:  ldc.i4.6
+  IL_0068:  stloc.0
+  IL_0069:  ldc.i4.5
+  IL_006a:  stloc.1
+  IL_006b:  ldc.i4.4
+  IL_006c:  stloc.2
+  IL_006d:  br.s       IL_0095
+  
+  IL_006f:  ldc.i4.6
+  IL_0070:  stloc.0
+  IL_0071:  ldc.i4.6
+  IL_0072:  stloc.1
+  IL_0073:  ldc.i4.6
+  IL_0074:  stloc.2
+  IL_0075:  br.s       IL_0095
+  
+  IL_0077:  call       int32 TupleElimination::f()
+  IL_007c:  stloc.0
+  IL_007d:  ldc.i4.7
+  IL_007e:  stloc.1
+  IL_007f:  call       int32 TupleElimination::f()
+  IL_0084:  stloc.2
+  IL_0085:  br.s       IL_0095
+  
+  IL_0087:  ldc.i4.8
+  IL_0088:  stloc.0
+  IL_0089:  call       int32 TupleElimination::y()
+  IL_008e:  stloc.1
+  IL_008f:  call       int32 TupleElimination::y()
+  IL_0094:  stloc.2
+  IL_0095:  ldloc.0
+  IL_0096:  ldloc.1
+  IL_0097:  add
+  IL_0098:  ldc.i4.2
+  IL_0099:  ldloc.2
+  IL_009a:  mul
+  IL_009b:  add
+  IL_009c:  ret
+}
+"""
+
+(*
+public static int z()
+{
+    int num;
+    int num2;
+    if (TupleElimination.cond())
+    {
+        num = 1;
+        num2 = 3;
+    }
+    else
+    {
+        num = 3;
+        num2 = 4;
+    }
+    return num + num2;
+}
+*)
+                      """
+.method public static int32  z() cil managed
+{
+  
+  .maxstack  4
+  .locals init (int32 V_0,
+           int32 V_1)
+  IL_0000:  call       bool TupleElimination::cond()
+  IL_0005:  brfalse.s  IL_000d
+    
+  IL_0007:  ldc.i4.1
+  IL_0008:  stloc.0
+  IL_0009:  ldc.i4.3
+  IL_000a:  stloc.1
+  IL_000b:  br.s       IL_0011
+    
+  IL_000d:  ldc.i4.3
+  IL_000e:  stloc.0
+  IL_000f:  ldc.i4.4
+  IL_0010:  stloc.1
+  IL_0011:  ldloc.0
+  IL_0012:  ldloc.1
+  IL_0013:  add
+  IL_0014:  ret
+}""" ]
+
+
+
+
