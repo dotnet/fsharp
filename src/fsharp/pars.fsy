@@ -4121,6 +4121,11 @@ atomicExpr:
       { let arg1 = SynExpr.Ident (ident("base", rhs parseState 1))
         $3 arg1 (lhs parseState) (rhs parseState 2), false }
 
+  | NEW atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType DOT atomicExprQualification 
+      { errorR (Error (FSComp.SR.parsNewExprMemberAccess (), rhs parseState 6))
+        let newExpr = SynExpr.New (false, $2, $4, unionRanges (rhs parseState 1) $4.Range)
+        $6 newExpr (lhs parseState) (rhs parseState 5), false }
+
   | QMARK nameop 
       { SynExpr.LongIdent (true, LongIdentWithDots([$2], []), None, rhs parseState 2), false }
 
