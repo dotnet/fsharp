@@ -265,6 +265,10 @@ type BoundModel private (tcConfig: TcConfig,
                          prevTcInfo: TcInfo,
                          syntaxTreeOpt: SyntaxTree option,
                          tcInfoStateOpt: TcInfoState option) as this =
+    let isDocOpen =
+        match syntaxTreeOpt with
+        | Some syntaxTree -> syntaxTree.Document.IsOpen
+        | _ -> false
 
     let tcInfoNode = 
         match tcInfoStateOpt with
@@ -279,7 +283,7 @@ type BoundModel private (tcConfig: TcConfig,
 
             let partialGraphNode =              
                 GraphNode(node {
-                    if enablePartialTypeChecking then
+                    if enablePartialTypeChecking && not isDocOpen then
                         // Optimization so we have less of a chance to duplicate work.
                         if fullGraphNode.IsComputing then
                             let! tcInfo, _ = fullGraphNode.GetOrComputeValue()
@@ -452,7 +456,7 @@ type BoundModel private (tcConfig: TcConfig,
                 return res
             | Some syntaxTree ->
                 let sigNameOpt =
-                    if partialCheck && not syntaxTree.Document.IsOpen then
+                    if partialCheck then
                         this.BackingSignature
                     else
                         None
@@ -512,7 +516,7 @@ type BoundModel private (tcConfig: TcConfig,
                                     None
                         }
                         
-                    if partialCheck && not syntaxTree.Document.IsOpen then
+                    if partialCheck then
                         return PartialState tcInfo
                     else
                         // Build symbol keys
