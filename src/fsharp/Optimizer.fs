@@ -1256,7 +1256,7 @@ let AbstractAndRemapModulInfo msg g m (repackage, hidden) info =
 let [<Literal>] suffixForVariablesThatMayNotBeEliminated = "$cont"
 
 /// Indicates a ValRef generated to facilitate tuple eliminations
-let [<Literal>] suffixForTupleElementAssignmentTarget = "$tupleElem"
+let [<Literal>] suffixForTupleElementAssignmentTarget = "tupleElem"
 
 /// Type applications of F# "type functions" may cause side effects, e.g. 
 /// let x<'a> = printfn "hello"; typeof<'a> 
