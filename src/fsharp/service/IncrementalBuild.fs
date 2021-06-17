@@ -452,7 +452,7 @@ type BoundModel private (tcConfig: TcConfig,
                 return res
             | Some syntaxTree ->
                 let sigNameOpt =
-                    if partialCheck then
+                    if partialCheck && not syntaxTree.Document.IsOpen then
                         this.BackingSignature
                     else
                         None
