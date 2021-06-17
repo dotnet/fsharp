@@ -54,22 +54,22 @@ namespace Microsoft.FSharp.NativeInterop
         val inline toVoidPtr : address: nativeptr<'T> -> voidptr
 
         [<Unverifiable>]
-        [<CompiledName("OfIlSigPtrInlined")>]
+        [<CompiledName("OfILSigPtrInlined")>]
         /// <summary>Returns a typed native pointer for a Common IL (Intermediate Language) signature pointer.</summary>
         ///
         /// <param name="address">The Common IL signature pointer.</param>
         ///
         /// <returns>A typed native pointer.</returns>
-        val inline ofIlSigPtr : address: ilsigptr<'T> -> nativeptr<'T>
+        val inline ofILSigPtr : address: ilsigptr<'T> -> nativeptr<'T>
 
         [<Unverifiable>]
-        [<CompiledName("ToIlSigPtrInlined")>]
+        [<CompiledName("ToILSigPtrInlined")>]
         /// <summary>Returns a Common IL (Intermediate Language) signature pointer for a given typed native pointer.</summary>
         ///
         /// <param name="address">The typed native pointer.</param>
         ///
         /// <returns>A Common IL signature pointer.</returns>
-        val inline toIlSigPtr : address: nativeptr<'T> -> ilsigptr<'T>
+        val inline toILSigPtr : address: nativeptr<'T> -> ilsigptr<'T>
 
         /// <summary>Converts a given typed native pointer to a managed pointer.</summary>
         ///

@@ -48,8 +48,8 @@ type NativePtr() =
             a2
             |> NativePtr.toVoidPtr
             |> NativePtr.ofVoidPtr<'T>
-            |> NativePtr.toIlSigPtr
-            |> NativePtr.ofIlSigPtr
+            |> NativePtr.toILSigPtr
+            |> NativePtr.ofILSigPtr
         )
         NativePtr.set a0 3 nusual
         Assert.Equal(nusual, NativePtr.get a0 3)
