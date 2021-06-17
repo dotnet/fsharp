@@ -2222,7 +2222,7 @@ and OptimizeExprOpReductionsAfter cenv env (op, tyargs, argsR, arginfos, m) =
         | _ -> None
     match knownValue with 
     | Some valu -> 
-        match TryOptimizeVal cenv env (false, valu, m) with 
+        match TryOptimizeVal cenv env (None, false, valu, m) with 
         | Some res -> OptimizeExpr cenv env res (* discard e1 since guard ensures it has no effects *)
         | None -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu
     | None -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos UnknownValue
@@ -2559,7 +2559,7 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
 
 /// Make optimization decisions once we know the optimization information
 /// for a value
-and TryOptimizeVal cenv env (mustInline, valInfoForVal, m) = 
+and TryOptimizeVal cenv env (vOpt: ValRef option, mustInline, valInfoForVal, m) = 
 
     match valInfoForVal with 
     // Inline all constants immediately 
@@ -2567,15 +2567,25 @@ and TryOptimizeVal cenv env (mustInline, valInfoForVal, m) =
         Some (Expr.Const (c, m, ty))
 
     | SizeValue (_, detail) ->
-        TryOptimizeVal cenv env (mustInline, detail, m) 
+        TryOptimizeVal cenv env (vOpt, mustInline, detail, m) 
 
     | ValValue (vR, detail) -> 
          // Inline values bound to other values immediately 
          // Prefer to inline using the more specific info if possible 
          // If the more specific info didn't reveal an inline then use the value 
-         match TryOptimizeVal cenv env (mustInline, detail, m) with 
+         match TryOptimizeVal cenv env (vOpt, mustInline, detail, m) with 
           | Some e -> Some e
-          | None -> Some(exprForValRef m vR)
+          | None -> 
+              // If we have proven 'v = compilerGeneratedValue'
+              // and 'v' is being eliminated in favour of 'compilerGeneratedValue'
+              // then replace the name of 'compilerGeneratedValue'
+              // by 'v' and mark it not compiler generated so we preserve good debugging and names
+              match vOpt with 
+              | Some v when not v.IsCompilerGenerated && vR.IsCompilerGenerated -> 
+                  vR.Deref.SetIsCompilerGenerated(false)
+                  vR.Deref.SetLogicalName(v.LogicalName)
+              | _ -> ()
+              Some(exprForValRef m vR)
 
     | ConstExprValue(_size, expr) ->
         Some (remarkExpr m (copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated expr))
@@ -2594,7 +2604,7 @@ and TryOptimizeVal cenv env (mustInline, valInfoForVal, m) =
     | _ -> None 
   
 and TryOptimizeValInfo cenv env m vinfo = 
-    if vinfo.HasEffect then None else TryOptimizeVal cenv env (false, vinfo.Info, m)
+    if vinfo.HasEffect then None else TryOptimizeVal cenv env (None, false, vinfo.Info, m)
 
 /// Add 'v1 = v2' information into the information stored about a value
 and AddValEqualityInfo g m (v: ValRef) info =
@@ -2613,7 +2623,7 @@ and AddValEqualityInfo g m (v: ValRef) info =
 and OptimizeVal cenv env expr (v: ValRef, m) =
     let valInfoForVal = GetInfoForVal cenv env m v 
 
-    match TryOptimizeVal cenv env (v.MustInline, valInfoForVal.ValExprInfo, m) with
+    match TryOptimizeVal cenv env (Some v, v.MustInline, valInfoForVal.ValExprInfo, m) with
     | Some e -> 
        // don't reoptimize inlined lambdas until they get applied to something
        match e with 

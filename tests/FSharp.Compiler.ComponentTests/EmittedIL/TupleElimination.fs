@@ -757,25 +757,41 @@ let testFunction(a,b) =
                                                                             int32)
   IL_0026:  ret
 } 
-""" 
 
-         // Checks the names of captured 'x' and 'y'. Currently these are not
-         // good names, see https://github.com/dotnet/fsharp/issues/11689,
-         // this test will need updating when this is fixed
-                      """
-  .method public strict virtual instance int32 
-          Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar0) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld      int32 TupleElimination/testFunction@7::patternInput_0
-    IL_0006:  ldarg.0
-    IL_0007:  ldfld      int32 TupleElimination/testFunction@7::patternInput_1
-    IL_000c:  add
-    IL_000d:  ret
-  } 
+""" ]
 
+
+
+
+    [<Fact>]
+    let ``Branching let binding of tuple gives good names in closure``() =
+        FSharp """
+module TupleElimination
+open System.Runtime.CompilerServices
+
+let testFunction(a,b) =
+    let x,y = printfn "hello"; b*a,a*b
+    (fun () -> x + y)
+     """
+     |> compile
+     |> shouldSucceed
+     |> verifyIL [
+
+     // Checks the names of captured 'x' and 'y'. 
+                  """
+
+        .method public strict virtual instance int32 
+                Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar0) cil managed
+        {
+          
+          .maxstack  8
+          IL_0000:  ldarg.0
+          IL_0001:  ldfld      int32 TupleElimination/testFunction@7::x
+          IL_0006:  ldarg.0
+          IL_0007:  ldfld      int32 TupleElimination/testFunction@7::y
+          IL_000c:  add
+          IL_000d:  ret
+        } 
 """ ]
 
 
