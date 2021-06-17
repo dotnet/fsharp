@@ -998,15 +998,16 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
             match state.boundModels.[slot].TryPeekValue() with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
             | ValueSome(boundModel) when mainState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
+                let newDocuments = state.documents.RemoveAt(slot).Insert(slot, fileInfo)
                 let newBoundModelNode = 
                     match fileInfo with
                     | _, doc, _ when doc.IsOpen ->
-                        createBoundModelGraphNode mainState state.documents boundModels slot
+                        createBoundModelGraphNode mainState newDocuments boundModels slot
                     | _ ->
                         let newBoundModel = boundModel.ClearTcInfoExtras()
                         GraphNode(node { return newBoundModel })
                 { state with
-                    documents = state.documents.RemoveAt(slot).Insert(slot, fileInfo)
+                    documents = newDocuments
                     boundModels = state.boundModels.RemoveAt(slot).Insert(slot, newBoundModelNode)
                     stampedFileNames = state.stampedFileNames.SetItem(slot, stamp)
                 }
