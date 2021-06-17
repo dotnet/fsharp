@@ -994,20 +994,26 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
         let stamp = StampFileNameTask fileInfo
 
         if currentStamp <> stamp then
+            let boundModels = state.boundModels.ToBuilder()
             match state.boundModels.[slot].TryPeekValue() with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
             | ValueSome(boundModel) when mainState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
-                let newBoundModel = boundModel.ClearTcInfoExtras()
+                let newBoundModelNode = 
+                    match fileInfo with
+                    | _, doc, _ when doc.IsOpen ->
+                        createBoundModelGraphNode mainState state.documents boundModels slot
+                    | _ ->
+                        let newBoundModel = boundModel.ClearTcInfoExtras()
+                        GraphNode(node { return newBoundModel })
                 { state with
                     documents = state.documents.RemoveAt(slot).Insert(slot, fileInfo)
-                    boundModels = state.boundModels.RemoveAt(slot).Insert(slot, GraphNode(node { return newBoundModel }))
-                    stampedFileNames = state.stampedFileNames.SetItem(slot, StampFileNameTask fileInfo)
+                    boundModels = state.boundModels.RemoveAt(slot).Insert(slot, newBoundModelNode)
+                    stampedFileNames = state.stampedFileNames.SetItem(slot, stamp)
                 }
             | _ ->
 
                 let stampedFileNames = state.stampedFileNames.ToBuilder()
                 let logicalStampedFileNames = state.logicalStampedFileNames.ToBuilder()
-                let boundModels = state.boundModels.ToBuilder()
 
                 // Invalidate the file and all files below it.
                 for j = 0 to stampedFileNames.Count - slot - 1 do
