@@ -558,7 +558,7 @@ public static int y()
                       """
 .method public static int32  y() cil managed
 {
-  
+
   .maxstack  5
   .locals init (int32 V_0,
            int32 V_1,
@@ -572,7 +572,7 @@ public static int y()
   IL_0005:  stloc.2
   IL_0006:  call       bool TupleElimination::cond()
   IL_000b:  brfalse.s  IL_0027
-    
+
   IL_000d:  ldstr      ""
   IL_0012:  callvirt   instance string [runtime]System.Object::ToString()
   IL_0017:  stloc.3
@@ -582,83 +582,85 @@ public static int y()
   IL_001f:  stloc.1
   IL_0020:  ldc.i4.3
   IL_0021:  stloc.2
-  IL_0022:  br         IL_0093
-    
+  IL_0022:  br         IL_0095
+  
   IL_0027:  call       bool TupleElimination::cond()
   IL_002c:  brfalse.s  IL_0036
-    
+  
   IL_002e:  ldc.i4.2
   IL_002f:  stloc.0
   IL_0030:  ldc.i4.2
   IL_0031:  stloc.1
   IL_0032:  ldc.i4.3
   IL_0033:  stloc.2
-  IL_0034:  br.s       IL_0093
-    
+  IL_0034:  br.s       IL_0095
+  
   IL_0036:  ldc.i4.1
   IL_0037:  ldc.i4.0
   IL_0038:  div
   IL_0039:  ldc.i4.1
   IL_003a:  sub
-  IL_003b:  switch     ( 
-                        IL_005c,
-                        IL_007d,
-                        IL_0085)
-  IL_004c:  ldc.i4.8
-  IL_004d:  stloc.0
-  IL_004e:  call       int32 TupleElimination::y()
-  IL_0053:  stloc.1
-  IL_0054:  call       int32 TupleElimination::y()
+  IL_003b:  switch     (
+                        IL_004e,
+                        IL_006f,
+                        IL_0077)
+  IL_004c:  br.s       IL_0087
+  
+  IL_004e:  ldc.i4.2
+  IL_004f:  ldc.i4.3
+  IL_0050:  div
+  IL_0051:  ldc.i4.1
+  IL_0052:  bne.un.s   IL_005c
+  
+  IL_0054:  ldc.i4.5
+  IL_0055:  stloc.0
+  IL_0056:  ldc.i4.6
+  IL_0057:  stloc.1
+  IL_0058:  ldc.i4.7
   IL_0059:  stloc.2
-  IL_005a:  br.s       IL_0093
-    
-  IL_005c:  ldc.i4.2
-  IL_005d:  ldc.i4.3
-  IL_005e:  div
-  IL_005f:  ldc.i4.1
-  IL_0060:  bne.un.s   IL_006a
-    
-  IL_0062:  ldc.i4.5
-  IL_0063:  stloc.0
-  IL_0064:  ldc.i4.6
-  IL_0065:  stloc.1
-  IL_0066:  ldc.i4.7
-  IL_0067:  stloc.2
-  IL_0068:  br.s       IL_0093
-    
-  IL_006a:  ldstr      ""
-  IL_006f:  callvirt   instance string [runtime]System.Object::ToString()
-  IL_0074:  stloc.3
-  IL_0075:  ldc.i4.6
-  IL_0076:  stloc.0
-  IL_0077:  ldc.i4.5
-  IL_0078:  stloc.1
-  IL_0079:  ldc.i4.4
-  IL_007a:  stloc.2
-  IL_007b:  br.s       IL_0093
-    
-  IL_007d:  ldc.i4.6
-  IL_007e:  stloc.0
-  IL_007f:  ldc.i4.6
-  IL_0080:  stloc.1
-  IL_0081:  ldc.i4.6
-  IL_0082:  stloc.2
-  IL_0083:  br.s       IL_0093
-    
-  IL_0085:  call       int32 TupleElimination::f()
-  IL_008a:  stloc.0
-  IL_008b:  ldc.i4.7
-  IL_008c:  stloc.1
-  IL_008d:  call       int32 TupleElimination::f()
-  IL_0092:  stloc.2
-  IL_0093:  ldloc.0
-  IL_0094:  ldloc.1
-  IL_0095:  add
-  IL_0096:  ldc.i4.2
-  IL_0097:  ldloc.2
-  IL_0098:  mul
-  IL_0099:  add
-  IL_009a:  ret
+  IL_005a:  br.s       IL_0095
+  
+  IL_005c:  ldstr      ""
+  IL_0061:  callvirt   instance string [runtime]System.Object::ToString()
+  IL_0066:  stloc.3
+  IL_0067:  ldc.i4.6
+  IL_0068:  stloc.0
+  IL_0069:  ldc.i4.5
+  IL_006a:  stloc.1
+  IL_006b:  ldc.i4.4
+  IL_006c:  stloc.2
+  IL_006d:  br.s       IL_0095
+  
+  IL_006f:  ldc.i4.6
+  IL_0070:  stloc.0
+  IL_0071:  ldc.i4.6
+  IL_0072:  stloc.1
+  IL_0073:  ldc.i4.6
+  IL_0074:  stloc.2
+  IL_0075:  br.s       IL_0095
+  
+  IL_0077:  call       int32 TupleElimination::f()
+  IL_007c:  stloc.0
+  IL_007d:  ldc.i4.7
+  IL_007e:  stloc.1
+  IL_007f:  call       int32 TupleElimination::f()
+  IL_0084:  stloc.2
+  IL_0085:  br.s       IL_0095
+  
+  IL_0087:  ldc.i4.8
+  IL_0088:  stloc.0
+  IL_0089:  call       int32 TupleElimination::y()
+  IL_008e:  stloc.1
+  IL_008f:  call       int32 TupleElimination::y()
+  IL_0094:  stloc.2
+  IL_0095:  ldloc.0
+  IL_0096:  ldloc.1
+  IL_0097:  add
+  IL_0098:  ldc.i4.2
+  IL_0099:  ldloc.2
+  IL_009a:  mul
+  IL_009b:  add
+  IL_009c:  ret
 }
 """
 
