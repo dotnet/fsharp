@@ -28,7 +28,7 @@ let DecideEscapes syntacticArgs body =
         not passedIn &&
         v.IsMutable &&
         v.ValReprInfo.IsNone &&
-        not (Optimizer.IsOnlyMutableBeforeUse (mkLocalValRef v))
+        not (Optimizer.IsKnownOnlyMutableBeforeUse (mkLocalValRef v))
 
     let frees = freeInExpr CollectLocals body
     frees.FreeLocals |> Zset.filter isMutableEscape 

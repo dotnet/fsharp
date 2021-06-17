@@ -708,3 +708,76 @@ public static int z()
   IL_0014:  ret
 }""" ]
 
+
+
+
+    [<Fact>]
+    let ``Branching let binding of tuple with capture doesn't promote``() =
+        FSharp """
+module TupleElimination
+open System.Runtime.CompilerServices
+
+let testFunction(a,b) =
+    let x,y = printfn "hello"; b*a,a*b
+    (fun () -> x + y)
+         """
+         |> compile
+         |> shouldSucceed
+         |> verifyIL [
+         // Checks the captured 'x' and 'y' are not promoted onto the heap
+                      """
+.method public static class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> 
+        testFunction(int32 a,
+                     int32 b) cil managed
+{
+  
+  .maxstack  4
+  .locals init (class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0,
+           int32 V_1,
+           int32 V_2)
+  IL_0000:  ldstr      "hello"
+  IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+  IL_000a:  stloc.0
+  IL_000b:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+  IL_0010:  ldloc.0
+  IL_0011:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+  IL_0016:  pop
+  IL_0017:  ldarg.1
+  IL_0018:  ldarg.0
+  IL_0019:  mul
+  IL_001a:  stloc.1
+  IL_001b:  ldarg.0
+  IL_001c:  ldarg.1
+  IL_001d:  mul
+  IL_001e:  stloc.2
+  IL_001f:  ldloc.1
+  IL_0020:  ldloc.2
+  IL_0021:  newobj     instance void TupleElimination/testFunction@7::.ctor(int32,
+                                                                            int32)
+  IL_0026:  ret
+} 
+""" 
+
+         // Checks the names of captured 'x' and 'y'. Currently these are not
+         // good names, see https://github.com/dotnet/fsharp/issues/11689,
+         // this test will need updating when this is fixed
+                      """
+  .method public strict virtual instance int32 
+          Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar0) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld      int32 TupleElimination/testFunction@7::patternInput_0
+    IL_0006:  ldarg.0
+    IL_0007:  ldfld      int32 TupleElimination/testFunction@7::patternInput_1
+    IL_000c:  add
+    IL_000d:  ret
+  } 
+
+""" ]
+
+
+
+

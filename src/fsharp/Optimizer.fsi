@@ -83,5 +83,5 @@ val ExprHasEffect: TcGlobals -> Expr -> bool
 val internal u_CcuOptimizationInfo: ReaderState -> CcuOptimizationInfo
 
 /// Indicates the value is only mutable during its initialization and before any access or capture
-val IsOnlyMutableBeforeUse: ValRef -> bool
+val IsKnownOnlyMutableBeforeUse: ValRef -> bool
 

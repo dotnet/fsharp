@@ -1256,7 +1256,7 @@ let AbstractAndRemapModulInfo msg g m (repackage, hidden) info =
 let [<Literal>] suffixForVariablesThatMayNotBeEliminated = "$cont"
 
 /// Indicates a ValRef generated to facilitate tuple eliminations
-let [<Literal>] suffixForTupleElementAssignmentTarget = "tupleElem"
+let [<Literal>] suffixForTupleElementAssignmentTarget = "$tupleElem"
 
 /// Type applications of F# "type functions" may cause side effects, e.g. 
 /// let x<'a> = printfn "hello"; typeof<'a> 
@@ -1280,13 +1280,13 @@ let ValueOfExpr expr =
 
 let IsMutableStructuralBindingForTupleElement (vref: ValRef) =
     vref.IsCompilerGenerated &&
-    vref.DisplayName.EndsWith suffixForTupleElementAssignmentTarget
+    vref.LogicalName.EndsWith suffixForTupleElementAssignmentTarget
 
 let IsMutableForOutArg (vref: ValRef) =
     vref.IsCompilerGenerated &&
-    vref.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)
+    vref.LogicalName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)
 
-let IsOnlyMutableBeforeUse (vref: ValRef) =
+let IsKnownOnlyMutableBeforeUse (vref: ValRef) =
     IsMutableStructuralBindingForTupleElement vref || 
     IsMutableForOutArg vref
 
@@ -1592,7 +1592,7 @@ let MakeStructuralBindingTemp (v: Val) i (arg: Expr) argTy =
     ve, mkCompGenBind v arg
 
 let MakeMutableStructuralBindingForTupleElement (v: Val) i (arg: Expr) argTy =
-    let name = sprintf "%s_%d_%s" v.LogicalName i suffixForTupleElementAssignmentTarget
+    let name = sprintf "%s_%d%s" v.LogicalName i suffixForTupleElementAssignmentTarget
     let v, ve = mkMutableCompGenLocal arg.Range name argTy
     ve, mkCompGenBind v arg
 
@@ -2604,7 +2604,7 @@ and AddValEqualityInfo g m (v: ValRef) info =
     // when their address is passed to the method call. Another exception are mutable variables
     // created for tuple elimination in branching tuple bindings because they are assigned to
     // exactly once.
-    if not v.IsMutable || IsOnlyMutableBeforeUse v then 
+    if not v.IsMutable || IsKnownOnlyMutableBeforeUse v then 
         { info with Info = MakeValueInfoForValue g m v info.Info }
     else
         info 
