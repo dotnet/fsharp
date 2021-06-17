@@ -446,7 +446,7 @@ type public FSharpCheckProjectResults =
                  TcImports *
                  CcuThunk *
                  ModuleOrNamespaceType *
-                 TcSymbolUses list *
+                 Choice<IncrementalBuilder, TcSymbolUses> *
                  TopAttribs option *
                  IRawFSharpAssemblyData option *
                  ILAssemblyRef *
