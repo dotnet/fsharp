@@ -1283,7 +1283,8 @@ let IsMutableStructuralBindingForTupleElement (vref: ValRef) =
     vref.DisplayName.EndsWith suffixForTupleElementAssignmentTarget
 
 let IsMutableForOutArg (vref: ValRef) =
-    (vref.IsCompilerGenerated && vref.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName))
+    vref.IsCompilerGenerated &&
+    vref.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)
 
 let IsOnlyMutableBeforeUse (vref: ValRef) =
     IsMutableStructuralBindingForTupleElement vref || 
@@ -1590,11 +1591,10 @@ let MakeStructuralBindingTemp (v: Val) i (arg: Expr) argTy =
     let v, ve = mkCompGenLocal arg.Range name argTy
     ve, mkCompGenBind v arg
 
-let MakeMutableStructuralBindingForTupleElement m (v: Val) i argTy =
-    let init = mkDefault (m, argTy)
-    let name = sprintf "%s_%d%s" v.LogicalName i suffixForTupleElementAssignmentTarget
-    let mutv, mutve = mkMutableCompGenLocal m name argTy
-    mutv, mutve, mkCompGenBind mutv init
+let MakeMutableStructuralBindingForTupleElement (v: Val) i (arg: Expr) argTy =
+    let name = sprintf "%s_%d_%s" v.LogicalName i suffixForTupleElementAssignmentTarget
+    let v, ve = mkMutableCompGenLocal arg.Range name argTy
+    ve, mkCompGenBind v arg
 
 let ExpandStructuralBindingRaw cenv expr =
     assert cenv.settings.ExpandStructuralValues()
@@ -1699,15 +1699,16 @@ let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
 
     let requisites = lazy (
         let argTys = destRefTupleTy g v.Type
-        let mutvs, mutves, mutinits = argTys |> List.mapi (MakeMutableStructuralBindingForTupleElement m v)  |> List.unzip3
-        let mutvrefs = mutvs |> List.map mkLocalValRef
-        argTys, mutves, mutinits, mutvrefs)
+        let inits = argTys |> List.map (mkNull m)
+        let ves, binds = List.mapi2 (MakeMutableStructuralBindingForTupleElement v) inits argTys |> List.unzip
+        let vrefs = binds |> List.map (fun (TBind (v, _, _)) -> mkLocalValRef v)
+        argTys, ves, binds, vrefs)
 
     match dive g m requisites rhs with
     | Some rewrittenRhs ->
-        let argTys, mutves, mutinits, _ = requisites.Value
-        let rhsAndTupleBinding = mkCompGenSequential m rewrittenRhs (mkRefTupled g m mutves argTys)
-        mkLetsBind m mutinits (mkLet tgtSeqPtOpt m v rhsAndTupleBinding body) |> Some
+        let argTys, ves, binds, _ = requisites.Value
+        let rhsAndTupleBinding = mkCompGenSequential m rewrittenRhs (mkRefTupled g m ves argTys)
+        mkLetsBind m binds (mkLet tgtSeqPtOpt m v rhsAndTupleBinding body) |> Some
     | _ -> None
 
 let ExpandStructuralBinding cenv expr =
