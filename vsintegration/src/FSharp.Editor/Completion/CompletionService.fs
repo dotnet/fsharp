@@ -17,7 +17,6 @@ type internal FSharpCompletionService
     (
         workspace: Workspace,
         serviceProvider: SVsServiceProvider,
-        checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager,
         assemblyContentProvider: AssemblyContentProvider,
         settings: EditorOptions
@@ -26,7 +25,7 @@ type internal FSharpCompletionService
 
     let builtInProviders = 
         ImmutableArray.Create<CompletionProvider>(
-            FSharpCompletionProvider(workspace, serviceProvider, checkerProvider, projectInfoManager, assemblyContentProvider),
+            FSharpCompletionProvider(workspace, serviceProvider, assemblyContentProvider),
             FSharpCommonCompletionProvider.Create(HashDirectiveCompletionProvider.Create(workspace, projectInfoManager)))
 
     override _.Language = FSharpConstants.FSharpLanguageName
@@ -56,13 +55,12 @@ type internal FSharpCompletionServiceFactory
     [<ImportingConstructor>] 
     (
         serviceProvider: SVsServiceProvider,
-        checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager,
         assemblyContentProvider: AssemblyContentProvider,
         settings: EditorOptions
     ) =
     interface ILanguageServiceFactory with
         member _.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
-            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider, checkerProvider, projectInfoManager, assemblyContentProvider, settings)
+            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider, projectInfoManager, assemblyContentProvider, settings)
 
 

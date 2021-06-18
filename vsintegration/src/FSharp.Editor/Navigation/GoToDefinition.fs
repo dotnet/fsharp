@@ -151,9 +151,7 @@ type internal FSharpGoToDefinitionResult =
     | NavigableItem of FSharpNavigableItem
     | ExternalAssembly of FSharpSymbolUse * MetadataReference seq
 
-type internal GoToDefinition(checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager) =
-    let userOpName = "GoToDefinition"
-    let checker = checkerProvider.Checker
+type internal GoToDefinition(checkerProvider: FSharpCheckerProvider) =
     let metadataAsSourceService = checkerProvider.MetadataAsSource
 
     /// Use an origin document to provide the solution & workspace used to 
@@ -176,18 +174,15 @@ type internal GoToDefinition(checkerProvider: FSharpCheckerProvider, projectInfo
     /// Helper function that is used to determine the navigation strategy to apply, can be tuned towards signatures or implementation files.
     member private _.FindSymbolHelper (originDocument: Document, originRange: range, sourceText: SourceText, preferSignature: bool) =
         asyncMaybe {
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(originDocument, CancellationToken.None, userOpName)
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! originTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, originRange)
             let position = originTextSpan.Start
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position, originDocument.FilePath, defines, SymbolLookupKind.Greedy, false, false)
-            
+            let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false)
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()  
-            
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument (originDocument, projectOptions, userOpName=userOpName)
             let idRange = lexerSymbol.Ident.idRange
+
+            let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync() |> liftAsync
             let! fsSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
             let symbol = fsSymbolUse.Symbol
             // if the tooltip was spawned in an implementation file and we have a range targeting
@@ -198,8 +193,7 @@ type internal GoToDefinition(checkerProvider: FSharpCheckerProvider, projectInfo
                 if not (File.Exists fsfilePath) then return! None else
                 let! implDoc = originDocument.Project.Solution.TryGetDocumentFromPath fsfilePath
                 let! implSourceText = implDoc.GetTextAsync ()
-                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(implDoc, CancellationToken.None, userOpName)
-                let! _, _, checkFileResults = checker.ParseAndCheckDocument (implDoc, projectOptions, userOpName=userOpName)
+                let! _, checkFileResults = implDoc.GetFSharpParseAndCheckResultsAsync() |> liftAsync
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol
                 let! implSymbol  = symbolUses |> Array.tryHead 
                 let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, implSymbol.Range)
@@ -212,13 +206,13 @@ type internal GoToDefinition(checkerProvider: FSharpCheckerProvider, projectInfo
     /// if the symbol is defined in the given file, return its declaration location, otherwise use the targetSymbol to find the first 
     /// instance of its presence in the provided source file. The first case is needed to return proper declaration location for
     /// recursive type definitions, where the first its usage may not be the declaration.
-    member _.FindSymbolDeclarationInDocument(targetSymbolUse: FSharpSymbolUse, document: Document, options: FSharpProjectOptions) = 
+    member _.FindSymbolDeclarationInDocument(targetSymbolUse: FSharpSymbolUse, document: Document) = 
         asyncMaybe {
             let filePath = document.FilePath
             match targetSymbolUse.Symbol.DeclarationLocation with
             | Some decl when decl.FileName = filePath -> return decl
             | _ ->
-                let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, userOpName)
+                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol
                 let! implSymbol  = symbolUses |> Array.tryHead 
                 return implSymbol.Range
@@ -226,9 +220,7 @@ type internal GoToDefinition(checkerProvider: FSharpCheckerProvider, projectInfo
 
     member private this.FindDefinitionAtPosition(originDocument: Document, position: int, cancellationToken: CancellationToken) =
         asyncMaybe {
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(originDocument, CancellationToken.None, userOpName)
-            let! sourceText = originDocument.GetTextAsync(cancellationToken) |> liftTaskAsync
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+            let! sourceText = originDocument.GetTextAsync(cancellationToken)
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let textLineString = textLine.ToString()
@@ -236,12 +228,11 @@ type internal GoToDefinition(checkerProvider: FSharpCheckerProvider, projectInfo
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()  
             
             let preferSignature = isSignatureFile originDocument.FilePath
-
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument (originDocument, projectOptions, userOpName=userOpName)
                 
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position,originDocument.FilePath, defines, SymbolLookupKind.Greedy, false, false)
+            let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false)
             let idRange = lexerSymbol.Ident.idRange
 
+            let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync() |> liftAsync
             let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineString, lexerSymbol.FullIsland, preferSignature)
             let! targetSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
 
@@ -285,7 +276,7 @@ type internal GoToDefinition(checkerProvider: FSharpCheckerProvider, projectInfo
                             if not (File.Exists implFilePath) then return! None else
                             let! implDocument = originDocument.Project.Solution.TryGetDocumentFromPath implFilePath
                         
-                            let! targetRange = this.FindSymbolDeclarationInDocument(targetSymbolUse, implDocument, projectOptions)
+                            let! targetRange = this.FindSymbolDeclarationInDocument(targetSymbolUse, implDocument)
                             let! implSourceText = implDocument.GetTextAsync(cancellationToken) |> liftTaskAsync
                             let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
                             let navItem = FSharpGoToDefinitionNavigableItem (implDocument, implTextSpan)
@@ -320,10 +311,8 @@ type internal GoToDefinition(checkerProvider: FSharpCheckerProvider, projectInfo
                                 else sigDocument.FilePath
 
                             let! implDocument = originDocument.Project.Solution.TryGetDocumentFromPath implFilePath
-
-                            let! _, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(implDocument, cancellationToken, userOpName)
                         
-                            let! targetRange = this.FindSymbolDeclarationInDocument(targetSymbolUse, implDocument, projectOptions)    
+                            let! targetRange = this.FindSymbolDeclarationInDocument(targetSymbolUse, implDocument)    
                         
                             let! implSourceText = implDocument.GetTextAsync () |> liftTaskAsync
                             let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
@@ -425,8 +414,7 @@ type internal GoToDefinition(checkerProvider: FSharpCheckerProvider, projectInfo
                 | Some tmpShownDoc ->
                     let goToAsync =
                         asyncMaybe {
-                            let! _, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject (tmpShownDoc, cancellationToken, userOpName)
-                            let! _, _, checkResults = checker.ParseAndCheckDocument(tmpShownDoc, projectOptions, userOpName)
+                            let! _, checkResults = tmpShownDoc.GetFSharpParseAndCheckResultsAsync() |> liftAsync
                             let! r =
                                 let rec areTypesEqual (ty1: FSharpType) (ty2: FSharpType) =
                                     let ty1 = ty1.StripAbbreviations()

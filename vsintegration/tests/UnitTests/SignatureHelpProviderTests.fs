@@ -45,7 +45,7 @@ let private DefaultDocumentationProvider =
         override doc.AppendDocumentation(_, _, _, _, _, _, _) = ()
     }
 
-let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:int) =
+let GetSignatureHelp (_project:FSharpProject) (fileName:string) (caretPosition:int) =
     async {
         let triggerChar = None
         let fileContents = File.ReadAllText(fileName)
@@ -53,14 +53,11 @@ let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:in
         let textLines = sourceText.Lines
         let caretLinePos = textLines.GetLinePosition(caretPosition)
         let caretLineColumn = caretLinePos.Character
-        let perfOptions = LanguageServicePerformanceOptions.Default
         
         let document = RoslynTestHelpers.CreateDocument(fileName, sourceText)
-        let parseResults, _, checkFileResults =
-            let x =
-                checker.ParseAndCheckDocument(document, project.Options, perfOptions, "TestSignatureHelpProvider")
-                |> Async.RunSynchronously
-            x.Value
+        let parseResults, checkFileResults =
+            document.GetFSharpParseAndCheckResultsAsync()
+            |> Async.RunSynchronously
 
         let paramInfoLocations = parseResults.FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn).Value
         let triggered =
@@ -106,14 +103,9 @@ let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (e
     let perfOptions = LanguageServicePerformanceOptions.Default
                
     let document = RoslynTestHelpers.CreateDocument(filePath, sourceText)
-    let parseResults, _, checkFileResults =
-        let x =
-            checker.ParseAndCheckDocument(document, projectOptions, perfOptions, "TestSignatureHelpProvider")
-            |> Async.RunSynchronously
-
-        if x.IsNone then
-            Assert.Fail("Could not parse and check document.")
-        x.Value
+    let parseResults, checkFileResults =
+        document.GetFSharpParseAndCheckResultsAsync()
+        |> Async.RunSynchronously
 
     let actual = 
         let paramInfoLocations = parseResults.FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn)
@@ -142,16 +134,10 @@ let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (e
 let assertSignatureHelpForFunctionApplication (fileContents: string) (marker: string) expectedArgumentCount expectedArgumentIndex =
     let caretPosition = fileContents.LastIndexOf(marker) + marker.Length
     let document, sourceText = RoslynTestHelpers.CreateDocument(filePath, fileContents)
-    let perfOptions = LanguageServicePerformanceOptions.Default
     
-    let parseResults, _, checkFileResults =
-        let x =
-            checker.ParseAndCheckDocument(document, projectOptions, perfOptions, "TestSignatureHelpProvider")
-            |> Async.RunSynchronously
-
-        if x.IsNone then
-            Assert.Fail("Could not parse and check document.")
-        x.Value
+    let parseResults, checkFileResults =
+        document.GetFSharpParseAndCheckResultsAsync()
+        |> Async.RunSynchronously
 
     let adjustedColumnInSource =
         let rec loop ch pos =
@@ -429,16 +415,10 @@ M.f
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
         let document, sourceText = RoslynTestHelpers.CreateDocument(filePath, fileContents)
-        let perfOptions = LanguageServicePerformanceOptions.Default
     
-        let parseResults, _, checkFileResults =
-            let x =
-                checker.ParseAndCheckDocument(document, projectOptions, perfOptions, "TestSignatureHelpProvider")
-                |> Async.RunSynchronously
-
-            if x.IsNone then
-                Assert.Fail("Could not parse and check document.")
-            x.Value
+        let parseResults, checkFileResults =
+            document.GetFSharpParseAndCheckResultsAsync()
+            |> Async.RunSynchronously
     
         let adjustedColumnInSource =
             let rec loop ch pos =
