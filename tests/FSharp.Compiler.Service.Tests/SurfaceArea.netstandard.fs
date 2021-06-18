@@ -2024,9 +2024,11 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateAll()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateConfiguration(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void set_MaxMemory(Int32)
 FSharp.Compiler.CodeAnalysis.FSharpDocument
+FSharp.Compiler.CodeAnalysis.FSharpDocument: Boolean IsOpen
+FSharp.Compiler.CodeAnalysis.FSharpDocument: Boolean get_IsOpen()
 FSharp.Compiler.CodeAnalysis.FSharpDocument: FSharp.Compiler.CodeAnalysis.DocumentText GetText()
-FSharp.Compiler.CodeAnalysis.FSharpDocument: FSharp.Compiler.CodeAnalysis.FSharpDocument Create(System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.Text.ISourceText])
-FSharp.Compiler.CodeAnalysis.FSharpDocument: FSharp.Compiler.CodeAnalysis.FSharpDocument CreateCopyFromFile(System.String)
+FSharp.Compiler.CodeAnalysis.FSharpDocument: FSharp.Compiler.CodeAnalysis.FSharpDocument Create(System.String, Boolean, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.Text.ISourceText])
+FSharp.Compiler.CodeAnalysis.FSharpDocument: FSharp.Compiler.CodeAnalysis.FSharpDocument CreateCopyFromFile(System.String, Boolean)
 FSharp.Compiler.CodeAnalysis.FSharpDocument: System.DateTime TimeStamp
 FSharp.Compiler.CodeAnalysis.FSharpDocument: System.DateTime get_TimeStamp()
 FSharp.Compiler.CodeAnalysis.FSharpDocument: System.String FilePath

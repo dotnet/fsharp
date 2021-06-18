@@ -995,10 +995,10 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
 
         if currentStamp <> stamp then
             let boundModels = state.boundModels.ToBuilder()
+            let newDocuments = state.documents.RemoveAt(slot).Insert(slot, fileInfo)
             match state.boundModels.[slot].TryPeekValue() with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
             | ValueSome(boundModel) when mainState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
-                let newDocuments = state.documents.RemoveAt(slot).Insert(slot, fileInfo)
                 let newBoundModelNode = 
                     match fileInfo with
                     | _, doc, _ when doc.IsOpen ->
@@ -1018,16 +1018,16 @@ type IncrementalBuilder(mainState: IncrementalBuilderMainState, state: Increment
 
                 // Invalidate the file and all files below it.
                 for j = 0 to stampedFileNames.Count - slot - 1 do
-                    let stamp = StampFileNameTask state.documents.[slot + j]
+                    let stamp = StampFileNameTask newDocuments.[slot + j]
                     stampedFileNames.[slot + j] <- stamp
                     logicalStampedFileNames.[slot + j] <- stamp
-                    boundModels.[slot + j] <- createBoundModelGraphNode mainState state.documents boundModels (slot + j)
+                    boundModels.[slot + j] <- createBoundModelGraphNode mainState newDocuments boundModels (slot + j)
 
                 { state with
                     // Something changed, the finalized view of the project must be invalidated.
                     finalizedBoundModel = createFinalizeBoundModelGraphNode mainState boundModels
 
-                    documents = state.documents.RemoveAt(slot).Insert(slot, fileInfo)
+                    documents = newDocuments
                     stampedFileNames = stampedFileNames.ToImmutable()
                     logicalStampedFileNames = logicalStampedFileNames.ToImmutable()
                     boundModels = boundModels.ToImmutable()
