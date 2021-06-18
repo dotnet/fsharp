@@ -3748,7 +3748,7 @@ module WitnessTests =
                 (match args with [ _; _ ] -> true | _ -> false)
                 *)
                 true
-            | _ -> false)) |> List.forall // Don't short circuit on a failed test
+            | _ -> false)) |> List.forall id // Don't short circuit on a failed test
 
 module MoreWitnessTests =
 
