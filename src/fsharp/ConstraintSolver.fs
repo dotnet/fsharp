@@ -384,7 +384,7 @@ let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g 
 let IsCharOrStringType g ty = isCharTy g ty || isStringTy g ty
 
 /// Checks the argument type for a built-in solution to an op_Addition, op_Subtraction or op_Modulus constraint.
-let IsAddSubModType nm g ty = IsNumericOrIntegralEnumType g ty || (nm = "op_Addition" && IsCharOrStringType g ty)
+let IsAddSubModType nm g ty = IsNumericOrIntegralEnumType g ty || (nm = "op_Addition" && IsCharOrStringType g ty) || (nm = "op_Subtraction" && isCharTy g ty)
 
 /// Checks the argument type for a built-in solution to a bitwise operator constraint
 let IsBitwiseOpType g ty = IsIntegerOrIntegerEnumTy g ty || (isEnumTy g ty)
