@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.QuotationPickler
 
+open System
 open System.Text
 open FSharp.Compiler.IO
 open Internal.Utilities
@@ -245,6 +246,10 @@ let SerializedReflectedDefinitionsResourceNameBase = "ReflectedDefinitions"
 
 let freshVar (n, ty, mut) = { vText=n; vType=ty; vMutable=mut }
 
+/// Arbitrary value
+[<Literal>]
+let PickleBufferCapacity = 100000
+
 module SimplePickle =
 
     type Table<'T> =
@@ -311,6 +316,11 @@ module SimplePickle =
         p_int32 (len) st
         st.os.EmitBytes s
 
+    let p_memory (s:ReadOnlyMemory<byte>) st =
+        let len = s.Length
+        p_int32 (len) st
+        st.os.EmitMemory s
+
     let prim_pstring (s:string) st =
         let bytes = Encoding.UTF8.GetBytes s
         let len = bytes.Length
@@ -363,20 +373,26 @@ module SimplePickle =
         | h :: t -> p_byte 1 st; f h st; p_list f t st
 
     let pickle_obj p x =
+        let st1 =
+            { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
+              ostrings=Table<_>.Create() }
         let stringTab, phase1bytes =
-            let st1 =
-                { os = ByteBuffer.Create 100000
-                  ostrings=Table<_>.Create() }
             p x st1
-            st1.ostrings.AsList, st1.os.Close()
+            st1.ostrings.AsList, st1.os.AsMemory()
+
         let phase2data = (stringTab, phase1bytes)
+
+        let st2 =
+           { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
+             ostrings=Table<_>.Create() }
         let phase2bytes =
-            let st2 =
-               { os = ByteBuffer.Create 100000
-                 ostrings=Table<_>.Create() }
-            p_tup2 (p_list prim_pstring) p_bytes phase2data st2
-            st2.os.Close()
-        phase2bytes
+            p_tup2 (p_list prim_pstring) p_memory phase2data st2
+            st2.os.AsMemory()
+
+        let finalBytes = phase2bytes.ToArray()
+        (st1.os :> IDisposable).Dispose()
+        (st2.os :> IDisposable).Dispose()
+        finalBytes
 
 open SimplePickle
 
