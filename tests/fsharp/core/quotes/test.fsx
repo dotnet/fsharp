@@ -3731,24 +3731,24 @@ module WitnessTests =
                true
            &&
            match test with
-            | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) ->
-                minfo1.IsStatic && 
-                minfo2.IsStatic && 
-                minfo2.Name = minfo1.Name + "$W" &&
+           | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) ->
+               minfo1.IsStatic && 
+               minfo2.IsStatic && 
+               minfo2.Name = minfo1.Name + "$W" &&
     (*
-                (printfn "checking minfo2.GetParameters().Length = %d..." (minfo2.GetParameters().Length); true) &&
-                minfo2.GetParameters().Length = 3 && 
-                (printfn "checking witnessArgs.Length..."; true) &&
-                witnessArgs.Length = 1 &&
-                (printfn "checking args.Length..."; true) &&
-                args.Length = 2 &&
-                (printfn "witnessArgs..."; true) &&
-                (match witnessArgs with [ Lambda _ ] -> true | _ -> false) &&
-                (printfn "args..."; true) &&
-                (match args with [ _; _ ] -> true | _ -> false)
-                *)
-                true
-            | _ -> false)) |> List.forall id // Don't short circuit on a failed test
+               (printfn "checking minfo2.GetParameters().Length = %d..." (minfo2.GetParameters().Length); true) &&
+               minfo2.GetParameters().Length = 3 && 
+               (printfn "checking witnessArgs.Length..."; true) &&
+               witnessArgs.Length = 1 &&
+               (printfn "checking args.Length..."; true) &&
+               args.Length = 2 &&
+               (printfn "witnessArgs..."; true) &&
+               (match witnessArgs with [ Lambda _ ] -> true | _ -> false) &&
+               (printfn "args..."; true) &&
+               (match args with [ _; _ ] -> true | _ -> false)
+               *)
+               true
+           | _ -> false) |> List.forall id) // Don't short circuit on a failed test
 
 module MoreWitnessTests =
 
