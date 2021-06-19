@@ -44,7 +44,7 @@ type internal FSharpCodeLensService
         workspace: Workspace, 
         documentId: Lazy<DocumentId>,
         buffer: ITextBuffer, 
-        checkerProvider: FSharpCheckerProvider,
+        metadataAsSource: FSharpMetadataAsSourceService,
         classificationFormatMapService: IClassificationFormatMapService,
         typeMap: Lazy<FSharpClassificationTypeMap>,
         codeLens : CodeLensDisplayService,
@@ -191,7 +191,7 @@ type internal FSharpCodeLensService
                                 let taggedText = ResizeArray()        
                                 typeLayout |> Seq.iter taggedText.Add
                                 let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>()) 
-                                let navigation = QuickInfoNavigation(statusBar, checkerProvider, document, realPosition)
+                                let navigation = QuickInfoNavigation(statusBar, metadataAsSource, document, realPosition)
                                 // Because the data is available notify that this line should be updated, displaying the results
                                 return Some (taggedText, navigation)
                             | None -> 

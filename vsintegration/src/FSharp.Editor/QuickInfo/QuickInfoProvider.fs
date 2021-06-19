@@ -162,7 +162,7 @@ type internal FSharpAsyncQuickInfoSource
     (
         statusBar: StatusBar,
         xmlMemberIndexService: IVsXMLMemberIndexService,
-        checkerProvider:FSharpCheckerProvider,
+        metadataAsSource: FSharpMetadataAsSourceService,
         textBuffer:ITextBuffer,
         _settings: EditorOptions
     ) =
@@ -220,7 +220,7 @@ type internal FSharpAsyncQuickInfoSource
                     | None, Some quickInfo ->
                         let mainDescription, docs = FSharpAsyncQuickInfoSource.BuildSingleQuickInfoItem documentationBuilder quickInfo
                         let imageId = Tokenizer.GetImageIdForSymbol(quickInfo.Symbol, quickInfo.SymbolKind)
-                        let navigation = QuickInfoNavigation(statusBar, checkerProvider, document, symbolUseRange)
+                        let navigation = QuickInfoNavigation(statusBar, metadataAsSource, document, symbolUseRange)
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
                         let span = getTrackingSpan quickInfo.Span
                         return QuickInfoItem(span, content)
@@ -250,7 +250,7 @@ type internal FSharpAsyncQuickInfoSource
                             ] |> ResizeArray
                         let docs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
                         let imageId = Tokenizer.GetImageIdForSymbol(targetQuickInfo.Symbol, targetQuickInfo.SymbolKind)
-                        let navigation = QuickInfoNavigation(statusBar, checkerProvider, document, symbolUseRange)
+                        let navigation = QuickInfoNavigation(statusBar, metadataAsSource, document, symbolUseRange)
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
                         let span = getTrackingSpan targetQuickInfo.Span
                         return QuickInfoItem(span, content)
@@ -265,7 +265,7 @@ type internal FSharpAsyncQuickInfoSourceProvider
     [<ImportingConstructor>]
     (
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
-        checkerProvider:FSharpCheckerProvider,
+        metadataAsSource: FSharpMetadataAsSourceService,
         settings: EditorOptions
     ) =
 
@@ -275,4 +275,4 @@ type internal FSharpAsyncQuickInfoSourceProvider
             // It is safe to do it here (see #4713)
             let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
             let xmlMemberIndexService = serviceProvider.XMLMemberIndexService
-            new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, checkerProvider, textBuffer, settings) :> IAsyncQuickInfoSource
+            new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, metadataAsSource, textBuffer, settings) :> IAsyncQuickInfoSource

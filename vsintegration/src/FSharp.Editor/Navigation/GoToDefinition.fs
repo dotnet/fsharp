@@ -151,8 +151,7 @@ type internal FSharpGoToDefinitionResult =
     | NavigableItem of FSharpNavigableItem
     | ExternalAssembly of FSharpSymbolUse * MetadataReference seq
 
-type internal GoToDefinition(checkerProvider: FSharpCheckerProvider) =
-    let metadataAsSourceService = checkerProvider.MetadataAsSource
+type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
 
     /// Use an origin document to provide the solution & workspace used to 
     /// find the corresponding textSpan and INavigableItem for the range
@@ -409,7 +408,7 @@ type internal GoToDefinition(checkerProvider: FSharpCheckerProvider) =
                         AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName), 
                         fileName, 
                         metadataReferences)
-                let tmpShownDocOpt = metadataAsSourceService.ShowDocument(tmpProjInfo, tmpDocInfo.FilePath, SourceText.From(text.ToString()))
+                let tmpShownDocOpt = metadataAsSource.ShowDocument(tmpProjInfo, tmpDocInfo.FilePath, SourceText.From(text.ToString()))
                 match tmpShownDocOpt with
                 | Some tmpShownDoc ->
                     let goToAsync =

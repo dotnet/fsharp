@@ -23,7 +23,7 @@ type internal CodeLensProvider
     (
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
         textDocumentFactory: ITextDocumentFactoryService,
-        checkerProvider: FSharpCheckerProvider,
+        metadataAsSource: FSharpMetadataAsSourceService,
         typeMap : FSharpClassificationTypeMap Lazy,
         settings: EditorOptions
     ) =
@@ -49,7 +49,7 @@ type internal CodeLensProvider
                 )
 
             let tagger = CodeLensGeneralTagger(wpfView, buffer)
-            let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, checkerProvider, componentModel.GetService(), typeMap, tagger, settings)
+            let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, metadataAsSource, componentModel.GetService(), typeMap, tagger, settings)
             let provider = (wpfView, (tagger, service))
             wpfView.Closed.Add (fun _ -> taggers.Remove provider |> ignore)
             taggers.Add((wpfView, (tagger, service)))
@@ -68,7 +68,7 @@ type internal CodeLensProvider
                     | _ -> None
                     |> Option.get
                 )
-            let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, checkerProvider, componentModel.GetService(), typeMap, LineLensDisplayService(wpfView, buffer), settings)
+            let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, metadataAsSource, componentModel.GetService(), typeMap, LineLensDisplayService(wpfView, buffer), settings)
             let provider = (wpfView, service)
             wpfView.Closed.Add (fun _ -> lineLensProvider.Remove provider |> ignore)
             lineLensProvider.Add(provider)

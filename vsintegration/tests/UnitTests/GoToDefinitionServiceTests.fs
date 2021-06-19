@@ -78,7 +78,6 @@ module GoToDefinitionServiceTests =
     let GoToDefinitionTest (fileContents: string, caretMarker: string, expected) =
 
         let filePath = Path.GetTempFileName() + ".fs"
-        let options = makeOptions filePath [| |]
         File.WriteAllText(filePath, fileContents)
 
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker

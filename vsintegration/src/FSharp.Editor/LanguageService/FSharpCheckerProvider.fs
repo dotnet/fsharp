@@ -18,39 +18,40 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 #nowarn "9" // NativePtr.toNativeInt
 
 // Exposes FSharpChecker as MEF export
-[<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
+[<Export(typeof<FSharpCheckerProvider>); Composition.Shared;Composition.Export(typeof<FSharpCheckerProvider>)>]
 type internal FSharpCheckerProvider 
-    [<ImportingConstructor>]
+    [<ImportingConstructor;Composition.ImportingConstructor>]
     (
-        [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace,
-        projectContextFactory: IWorkspaceProjectContextFactory,
+        [<Import(typeof<VisualStudioWorkspace>)>] workspace: Workspace,
         settings: EditorOptions
     ) =
 
-    let metadataAsSource = FSharpMetadataAsSourceService(projectContextFactory)
-
     let tryGetMetadataSnapshot (path, timeStamp) = 
-        try
-            let md = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetMetadata(workspace, path, timeStamp)
-            let amd = (md :?> AssemblyMetadata)
-            let mmd = amd.GetModules().[0]
-            let mmr = mmd.GetMetadataReader()
+        match workspace with
+        | :? VisualStudioWorkspace as workspace ->
+            try
+                let md = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetMetadata(workspace, path, timeStamp)
+                let amd = (md :?> AssemblyMetadata)
+                let mmd = amd.GetModules().[0]
+                let mmr = mmd.GetMetadataReader()
 
-            // "lifetime is timed to Metadata you got from the GetMetadata(...). As long as you hold it strongly, raw 
-            // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
-            // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
-            // You shouldn't dispose it directly."
+                // "lifetime is timed to Metadata you got from the GetMetadata(...). As long as you hold it strongly, raw 
+                // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
+                // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
+                // You shouldn't dispose it directly."
 
-            let objToHold = box md
+                let objToHold = box md
 
-            // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
-            // Debug.Assert((FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
+                // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
+                // Debug.Assert((FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
 
-            Some (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
-        with ex -> 
-            // We catch all and let the backup routines in the F# compiler find the error
-            Assert.Exception(ex)
-            None 
+                Some (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
+            with ex -> 
+                // We catch all and let the backup routines in the F# compiler find the error
+                Assert.Exception(ex)
+                None 
+        | _ ->
+            None
 
     let checker = 
         lazy
@@ -68,6 +69,4 @@ type internal FSharpCheckerProvider
             checker
 
     member this.Checker = checker.Value
-
-    member _.MetadataAsSource = metadataAsSource
 

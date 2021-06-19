@@ -57,13 +57,13 @@ type internal FSharpCheckerWorkspaceServiceFactory
                 member _.FSharpProjectOptionsManager = projectInfoManager }
 
 [<Sealed>]
-type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager) =
+type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager, metadataAsSource: FSharpMetadataAsSourceService) =
 
     interface IVsSolutionEvents with
 
         member _.OnAfterCloseSolution(_) =
             projectManager.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-            projectManager.MetadataAsSource.ClearGeneratedFiles()
+            metadataAsSource.ClearGeneratedFiles()
             projectManager.ClearAllCaches()
             VSConstants.S_OK
 
@@ -177,9 +177,10 @@ type internal FSharpPackage() as this =
                     // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
                     let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
                     let projectInfoManager = this.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
+                    let metadataAsSource = this.ComponentModel.DefaultExportProvider.GetExport<FSharpMetadataAsSourceService>().Value
                     let solution = this.GetServiceAsync(typeof<SVsSolution>).Result
                     let solution = solution :?> IVsSolution
-                    let solutionEvents = FSharpSolutionEvents(projectInfoManager)
+                    let solutionEvents = FSharpSolutionEvents(projectInfoManager, metadataAsSource)
                     let rdt = this.GetServiceAsync(typeof<SVsRunningDocumentTable>).Result
                     let rdt = rdt :?> IVsRunningDocumentTable
 

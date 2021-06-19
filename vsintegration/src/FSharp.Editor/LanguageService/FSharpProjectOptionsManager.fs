@@ -75,7 +75,7 @@ module private FSharpProjectOptionsHelpers =
             let p2 = newProject.Solution.GetProject(p2.ProjectId)
             doesProjectIdDiffer || 
             (
-                if p1.Language = LanguageNames.FSharp then
+                if p1.IsFSharpProject then
                     p1.Version <> p2.Version
                 else
                     let v1 = p1.GetDependentVersionAsync(ct).Result
@@ -462,7 +462,7 @@ type internal FSharpProjectOptionsManager
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace,
+        [<Import(typeof<VisualStudioWorkspace>)>] workspace: Workspace,
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,
         settings: EditorOptions
     ) =
@@ -484,7 +484,7 @@ type internal FSharpProjectOptionsManager
         workspace.DocumentClosed.Add(fun args ->
             let doc = args.Document
             let proj = doc.Project
-            if proj.Language = LanguageNames.FSharp && proj.IsFSharpMiscellaneousOrMetadata then
+            if proj.IsFSharpProject && proj.IsFSharpMiscellaneousOrMetadata then
                 reactor.ClearSingleFileOptionsCache(doc.Id)
         )
 
@@ -545,22 +545,24 @@ type internal FSharpProjectOptionsManager
     member _.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, _references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
         use _logBlock = Logger.LogBlock(LogEditorFunctionId.LanguageService_HandleCommandLineArgs)
 
-        let projectId =
-            match Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.TryGetProjectIdByBinPath(workspace, path) with
-            | true, projectId -> projectId
-            | false, _ -> Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetOrCreateProjectIdForPath(workspace, path, projectDisplayNameOf path)
-        let path = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetProjectFilePath(workspace, projectId)
+        match workspace with
+        | :? VisualStudioWorkspace as workspace ->
+            let projectId =
+                match Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.TryGetProjectIdByBinPath(workspace, path) with
+                | true, projectId -> projectId
+                | false, _ -> Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetOrCreateProjectIdForPath(workspace, path, projectDisplayNameOf path)
+            let path = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetProjectFilePath(workspace, projectId)
 
-        let getFullPath p =
-            let p' =
-                if Path.IsPathRooted(p) || path = null then p
-                else Path.Combine(Path.GetDirectoryName(path), p)
-            Path.GetFullPathSafe(p')
+            let getFullPath p =
+                let p' =
+                    if Path.IsPathRooted(p) || path = null then p
+                    else Path.Combine(Path.GetDirectoryName(path), p)
+                Path.GetFullPathSafe(p')
 
-        let sourcePaths = sources |> Seq.map(fun s -> getFullPath s.Path) |> Seq.toArray
+            let sourcePaths = sources |> Seq.map(fun s -> getFullPath s.Path) |> Seq.toArray
 
-        reactor.SetCpsCommandLineOptions(projectId, sourcePaths, options.ToArray())
+            reactor.SetCpsCommandLineOptions(projectId, sourcePaths, options.ToArray())
+        | _ ->
+            ()
 
     member _.Checker = checkerProvider.Checker
-
-    member _.MetadataAsSource = checkerProvider.MetadataAsSource
