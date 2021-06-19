@@ -137,3 +137,11 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Length")>]
         val length: str:string -> int
 
+        /// <summary>Returns whether or not <c>str</c> contains another string, <c>substring</c>.</summary>
+        ///
+        /// <param name="substring">The substring to check for.</param>
+        /// <param name="str">The input string.</param>
+        ///
+        /// <returns>True if <c>substring</c> is a substring and false otherwise.</returns> 
+        [<CompiledName("Contains")>]
+        val contains: substring:string -> str:string -> bool

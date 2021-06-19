@@ -1990,6 +1990,7 @@ Microsoft.FSharp.Core.StringModule: System.String MapIndexed(Microsoft.FSharp.Co
 Microsoft.FSharp.Core.StringModule: System.String Replicate(Int32, System.String)
 Microsoft.FSharp.Core.StringModule: Void Iterate(Microsoft.FSharp.Core.FSharpFunc`2[System.Char,Microsoft.FSharp.Core.Unit], System.String)
 Microsoft.FSharp.Core.StringModule: Void IterateIndexed(Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[System.Char,Microsoft.FSharp.Core.Unit]], System.String)
+Microsoft.FSharp.Core.StringModule: Boolean Contains(System.String, System.String)
 Microsoft.FSharp.Core.StructAttribute: Void .ctor()
 Microsoft.FSharp.Core.StructuralComparisonAttribute: Void .ctor()
 Microsoft.FSharp.Core.StructuralEqualityAttribute: Void .ctor()

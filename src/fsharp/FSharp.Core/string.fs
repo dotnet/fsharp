@@ -180,3 +180,10 @@ namespace Microsoft.FSharp.Core
             else
                 let rec check i = (i < str.Length) && (predicate str.[i] || check (i+1)) 
                 check 0  
+        
+        [<CompiledName("Contains")>]
+        let contains substring (str: string) =
+            if isNull str then
+                nullArg (nameof(str))
+            else
+                str.Contains substring

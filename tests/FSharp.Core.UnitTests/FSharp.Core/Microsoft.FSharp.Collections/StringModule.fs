@@ -356,3 +356,26 @@ type StringModule() =
         Assert.AreEqual(str.[-3..(-4)], (""))
         Assert.AreEqual(str.[-4..(-3)], (""))
 
+    
+    [<Fact>]
+    member this.Contains() =
+        let e1 = String.contains "foo" "foobar"
+        Assert.True(e1)
+
+        let e2 = String.contains "bar" "foobar"
+        Assert.True(e2)
+
+        let e3 = String.contains "oba" "foobar"
+        Assert.True(e3)
+
+        let e4 = String.contains "fooo" "foobar"
+        Assert.False(e4)
+
+        let e5 = String.contains "xyz" "foobar"
+        Assert.False(e5)
+
+        let e6 = String.contains "" "foobar"
+        Assert.True(e6)
+
+        CheckThrowsArgumentNullException(fun () -> String.contains null "banana" |> ignore)
+        CheckThrowsArgumentNullException(fun () -> String.contains "banana" null |> ignore)
