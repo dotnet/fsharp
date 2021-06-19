@@ -684,9 +684,9 @@ module LeafExpressionConverter =
             let e2 = if addConvertRight then Expression.Convert(e2, typedefof<Nullable<int>>.MakeGenericType [| e2.Type |]) |> asExpr else e2
             try exprErasedConstructor(e1, e2, null) with e ->
                 // LINQ Expressions' arithmetic operators do not handle byte, sbyte and char. In this case, use the F# operator as the user-defined method.
-                try exprErasedConstructor(e1, e2, System.Reflection.MethodInfo.GetMethodFromHandle fallback :?> _) with _ ->
+                try exprErasedConstructor(e1, e2, System.Reflection.MethodInfo.GetMethodFromHandle fallback :?> _) with e' ->
                     // Still failing. Preserve descriptive exception stack traces.
-                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e).Throw()
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e').Throw()
                     failwith "Unreachable"
             |> asExpr
         | _ -> failConvert inp
