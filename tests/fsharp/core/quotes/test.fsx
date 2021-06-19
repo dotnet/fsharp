@@ -3720,7 +3720,7 @@ module WitnessTests =
            match canEval with
            | Some eval ->
                printfn "--> checking we can evaluate %A" test
-               let res = FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation test |> ignore
+               let res = FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation test
                let b = res = FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation eval
                if b then printfn "<-- Success, It is %A which is equal to %A" res eval
                else printfn "<-- FAIL, It is %A which is not equal to %A" res eval
