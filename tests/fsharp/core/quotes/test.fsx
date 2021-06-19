@@ -3383,12 +3383,12 @@ module WitnessTests =
 
     test "check CallWithWitnesses all operators)"      
       (let tests = 
-            [ <@@ sin 1.0 @@>, Some <@@ 0.8414709848 @@>
-              <@@ sin 1.0f @@>, Some <@@ 0.841470957f @@>
+            [ <@@ sin 1.0 @@>, Some <@@ 0x3FEAED548F090CEELF @@> // Around 0.841470984807897
+              <@@ sin 1.0f @@>, Some <@@ 0x3F576AA4lf @@> // = 0.841471f
               <@@ sign 1.0f @@>, Some <@@ 1 @@>
               <@@ sqrt 1.0f<m> @@>, Some <@@ 1f @@>
-              <@@ atan2 3.0 4.0 @@>, Some <@@ 0.6435011088 @@>
-              <@@ atan2 3.0<m> 4.0<m> @@>, Some <@@ 0.6435011088 @@>
+              <@@ atan2 3.0 4.0 @@>, Some <@@ 0x3FE4978FA3269EE1LF @@> // Around 0.643501108793284
+              <@@ atan2 3.0<m> 4.0<m> @@>, Some <@@ 0x3FE4978FA3269EE1LF @@> // Around 0.643501108793284
               
               <@@ 1y + 4y @@>, Some <@@ 5y @@>
               <@@ 1uy + 4uy @@>, Some <@@ 5uy @@>
