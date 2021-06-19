@@ -145,3 +145,9 @@ namespace Microsoft.FSharp.Core
         /// <returns>True if <c>substring</c> is a substring and false otherwise.</returns> 
         [<CompiledName("Contains")>]
         val contains: substring:string -> str:string -> bool
+
+        [<CompiledName("Replace")>]
+        val replace: oldValue:string -> newValue:string -> str:string -> string
+
+        [<CompiledName("ReplaceChar")>]
+        val replaceChar: oldValue:char -> newValue:char -> str:string -> string

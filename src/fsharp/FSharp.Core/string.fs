@@ -131,7 +131,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Replicate")>]
         let replicate (count:int) (str:string) =
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
-
+            
             let len = length str
             if len = 0 || count = 0 then 
                 String.Empty
@@ -187,3 +187,17 @@ namespace Microsoft.FSharp.Core
                 nullArg (nameof(str))
             else
                 str.Contains substring
+
+        [<CompiledName("Replace")>]
+        let replace (oldValue: string) (newValue: string) (str: string) =
+            if isNull str then
+                nullArg (nameof(str))
+            else
+                str.Replace(oldValue, newValue)
+
+        [<CompiledName("ReplaceChar")>]
+        let replaceChar (oldValue: char) (newValue: char) (str: string) =
+            if isNull str then
+                nullArg (nameof(str))
+            else
+                str.Replace(oldValue, newValue)

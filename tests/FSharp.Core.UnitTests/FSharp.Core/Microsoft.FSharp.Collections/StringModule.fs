@@ -379,3 +379,32 @@ type StringModule() =
 
         CheckThrowsArgumentNullException(fun () -> String.contains null "banana" |> ignore)
         CheckThrowsArgumentNullException(fun () -> String.contains "banana" null |> ignore)
+
+    [<Fact>]
+    member this.Replace () =
+        let e1 = String.replace "oo" "aa" "foobar"
+        Assert.AreEqual("faabar", e1)
+
+        let e2 = String.replace "na" "ba" "banana"
+        Assert.AreEqual("bababa", e2)
+
+
+        let e3 = String.replace "na" "" "banana"
+        Assert.AreEqual("ba", e3)
+
+        let e4 = String.replace "na" null "banana"
+        Assert.AreEqual("ba", e4)
+
+        CheckThrowsArgumentException(fun () -> String.replace "" "x" "banana" |> ignore)
+        CheckThrowsArgumentNullException(fun () -> String.replace null "x" "banana" |> ignore)
+        CheckThrowsArgumentNullException(fun () -> String.replace "foo" "bar" null |> ignore)
+
+    [<Fact>]
+    member this.ReplaceChar () =
+        let e1 = String.replaceChar 'b' 'c' "foobar"
+        Assert.AreEqual("foocar", e1)
+
+        let e2 = String.replaceChar 'a' 'o' "banana"
+        Assert.AreEqual("bonono", e2)
+
+        CheckThrowsArgumentNullException(fun () -> String.replaceChar 'x' 'y' null |> ignore)    
