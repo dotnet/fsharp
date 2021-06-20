@@ -2772,8 +2772,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         with
         | _ ->
             let d = System.Reflection.Assembly.GetExecutingAssembly() //IO.Directory.GetCurrentDirectory()        
-            let fi = IO.FileInfo(d.Location)
-            fi.DirectoryName
+            System.IO.Path.GetDirectoryName d.Location
 
     let legacyReferenceResolver =
         match legacyReferenceResolver with
