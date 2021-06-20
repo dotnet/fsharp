@@ -3728,7 +3728,6 @@ module WitnessTests =
               <@@ Nullable<_> 1.0 ?+ 4.0 @@>, Some <@@ Nullable<_> 5. @@>
               <@@ Nullable<_> 1m ?+ 4m @@>, Some <@@ Nullable<_> 5m @@>
               <@@ Nullable<_> '1' ?+ '\004' @@>, Some <@@ Nullable<_> '5' @@>
-              <@@ Nullable<_> "abc" ?+ "def" @@>, Some <@@ Nullable<_> "abcdef" @@>
               <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?+ LanguagePrimitives.GenericOne<nativeint> @@>, None
               <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?+ LanguagePrimitives.GenericOne<unativeint> @@>, None
               
@@ -3744,7 +3743,6 @@ module WitnessTests =
               <@@ 1.0 +? Nullable<_> 4.0 @@>, Some <@@ Nullable<_> 5. @@>
               <@@ 1m +? Nullable<_> 4m @@>, Some <@@ Nullable<_> 5m @@>
               <@@ '1' +? Nullable<_> '\004' @@>, Some <@@ Nullable<_> '5' @@>
-              <@@ "abc" +? Nullable<_> "def" @@>, Some <@@ Nullable<_> "abcdef" @@>
               <@@ LanguagePrimitives.GenericOne<nativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, None
               <@@ LanguagePrimitives.GenericOne<unativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, None
               
@@ -3760,7 +3758,6 @@ module WitnessTests =
               <@@ Nullable<_> 1.0 ?+? Nullable<_> 4.0 @@>, Some <@@ Nullable<_> 5. @@>
               <@@ Nullable<_> 1m ?+? Nullable<_> 4m @@>, Some <@@ Nullable<_> 5m @@>
               <@@ Nullable<_> '1' ?+? Nullable<_> '\004' @@>, Some <@@ Nullable<_> '5' @@>
-              <@@ Nullable<_> "abc" ?+? Nullable<_> "def" @@>, Some <@@ Nullable<_> "abcdef" @@>
               <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, None
               <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, None
               
@@ -3776,7 +3773,6 @@ module WitnessTests =
               <@@ Nullable<_> 1.0 ?= 1.0 @@>, Some <@@ Nullable<_> true @@>
               <@@ Nullable<_> 1m ?= 1m @@>, Some <@@ Nullable<_> true @@>
               <@@ Nullable<_> '1' ?= '1' @@>, Some <@@ Nullable<_> true @@>
-              <@@ Nullable<_> "abc" ?= "abc" @@>, Some <@@ Nullable<_> true @@>
               <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?= LanguagePrimitives.GenericOne<nativeint> @@>, None
               <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?= LanguagePrimitives.GenericOne<unativeint> @@>, None
               
@@ -3792,7 +3788,6 @@ module WitnessTests =
               <@@ 1.0 =? Nullable<_> 1.0 @@>, Some <@@ Nullable<_> true @@>
               <@@ 1m =? Nullable<_> 1m @@>, Some <@@ Nullable<_> true @@>
               <@@ '1' =? Nullable<_> '1' @@>, Some <@@ Nullable<_> true @@>
-              <@@ "abc" =? Nullable<_> "abc" @@>, Some <@@ Nullable<_> true @@>
               <@@ LanguagePrimitives.GenericOne<nativeint> =? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, None
               <@@ LanguagePrimitives.GenericOne<unativeint> =? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, None
               
@@ -3808,7 +3803,6 @@ module WitnessTests =
               <@@ Nullable<_> 1.0 ?=? Nullable<_> 1.0 @@>, Some <@@ Nullable<_> true @@>
               <@@ Nullable<_> 1m ?=? Nullable<_> 1m @@>, Some <@@ Nullable<_> true @@>
               <@@ Nullable<_> '1' ?=? Nullable<_> '1' @@>, Some <@@ Nullable<_> true @@>
-              <@@ Nullable<_> "abc" ?=? Nullable<_> "abc" @@>, Some <@@ Nullable<_> true @@>
               <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?=? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, None
               <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?=? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, None
             ]
