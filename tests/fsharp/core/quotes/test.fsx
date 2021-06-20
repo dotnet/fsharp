@@ -3743,8 +3743,8 @@ module WitnessTests =
               <@@ 1.0 +? Nullable<_> 4.0 @@>, Some <@@ Nullable<_> 5. @@>
               <@@ 1m +? Nullable<_> 4m @@>, Some <@@ Nullable<_> 5m @@>
               <@@ '1' +? Nullable<_> '\004' @@>, Some <@@ Nullable<_> '5' @@>
-              <@@ LanguagePrimitives.GenericOne<nativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, None
-              <@@ LanguagePrimitives.GenericOne<unativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, None
+              <@@ LanguagePrimitives.GenericOne<nativeint> +? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, None
+              <@@ LanguagePrimitives.GenericOne<unativeint> +? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, None
               
               <@@ Nullable<_> 1y ?+? Nullable<_> 4y @@>, Some <@@ Nullable<_> 5y @@>
               <@@ Nullable<_> 1uy ?+? Nullable<_> 4uy @@>, Some <@@ Nullable<_> 5uy @@>
