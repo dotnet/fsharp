@@ -3258,7 +3258,7 @@ module TestMatchBang =
 #if LANGVERSION_PREVIEW
 module WitnessTests = 
     open FSharp.Data.UnitSystems.SI.UnitSymbols
-    open FSharp.Linq
+    open FSharp.Linq.NullableOperators
 
     test "check CallWithWitness"      
         (<@ 1 + 1  @> 
