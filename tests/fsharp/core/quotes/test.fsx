@@ -3258,6 +3258,7 @@ module TestMatchBang =
 #if LANGVERSION_PREVIEW
 module WitnessTests = 
     open FSharp.Data.UnitSystems.SI.UnitSymbols
+    open FSharp.Linq
 
     test "check CallWithWitness"      
         (<@ 1 + 1  @> 
@@ -3714,6 +3715,102 @@ module WitnessTests =
               <@@ List.average [ 1.0; 2.0 ] @@>, Some <@@ 1.5 @@>
               <@@ List.average [ 1.0f; 2.0f ] @@>, Some <@@ 1.5f @@>
               <@@ List.average [ 1.0M; 2.0M ] @@>, Some <@@ 1.5m @@> 
+              
+              <@@ Nullable<_> 1y ?+ 4y @@>, Some <@@ Nullable<_> 5y @@>
+              <@@ Nullable<_> 1uy ?+ 4uy @@>, Some <@@ Nullable<_> 5uy @@>
+              <@@ Nullable<_> 1s ?+ 4s @@>, Some <@@ Nullable<_> 5s @@>
+              <@@ Nullable<_> 1us ?+ 4us @@>, Some <@@ Nullable<_> 5us @@>
+              <@@ Nullable<_> 1 ?+ 4 @@>, Some <@@ Nullable<_> 5 @@>
+              <@@ Nullable<_> 1u ?+ 4u @@>, Some <@@ Nullable<_> 5u @@>
+              <@@ Nullable<_> 1L ?+ 4L @@>, Some <@@ Nullable<_> 5L @@>
+              <@@ Nullable<_> 1uL ?+ 4uL @@>, Some <@@ Nullable<_> 5uL @@>
+              <@@ Nullable<_> 1.0f ?+ 4.0f @@>, Some <@@ Nullable<_> 5f @@>
+              <@@ Nullable<_> 1.0 ?+ 4.0 @@>, Some <@@ Nullable<_> 5. @@>
+              <@@ Nullable<_> 1m ?+ 4m @@>, Some <@@ Nullable<_> 5m @@>
+              <@@ Nullable<_> '1' ?+ '\004' @@>, Some <@@ Nullable<_> '5' @@>
+              <@@ Nullable<_> "abc" ?+ "def" @@>, Some <@@ Nullable<_> "abcdef" @@>
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?+ LanguagePrimitives.GenericOne<nativeint> @@>, None
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?+ LanguagePrimitives.GenericOne<unativeint> @@>, None
+              
+              <@@ 1y +? Nullable<_> 4y @@>, Some <@@ Nullable<_> 5y @@>
+              <@@ 1uy +? Nullable<_> 4uy @@>, Some <@@ Nullable<_> 5uy @@>
+              <@@ 1s +? Nullable<_> 4s @@>, Some <@@ Nullable<_> 5s @@>
+              <@@ 1us +? Nullable<_> 4us @@>, Some <@@ Nullable<_> 5us @@>
+              <@@ 1 +? Nullable<_> 4 @@>, Some <@@ Nullable<_> 5 @@>
+              <@@ 1u +? Nullable<_> 4u @@>, Some <@@ Nullable<_> 5u @@>
+              <@@ 1L +? Nullable<_> 4L @@>, Some <@@ Nullable<_> 5L @@>
+              <@@ 1uL +? Nullable<_> 4uL @@>, Some <@@ Nullable<_> 5uL @@>
+              <@@ 1.0f +? Nullable<_> 4.0f @@>, Some <@@ Nullable<_> 5f @@>
+              <@@ 1.0 +? Nullable<_> 4.0 @@>, Some <@@ Nullable<_> 5. @@>
+              <@@ 1m +? Nullable<_> 4m @@>, Some <@@ Nullable<_> 5m @@>
+              <@@ '1' +? Nullable<_> '\004' @@>, Some <@@ Nullable<_> '5' @@>
+              <@@ "abc" +? Nullable<_> "def" @@>, Some <@@ Nullable<_> "abcdef" @@>
+              <@@ LanguagePrimitives.GenericOne<nativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, None
+              <@@ LanguagePrimitives.GenericOne<unativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, None
+              
+              <@@ Nullable<_> 1y ?+? Nullable<_> 4y @@>, Some <@@ Nullable<_> 5y @@>
+              <@@ Nullable<_> 1uy ?+? Nullable<_> 4uy @@>, Some <@@ Nullable<_> 5uy @@>
+              <@@ Nullable<_> 1s ?+? Nullable<_> 4s @@>, Some <@@ Nullable<_> 5s @@>
+              <@@ Nullable<_> 1us ?+? Nullable<_> 4us @@>, Some <@@ Nullable<_> 5us @@>
+              <@@ Nullable<_> 1 ?+? Nullable<_> 4 @@>, Some <@@ Nullable<_> 5 @@>
+              <@@ Nullable<_> 1u ?+? Nullable<_> 4u @@>, Some <@@ Nullable<_> 5u @@>
+              <@@ Nullable<_> 1L ?+? Nullable<_> 4L @@>, Some <@@ Nullable<_> 5L @@>
+              <@@ Nullable<_> 1uL ?+? Nullable<_> 4uL @@>, Some <@@ Nullable<_> 5uL @@>
+              <@@ Nullable<_> 1.0f ?+? Nullable<_> 4.0f @@>, Some <@@ Nullable<_> 5f @@>
+              <@@ Nullable<_> 1.0 ?+? Nullable<_> 4.0 @@>, Some <@@ Nullable<_> 5. @@>
+              <@@ Nullable<_> 1m ?+? Nullable<_> 4m @@>, Some <@@ Nullable<_> 5m @@>
+              <@@ Nullable<_> '1' ?+? Nullable<_> '\004' @@>, Some <@@ Nullable<_> '5' @@>
+              <@@ Nullable<_> "abc" ?+? Nullable<_> "def" @@>, Some <@@ Nullable<_> "abcdef" @@>
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, None
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, None
+              
+              <@@ Nullable<_> 1y ?= 1y @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1uy ?= 1uy @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1s ?= 1s @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1us ?= 1us @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1 ?= 1 @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1u ?= 1u @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1L ?= 1L @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1uL ?= 1uL @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1.0f ?= 1.0f @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1.0 ?= 1.0 @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1m ?= 1m @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> '1' ?= '1' @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> "abc" ?= "abc" @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?= LanguagePrimitives.GenericOne<nativeint> @@>, None
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?= LanguagePrimitives.GenericOne<unativeint> @@>, None
+              
+              <@@ 1y =? Nullable<_> 1y @@>, Some <@@ Nullable<_> true @@>
+              <@@ 1uy =? Nullable<_> 1uy @@>, Some <@@ Nullable<_> true @@>
+              <@@ 1s =? Nullable<_> 1s @@>, Some <@@ Nullable<_> true @@>
+              <@@ 1us =? Nullable<_> 1us @@>, Some <@@ Nullable<_> true @@>
+              <@@ 1 =? Nullable<_> 1 @@>, Some <@@ Nullable<_> true @@>
+              <@@ 1u =? Nullable<_> 1u @@>, Some <@@ Nullable<_> true @@>
+              <@@ 1L =? Nullable<_> 1L @@>, Some <@@ Nullable<_> true @@>
+              <@@ 1uL =? Nullable<_> 1uL @@>, Some <@@ Nullable<_> true @@>
+              <@@ 1.0f =? Nullable<_> 1.0f @@>, Some <@@ Nullable<_> true @@>
+              <@@ 1.0 =? Nullable<_> 1.0 @@>, Some <@@ Nullable<_> true @@>
+              <@@ 1m =? Nullable<_> 1m @@>, Some <@@ Nullable<_> true @@>
+              <@@ '1' =? Nullable<_> '1' @@>, Some <@@ Nullable<_> true @@>
+              <@@ "abc" =? Nullable<_> "abc" @@>, Some <@@ Nullable<_> true @@>
+              <@@ LanguagePrimitives.GenericOne<nativeint> =? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, None
+              <@@ LanguagePrimitives.GenericOne<unativeint> =? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, None
+              
+              <@@ Nullable<_> 1y ?=? Nullable<_> 1y @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1uy ?=? Nullable<_> 1uy @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1s ?=? Nullable<_> 1s @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1us ?=? Nullable<_> 1us @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1 ?=? Nullable<_> 1 @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1u ?=? Nullable<_> 1u @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1L ?=? Nullable<_> 1L @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1uL ?=? Nullable<_> 1uL @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1.0f ?=? Nullable<_> 1.0f @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1.0 ?=? Nullable<_> 1.0 @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> 1m ?=? Nullable<_> 1m @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> '1' ?=? Nullable<_> '1' @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> "abc" ?=? Nullable<_> "abc" @@>, Some <@@ Nullable<_> true @@>
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?=? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, None
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?=? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, None
             ]
 
        tests |> List.map (fun (test, canEval) -> 
