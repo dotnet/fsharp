@@ -687,7 +687,7 @@ module LeafExpressionConverter =
                 let nullableUnderlyingType (exp: Expression) = match Nullable.GetUnderlyingType exp.Type with null -> exp.Type | t -> t
                 System.Reflection.MethodInfo.GetMethodFromHandle fallback
                 :?> System.Reflection.MethodInfo
-                |> fun method -> exprErasedConstructor(e1, e2, method.MakeGenericMethod [| nullableUnderlyingType e1; nullableUnderlyingType e2 |])
+                |> fun method -> exprErasedConstructor(e1, e2, method.MakeGenericMethod [| nullableUnderlyingType e1; nullableUnderlyingType e2; nullableUnderlyingType e1 |])
             |> asExpr
         | _ -> failConvert inp
 
