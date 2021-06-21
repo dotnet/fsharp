@@ -387,6 +387,21 @@ let ConcatAttributesLists (attrsLists: SynAttributeList list) =
 let (|Attributes|) synAttributes =
     ConcatAttributesLists synAttributes
 
+let (|TyparDecls|) (typarDecls: SynTyparDecls option) =
+    typarDecls
+    |> Option.map (fun x -> x.TyparDecls)
+    |> Option.defaultValue []
+
+let (|TyparsAndConstraints|) (typarDecls: SynTyparDecls option) =
+    typarDecls
+    |> Option.map (fun x -> x.TyparDecls, x.Constraints)
+    |> Option.defaultValue ([], [])
+
+let (|ValTyparDecls|) (SynValTyparDecls(typarDecls, canInfer)) =
+    typarDecls
+    |> Option.map (fun x -> x.TyparDecls, x.Constraints, canInfer)
+    |> Option.defaultValue ([], [], canInfer)
+
 let rangeOfNonNilAttrs (attrs: SynAttributes) =
     (attrs.Head.Range, attrs.Tail) ||> unionRangeWithListBy (fun a -> a.Range)
 
@@ -594,9 +609,9 @@ let StaticMemberFlags k : SynMemberFlags =
       IsOverrideOrExplicitImpl=false
       IsFinal=false }
 
-let inferredTyparDecls = SynValTyparDecls([], true, [])
+let inferredTyparDecls = SynValTyparDecls(None, true)
 
-let noInferredTypars = SynValTyparDecls([], false, [])
+let noInferredTypars = SynValTyparDecls(None, false)
 
 let rec synExprContainsError inpExpr =
     let rec walkBind (SynBinding(_, _, _, _, _, _, _, _, _, synExpr, _, _)) = walkExpr synExpr

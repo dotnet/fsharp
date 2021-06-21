@@ -405,6 +405,18 @@ type SynTypeConstraint =
        typeArgs: SynType list *
        range: range
 
+/// List of type parameter declarations with optional type constraints,
+/// enclosed in `< ... >` (postfix) or `( ... )` (prefix), or a single prefix parameter.
+[<RequireQualifiedAccess>]
+type SynTyparDecls =
+    | PostfixList of decls: SynTyparDecl list * constraints: SynTypeConstraint list * range: range
+    | PrefixList of decls: SynTyparDecl list * range: range
+    | SinglePrefix of decl: SynTyparDecl * range: range
+
+    member TyparDecls: SynTyparDecl list
+    member Constraints: SynTypeConstraint list
+    member Range: range
+
 /// Represents a syntax tree for F# types
 [<NoEquality; NoComparison;RequireQualifiedAccess>]
 type SynType = 
@@ -1592,7 +1604,7 @@ type SynField =
 type SynComponentInfo =
     | SynComponentInfo of
         attributes: SynAttributes *
-        typeParams: SynTyparDecl list *
+        typeParams: SynTyparDecls option *
         constraints: SynTypeConstraint list *
         longId: LongIdent *
         xmlDoc: PreXmlDoc *
@@ -1650,11 +1662,9 @@ type SynArgInfo =
 /// Represents the names and other metadata for the type parameters for a member or function
 [<NoEquality; NoComparison>]
 type SynValTyparDecls =
-
     | SynValTyparDecls of
-        typars: SynTyparDecl list *
-        canInfer: bool *
-        constraints: SynTypeConstraint list
+        typars: SynTyparDecls option *
+        canInfer: bool
 
 /// Represents the syntactic elements associated with the "return" of a function or method. 
 [<NoEquality; NoComparison>]

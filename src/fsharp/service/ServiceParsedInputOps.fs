@@ -494,7 +494,7 @@ module ParsedInput =
                 ifPosInRange r (fun _ -> kind)
                 |> Option.orElse (
                     typars 
-                    |> Option.bind (fun (SynValTyparDecls (typars, _, constraints)) -> 
+                    |> Option.bind (fun (ValTyparDecls (typars, constraints, _)) -> 
                         List.tryPick walkTyparDecl typars
                         |> Option.orElse (List.tryPick walkTypeConstraint constraints)))
                 |> Option.orElse (List.tryPick walkPat pats)
@@ -686,7 +686,7 @@ module ParsedInput =
             | SynTypeDefnSimpleRepr.TypeAbbrev(_, t, _) -> walkType t
             | _ -> None
 
-        and walkComponentInfo isModule (SynComponentInfo(Attributes attrs, typars, constraints, _, _, _, _, r)) =
+        and walkComponentInfo isModule (SynComponentInfo(Attributes attrs, TyparDecls typars, constraints, _, _, _, _, r)) =
             if isModule then None else ifPosInRange r (fun _ -> Some EntityKind.Type)
             |> Option.orElse (
                 List.tryPick walkAttribute attrs
@@ -1213,7 +1213,7 @@ module ParsedInput =
             | SynPat.LongIdent (ident, _, typars, ConstructorPats pats, _, _) ->
                 addLongIdentWithDots ident
                 typars
-                |> Option.iter (fun (SynValTyparDecls (typars, _, constraints)) ->
+                |> Option.iter (fun (ValTyparDecls (typars, constraints, _)) ->
                      List.iter walkTyparDecl typars
                      List.iter walkTypeConstraint constraints)
                 List.iter walkPat pats
@@ -1222,7 +1222,7 @@ module ParsedInput =
             | SynPat.QuoteExpr(e, _) -> walkExpr e
             | _ -> ()
     
-        and walkTypar (SynTypar (_, _, _)) = ()
+        and walkTypar (SynTypar _) = ()
     
         and walkBinding (SynBinding(_, _, _, _, Attributes attrs, _, _, pat, returnInfo, e, _, _)) =
             List.iter walkAttribute attrs
@@ -1446,7 +1446,7 @@ module ParsedInput =
             | SynTypeDefnSimpleRepr.TypeAbbrev (_, t, _) -> walkType t
             | _ -> ()
     
-        and walkComponentInfo isTypeExtensionOrAlias (SynComponentInfo(Attributes attrs, typars, constraints, longIdent, _, _, _, _)) =
+        and walkComponentInfo isTypeExtensionOrAlias (SynComponentInfo(Attributes attrs, TyparDecls typars, constraints, longIdent, _, _, _, _)) =
             List.iter walkAttribute attrs
             List.iter walkTyparDecl typars
             List.iter walkTypeConstraint constraints

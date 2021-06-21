@@ -303,6 +303,29 @@ type SynTypeConstraint =
        typeArgs: SynType list *
        range: range
 
+[<RequireQualifiedAccess>]
+type SynTyparDecls =
+    | PostfixList of decls: SynTyparDecl list * constraints: SynTypeConstraint list * range: range
+    | PrefixList of decls: SynTyparDecl list * range: range
+    | SinglePrefix of decl: SynTyparDecl * range: range
+
+    member x.TyparDecls =
+        match x with
+        | PostfixList (decls=decls)
+        | PrefixList (decls=decls) -> decls
+        | SinglePrefix (decl, _) -> [decl]
+
+    member x.Constraints =
+        match x with
+        | PostfixList (constraints=constraints) -> constraints
+        | _ -> []
+
+    member x.Range =
+        match x with
+        | PostfixList (range=range)
+        | PrefixList (range=range) -> range
+        | SinglePrefix (range=range) -> range
+
 [<NoEquality; NoComparison;RequireQualifiedAccess>]
 type SynType = 
     
@@ -1391,7 +1414,7 @@ type SynField =
 type SynComponentInfo =
     | SynComponentInfo of
         attributes: SynAttributes *
-        typeParams: SynTyparDecl list *
+        typeParams: SynTyparDecls option *
         constraints: SynTypeConstraint list *
         longId: LongIdent *
         xmlDoc: PreXmlDoc *
@@ -1450,11 +1473,9 @@ type SynArgInfo =
 
 [<NoEquality; NoComparison>]
 type SynValTyparDecls =
-
     | SynValTyparDecls of
-        typars: SynTyparDecl list *
-        canInfer: bool *
-        constraints: SynTypeConstraint list
+        typars: SynTyparDecls option *
+        canInfer: bool
 
 [<NoEquality; NoComparison>]
 type SynReturnInfo =
