@@ -75,7 +75,7 @@ module private FSharpProjectOptionsHelpers =
             let p2 = newProject.Solution.GetProject(p2.ProjectId)
             doesProjectIdDiffer || 
             (
-                if p1.IsFSharpProject then
+                if p1.IsFSharp then
                     p1.Version <> p2.Version
                 else
                     let v1 = p1.GetDependentVersionAsync(ct).Result
@@ -484,7 +484,7 @@ type internal FSharpProjectOptionsManager
         workspace.DocumentClosed.Add(fun args ->
             let doc = args.Document
             let proj = doc.Project
-            if proj.IsFSharpProject && proj.IsFSharpMiscellaneousOrMetadata then
+            if proj.IsFSharp && proj.IsFSharpMiscellaneousOrMetadata then
                 reactor.ClearSingleFileOptionsCache(doc.Id)
         )
 

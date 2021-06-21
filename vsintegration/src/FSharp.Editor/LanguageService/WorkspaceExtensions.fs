@@ -111,7 +111,7 @@ type Project with
 
     member this.GetFSharpProjectOptionsAsync() =
         async {
-            if this.IsFSharpProject then
+            if this.IsFSharp then
                 match ProjectCache.Projects.TryGetValue(this) with
                 | true, result -> return result
                 | _ ->
@@ -137,7 +137,7 @@ type Project with
 type Document with
 
     member this.GetFSharpSyntaxDefines() =
-        if this.Project.IsFSharpProject then
+        if this.Project.IsFSharp then
             let service = this.Project.Solution.GetFSharpService()
             service.FSharpProjectOptionsManager.GetCompilationDefinesForEditingDocument(this)
         else

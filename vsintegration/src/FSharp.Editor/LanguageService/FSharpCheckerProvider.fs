@@ -18,9 +18,9 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 #nowarn "9" // NativePtr.toNativeInt
 
 // Exposes FSharpChecker as MEF export
-[<Export(typeof<FSharpCheckerProvider>); Composition.Shared;Composition.Export(typeof<FSharpCheckerProvider>)>]
+[<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
 type internal FSharpCheckerProvider 
-    [<ImportingConstructor;Composition.ImportingConstructor>]
+    [<ImportingConstructor>]
     (
         [<Import(typeof<VisualStudioWorkspace>)>] workspace: Workspace,
         settings: EditorOptions
