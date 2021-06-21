@@ -355,7 +355,6 @@ module LeafExpressionConverter =
                 let props = ctor.DeclaringType.GetProperties()
                 Expression.New(ctor, argsR, [| for p in props -> (p :> MemberInfo) |]) |> asExpr
 
-
             // Do the same thing as C# compiler for string addition
             | PlusQ (_, [ty1; ty2; ty3], [x1; x2]) when (ty1 = typeof<string>) && (ty2 = typeof<string>) && (ty3 = typeof<string>) ->
                  Expression.Add(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2, StringConcat) |> asExpr
@@ -401,7 +400,7 @@ module LeafExpressionConverter =
             | MakeDecimalQ (_, _, [Int32 lo; Int32 med; Int32 hi; Bool isNegative; Byte scale]) ->
                 Expression.Constant (new System.Decimal(lo, med, hi, isNegative, scale)) |> asExpr
 
-            | NegQ (_, _, [x1])    -> Expression.Negate(ConvExprToLinqInContext env x1) |> asExpr
+            | NegQ (_, _, [x]) -> transUnaryOpFallback inp env x Expression.Negate <| methodhandleof (fun x -> LanguagePrimitives.UnaryNegationDynamic x)
             | PlusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Add <| methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y)
             | MinusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Subtract <| methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y)
             | MultiplyQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Multiply <| methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y)
@@ -413,9 +412,9 @@ module LeafExpressionConverter =
             | BitwiseAndQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.And <| methodhandleof (fun (x, y) -> LanguagePrimitives.BitwiseAndDynamic x y)
             | BitwiseOrQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Or <| methodhandleof (fun (x, y) -> LanguagePrimitives.BitwiseOrDynamic x y)
             | BitwiseXorQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.ExclusiveOr <| methodhandleof (fun (x, y) -> LanguagePrimitives.ExclusiveOrDynamic x y)
-            | BitwiseNotQ (_, _, [x1]) -> Expression.Not(ConvExprToLinqInContext env x1) |> asExpr
+            | BitwiseNotQ (_, _, [x]) -> transUnaryOpFallback inp env x Expression.Not <| methodhandleof (fun x -> LanguagePrimitives.LogicalNotDynamic x)
             
-            | CheckedNeg (_, _, [x1]) -> Expression.NegateChecked(ConvExprToLinqInContext env x1) |> asExpr
+            | CheckedNeg (_, _, [x]) -> transUnaryOpFallback inp env x Expression.NegateChecked <| methodhandleof (fun x -> LanguagePrimitives.CheckedUnaryNegationDynamic x)
             | CheckedPlusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.AddChecked <| methodhandleof (fun (x, y) -> LanguagePrimitives.CheckedAdditionDynamic x y)
             | CheckedMinusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.SubtractChecked <| methodhandleof (fun (x, y) -> LanguagePrimitives.CheckedSubtractionDynamic x y)
             | CheckedMultiplyQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.MultiplyChecked <| methodhandleof (fun (x, y) -> LanguagePrimitives.CheckedMultiplyDynamic x y)
@@ -664,6 +663,15 @@ module LeafExpressionConverter =
 
     and failConvert inp =
             raise (new NotSupportedException(Printf.sprintf "Could not convert the following F# Quotation to a LINQ Expression Tree\n--------\n%A\n-------------\n" inp))
+
+    and transUnaryOpFallback inp env x (exprErasedConstructor: _ * _ -> _) fallback =
+        let e = ConvExprToLinqInContext env x
+        try exprErasedConstructor(e, null) with _ ->
+            // LINQ Expressions' arithmetic operators do not handle byte, sbyte and char. In this case, use the F# operator as the user-defined method.
+            let nullableUnderlyingType (exp: Expr) = match Nullable.GetUnderlyingType exp.Type with null -> exp.Type | t -> t
+            let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
+            exprErasedConstructor(e, method.MakeGenericMethod [| nullableUnderlyingType x; nullableUnderlyingType inp |])
+        |> asExpr
 
     and transBinOp _inp env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ -> _) =
         let e1 = ConvExprToLinqInContext env x1
