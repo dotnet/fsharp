@@ -3638,18 +3638,18 @@ module WitnessTests =
               <@@ int16 "3" @@>, None
 
               <@@ uint16 3uy @@>, Some <@@ 3us @@>
-              <@@ uint16 3y @@>, Some <@@ 3s @@>
-              <@@ uint16 3s @@>, Some <@@ 3s @@>
-              <@@ uint16 3us @@>, Some <@@ 3s @@>
-              <@@ uint16 3 @@>, Some <@@ 3s @@>
-              <@@ uint16 3u @@>, Some <@@ 3s @@>
-              <@@ uint16 3L @@>, Some <@@ 3s @@>
-              <@@ uint16 3UL @@>, Some <@@ 3s @@>
-              <@@ uint16 3.0f @@>, Some <@@ 3s @@>
-              <@@ uint16 3.0 @@>, Some <@@ 3s @@>
+              <@@ uint16 3y @@>, Some <@@ 3us @@>
+              <@@ uint16 3s @@>, Some <@@ 3us @@>
+              <@@ uint16 3us @@>, Some <@@ 3us @@>
+              <@@ uint16 3 @@>, Some <@@ 3us @@>
+              <@@ uint16 3u @@>, Some <@@ 3us @@>
+              <@@ uint16 3L @@>, Some <@@ 3us @@>
+              <@@ uint16 3UL @@>, Some <@@ 3us @@>
+              <@@ uint16 3.0f @@>, Some <@@ 3us @@>
+              <@@ uint16 3.0 @@>, Some <@@ 3us @@>
               <@@ uint16 LanguagePrimitives.GenericOne<nativeint> @@>, None
               <@@ uint16 LanguagePrimitives.GenericOne<unativeint> @@>, None
-              <@@ uint16 3.0M @@>, Some <@@ 3s @@>
+              <@@ uint16 3.0M @@>, Some <@@ 3us @@>
               <@@ uint16 "3" @@>, None
 
               <@@ int32 3uy @@>, Some <@@ 3 @@>
