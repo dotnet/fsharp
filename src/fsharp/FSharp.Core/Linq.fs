@@ -402,43 +402,43 @@ module LeafExpressionConverter =
                 Expression.Constant (new System.Decimal(lo, med, hi, isNegative, scale)) |> asExpr
 
             | NegQ (_, _, [x1])    -> Expression.Negate(ConvExprToLinqInContext env x1) |> asExpr
-            | PlusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Add <| methodhandleof LanguagePrimitives.AdditionDynamic
-            | MinusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Subtract <| methodhandleof LanguagePrimitives.SubtractionDynamic
-            | MultiplyQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Multiply <| methodhandleof LanguagePrimitives.MultiplyDynamic
-            | DivideQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Divide <| methodhandleof LanguagePrimitives.DivisionDynamic
-            | ModuloQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Modulo <| methodhandleof LanguagePrimitives.ModulusDynamic
+            | PlusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Add <| methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y)
+            | MinusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Subtract <| methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y)
+            | MultiplyQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Multiply <| methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y)
+            | DivideQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Divide <| methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y)
+            | ModuloQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Modulo <| methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y)
 
-            | ShiftLeftQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.LeftShift <| methodhandleof LanguagePrimitives.LeftShiftDynamic
-            | ShiftRightQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.RightShift <| methodhandleof LanguagePrimitives.RightShiftDynamic
-            | BitwiseAndQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.And <| methodhandleof LanguagePrimitives.BitwiseAndDynamic
-            | BitwiseOrQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Or <| methodhandleof LanguagePrimitives.BitwiseOrDynamic
-            | BitwiseXorQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.ExclusiveOr <| methodhandleof LanguagePrimitives.ExclusiveOrDynamic
+            | ShiftLeftQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.LeftShift <| methodhandleof (fun (x, y) -> LanguagePrimitives.LeftShiftDynamic x y)
+            | ShiftRightQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.RightShift <| methodhandleof (fun (x, y) -> LanguagePrimitives.RightShiftDynamic x y)
+            | BitwiseAndQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.And <| methodhandleof (fun (x, y) -> LanguagePrimitives.BitwiseAndDynamic x y)
+            | BitwiseOrQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Or <| methodhandleof (fun (x, y) -> LanguagePrimitives.BitwiseOrDynamic x y)
+            | BitwiseXorQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.ExclusiveOr <| methodhandleof (fun (x, y) -> LanguagePrimitives.ExclusiveOrDynamic x y)
             | BitwiseNotQ (_, _, [x1]) -> Expression.Not(ConvExprToLinqInContext env x1) |> asExpr
             
             | CheckedNeg (_, _, [x1]) -> Expression.NegateChecked(ConvExprToLinqInContext env x1) |> asExpr
-            | CheckedPlusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.AddChecked <| methodhandleof LanguagePrimitives.CheckedAdditionDynamic
-            | CheckedMinusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.SubtractChecked <| methodhandleof LanguagePrimitives.CheckedSubtractionDynamic
-            | CheckedMultiplyQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.MultiplyChecked <| methodhandleof LanguagePrimitives.CheckedMultiplyDynamic
+            | CheckedPlusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.AddChecked <| methodhandleof (fun (x, y) -> LanguagePrimitives.CheckedAdditionDynamic x y)
+            | CheckedMinusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.SubtractChecked <| methodhandleof (fun (x, y) -> LanguagePrimitives.CheckedSubtractionDynamic x y)
+            | CheckedMultiplyQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.MultiplyChecked <| methodhandleof (fun (x, y) -> LanguagePrimitives.CheckedMultiplyDynamic x y)
             
-            | NullablePlusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 true Expression.Add <| methodhandleof LanguagePrimitives.AdditionDynamic
-            | PlusNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env true x1 x2 false Expression.Add <| methodhandleof LanguagePrimitives.AdditionDynamic
-            | NullablePlusNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Add <| methodhandleof LanguagePrimitives.AdditionDynamic
+            | NullablePlusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 true Expression.Add <| methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y)
+            | PlusNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env true x1 x2 false Expression.Add <| methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y)
+            | NullablePlusNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Add <| methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y)
             
-            | NullableMinusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 true Expression.Subtract <| methodhandleof LanguagePrimitives.SubtractionDynamic
-            | MinusNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env true x1 x2 false Expression.Subtract <| methodhandleof LanguagePrimitives.SubtractionDynamic
-            | NullableMinusNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Subtract <| methodhandleof LanguagePrimitives.SubtractionDynamic
+            | NullableMinusQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 true Expression.Subtract <| methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y)
+            | MinusNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env true x1 x2 false Expression.Subtract <| methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y)
+            | NullableMinusNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Subtract <| methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y)
             
-            | NullableMultiplyQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 true Expression.Multiply <| methodhandleof LanguagePrimitives.MultiplyDynamic
-            | MultiplyNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env true x1 x2 false Expression.Multiply <| methodhandleof LanguagePrimitives.MultiplyDynamic
-            | NullableMultiplyNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Multiply <| methodhandleof LanguagePrimitives.MultiplyDynamic
+            | NullableMultiplyQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 true Expression.Multiply <| methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y)
+            | MultiplyNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env true x1 x2 false Expression.Multiply <| methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y)
+            | NullableMultiplyNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Multiply <| methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y)
             
-            | NullableDivideQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 true Expression.Divide <| methodhandleof LanguagePrimitives.DivisionDynamic
-            | DivideNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env true x1 x2 false Expression.Divide <| methodhandleof LanguagePrimitives.DivisionDynamic
-            | NullableDivideNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Divide <| methodhandleof LanguagePrimitives.DivisionDynamic
+            | NullableDivideQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 true Expression.Divide <| methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y)
+            | DivideNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env true x1 x2 false Expression.Divide <| methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y)
+            | NullableDivideNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Divide <| methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y)
             
-            | NullableModuloQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 true Expression.Modulo <| methodhandleof LanguagePrimitives.ModulusDynamic
-            | ModuloNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env true x1 x2 false Expression.Modulo <| methodhandleof LanguagePrimitives.ModulusDynamic
-            | NullableModuloNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Modulo <| methodhandleof LanguagePrimitives.ModulusDynamic
+            | NullableModuloQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 true Expression.Modulo <| methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y)
+            | ModuloNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env true x1 x2 false Expression.Modulo <| methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y)
+            | NullableModuloNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Modulo <| methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y)
 
             | ConvNullableCharQ    (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<char>>) |> asExpr
             | ConvNullableDecimalQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<decimal>>) |> asExpr
