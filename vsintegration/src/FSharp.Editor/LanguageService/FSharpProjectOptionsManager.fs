@@ -99,7 +99,7 @@ type private FSharpProjectOptionsMessage =
     | ClearSingleFileOptionsCache of DocumentId
 
 [<Sealed>]
-type private FSharpProjectOptionsReactor (workspace: Workspace, settings: EditorOptions, _serviceProvider, checkerProvider: FSharpCheckerProvider) =
+type private FSharpProjectOptionsReactor (settings: EditorOptions, _serviceProvider, checkerProvider: FSharpCheckerProvider) =
     let cancellationTokenSource = new CancellationTokenSource()
 
     // Hack to store command line options from HandleCommandLineChanges
@@ -303,7 +303,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     return None
                 else
                     // Clear any caches that need clearing and invalidate the project.
-                    let currentSolution = workspace.CurrentSolution
+                    let currentSolution = project.Solution.Workspace.CurrentSolution
                     let projectsToClearCache =
                         cache
                         |> Seq.filter (fun pair -> not (currentSolution.ContainsProject pair.Key))
@@ -471,7 +471,7 @@ type internal FSharpProjectOptionsManager
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
         else Path.GetFileNameWithoutExtension projectFileName
 
-    let reactor = new FSharpProjectOptionsReactor(workspace, settings, serviceProvider, checkerProvider)
+    let reactor = new FSharpProjectOptionsReactor(settings, serviceProvider, checkerProvider)
 
     do
         // We need to listen to this event for lifecycle purposes.

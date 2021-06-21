@@ -3,34 +3,192 @@
 open System
 open System.IO
 open System.Reflection
+open System.Linq
+open System.Composition.Hosting
+open System.Collections.Generic
 open Microsoft.VisualStudio.Composition
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.CodeAnalysis.Host.Mef
+open Microsoft.VisualStudio.LanguageServices
 
-type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace) =
+[<AutoOpen>]
+module MefHelpers =
+
+    let getAssemblies() =
+        let self = Assembly.GetExecutingAssembly()
+        let here = AppContext.BaseDirectory
+
+        let imports =   [|
+                            //"Microsoft.CodeAnalysis.LanguageServer.Protocol.dll"
+                           // "Microsoft.CodeAnalysis.Features.dll"
+                            "Microsoft.CodeAnalysis.Workspaces.dll"
+                            "Microsoft.CodeAnalysis.Remote.Workspaces.dll"
+                           // "Microsoft.CodeAnalysis.EditorFeatures.dll"
+                          //  "Microsoft.CodeAnalysis.CSharp.EditorFeatures.dll"
+                          //  "Microsoft.CodeAnalysis.EditorFeatures.Text.dll"
+                          //  "Microsoft.VisualStudio.Text.Logic.dll"
+                         //   "Microsoft.VisualStudio.LanguageServices.dll"
+                            "FSharp.Editor.dll"
+                        |]
+
+        let resolvedImports = imports.Select(fun name -> Path.Combine(here, name)).ToList()
+        let missingDlls = resolvedImports.Where(fun path -> not(File.Exists(path))).ToList()
+        if (missingDlls.Any()) then
+            failwith "Missing imports"
+
+        let loadedImports = resolvedImports.Select(fun p -> Assembly.LoadFrom(p)).ToList()
+
+        let result = loadedImports.ToDictionary(fun k -> Path.GetFileNameWithoutExtension(k.Location))
+        result.Values 
+        |> Seq.append [|self|]
+        |> Seq.append MefHostServices.DefaultAssemblies
+        |> Array.ofSeq
+
+    let exportProvider =
+        let resolver = Resolver.DefaultInstance
+        let catalog = 
+            let asms = getAssemblies()
+            let partDiscovery = PartDiscovery.Combine(new AttributedPartDiscoveryV1(resolver), new AttributedPartDiscovery(resolver, isNonPublicSupported = true));
+            let parts = partDiscovery.CreatePartsAsync(asms).Result
+            let catalog = ComposableCatalog.Create(resolver)
+            catalog.AddParts(parts)
+
+        let configuration = CompositionConfiguration.Create(catalog.WithCompositionService())
+        let runtimeComposition = RuntimeComposition.CreateRuntimeComposition(configuration)
+        let exportProviderFactory = runtimeComposition.CreateExportProviderFactory()
+        exportProviderFactory.CreateExportProvider()
+
+type TestWorkspaceServiceMetadata(serviceType: string, layer: string) =
+
+    member _.ServiceType = serviceType
+    member _.Layer = layer
+
+    new(data: IDictionary<string, obj>) =
+        let serviceType =
+            match data.TryGetValue("ServiceType") with
+            | true, result -> result :?> string
+            | _ -> Unchecked.defaultof<_>
+
+        let layer =
+            match data.TryGetValue("Layer") with
+            | true, result -> result :?> string
+            | _ -> Unchecked.defaultof<_>
+        TestWorkspaceServiceMetadata(serviceType, layer)
+
+    new(serviceType: Type, layer: string) =
+        TestWorkspaceServiceMetadata(serviceType.AssemblyQualifiedName, layer)
+
+type TestLanguageServiceMetadata(language: string, serviceType: string, layer: string, data: IDictionary<string, obj>) =
+
+    member _.Language = language
+    member _.ServiceType = serviceType
+    member _.Layer = layer
+    member _.Data = data
+
+    new(data: IDictionary<string, obj>) =
+        let language =
+            match data.TryGetValue("Language") with
+            | true, result -> result :?> string
+            | _ -> Unchecked.defaultof<_>
+
+        let serviceType =
+            match data.TryGetValue("ServiceType") with
+            | true, result -> result :?> string
+            | _ -> Unchecked.defaultof<_>
+
+        let layer =
+            match data.TryGetValue("Layer") with
+            | true, result -> result :?> string
+            | _ -> Unchecked.defaultof<_>
+        TestLanguageServiceMetadata(language, serviceType, layer, data)
+
+type TestHostLanguageServices(workspaceServices: HostWorkspaceServices, language: string) as this =
+    inherit HostLanguageServices()
+
+    let services1 =
+        exportProvider.GetExports<ILanguageService, TestLanguageServiceMetadata>()
+        |> Seq.filter (fun x -> x.Metadata.Language = language)
+
+    let factories1 =
+        exportProvider.GetExports<ILanguageServiceFactory, TestLanguageServiceMetadata>()
+        |> Seq.filter (fun x -> x.Metadata.Language = language)
+        |> Seq.map (fun x ->
+            Lazy<_, _>((fun () -> x.Value.CreateLanguageService(this)), x.Metadata)
+        )
+
+    let otherServices1 = Seq.append factories1 services1
+
+    let otherServicesMap1 =
+        otherServices1
+        |> Seq.map (fun x ->
+            KeyValuePair(x.Metadata.ServiceType, x)
+        )
+        |> Seq.distinctBy (fun x -> x.Key)
+        |> System.Collections.Concurrent.ConcurrentDictionary
+
+    override this.WorkspaceServices = workspaceServices
+
+    override this.Language = language
+
+    override this.GetService<'T when 'T :> ILanguageService>() : 'T =
+        match otherServicesMap1.TryGetValue(typeof<'T>.AssemblyQualifiedName) with
+        | true, otherService ->
+            otherService.Value :?> 'T
+        | _ ->
+            try
+                exportProvider.GetExport<'T>().Value
+            with
+            | _ ->
+                Unchecked.defaultof<'T>
+
+type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace) as this =
     inherit HostWorkspaceServices()
 
-    let resolver = Resolver.DefaultInstance
-    let catalog = 
-        let asms = AppDomain.CurrentDomain.GetAssemblies()
-        let partDiscovery = PartDiscovery.Combine(new AttributedPartDiscoveryV1(resolver), new AttributedPartDiscovery(resolver, isNonPublicSupported = true));
-        let parts = partDiscovery.CreatePartsAsync(asms).Result
-        let catalog = ComposableCatalog.Create(resolver)
-        catalog.AddParts(parts)
+    let services1 =
+        exportProvider.GetExports<IWorkspaceService, TestWorkspaceServiceMetadata>()
 
-    let configuration = CompositionConfiguration.Create(catalog.WithCompositionService())
-    let runtimeComposition = RuntimeComposition.CreateRuntimeComposition(configuration)
-    let exportProviderFactory = runtimeComposition.CreateExportProviderFactory()
-    let exportProvider = exportProviderFactory.CreateExportProvider().AsExportProvider()
+    let factories1 =
+        exportProvider.GetExports<IWorkspaceServiceFactory, TestWorkspaceServiceMetadata>()
+        |> Seq.map (fun x ->
+            Lazy<_, _>((fun () -> x.Value.CreateService(this)), x.Metadata)
+        )
+
+    let otherServices1 = Seq.append factories1 services1
+
+    let otherServicesMap1 =
+        otherServices1
+        |> Seq.map (fun x ->
+            KeyValuePair(x.Metadata.ServiceType, x)
+        )
+        |> Seq.distinctBy (fun x -> x.Key)
+        |> System.Collections.Concurrent.ConcurrentDictionary
+
+    let langServices = TestHostLanguageServices(this, LanguageNames.FSharp)
 
     override _.Workspace = workspace
 
-    override _.GetService<'T when 'T :> IWorkspaceService>() =
-        exportProvider.GetExport<'T>().Value
+    override this.GetService<'T when 'T :> IWorkspaceService>() : 'T =
+        match otherServicesMap1.TryGetValue(typeof<'T>.AssemblyQualifiedName) with
+        | true, otherService ->
+            otherService.Value :?> 'T
+        | _ ->
+            try
+                exportProvider.GetExport<'T>().Value
+            with
+            | _ ->
+                Unchecked.defaultof<'T>
 
     override _.FindLanguageServices(filter) = Seq.empty
+
+    override _.GetLanguageServices(languageName) =
+        match languageName with
+        | LanguageNames.FSharp ->
+            langServices :> HostLanguageServices
+        | _ ->
+            raise(NotSupportedException(sprintf "Language '%s' not supported in FSharp VS tests." languageName))
 
     override _.HostServices = hostServices
 
@@ -48,8 +206,9 @@ type RoslynTestHelpers private () =
 
     static member CreateDocument (filePath, text: SourceText) =
         let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
-        let asms = AppDomain.CurrentDomain.GetAssemblies()
-        let workspace = new AdhocWorkspace(Host.Mef.MefHostServices.Create(asms))
+
+        let hostServices = TestHostServices()
+        let workspace = new AdhocWorkspace(hostServices)
 
         let projId = ProjectId.CreateNewId()
         let docId = DocumentId.CreateNewId(projId)
@@ -68,7 +227,7 @@ type RoslynTestHelpers private () =
                 VersionStamp.Create(DateTime.UtcNow),
                 "test.fsproj", 
                 "test.dll", 
-                LanguageNames.CSharp, // We cannot use LanguageNames.FSharp as Roslyn doesn't support creating adhoc projects with F# language name.
+                LanguageNames.FSharp,
                 documents = [docInfo]
             )
 

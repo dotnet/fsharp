@@ -22,6 +22,7 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text.Outlining
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
+open Microsoft.CodeAnalysis.Host.Mef
 
 // Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
 // Diagnostic providers can be executed in environment that does not use MEF so they can rely only
@@ -30,6 +31,24 @@ type internal FSharpCheckerWorkspaceService =
     inherit Microsoft.CodeAnalysis.Host.IWorkspaceService
     abstract Checker: FSharpChecker
     abstract FSharpProjectOptionsManager: FSharpProjectOptionsManager
+
+//[<ExportWorkspaceService(typeof<FSharpCheckerWorkspaceService>, ServiceLayer.Default); Composition.Shared>]
+//type internal ImplFSharpCheckerWorkspaceService
+//    [<Composition.ImportingConstructor>]
+//    (
+//        checkerProvider: FSharpCheckerProvider,
+//        projectInfoManager: FSharpProjectOptionsManager
+//    ) =
+
+//    do
+//        Console.WriteLine("test")
+//        Console.WriteLine("test")
+
+//    interface FSharpCheckerWorkspaceService with
+
+//        member _.Checker = checkerProvider.Checker
+
+//        member _.FSharpProjectOptionsManager = projectInfoManager
 
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
