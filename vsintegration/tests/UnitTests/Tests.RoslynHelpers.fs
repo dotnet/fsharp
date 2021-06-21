@@ -25,7 +25,6 @@ module MefHelpers =
                             //"Microsoft.CodeAnalysis.LanguageServer.Protocol.dll"
                            // "Microsoft.CodeAnalysis.Features.dll"
                             "Microsoft.CodeAnalysis.Workspaces.dll"
-                            "Microsoft.CodeAnalysis.Remote.Workspaces.dll"
                            // "Microsoft.CodeAnalysis.EditorFeatures.dll"
                           //  "Microsoft.CodeAnalysis.CSharp.EditorFeatures.dll"
                           //  "Microsoft.CodeAnalysis.EditorFeatures.Text.dll"
@@ -47,7 +46,7 @@ module MefHelpers =
         |> Seq.append MefHostServices.DefaultAssemblies
         |> Array.ofSeq
 
-    let exportProvider =
+    let createExportProvider() =
         let resolver = Resolver.DefaultInstance
         let catalog = 
             let asms = getAssemblies()
@@ -105,7 +104,7 @@ type TestLanguageServiceMetadata(language: string, serviceType: string, layer: s
             | _ -> Unchecked.defaultof<_>
         TestLanguageServiceMetadata(language, serviceType, layer, data)
 
-type TestHostLanguageServices(workspaceServices: HostWorkspaceServices, language: string) as this =
+type TestHostLanguageServices(workspaceServices: HostWorkspaceServices, language: string, exportProvider: ExportProvider) as this =
     inherit HostLanguageServices()
 
     let services1 =
@@ -147,6 +146,8 @@ type TestHostLanguageServices(workspaceServices: HostWorkspaceServices, language
 type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace) as this =
     inherit HostWorkspaceServices()
 
+    let exportProvider = createExportProvider()
+
     let services1 =
         exportProvider.GetExports<IWorkspaceService, TestWorkspaceServiceMetadata>()
 
@@ -166,7 +167,7 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
         |> Seq.distinctBy (fun x -> x.Key)
         |> System.Collections.Concurrent.ConcurrentDictionary
 
-    let langServices = TestHostLanguageServices(this, LanguageNames.FSharp)
+    let langServices = TestHostLanguageServices(this, LanguageNames.FSharp, exportProvider)
 
     override _.Workspace = workspace
 
@@ -207,8 +208,7 @@ type RoslynTestHelpers private () =
     static member CreateDocument (filePath, text: SourceText) =
         let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
 
-        let hostServices = TestHostServices()
-        let workspace = new AdhocWorkspace(hostServices)
+        let workspace = new AdhocWorkspace(TestHostServices.Instance)
 
         let projId = ProjectId.CreateNewId()
         let docId = DocumentId.CreateNewId(projId)
