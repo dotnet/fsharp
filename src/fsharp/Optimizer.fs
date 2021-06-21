@@ -1707,8 +1707,8 @@ let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
     match dive g m requisites rhs with
     | Some rewrittenRhs ->
         let argTys, ves, binds, _ = requisites.Value
-        let rhsAndTupleBinding = mkCompGenSequential m rewrittenRhs (mkRefTupled g m ves argTys)
-        mkLetsBind m binds (mkLet tgtSeqPtOpt m v rhsAndTupleBinding body) |> Some
+        let rhsAndTupleBinding = mkCompGenSequential m rewrittenRhs (mkLet tgtSeqPtOpt m v (mkRefTupled g m ves argTys) body)
+        mkLetsBind m binds rhsAndTupleBinding |> Some
     | _ -> None
 
 let ExpandStructuralBinding cenv expr =
