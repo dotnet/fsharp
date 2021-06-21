@@ -3406,6 +3406,21 @@ module WitnessTests =
               <@@ "abc" + "def" @@>, Some <@@ "abcdef" @@>
               <@@ LanguagePrimitives.GenericOne<nativeint> + LanguagePrimitives.GenericOne<nativeint> @@>, None
               <@@ LanguagePrimitives.GenericOne<unativeint> + LanguagePrimitives.GenericOne<unativeint> @@>, None
+              <@@ Checked.(+) 1y 4y @@>, Some <@@ 5y @@>
+              <@@ Checked.(+) 1uy 4uy @@>, Some <@@ 5uy @@>
+              <@@ Checked.(+) 1s 4s @@>, Some <@@ 5s @@>
+              <@@ Checked.(+) 1us 4us @@>, Some <@@ 5us @@>
+              <@@ Checked.(+) 1 4 @@>, Some <@@ 5 @@>
+              <@@ Checked.(+) 1u 4u @@>, Some <@@ 5u @@>
+              <@@ Checked.(+) 1L 4L @@>, Some <@@ 5L @@>
+              <@@ Checked.(+) 1uL 4uL @@>, Some <@@ 5uL @@>
+              <@@ Checked.(+) 1.0f 4.0f @@>, Some <@@ 5f @@>
+              <@@ Checked.(+) 1.0 4.0 @@>, Some <@@ 5. @@>
+              <@@ Checked.(+) 1m 4m @@>, Some <@@ 5m @@>
+              <@@ Checked.(+) '1' '\004' @@>, Some <@@ '5' @@>
+              <@@ Checked.(+) "abc" "def" @@>, Some <@@ "abcdef" @@>
+              <@@ Checked.(+) LanguagePrimitives.GenericOne<nativeint> LanguagePrimitives.GenericOne<nativeint> @@>, None
+              <@@ Checked.(+) LanguagePrimitives.GenericOne<unativeint> LanguagePrimitives.GenericOne<unativeint> @@>, None
 
               <@@ 4y - 1y @@>, Some <@@ 3y @@>
               <@@ 4uy - 1uy @@>, Some <@@ 3uy @@>
@@ -3421,6 +3436,20 @@ module WitnessTests =
               <@@ '4' - '\001' @@>, Some <@@ '3' @@>
               <@@ LanguagePrimitives.GenericOne<nativeint> - LanguagePrimitives.GenericOne<nativeint> @@>, None
               <@@ LanguagePrimitives.GenericOne<unativeint> - LanguagePrimitives.GenericOne<unativeint> @@>, None
+              <@@ Checked.(-) 4y 1y @@>, Some <@@ 3y @@>
+              <@@ Checked.(-) 4uy 1uy @@>, Some <@@ 3uy @@>
+              <@@ Checked.(-) 4s 1s @@>, Some <@@ 3s @@>
+              <@@ Checked.(-) 4us 1us @@>, Some <@@ 3us @@>
+              <@@ Checked.(-) 4 1 @@>, Some <@@ 3 @@>
+              <@@ Checked.(-) 4u 1u @@>, Some <@@ 3u @@>
+              <@@ Checked.(-) 4L 1L @@>, Some <@@ 3L @@>
+              <@@ Checked.(-) 4uL 1uL @@>, Some <@@ 3uL @@>
+              <@@ Checked.(-) 4.0f 1.0f @@>, Some <@@ 3f @@>
+              <@@ Checked.(-) 4.0 1.0 @@>, Some <@@ 3. @@>
+              <@@ Checked.(-) 4m 1m @@>, Some <@@ 3m @@>
+              <@@ Checked.(-) '4' '\001' @@>, Some <@@ '3' @@>
+              <@@ Checked.(-) LanguagePrimitives.GenericOne<nativeint> LanguagePrimitives.GenericOne<nativeint> @@>, None
+              <@@ Checked.(-) LanguagePrimitives.GenericOne<unativeint> LanguagePrimitives.GenericOne<unativeint> @@>, None
 
               <@@ 2y * 4y @@>, Some <@@ 8y @@>
               <@@ 2uy * 4uy @@>, Some <@@ 8uy @@>
@@ -3435,6 +3464,19 @@ module WitnessTests =
               <@@ 2m * 4m @@>, Some <@@ 8m @@>
               <@@ LanguagePrimitives.GenericOne<nativeint> * LanguagePrimitives.GenericOne<nativeint> @@>, None
               <@@ LanguagePrimitives.GenericOne<unativeint> * LanguagePrimitives.GenericOne<unativeint> @@>, None
+              <@@ Checked.(*) 2y 4y @@>, Some <@@ 8y @@>
+              <@@ Checked.(*) 2uy 4uy @@>, Some <@@ 8uy @@>
+              <@@ Checked.(*) 2s 4s @@>, Some <@@ 8s @@>
+              <@@ Checked.(*) 2us 4us @@>, Some <@@ 8us @@>
+              <@@ Checked.(*) 2 4 @@>, Some <@@ 8 @@>
+              <@@ Checked.(*) 2u 4u @@>, Some <@@ 8u @@>
+              <@@ Checked.(*) 2L 4L @@>, Some <@@ 8L @@>
+              <@@ Checked.(*) 2uL 4uL @@>, Some <@@ 8uL @@>
+              <@@ Checked.(*) 2.0f 4.0f @@>, Some <@@ 8f @@>
+              <@@ Checked.(*) 2.0 4.0 @@>, Some <@@ 8. @@>
+              <@@ Checked.(*) 2m 4m @@>, Some <@@ 8m @@>
+              <@@ Checked.(*) LanguagePrimitives.GenericOne<nativeint> LanguagePrimitives.GenericOne<nativeint> @@>, None
+              <@@ Checked.(*) LanguagePrimitives.GenericOne<unativeint> LanguagePrimitives.GenericOne<unativeint> @@>, None
 
               <@@ 6y / 3y @@>, Some <@@ 2y @@>
               <@@ 6uy / 3uy @@>, Some <@@ 2uy @@>
@@ -3472,6 +3514,14 @@ module WitnessTests =
               <@@ -(1.) @@>, Some <@@ -1. @@>
               <@@ -(1m) @@>, Some <@@ -1m @@>
               <@@ -(LanguagePrimitives.GenericOne<nativeint>) @@>, None
+              <@@ Checked.(~-) (1y) @@>, Some <@@ -1y @@>
+              <@@ Checked.(~-) (1s) @@>, Some <@@ -1s @@>
+              <@@ Checked.(~-) (1) @@>, Some <@@ -1 @@>
+              <@@ Checked.(~-) (1L) @@>, Some <@@ -1L @@>
+              <@@ Checked.(~-) (1f) @@>, Some <@@ -1f @@>
+              <@@ Checked.(~-) (1.) @@>, Some <@@ -1. @@>
+              <@@ Checked.(~-) (1m) @@>, Some <@@ -1m @@>
+              <@@ Checked.(~-) (LanguagePrimitives.GenericOne<nativeint>) @@>, None
 
               <@@ 4f ** 3f @@>, Some <@@ 64f @@>
               <@@ 4. ** 3. @@>, Some <@@ 64. @@>
