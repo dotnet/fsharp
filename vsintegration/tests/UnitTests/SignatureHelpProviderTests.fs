@@ -101,7 +101,7 @@ let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (e
     let caretLinePos = textLines.GetLinePosition(caretPosition)
     let caretLineColumn = caretLinePos.Character
                
-    let document = RoslynTestHelpers.CreateDocument(filePath, sourceText)
+    let document = RoslynTestHelpers.CreateDocument(filePath, sourceText, options = projectOptions)
     let parseResults, checkFileResults =
         document.GetFSharpParseAndCheckResultsAsync()
         |> Async.RunSynchronously
