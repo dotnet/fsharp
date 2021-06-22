@@ -216,14 +216,16 @@ type RoslynTestHelpers private () =
                 filePath=filePath,
                 sourceCodeKind= if isScript then SourceCodeKind.Script else SourceCodeKind.Regular)
 
+        let projFilePath = "C:\\test.fsproj"
         let projInfo =
             ProjectInfo.Create(
                 projId,
                 VersionStamp.Create(DateTime.UtcNow),
-                "test.fsproj", 
+                projFilePath, 
                 "test.dll", 
                 LanguageNames.FSharp,
-                documents = [docInfo]
+                documents = [docInfo],
+                filePath = projFilePath
             )
 
         let solutionInfo = SolutionInfo.Create(SolutionId.CreateNewId(), VersionStamp.Create(DateTime.UtcNow), "test.sln", [projInfo])
