@@ -448,16 +448,16 @@ module LeafExpressionConverter =
             | ConvNullableUInt64Q (_, _, [x]) | ConvNullableIntPtrQ (_, _, [x]) | ConvNullableUIntPtrQ (_, _, [x])
 
             | ConvCharQ (_, _, [x]) | ConvDecimalQ (_, _, [x]) | ConvFloatQ (_, _, [x]) | ConvDoubleQ (_, _, [x])
-			| ConvFloat32Q (_, _, [x]) | ConvSingleQ (_, _, [x]) | ConvSByteQ (_, _, [x]) | ConvInt8Q (_, _, [x])
-			| ConvInt16Q (_, _, [x]) | ConvInt32Q (_, _, [x]) | ConvIntQ (_, _, [x]) | ConvInt64Q (_, _, [x])
-			| ConvByteQ (_, _, [x]) | ConvUInt8Q (_, _, [x]) | ConvUInt16Q (_, _, [x]) | ConvUInt32Q (_, _, [x])
-			| ConvUInt64Q (_, _, [x]) | ConvIntPtrQ (_, _, [x]) | ConvUIntPtrQ (_, _, [x]) -> transConvFallback inp env false x
+            | ConvFloat32Q (_, _, [x]) | ConvSingleQ (_, _, [x]) | ConvSByteQ (_, _, [x]) | ConvInt8Q (_, _, [x])
+            | ConvInt16Q (_, _, [x]) | ConvInt32Q (_, _, [x]) | ConvIntQ (_, _, [x]) | ConvInt64Q (_, _, [x])
+            | ConvByteQ (_, _, [x]) | ConvUInt8Q (_, _, [x]) | ConvUInt16Q (_, _, [x]) | ConvUInt32Q (_, _, [x])
+            | ConvUInt64Q (_, _, [x]) | ConvIntPtrQ (_, _, [x]) | ConvUIntPtrQ (_, _, [x]) -> transConvFallback inp env false x
 
             | CheckedConvCharQ (_, _, [x]) | CheckedConvSByteQ (_, _, [x]) | CheckedConvInt8Q (_, _, [x]) | CheckedConvInt16Q (_, _, [x])
-			| CheckedConvInt32Q (_, _, [x]) | CheckedConvInt64Q (_, _, [x]) | CheckedConvByteQ (_, _, [x]) | CheckedConvUInt8Q (_, _, [x])
-			| CheckedConvUInt16Q (_, _, [x]) | CheckedConvUInt32Q (_, _, [x]) | CheckedConvUInt64Q (_, _, [x]) | CheckedConvIntPtrQ (_, _, [x])
-		    | CheckedConvUIntPtrQ (_, _, [x]) -> transConvFallback inp env true x
-				
+            | CheckedConvInt32Q (_, _, [x]) | CheckedConvInt64Q (_, _, [x]) | CheckedConvByteQ (_, _, [x]) | CheckedConvUInt8Q (_, _, [x])
+            | CheckedConvUInt16Q (_, _, [x]) | CheckedConvUInt32Q (_, _, [x]) | CheckedConvUInt64Q (_, _, [x]) | CheckedConvIntPtrQ (_, _, [x])
+            | CheckedConvUIntPtrQ (_, _, [x]) -> transConvFallback inp env true x
+
             | ArrayLookupQ (_, [_; _; _], [x1; x2]) ->
                 Expression.ArrayIndex(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
 
