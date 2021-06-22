@@ -45,7 +45,7 @@ let private DefaultDocumentationProvider =
         override doc.AppendDocumentation(_, _, _, _, _, _, _) = ()
     }
 
-let GetSignatureHelp (_project:FSharpProject) (fileName:string) (caretPosition:int) =
+let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:int) =
     async {
         let triggerChar = None
         let fileContents = File.ReadAllText(fileName)
@@ -54,7 +54,7 @@ let GetSignatureHelp (_project:FSharpProject) (fileName:string) (caretPosition:i
         let caretLinePos = textLines.GetLinePosition(caretPosition)
         let caretLineColumn = caretLinePos.Character
         
-        let document = RoslynTestHelpers.CreateDocument(fileName, sourceText)
+        let document = RoslynTestHelpers.CreateDocument(fileName, sourceText, options = project.Options)
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync()
             |> Async.RunSynchronously

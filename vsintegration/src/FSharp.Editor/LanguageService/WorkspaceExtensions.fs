@@ -3,6 +3,7 @@ module internal Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
 
 open System
 open System.Runtime.CompilerServices
+open System.Threading
 open Microsoft.CodeAnalysis
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
@@ -190,6 +191,14 @@ type Document with
             let! sourceText = this.GetTextAsync(ct) |> Async.AwaitTask
             return Tokenizer.getSymbolAtPosition(this.Id, sourceText, position, this.FilePath, defines, lookupKind, wholeActivePattern, allowStringToken)
         }
+
+    member this.SetFSharpProjectOptionsForTesting(projectOptions: FSharpProjectOptions) =
+        let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
+        let parsingOptions, _, _ = 
+            workspaceService.FSharpProjectOptionsManager.TryGetOptionsForDocumentOrProject(this, CancellationToken.None, nameof(this.SetFSharpProjectOptionsForTesting))
+            |> Async.RunSynchronously
+            |> Option.get
+        ProjectCache.Projects.Add(this.Project, (workspaceService.Checker, workspaceService.FSharpProjectOptionsManager, parsingOptions, projectOptions))
 
 type Project with
 

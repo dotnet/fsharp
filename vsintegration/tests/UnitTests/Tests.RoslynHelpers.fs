@@ -200,7 +200,7 @@ type TestHostServices() =
 [<AbstractClass;Sealed>]
 type RoslynTestHelpers private () =
 
-    static member CreateDocument (filePath, text: SourceText) =
+    static member CreateDocument (filePath, text: SourceText, ?options: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions) =
         let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
 
         let workspace = new AdhocWorkspace(TestHostServices())
@@ -233,9 +233,17 @@ type RoslynTestHelpers private () =
         let solution = workspace.AddSolution(solutionInfo)
 
         let workspaceService = workspace.Services.GetService<IFSharpWorkspaceService>()
-        workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projId, [|filePath|], ImmutableArray.Empty)
 
-        solution.GetProject(projId).GetDocument(docId)
+        let document = solution.GetProject(projId).GetDocument(docId)
+
+        match options with
+        | Some options ->
+            workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projId, options.SourceFiles, options.OtherOptions |> ImmutableArray.CreateRange)
+            document.SetFSharpProjectOptionsForTesting(options)
+        | _ ->
+            workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projId, [|filePath|], ImmutableArray.Empty)
+
+        document
 
     static member CreateDocument (filePath, code: string) =
         let text = SourceText.From(code)
