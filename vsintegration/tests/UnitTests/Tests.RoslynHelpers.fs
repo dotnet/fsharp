@@ -142,24 +142,24 @@ type TestHostLanguageServices(workspaceServices: HostWorkspaceServices, language
 [<ComponentModel.Composition.Export(typeof<IFSharpVisualStudioService>); Composition.Shared>]
 type internal MockFSharpVisualStudioService() =
 
-    let workspace = new AdhocWorkspace() :> Workspace
+    static let mockWorkspace = new AdhocWorkspace()
+    static let instance = MockFSharpVisualStudioService()
+    static member Instance = instance
     
     interface IFSharpVisualStudioService with
 
-        member _.Workspace = workspace
+        member _.Workspace = mockWorkspace :> Workspace
 
         member _.ServiceProvider = null
-
-[<ComponentModel.Composition.Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
-type internal MockFSharpCheckerProvider() =
-    inherit FSharpCheckerProvider(MockFSharpVisualStudioService())
 
 [<ComponentModel.Composition.Export(typeof<IFSharpWorkspaceService>); Composition.Shared>]
 type internal MockFSharpWorkspaceService() =
 
-    let checkerProvider = MockFSharpCheckerProvider()
-    let fsVsService = MockFSharpVisualStudioService()
-    let manager = FSharpProjectOptionsManager(checkerProvider, fsVsService)
+    static let checkerProvider = FSharpCheckerProvider(MockFSharpVisualStudioService.Instance)
+    static let manager = FSharpProjectOptionsManager(checkerProvider, MockFSharpVisualStudioService.Instance)
+
+    static let instance = MockFSharpWorkspaceService()
+    static member Instance = instance
         
     interface IFSharpWorkspaceService with
 
@@ -193,13 +193,6 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
         |> System.Collections.Concurrent.ConcurrentDictionary
 
     let langServices = TestHostLanguageServices(this, LanguageNames.FSharp, exportProvider)
-
-    do
-        let x = exportProvider.GetExportedValue<IFSharpVisualStudioService>()
-        let y = exportProvider.GetExportedValue<FSharpCheckerProvider>()
-        Console.WriteLine(x)
-        Console.WriteLine(y)
-        ()
 
     override _.Workspace = workspace
 
