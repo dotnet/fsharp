@@ -330,6 +330,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
 [<Composition.Shared>]
 [<System.ComponentModel.Composition.Export(typeof<HackCpsCommandLineChanges>)>]
 type internal HackCpsCommandLineChanges
+    [<System.ComponentModel.Composition.ImportingConstructor>]
     (
         [<System.ComponentModel.Composition.Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace
     ) =
