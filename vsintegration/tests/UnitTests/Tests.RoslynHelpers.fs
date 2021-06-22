@@ -23,15 +23,8 @@ module MefHelpers =
         let here = AppContext.BaseDirectory
 
         let imports =   [|
-                            //"Microsoft.CodeAnalysis.LanguageServer.Protocol.dll"
-                           // "Microsoft.CodeAnalysis.Features.dll"
                             "Microsoft.CodeAnalysis.Workspaces.dll"
-                           // "Microsoft.CodeAnalysis.EditorFeatures.dll"
-                          //  "Microsoft.CodeAnalysis.CSharp.EditorFeatures.dll"
-                          //  "Microsoft.CodeAnalysis.EditorFeatures.Text.dll"
-                          //  "Microsoft.VisualStudio.Text.Logic.dll"
-                         //   "Microsoft.VisualStudio.LanguageServices.dll"
-                          //  "Microsoft.VisualStudio.Shell.Framework.dll"
+                            "Microsoft.VisualStudio.Shell.15.0.dll"
                             "FSharp.Editor.dll"
                         |]
 
@@ -151,8 +144,9 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
     let exportProvider = createExportProvider()
 
     do
-        let vsworkspace = exportProvider.GetExportedValue<VisualStudioWorkspace>()
+       // let vsworkspace = exportProvider.GetExportedValue<VisualStudioWorkspace>()
         let serviceProvider = exportProvider.GetExportedValue<SVsServiceProvider>()
+        let editorOptions = exportProvider.GetExportedValue<EditorOptions>()
         ()
 
     let services1 =
