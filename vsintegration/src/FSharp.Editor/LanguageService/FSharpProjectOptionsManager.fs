@@ -6,21 +6,13 @@ open System
 open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Collections.Immutable
-open System.ComponentModel.Composition
 open System.IO
 open System.Linq
 open Microsoft.CodeAnalysis
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
-open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.LanguageServices
-open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
-open Microsoft.VisualStudio.Shell
 open System.Threading
-open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices
 open Microsoft.VisualStudio.FSharp.Interactive.Session
 open System.Runtime.CompilerServices
 
@@ -459,10 +451,6 @@ type internal FSharpProjectOptionsManager
         workspace: Workspace
     ) =
 
-    let projectDisplayNameOf projectFileName =
-        if String.IsNullOrWhiteSpace projectFileName then projectFileName
-        else Path.GetFileNameWithoutExtension projectFileName
-
     let reactor = new FSharpProjectOptionsReactor(checker)
 
     do
@@ -532,32 +520,5 @@ type internal FSharpProjectOptionsManager
 
     member this.ClearAllCaches() =
         reactor.ClearAllCaches()
-
-    [<Export>]
-    /// This handles commandline change notifications from the Dotnet Project-system
-    /// Prior to VS 15.7 path contained path to project file, post 15.7 contains target binpath
-    /// binpath is more accurate because a project file can have multiple in memory projects based on configuration
-    member _.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, _references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
-        use _logBlock = Logger.LogBlock(LogEditorFunctionId.LanguageService_HandleCommandLineArgs)
-
-        match workspace with
-        | :? VisualStudioWorkspace as workspace ->
-            let projectId =
-                match Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.TryGetProjectIdByBinPath(workspace, path) with
-                | true, projectId -> projectId
-                | false, _ -> Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetOrCreateProjectIdForPath(workspace, path, projectDisplayNameOf path)
-            let path = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetProjectFilePath(workspace, projectId)
-
-            let getFullPath p =
-                let p' =
-                    if Path.IsPathRooted(p) || path = null then p
-                    else Path.Combine(Path.GetDirectoryName(path), p)
-                Path.GetFullPathSafe(p')
-
-            let sourcePaths = sources |> Seq.map(fun s -> getFullPath s.Path) |> Seq.toArray
-
-            reactor.SetCpsCommandLineOptions(projectId, sourcePaths, options.ToArray())
-        | _ ->
-            ()
 
     member _.Checker = checker

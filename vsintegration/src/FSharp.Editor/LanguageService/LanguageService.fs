@@ -6,6 +6,8 @@ open System
 open System.ComponentModel.Design
 open System.Runtime.InteropServices
 open System.Threading
+open System.IO
+open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Options
 open FSharp.Compiler
@@ -323,3 +325,38 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         if not (isNull outliningManager) then
             let settings = this.Workspace.Services.GetService<EditorOptions>()
             outliningManager.Enabled <- settings.Advanced.IsOutliningEnabled
+
+[<Composition.Shared>]
+[<System.ComponentModel.Composition.Export(typeof<HackCpsCommandLineChanges>)>]
+type HackCpsCommandLineChanges
+    (
+        [<System.ComponentModel.Composition.Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace
+    ) =
+
+    static let projectDisplayNameOf projectFileName =
+        if String.IsNullOrWhiteSpace projectFileName then projectFileName
+        else Path.GetFileNameWithoutExtension projectFileName
+
+    [<System.ComponentModel.Composition.Export>]
+    /// This handles commandline change notifications from the Dotnet Project-system
+    /// Prior to VS 15.7 path contained path to project file, post 15.7 contains target binpath
+    /// binpath is more accurate because a project file can have multiple in memory projects based on configuration
+    member _.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, _references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
+        use _logBlock = Logger.LogBlock(LogEditorFunctionId.LanguageService_HandleCommandLineArgs)
+
+        let projectId =
+            match Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.TryGetProjectIdByBinPath(workspace, path) with
+            | true, projectId -> projectId
+            | false, _ -> Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetOrCreateProjectIdForPath(workspace, path, projectDisplayNameOf path)
+        let path = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetProjectFilePath(workspace, projectId)
+
+        let getFullPath p =
+            let p' =
+                if Path.IsPathRooted(p) || path = null then p
+                else Path.Combine(Path.GetDirectoryName(path), p)
+            Path.GetFullPathSafe(p')
+
+        let sourcePaths = sources |> Seq.map(fun s -> getFullPath s.Path) |> Seq.toArray
+
+        let workspaceService = workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
+        workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projectId, sourcePaths, options)
