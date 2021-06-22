@@ -36,7 +36,7 @@ type internal SimplifyNameDiagnosticAnalyzer
             else
 
             asyncMaybe {
-                do! Option.guard document.FSharpOptions.CodeFixes.SimplifyName
+                do! Option.guard document.Project.IsFSharpCodeFixesSimplifyNameEnabled
                 do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let textVersionHash = textVersion.GetHashCode()

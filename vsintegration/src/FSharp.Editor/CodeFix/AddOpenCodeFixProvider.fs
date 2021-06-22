@@ -134,7 +134,7 @@ type internal FSharpAddOpenCodeFixProvider
                     |> List.toArray)
                                                     
             let insertionPoint = 
-                if document.FSharpOptions.CodeFixes.AlwaysPlaceOpensAtTopLevel then OpenStatementInsertionPoint.TopLevel
+                if document.Project.IsFSharpCodeFixesAlwaysPlaceOpensAtTopLevelEnabled then OpenStatementInsertionPoint.TopLevel
                 else OpenStatementInsertionPoint.Nearest
 
             let createEntity = ParsedInput.TryFindInsertionContext unresolvedIdentRange.StartLine parseResults.ParseTree maybeUnresolvedIdents insertionPoint

@@ -24,7 +24,7 @@ type internal FSharpRemoveUnusedBindingCodeFixProvider
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             // Don't show code fixes for unused values, even if they are compiler-generated.
-            do! Option.guard context.Document.FSharpOptions.CodeFixes.UnusedDeclarations
+            do! Option.guard context.Document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled
 
             let document = context.Document
             let! sourceText = document.GetTextAsync(context.CancellationToken)

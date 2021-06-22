@@ -24,7 +24,7 @@ type internal UnusedDeclarationsAnalyzer
             else
 
             asyncMaybe {
-                do! Option.guard document.FSharpOptions.CodeFixes.UnusedDeclarations
+                do! Option.guard document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled
 
                 do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
                 let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync

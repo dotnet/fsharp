@@ -32,7 +32,7 @@ module private CheckerExtensions =
                 return! checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToFSharpSourceText(), options,userOpName=userOpName)
             }
 
-        member checker.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, languageServicePerformanceOptions: LanguageServicePerformanceOptions, userOpName: string) =
+        member checker.ParseAndCheckDocumentWithPossibleStaleResults(document: Document, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string) =
             async {
                 let! ct = Async.CancellationToken
 
@@ -55,7 +55,7 @@ module private CheckerExtensions =
 
                 let tryGetFreshResultsWithTimeout() =
                     async {
-                        let! worker = Async.StartChild(async { try return! parseAndCheckFile with | _ -> return None }, millisecondsTimeout=languageServicePerformanceOptions.TimeUntilStaleCompletion)
+                        let! worker = Async.StartChild(async { try return! parseAndCheckFile with | _ -> return None }, millisecondsTimeout=document.Project.FSharpTimeUntilStaleCompletion)
                         try
                             return! worker
                         with :? TimeoutException ->
@@ -68,7 +68,7 @@ module private CheckerExtensions =
                         Some (parseResults, parseResults.ParseTree, checkResults)
                     | None -> None
 
-                if languageServicePerformanceOptions.AllowStaleCompletionResults then
+                if allowStaleResults then
                     let! freshResults = tryGetFreshResultsWithTimeout()
                     
                     let! results =
@@ -90,11 +90,11 @@ module private CheckerExtensions =
 
         member checker.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, userOpName: string, ?allowStaleResults: bool) =
             async {
-                let perfOpts =
+                let allowStaleResults =
                     match allowStaleResults with 
-                    | Some b -> { document.FSharpOptions.LanguageServicePerformance with AllowStaleCompletionResults = b } 
-                    | _ ->  document.FSharpOptions.LanguageServicePerformance
-                return! checker.ParseAndCheckDocument(document, options, perfOpts, userOpName=userOpName)
+                    | Some b -> b
+                    | _ ->  document.Project.IsFSharpStaleCompletionResultsEnabled
+                return! checker.ParseAndCheckDocumentWithPossibleStaleResults(document, options, allowStaleResults, userOpName=userOpName)
             }
 
 [<RequireQualifiedAccess>]
@@ -104,7 +104,7 @@ module private ProjectCache =
 
 type Solution with
 
-    member this.GetFSharpService() =
+    member private this.GetFSharpService() =
         this.Workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
 
 type Project with
