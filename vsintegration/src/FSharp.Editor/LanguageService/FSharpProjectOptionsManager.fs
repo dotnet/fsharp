@@ -84,12 +84,9 @@ module private FSharpProjectOptionsHelpers =
             )
         )
 
-    let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) ct =
+    let isProjectInvalidated (oldProject: Project) (newProject: Project) ct =
         let hasProjectVersionChanged = hasProjectVersionChanged oldProject newProject
-        if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
-            hasProjectVersionChanged || hasDependentVersionChanged oldProject newProject ct
-        else
-            hasProjectVersionChanged
+        hasProjectVersionChanged || hasDependentVersionChanged oldProject newProject ct
 
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
@@ -99,7 +96,7 @@ type private FSharpProjectOptionsMessage =
     | ClearSingleFileOptionsCache of DocumentId
 
 [<Sealed>]
-type private FSharpProjectOptionsReactor (settings: EditorOptions, checkerProvider: FSharpCheckerProvider) =
+type private FSharpProjectOptionsReactor (checkerProvider: FSharpCheckerProvider) =
     let cancellationTokenSource = new CancellationTokenSource()
 
     // Hack to store command line options from HandleCommandLineChanges
@@ -245,17 +242,16 @@ type private FSharpProjectOptionsReactor (settings: EditorOptions, checkerProvid
             
                 let referencedProjects = ResizeArray()
 
-                if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
-                    for projectReference in project.ProjectReferences do
-                        let referencedProject = project.Solution.GetProject(projectReference.ProjectId)
-                        if referencedProject.Language = FSharpConstants.FSharpLanguageName then
-                            match! tryComputeOptions referencedProject ct with
-                            | None -> canBail <- true
-                            | Some(_, projectOptions) -> referencedProjects.Add(FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions))
-                        elif referencedProject.SupportsCompilation then
-                            let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
-                            let peRef = createPEReference referencedProject comp
-                            referencedProjects.Add(peRef)
+                for projectReference in project.ProjectReferences do
+                    let referencedProject = project.Solution.GetProject(projectReference.ProjectId)
+                    if referencedProject.Language = FSharpConstants.FSharpLanguageName then
+                        match! tryComputeOptions referencedProject ct with
+                        | None -> canBail <- true
+                        | Some(_, projectOptions) -> referencedProjects.Add(FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions))
+                    elif referencedProject.SupportsCompilation then
+                        let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
+                        let peRef = createPEReference referencedProject comp
+                        referencedProjects.Add(peRef)
 
                 if canBail then
                     return None
@@ -333,7 +329,7 @@ type private FSharpProjectOptionsReactor (settings: EditorOptions, checkerProvid
                     return Some(parsingOptions, projectOptions)
   
             | true, (oldProject, parsingOptions, projectOptions) ->
-                if isProjectInvalidated oldProject project settings ct then
+                if isProjectInvalidated oldProject project ct then
                     cache.TryRemove(projectId) |> ignore
                     return! tryComputeOptions project ct
                 else
@@ -462,7 +458,6 @@ type internal FSharpProjectOptionsManager
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        settings: EditorOptions,
         fsVsService: IFSharpVisualStudioService
     ) =
 
@@ -470,7 +465,7 @@ type internal FSharpProjectOptionsManager
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
         else Path.GetFileNameWithoutExtension projectFileName
 
-    let reactor = new FSharpProjectOptionsReactor(settings, checkerProvider)
+    let reactor = new FSharpProjectOptionsReactor(checkerProvider)
 
     do
         // We need to listen to this event for lifecycle purposes.
@@ -533,6 +528,9 @@ type internal FSharpProjectOptionsManager
         match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
         | Some (_, parsingOptions, _) -> parsingOptions
         | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile document.Name }
+
+    member this.SetCommandLineOptions(projectId, sourcePaths, options: ImmutableArray<string>) =
+        reactor.SetCpsCommandLineOptions(projectId, sourcePaths, options.ToArray())
 
     member this.ClearAllCaches() =
         reactor.ClearAllCaches()

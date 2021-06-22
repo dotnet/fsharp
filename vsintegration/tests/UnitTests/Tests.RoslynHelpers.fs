@@ -6,6 +6,7 @@ open System.Reflection
 open System.Linq
 open System.Composition.Hosting
 open System.Collections.Generic
+open System.Collections.Immutable
 open Microsoft.VisualStudio.Composition
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Host
@@ -138,16 +139,38 @@ type TestHostLanguageServices(workspaceServices: HostWorkspaceServices, language
             | _ ->
                 Unchecked.defaultof<'T>
 
+[<ComponentModel.Composition.Export(typeof<IFSharpVisualStudioService>); Composition.Shared>]
+type internal MockFSharpVisualStudioService() =
+
+    let workspace = new AdhocWorkspace() :> Workspace
+    
+    interface IFSharpVisualStudioService with
+
+        member _.Workspace = workspace
+
+        member _.ServiceProvider = null
+
+[<ComponentModel.Composition.Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
+type internal MockFSharpCheckerProvider() =
+    inherit FSharpCheckerProvider(MockFSharpVisualStudioService())
+
+[<ComponentModel.Composition.Export(typeof<IFSharpWorkspaceService>); Composition.Shared>]
+type internal MockFSharpWorkspaceService() =
+
+    let checkerProvider = MockFSharpCheckerProvider()
+    let fsVsService = MockFSharpVisualStudioService()
+    let manager = FSharpProjectOptionsManager(checkerProvider, fsVsService)
+        
+    interface IFSharpWorkspaceService with
+
+        member _.Checker = checkerProvider.Checker
+
+        member _.FSharpProjectOptionsManager = manager
+
 type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace) as this =
     inherit HostWorkspaceServices()
 
     let exportProvider = createExportProvider()
-
-    do
-       // let vsworkspace = exportProvider.GetExportedValue<VisualStudioWorkspace>()
-        let serviceProvider = exportProvider.GetExportedValue<SVsServiceProvider>()
-        let editorOptions = exportProvider.GetExportedValue<EditorOptions>()
-        ()
 
     let services1 =
         exportProvider.GetExports<IWorkspaceService, TestWorkspaceServiceMetadata>()
@@ -170,6 +193,13 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
         |> System.Collections.Concurrent.ConcurrentDictionary
 
     let langServices = TestHostLanguageServices(this, LanguageNames.FSharp, exportProvider)
+
+    do
+        let x = exportProvider.GetExportedValue<IFSharpVisualStudioService>()
+        let y = exportProvider.GetExportedValue<FSharpCheckerProvider>()
+        Console.WriteLine(x)
+        Console.WriteLine(y)
+        ()
 
     override _.Workspace = workspace
 
@@ -237,6 +267,10 @@ type RoslynTestHelpers private () =
         let solutionInfo = SolutionInfo.Create(SolutionId.CreateNewId(), VersionStamp.Create(DateTime.UtcNow), "test.sln", [projInfo])
 
         let solution = workspace.AddSolution(solutionInfo)
+
+        let workspaceService = workspace.Services.GetService<IFSharpWorkspaceService>()
+        workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projId, [|filePath|], ImmutableArray.Empty)
+
         solution.GetProject(projId).GetDocument(docId)
 
     static member CreateDocument (filePath, code: string) =

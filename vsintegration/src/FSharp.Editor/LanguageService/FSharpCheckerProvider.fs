@@ -22,8 +22,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 type internal FSharpCheckerProvider 
     [<ImportingConstructor>]
     (
-        fsVsService: IFSharpVisualStudioService,
-        settings: EditorOptions
+        fsVsService: IFSharpVisualStudioService
     ) =
 
     let tryGetMetadataSnapshot (path, timeStamp) = 
@@ -57,10 +56,8 @@ type internal FSharpCheckerProvider
         lazy
             let checker = 
                 FSharpChecker.Create(
-                    projectCacheSize = settings.LanguageServicePerformance.ProjectCheckCacheSize, 
+                    projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine. 
                     keepAllBackgroundResolutions = false,
-                    // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
-                    (* , MaxMemory = 2300 *)
                     legacyReferenceResolver=LegacyMSBuildReferenceResolver.getResolver(),
                     tryGetMetadataSnapshot = tryGetMetadataSnapshot,
                     keepAllBackgroundSymbolUses = false,
