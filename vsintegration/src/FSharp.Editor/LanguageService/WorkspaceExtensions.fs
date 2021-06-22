@@ -107,25 +107,25 @@ type Solution with
     member private this.GetFSharpWorkspaceService() =
         this.Workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
 
-type Project with
+type Document with
 
     member this.GetFSharpCompilationOptionsAsync() =
         async {
-            if this.IsFSharp then
-                match ProjectCache.Projects.TryGetValue(this) with
+            if this.Project.IsFSharp then
+                match ProjectCache.Projects.TryGetValue(this.Project) with
                 | true, result -> return result
                 | _ ->
-                    let service = this.Solution.GetFSharpWorkspaceService()
+                    let service = this.Project.Solution.GetFSharpWorkspaceService()
                     let projectOptionsManager = service.FSharpProjectOptionsManager
                     let! ct = Async.CancellationToken
-                    match! projectOptionsManager.TryGetOptionsByProject(this, ct) with
+                    match! projectOptionsManager.TryGetOptionsForDocumentOrProject(this, ct, nameof(this.GetFSharpCompilationOptionsAsync)) with
                     | None -> return raise(System.OperationCanceledException("FSharp project options not found."))
-                    | Some(parsingOptions, projectOptions) ->
+                    | Some(parsingOptions, _, projectOptions) ->
                         let result = (service.Checker, projectOptionsManager, parsingOptions, projectOptions)
-                        ProjectCache.Projects.Add(this, result)
+                        ProjectCache.Projects.Add(this.Project, result)
                         return result
             else
-                return raise(System.OperationCanceledException("Project is not a FSharp project."))
+                return raise(System.OperationCanceledException("Document is not a FSharp document."))
         }
 
     member this.GetFSharpCompilationDefinesAsync() =
@@ -133,8 +133,6 @@ type Project with
             let! _, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync()
             return CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
         }
-
-type Document with
 
     member this.GetFSharpChecker() =
         let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
@@ -150,13 +148,13 @@ type Document with
     
     member this.GetFSharpParseResultsAsync() =
         async {
-            let! checker, _, parsingOptions, _ = this.Project.GetFSharpCompilationOptionsAsync()
+            let! checker, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync()
             return! checker.ParseDocument(this, parsingOptions, nameof(this.GetFSharpParseResultsAsync))
         }
 
     member this.GetFSharpParseAndCheckResultsAsync() =
         async {
-            let! checker, _, _, projectOptions = this.Project.GetFSharpCompilationOptionsAsync()
+            let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync()
             match! checker.ParseAndCheckDocument(this, projectOptions, nameof(this.GetFSharpParseAndCheckResultsAsync), allowStaleResults = false) with
             | Some(parseResults, _, checkResults) ->
                 return (parseResults, checkResults)
@@ -166,7 +164,7 @@ type Document with
 
     member this.GetFSharpSemanticClassificationAsync() =
         async {
-            let! checker, _, _, projectOptions = this.Project.GetFSharpCompilationOptionsAsync()
+            let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync()
             match! checker.GetBackgroundSemanticClassificationForFile(this.FilePath, projectOptions) with
             | Some results -> return results
             | _ -> return raise(System.OperationCanceledException("Unable to get FSharp semantic classification."))
@@ -174,7 +172,7 @@ type Document with
 
     member this.FindFSharpReferencesAsync(symbol, onFound) =
         async {
-            let! checker, _, _, projectOptions = this.Project.GetFSharpCompilationOptionsAsync()
+            let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync()
             let! symbolUses = checker.FindBackgroundReferencesInFile(this.FilePath, projectOptions, symbol, canInvalidateProject = false)
             let! ct = Async.CancellationToken
             let! sourceText = this.GetTextAsync ct |> Async.AwaitTask
@@ -188,7 +186,7 @@ type Document with
 
     member this.TryFindFSharpLexerSymbolAsync(position, lookupKind, wholeActivePattern, allowStringToken) =
         async {
-            let! defines = this.Project.GetFSharpCompilationDefinesAsync()
+            let! defines = this.GetFSharpCompilationDefinesAsync()
             let! ct = Async.CancellationToken
             let! sourceText = this.GetTextAsync(ct) |> Async.AwaitTask
             return Tokenizer.getSymbolAtPosition(this.Id, sourceText, position, this.FilePath, defines, lookupKind, wholeActivePattern, allowStringToken)

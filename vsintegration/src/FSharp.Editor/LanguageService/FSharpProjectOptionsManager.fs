@@ -94,8 +94,8 @@ type private FSharpProjectOptionsMessage =
 type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
     let cancellationTokenSource = new CancellationTokenSource()
 
-    // Hack to store command line options from HandleCommandLineChanges
-    let cpsCommandLineOptions = ConcurrentDictionary<ProjectId, string[] * string[]>()
+    // Store command line options
+    let commandLineOptions = ConcurrentDictionary<ProjectId, string[] * string[]>()
 
     let legacyProjectSites = ConcurrentDictionary<ProjectId, IProjectSite>()
 
@@ -217,8 +217,8 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
 
     let tryGetProjectSite (project: Project) =
         // Cps
-        if cpsCommandLineOptions.ContainsKey project.Id then
-            Some (mapCpsProjectToSite(project, cpsCommandLineOptions))
+        if commandLineOptions.ContainsKey project.Id then
+            Some (mapCpsProjectToSite(project, commandLineOptions))
         else
             // Legacy
             match legacyProjectSites.TryGetValue project.Id with
@@ -420,8 +420,8 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
     member _.ClearSingleFileOptionsCache(documentId) =
         agent.Post(FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId))
 
-    member _.SetCpsCommandLineOptions(projectId, sourcePaths, options) =
-        cpsCommandLineOptions.[projectId] <- (sourcePaths, options)
+    member _.SetCommandLineOptions(projectId, sourcePaths, options) =
+        commandLineOptions.[projectId] <- (sourcePaths, options)
 
     member _.SetLegacyProjectSite (projectId, projectSite) =
         legacyProjectSites.[projectId] <- projectSite
@@ -432,7 +432,7 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
         | _ -> None
 
     member _.ClearAllCaches() =
-        cpsCommandLineOptions.Clear()
+        commandLineOptions.Clear()
         legacyProjectSites.Clear()
         cache.Clear()
         singleFileCache.Clear()
@@ -516,7 +516,7 @@ type internal FSharpProjectOptionsManager
         | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile document.Name }
 
     member this.SetCommandLineOptions(projectId, sourcePaths, options: ImmutableArray<string>) =
-        reactor.SetCpsCommandLineOptions(projectId, sourcePaths, options.ToArray())
+        reactor.SetCommandLineOptions(projectId, sourcePaths, options.ToArray())
 
     member this.ClearAllCaches() =
         reactor.ClearAllCaches()

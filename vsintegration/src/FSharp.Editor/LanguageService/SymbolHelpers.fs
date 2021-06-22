@@ -21,7 +21,7 @@ module internal SymbolHelpers =
     let getSymbolUsesOfSymbolAtLocationInDocument (document: Document, position: int) =
         asyncMaybe {
             let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync
-            let! defines = document.Project.GetFSharpCompilationDefinesAsync() |> liftAsync
+            let! defines = document.GetFSharpCompilationDefinesAsync() |> liftAsync
 
             let! cancellationToken = Async.CancellationToken |> liftAsync
             let! sourceText = document.GetTextAsync(cancellationToken)

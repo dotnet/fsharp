@@ -89,7 +89,7 @@ type internal FSharpAddOpenCodeFixProvider
             let! parseResults, checkResults = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync
             let line = sourceText.Lines.GetLineFromPosition(context.Span.End)
             let linePos = sourceText.Lines.GetLinePosition(context.Span.End)
-            let! defines = document.Project.GetFSharpCompilationDefinesAsync() |> liftAsync
+            let! defines = document.GetFSharpCompilationDefinesAsync() |> liftAsync
             
             let! symbol = 
                 maybe {
