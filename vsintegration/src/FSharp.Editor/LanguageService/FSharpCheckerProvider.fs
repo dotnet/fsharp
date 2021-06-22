@@ -22,12 +22,12 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 type internal FSharpCheckerProvider 
     [<ImportingConstructor>]
     (
-        [<Import(typeof<VisualStudioWorkspace>)>] workspace: Workspace,
+        fsVsService: IFSharpVisualStudioService,
         settings: EditorOptions
     ) =
 
     let tryGetMetadataSnapshot (path, timeStamp) = 
-        match workspace with
+        match fsVsService.Workspace with
         | :? VisualStudioWorkspace as workspace ->
             try
                 let md = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetMetadata(workspace, path, timeStamp)

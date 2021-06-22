@@ -99,7 +99,7 @@ type private FSharpProjectOptionsMessage =
     | ClearSingleFileOptionsCache of DocumentId
 
 [<Sealed>]
-type private FSharpProjectOptionsReactor (settings: EditorOptions, _serviceProvider, checkerProvider: FSharpCheckerProvider) =
+type private FSharpProjectOptionsReactor (settings: EditorOptions, checkerProvider: FSharpCheckerProvider) =
     let cancellationTokenSource = new CancellationTokenSource()
 
     // Hack to store command line options from HandleCommandLineChanges
@@ -462,26 +462,25 @@ type internal FSharpProjectOptionsManager
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        [<Import(typeof<VisualStudioWorkspace>)>] workspace: Workspace,
-        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,
-        settings: EditorOptions
+        settings: EditorOptions,
+        fsVsService: IFSharpVisualStudioService
     ) =
 
     let projectDisplayNameOf projectFileName =
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
         else Path.GetFileNameWithoutExtension projectFileName
 
-    let reactor = new FSharpProjectOptionsReactor(settings, serviceProvider, checkerProvider)
+    let reactor = new FSharpProjectOptionsReactor(settings, checkerProvider)
 
     do
         // We need to listen to this event for lifecycle purposes.
-        workspace.WorkspaceChanged.Add(fun args ->
+        fsVsService.Workspace.WorkspaceChanged.Add(fun args ->
             match args.Kind with
             | WorkspaceChangeKind.ProjectRemoved -> reactor.ClearOptionsByProjectId(args.ProjectId)
             | _ -> ()
         )
 
-        workspace.DocumentClosed.Add(fun args ->
+        fsVsService.Workspace.DocumentClosed.Add(fun args ->
             let doc = args.Document
             let proj = doc.Project
             if proj.IsFSharp && proj.IsFSharpMiscellaneousOrMetadata then
@@ -545,7 +544,7 @@ type internal FSharpProjectOptionsManager
     member _.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, _references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
         use _logBlock = Logger.LogBlock(LogEditorFunctionId.LanguageService_HandleCommandLineArgs)
 
-        match workspace with
+        match fsVsService.Workspace with
         | :? VisualStudioWorkspace as workspace ->
             let projectId =
                 match Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.TryGetProjectIdByBinPath(workspace, path) with

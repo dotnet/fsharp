@@ -34,6 +34,7 @@
     <Compile Include="Common\FSharpCodeAnalysisExtensions.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
     <Compile Include="Common\Vs.fs" />
+    <Compile Include="Common\IFSharpVisualStudioService.fs" />
     <Compile Include="Options\SettingsPersistence.fs" />
     <Compile Include="Options\UIHelpers.fs" />
     <Compile Include="Options\EditorOptions.fs" />

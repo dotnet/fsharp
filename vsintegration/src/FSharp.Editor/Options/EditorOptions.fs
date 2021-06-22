@@ -100,7 +100,7 @@ type FormattingOptions =
 type EditorOptions 
     [<ImportingConstructor>] 
     (
-      [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider
+        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider
     ) =
 
     let store = SettingsStore(serviceProvider)
