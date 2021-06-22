@@ -46,13 +46,12 @@ type internal RoamingProfileStorageLocation(keyName: string) =
             let substituteLanguageName = if languageName = FSharpConstants.FSharpLanguageName then "FSharp" else languageName
             unsubstitutedKeyName.Replace("%LANGUAGE%", substituteLanguageName)
  
-[<Composition.Shared>]
+[<System.Composition.Shared>]
 [<ExportWorkspaceServiceFactory(typeof<IFSharpWorkspaceService>, ServiceLayer.Default)>]
 type internal FSharpWorkspaceServiceFactory
-    [<Composition.ImportingConstructor>]
+    [<System.Composition.ImportingConstructor>]
     (
     ) =
-
 
     static let gate = obj()
 
@@ -245,11 +244,13 @@ type internal FSharpPackage() as this =
 
                     // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
                     let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
-                    let projectInfoManager = this.ComponentModel.DefaultExportProvider.GetExport<IFSharpWorkspaceService>().Value.FSharpProjectOptionsManager
+
+                    let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
+                    let optionsManager = workspace.Services.GetService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
                     let metadataAsSource = this.ComponentModel.DefaultExportProvider.GetExport<FSharpMetadataAsSourceService>().Value
                     let solution = this.GetServiceAsync(typeof<SVsSolution>).Result
                     let solution = solution :?> IVsSolution
-                    let solutionEvents = FSharpSolutionEvents(projectInfoManager, metadataAsSource)
+                    let solutionEvents = FSharpSolutionEvents(optionsManager, metadataAsSource)
                     let rdt = this.GetServiceAsync(typeof<SVsRunningDocumentTable>).Result
                     let rdt = rdt :?> IVsRunningDocumentTable
 
@@ -263,10 +264,10 @@ type internal FSharpPackage() as this =
                         new SingleFileWorkspaceMap(
                             workspace, 
                             miscFilesWorkspace, 
-                            projectInfoManager, 
+                            optionsManager, 
                             projectContextFactory, 
                             rdt)
-                    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, projectInfoManager, projectContextFactory)
+                    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, optionsManager, projectContextFactory)
                     ()
                 let awaiter = this.JoinableTaskFactory.SwitchToMainThreadAsync().GetAwaiter()
                 if awaiter.IsCompleted then
