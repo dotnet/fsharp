@@ -1509,11 +1509,7 @@ memberFlags:
 typeNameInfo: 
   | opt_attributes tyconNameAndTyparDecls opt_typeConstraints
      { let typars, lid, fixity, vis, xmlDoc = $2
-       let tpcs1 =
-           typars
-           |> Option.map (fun (typars: SynTyparDecls) -> typars.Constraints)
-           |> Option.defaultValue []
-       SynComponentInfo ($1, typars, tpcs1 @ $3, lid, xmlDoc, fixity, vis, rangeOfLid lid) }
+       SynComponentInfo ($1, typars, $3, lid, xmlDoc, fixity, vis, rangeOfLid lid) }
 
 /* Part of a set of type definitions */
 tyconDefnList:  
