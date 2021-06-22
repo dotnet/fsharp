@@ -247,7 +247,9 @@ type internal FSharpPackage() as this =
                     // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
                     let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
 
+                    
                     let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
+                    let _ = this.ComponentModel.DefaultExportProvider.GetExport<HackCpsCommandLineChanges>()
                     let optionsManager = workspace.Services.GetService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
                     let metadataAsSource = this.ComponentModel.DefaultExportProvider.GetExport<FSharpMetadataAsSourceService>().Value
                     let solution = this.GetServiceAsync(typeof<SVsSolution>).Result
@@ -260,7 +262,6 @@ type internal FSharpPackage() as this =
                     solution.AdviseSolutionEvents(solutionEvents) |> ignore
                     
                     let projectContextFactory = this.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
-                    let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
                     let miscFilesWorkspace = this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
                     let _singleFileWorkspaceMap = 
                         new SingleFileWorkspaceMap(
@@ -328,7 +329,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
 
 [<Composition.Shared>]
 [<System.ComponentModel.Composition.Export(typeof<HackCpsCommandLineChanges>)>]
-type HackCpsCommandLineChanges
+type internal HackCpsCommandLineChanges
     (
         [<System.ComponentModel.Composition.Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace
     ) =
