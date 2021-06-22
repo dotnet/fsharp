@@ -21,14 +21,14 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text.Outlining
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
+open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
 
 // Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
 // Diagnostic providers can be executed in environment that does not use MEF so they can rely only
 // on services exposed by the workspace
 type internal IFSharpWorkspaceService =
-    inherit Microsoft.CodeAnalysis.Host.IWorkspaceService
+    inherit IWorkspaceService
     abstract Checker: FSharpChecker
     abstract FSharpProjectOptionsManager: FSharpProjectOptionsManager
 

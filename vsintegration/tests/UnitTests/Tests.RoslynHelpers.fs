@@ -1,4 +1,4 @@
-﻿namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+﻿namespace rec Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
 open System
 open System.IO
@@ -142,15 +142,13 @@ type TestHostLanguageServices(workspaceServices: HostWorkspaceServices, language
 [<ComponentModel.Composition.Export(typeof<IFSharpVisualStudioService>); Composition.Shared>]
 type internal MockFSharpVisualStudioService() =
 
-    static let mockWorkspace = new AdhocWorkspace()
+    static let workspace = new AdhocWorkspace()
     static let instance = MockFSharpVisualStudioService()
     static member Instance = instance
     
     interface IFSharpVisualStudioService with
 
-        member _.Workspace = mockWorkspace :> Workspace
-
-        member _.ServiceProvider = null
+        member _.Workspace = workspace :> Workspace
 
 [<ComponentModel.Composition.Export(typeof<IFSharpWorkspaceService>); Composition.Shared>]
 type internal MockFSharpWorkspaceService() =

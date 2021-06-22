@@ -131,7 +131,7 @@
   </ItemGroup>
 
   <!-- assemblies used during tests -->
-  <ItemGroup>
+  <!--<ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" Private="true" />
     <ProjectReference Include="..\MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj" Private="true" />
     <ProjectReference Include="..\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist\DefinitionLocationAttributeFileDoesnotExist.csproj" Private="true" />
@@ -145,7 +145,7 @@
     <ProjectReference Include="..\MockTypeProviders\XmlDocAttributeWithLocalizedComment\XmlDocAttributeWithLocalizedComment.csproj" Private="true" />
     <ProjectReference Include="..\MockTypeProviders\XmlDocAttributeWithLongComment\XmlDocAttributeWithLongComment.csproj" Private="true" />
     <ProjectReference Include="..\MockTypeProviders\XmlDocAttributeWithNullComment\XmlDocAttributeWithNullComment.csproj" Private="true" />
-  </ItemGroup>
+  </ItemGroup>-->
 
   <ItemGroup>
     <Reference Include="mscorlib" />

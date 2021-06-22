@@ -11,19 +11,14 @@ type internal IFSharpVisualStudioService =
 
     abstract Workspace: Workspace
 
-    abstract ServiceProvider: IServiceProvider
-
 [<System.Composition.Shared>]
 [<System.ComponentModel.Composition.Export(typeof<IFSharpVisualStudioService>)>]
 type internal FSharpVisualStudioService
     [<System.ComponentModel.Composition.ImportingConstructor>]
     (
-        [<System.ComponentModel.Composition.Import(typeof<VisualStudioWorkspace>)>] workspace,
-        [<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider
+        [<System.ComponentModel.Composition.Import(typeof<VisualStudioWorkspace>)>] workspace
     ) =
 
     interface IFSharpVisualStudioService with
 
         member _.Workspace = workspace
-
-        member _.ServiceProvider = serviceProvider
