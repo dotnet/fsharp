@@ -238,6 +238,7 @@ type RoslynTestHelpers private () =
 
         match options with
         | Some options ->
+            let options = { options with ProjectId = Some(Guid.NewGuid().ToString()) }
             workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projId, options.SourceFiles, options.OtherOptions |> ImmutableArray.CreateRange)
             document.SetFSharpProjectOptionsForTesting(options)
         | _ ->

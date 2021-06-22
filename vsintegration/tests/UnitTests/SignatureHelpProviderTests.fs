@@ -100,7 +100,6 @@ let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (e
     let textLines = sourceText.Lines
     let caretLinePos = textLines.GetLinePosition(caretPosition)
     let caretLineColumn = caretLinePos.Character
-    let perfOptions = LanguageServicePerformanceOptions.Default
                
     let document = RoslynTestHelpers.CreateDocument(filePath, sourceText)
     let parseResults, checkFileResults =
