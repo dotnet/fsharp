@@ -27,28 +27,10 @@ open Microsoft.CodeAnalysis.Host.Mef
 // Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
 // Diagnostic providers can be executed in environment that does not use MEF so they can rely only
 // on services exposed by the workspace
-type internal FSharpCheckerWorkspaceService =
+type internal IFSharpWorkspaceService =
     inherit Microsoft.CodeAnalysis.Host.IWorkspaceService
     abstract Checker: FSharpChecker
     abstract FSharpProjectOptionsManager: FSharpProjectOptionsManager
-
-//[<ExportWorkspaceService(typeof<FSharpCheckerWorkspaceService>, ServiceLayer.Default); Composition.Shared>]
-//type internal ImplFSharpCheckerWorkspaceService
-//    [<Composition.ImportingConstructor>]
-//    (
-//        checkerProvider: FSharpCheckerProvider,
-//        projectInfoManager: FSharpProjectOptionsManager
-//    ) =
-
-//    do
-//        Console.WriteLine("test")
-//        Console.WriteLine("test")
-
-//    interface FSharpCheckerWorkspaceService with
-
-//        member _.Checker = checkerProvider.Checker
-
-//        member _.FSharpProjectOptionsManager = projectInfoManager
 
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
@@ -62,16 +44,16 @@ type internal RoamingProfileStorageLocation(keyName: string) =
             unsubstitutedKeyName.Replace("%LANGUAGE%", substituteLanguageName)
  
 [<Composition.Shared>]
-[<Microsoft.CodeAnalysis.Host.Mef.ExportWorkspaceServiceFactory(typeof<FSharpCheckerWorkspaceService>, Microsoft.CodeAnalysis.Host.Mef.ServiceLayer.Default)>]
-type internal FSharpCheckerWorkspaceServiceFactory
+[<ExportWorkspaceServiceFactory(typeof<IFSharpWorkspaceService>, ServiceLayer.Default)>]
+type internal FSharpWorkspaceServiceFactory
     [<Composition.ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager
     ) =
-    interface Microsoft.CodeAnalysis.Host.Mef.IWorkspaceServiceFactory with
+    interface IWorkspaceServiceFactory with
         member _.CreateService(_workspaceServices) =
-            upcast { new FSharpCheckerWorkspaceService with
+            upcast { new IFSharpWorkspaceService with
                 member _.Checker = checkerProvider.Checker
                 member _.FSharpProjectOptionsManager = projectInfoManager }
 

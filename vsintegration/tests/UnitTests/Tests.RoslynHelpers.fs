@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.LanguageServices
+open Microsoft.VisualStudio.Shell
 
 [<AutoOpen>]
 module MefHelpers =
@@ -30,6 +31,7 @@ module MefHelpers =
                           //  "Microsoft.CodeAnalysis.EditorFeatures.Text.dll"
                           //  "Microsoft.VisualStudio.Text.Logic.dll"
                          //   "Microsoft.VisualStudio.LanguageServices.dll"
+                          //  "Microsoft.VisualStudio.Shell.Framework.dll"
                             "FSharp.Editor.dll"
                         |]
 
@@ -148,6 +150,11 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
 
     let exportProvider = createExportProvider()
 
+    do
+        let vsworkspace = exportProvider.GetExportedValue<VisualStudioWorkspace>()
+        let serviceProvider = exportProvider.GetExportedValue<SVsServiceProvider>()
+        ()
+
     let services1 =
         exportProvider.GetExports<IWorkspaceService, TestWorkspaceServiceMetadata>()
 
@@ -157,7 +164,8 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
             Lazy<_, _>((fun () -> x.Value.CreateService(this)), x.Metadata)
         )
 
-    let otherServices1 = Seq.append factories1 services1
+    let otherServices1 = 
+        Seq.append factories1 services1
 
     let otherServicesMap1 =
         otherServices1
@@ -172,7 +180,8 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
     override _.Workspace = workspace
 
     override this.GetService<'T when 'T :> IWorkspaceService>() : 'T =
-        match otherServicesMap1.TryGetValue(typeof<'T>.AssemblyQualifiedName) with
+        let ty = typeof<'T>
+        match otherServicesMap1.TryGetValue(ty.AssemblyQualifiedName) with
         | true, otherService ->
             otherService.Value :?> 'T
         | _ ->
@@ -216,7 +225,7 @@ type RoslynTestHelpers private () =
         let docInfo =
             DocumentInfo.Create(
                 docId,
-                filePath,
+                filePath, 
                 loader=TextLoader.From(text.Container, VersionStamp.Create(DateTime.UtcNow)),
                 filePath=filePath,
                 sourceCodeKind= if isScript then SourceCodeKind.Script else SourceCodeKind.Regular)

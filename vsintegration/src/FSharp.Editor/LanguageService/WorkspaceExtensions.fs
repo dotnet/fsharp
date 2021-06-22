@@ -105,7 +105,7 @@ module private ProjectCache =
 type Solution with
 
     member this.GetFSharpService() =
-        this.Workspace.Services.GetRequiredService<FSharpCheckerWorkspaceService>()
+        this.Workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
 
 type Project with
 
