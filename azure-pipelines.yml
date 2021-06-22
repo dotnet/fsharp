@@ -76,10 +76,10 @@ stages:
   #-------------------------------------------------------------------------------------------------------------------#
   #                                                  Signed build                                                     #
   #-------------------------------------------------------------------------------------------------------------------#
-  - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
+  - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/main')) }}:
     - template: /eng/common/templates/job/onelocbuild.yml
       parameters:
-        CreatePr: false
+        MirrorRepo: fsharp
         LclSource: lclFilesfromPackage
         LclPackageId: 'LCL-JUNO-PROD-FSHARP'
     - template: /eng/common/templates/jobs/jobs.yml
