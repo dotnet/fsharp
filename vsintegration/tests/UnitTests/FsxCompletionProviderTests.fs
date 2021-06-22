@@ -56,7 +56,7 @@ type Worker () =
 
     member _.VerifyCompletionListExactly(fileContents: string, marker: string, expected: List<string>) =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
-        let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
+        let document = RoslynTestHelpers.CreateDocument(filePath, SourceText.From(fileContents), options = projectOptions)
         let expected = expected |> Seq.toList
         let actual = 
             let x = FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []), IntelliSenseOptions.Default) 
