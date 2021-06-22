@@ -99,7 +99,7 @@ module LeafExpressionConverter =
     let (|EqualsQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x = y))
     let (|GreaterQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x > y))
     let (|GreaterEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x >= y))
-    let (|LessQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x <  y))
+    let (|LessQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x < y))
     let (|LessEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x <= y))
     let (|NotEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x <> y))
 
@@ -185,6 +185,8 @@ module LeafExpressionConverter =
     let (|ConvUInt16Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Operators.uint16 x))
     let (|ConvUInt32Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Operators.uint32 x))
     let (|ConvUInt64Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Operators.uint64 x))
+    let (|ConvIntPtrQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Operators.nativeint x))
+    let (|ConvUIntPtrQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Operators.unativeint x))
 
     let (|ConvInt8Q|_|) = SpecificCallToMethodInfo (typeof<ConvEnv>.Assembly.GetType("Microsoft.FSharp.Core.ExtraTopLevelOperators").GetMethod("ToSByte"))
     let (|ConvUInt8Q|_|) = SpecificCallToMethodInfo (typeof<ConvEnv>.Assembly.GetType("Microsoft.FSharp.Core.ExtraTopLevelOperators").GetMethod("ToByte"))
@@ -208,10 +210,8 @@ module LeafExpressionConverter =
     let (|ConvNullableUInt16Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.uint16 x))
     let (|ConvNullableUInt32Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.uint32 x))
     let (|ConvNullableUInt64Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.uint64 x))
-    // LINQ expressions can't do native integer operations, so we don't convert these
-    //let (|ConvNullableIntPtrQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.nativeint x))
-    //let (|ConvNullableUIntPtrQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.unativeint x))
-
+    let (|ConvNullableIntPtrQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.nativeint x))
+    let (|ConvNullableUIntPtrQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.unativeint x))
 
     let (|UnboxGeneric|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> LanguagePrimitives.IntrinsicFunctions.UnboxGeneric x))
     let (|TypeTestGeneric|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric x))
@@ -226,6 +226,8 @@ module LeafExpressionConverter =
     let (|CheckedConvUInt16Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.uint16 x))
     let (|CheckedConvUInt32Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.uint32 x))
     let (|CheckedConvUInt64Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.uint64 x))
+    let (|CheckedConvIntPtrQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.nativeint x))
+    let (|CheckedConvUIntPtrQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.unativeint x))
     let (|ImplicitExpressionConversionHelperQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> ImplicitExpressionConversionHelper x))
     let (|MemberInitializationHelperQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> MemberInitializationHelper x))
     let (|NewAnonymousObjectHelperQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> NewAnonymousObjectHelper x))
@@ -439,56 +441,23 @@ module LeafExpressionConverter =
             | ModuloNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env true x1 x2 false Expression.Modulo <| methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y)
             | NullableModuloNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Modulo <| methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y)
 
-            | ConvNullableCharQ    (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<char>>) |> asExpr
-            | ConvNullableDecimalQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<decimal>>) |> asExpr
-            | ConvNullableFloatQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<float>>) |> asExpr
-            | ConvNullableDoubleQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<double>>) |> asExpr
-            | ConvNullableFloat32Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<float32>>) |> asExpr
-            | ConvNullableSingleQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<float32>>) |> asExpr
-            | ConvNullableSByteQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<sbyte>>) |> asExpr
-            | ConvNullableInt8Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<sbyte>>) |> asExpr
-            | ConvNullableInt16Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<int16>>) |> asExpr
-            | ConvNullableInt32Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<int32>>) |> asExpr
-            | ConvNullableIntQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<int32>>) |> asExpr
-            | ConvNullableInt64Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<int64>>) |> asExpr
-            | ConvNullableByteQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<byte>>) |> asExpr
-            | ConvNullableUInt8Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<byte>>) |> asExpr
-            | ConvNullableUInt16Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<uint16>>) |> asExpr
-            | ConvNullableUInt32Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<uint32>>) |> asExpr
-            | ConvNullableUInt64Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<uint64>>) |> asExpr
-            // LINQ expressions can't do native integer operations, so we don't convert these
-            //| ConvNullableIntPtrQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<nativeint>>) |> asExpr
-            //| ConvNullableUIntPtrQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<unativeint>>) |> asExpr
+            | ConvNullableCharQ (_, _, [x]) | ConvNullableDecimalQ (_, _, [x]) | ConvNullableFloatQ (_, _, [x]) | ConvNullableDoubleQ (_, _, [x])
+            | ConvNullableFloat32Q (_, _, [x]) | ConvNullableSingleQ (_, _, [x]) | ConvNullableSByteQ (_, _, [x]) | ConvNullableInt8Q (_, _, [x])
+            | ConvNullableInt16Q (_, _, [x]) | ConvNullableInt32Q (_, _, [x]) | ConvNullableIntQ (_, _, [x]) | ConvNullableInt64Q (_, _, [x])
+            | ConvNullableByteQ (_, _, [x]) | ConvNullableUInt8Q (_, _, [x]) | ConvNullableUInt16Q (_, _, [x]) | ConvNullableUInt32Q (_, _, [x])
+            | ConvNullableUInt64Q (_, _, [x]) | ConvNullableIntPtrQ (_, _, [x]) | ConvNullableUIntPtrQ (_, _, [x])
 
-            | ConvCharQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<char>) |> asExpr
-            | ConvDecimalQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<decimal>) |> asExpr
-            | ConvFloatQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<float>) |> asExpr
-            | ConvDoubleQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<double>) |> asExpr
-            | ConvFloat32Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<float32>) |> asExpr
-            | ConvSingleQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<float32>) |> asExpr
-            | ConvSByteQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<sbyte>) |> asExpr
-            | ConvInt8Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<sbyte>) |> asExpr
-            | ConvInt16Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<int16>) |> asExpr
-            | ConvInt32Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<int32>) |> asExpr
-            | ConvIntQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<int32>) |> asExpr
-            | ConvInt64Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<int64>) |> asExpr
-            | ConvByteQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<byte>) |> asExpr
-            | ConvUInt8Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<byte>) |> asExpr
-            | ConvUInt16Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<uint16>) |> asExpr
-            | ConvUInt32Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<uint32>) |> asExpr
-            | ConvUInt64Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<uint64>) |> asExpr
+            | ConvCharQ (_, _, [x]) | ConvDecimalQ (_, _, [x]) | ConvFloatQ (_, _, [x]) | ConvDoubleQ (_, _, [x])
+			| ConvFloat32Q (_, _, [x]) | ConvSingleQ (_, _, [x]) | ConvSByteQ (_, _, [x]) | ConvInt8Q (_, _, [x])
+			| ConvInt16Q (_, _, [x]) | ConvInt32Q (_, _, [x]) | ConvIntQ (_, _, [x]) | ConvInt64Q (_, _, [x])
+			| ConvByteQ (_, _, [x]) | ConvUInt8Q (_, _, [x]) | ConvUInt16Q (_, _, [x]) | ConvUInt32Q (_, _, [x])
+			| ConvUInt64Q (_, _, [x]) | ConvIntPtrQ (_, _, [x]) | ConvUIntPtrQ (_, _, [x]) -> transConvFallback inp env false x
 
-            | CheckedConvCharQ (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<char>) |> asExpr
-            | CheckedConvSByteQ (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<sbyte>) |> asExpr
-            | CheckedConvInt8Q (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<sbyte>) |> asExpr
-            | CheckedConvInt16Q (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<int16>) |> asExpr
-            | CheckedConvInt32Q (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<int32>) |> asExpr
-            | CheckedConvInt64Q (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<int64>) |> asExpr
-            | CheckedConvByteQ (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<byte>) |> asExpr
-            | CheckedConvUInt8Q (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<byte>) |> asExpr
-            | CheckedConvUInt16Q (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<uint16>) |> asExpr
-            | CheckedConvUInt32Q (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<uint32>) |> asExpr
-            | CheckedConvUInt64Q (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<uint64>) |> asExpr
+            | CheckedConvCharQ (_, _, [x]) | CheckedConvSByteQ (_, _, [x]) | CheckedConvInt8Q (_, _, [x]) | CheckedConvInt16Q (_, _, [x])
+			| CheckedConvInt32Q (_, _, [x]) | CheckedConvInt64Q (_, _, [x]) | CheckedConvByteQ (_, _, [x]) | CheckedConvUInt8Q (_, _, [x])
+			| CheckedConvUInt16Q (_, _, [x]) | CheckedConvUInt32Q (_, _, [x]) | CheckedConvUInt64Q (_, _, [x]) | CheckedConvIntPtrQ (_, _, [x])
+		    | CheckedConvUIntPtrQ (_, _, [x]) -> transConvFallback inp env true x
+				
             | ArrayLookupQ (_, [_; _; _], [x1; x2]) ->
                 Expression.ArrayIndex(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
 
@@ -672,14 +641,12 @@ module LeafExpressionConverter =
             let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
             exprErasedConstructor(e, method.MakeGenericMethod [| nullableUnderlyingType x; nullableUnderlyingType inp |])
         |> asExpr
-
     and transBinOp _inp env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ -> _) =
         let e1 = ConvExprToLinqInContext env x1
         let e2 = ConvExprToLinqInContext env x2
         let e1 = if addConvertLeft  then Expression.Convert(e1, typedefof<Nullable<int>>.MakeGenericType [| e1.Type |]) |> asExpr else e1
         let e2 = if addConvertRight then Expression.Convert(e2, typedefof<Nullable<int>>.MakeGenericType [| e2.Type |]) |> asExpr else e2
         exprErasedConstructor(e1, e2) |> asExpr
-
     and transBinOpFallback inp env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ -> _) fallback =
         transBinOp inp env addConvertLeft x1 x2 addConvertRight (fun (e1, e2) ->
             try exprErasedConstructor(e1, e2, null) with _ ->
@@ -688,6 +655,16 @@ module LeafExpressionConverter =
                 let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
                 exprErasedConstructor(e1, e2, method.MakeGenericMethod [| nullableUnderlyingType x1; nullableUnderlyingType x2; nullableUnderlyingType inp |])
         )
+    and transConvFallback (inp: Expr) env isChecked x =
+        let e = ConvExprToLinqInContext env x
+        let exprErasedConstructor: _ * _ * _ -> _ = if isChecked then Expression.ConvertChecked else Expression.Convert
+        try exprErasedConstructor(e, inp.Type, null) with _ ->
+            // LINQ Expressions' arithmetic operators do not handle byte, sbyte and char. In this case, use the F# operator as the user-defined method.
+            let nullableUnderlyingType (exp: Expr) = match Nullable.GetUnderlyingType exp.Type with null -> exp.Type | t -> t
+            // The dynamic implementations of checked conversion operators refer to LanguagePrimitives.ExplicitDynamic which is unchecked! This is a bug and should definitely be fixed.
+            let method = Reflection.MethodInfo.GetMethodFromHandle (methodhandleof (fun x -> LanguagePrimitives.ExplicitDynamic x)) :?> Reflection.MethodInfo
+            exprErasedConstructor(e, inp.Type, method.MakeGenericMethod [| nullableUnderlyingType x; nullableUnderlyingType inp |])
+        |> asExpr
 
     and ConvObjArg env objOpt coerceTo : Expression =
         match objOpt with
