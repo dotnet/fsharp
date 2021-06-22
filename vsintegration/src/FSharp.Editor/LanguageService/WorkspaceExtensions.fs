@@ -122,8 +122,7 @@ type Document with
                     | None -> return raise(System.OperationCanceledException("FSharp project options not found."))
                     | Some(parsingOptions, _, projectOptions) ->
                         let result = (service.Checker, projectOptionsManager, parsingOptions, projectOptions)
-                        ProjectCache.Projects.Add(this.Project, result)
-                        return result
+                        return ProjectCache.Projects.GetValue(this.Project, Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(fun _ -> result))
             else
                 return raise(System.OperationCanceledException("Document is not a FSharp document."))
         }
