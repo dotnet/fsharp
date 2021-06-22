@@ -5809,7 +5809,7 @@ FSharp.Compiler.Syntax.SynByteStringKind: System.String ToString()
 FSharp.Compiler.Syntax.SynComponentInfo
 FSharp.Compiler.Syntax.SynComponentInfo: Boolean get_preferPostfix()
 FSharp.Compiler.Syntax.SynComponentInfo: Boolean preferPostfix
-FSharp.Compiler.Syntax.SynComponentInfo: FSharp.Compiler.Syntax.SynComponentInfo NewSynComponentInfo(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTyparDecl], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Xml.PreXmlDoc, Boolean, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynComponentInfo: FSharp.Compiler.Syntax.SynComponentInfo NewSynComponentInfo(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynTyparDecls], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Xml.PreXmlDoc, Boolean, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynComponentInfo: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynComponentInfo: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynComponentInfo: FSharp.Compiler.Text.Range get_range()
@@ -5822,12 +5822,12 @@ FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Collections.FSharpList
 FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident] longId
 FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] attributes
 FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] get_attributes()
-FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTyparDecl] get_typeParams()
-FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTyparDecl] typeParams
 FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint] constraints
 FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint] get_constraints()
 FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess] accessibility
 FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess] get_accessibility()
+FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynTyparDecls] get_typeParams()
+FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynTyparDecls] typeParams
 FSharp.Compiler.Syntax.SynComponentInfo: System.String ToString()
 FSharp.Compiler.Syntax.SynConst
 FSharp.Compiler.Syntax.SynConst+Bool: Boolean Item
@@ -8037,6 +8037,46 @@ FSharp.Compiler.Syntax.SynTyparDecl: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynTyparDecl: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] attributes
 FSharp.Compiler.Syntax.SynTyparDecl: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] get_attributes()
 FSharp.Compiler.Syntax.SynTyparDecl: System.String ToString()
+FSharp.Compiler.Syntax.SynTyparDecls
+FSharp.Compiler.Syntax.SynTyparDecls+PostfixList: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynTyparDecls+PostfixList: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynTyparDecls+PostfixList: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTyparDecl] decls
+FSharp.Compiler.Syntax.SynTyparDecls+PostfixList: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTyparDecl] get_decls()
+FSharp.Compiler.Syntax.SynTyparDecls+PostfixList: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint] constraints
+FSharp.Compiler.Syntax.SynTyparDecls+PostfixList: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint] get_constraints()
+FSharp.Compiler.Syntax.SynTyparDecls+PrefixList: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynTyparDecls+PrefixList: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynTyparDecls+PrefixList: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTyparDecl] decls
+FSharp.Compiler.Syntax.SynTyparDecls+PrefixList: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTyparDecl] get_decls()
+FSharp.Compiler.Syntax.SynTyparDecls+SinglePrefix: FSharp.Compiler.Syntax.SynTyparDecl decl
+FSharp.Compiler.Syntax.SynTyparDecls+SinglePrefix: FSharp.Compiler.Syntax.SynTyparDecl get_decl()
+FSharp.Compiler.Syntax.SynTyparDecls+SinglePrefix: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynTyparDecls+SinglePrefix: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynTyparDecls+Tags: Int32 PostfixList
+FSharp.Compiler.Syntax.SynTyparDecls+Tags: Int32 PrefixList
+FSharp.Compiler.Syntax.SynTyparDecls+Tags: Int32 SinglePrefix
+FSharp.Compiler.Syntax.SynTyparDecls: Boolean IsPostfixList
+FSharp.Compiler.Syntax.SynTyparDecls: Boolean IsPrefixList
+FSharp.Compiler.Syntax.SynTyparDecls: Boolean IsSinglePrefix
+FSharp.Compiler.Syntax.SynTyparDecls: Boolean get_IsPostfixList()
+FSharp.Compiler.Syntax.SynTyparDecls: Boolean get_IsPrefixList()
+FSharp.Compiler.Syntax.SynTyparDecls: Boolean get_IsSinglePrefix()
+FSharp.Compiler.Syntax.SynTyparDecls: FSharp.Compiler.Syntax.SynTyparDecls NewPostfixList(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTyparDecl], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynTyparDecls: FSharp.Compiler.Syntax.SynTyparDecls NewPrefixList(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTyparDecl], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynTyparDecls: FSharp.Compiler.Syntax.SynTyparDecls NewSinglePrefix(FSharp.Compiler.Syntax.SynTyparDecl, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynTyparDecls: FSharp.Compiler.Syntax.SynTyparDecls+PostfixList
+FSharp.Compiler.Syntax.SynTyparDecls: FSharp.Compiler.Syntax.SynTyparDecls+PrefixList
+FSharp.Compiler.Syntax.SynTyparDecls: FSharp.Compiler.Syntax.SynTyparDecls+SinglePrefix
+FSharp.Compiler.Syntax.SynTyparDecls: FSharp.Compiler.Syntax.SynTyparDecls+Tags
+FSharp.Compiler.Syntax.SynTyparDecls: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynTyparDecls: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.Syntax.SynTyparDecls: Int32 Tag
+FSharp.Compiler.Syntax.SynTyparDecls: Int32 get_Tag()
+FSharp.Compiler.Syntax.SynTyparDecls: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTyparDecl] TyparDecls
+FSharp.Compiler.Syntax.SynTyparDecls: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTyparDecl] get_TyparDecls()
+FSharp.Compiler.Syntax.SynTyparDecls: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint] Constraints
+FSharp.Compiler.Syntax.SynTyparDecls: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint] get_Constraints()
+FSharp.Compiler.Syntax.SynTyparDecls: System.String ToString()
 FSharp.Compiler.Syntax.SynType
 FSharp.Compiler.Syntax.SynType+Anon: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynType+Anon: FSharp.Compiler.Text.Range range
@@ -8702,13 +8742,11 @@ FSharp.Compiler.Syntax.SynValSig: System.String ToString()
 FSharp.Compiler.Syntax.SynValTyparDecls
 FSharp.Compiler.Syntax.SynValTyparDecls: Boolean canInfer
 FSharp.Compiler.Syntax.SynValTyparDecls: Boolean get_canInfer()
-FSharp.Compiler.Syntax.SynValTyparDecls: FSharp.Compiler.Syntax.SynValTyparDecls NewSynValTyparDecls(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTyparDecl], Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint])
+FSharp.Compiler.Syntax.SynValTyparDecls: FSharp.Compiler.Syntax.SynValTyparDecls NewSynValTyparDecls(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynTyparDecls], Boolean)
 FSharp.Compiler.Syntax.SynValTyparDecls: Int32 Tag
 FSharp.Compiler.Syntax.SynValTyparDecls: Int32 get_Tag()
-FSharp.Compiler.Syntax.SynValTyparDecls: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTyparDecl] get_typars()
-FSharp.Compiler.Syntax.SynValTyparDecls: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTyparDecl] typars
-FSharp.Compiler.Syntax.SynValTyparDecls: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint] constraints
-FSharp.Compiler.Syntax.SynValTyparDecls: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint] get_constraints()
+FSharp.Compiler.Syntax.SynValTyparDecls: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynTyparDecls] get_typars()
+FSharp.Compiler.Syntax.SynValTyparDecls: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynTyparDecls] typars
 FSharp.Compiler.Syntax.SynValTyparDecls: System.String ToString()
 FSharp.Compiler.Syntax.SyntaxNode
 FSharp.Compiler.Syntax.SyntaxNode+SynBinding: FSharp.Compiler.Syntax.SynBinding Item
