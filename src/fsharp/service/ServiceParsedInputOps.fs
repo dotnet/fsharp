@@ -686,7 +686,8 @@ module ParsedInput =
             | SynTypeDefnSimpleRepr.TypeAbbrev(_, t, _) -> walkType t
             | _ -> None
 
-        and walkComponentInfo isModule (SynComponentInfo(Attributes attrs, TyparDecls typars, constraints, _, _, _, _, r)) =
+        and walkComponentInfo isModule (SynComponentInfo(Attributes attrs, TyparsAndConstraints (typars, cs1), cs2, _, _, _, _, r)) =
+            let constraints = cs1 @ cs2
             if isModule then None else ifPosInRange r (fun _ -> Some EntityKind.Type)
             |> Option.orElse (
                 List.tryPick walkAttribute attrs
@@ -1446,7 +1447,8 @@ module ParsedInput =
             | SynTypeDefnSimpleRepr.TypeAbbrev (_, t, _) -> walkType t
             | _ -> ()
     
-        and walkComponentInfo isTypeExtensionOrAlias (SynComponentInfo(Attributes attrs, TyparDecls typars, constraints, longIdent, _, _, _, _)) =
+        and walkComponentInfo isTypeExtensionOrAlias (SynComponentInfo(Attributes attrs, TyparsAndConstraints (typars, cs1), cs2, longIdent, _, _, _, _)) =
+            let constraints = cs1 @ cs2
             List.iter walkAttribute attrs
             List.iter walkTyparDecl typars
             List.iter walkTypeConstraint constraints

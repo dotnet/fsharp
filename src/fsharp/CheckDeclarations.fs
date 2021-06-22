@@ -3184,7 +3184,7 @@ module EstablishTypeDefinitionCores =
             |> set
 
     let TcTyconDefnCore_Phase1A_BuildInitialModule cenv envInitial parent typeNames compInfo decls =
-        let (SynComponentInfo(Attributes attribs, _parms, _constraints, longPath, xml, _, vis, im)) = compInfo 
+        let (SynComponentInfo(Attributes attribs, _, _, longPath, xml, _, vis, im)) = compInfo 
         let id = ComputeModuleName longPath
         let modAttrs = TcAttributes cenv envInitial AttributeTargets.ModuleDecl attribs 
         let modKind = ComputeModuleOrNamespaceKind cenv.g true typeNames modAttrs id.idText
@@ -4320,7 +4320,8 @@ module EstablishTypeDefinitionCores =
                match origInfo, tyconOpt with 
                | (typeDefCore, _, _), Some (tycon: Tycon) -> 
                 let (MutRecDefnsPhase1DataForTycon(synTyconInfo, _, _, _, _, _)) = typeDefCore
-                let (SynComponentInfo(_, _, synTyconConstraints, _, _, _, _, _)) = synTyconInfo
+                let (SynComponentInfo(_, TyparsAndConstraints (_, cs1), cs2, _, _, _, _, _)) = synTyconInfo
+                let synTyconConstraints = cs1 @ cs2
                 let envForTycon = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envForDecls
                 let thisTyconRef = mkLocalTyconRef tycon
                 let envForTycon = MakeInnerEnvForTyconRef envForTycon thisTyconRef false 
@@ -5036,7 +5037,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let env = List.foldBack (AddLocalVal cenv.g cenv.tcSink scopem) idvs env
             return env
 
-        | SynModuleSigDecl.NestedModule(SynComponentInfo(Attributes attribs, _parms, _constraints, longPath, xml, _, vis, im) as compInfo, isRec, mdefs, m) ->
+        | SynModuleSigDecl.NestedModule(SynComponentInfo(Attributes attribs, _, _, longPath, xml, _, vis, im) as compInfo, isRec, mdefs, m) ->
             if isRec then 
                 // Treat 'module rec M = ...' as a single mutually recursive definition group 'module M = ...'
                 let modDecl = SynModuleSigDecl.NestedModule(compInfo, false, mdefs, m)
@@ -5356,7 +5357,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               let modDecl = SynModuleDecl.NestedModule(compInfo, false, mdefs, isContinuingModule, m)
               return! TcModuleOrNamespaceElementsMutRec cenv parent typeNames m env None [modDecl]
           else
-              let (SynComponentInfo(Attributes attribs, _parms, _constraints, longPath, xml, _, vis, im)) = compInfo
+              let (SynComponentInfo(Attributes attribs, _, _, longPath, xml, _, vis, im)) = compInfo
               let id = ComputeModuleName longPath
 
               let modAttrs = TcAttributes cenv env AttributeTargets.ModuleDecl attribs
