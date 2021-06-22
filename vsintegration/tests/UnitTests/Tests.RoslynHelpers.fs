@@ -139,32 +139,6 @@ type TestHostLanguageServices(workspaceServices: HostWorkspaceServices, language
             | _ ->
                 Unchecked.defaultof<'T>
 
-[<ComponentModel.Composition.Export(typeof<IFSharpVisualStudioService>); Composition.Shared>]
-type internal MockFSharpVisualStudioService() =
-
-    static let workspace = new AdhocWorkspace()
-    static let instance = MockFSharpVisualStudioService()
-    static member Instance = instance
-    
-    interface IFSharpVisualStudioService with
-
-        member _.Workspace = workspace :> Workspace
-
-[<ComponentModel.Composition.Export(typeof<IFSharpWorkspaceService>); Composition.Shared>]
-type internal MockFSharpWorkspaceService() =
-
-    static let checkerProvider = FSharpCheckerProvider(MockFSharpVisualStudioService.Instance)
-    static let manager = FSharpProjectOptionsManager(checkerProvider, MockFSharpVisualStudioService.Instance)
-
-    static let instance = MockFSharpWorkspaceService()
-    static member Instance = instance
-        
-    interface IFSharpWorkspaceService with
-
-        member _.Checker = checkerProvider.Checker
-
-        member _.FSharpProjectOptionsManager = manager
-
 type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace) as this =
     inherit HostWorkspaceServices()
 
@@ -220,9 +194,6 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
 type TestHostServices() =
     inherit HostServices()
 
-    static let instance = TestHostServices()
-    static member Instance = instance
-
     override this.CreateWorkspaceServices(workspace) =
         TestHostWorkspaceServices(this, workspace) :> HostWorkspaceServices
 
@@ -232,7 +203,7 @@ type RoslynTestHelpers private () =
     static member CreateDocument (filePath, text: SourceText) =
         let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
 
-        let workspace = new AdhocWorkspace(TestHostServices.Instance)
+        let workspace = new AdhocWorkspace(TestHostServices())
 
         let projId = ProjectId.CreateNewId()
         let docId = DocumentId.CreateNewId(projId)

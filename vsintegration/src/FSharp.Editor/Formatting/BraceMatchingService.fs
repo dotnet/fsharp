@@ -12,8 +12,6 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 type internal FSharpBraceMatchingService 
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     
     static let userOpName = "BraceMatching"
@@ -36,9 +34,9 @@ type internal FSharpBraceMatchingService
     interface IFSharpBraceMatcher with
         member this.FindBracesAsync(document, position, cancellationToken) = 
             asyncMaybe {
-                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
+                let! checker, _, parsingOptions, _ = document.Project.GetFSharpCompilationOptionsAsync() |> liftAsync
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! (left, right) = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, parsingOptions, position, userOpName)
+                let! (left, right) = FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, document.Name, parsingOptions, position, userOpName)
                 let! leftSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, left)
                 let! rightSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, right)
                 return FSharpBraceMatchingResult(leftSpan, rightSpan)

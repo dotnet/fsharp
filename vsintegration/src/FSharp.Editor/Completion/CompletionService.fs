@@ -55,12 +55,12 @@ type internal FSharpCompletionServiceFactory
     [<ImportingConstructor>] 
     (
         serviceProvider: SVsServiceProvider,
-        projectInfoManager: FSharpProjectOptionsManager,
+        workspaceService: IFSharpWorkspaceService,
         assemblyContentProvider: AssemblyContentProvider,
         settings: EditorOptions
     ) =
     interface ILanguageServiceFactory with
         member _.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
-            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider, projectInfoManager, assemblyContentProvider, settings)
+            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider, workspaceService.FSharpProjectOptionsManager, assemblyContentProvider, settings)
 
 

@@ -34,7 +34,6 @@
     <Compile Include="Common\FSharpCodeAnalysisExtensions.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
     <Compile Include="Common\Vs.fs" />
-    <Compile Include="Common\IFSharpVisualStudioService.fs" />
     <Compile Include="Options\SettingsPersistence.fs" />
     <Compile Include="Options\UIHelpers.fs" />
     <Compile Include="Options\EditorOptions.fs" />
@@ -46,7 +45,6 @@
     <Compile Include="LanguageService\IProjectSite.fs" />
     <Compile Include="LanguageService\ProvideFSharpVersionRegistrationAttribute.fs" />
     <Compile Include="LanguageService\MetadataAsSource.fs" />
-    <Compile Include="LanguageService\FSharpCheckerProvider.fs" />
     <Compile Include="LanguageService\FSharpProjectOptionsManager.fs" />
     <Compile Include="LanguageService\SingleFileWorkspaceMap.fs" />
     <Compile Include="LanguageService\LegacyProjectWorkspaceMap.fs" />

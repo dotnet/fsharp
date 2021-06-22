@@ -20,7 +20,6 @@ open Microsoft.CodeAnalysis
 type internal FSharpHelpContextService 
     [<ImportingConstructor>]
     (
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
     static member GetHelpTerm(document: Document, span: TextSpan, tokens: List<ClassifiedSpan>) : Async<string option> = 
@@ -100,7 +99,7 @@ type internal FSharpHelpContextService
         member this.GetHelpTermAsync(document, textSpan, cancellationToken) = 
             asyncMaybe {
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
+                let defines = document.GetFSharpSyntaxDefines() 
                 let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
                 let classifiedSpans = Tokenizer.getClassifiedSpans(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
                 return! FSharpHelpContextService.GetHelpTerm(document, textSpan, classifiedSpans)
