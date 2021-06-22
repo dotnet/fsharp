@@ -396,7 +396,7 @@ module LeafExpressionConverter =
             | NullableGreaterNullableQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.GreaterThan
             | NullableGreaterEqNullableQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.GreaterThanOrEqual
             | NullableLessNullableQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.LessThan
-            | NullableLessEqNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.LessThanOrEqual <| methodhandleof (fun (x, y) -> LanguagePrimitives.LessThanOrEqualDynamic x y)
+            | NullableLessEqNullableQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.LessThanOrEqual
             
             // Detect the F# quotation encoding of decimal literals
             | MakeDecimalQ (_, _, [Int32 lo; Int32 med; Int32 hi; Bool isNegative; Byte scale]) ->
