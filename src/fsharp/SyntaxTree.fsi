@@ -1099,7 +1099,7 @@ type SynStaticOptimizationConstraint =
 /// function definition or other binding point, after the elimination of pattern matching
 /// from the construct, e.g. after changing a "function pat1 -> rule1 | ..." to a
 /// "fun v -> match v with ..."
-[<NoEquality; NoComparison;RequireQualifiedAccess>]
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePats =
 
     | SimplePats of
@@ -1122,7 +1122,7 @@ type SynArgPats =
         range: range
 
 /// Represents a syntax tree for an F# pattern
-[<NoEquality; NoComparison;RequireQualifiedAccess>]
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynPat =
 
     /// A constant in a pattern
@@ -1134,9 +1134,9 @@ type SynPat =
     | Wild of
         range: range
 
-    /// A named pattern 'pat as ident'
+    /// A name pattern 'ident' but @dsyme wants to keep the old name "named"
+    /// when this double-purposed to also represent 'pat as ident' to reduce churn
     | Named of
-        pat: SynPat *
         ident: Ident *
         isSelfIdentifier: bool *
         accessibility: SynAccess option *
@@ -1163,6 +1163,12 @@ type SynPat =
     /// A conjunctive pattern 'pat1 & pat2'
     | Ands of
         pats: SynPat list *
+        range: range
+
+    /// A conjunctive pattern 'pat1 as pat2'
+    | As of
+        lhsPat: SynPat *
+        rhsPat: SynPat *
         range: range
 
     /// A long identifier pattern possibly with argument patterns
