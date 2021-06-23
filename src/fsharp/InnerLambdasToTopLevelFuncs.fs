@@ -1067,7 +1067,7 @@ module Pass4_RewriteAssembly =
         // Is it a val app, where the val f is TLR with arity wf?
         // CLEANUP NOTE: should be using a mkApps to make all applications
         match fx with
-        | Expr.Val (fvref: ValRef, _, m) when
+        | Expr.Val (fvref: ValRef, _, vm) when
                 (Zset.contains fvref.Deref penv.tlrS) &&
                 (let wf = Zmap.force fvref.Deref penv.arityM ("TransApp - wf", nameOfVal)
                  IsArityMet fvref wf tys args) ->
@@ -1078,9 +1078,9 @@ module Pass4_RewriteAssembly =
                    let envp = Zmap.force fc penv.envPackM ("TransApp - envp", string)
                    let fHat = Zmap.force f  penv.fHatM ("TransApp - fHat", nameOfVal)
                    let tys  = (List.map mkTyparTy envp.ep_etps) @ tys
-                   let aenvExprs = List.map (exprForVal m) envp.ep_aenvs
+                   let aenvExprs = List.map (exprForVal vm) envp.ep_aenvs
                    let args = aenvExprs @ args
-                   mkApps penv.g ((exprForVal m fHat, fHat.Type), [tys], args, m) (* change, direct fHat call with closure (reqdTypars, aenvs) *)
+                   mkApps penv.g ((exprForVal vm fHat, fHat.Type), [tys], args, m) (* change, direct fHat call with closure (reqdTypars, aenvs) *)
         | _ ->
             if isNil tys && isNil args then
                 fx
