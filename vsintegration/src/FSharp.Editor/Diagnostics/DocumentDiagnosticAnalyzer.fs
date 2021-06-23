@@ -56,7 +56,7 @@ type internal FSharpDocumentDiagnosticAnalyzer
         async {
             let! ct = Async.CancellationToken
 
-            let! parseResults = document.GetFSharpParseResultsAsync()
+            let! parseResults = document.GetFSharpParseResultsAsync("GetDiagnostics")
 
             let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
             let filePath = document.FilePath
@@ -65,7 +65,7 @@ type internal FSharpDocumentDiagnosticAnalyzer
                 async {
                     match diagnosticType with
                     | DiagnosticsType.Semantic ->
-                        let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync()
+                        let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
                         // In order to eleminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
                         let allErrors = HashSet(checkResults.Diagnostics, errorInfoEqualityComparer)
                         allErrors.ExceptWith(parseResults.Diagnostics)

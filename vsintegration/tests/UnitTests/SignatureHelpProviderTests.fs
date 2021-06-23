@@ -56,7 +56,7 @@ let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:in
         
         let document = RoslynTestHelpers.CreateDocument(fileName, sourceText, options = project.Options)
         let parseResults, checkFileResults =
-            document.GetFSharpParseAndCheckResultsAsync()
+            document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
             |> Async.RunSynchronously
 
         let paramInfoLocations = parseResults.FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn).Value
@@ -103,7 +103,7 @@ let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (e
                
     let document = RoslynTestHelpers.CreateDocument(filePath, sourceText, options = projectOptions)
     let parseResults, checkFileResults =
-        document.GetFSharpParseAndCheckResultsAsync()
+        document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForMethodCalls")
         |> Async.RunSynchronously
 
     let actual = 
@@ -135,7 +135,7 @@ let assertSignatureHelpForFunctionApplication (fileContents: string) (marker: st
     let document, sourceText = RoslynTestHelpers.CreateDocument(filePath, fileContents)
     
     let parseResults, checkFileResults =
-        document.GetFSharpParseAndCheckResultsAsync()
+        document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForFunctionApplication")
         |> Async.RunSynchronously
 
     let adjustedColumnInSource =
@@ -416,7 +416,7 @@ M.f
         let document, sourceText = RoslynTestHelpers.CreateDocument(filePath, fileContents)
     
         let parseResults, checkFileResults =
-            document.GetFSharpParseAndCheckResultsAsync()
+            document.GetFSharpParseAndCheckResultsAsync("function application in single pipeline with no additional args")
             |> Async.RunSynchronously
     
         let adjustedColumnInSource =

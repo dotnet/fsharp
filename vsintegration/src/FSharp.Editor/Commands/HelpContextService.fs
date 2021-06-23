@@ -24,7 +24,7 @@ type internal FSharpHelpContextService
 
     static member GetHelpTerm(document: Document, span: TextSpan, tokens: List<ClassifiedSpan>) : Async<string option> = 
         asyncMaybe {
-            let! _, check = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+            let! _, check = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpHelpContextService)) |> liftAsync
             let! sourceText = document.GetTextAsync() |> liftTaskAsync
             let textLines = sourceText.Lines
             let lineInfo = textLines.GetLineFromPosition(span.Start)
@@ -99,7 +99,7 @@ type internal FSharpHelpContextService
         member this.GetHelpTermAsync(document, textSpan, cancellationToken) = 
             asyncMaybe {
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let defines = document.GetFSharpSyntaxDefines() 
+                let defines = document.GetFSharpQuickDefines() 
                 let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
                 let classifiedSpans = Tokenizer.getClassifiedSpans(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
                 return! FSharpHelpContextService.GetHelpTerm(document, textSpan, classifiedSpans)

@@ -38,10 +38,10 @@ type internal FSharpRenameUnusedValueCodeFixProvider
             // We have to use the additional check for backtickes because `IsOperatorOrBacktickedName` operates on display names
             // where backtickes are replaced with parens.
             if not (PrettyNaming.IsOperatorOrBacktickedName ident) && not (ident.StartsWith "``") then
-                let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(context.Span.Start, SymbolLookupKind.Greedy, false, false)
+                let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(context.Span.Start, SymbolLookupKind.Greedy, false, false, nameof(FSharpRenameUnusedValueCodeFixProvider))
                 let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
                 let lineText = (sourceText.Lines.GetLineFromPosition context.Span.Start).ToString()  
-                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpRenameUnusedValueCodeFixProvider)) |> liftAsync
                 let! symbolUse = checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, lexerSymbol.FullIsland)
                 let symbolName = symbolUse.Symbol.DisplayName
 

@@ -78,7 +78,7 @@ module private FSharpProjectOptionsHelpers =
 
     let isProjectInvalidated (oldProject: Project) (newProject: Project) ct =
         let hasProjectVersionChanged = hasProjectVersionChanged oldProject newProject
-        if newProject.IsFSharpCrossProjectReferencingEnabled then
+        if newProject.AreFSharpInMemoryCrossProjectReferencesEnabled then
             hasProjectVersionChanged || hasDependentVersionChanged oldProject newProject ct
         else
             hasProjectVersionChanged
@@ -237,7 +237,7 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
             
                 let referencedProjects = ResizeArray()
 
-                if project.IsFSharpCrossProjectReferencingEnabled then
+                if project.AreFSharpInMemoryCrossProjectReferencesEnabled then
                     for projectReference in project.ProjectReferences do
                         let referencedProject = project.Solution.GetProject(projectReference.ProjectId)
                         if referencedProject.Language = FSharpConstants.FSharpLanguageName then

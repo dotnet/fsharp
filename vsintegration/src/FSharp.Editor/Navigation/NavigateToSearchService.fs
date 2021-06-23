@@ -179,7 +179,7 @@ type internal FSharpNavigateToSearchService
     let GetNavigableItems(document: Document, kinds: IImmutableSet<string>) =
         async {
             let! cancellationToken = Async.CancellationToken
-            let! parseResults = document.GetFSharpParseResultsAsync()
+            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpNavigateToSearchService))
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let navItems parsedInput =
                 NavigateTo.GetNavigableItems parsedInput

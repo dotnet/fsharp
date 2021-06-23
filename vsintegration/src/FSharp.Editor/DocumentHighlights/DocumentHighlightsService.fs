@@ -51,7 +51,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
 
     static member GetDocumentHighlights(document: Document, position: int) : Async<FSharpHighlightSpan[] option> =
         asyncMaybe {
-            let! symbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false)
+            let! symbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof(FSharpDocumentHighlightsService.GetDocumentHighlights))
 
             let! ct = Async.CancellationToken |> liftAsync
             let! sourceText = document.GetTextAsync(ct)
@@ -59,7 +59,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
 
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpDocumentHighlightsService)) |> liftAsync
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
             let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
             return 

@@ -86,10 +86,10 @@ type internal FSharpAddOpenCodeFixProvider
             let document = context.Document
 
             let! sourceText = document.GetTextAsync(context.CancellationToken)
-            let! parseResults, checkResults = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+            let! parseResults, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpAddOpenCodeFixProvider)) |> liftAsync
             let line = sourceText.Lines.GetLineFromPosition(context.Span.End)
             let linePos = sourceText.Lines.GetLinePosition(context.Span.End)
-            let! defines = document.GetFSharpCompilationDefinesAsync() |> liftAsync
+            let! defines = document.GetFSharpCompilationDefinesAsync(nameof(FSharpAddOpenCodeFixProvider)) |> liftAsync
             
             let! symbol = 
                 maybe {

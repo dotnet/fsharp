@@ -20,7 +20,7 @@ type internal FSharpRemoveReturnOrYieldCodeFixProvider
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
-            let! parseResults = context.Document.GetFSharpParseResultsAsync() |> liftAsync
+            let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof(FSharpRemoveReturnOrYieldCodeFixProvider)) |> liftAsync
 
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let errorRange = RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)

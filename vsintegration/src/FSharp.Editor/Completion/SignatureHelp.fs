@@ -503,7 +503,7 @@ type internal FSharpSignatureHelpProvider
             possibleCurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind option
         ) =
         asyncMaybe {
-            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideSignatureHelp") |> liftAsync
 
             let! sourceText = document.GetTextAsync() |> liftTaskAsync
 
@@ -569,7 +569,7 @@ type internal FSharpSignatureHelpProvider
 
         member _.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
             asyncMaybe {
-                let defines = document.GetFSharpSyntaxDefines()
+                let defines = document.GetFSharpQuickDefines()
 
                 let triggerTypedChar = 
                     if triggerInfo.TriggerCharacter.HasValue && triggerInfo.TriggerReason = FSharpSignatureHelpTriggerReason.TypeCharCommand then

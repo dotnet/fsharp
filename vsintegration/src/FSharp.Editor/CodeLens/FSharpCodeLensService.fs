@@ -154,7 +154,7 @@ type internal FSharpCodeLensService
             logInfof "Rechecking code due to buffer edit!"
 #endif
             let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
-            let! parseFileResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+            let! parseFileResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpUseMutationWhenValueIsMutableFixProvider)) |> liftAsync
             let parsedInput = parseFileResults.ParseTree
 #if DEBUG
             logInfof "Getting uses of all symbols!"

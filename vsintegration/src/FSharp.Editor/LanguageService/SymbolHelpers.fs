@@ -20,8 +20,9 @@ module internal SymbolHelpers =
     /// Used for local code fixes in a document, e.g. to rename local parameters
     let getSymbolUsesOfSymbolAtLocationInDocument (document: Document, position: int) =
         asyncMaybe {
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync
-            let! defines = document.GetFSharpCompilationDefinesAsync() |> liftAsync
+            let userOpName = "getSymbolUsesOfSymbolAtLocationInDocument"
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
+            let! defines = document.GetFSharpCompilationDefinesAsync(userOpName) |> liftAsync
 
             let! cancellationToken = Async.CancellationToken |> liftAsync
             let! sourceText = document.GetTextAsync(cancellationToken)
@@ -37,7 +38,7 @@ module internal SymbolHelpers =
 
     let getSymbolUsesInProjects (symbol: FSharpSymbol, projects: Project list, onFound: Document -> TextSpan -> range -> Async<unit>) =
         projects
-        |> Seq.map (fun project -> project.FindFSharpReferencesAsync(symbol, onFound))
+        |> Seq.map (fun project -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects"))
         |> Async.Sequential
 
     let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults, solution: Solution) =
@@ -93,18 +94,19 @@ module internal SymbolHelpers =
     let changeAllSymbolReferences (document: Document, symbolSpan: TextSpan, textChanger: string -> string)
         : Async<(Func<CancellationToken, Task<Solution>> * OriginalText) option> =
         asyncMaybe {
+            let userOpName = "changeAllSymbolReferences"
             do! Option.guard (symbolSpan.Length > 0)
             let! cancellationToken = liftAsync Async.CancellationToken
             let! sourceText = document.GetTextAsync(cancellationToken)
             let originalText = sourceText.ToString(symbolSpan)
             do! Option.guard (originalText.Length > 0)
 
-            let! symbol = document.TryFindFSharpLexerSymbolAsync(symbolSpan.Start, SymbolLookupKind.Greedy, false, false)
+            let! symbol = document.TryFindFSharpLexerSymbolAsync(symbolSpan.Start, SymbolLookupKind.Greedy, false, false, userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)
             let textLinePos = sourceText.Lines.GetLinePosition(symbolSpan.Start)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
 
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
             let newText = textChanger originalText

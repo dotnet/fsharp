@@ -46,6 +46,7 @@ module internal FSharpQuickInfo =
         : Async<QuickInfo option> =
 
         asyncMaybe {
+            let userOpName = "getQuickInfoFromRange"
             let solution = document.Project.Solution
             // ascertain the location of the target declaration in the signature file
             let! extDocId = solution.GetDocumentIdsWithFilePath declRange.FileName |> Seq.tryHead
@@ -55,8 +56,8 @@ module internal FSharpQuickInfo =
             let extLineText = (extSourceText.Lines.GetLineFromPosition extSpan.Start).ToString()
 
             // project options need to be retrieved because the signature file could be in another project
-            let! extLexerSymbol = extDocument.TryFindFSharpLexerSymbolAsync(extSpan.Start, SymbolLookupKind.Greedy, true, true)
-            let! _, extCheckFileResults = extDocument.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+            let! extLexerSymbol = extDocument.TryFindFSharpLexerSymbolAsync(extSpan.Start, SymbolLookupKind.Greedy, true, true, userOpName)
+            let! _, extCheckFileResults = extDocument.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
 
             let extQuickInfoText = 
                 extCheckFileResults.GetToolTip
@@ -86,8 +87,9 @@ module internal FSharpQuickInfo =
         : Async<(range * QuickInfo option * QuickInfo option) option> =
 
         asyncMaybe {
-            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, true, true)
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+            let userOpName = "getQuickInfo"
+            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, true, true, userOpName)
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
             let! sourceText = document.GetTextAsync cancellationToken
             let idRange = lexerSymbol.Ident.idRange  
             let textLinePos = sourceText.Lines.GetLinePosition position
@@ -174,9 +176,9 @@ type internal FSharpAsyncQuickInfoSource
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
             let textLineString = textLine.ToString()
-            let! symbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Precise, true, true)
+            let! symbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Precise, true, true, nameof(FSharpAsyncQuickInfoSource))
 
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpAsyncQuickInfoSource)) |> liftAsync
             let res = checkFileResults.GetToolTip (textLineNumber, symbol.Ident.idRange.EndColumn, textLineString, symbol.FullIsland, FSharpTokenTag.IDENT)
             match res with
             | ToolTipText []

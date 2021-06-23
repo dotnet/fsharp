@@ -34,7 +34,7 @@ type SemanticClassificationServiceTests() =
     let getRanges (source: string) : SemanticClassificationItem list =
         asyncMaybe {
             let document, _ = RoslynTestHelpers.CreateDocument(filePath, source)
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("SemanticClassificationServiceTests") |> liftAsync
             return checkFileResults.GetSemanticClassification(None)
         } 
         |> Async.RunSynchronously

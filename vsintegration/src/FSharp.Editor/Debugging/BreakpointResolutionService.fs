@@ -37,7 +37,7 @@ type internal FSharpBreakpointResolutionService
             else
                 let textLineColumn = textLinePos.Character
                 let fcsTextLineNumber = Line.fromZ textLinePos.Line // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-                let! parseResults = document.GetFSharpParseResultsAsync() |> liftAsync
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpBreakpointResolutionService)) |> liftAsync
                 match parseResults with
                 | Some parseResults -> return parseResults.ValidateBreakpointLocation(mkPos fcsTextLineNumber textLineColumn)
                 | _ -> return None

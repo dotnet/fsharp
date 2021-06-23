@@ -29,7 +29,7 @@ type internal FSharpRemoveUnusedBindingCodeFixProvider
             let document = context.Document
             let! sourceText = document.GetTextAsync(context.CancellationToken)
 
-            let! parseResults = context.Document.GetFSharpParseResultsAsync() |> liftAsync
+            let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof(FSharpRemoveUnusedBindingCodeFixProvider)) |> liftAsync
 
             let diagnostics =
                 context.Diagnostics

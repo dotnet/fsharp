@@ -12,6 +12,7 @@ open FSharp.Compiler.CodeAnalysis
 module private CheckerExtensions =
 
     type FSharpChecker with
+        /// Parse the source text from the Roslyn document.
         member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, userOpName: string) =
             async {
                 let! ct = Async.CancellationToken
@@ -20,19 +21,7 @@ module private CheckerExtensions =
                 return! checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName=userOpName)
             }
 
-        member checker.CheckDocument(document: Document, parseResults: FSharpParseFileResults, options: FSharpProjectOptions, userOpName: string) =
-            async {
-                let! ct = Async.CancellationToken
-
-                let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
-                let! textVersion = document.GetTextVersionAsync(ct) |> Async.AwaitTask
-
-                let filePath = document.FilePath
-                let textVersionHash = textVersion.GetHashCode()
-            
-                return! checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToFSharpSourceText(), options,userOpName=userOpName)
-            }
-
+        /// Parse and check the source text from the Roslyn document with possible stale results.
         member checker.ParseAndCheckDocumentWithPossibleStaleResults(document: Document, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string) =
             async {
                 let! ct = Async.CancellationToken
@@ -89,6 +78,7 @@ module private CheckerExtensions =
                     return bindParsedInput results
             }
 
+        /// Parse and check the source text from the Roslyn document.
         member checker.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, userOpName: string, ?allowStaleResults: bool) =
             async {
                 let allowStaleResults =
@@ -101,16 +91,21 @@ module private CheckerExtensions =
 [<RequireQualifiedAccess>]
 module private ProjectCache =
 
+    /// This is a cache to maintain FSharpParsingOptions and FSharpProjectOptions per Roslyn Project.
+    /// The Roslyn Project is held weakly meaning when it is cleaned up by the GC, the FSharParsingOptions and FSharpProjectOptions will be cleaned up by the GC.
+    /// At some point, this will be the main caching mechanism for FCS projects instead of FCS itself.
     let Projects = ConditionalWeakTable<Project, FSharpChecker * FSharpProjectOptionsManager * FSharpParsingOptions * FSharpProjectOptions>()    
 
 type Solution with
 
+    /// Get the instance of IFSharpWorkspaceService.
     member private this.GetFSharpWorkspaceService() =
         this.Workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
 
 type Document with
 
-    member this.GetFSharpCompilationOptionsAsync() =
+    /// Get the FSharpParsingOptions and FSharpProjectOptions from the F# project that is associated with the given F# document.
+    member this.GetFSharpCompilationOptionsAsync(userOpName) =
         async {
             if this.Project.IsFSharp then
                 match ProjectCache.Projects.TryGetValue(this.Project) with
@@ -119,7 +114,7 @@ type Document with
                     let service = this.Project.Solution.GetFSharpWorkspaceService()
                     let projectOptionsManager = service.FSharpProjectOptionsManager
                     let! ct = Async.CancellationToken
-                    match! projectOptionsManager.TryGetOptionsForDocumentOrProject(this, ct, nameof(this.GetFSharpCompilationOptionsAsync)) with
+                    match! projectOptionsManager.TryGetOptionsForDocumentOrProject(this, ct, userOpName) with
                     | None -> return raise(System.OperationCanceledException("FSharp project options not found."))
                     | Some(parsingOptions, _, projectOptions) ->
                         let result = (service.Checker, projectOptionsManager, parsingOptions, projectOptions)
@@ -128,51 +123,61 @@ type Document with
                 return raise(System.OperationCanceledException("Document is not a FSharp document."))
         }
 
-    member this.GetFSharpCompilationDefinesAsync() =
+    /// Get the compilation defines from F# project that is associated with the given F# document.
+    member this.GetFSharpCompilationDefinesAsync(userOpName) =
         async {
-            let! _, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync()
+            let! _, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync(userOpName)
             return CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
         }
 
+    /// Get the instance of the FSharpChecker from the workspace by the given F# document.
     member this.GetFSharpChecker() =
         let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
         workspaceService.Checker
 
+    /// A non-async call that quickly gets FSharpParsingOptions of the given F# document.
+    /// This tries to get the FSharpParsingOptions by looking at an internal cache; if it doesn't exist in the cache it will create an inaccurate but usable form of the FSharpParsingOptions.
     member this.GetFSharpQuickParsingOptions() =
         let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
         workspaceService.FSharpProjectOptionsManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(this)
 
-    member this.GetFSharpSyntaxDefines() =
-            let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
-            workspaceService.FSharpProjectOptionsManager.GetCompilationDefinesForEditingDocument(this)
+    /// A non-async call that quickly gets the defines of the given F# document.
+    /// This tries to get the defines by looking at an internal cache; if it doesn't exist in the cache it will create an inaccurate but usable form of the defines.
+    member this.GetFSharpQuickDefines() =
+        let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
+        workspaceService.FSharpProjectOptionsManager.GetCompilationDefinesForEditingDocument(this)
     
-    member this.GetFSharpParseResultsAsync() =
+    /// Parses the given F# document.
+    member this.GetFSharpParseResultsAsync(userOpName) =
         async {
-            let! checker, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync()
-            return! checker.ParseDocument(this, parsingOptions, nameof(this.GetFSharpParseResultsAsync))
+            let! checker, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync(userOpName)
+            return! checker.ParseDocument(this, parsingOptions, userOpName)
         }
 
-    member this.GetFSharpParseAndCheckResultsAsync() =
+    /// Parses and checks the given F# document.
+    member this.GetFSharpParseAndCheckResultsAsync(userOpName) =
         async {
-            let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync()
-            match! checker.ParseAndCheckDocument(this, projectOptions, nameof(this.GetFSharpParseAndCheckResultsAsync), allowStaleResults = false) with
+            let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
+            match! checker.ParseAndCheckDocument(this, projectOptions, userOpName, allowStaleResults = false) with
             | Some(parseResults, _, checkResults) ->
                 return (parseResults, checkResults)
             | _ ->
                 return raise(System.OperationCanceledException("Unable to get FSharp parse and check results."))
         }
 
-    member this.GetFSharpSemanticClassificationAsync() =
+    /// Get the semantic classifications of the given F# document.
+    member this.GetFSharpSemanticClassificationAsync(userOpName) =
         async {
-            let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync()
+            let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
             match! checker.GetBackgroundSemanticClassificationForFile(this.FilePath, projectOptions) with
             | Some results -> return results
             | _ -> return raise(System.OperationCanceledException("Unable to get FSharp semantic classification."))
         }
 
-    member this.FindFSharpReferencesAsync(symbol, onFound) =
+    /// Find F# references in the given F# document.
+    member this.FindFSharpReferencesAsync(symbol, onFound, userOpName) =
         async {
-            let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync()
+            let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
             let! symbolUses = checker.FindBackgroundReferencesInFile(this.FilePath, projectOptions, symbol, canInvalidateProject = false)
             let! ct = Async.CancellationToken
             let! sourceText = this.GetTextAsync ct |> Async.AwaitTask
@@ -184,14 +189,16 @@ type Document with
                     ()
         }
 
-    member this.TryFindFSharpLexerSymbolAsync(position, lookupKind, wholeActivePattern, allowStringToken) =
+    /// Try to find a F# lexer/token symbol of the given F# document and position.
+    member this.TryFindFSharpLexerSymbolAsync(position, lookupKind, wholeActivePattern, allowStringToken, userOpName) =
         async {
-            let! defines = this.GetFSharpCompilationDefinesAsync()
+            let! defines = this.GetFSharpCompilationDefinesAsync(userOpName)
             let! ct = Async.CancellationToken
             let! sourceText = this.GetTextAsync(ct) |> Async.AwaitTask
             return Tokenizer.getSymbolAtPosition(this.Id, sourceText, position, this.FilePath, defines, lookupKind, wholeActivePattern, allowStringToken)
         }
 
+    /// This is only used for testing purposes. It sets the ProjectCache.Projects with the given FSharpProjectOptions and F# document's project.
     member this.SetFSharpProjectOptionsForTesting(projectOptions: FSharpProjectOptions) =
         let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
         let parsingOptions, _, _ = 
@@ -202,8 +209,9 @@ type Document with
 
 type Project with
 
-    member this.FindFSharpReferencesAsync(symbol, onFound) =
+    /// Find F# references in the given project.
+    member this.FindFSharpReferencesAsync(symbol, onFound, userOpName) =
         async {
             for doc in this.Documents do
-                do! doc.FindFSharpReferencesAsync(symbol, fun textSpan range -> onFound doc textSpan range)
+                do! doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName)
         }

@@ -51,7 +51,7 @@ module GoToDefinitionServiceTests =
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
-            let _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync() |> Async.RunSynchronously
+            let _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(userOpName)) |> Async.RunSynchronously
 
             let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
             

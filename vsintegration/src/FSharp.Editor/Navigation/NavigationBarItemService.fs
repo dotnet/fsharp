@@ -24,7 +24,7 @@ type internal FSharpNavigationBarItemService
     interface IFSharpNavigationBarItemService with
         member _.GetItemsAsync(document, cancellationToken) : Task<IList<FSharpNavigationBarItem>> = 
             asyncMaybe {
-                let! parseResults = document.GetFSharpParseResultsAsync() |> liftAsync
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpNavigationBarItemService)) |> liftAsync
                 let navItems = Navigation.getNavigation parseResults.ParseTree
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let rangeToTextSpan range = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)

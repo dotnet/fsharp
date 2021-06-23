@@ -173,15 +173,16 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
     /// Helper function that is used to determine the navigation strategy to apply, can be tuned towards signatures or implementation files.
     member private _.FindSymbolHelper (originDocument: Document, originRange: range, sourceText: SourceText, preferSignature: bool) =
         asyncMaybe {
+            let userOpName = "FindSymbolHelper"
             let! originTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, originRange)
             let position = originTextSpan.Start
-            let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false)
+            let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, userOpName)
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()  
             let idRange = lexerSymbol.Ident.idRange
 
-            let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+            let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync(nameof(GoToDefinition)) |> liftAsync
             let! fsSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
             let symbol = fsSymbolUse.Symbol
             // if the tooltip was spawned in an implementation file and we have a range targeting
@@ -192,7 +193,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                 if not (File.Exists fsfilePath) then return! None else
                 let! implDoc = originDocument.Project.Solution.TryGetDocumentFromPath fsfilePath
                 let! implSourceText = implDoc.GetTextAsync ()
-                let! _, checkFileResults = implDoc.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+                let! _, checkFileResults = implDoc.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol
                 let! implSymbol  = symbolUses |> Array.tryHead 
                 let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, implSymbol.Range)
@@ -211,7 +212,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             match targetSymbolUse.Symbol.DeclarationLocation with
             | Some decl when decl.FileName = filePath -> return decl
             | _ ->
-                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("FindSymbolDeclarationInDocument") |> liftAsync
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol
                 let! implSymbol  = symbolUses |> Array.tryHead 
                 return implSymbol.Range
@@ -219,6 +220,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
 
     member private this.FindDefinitionAtPosition(originDocument: Document, position: int, cancellationToken: CancellationToken) =
         asyncMaybe {
+            let userOpName = "FindDefinitionAtPosition"
             let! sourceText = originDocument.GetTextAsync(cancellationToken)
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
@@ -228,10 +230,10 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             
             let preferSignature = isSignatureFile originDocument.FilePath
                 
-            let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false)
+            let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, userOpName)
             let idRange = lexerSymbol.Ident.idRange
 
-            let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+            let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
             let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineString, lexerSymbol.FullIsland, preferSignature)
             let! targetSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
 
@@ -413,7 +415,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                 | Some tmpShownDoc ->
                     let goToAsync =
                         asyncMaybe {
-                            let! _, checkResults = tmpShownDoc.GetFSharpParseAndCheckResultsAsync() |> liftAsync
+                            let! _, checkResults = tmpShownDoc.GetFSharpParseAndCheckResultsAsync("NavigateToExternalDeclaration") |> liftAsync
                             let! r =
                                 let rec areTypesEqual (ty1: FSharpType) (ty2: FSharpType) =
                                     let ty1 = ty1.StripAbbreviations()

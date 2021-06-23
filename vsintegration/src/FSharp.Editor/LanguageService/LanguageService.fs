@@ -55,6 +55,10 @@ type internal FSharpWorkspaceServiceFactory
     (
     ) =
 
+    // We have a lock just in case if multi-threads try to create a new IFSharpWorkspaceService -
+    //     but we only want to have a single instance of the FSharpChecker regardless if there are multiple instances of IFSharpWorkspaceService.
+    //     In VS, we only ever have a single IFSharpWorkspaceService, but for testing we may have mutliple; we still only want a
+    //     single FSharpChecker instance shared across them.
     static let gate = obj()
 
     // We only ever want to have a single FSharpChecker.
@@ -119,12 +123,12 @@ type internal FSharpWorkspaceServiceFactory
                     | _ ->
                         failwith "Checker not set."
 
-            upcast { new IFSharpWorkspaceService with
+            { new IFSharpWorkspaceService with
                 member _.Checker =
                     match checkerSingleton with
                     | Some checker -> checker.Value
                     | _ -> failwith "Checker not set."
-                member _.FSharpProjectOptionsManager = optionsManager.Value }
+                member _.FSharpProjectOptionsManager = optionsManager.Value } :> _
 
 [<Sealed>]
 type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager, metadataAsSource: FSharpMetadataAsSourceService) =

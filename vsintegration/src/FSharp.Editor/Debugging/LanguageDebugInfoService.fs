@@ -49,7 +49,7 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>]() =
 
         member this.GetDataTipInfoAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<FSharpDebugDataTipInfo> =
             async {
-                let defines = document.GetFSharpSyntaxDefines() 
+                let defines = document.GetFSharpQuickDefines() 
                 let! cancellationToken = Async.CancellationToken
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let textSpan = TextSpan.FromBounds(0, sourceText.Length)

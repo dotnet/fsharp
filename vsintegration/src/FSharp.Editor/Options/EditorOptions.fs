@@ -194,7 +194,7 @@ module EditorOptionsExtensions =
 
     type Project with
 
-        member this.IsFSharpCrossProjectReferencingEnabled =
+        member this.AreFSharpInMemoryCrossProjectReferencesEnabled =
             let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
             match box editorOptions with
             | null -> true
