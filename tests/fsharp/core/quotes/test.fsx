@@ -3607,6 +3607,22 @@ module WitnessTests =
               <@@ ~~~LanguagePrimitives.GenericOne<nativeint> @@>, box ~~~1n
               <@@ ~~~LanguagePrimitives.GenericOne<unativeint> @@>, box ~~~1un
 
+              <@@ 3y = 3y @@>, box true
+              <@@ 3uy = 3uy @@>, box true
+              <@@ 3s = 3s @@>, box true
+              <@@ 3us = 3us @@>, box true
+              <@@ 3 = 3 @@>, box true
+              <@@ 3u = 3u @@>, box true
+              <@@ 3L = 3L @@>, box true
+              <@@ 3UL = 3UL @@>, box true
+              <@@ '3' = '3' @@>, box true
+              <@@ LanguagePrimitives.GenericOne<nativeint> = LanguagePrimitives.GenericOne<nativeint> @@>, box ~~~1n
+              <@@ LanguagePrimitives.GenericOne<unativeint> = LanguagePrimitives.GenericOne<unativeint> @@>, box ~~~1un
+              <@@ 3f = 3f @@>, box true
+              <@@ 3. = 3. @@>, box true
+              <@@ 3m = 3m @@>, box true
+              <@@ "3" = "3" @@>, box true
+
               <@@ byte 3uy @@>, box 3uy
               <@@ byte 3y @@>, box 3uy
               <@@ byte 3s @@>, box 3uy
