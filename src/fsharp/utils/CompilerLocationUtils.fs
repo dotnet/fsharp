@@ -362,9 +362,6 @@ module internal FSharpEnvironment =
     let getDefaultFSharpCoreLocation() = Path.Combine(getFSharpCompilerLocation(), getFSharpCoreLibraryName + ".dll")
     let getDefaultFsiLibraryLocation() = Path.Combine(getFSharpCompilerLocation(), fsiLibraryName + ".dll")
 
-    // Path to the directory containing the fsharp compilers
-    let fsharpCompilerPath = Path.Combine(Path.GetDirectoryName(typeof<TypeInThisAssembly>.GetTypeInfo().Assembly.Location), "Tools")
-
     let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
     let dotnet = if isWindows then "dotnet.exe" else "dotnet"
