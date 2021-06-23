@@ -7924,6 +7924,8 @@ FSharp.Compiler.Syntax.SynSimplePat: FSharp.Compiler.Syntax.SynSimplePat+Attrib
 FSharp.Compiler.Syntax.SynSimplePat: FSharp.Compiler.Syntax.SynSimplePat+Id
 FSharp.Compiler.Syntax.SynSimplePat: FSharp.Compiler.Syntax.SynSimplePat+Tags
 FSharp.Compiler.Syntax.SynSimplePat: FSharp.Compiler.Syntax.SynSimplePat+Typed
+FSharp.Compiler.Syntax.SynSimplePat: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynSimplePat: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynSimplePat: Int32 Tag
 FSharp.Compiler.Syntax.SynSimplePat: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynSimplePat: System.String ToString()
@@ -7968,6 +7970,8 @@ FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats NewTy
 FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats+SimplePats
 FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats+Tags
 FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats+Typed
+FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynSimplePats: Int32 Tag
 FSharp.Compiler.Syntax.SynSimplePats: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynSimplePats: System.String ToString()
@@ -8389,6 +8393,8 @@ FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstrai
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparSubtypeOfType
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparSupportsMember
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparSupportsNull
+FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynTypeConstraint: Int32 Tag
 FSharp.Compiler.Syntax.SynTypeConstraint: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynTypeConstraint: System.String ToString()

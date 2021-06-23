@@ -405,6 +405,8 @@ type SynTypeConstraint =
        typeArgs: SynType list *
        range: range
 
+    member Range: range
+
 /// List of type parameter declarations with optional type constraints,
 /// enclosed in `< ... >` (postfix) or `( ... )` (prefix), or a single prefix parameter.
 [<RequireQualifiedAccess>]
@@ -1082,6 +1084,8 @@ type SynSimplePat =
         attributes: SynAttributes *
         range: range
 
+    member Range: range
+
 /// Represents the alternative identifier for a simple pattern
 [<RequireQualifiedAccess>]
 type SynSimplePatAlternativeIdInfo =
@@ -1113,7 +1117,6 @@ type SynStaticOptimizationConstraint =
 /// "fun v -> match v with ..."
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePats =
-
     | SimplePats of
         pats: SynSimplePat list *
         range: range
@@ -1122,6 +1125,8 @@ type SynSimplePats =
         pats: SynSimplePats *
         targetType: SynType *
         range: range
+
+    member Range: range
 
 /// Represents a syntax tree for arguments patterns 
 [<RequireQualifiedAccess>]
