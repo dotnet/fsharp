@@ -1811,7 +1811,7 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
     let typarsFromAbsSlotAreRigid =
 
         match synTyparDecls with
-        | SynValTyparDecls(synTypars, infer, _) ->
+        | ValTyparDecls(synTypars, _, infer) ->
             if infer && not (isNil synTypars) then
                 errorR(Error(FSComp.SR.tcOverridingMethodRequiresAllOrNoTypeParameters(), m))
 
@@ -3946,7 +3946,7 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv memSpfn m =
 
 /// Check a value specification, e.g. in a signature, interface declaration or a constraint
 and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv valSpfn attrs =
-    let (SynValSig(_, id, SynValTyparDecls(synTypars, _, synTyparConstraints), ty, valSynInfo, _, _, _, _, _, m)) = valSpfn
+    let (SynValSig(_, id, ValTyparDecls (synTypars, synTyparConstraints, _), ty, valSynInfo, _, _, _, _, _, m)) = valSpfn
     let declaredTypars = TcTyparDecls cenv env synTypars
     let (ContainerInfo(altActualParent, tcrefContainerInfo)) = containerInfo
     let enclosingDeclaredTypars, memberContainerInfo, thisTyOpt, declKind =
@@ -9508,7 +9508,7 @@ and TcLiteral cenv overallTy env tpenv (attrs, synLiteralValExpr) =
 
     else hasLiteralAttr, None
 
-and TcBindingTyparDecls alwaysRigid cenv env tpenv (SynValTyparDecls(synTypars, infer, synTyparConstraints)) =
+and TcBindingTyparDecls alwaysRigid cenv env tpenv (ValTyparDecls(synTypars, synTyparConstraints, infer)) =
     let declaredTypars = TcTyparDecls cenv env synTypars
     let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTypars env
     let tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurence.UseInType envinner tpenv synTyparConstraints
@@ -10952,7 +10952,7 @@ and TcLetrec overridesOK cenv env tpenv (binds, bindsm, scopem) =
 
 let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memFlagsOpt, tpenv, valSpfn) =
 
-  let (SynValSig (Attributes synAttrs, _, SynValTyparDecls (synTypars, synCanInferTypars, _), _, _, isInline, mutableFlag, doc, vis, literalExprOpt, m)) = valSpfn
+  let (SynValSig (Attributes synAttrs, _, ValTyparDecls (synTypars, _, synCanInferTypars), _, _, isInline, mutableFlag, doc, vis, literalExprOpt, m)) = valSpfn
 
   GeneralizationHelpers.CheckDeclaredTyparsPermitted(memFlagsOpt, synTypars, m)
   let canInferTypars = GeneralizationHelpers.ComputeCanInferExtraGeneralizableTypars (containerInfo.ParentRef, synCanInferTypars, memFlagsOpt)
