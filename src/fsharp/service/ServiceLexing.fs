@@ -706,7 +706,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         | LexCont.String (ifdefs, stringNest, style, kind, m) ->
             lexargs.ifdefStack <- ifdefs
             lexargs.stringNest <- stringNest
-            let buf = ByteBuffer.Create 100
+            use buf = ByteBuffer.Create (Lexer.StringCapacity)
             let args = (buf, LexerStringFinisher.Default, m, kind, lexargs)
             match style with
             | LexerStringStyle.SingleQuote -> Lexer.singleQuoteString args skip lexbuf

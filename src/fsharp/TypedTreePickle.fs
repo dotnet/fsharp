@@ -237,6 +237,11 @@ let p_bytes (s: byte[]) st =
     p_int32 len st
     st.os.EmitBytes s
 
+let p_memory (s: System.ReadOnlyMemory<byte>) st =
+    let len = s.Length
+    p_int32 len st
+    st.os.EmitMemory s
+
 let p_prim_string (s: string) st =
     let bytes = Encoding.UTF8.GetBytes s
     let len = bytes.Length
@@ -789,11 +794,15 @@ let p_encoded_simpletyp x st = p_int x st
 let p_encoded_anoninfo x st = p_int x st
 let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs st.osimpletys st.oscope x) st
 
+/// Arbitrary value
+[<Literal>]
+let PickleBufferCapacity = 100000
+
 let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
   let ccuNameTab,(ntycons, ntypars, nvals, nanoninfos),stringTab,pubpathTab,nlerefTab,simpleTyTab,phase1bytes,phase1bytesB =
-    let st1 = 
-      { os = ByteBuffer.Create 100000 
-        osB = ByteBuffer.Create 100000 
+    let st1 =
+      { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
+        osB = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
         oscope=scope
         occus= Table<_>.Create "occus"
         oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), (fun osgn -> osgn), "otycons")
@@ -818,8 +827,8 @@ let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
 
   let phase2bytes, phase2bytesB = 
     let st2 = 
-     { os = ByteBuffer.Create 100000 
-       osB = ByteBuffer.Create 100000 
+     { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
+       osB = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
        oscope=scope
        occus= Table<_>.Create "occus (fake)"
        oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), (fun osgn -> osgn), "otycons")
@@ -834,6 +843,7 @@ let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
        ofile=file
        oInMem=inMem
        isStructThisArgPos = false }
+  let phase2bytes =
     p_array p_encoded_ccuref ccuNameTab.AsArray st2
 
     // For F# 5.0 and beyond we add a 4th integer for nanoninfos, indicated by a negative 1st integer
@@ -850,7 +860,7 @@ let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
         (p_array p_encoded_pubpath)
         (p_array p_encoded_nleref)
         (p_array p_encoded_simpletyp)
-        p_bytes
+        p_memory
         (stringTab.AsArray, pubpathTab.AsArray, nlerefTab.AsArray, simpleTyTab.AsArray, phase1bytes)
         st2
     st2.os.Close(), st2.osB.Close()

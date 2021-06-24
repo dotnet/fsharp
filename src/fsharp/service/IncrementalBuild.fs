@@ -182,14 +182,9 @@ type TcInfo =
 [<NoEquality; NoComparison>]
 type TcInfoExtras =
     {
-      /// Accumulated resolutions, last file first
-      tcResolutionsRev: TcResolutions list
-
-      /// Accumulated symbol uses, last file first
-      tcSymbolUsesRev: TcSymbolUses list
-
-      /// Accumulated 'open' declarations, last file first
-      tcOpenDeclarationsRev: OpenDeclaration[] list
+      tcResolutions: TcResolutions
+      tcSymbolUses: TcSymbolUses
+      tcOpenDeclarations: OpenDeclaration[]
 
       /// Result of checking most recent file, if any
       latestImplFile: TypedImplFile option
@@ -202,16 +197,16 @@ type TcInfoExtras =
     }
 
     member x.TcSymbolUses =
-        List.rev x.tcSymbolUsesRev
+        x.tcSymbolUses
 
 [<AutoOpen>]
 module TcInfoHelpers =
 
     let emptyTcInfoExtras =
         {
-            tcResolutionsRev = []
-            tcSymbolUsesRev = []
-            tcOpenDeclarationsRev = []
+            tcResolutions = TcResolutions.Empty
+            tcSymbolUses = TcSymbolUses.Empty
+            tcOpenDeclarations = [||]
             latestImplFile = None
             itemKeyStore = None
             semanticClassificationKeyStore = None
@@ -258,7 +253,6 @@ type BoundModel private (tcConfig: TcConfig,
                          beforeFileChecked: Event<string>,
                          fileChecked: Event<string>,
                          prevTcInfo: TcInfo,
-                         prevTcInfoExtras: NodeCode<TcInfoExtras>,
                          syntaxTreeOpt: SyntaxTree option,
                          tcInfoStateOpt: TcInfoState option) as this =
 
@@ -295,8 +289,7 @@ type BoundModel private (tcConfig: TcConfig,
 
     let defaultTypeCheck () =
         node {
-            let! prevTcInfoExtras = prevTcInfoExtras
-            return FullState(prevTcInfo, prevTcInfoExtras)
+            return PartialState(prevTcInfo)
         }
 
     member _.TcConfig = tcConfig
@@ -347,7 +340,6 @@ type BoundModel private (tcConfig: TcConfig,
                 beforeFileChecked,
                 fileChecked,
                 prevTcInfo,
-                prevTcInfoExtras,
                 newSyntaxTreeOpt,
                 newTcInfoStateOpt)
         else
@@ -366,7 +358,6 @@ type BoundModel private (tcConfig: TcConfig,
             beforeFileChecked,
             fileChecked,
             tcInfo,
-            this.GetOrComputeTcInfoExtras(),
             Some syntaxTree,
             None)
 
@@ -402,7 +393,6 @@ type BoundModel private (tcConfig: TcConfig,
                     beforeFileChecked,
                     fileChecked,
                     prevTcInfo,
-                    prevTcInfoExtras,
                     syntaxTreeOpt,
                     Some finishState)
         }
@@ -416,6 +406,13 @@ type BoundModel private (tcConfig: TcConfig,
                 match fullGraphNode.TryPeekValue() with
                 | ValueSome(tcInfo, _) -> Some tcInfo
                 | _ -> None
+
+    member _.TryPeekTcInfoWithExtras() =
+        match tcInfoNode with
+        | TcInfoNode(_, fullGraphNode) ->
+            match fullGraphNode.TryPeekValue() with
+            | ValueSome(tcInfo, tcInfoExtras) -> Some(tcInfo, tcInfoExtras)
+            | _ -> None
 
     member _.GetOrComputeTcInfo() =
         match tcInfoNode with
@@ -512,7 +509,6 @@ type BoundModel private (tcConfig: TcConfig,
                     if partialCheck then
                         return PartialState tcInfo
                     else
-                        let! prevTcInfoOptional = prevTcInfoExtras
                         // Build symbol keys
                         let itemKeyStore, semanticClassification =
                             if enableBackgroundItemKeyStoreAndSemanticClassification then
@@ -543,9 +539,9 @@ type BoundModel private (tcConfig: TcConfig,
                             {
                                 /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
                                 latestImplFile = if keepAssemblyContents then implFile else None
-                                tcResolutionsRev = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty) :: prevTcInfoOptional.tcResolutionsRev
-                                tcSymbolUsesRev = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: prevTcInfoOptional.tcSymbolUsesRev
-                                tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: prevTcInfoOptional.tcOpenDeclarationsRev
+                                tcResolutions = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty)
+                                tcSymbolUses = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty)
+                                tcOpenDeclarations = sink.GetOpenDeclarations()
                                 itemKeyStore = itemKeyStore
                                 semanticClassificationKeyStore = semanticClassification
                             }
@@ -563,7 +559,6 @@ type BoundModel private (tcConfig: TcConfig,
                          beforeFileChecked: Event<string>,
                          fileChecked: Event<string>,
                          prevTcInfo: TcInfo,
-                         prevTcInfoExtras: NodeCode<TcInfoExtras>,
                          syntaxTreeOpt: SyntaxTree option) =
         BoundModel(tcConfig, tcGlobals, tcImports,
                       keepAssemblyContents, keepAllBackgroundResolutions,
@@ -573,7 +568,6 @@ type BoundModel private (tcConfig: TcConfig,
                       beforeFileChecked,
                       fileChecked,
                       prevTcInfo,
-                      prevTcInfoExtras,
                       syntaxTreeOpt,
                       None)
 
@@ -649,6 +643,8 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime) =
     member _.TimeStamp = timeStamp
 
     member _.TryPeekTcInfo() = boundModel.TryPeekTcInfo()
+
+    member _.TryPeekTcInfoWithExtras() = boundModel.TryPeekTcInfoWithExtras()
 
     member _.GetOrComputeTcInfo() = boundModel.GetOrComputeTcInfo()
 
@@ -849,7 +845,6 @@ type IncrementalBuilder(
               tcDependencyFiles = basicDependencies
               sigNameOpt = None
             }
-        let tcInfoExtras = emptyTcInfoExtras
         return
             BoundModel.Create(
                 tcConfig,
@@ -863,7 +858,6 @@ type IncrementalBuilder(
                 beforeFileChecked,
                 fileChecked,
                 tcInfo,
-                node { return tcInfoExtras },
                 None) }
 
     /// Type check all files eagerly.
@@ -1199,6 +1193,14 @@ type IncrementalBuilder(
     member builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename: PartialCheckResults option  =
         let slotOfFile = builder.GetSlotOfFileName filename
         let result = tryGetBeforeSlot currentState slotOfFile
+
+        match result with
+        | Some (boundModel, timestamp) -> Some (PartialCheckResults (boundModel, timestamp))
+        | _ -> None
+
+    member builder.GetCheckResultsForFileInProjectEvenIfStale filename: PartialCheckResults option  =
+        let slotOfFile = builder.GetSlotOfFileName filename
+        let result = tryGetSlot currentState slotOfFile
 
         match result with
         | Some (boundModel, timestamp) -> Some (PartialCheckResults (boundModel, timestamp))

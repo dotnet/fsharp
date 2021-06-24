@@ -100,9 +100,11 @@ let PickleToResource inMem file (g: TcGlobals) scope rName rNameB p x =
     let bytes, bytesB = pickleObjWithDanglingCcus inMem file g scope p x 
     let byteStorage =
         if inMem then
-            ByteStorage.FromByteArrayAndCopy(bytes, useBackingMemoryMappedFile = true)
+            ByteStorage.FromMemoryAndCopy(bytes.AsMemory(), useBackingMemoryMappedFile = true)
         else
-            ByteStorage.FromByteArray(bytes)
+            ByteStorage.FromByteArray(bytes.AsMemory().ToArray())
+
+    (bytes :> IDisposable).Dispose()
 
     let byteStorageB =
         if inMem then
