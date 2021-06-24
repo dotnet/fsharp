@@ -261,9 +261,11 @@ type internal FSharpPackage() as this =
                     let miscFilesWorkspace = this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
                     let _singleFileWorkspaceMap = 
                         new SingleFileWorkspaceMap(
-                            workspace, 
-                            miscFilesWorkspace,
-                            projectContextFactory, 
+                            FSharpMiscellaneousFileService(
+                                workspace,
+                                miscFilesWorkspace,
+                                FSharpWorkspaceProjectContextFactory(projectContextFactory)
+                            ),
                             rdt)
                     let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, optionsManager, projectContextFactory)
                     ()

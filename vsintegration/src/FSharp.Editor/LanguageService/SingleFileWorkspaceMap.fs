@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Collections.Concurrent
+open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
@@ -13,18 +14,73 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.LanguageServices
 open FSharp.Compiler.CodeAnalysis
 
-type private ScriptDependencies = ResizeArray<string>
+type internal IFSharpWorkspaceProjectContext =
+    inherit IDisposable
 
-[<Sealed>]
-type internal SingleFileWorkspaceMap(workspace: Workspace,
-                                     miscFilesWorkspace: MiscellaneousFilesWorkspace,
-                                     projectContextFactory: IWorkspaceProjectContextFactory,
-                                     rdt: IVsRunningDocumentTable) as this =
+    abstract Id : ProjectId
 
-    // We have a lock because the `ScriptUpdated` event may happen concurrently when a document opens or closes.
-    let gate = obj()
-    let files = ConcurrentDictionary(StringComparer.OrdinalIgnoreCase)
-    let optionsManager = workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
+    abstract FilePath : string
+
+    abstract ProjectReferenceCount : int
+
+    abstract HasProjectReference : filePath: string -> bool
+
+    abstract SetProjectReferences : IFSharpWorkspaceProjectContext seq -> unit
+
+type internal IFSharpWorkspaceProjectContextFactory =
+
+    abstract CreateProjectContext : filePath: string -> IFSharpWorkspaceProjectContext
+
+type internal FSharpWorkspaceProjectContext(vsProjectContext: IWorkspaceProjectContext) =
+
+    let mutable refs = ImmutableDictionary.Create(StringComparer.OrdinalIgnoreCase)
+
+    member private _.VisualStudioProjectContext = vsProjectContext
+
+    member private _.AddProjectReference(builder: ImmutableDictionary<_, _>.Builder, projectContext: IFSharpWorkspaceProjectContext) =
+        match projectContext with
+        | :? FSharpWorkspaceProjectContext as fsProjectContext ->
+            vsProjectContext.AddProjectReference(fsProjectContext.VisualStudioProjectContext, MetadataReferenceProperties.Assembly)
+            builder.Add(projectContext.FilePath, projectContext)
+        | _ ->
+            ()
+
+    member private _.RemoveProjectReference(projectContext: IFSharpWorkspaceProjectContext) =
+        match projectContext with
+        | :? FSharpWorkspaceProjectContext as fsProjectContext ->
+            vsProjectContext.RemoveProjectReference(fsProjectContext.VisualStudioProjectContext)
+        | _ ->
+            ()
+
+    interface IFSharpWorkspaceProjectContext with
+
+        member _.Id = vsProjectContext.Id
+
+        member _.FilePath = vsProjectContext.ProjectFilePath
+
+        member _.ProjectReferenceCount = refs.Count
+
+        member _.HasProjectReference(filePath) = refs.ContainsKey(filePath)
+
+        member this.SetProjectReferences(projRefs) =
+            let builder = ImmutableDictionary.CreateBuilder()
+
+            refs.Values
+            |> Seq.iter (fun x ->
+                this.RemoveProjectReference(x)
+            )
+
+            projRefs
+            |> Seq.iter (fun x ->
+                this.AddProjectReference(builder, x)
+            )
+
+            refs <- builder.ToImmutable()
+
+        member _.Dispose() =
+            vsProjectContext.Dispose()
+
+type internal FSharpWorkspaceProjectContextFactory(projectContextFactory: IWorkspaceProjectContextFactory) =
 
     static let createSourceCodeKind (filePath: string) =
         if isScriptFile filePath then
@@ -32,56 +88,68 @@ type internal SingleFileWorkspaceMap(workspace: Workspace,
         else
             SourceCodeKind.Regular
 
-    static let canUpdateScript (depSourceFiles: string []) (currentDepSourceFiles: ScriptDependencies) =
-        depSourceFiles.Length <> currentDepSourceFiles.Count ||
-        (
-             (currentDepSourceFiles, depSourceFiles) 
-             ||> Seq.forall2 (fun (x: string) y -> x.Equals(y, StringComparison.OrdinalIgnoreCase))
-             |> not
+    interface IFSharpWorkspaceProjectContextFactory with
 
+        member _.CreateProjectContext filePath =
+            let projectContext = projectContextFactory.CreateProjectContext(FSharpConstants.FSharpLanguageName, filePath, filePath, Guid.NewGuid(), null, null)
+            projectContext.DisplayName <- FSharpConstants.FSharpMiscellaneousFilesName
+            projectContext.AddSourceFile(filePath, sourceCodeKind = createSourceCodeKind filePath)
+            new FSharpWorkspaceProjectContext(projectContext) :> IFSharpWorkspaceProjectContext
+
+type internal FSharpMiscellaneousFileService(workspace: Workspace, 
+                                             miscFilesWorkspace: Workspace, 
+                                             projectContextFactory: IFSharpWorkspaceProjectContextFactory) =
+
+    // We have a lock because the `ScriptUpdated` event may happen concurrently when a document opens or closes.
+    let gate = obj()
+    let files = ConcurrentDictionary(StringComparer.OrdinalIgnoreCase)
+    let optionsManager = workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
+
+    static let mustUpdateProject (refSourceFiles: string []) (projectContext: IFSharpWorkspaceProjectContext) =
+        refSourceFiles.Length <> projectContext.ProjectReferenceCount ||
+        (
+             refSourceFiles 
+             |> Seq.forall projectContext.HasProjectReference
+             |> not
         )
 
-    static let createProjectContext (projectContextFactory: IWorkspaceProjectContextFactory) filePath =
-        let projectContext = projectContextFactory.CreateProjectContext(FSharpConstants.FSharpLanguageName, filePath, filePath, Guid.NewGuid(), null, null)
-        projectContext.DisplayName <- FSharpConstants.FSharpMiscellaneousFilesName
-        projectContext.AddSourceFile(filePath, sourceCodeKind = createSourceCodeKind filePath)
-        projectContext, ScriptDependencies()
+    let tryRemove (document: Document) =
+        optionsManager.ClearSingleFileOptionsCache(document.Id)
+
+        match files.TryRemove(document.FilePath) with
+        | true, projectContext ->
+            let projIds = document.Project.Solution.GetDependentProjectIds(document.Project.Id)
+            if projIds.Count = 0 then
+                (projectContext :> IDisposable).Dispose()
+        | _ ->
+            ()
 
     do
         optionsManager.ScriptUpdated.Add(fun scriptProjectOptions ->
             if scriptProjectOptions.SourceFiles.Length > 0 then
                 // The last file in the project options is the main script file.
                 let filePath = scriptProjectOptions.SourceFiles.[scriptProjectOptions.SourceFiles.Length - 1]
-                let depSourceFiles = scriptProjectOptions.SourceFiles |> Array.take (scriptProjectOptions.SourceFiles.Length - 1)
+                let refSourceFiles = scriptProjectOptions.SourceFiles |> Array.take (scriptProjectOptions.SourceFiles.Length - 1)
 
-                lock gate (fun () ->
-                    match files.TryGetValue(filePath) with
-                    | true, (projectContext: IWorkspaceProjectContext, currentDepSourceFiles: ScriptDependencies) -> 
-                        if canUpdateScript depSourceFiles currentDepSourceFiles then
-                            currentDepSourceFiles
-                            |> Seq.iter (fun x ->
-                                match files.TryGetValue(x) with
-                                | true, (depProjectContext, _) ->
-                                    projectContext.RemoveProjectReference(depProjectContext)
-                                | _ ->
-                                    ()
-                            )
+                match files.TryGetValue(filePath) with
+                | true, (projectContext: IFSharpWorkspaceProjectContext) ->
+                    if mustUpdateProject refSourceFiles projectContext then
+                        lock gate (fun () ->
+                            let newProjRefs =
+                                refSourceFiles
+                                |> Array.map (fun filePath ->
+                                    match files.TryGetValue(filePath) with
+                                    | true, refProjectContext -> refProjectContext
+                                    | _ ->
+                                        let refProjectContext = projectContextFactory.CreateProjectContext(filePath)
+                                        files.[filePath] <- refProjectContext
+                                        refProjectContext
+                                )
 
-                            currentDepSourceFiles.Clear()
-                            depSourceFiles
-                            |> Array.iter (fun filePath ->
-                                currentDepSourceFiles.Add(filePath)
-                                match files.TryGetValue(filePath) with
-                                | true, (depProjectContext, _) ->
-                                    projectContext.AddProjectReference(depProjectContext, MetadataReferenceProperties.Assembly)
-                                | _ ->
-                                    let result = createProjectContext projectContextFactory filePath
-                                    files.[filePath] <- result
-                                    let depProjectContext, _ = result
-                                    projectContext.AddProjectReference(depProjectContext, MetadataReferenceProperties.Assembly)
-                            )
-                    | _ -> ()
-            )
+                            projectContext.SetProjectReferences(newProjRefs)
+                        )
+                | _ ->
+                    ()
         )
 
         miscFilesWorkspace.DocumentOpened.Add(fun args ->
@@ -93,56 +161,82 @@ type internal SingleFileWorkspaceMap(workspace: Workspace,
                 let filePath = document.FilePath
                 lock gate (fun () ->
                     if files.ContainsKey(filePath) |> not then
-                        files.[filePath] <- createProjectContext projectContextFactory filePath
+                        files.[filePath] <- projectContextFactory.CreateProjectContext(filePath)
                 )
         )
 
         workspace.DocumentOpened.Add(fun args ->
             let document = args.Document
             if not document.Project.IsFSharpMiscellaneousOrMetadata then
-                optionsManager.ClearSingleFileOptionsCache(document.Id)
-
-                let projectContextOpt =
+                if files.ContainsKey(document.FilePath) then
                     lock gate (fun () ->
-                        match files.TryRemove(document.FilePath) with
-                        | true, (projectContext, _) ->
-                            Some projectContext
-                        | _ ->
-                            None
+                        tryRemove document
                     )
-
-                match projectContextOpt with
-                | Some projectContext ->
-                    projectContext.Dispose()
-                | _ ->
-                    ()
         )
 
         workspace.DocumentClosed.Add(fun args ->
             let document = args.Document
             if document.Project.IsFSharpMiscellaneousOrMetadata then
-                optionsManager.ClearSingleFileOptionsCache(document.Id)
-
-                let projectContextOpt =
-                    lock gate (fun () ->
-                        match files.TryRemove(document.FilePath) with
-                        | true, (projectContext, _) ->
-                            Some projectContext
-                        | _ ->
-                            None
-                    )
-
-                match projectContextOpt with
-                | Some projectContext ->
-                    let projIds = document.Project.Solution.GetDependentProjectIds(document.Project.Id)
-                    if projIds.Count = 0 then
-                        projectContext.Dispose()
-                | _ ->
-                    ()
+                lock gate (fun () ->
+                    tryRemove document
+                )
         )
 
-        do
-            rdt.AdviseRunningDocTableEvents(this) |> ignore
+        workspace.WorkspaceChanged.Add(fun args ->
+            match args.Kind with
+            | WorkspaceChangeKind.ProjectRemoved ->
+                let proj = args.OldSolution.GetProject(args.ProjectId)
+                if proj.IsFSharpMiscellaneousOrMetadata then
+                    let projRefs = 
+                        proj.GetAllProjectsThisProjectDependsOn()
+                        |> Array.ofSeq
+
+                    if projRefs.Length > 0 then
+                        lock gate (fun () ->
+                            projRefs
+                            |> Array.iter (fun proj ->
+                                if proj.IsFSharpMiscellaneousOrMetadata then
+                                    match proj.Documents |> Seq.tryExactlyOne with
+                                    | Some doc when not (workspace.IsDocumentOpen(doc.Id)) ->
+                                        tryRemove doc
+                                    | _ ->
+                                        ()
+                            )
+                        )
+            | _ ->
+                ()
+        )
+
+    member _.Workspace = workspace
+
+    member _.ProjectContextFactory = projectContextFactory
+
+    member _.ContainsFile filePath = files.ContainsKey(filePath)
+
+    member _.RenameFile(filePath, newFilePath) =
+        match files.TryRemove(filePath) with
+        | true, projectContext ->
+            let project = workspace.CurrentSolution.GetProject(projectContext.Id)
+            if project <> null then
+                let documentOpt =
+                    project.Documents 
+                    |> Seq.tryFind (fun x -> String.Equals(x.FilePath, filePath, StringComparison.OrdinalIgnoreCase))
+                match documentOpt with
+                | None -> ()
+                | Some(document) ->                           
+                    optionsManager.ClearSingleFileOptionsCache(document.Id)
+                    projectContext.Dispose()
+                    files.[newFilePath] <- projectContextFactory.CreateProjectContext(newFilePath)
+            else
+                projectContext.Dispose() // fallback, shouldn't happen, but in case it does let's dispose of the project context so we don't leak
+        | _ -> ()
+
+[<Sealed>]
+type internal SingleFileWorkspaceMap(miscFileService: FSharpMiscellaneousFileService,
+                                     rdt: IVsRunningDocumentTable) as this =
+
+    do
+        rdt.AdviseRunningDocTableEvents(this) |> ignore
 
     interface IVsRunningDocTableEvents with
 
@@ -164,23 +258,8 @@ type internal SingleFileWorkspaceMap(workspace: Workspace,
 
         member _.OnAfterAttributeChangeEx(_, grfAttribs, _, _, pszMkDocumentOld, _, _, pszMkDocumentNew) = 
             // Handles renaming of a misc file
-            if (grfAttribs &&& (uint32 __VSRDTATTRIB.RDTA_MkDocument)) <> 0u && files.ContainsKey(pszMkDocumentOld) then
-                match files.TryRemove(pszMkDocumentOld) with
-                | true, (projectContext, _) ->
-                    let project = workspace.CurrentSolution.GetProject(projectContext.Id)
-                    if project <> null then
-                        let documentOpt =
-                            project.Documents 
-                            |> Seq.tryFind (fun x -> String.Equals(x.FilePath, pszMkDocumentOld, StringComparison.OrdinalIgnoreCase))
-                        match documentOpt with
-                        | None -> ()
-                        | Some(document) ->                           
-                            optionsManager.ClearSingleFileOptionsCache(document.Id)
-                            projectContext.Dispose()
-                            files.[pszMkDocumentNew] <- createProjectContext projectContextFactory pszMkDocumentNew
-                    else
-                        projectContext.Dispose() // fallback, shouldn't happen, but in case it does let's dispose of the project context so we don't leak
-                | _ -> ()
+            if (grfAttribs &&& (uint32 __VSRDTATTRIB.RDTA_MkDocument)) <> 0u && miscFileService.ContainsFile(pszMkDocumentOld) then
+                miscFileService.RenameFile(pszMkDocumentOld, pszMkDocumentNew)
             VSConstants.S_OK
 
         member _.OnAfterDocumentWindowHide(_, _) = VSConstants.E_NOTIMPL
