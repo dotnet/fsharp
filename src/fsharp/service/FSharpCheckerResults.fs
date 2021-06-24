@@ -2182,7 +2182,7 @@ type FSharpCheckProjectResults
           tcConfigOption: TcConfig option,
           keepAssemblyContents: bool,
           diagnostics: FSharpDiagnostic[],
-          details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list *
+          details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses> *
                    TopAttribs option * IRawFSharpAssemblyData option * ILAssemblyRef *
                    AccessorDomain * TypedImplFile list option * string[] * FSharpProjectOptions) option) =
 
@@ -2201,12 +2201,12 @@ type FSharpCheckProjectResults
     member _.HasCriticalErrors = details.IsNone
 
     member _.AssemblySignature =
-        let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, _builderOrSymbolUses, topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         FSharpAssemblySignature(tcGlobals, thisCcu, ccuSig, tcImports, topAttribs, ccuSig)
 
     member _.TypedImplementationFiles =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, _ccuSig, _builderOrSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let mimpls =
             match tcAssemblyExpr with
             | None -> []
@@ -2215,7 +2215,7 @@ type FSharpCheckProjectResults
 
     member info.AssemblyContents =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, _builderOrSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let mimpls =
             match tcAssemblyExpr with
             | None -> []
@@ -2224,7 +2224,7 @@ type FSharpCheckProjectResults
 
     member _.GetOptimizedAssemblyContents() =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, _builderOrSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let mimpls =
             match tcAssemblyExpr with
             | None -> []
@@ -2243,10 +2243,28 @@ type FSharpCheckProjectResults
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member _.GetUsesOfSymbol(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) =
-        let (tcGlobals, _tcImports, _thisCcu, _ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, _tcImports, _thisCcu, _ccuSig, builderOrSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
 
-        tcSymbolUses
-        |> Seq.collect (fun r -> r.GetUsesOfSymbol symbol.Item)
+        let results =
+            match builderOrSymbolUses with
+            | Choice1Of2 builder ->
+                builder.SourceFiles
+                |> Array.ofList
+                |> Array.collect (fun x ->
+                    match builder.GetCheckResultsForFileInProjectEvenIfStale x with
+                    | Some partialCheckResults ->
+                        match partialCheckResults.TryPeekTcInfoWithExtras() with
+                        | Some(_, tcInfoExtras) ->
+                            tcInfoExtras.TcSymbolUses.GetUsesOfSymbol symbol.Item
+                        | _ ->
+                            [||]
+                    | _ ->
+                        [||]
+                )
+            | Choice2Of2 tcSymbolUses ->
+                tcSymbolUses.GetUsesOfSymbol symbol.Item
+
+        results
         |> Seq.filter (fun symbolUse -> symbolUse.ItemOccurence <> ItemOccurence.RelatedText)
         |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range)
         |> Seq.map (fun symbolUse ->
@@ -2256,8 +2274,27 @@ type FSharpCheckProjectResults
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member _.GetAllUsesOfAllSymbols(?cancellationToken: CancellationToken) =
-        let (tcGlobals, tcImports, thisCcu, ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, builderOrSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let cenv = SymbolEnv(tcGlobals, thisCcu, Some ccuSig, tcImports)
+
+        let tcSymbolUses =
+            match builderOrSymbolUses with
+            | Choice1Of2 builder ->
+                builder.SourceFiles
+                |> Array.ofList
+                |> Array.map (fun x ->
+                    match builder.GetCheckResultsForFileInProjectEvenIfStale x with
+                    | Some partialCheckResults ->
+                        match partialCheckResults.TryPeekTcInfoWithExtras() with
+                        | Some(_, tcInfoExtras) ->
+                            tcInfoExtras.TcSymbolUses
+                        | _ ->
+                            TcSymbolUses.Empty
+                    | _ ->
+                        TcSymbolUses.Empty
+                )
+            | Choice2Of2 tcSymbolUses ->
+                [|tcSymbolUses|]
 
         [| for r in tcSymbolUses do
             for symbolUseChunk in r.AllUsesOfSymbols do
@@ -2353,7 +2390,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                 FSharpCheckProjectResults (filename, Some tcConfig,
                     keepAssemblyContents, errors,
                     Some(tcGlobals, tcImports, tcFileInfo.ThisCcu, tcFileInfo.CcuSigForFile,
-                            [tcFileInfo.ScopeSymbolUses], None, None, mkSimpleAssemblyRef "stdin",
+                            (Choice2Of2 tcFileInfo.ScopeSymbolUses), None, None, mkSimpleAssemblyRef "stdin",
                             tcState.TcEnvFromImpls.AccessRights, None, dependencyFiles,
                             projectOptions))
 
