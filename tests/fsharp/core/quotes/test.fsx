@@ -4540,6 +4540,21 @@ module WitnessTests =
               <@@ Nullable<_> '1' ?=? Nullable<_> '1' @@>, box true
               <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?=? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box true
               <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?=? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              
+              <@@ Nullable<_> 3y ?<> 3y @@>, box false
+              <@@ Nullable<_> 3uy ?<> 3uy @@>, box false
+              <@@ Nullable<_> 3s ?<> 3s @@>, box false
+              <@@ Nullable<_> 3us ?<> 3us @@>, box false
+              <@@ Nullable<_> 3 ?<> 3 @@>, box false
+              <@@ Nullable<_> 3u ?<> 3u @@>, box false
+              <@@ Nullable<_> 3L ?<> 3L @@>, box false
+              <@@ Nullable<_> 3UL ?<> 3UL @@>, box false
+              <@@ Nullable<_> '3' ?<> '3' @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?<> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?<> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ Nullable<_> 3f ?<> 3f @@>, box false
+              <@@ Nullable<_> 3. ?<> 3. @@>, box false
+              <@@ Nullable<_> 3m ?<> 3m @@>, box false
             ]
 
        tests |> List.map (fun (test, eval) -> 
