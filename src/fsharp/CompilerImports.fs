@@ -108,9 +108,11 @@ let PickleToResource inMem file (g: TcGlobals) scope rName rNameB p x =
 
     let byteStorageB =
         if inMem then
-            ByteStorage.FromByteArrayAndCopy(bytesB, useBackingMemoryMappedFile = true)
+            ByteStorage.FromByteArrayAndCopy(bytesB.AsMemory(), useBackingMemoryMappedFile = true)
         else
-            ByteStorage.FromByteArray(bytesB)
+            ByteStorage.FromByteArray(bytesB.AsMemory().ToArray())
+
+    (bytesB :> IDisposable).Dispose()
 
     let resource =
         { Name = rName
@@ -194,7 +196,7 @@ let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemappi
             let ccu, modulInfo = data
             let bytes, _bytesB = TypedTreePickle.pickleObjWithDanglingCcus isIncrementalBuild outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
             let optDataFileName = (FileSystemUtils.chopExtension outfile)+".optdata"
-            File.WriteAllBytes(optDataFileName, bytes)
+            File.WriteAllBytes(optDataFileName, bytes.AsMemory().ToArray())
         let (ccu, optData) =
             if tcConfig.onlyEssentialOptimizationData then
                 map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data
