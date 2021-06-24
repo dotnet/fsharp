@@ -799,8 +799,7 @@ let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs 
 let PickleBufferCapacity = 100000
 
 let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
-  let ccuNameTab,(ntycons, ntypars, nvals, nanoninfos),stringTab,pubpathTab,nlerefTab,simpleTyTab,phase1bytes,phase1bytesB =
-    let st1 =
+  let st1 =
       { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
         osB = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
         oscope=scope
@@ -817,16 +816,17 @@ let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
         ofile=file
         oInMem=inMem
         isStructThisArgPos = false }
+
+  let ccuNameTab,(ntycons, ntypars, nvals, nanoninfos),stringTab,pubpathTab,nlerefTab,simpleTyTab,phase1bytes,phase1bytesB =
     p x st1
     let sizes =
       st1.oentities.Size,
       st1.otypars.Size,
       st1.ovals.Size,
       st1.oanoninfos.Size 
-    st1.occus, sizes, st1.ostrings, st1.opubpaths,st1.onlerefs, st1.osimpletys, st1.os.Close(), st1.osB.Close()
+    st1.occus, sizes, st1.ostrings, st1.opubpaths,st1.onlerefs, st1.osimpletys, st1.os.AsMemory(), st1.osB
 
-  let phase2bytes, phase2bytesB = 
-    let st2 = 
+  let st2 = 
      { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
        osB = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
        oscope=scope
@@ -843,7 +843,8 @@ let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
        ofile=file
        oInMem=inMem
        isStructThisArgPos = false }
-  let phase2bytes =
+
+  let phase2bytes = 
     p_array p_encoded_ccuref ccuNameTab.AsArray st2
 
     // For F# 5.0 and beyond we add a 4th integer for nanoninfos, indicated by a negative 1st integer
@@ -863,9 +864,14 @@ let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
         p_memory
         (stringTab.AsArray, pubpathTab.AsArray, nlerefTab.AsArray, simpleTyTab.AsArray, phase1bytes)
         st2
-    st2.os.Close(), st2.osB.Close()
+    
+    // The B stream should be empty in the second phase
+    let phase2bytesB = st2.osB.AsMemory()
+    if phase2bytesB.Length <> 0 then failwith "expected phase2bytesB.Length = 0"
+    (st2.osB :> System.IDisposable).Dispose()
+    st2.os
 
-  if phase2bytesB.Length <> 0 then failwith "expected phase2bytesB.Length = 0"
+  (st1.os :> System.IDisposable).Dispose()
 
   phase2bytes, phase1bytesB
   
