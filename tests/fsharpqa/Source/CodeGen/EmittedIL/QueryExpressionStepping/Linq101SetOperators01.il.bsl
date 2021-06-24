@@ -45,13 +45,13 @@
   // Offset: 0x00000390 Length: 0x0000011E
 }
 .module Linq101SetOperators01.exe
-// MVID: {60B78A59-4EE5-349F-A745-0383598AB760}
+// MVID: {60D46F1F-4EE5-349F-A745-03831F6FD460}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06940000
+// Image base: 0x04FA0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -846,7 +846,7 @@
       IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/productFirstChars@33::'enum'
       IL_005c:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
       IL_0061:  stloc.0
-      .line 33,33 : 29,30 ''
+      .line 33,33 : 16,33 ''
       IL_0062:  ldarg.0
       IL_0063:  ldc.i4.2
       IL_0064:  stfld      int32 Linq101SetOperators01/productFirstChars@33::pc
@@ -1196,7 +1196,7 @@
       IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer> Linq101SetOperators01/customerFirstChars@39::'enum'
       IL_005c:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer>::get_Current()
       IL_0061:  stloc.0
-      .line 39,39 : 29,30 ''
+      .line 39,39 : 16,33 ''
       IL_0062:  ldarg.0
       IL_0063:  ldc.i4.2
       IL_0064:  stfld      int32 Linq101SetOperators01/customerFirstChars@39::pc

@@ -2975,6 +2975,16 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
           
     | _ -> None
 
+/// When optimizing a function in an application, use the whole range including arguments for the range
+/// to apply to 'inline' code
+and OptimizeFuncInApplication cenv env f0 mWithArgs =
+    let f0 = stripExpr f0
+    match f0 with
+    | Expr.Val (v, _vFlags, _) -> 
+        OptimizeVal cenv env f0 (v, mWithArgs)
+    | _ ->
+        OptimizeExpr cenv env f0
+
 /// Optimize/analyze an application of a function to type and term arguments
 and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
     // trying to devirtualize
@@ -2983,7 +2993,7 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
         // devirtualized
         res
     | None -> 
-    let newf0, finfo = OptimizeExpr cenv env f0
+    let newf0, finfo = OptimizeFuncInApplication cenv env f0 m
     match TryInlineApplication cenv env finfo (tyargs, args, m) with 
     | Some res -> 
         // inlined
