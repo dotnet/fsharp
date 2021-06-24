@@ -7,6 +7,7 @@ open System.Linq
 open System.Composition.Hosting
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.Threading
 open Microsoft.VisualStudio.Composition
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Host
@@ -68,10 +69,18 @@ module WorkspaceTests =
 
                 mainProj <- solution.GetProject(currentProj.Id)
 
-    type TestFSharpWorkspaceProjectContextFactory(workspace: Workspace) =
+    type TestFSharpWorkspaceProjectContextFactory(workspace: Workspace, miscFilesWorkspace: Workspace) =
                 
         interface IFSharpWorkspaceProjectContextFactory with
             member this.CreateProjectContext(filePath: string): IFSharpWorkspaceProjectContext =
+                match miscFilesWorkspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) |> Seq.tryExactlyOne with
+                | Some docId ->
+                    let doc = miscFilesWorkspace.CurrentSolution.GetDocument(docId)
+                    if not (miscFilesWorkspace.TryApplyChanges(miscFilesWorkspace.CurrentSolution.RemoveProject(doc.Project.Id))) then
+                        failwith "Unable to apply workspace changes."
+                | _ ->
+                    ()
+
                 let projInfo = RoslynTestHelpers.CreateProjectInfoWithSingleDocument(filePath)
                 if not (workspace.TryApplyChanges(workspace.CurrentSolution.AddProject(projInfo))) then
                     failwith "Unable to apply workspace changes."
@@ -92,13 +101,21 @@ module WorkspaceTests =
     let createMiscFileWorkspace() =
         createWorkspace()
 
+    let openDocument (workspace: Workspace) (docId: DocumentId) =
+        use waitHandle = new ManualResetEventSlim(false)
+        use _sub = workspace.DocumentOpened.Subscribe(fun _ ->
+            waitHandle.Set()
+        )
+        workspace.OpenDocument(docId)
+        waitHandle.Wait()
+
     [<Test>]
     let ``Script file opened in misc files workspace will get transferred to normal workspace``() =
         let workspace = createWorkspace()
         let miscFilesWorkspace = createMiscFileWorkspace()
-        let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace)
+        let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
 
-        let miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
+        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
 
         let filePath = 
             createOnDiskScript 
@@ -109,8 +126,9 @@ let x = 1
                 """
         
         try
-            let solutionInfo = RoslynTestHelpers.CreateSolutionInfoWithSingleDocument(filePath)
-            miscFilesWorkspace.AddSolution(solutionInfo) |> ignore
+            let projInfo = RoslynTestHelpers.CreateProjectInfoWithSingleDocument(filePath)
+            if not (miscFilesWorkspace.TryApplyChanges(miscFilesWorkspace.CurrentSolution.AddProject(projInfo))) then
+                failwith "Unable to apply workspace changes."
             
             let doc = 
                 miscFilesWorkspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) 
@@ -119,6 +137,14 @@ let x = 1
 
             Assert.IsFalse(miscFilesWorkspace.IsDocumentOpen(doc.Id))
             Assert.AreEqual(0, workspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath).Length)
+
+            openDocument miscFilesWorkspace doc.Id
+            // Although we opened the document, this is false as it has been transferred to the other workspace.
+            Assert.IsFalse(miscFilesWorkspace.IsDocumentOpen(doc.Id))
+
+            Assert.AreEqual(0, miscFilesWorkspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath).Length)
+            Assert.AreEqual(1, workspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath).Length)
+            Assert.IsFalse(workspace.IsDocumentOpen(doc.Id))
 
         finally
             try File.Delete(filePath) with | _ -> ()
