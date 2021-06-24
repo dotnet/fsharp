@@ -234,15 +234,15 @@ type RoslynTestHelpers private () =
 
         let workspaceService = workspace.Services.GetService<IFSharpWorkspaceService>()
 
-        let document = solution.GetProject(projInfo.Id).GetDocument(docInfo.Id)
+        let document = solution.GetProject(projId).GetDocument(docId)
 
         match options with
         | Some options ->
             let options = { options with ProjectId = Some(Guid.NewGuid().ToString()) }
-            workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projInfo.Id, options.SourceFiles, options.OtherOptions |> ImmutableArray.CreateRange)
+            workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projId, options.SourceFiles, options.OtherOptions |> ImmutableArray.CreateRange)
             document.SetFSharpProjectOptionsForTesting(options)
         | _ ->
-            workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projInfo.Id, [|filePath|], ImmutableArray.Empty)
+            workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projId, [|filePath|], ImmutableArray.Empty)
 
         document
 
