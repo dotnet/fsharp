@@ -9386,7 +9386,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
         let isZeroMethod =
             match declKind, pat with
-            | ModuleOrMemberBinding, SynPat.Named(_, name, _, _, _) when name.idText = "Zero" -> 
+            | ModuleOrMemberBinding, SynPat.Named(id, _, _, _) when id.idText = "Zero" -> 
                 match memberFlagsOpt with
                 | Some memberFlags ->
                     match memberFlags.MemberKind with
