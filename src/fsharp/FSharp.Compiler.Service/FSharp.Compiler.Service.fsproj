@@ -59,6 +59,7 @@
     <NuspecProperty Include="SystemThreadingTasksParallelPackageVersion=$(SystemThreadingTasksParallelVersion)" />
     <NuspecProperty Include="SystemThreadingThreadPackageVersion=$(SystemThreadingThreadVersion)" />
     <NuspecProperty Include="SystemThreadingThreadPoolPackageVersion=$(SystemThreadingThreadPoolVersion)" />
+    <NuspecProperty Include="SystemRuntimeCompilerServicesUnsafePackageVersion=$(SystemRuntimeCompilerServicesUnsafeVersion)" />
   </ItemGroup>
 
   <ItemGroup>
@@ -993,6 +994,7 @@
     <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
   </ItemGroup>
 
 </Project>

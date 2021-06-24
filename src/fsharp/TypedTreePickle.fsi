@@ -84,7 +84,7 @@ val internal p_ty : pickler<TType>
 val internal pickleCcuInfo : pickler<PickledCcuInfo>
 
 /// Serialize an arbitrary object using the given pickler
-val pickleObjWithDanglingCcus : inMem: bool -> file: string -> TcGlobals -> scope:CcuThunk -> pickler<'T> -> 'T -> byte[]
+val pickleObjWithDanglingCcus : inMem: bool -> file: string -> TcGlobals -> scope:CcuThunk -> pickler<'T> -> 'T -> ByteBuffer
 
 /// The type of state unpicklers read from
 type ReaderState

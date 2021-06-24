@@ -130,8 +130,12 @@ let checkExprOp (lexbuf:UnicodeLexing.Lexbuf) =
 let unexpectedChar lexbuf =
     LEX_FAILURE (FSComp.SR.lexUnexpectedChar(lexeme lexbuf))
 
+/// Arbitrary value
+[<Literal>]
+let StringCapacity = 100
+
 let startString args (lexbuf: UnicodeLexing.Lexbuf) =
-    let buf = ByteBuffer.Create 100
+    let buf = ByteBuffer.Create StringCapacity
     let m = lexbuf.LexemeRange
     let startp = lexbuf.StartPos
     let fin =
@@ -1584,7 +1588,7 @@ and tripleQuoteStringInComment n m args skip = parse
 
 and mlOnly m args skip = parse
  | "\""
-     { let buf = ByteBuffer.Create 100
+     { let buf = ByteBuffer.Create StringCapacity
        let m2 = lexbuf.LexemeRange
        let _ = singleQuoteString (buf, LexerStringFinisher.Default, m2, LexerStringKind.String, args) skip lexbuf
        if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))

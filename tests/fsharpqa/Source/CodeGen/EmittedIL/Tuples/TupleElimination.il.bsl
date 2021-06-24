@@ -41,13 +41,13 @@
   // Offset: 0x00000230 Length: 0x0000007B
 }
 .module TupleElimination.exe
-// MVID: {608C0510-DFDD-92DF-A745-038310058C60}
+// MVID: {60CB69C6-DFDD-92DF-A745-0383C669CB60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06D10000
+// Image base: 0x06AF0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,23 +63,18 @@
     // Code size       197 (0xc5)
     .maxstack  5
     .locals init ([0] class [mscorlib]System.Collections.Generic.Dictionary`2<int32,int32> dic,
-             [1] int32 V_1,
-             [2] bool V_2,
-             [3] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_3,
-             [4] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_4,
-             [5] int64 V_5,
-             [6] bool V_6,
-             [7] class [mscorlib]System.Tuple`2<bool,int64> t,
-             [8] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_8,
-             [9] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<bool,int64>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_9)
-    .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 7,7 : 5,64 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Tuples\\TupleElimination.fs'
+             [1] int32 i,
+             [2] bool b,
+             [3] int64 l,
+             [4] bool V_4,
+             [5] class [mscorlib]System.Tuple`2<bool,int64> t)
+    .line 7,7 : 5,64 ''
     IL_0000:  newobj     instance void class [mscorlib]System.Collections.Generic.Dictionary`2<int32,int32>::.ctor()
     IL_0005:  stloc.0
     .line 9,9 : 31,48 ''
     IL_0006:  ldloc.0
     IL_0007:  ldc.i4.1
-    IL_0008:  ldloca.s   V_1
+    IL_0008:  ldloca.s   i
     IL_000a:  callvirt   instance bool class [mscorlib]System.Collections.Generic.Dictionary`2<int32,int32>::TryGetValue(!0,
                                                                                                                          !1&)
     IL_000f:  stloc.2

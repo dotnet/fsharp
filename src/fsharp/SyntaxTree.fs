@@ -302,6 +302,43 @@ type SynTypeConstraint =
        typeArgs: SynType list *
        range: range
 
+    member x.Range =
+        match x with
+        | WhereTyparIsValueType(range=range)
+        | WhereTyparIsReferenceType(range=range)
+        | WhereTyparIsUnmanaged(range=range)
+        | WhereTyparSupportsNull(range=range)
+        | WhereTyparIsComparable(range=range)
+        | WhereTyparIsEquatable(range=range)
+        | WhereTyparDefaultsToType(range=range)
+        | WhereTyparSubtypeOfType(range=range)
+        | WhereTyparSupportsMember(range=range)
+        | WhereTyparIsEnum(range=range)
+        | WhereTyparIsDelegate(range=range) -> range
+
+[<RequireQualifiedAccess>]
+type SynTyparDecls =
+    | PostfixList of decls: SynTyparDecl list * constraints: SynTypeConstraint list * range: range
+    | PrefixList of decls: SynTyparDecl list * range: range
+    | SinglePrefix of decl: SynTyparDecl * range: range
+
+    member x.TyparDecls =
+        match x with
+        | PostfixList (decls=decls)
+        | PrefixList (decls=decls) -> decls
+        | SinglePrefix (decl, _) -> [decl]
+
+    member x.Constraints =
+        match x with
+        | PostfixList (constraints=constraints) -> constraints
+        | _ -> []
+
+    member x.Range =
+        match x with
+        | PostfixList (range=range)
+        | PrefixList (range=range) -> range
+        | SinglePrefix (range=range) -> range
+
 [<NoEquality; NoComparison;RequireQualifiedAccess>]
 type SynType = 
     
@@ -906,7 +943,6 @@ type SynIndexerArg =
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePat =
-
     | Id of
         ident: Ident *
         altNameRefCell: SynSimplePatAlternativeIdInfo ref option *
@@ -924,6 +960,12 @@ type SynSimplePat =
         pat: SynSimplePat *
         attributes: SynAttributes *
         range: range
+
+    member x.Range =
+        match x with
+        | SynSimplePat.Id(range=range)
+        | SynSimplePat.Typed(range=range)
+        | SynSimplePat.Attrib(range=range) -> range
 
 [<RequireQualifiedAccess>]
 type SynSimplePatAlternativeIdInfo =
@@ -946,7 +988,6 @@ type SynStaticOptimizationConstraint =
 
 [<NoEquality; NoComparison;RequireQualifiedAccess>]
 type SynSimplePats =
-
     | SimplePats of
         pats: SynSimplePat list *
         range: range
@@ -955,6 +996,11 @@ type SynSimplePats =
         pats: SynSimplePats *
         targetType: SynType *
         range: range
+
+    member x.Range =
+        match x with
+        | SynSimplePats.SimplePats(range=range)
+        | SynSimplePats.Typed(range=range) -> range
 
 [<RequireQualifiedAccess>]
 type SynArgPats =
@@ -976,7 +1022,6 @@ type SynPat =
         range: range
 
     | Named of
-        pat: SynPat *
         ident: Ident *
         isThisVal: bool *
         accessibility: SynAccess option *
@@ -999,6 +1044,11 @@ type SynPat =
 
     | Ands of
         pats: SynPat list *
+        range: range
+        
+    | As of
+        lhsPat: SynPat *
+        rhsPat: SynPat *
         range: range
 
     | LongIdent of
@@ -1065,6 +1115,7 @@ type SynPat =
       | SynPat.Named (range=m)
       | SynPat.Or (range=m)
       | SynPat.Ands (range=m)
+      | SynPat.As (range=m)
       | SynPat.LongIdent (range=m)
       | SynPat.ArrayOrList (range=m)
       | SynPat.Tuple (range=m)
@@ -1390,7 +1441,7 @@ type SynField =
 type SynComponentInfo =
     | SynComponentInfo of
         attributes: SynAttributes *
-        typeParams: SynTyparDecl list *
+        typeParams: SynTyparDecls option *
         constraints: SynTypeConstraint list *
         longId: LongIdent *
         xmlDoc: PreXmlDoc *
@@ -1451,11 +1502,9 @@ type SynArgInfo =
 
 [<NoEquality; NoComparison>]
 type SynValTyparDecls =
-
     | SynValTyparDecls of
-        typars: SynTyparDecl list *
-        canInfer: bool *
-        constraints: SynTypeConstraint list
+        typars: SynTyparDecls option *
+        canInfer: bool
 
 [<NoEquality; NoComparison>]
 type SynReturnInfo =

@@ -1274,6 +1274,18 @@ let ValueOfExpr expr =
       ConstExprValue(0, expr)
     else UnknownValue
 
+let IsMutableStructuralBindingForTupleElement (vref: ValRef) =
+    vref.IsCompilerGenerated &&
+    vref.LogicalName.EndsWith suffixForTupleElementAssignmentTarget
+
+let IsMutableForOutArg (vref: ValRef) =
+    vref.IsCompilerGenerated &&
+    vref.LogicalName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)
+
+let IsKnownOnlyMutableBeforeUse (vref: ValRef) =
+    IsMutableStructuralBindingForTupleElement vref || 
+    IsMutableForOutArg vref
+
 //-------------------------------------------------------------------------
 // Dead binding elimination 
 //------------------------------------------------------------------------- 
@@ -1593,7 +1605,12 @@ let MakeStructuralBindingTemp (v: Val) i (arg: Expr) argTy =
     let name = v.LogicalName + "_" + string i
     let v, ve = mkCompGenLocal arg.Range name argTy
     ve, mkCompGenBind v arg
-           
+
+let MakeMutableStructuralBindingForTupleElement (v: Val) i (arg: Expr) argTy =
+    let name = sprintf "%s_%d%s" v.LogicalName i suffixForTupleElementAssignmentTarget
+    let v, ve = mkMutableCompGenLocal arg.Range name argTy
+    ve, mkCompGenBind v arg
+
 let ExpandStructuralBindingRaw cenv expr =
     assert cenv.settings.ExpandStructuralValues()
     match expr with
@@ -1633,6 +1650,82 @@ let rec RearrangeTupleBindings expr fin =
         | None -> None
     | _ -> None
 
+// Attempts to rewrite tuple bindings containing ifs/matches by introducing a mutable local for each tuple element.
+// These are assigned to exactly once from each branch in order to eliminate tuple allocations. The tuple binding
+// is also rearranged such that OptimizeTupleFieldGet may kick in (see RearrangeTupleBindings comment above).
+// First class use of a tuple at the end of any branch prevents this rewrite.
+//
+// Roughly speaking, the following expression:
+//
+//    let a, b =
+//        if cond () then
+//            1, 2
+//        elif cond2 () then
+//            3, 4
+//        else
+//            5, 6
+//    in ...
+//
+// becomes
+//
+//    let mutable a = Unchecked.defaultof<_>
+//    let mutable b = Unchecked.defaultof<_>
+//
+//    if cond () then
+//        a <- 1
+//        b <- 2
+//    elif cond2 () then
+//        a <- 3
+//        b <- 4
+//    else
+//        a <- 5
+//        b <- 6
+//    in ...
+let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
+    let rec dive g m (requisites: Lazy<_>) expr =
+        match expr with
+        | Expr.Match (sp, inputRange, decision, targets, fullRange, ty) ->
+            // Recurse down every if/match branch
+            let rewrittenTargets = targets |> Array.choose (fun (TTarget (vals, targetExpr, sp)) ->
+                match dive g m requisites targetExpr with
+                | Some rewritten -> TTarget (vals, rewritten, sp) |> Some
+                | _ -> None)
+
+            // If not all branches can be rewritten, keep the original expression as it is
+            if rewrittenTargets.Length <> targets.Length then
+                None
+            else
+                Expr.Match (sp, inputRange, decision, rewrittenTargets, fullRange, ty) |> Some
+        | Expr.Op (TOp.Tuple tupInfo, _, tupleElements, m) when not (evalTupInfoIsStruct tupInfo) ->
+            // Replace tuple allocation with mutations of locals
+            let _, _, _, vrefs = requisites.Value
+            List.map2 (mkValSet m) vrefs tupleElements
+            |> mkSequentials DebugPointAtSequential.StmtOnly g m
+            |> Some
+        | Expr.Sequential (e1, e2, kind, sp, m) ->
+            match dive g m requisites e2 with
+            | Some rewritten -> Expr.Sequential (e1, rewritten, kind, sp, m) |> Some
+            | _ -> None
+        | Expr.Let (bind, body, m, _) ->
+            match dive g m requisites body with
+            | Some rewritten -> mkLetBind m bind rewritten |> Some
+            | _ -> None
+        | _ -> None
+
+    let requisites = lazy (
+        let argTys = destRefTupleTy g v.Type
+        let inits = argTys |> List.map (mkNull m)
+        let ves, binds = List.mapi2 (MakeMutableStructuralBindingForTupleElement v) inits argTys |> List.unzip
+        let vrefs = binds |> List.map (fun (TBind (v, _, _)) -> mkLocalValRef v)
+        argTys, ves, binds, vrefs)
+
+    match dive g m requisites rhs with
+    | Some rewrittenRhs ->
+        let argTys, ves, binds, _ = requisites.Value
+        let rhsAndTupleBinding = mkCompGenSequential m rewrittenRhs (mkLet tgtSeqPtOpt m v (mkRefTupled g m ves argTys) body)
+        mkLetsBind m binds rhsAndTupleBinding |> Some
+    | _ -> None
+
 let ExpandStructuralBinding cenv expr =
     assert cenv.settings.ExpandStructuralValues()
     match expr with
@@ -1642,7 +1735,9 @@ let ExpandStructuralBinding cenv expr =
               CanExpandStructuralBinding v) ->
         match RearrangeTupleBindings rhs (fun top -> mkLet tgtSeqPtOpt m v top body) with
         | Some e -> ExpandStructuralBindingRaw cenv e
-        | None -> expr
+        | None ->
+            // RearrangeTupleBindings could have failed because the rhs branches
+            TryRewriteBranchingTupleBinding cenv.g v rhs tgtSeqPtOpt body m |> Option.defaultValue expr
 
     // Expand 'let v = Some arg in ...' to 'let tmp = arg in let v = Some tp in ...'
     // Used to give names to values of optional arguments prior as we inline.
@@ -2151,7 +2246,11 @@ and OptimizeExprOpReductionsAfter cenv env (op, tyargs, argsR, arginfos, m) =
         | _ -> None
     match knownValue with 
     | Some valu -> 
+<<<<<<< HEAD
         match TryOptimizeVal cenv env (false, false, valu, m) with 
+=======
+        match TryOptimizeVal cenv env (None, false, valu, m) with 
+>>>>>>> 48e06db01c48fc01e382d7db5304ffb79725eef4
         | Some res -> OptimizeExpr cenv env res (* discard e1 since guard ensures it has no effects *)
         | None -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu
     | None -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos UnknownValue
@@ -2506,7 +2605,11 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
 
 /// Make optimization decisions once we know the optimization information
 /// for a value
+<<<<<<< HEAD
 and TryOptimizeVal cenv env (mustInline, inlineIfLambda, valInfoForVal, m) = 
+=======
+and TryOptimizeVal cenv env (vOpt: ValRef option, mustInline, valInfoForVal, m) = 
+>>>>>>> 48e06db01c48fc01e382d7db5304ffb79725eef4
 
     match valInfoForVal with 
     // Inline all constants immediately 
@@ -2514,15 +2617,33 @@ and TryOptimizeVal cenv env (mustInline, inlineIfLambda, valInfoForVal, m) =
         Some (Expr.Const (c, m, ty))
 
     | SizeValue (_, detail) ->
+<<<<<<< HEAD
         TryOptimizeVal cenv env (mustInline, inlineIfLambda, detail, m) 
+=======
+        TryOptimizeVal cenv env (vOpt, mustInline, detail, m) 
+>>>>>>> 48e06db01c48fc01e382d7db5304ffb79725eef4
 
     | ValValue (vR, detail) -> 
          // Inline values bound to other values immediately 
          // Prefer to inline using the more specific info if possible 
          // If the more specific info didn't reveal an inline then use the value 
+<<<<<<< HEAD
          match TryOptimizeVal cenv env (mustInline, inlineIfLambda, detail, m) with 
+=======
+         match TryOptimizeVal cenv env (vOpt, mustInline, detail, m) with 
+>>>>>>> 48e06db01c48fc01e382d7db5304ffb79725eef4
           | Some e -> Some e
-          | None -> Some(exprForValRef m vR)
+          | None -> 
+              // If we have proven 'v = compilerGeneratedValue'
+              // and 'v' is being eliminated in favour of 'compilerGeneratedValue'
+              // then replace the name of 'compilerGeneratedValue'
+              // by 'v' and mark it not compiler generated so we preserve good debugging and names
+              match vOpt with 
+              | Some v when not v.IsCompilerGenerated && vR.IsCompilerGenerated -> 
+                  vR.Deref.SetIsCompilerGenerated(false)
+                  vR.Deref.SetLogicalName(v.LogicalName)
+              | _ -> ()
+              Some(exprForValRef m vR)
 
     | ConstExprValue(_size, expr) ->
         Some (remarkExpr m (copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated expr))
@@ -2546,24 +2667,34 @@ and TryOptimizeVal cenv env (mustInline, inlineIfLambda, valInfoForVal, m) =
     | _ -> None 
   
 and TryOptimizeValInfo cenv env m vinfo = 
+<<<<<<< HEAD
     if vinfo.HasEffect then None else TryOptimizeVal cenv env (false, false, vinfo.Info, m)
+=======
+    if vinfo.HasEffect then None else TryOptimizeVal cenv env (None, false, vinfo.Info, m)
+>>>>>>> 48e06db01c48fc01e382d7db5304ffb79725eef4
 
 /// Add 'v1 = v2' information into the information stored about a value
 and AddValEqualityInfo g m (v: ValRef) info =
     // ValValue is information that v = v2, where v2 does not change 
     // So we can't record this information for mutable values. An exception can be made
     // for "outArg" values arising from method calls since they are only temporarily mutable
-    // when their address is passed to the method call.
-    if v.IsMutable && not (v.IsCompilerGenerated && v.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)) then 
+    // when their address is passed to the method call. Another exception are mutable variables
+    // created for tuple elimination in branching tuple bindings because they are assigned to
+    // exactly once.
+    if not v.IsMutable || IsKnownOnlyMutableBeforeUse v then 
+        { info with Info = MakeValueInfoForValue g m v info.Info }
+    else
         info 
-    else 
-        {info with Info= MakeValueInfoForValue g m v info.Info}
 
 /// Optimize/analyze a use of a value
 and OptimizeVal cenv env expr (v: ValRef, m) =
     let valInfoForVal = GetInfoForVal cenv env m v 
 
+<<<<<<< HEAD
     match TryOptimizeVal cenv env (v.MustInline, v.InlineIfLambda, valInfoForVal.ValExprInfo, m) with
+=======
+    match TryOptimizeVal cenv env (Some v, v.MustInline, valInfoForVal.ValExprInfo, m) with
+>>>>>>> 48e06db01c48fc01e382d7db5304ffb79725eef4
     | Some e -> 
        // don't reoptimize inlined lambdas until they get applied to something
        match e with 
