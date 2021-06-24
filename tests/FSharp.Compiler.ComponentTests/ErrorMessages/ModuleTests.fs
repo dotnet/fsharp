@@ -37,8 +37,8 @@ module Modules =
         FSharp """[<Experimental "Hello">] module L1 = List"""
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 536, Line 1, Col 1, Line 1, Col 7,
-                                 "The 'Internal' accessibility attribute is not allowed on module abbreviation. Module abbreviations are always private.")
+        |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 32,
+                                 "Ignoring attributes on module abbreviation")
                                  
     [<Fact>]
     let ``Attribute to the right without preview``() =
@@ -58,7 +58,7 @@ module Modules =
                                  
     [<Fact>]
     let ``Attribute on both sides``() =
-        FSharp """[<System.Obsolete "Hi">] module [<Experimental "Hello">] L1 = List"""
+        FSharp """[<System.Obsolete "Hi">] module [<Experimental "Hello">] internal L1 = List"""
         |> withLangVersionPreview
         |> typecheck
         |> shouldFail
@@ -68,7 +68,7 @@ module Modules =
     [<Fact>]
     let ``Attributes applied successfully``() =
         FSharp """
-[<System.Obsolete "Hi">] module [<Experimental "Hello">] L1 = type L2() = do ()
+[<System.Obsolete "Hi">] module [<Experimental "Hello">] rec L1 = type L2() = do ()
 match typeof<L1.L2>.DeclaringType.GetCustomAttrubtes false with
 | [|:? CompilationMappingAttribute as compilationMapping; :? System.ObsoleteAttribute as obsolete; :? ExperimentalAttribute as experimental|] ->
     if compilationMapping.SourceConstructFlags <> SourceConstructFlags.Module then failwithf "CompilationMapping attribute did not contain the correct SourceConstructFlags: %A" compilationMapping.SourceConstructFlags
@@ -84,7 +84,7 @@ match typeof<L1.L2>.DeclaringType.GetCustomAttrubtes false with
         FSharp """
 open System
 open System.ComponentModel
-[<Obsolete "Hi"; NonSerialized>] [<Bindable true; AmbientValue false>] module private rec [<Experimental "Hello"; Category "Oi">][<DefaultValue 'H'; Description "Howdy">] L1 = type L2() = do ()
+[<Obsolete "Hi"; NonSerialized>] [<Bindable true; AmbientValue false>] module [<Experimental "Hello"; Category "Oi">][<DefaultValue 'H'; Description "Howdy">] private rec L1 = type L2() = do ()
 match typeof<L1.L2>.DeclaringType.GetCustomAttrubtes false with
 | [|:? CompilationMappingAttribute as compilationMapping
     :? ObsoleteAttribute as obsolete

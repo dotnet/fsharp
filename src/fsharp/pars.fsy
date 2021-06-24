@@ -677,10 +677,10 @@ signatureFile:
 
 /* The start of a module declaration */
 moduleIntro: 
-  | moduleKeyword opt_access opt_rec opt_attributes path
-      { if not (isNil $4) then
+  | moduleKeyword opt_attributes opt_access opt_rec path
+      { if not (isNil $2) then
             parseState.LexBuffer.CheckLanguageFeatureErrorRecover LanguageFeature.AttributesToRightOfModuleKeyword <| rhs parseState 4
-        $3, $5.Lid, grabXmlDoc(parseState, 1), $2, $4 }
+        $4, $5.Lid, grabXmlDoc(parseState, 1), $3, $2 }
 
 
 /* The start of a namespace declaration */
