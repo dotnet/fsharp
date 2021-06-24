@@ -418,14 +418,14 @@ type BoundModel private (tcConfig: TcConfig,
     member _.TryPeekTcInfo() =
         match tcInfoNode with
         | TcInfoNode(partialGraphNode, fullGraphNode) -> 
-            match fullGraphNode.TryPeekValue() with
-            | ValueSome (tcInfo, _) -> Some tcInfo
-            | _ -> 
             match partialGraphNode.TryPeekValue() with
             | ValueSome tcInfo -> Some tcInfo
-            | _ -> None
+            | _ ->
+                match fullGraphNode.TryPeekValue() with
+                | ValueSome (tcInfo, _) -> Some tcInfo
+                | _ -> None
 
-    member _.TryPeekTcInfoWithExtras() =
+    member _.TryPeekTcInfoExtras() =
         match tcInfoNode with
         | TcInfoNode(_, fullGraphNode) ->
             match fullGraphNode.TryPeekValue() with
@@ -673,7 +673,7 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime) =
 
     member _.TryPeekTcInfo() = boundModel.TryPeekTcInfo()
 
-    member _.TryPeekTcInfoWithExtras() = boundModel.TryPeekTcInfoWithExtras()
+    member _.TryPeekTcInfoExtras() = boundModel.TryPeekTcInfoExtras()
 
     member _.GetOrComputeTcInfo() = boundModel.GetOrComputeTcInfo()
 
