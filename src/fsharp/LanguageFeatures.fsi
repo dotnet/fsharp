@@ -26,6 +26,8 @@ type LanguageFeature =
     | ExpandedMeasurables
     | StructActivePattern
     | PrintfBinaryFormat
+    | UseBindingValueDiscard
+    | NonVariablePatternsToRightOfAsPatterns
 
 /// LanguageVersion management
 type LanguageVersion =

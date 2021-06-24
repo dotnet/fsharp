@@ -3,7 +3,9 @@ namespace FSharp.Compiler.IO
 open System
 open System.IO
 open System.IO.MemoryMappedFiles
+open System.Buffers
 open System.Reflection
+open System.Threading
 open System.Runtime.InteropServices
 open FSharp.NativeInterop
 open Internal.Utilities.Library
@@ -164,6 +166,34 @@ type SafeUnmanagedMemoryStream =
         base.Dispose disposing
         x.holder <- null // Null out so it can be collected.
 
+type internal MemoryMappedStream(mmf: MemoryMappedFile, length: int64) = 
+    inherit Stream()
+
+    let viewStream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
+
+    member _.ViewStream = viewStream
+
+    override x.CanRead = viewStream.CanRead
+    override x.CanWrite = viewStream.CanWrite
+    override x.CanSeek = viewStream.CanSeek
+    override x.Position with get() = viewStream.Position and set v = (viewStream.Position <- v)
+    override x.Length = viewStream.Length
+    override x.Flush() = viewStream.Flush()
+    override x.Seek(offset, origin) = viewStream.Seek(offset, origin)
+    override x.SetLength(value) = viewStream.SetLength(value)
+    override x.Write(buffer, offset, count) = viewStream.Write(buffer, offset, count)
+    override x.Read(buffer, offset, count) = viewStream.Read(buffer, offset, count)
+
+    override x.Finalize() =
+        x.Dispose()
+
+    interface IDisposable with
+        override x.Dispose() =
+            GC.SuppressFinalize x
+            mmf.Dispose()
+            viewStream.Dispose()
+
+
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
     inherit ByteMemory ()
@@ -289,31 +319,45 @@ type ReadOnlyByteMemory(bytes: ByteMemory) =
 
 [<AutoOpen>]
 module MemoryMappedFileExtensions =
-    type MemoryMappedFile with
-        static member TryFromByteMemory(bytes: ReadOnlyByteMemory) =
-            let length = int64 bytes.Length
-            if length = 0L then
+
+    let private trymmf length copyTo =
+        let length = int64 length
+        if length = 0L then
+            None
+        else
+            if runningOnMono then
+                // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/1024
                 None
             else
-                if runningOnMono then
-                    // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/1024
-                    None
-                else
-                    // Try to create a memory mapped file and copy the contents of the given bytes to it.
-                    // If this fails, then we clean up and return None.
+                // Try to create a memory mapped file and copy the contents of the given bytes to it.
+                // If this fails, then we clean up and return None.
+                try
+                    let mmf = MemoryMappedFile.CreateNew(null, length, MemoryMappedFileAccess.ReadWrite, MemoryMappedFileOptions.None, HandleInheritability.None)
                     try
-                        let mmf = MemoryMappedFile.CreateNew(null, length, MemoryMappedFileAccess.ReadWrite, MemoryMappedFileOptions.None, HandleInheritability.None)
-                        try
-                            use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
-                            bytes.CopyTo stream
-                            Some mmf
-                        with
-                        | _ ->
-                            mmf.Dispose()
-                            None
+                        use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
+                        copyTo stream
+                        Some mmf
                     with
                     | _ ->
+                        mmf.Dispose()
                         None
+                with
+                | _ ->
+                    None
+
+    type MemoryMappedFile with
+        static member TryFromByteMemory(bytes: ReadOnlyByteMemory) =
+            trymmf (int64 bytes.Length) bytes.CopyTo
+
+        static member TryFromMemory(bytes: ReadOnlyMemory<byte>) =
+            let length = int64 bytes.Length
+            trymmf length
+                (fun stream ->
+                    stream.SetLength(stream.Length + length)
+                    let span = Span<byte>(stream.PositionPointer |> NativePtr.toVoidPtr, int length)
+                    bytes.Span.CopyTo(span)
+                    stream.Position <- stream.Position + length
+                )
 
 [<RequireQualifiedAccess>]
 module internal FileSystemUtils =
@@ -416,7 +460,7 @@ type DefaultFileSystem() as this =
         if runningOnMono || (not useMemoryMappedFile) then
             fileStream :> Stream
         else
-            use mmf =
+            let mmf =
                 if shouldShadowCopy then
                     let mmf =
                         MemoryMappedFile.CreateNew(
@@ -437,10 +481,13 @@ type DefaultFileSystem() as this =
                         MemoryMappedFileAccess.Read,
                         HandleInheritability.None,
                         leaveOpen=false)
-            let stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
+
+            let stream = new MemoryMappedStream(mmf, length)
+
             if not stream.CanRead then
                 invalidOp "Cannot read file"
             stream :> Stream
+
 
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
     default _.OpenFileForWriteShim(filePath: string, ?fileMode: FileMode, ?fileAccess: FileAccess, ?fileShare: FileShare) : Stream =
@@ -654,20 +701,12 @@ module public StreamExtensions =
         /// However, when we use any other stream (FileStream, MemoryStream, etc) - we just read everything from it and expose via ByteArrayMemory.
         member s.AsByteMemory() : ByteMemory =
             match s with
-            | :? MemoryMappedViewStream as mmvs ->
-                let safeHolder =
-                    { new obj() with
-                        override x.Finalize() =
-                            (x :?> IDisposable).Dispose()
-                      interface IDisposable with
-                        member x.Dispose() =
-                            GC.SuppressFinalize x
-                            mmvs.Dispose() }
-                let length = mmvs.Length
+            | :? MemoryMappedStream as mmfs ->
+                let length = mmfs.Length
                 RawByteMemory(
-                    NativePtr.ofNativeInt (mmvs.SafeMemoryMappedViewHandle.DangerousGetHandle()),
+                    NativePtr.ofNativeInt (mmfs.ViewStream.SafeMemoryMappedViewHandle.DangerousGetHandle()),
                     int length,
-                    safeHolder) :> ByteMemory
+                    mmfs) :> ByteMemory
 
             | _ ->
                 let bytes = s.ReadAllBytes()
@@ -732,27 +771,45 @@ type internal ByteStream =
 
 
 type internal ByteBuffer =
-    { mutable bbArray: byte[]
+    { useArrayPool: bool
+      mutable isDisposed: bool
+      mutable bbArray: byte[]
       mutable bbCurrent: int }
 
-    member buf.Ensure newSize =
+    member inline private buf.CheckDisposed() =
+        if buf.isDisposed then
+            raise(ObjectDisposedException(nameof(ByteBuffer)))
+
+    member private buf.Ensure newSize =
         let oldBufSize = buf.bbArray.Length
         if newSize > oldBufSize then
             let old = buf.bbArray
-            buf.bbArray <- Bytes.zeroCreate (max newSize (oldBufSize * 2))
+            buf.bbArray <- 
+                if buf.useArrayPool then
+                    ArrayPool.Shared.Rent (max newSize (oldBufSize * 2))
+                else
+                    Bytes.zeroCreate (max newSize (oldBufSize * 2))
             Bytes.blit old 0 buf.bbArray 0 buf.bbCurrent
+            if buf.useArrayPool then
+                ArrayPool.Shared.Return old
 
-    member buf.Close () = Bytes.sub buf.bbArray 0 buf.bbCurrent
+    member buf.AsMemory() = 
+        buf.CheckDisposed()
+        ReadOnlyMemory(buf.bbArray, 0, buf.bbCurrent)
 
     member buf.EmitIntAsByte (i:int) =
+        buf.CheckDisposed()
         let newSize = buf.bbCurrent + 1
         buf.Ensure newSize
         buf.bbArray.[buf.bbCurrent] <- byte i
         buf.bbCurrent <- newSize
 
-    member buf.EmitByte (b:byte) = buf.EmitIntAsByte (int b)
+    member buf.EmitByte (b:byte) = 
+        buf.CheckDisposed()
+        buf.EmitIntAsByte (int b)
 
     member buf.EmitIntsAsBytes (arr:int[]) =
+        buf.CheckDisposed()
         let n = arr.Length
         let newSize = buf.bbCurrent + n
         buf.Ensure newSize
@@ -763,25 +820,37 @@ type internal ByteBuffer =
         buf.bbCurrent <- newSize
 
     member bb.FixupInt32 pos value =
+        bb.CheckDisposed()
         bb.bbArray.[pos] <- (Bytes.b0 value |> byte)
         bb.bbArray.[pos + 1] <- (Bytes.b1 value |> byte)
         bb.bbArray.[pos + 2] <- (Bytes.b2 value |> byte)
         bb.bbArray.[pos + 3] <- (Bytes.b3 value |> byte)
 
     member buf.EmitInt32 n =
+        buf.CheckDisposed()
         let newSize = buf.bbCurrent + 4
         buf.Ensure newSize
         buf.FixupInt32 buf.bbCurrent n
         buf.bbCurrent <- newSize
 
     member buf.EmitBytes (i:byte[]) =
+        buf.CheckDisposed()
         let n = i.Length
         let newSize = buf.bbCurrent + n
         buf.Ensure newSize
         Bytes.blit i 0 buf.bbArray buf.bbCurrent n
         buf.bbCurrent <- newSize
 
+    member buf.EmitMemory (i:ReadOnlyMemory<byte>) =
+        buf.CheckDisposed()
+        let n = i.Length
+        let newSize = buf.bbCurrent + n
+        buf.Ensure newSize
+        i.CopyTo(Memory(buf.bbArray, buf.bbCurrent, n))
+        buf.bbCurrent <- newSize
+
     member buf.EmitByteMemory (i:ReadOnlyByteMemory) =
+        buf.CheckDisposed()
         let n = i.Length
         let newSize = buf.bbCurrent + n
         buf.Ensure newSize
@@ -789,25 +858,44 @@ type internal ByteBuffer =
         buf.bbCurrent <- newSize
 
     member buf.EmitInt32AsUInt16 n =
+        buf.CheckDisposed()
         let newSize = buf.bbCurrent + 2
         buf.Ensure newSize
         buf.bbArray.[buf.bbCurrent] <- (Bytes.b0 n |> byte)
         buf.bbArray.[buf.bbCurrent + 1] <- (Bytes.b1 n |> byte)
         buf.bbCurrent <- newSize
 
-    member buf.EmitBoolAsByte (b:bool) = buf.EmitIntAsByte (if b then 1 else 0)
+    member buf.EmitBoolAsByte (b:bool) = 
+        buf.CheckDisposed()
+        buf.EmitIntAsByte (if b then 1 else 0)
 
-    member buf.EmitUInt16 (x:uint16) = buf.EmitInt32AsUInt16 (int32 x)
+    member buf.EmitUInt16 (x:uint16) = 
+        buf.CheckDisposed()
+        buf.EmitInt32AsUInt16 (int32 x)
 
     member buf.EmitInt64 x =
+        buf.CheckDisposed()
         buf.EmitInt32 (Bytes.dWw0 x)
         buf.EmitInt32 (Bytes.dWw1 x)
 
-    member buf.Position = buf.bbCurrent
+    member buf.Position =
+        buf.CheckDisposed()
+        buf.bbCurrent
 
-    static member Create sz =
-        { bbArray = Bytes.zeroCreate sz
+    static member Create(capacity, useArrayPool) =
+        let useArrayPool = defaultArg useArrayPool false
+        { useArrayPool = useArrayPool
+          isDisposed = false
+          bbArray = if useArrayPool then ArrayPool.Shared.Rent capacity else Bytes.zeroCreate capacity
           bbCurrent = 0 }
+
+    interface IDisposable with
+
+        member this.Dispose() =
+            if not this.isDisposed then
+                this.isDisposed <- true
+                if this.useArrayPool then
+                    ArrayPool.Shared.Return this.bbArray
 
 [<Sealed>]
 type ByteStorage(getByteMemory: unit -> ReadOnlyByteMemory) =
@@ -836,6 +924,18 @@ type ByteStorage(getByteMemory: unit -> ReadOnlyByteMemory) =
     static member FromByteMemoryAndCopy(bytes: ReadOnlyByteMemory, useBackingMemoryMappedFile: bool) =
         if useBackingMemoryMappedFile then
             match MemoryMappedFile.TryFromByteMemory(bytes) with
+            | Some mmf ->
+                ByteStorage(fun () -> ByteMemory.FromMemoryMappedFile(mmf).AsReadOnly())
+            | _ ->
+                let copiedBytes = ByteMemory.FromArray(bytes.ToArray()).AsReadOnly()
+                ByteStorage.FromByteMemory(copiedBytes)
+        else
+            let copiedBytes = ByteMemory.FromArray(bytes.ToArray()).AsReadOnly()
+            ByteStorage.FromByteMemory(copiedBytes)
+
+    static member FromMemoryAndCopy(bytes: ReadOnlyMemory<byte>, useBackingMemoryMappedFile: bool) =
+        if useBackingMemoryMappedFile then
+            match MemoryMappedFile.TryFromMemory(bytes) with
             | Some mmf ->
                 ByteStorage(fun () -> ByteMemory.FromMemoryMappedFile(mmf).AsReadOnly())
             | _ ->
