@@ -211,7 +211,7 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
                 return Some(parsingOptions, projectOptions)
 
             | true, (oldProject, oldFileStamp, parsingOptions, projectOptions) ->
-                if fileStamp <> oldFileStamp || isProjectInvalidated document.Project oldProject settings ct then
+                if fileStamp <> oldFileStamp || isProjectInvalidated document.Project oldProject ct then
                     singleFileCache.TryRemove(document.Id) |> ignore
                     return! tryComputeOptionsBySingleScriptOrFile document ct userOpName
                 else
