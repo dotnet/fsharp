@@ -29,6 +29,7 @@ type LanguageFeature =
     | StructActivePattern
     | PrintfBinaryFormat
     | UseBindingValueDiscard
+    | NonVariablePatternsToRightOfAsPatterns
 
 /// LanguageVersion management
 type LanguageVersion =
