@@ -769,10 +769,8 @@ let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo."
 
 let FSharpSignatureDataResourceName2 = "FSharpSignatureInfo."
 
-// Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
 let [<Literal>] suffixForVariablesThatMayNotBeEliminated = "$cont"
 
-/// Indicates a ValRef generated to facilitate tuple eliminations
 let [<Literal>] suffixForTupleElementAssignmentTarget = "$tupleElem"
 
 let [<Literal>] stackVarPrefix = "__stack_"

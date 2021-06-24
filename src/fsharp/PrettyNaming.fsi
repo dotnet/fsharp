@@ -182,9 +182,13 @@ val FormatAndOtherOverloadsString: int -> string
 
 val FSharpSignatureDataResourceName2: string
 
-// Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
+/// Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
 [<Literal>] 
 val internal suffixForVariablesThatMayNotBeEliminated : string = "$cont"
+
+/// Indicates a ValRef generated to facilitate tuple eliminations
+[<Literal>] 
+val internal suffixForTupleElementAssignmentTarget : string = "$tupleElem"
 
 [<Literal>] 
 val internal stackVarPrefix : string = "__stack_"
