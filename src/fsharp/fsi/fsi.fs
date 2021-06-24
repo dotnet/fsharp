@@ -2760,9 +2760,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
             let d = Assembly.GetExecutingAssembly()
             Path.GetDirectoryName d.Location
         match FSharpEnvironment.tryCurrentDomain() with
-        | null -> fallback()
-        | dom -> 
-            match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(dom) with
+        | None -> fallback()
+        | probPoint -> 
+            match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(probPoint) with
             | None -> fallback()
             | Some dir -> dir
 
