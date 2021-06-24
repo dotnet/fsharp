@@ -201,13 +201,32 @@ type TestHostServices() =
 type RoslynTestHelpers private () =
 
     static member CreateDocument (filePath, text: SourceText, ?options: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions) =
+        let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
+
         let workspace = new AdhocWorkspace(TestHostServices())
 
-        let projFilePath = "C:\\test.fsproj"
-        let projInfo = ProjectInfo.CreateFSharp(projFilePath, "test.dll", Seq.empty, filePath = projFilePath)
-        let docInfo = DocumentInfo.CreateFSharp(projInfo.Id, filePath, loader = TextLoader.From(text.Container, VersionStamp.Create(DateTime.UtcNow)))
+        let projId = ProjectId.CreateNewId()
+        let docId = DocumentId.CreateNewId(projId)
 
-        let projInfo = projInfo.WithDocuments([docInfo])
+        let docInfo =
+            DocumentInfo.Create(
+                docId,
+                filePath, 
+                loader=TextLoader.From(text.Container, VersionStamp.Create(DateTime.UtcNow)),
+                filePath=filePath,
+                sourceCodeKind= if isScript then SourceCodeKind.Script else SourceCodeKind.Regular)
+
+        let projFilePath = "C:\\test.fsproj"
+        let projInfo =
+            ProjectInfo.Create(
+                projId,
+                VersionStamp.Create(DateTime.UtcNow),
+                projFilePath, 
+                "test.dll", 
+                LanguageNames.FSharp,
+                documents = [docInfo],
+                filePath = projFilePath
+            )
 
         let solutionInfo = SolutionInfo.Create(SolutionId.CreateNewId(), VersionStamp.Create(DateTime.UtcNow), "test.sln", [projInfo])
 
