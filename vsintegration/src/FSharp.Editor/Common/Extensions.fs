@@ -39,10 +39,10 @@ type ProjectId with
         this.Id.ToString("D").ToLowerInvariant()
 
 type Project with
+    member this.IsFSharpMiscellaneous = this.Name = FSharpConstants.FSharpMiscellaneousFilesName
+    member this.IsFSharpMetadata = this.Name.StartsWith(FSharpConstants.FSharpMetadataName)
+    member this.IsFSharpMiscellaneousOrMetadata = this.IsFSharpMiscellaneous || this.IsFSharpMetadata
     member this.IsFSharp = this.Language = LanguageNames.FSharp
-    member this.IsFSharpMiscellaneous = this.IsFSharp && this.Name = FSharpConstants.FSharpMiscellaneousFilesName
-    member this.IsFSharpMetadata = this.IsFSharp && this.Name.StartsWith(FSharpConstants.FSharpMetadataName)
-    member this.IsFSharpMiscellaneousOrMetadata = this.IsFSharp && (this.IsFSharpMiscellaneous || this.IsFSharpMetadata)
 
 type Document with
     member this.TryGetLanguageService<'T when 'T :> ILanguageService>() =
