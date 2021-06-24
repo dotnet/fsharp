@@ -205,28 +205,11 @@ type RoslynTestHelpers private () =
 
         let workspace = new AdhocWorkspace(TestHostServices())
 
-        let projId = ProjectId.CreateNewId()
-        let docId = DocumentId.CreateNewId(projId)
-
-        let docInfo =
-            DocumentInfo.Create(
-                docId,
-                filePath, 
-                loader=TextLoader.From(text.Container, VersionStamp.Create(DateTime.UtcNow)),
-                filePath=filePath,
-                sourceCodeKind= if isScript then SourceCodeKind.Script else SourceCodeKind.Regular)
-
         let projFilePath = "C:\\test.fsproj"
-        let projInfo =
-            ProjectInfo.Create(
-                projId,
-                VersionStamp.Create(DateTime.UtcNow),
-                projFilePath, 
-                "test.dll", 
-                LanguageNames.FSharp,
-                documents = [docInfo],
-                filePath = projFilePath
-            )
+        let projInfo = ProjectInfo.CreateFSharp(projFilePath, "test.dll", Seq.empty, filePath = projFilePath)
+        let docInfo = DocumentInfo.CreateFSharp(projInfo.Id, filePath, loader = TextLoader.From(text.Container, VersionStamp.Create(DateTime.UtcNow)))
+
+        let projInfo = projInfo.WithDocuments([docInfo])
 
         let solutionInfo = SolutionInfo.Create(SolutionId.CreateNewId(), VersionStamp.Create(DateTime.UtcNow), "test.sln", [projInfo])
 
@@ -234,15 +217,15 @@ type RoslynTestHelpers private () =
 
         let workspaceService = workspace.Services.GetService<IFSharpWorkspaceService>()
 
-        let document = solution.GetProject(projId).GetDocument(docId)
+        let document = solution.GetProject(projInfo.Id).GetDocument(docInfo.Id)
 
         match options with
         | Some options ->
             let options = { options with ProjectId = Some(Guid.NewGuid().ToString()) }
-            workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projId, options.SourceFiles, options.OtherOptions |> ImmutableArray.CreateRange)
+            workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projInfo.Id, options.SourceFiles, options.OtherOptions |> ImmutableArray.CreateRange)
             document.SetFSharpProjectOptionsForTesting(options)
         | _ ->
-            workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projId, [|filePath|], ImmutableArray.Empty)
+            workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projInfo.Id, [|filePath|], ImmutableArray.Empty)
 
         document
 

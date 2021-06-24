@@ -13,47 +13,51 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.LanguageServices
 open FSharp.Compiler.CodeAnalysis
 
+type private ScriptDependencies = ResizeArray<string>
+
 [<Sealed>]
-type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
+type internal SingleFileWorkspaceMap(workspace: Workspace,
                                      miscFilesWorkspace: MiscellaneousFilesWorkspace,
-                                     optionsManager: FSharpProjectOptionsManager, 
                                      projectContextFactory: IWorkspaceProjectContextFactory,
                                      rdt: IVsRunningDocumentTable) as this =
 
+    // We have a lock because the `ScriptUpdated` event may happen concurrently when a document opens or closes.
     let gate = obj()
     let files = ConcurrentDictionary(StringComparer.OrdinalIgnoreCase)
+    let optionsManager = workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
 
-    let createSourceCodeKind (filePath: string) =
+    static let createSourceCodeKind (filePath: string) =
         if isScriptFile filePath then
             SourceCodeKind.Script
         else
             SourceCodeKind.Regular
 
-    let createProjectContext filePath =
+    static let canUpdateScript (depSourceFiles: string []) (currentDepSourceFiles: ScriptDependencies) =
+        depSourceFiles.Length <> currentDepSourceFiles.Count ||
+        (
+             (currentDepSourceFiles, depSourceFiles) 
+             ||> Seq.forall2 (fun (x: string) y -> x.Equals(y, StringComparison.OrdinalIgnoreCase))
+             |> not
+
+        )
+
+    static let createProjectContext (projectContextFactory: IWorkspaceProjectContextFactory) filePath =
         let projectContext = projectContextFactory.CreateProjectContext(FSharpConstants.FSharpLanguageName, filePath, filePath, Guid.NewGuid(), null, null)
         projectContext.DisplayName <- FSharpConstants.FSharpMiscellaneousFilesName
         projectContext.AddSourceFile(filePath, sourceCodeKind = createSourceCodeKind filePath)
-        projectContext, ResizeArray()
+        projectContext, ScriptDependencies()
 
     do
         optionsManager.ScriptUpdated.Add(fun scriptProjectOptions ->
             if scriptProjectOptions.SourceFiles.Length > 0 then
                 // The last file in the project options is the main script file.
                 let filePath = scriptProjectOptions.SourceFiles.[scriptProjectOptions.SourceFiles.Length - 1]
+                let depSourceFiles = scriptProjectOptions.SourceFiles |> Array.take (scriptProjectOptions.SourceFiles.Length - 1)
 
                 lock gate (fun () ->
                     match files.TryGetValue(filePath) with
-                    | true, (projectContext: IWorkspaceProjectContext, currentDepSourceFiles: ResizeArray<_>) -> 
-                    
-                        let depSourceFiles = scriptProjectOptions.SourceFiles |> Array.filter (fun x -> x.Equals(filePath, StringComparison.OrdinalIgnoreCase) |> not)
-
-                        if depSourceFiles.Length <> currentDepSourceFiles.Count ||
-                           (
-                                (currentDepSourceFiles, depSourceFiles) 
-                                ||> Seq.forall2 (fun (x: string) y -> x.Equals(y, StringComparison.OrdinalIgnoreCase))
-                                |> not
-
-                           ) then
+                    | true, (projectContext: IWorkspaceProjectContext, currentDepSourceFiles: ScriptDependencies) -> 
+                        if canUpdateScript depSourceFiles currentDepSourceFiles then
                             currentDepSourceFiles
                             |> Seq.iter (fun x ->
                                 match files.TryGetValue(x) with
@@ -71,12 +75,11 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
                                 | true, (depProjectContext, _) ->
                                     projectContext.AddProjectReference(depProjectContext, MetadataReferenceProperties.Assembly)
                                 | _ ->
-                                    let result = createProjectContext filePath
+                                    let result = createProjectContext projectContextFactory filePath
                                     files.[filePath] <- result
                                     let depProjectContext, _ = result
                                     projectContext.AddProjectReference(depProjectContext, MetadataReferenceProperties.Assembly)
                             )
-
                     | _ -> ()
             )
         )
@@ -84,40 +87,58 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
         miscFilesWorkspace.DocumentOpened.Add(fun args ->
             let document = args.Document
 
-            if document.Project.Language = FSharpConstants.FSharpLanguageName && workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath).Length = 0 then
+            // If the file does not exist in the current solution, then we can create new project in the VisualStudioWorkspace that represents
+            // a F# miscellaneous project, which could be a script or not.
+            if document.Project.IsFSharp && workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath).Length = 0 then
                 let filePath = document.FilePath
                 lock gate (fun () ->
                     if files.ContainsKey(filePath) |> not then
-                        files.[filePath] <- createProjectContext filePath
+                        files.[filePath] <- createProjectContext projectContextFactory filePath
                 )
         )
 
         workspace.DocumentOpened.Add(fun args ->
             let document = args.Document
-            if document.Project.Language = FSharpConstants.FSharpLanguageName && 
-               not document.Project.IsFSharpMiscellaneousOrMetadata then
+            if not document.Project.IsFSharpMiscellaneousOrMetadata then
                 optionsManager.ClearSingleFileOptionsCache(document.Id)
 
-                lock gate (fun () ->
-                    match files.TryRemove(document.FilePath) with
-                    | true, (projectContext, _) ->
-                        projectContext.Dispose()
-                    | _ -> ()
-                )
+                let projectContextOpt =
+                    lock gate (fun () ->
+                        match files.TryRemove(document.FilePath) with
+                        | true, (projectContext, _) ->
+                            Some projectContext
+                        | _ ->
+                            None
+                    )
+
+                match projectContextOpt with
+                | Some projectContext ->
+                    projectContext.Dispose()
+                | _ ->
+                    ()
         )
 
         workspace.DocumentClosed.Add(fun args ->
             let document = args.Document
-            if document.Project.Language = FSharpConstants.FSharpLanguageName && 
-               document.Project.IsFSharpMiscellaneousOrMetadata then
+            if document.Project.IsFSharpMiscellaneousOrMetadata then
                 optionsManager.ClearSingleFileOptionsCache(document.Id)
 
-                lock gate (fun () ->
-                    match files.TryRemove(document.FilePath) with
-                    | true, (projectContext, _) ->
+                let projectContextOpt =
+                    lock gate (fun () ->
+                        match files.TryRemove(document.FilePath) with
+                        | true, (projectContext, _) ->
+                            Some projectContext
+                        | _ ->
+                            None
+                    )
+
+                match projectContextOpt with
+                | Some projectContext ->
+                    let projIds = document.Project.Solution.GetDependentProjectIds(document.Project.Id)
+                    if projIds.Count = 0 then
                         projectContext.Dispose()
-                    | _ -> ()
-                )
+                | _ ->
+                    ()
         )
 
         do
@@ -156,7 +177,7 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
                         | Some(document) ->                           
                             optionsManager.ClearSingleFileOptionsCache(document.Id)
                             projectContext.Dispose()
-                            files.[pszMkDocumentNew] <- createProjectContext pszMkDocumentNew
+                            files.[pszMkDocumentNew] <- createProjectContext projectContextFactory pszMkDocumentNew
                     else
                         projectContext.Dispose() // fallback, shouldn't happen, but in case it does let's dispose of the project context so we don't leak
                 | _ -> ()

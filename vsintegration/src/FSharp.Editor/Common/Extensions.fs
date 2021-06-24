@@ -39,10 +39,49 @@ type ProjectId with
         this.Id.ToString("D").ToLowerInvariant()
 
 type Project with
-    member this.IsFSharpMiscellaneous = this.Name = FSharpConstants.FSharpMiscellaneousFilesName
-    member this.IsFSharpMetadata = this.Name.StartsWith(FSharpConstants.FSharpMetadataName)
-    member this.IsFSharpMiscellaneousOrMetadata = this.IsFSharpMiscellaneous || this.IsFSharpMetadata
     member this.IsFSharp = this.Language = LanguageNames.FSharp
+    member this.IsFSharpMiscellaneous = this.IsFSharp && this.Name = FSharpConstants.FSharpMiscellaneousFilesName
+    member this.IsFSharpMetadata = this.IsFSharp && this.Name.StartsWith(FSharpConstants.FSharpMetadataName)
+    member this.IsFSharpMiscellaneousOrMetadata = this.IsFSharp && (this.IsFSharpMiscellaneous || this.IsFSharpMetadata)
+
+type DocumentInfo with
+
+    static member CreateFSharp(projectId, filePath, ?loader) =
+        let isScript = isScriptFile filePath
+        let docId = DocumentId.CreateNewId(projectId)
+        DocumentInfo.Create(
+            docId,
+            filePath,
+            filePath=filePath,
+            loader = defaultArg loader null,
+            sourceCodeKind= if isScript then SourceCodeKind.Script else SourceCodeKind.Regular)
+
+type ProjectInfo with
+
+    static member CreateFSharp(name, assemblyName: string, sourceFiles: string seq, ?filePath: string) =
+        let projId = ProjectId.CreateNewId()
+        
+        let docInfos =
+            sourceFiles
+            |> Seq.map (fun sourceFile ->
+                let isScript = isScriptFile sourceFile
+                let docId = DocumentId.CreateNewId(projId)
+                DocumentInfo.Create(
+                    docId,
+                    sourceFile,
+                    filePath=sourceFile,
+                    sourceCodeKind= if isScript then SourceCodeKind.Script else SourceCodeKind.Regular)
+            )
+        
+        ProjectInfo.Create(
+            projId,
+            VersionStamp.Create(DateTime.UtcNow),
+            name, 
+            assemblyName, 
+            LanguageNames.FSharp,
+            documents = docInfos,
+            filePath = defaultArg filePath null
+        )
 
 type Document with
     member this.TryGetLanguageService<'T when 'T :> ILanguageService>() =
