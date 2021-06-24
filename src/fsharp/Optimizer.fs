@@ -2590,9 +2590,10 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, mustInline, valInfoForVal, m) 
               // If we have proven 'v = compilerGeneratedValue'
               // and 'v' is being eliminated in favour of 'compilerGeneratedValue'
               // then replace the name of 'compilerGeneratedValue'
-              // by 'v' and mark it not compiler generated so we preserve good debugging and names
+              // by 'v' and mark it not compiler generated so we preserve good debugging and names.
+              // Don't do this for things represented statically as it may publish multiple values with the same name.
               match vOpt with 
-              | Some v when not v.IsCompilerGenerated && vR.IsCompilerGenerated -> 
+              | Some v when not v.IsCompilerGenerated && vR.IsCompilerGenerated && not vR.IsCompiledAsTopLevel  && not v.IsCompiledAsTopLevel -> 
                   vR.Deref.SetIsCompilerGenerated(false)
                   vR.Deref.SetLogicalName(v.LogicalName)
               | _ -> ()

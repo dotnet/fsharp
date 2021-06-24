@@ -967,12 +967,13 @@ module Pass4_RewriteAssembly =
     // pass4: lowertop - convert_vterm_bind on TopLevel binds
     //-------------------------------------------------------------------------
 
-    let ConvertBind g (TBind(v, repr, _) as bind)  =
+    let AdjustBindToTopVal g (TBind(v, repr, _))  =
         match v.ValReprInfo with
-        | None -> v.SetValReprInfo (Some (InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v repr ))
+        | None -> 
+            v.SetValReprInfo (Some (InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v repr ))
+            // Things that don't have an arity from type inference but are top-level are compiler-generated
+            v.SetIsCompilerGenerated(true)
         | Some _ -> ()
-
-        bind
 
     //-------------------------------------------------------------------------
     // pass4: transBind (translate)
@@ -1035,6 +1036,9 @@ module Pass4_RewriteAssembly =
         | None      -> List.empty           // no env for this mutual binding
         | Some envp -> envp.ep_pack // environment pack bindings
 
+    let forceTopBindToHaveArity penv (bind: Binding) =
+        if penv.topValS.Contains(bind.Var) then AdjustBindToTopVal penv.g bind
+
     let TransBindings xisRec penv (binds: Bindings) =
         let tlrBs, nonTlrBs = binds |> List.partition (fun b -> Zset.contains b.Var penv.tlrS)
         let fclass = BindingGroupSharingSameReqdItems tlrBs
@@ -1045,12 +1049,9 @@ module Pass4_RewriteAssembly =
         // QUERY: we repeat this logic in LowerCallsAndSeqs.  Do we really need to do this here?
         // QUERY: yes and no - if we don't, we have an unrealizable term, and many decisions must
         // QUERY: correlate with LowerCallsAndSeqs.
-        let forceTopBindToHaveArity (bind: Binding) =
-            if penv.topValS.Contains(bind.Var) then ConvertBind penv.g bind
-            else bind
 
-        let nonTlrBs = nonTlrBs |> List.map forceTopBindToHaveArity
-        let tlrRebinds = tlrRebinds |> List.map forceTopBindToHaveArity
+        nonTlrBs |> List.iter (forceTopBindToHaveArity penv)
+        tlrRebinds |> List.iter (forceTopBindToHaveArity penv)
         // assemble into replacement bindings
         let bindAs, rebinds =
             match xisRec with
