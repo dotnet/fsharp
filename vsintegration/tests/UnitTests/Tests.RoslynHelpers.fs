@@ -201,8 +201,6 @@ type TestHostServices() =
 type RoslynTestHelpers private () =
 
     static member CreateDocument (filePath, text: SourceText, ?options: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions) =
-        let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
-
         let workspace = new AdhocWorkspace(TestHostServices())
 
         let projFilePath = "C:\\test.fsproj"
