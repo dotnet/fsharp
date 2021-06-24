@@ -200,6 +200,59 @@ type TestHostServices() =
 [<AbstractClass;Sealed>]
 type RoslynTestHelpers private () =
 
+    static member CreateProjectInfoWithSingleDocument(docFilePath) =
+        let isScript = String.Equals(Path.GetExtension(docFilePath), ".fsx", StringComparison.OrdinalIgnoreCase)
+
+        let projId = ProjectId.CreateNewId()
+        let docId = DocumentId.CreateNewId(projId)
+
+        let docInfo =
+            DocumentInfo.Create(
+                docId,
+                docFilePath, 
+                filePath=docFilePath,
+                sourceCodeKind= if isScript then SourceCodeKind.Script else SourceCodeKind.Regular)
+
+        let projFilePath = "C:\\test.fsproj"
+        ProjectInfo.Create(
+            projId,
+            VersionStamp.Create(DateTime.UtcNow),
+            projFilePath, 
+            "test.dll", 
+            LanguageNames.FSharp,
+            documents = [docInfo],
+            filePath = projFilePath
+        )
+
+    static member CreateSolutionInfoWithSingleDocument(docFilePath) =
+        let isScript = String.Equals(Path.GetExtension(docFilePath), ".fsx", StringComparison.OrdinalIgnoreCase)
+
+        let projId = ProjectId.CreateNewId()
+        let docId = DocumentId.CreateNewId(projId)
+
+        let docInfo =
+            DocumentInfo.Create(
+                docId,
+                docFilePath, 
+                filePath=docFilePath,
+                sourceCodeKind= if isScript then SourceCodeKind.Script else SourceCodeKind.Regular)
+
+        let projFilePath = "C:\\test.fsproj"
+        let projInfo =
+            ProjectInfo.Create(
+                projId,
+                VersionStamp.Create(DateTime.UtcNow),
+                projFilePath, 
+                "test.dll", 
+                LanguageNames.FSharp,
+                documents = [docInfo],
+                filePath = projFilePath
+            )
+
+        let solutionInfo = SolutionInfo.Create(SolutionId.CreateNewId(), VersionStamp.Create(DateTime.UtcNow), "test.sln", [projInfo])
+
+        solutionInfo
+
     static member CreateDocument (filePath, text: SourceText, ?options: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions) =
         let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
 
