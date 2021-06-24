@@ -3616,12 +3616,28 @@ module WitnessTests =
               <@@ 3L = 3L @@>, box true
               <@@ 3UL = 3UL @@>, box true
               <@@ '3' = '3' @@>, box true
-              <@@ LanguagePrimitives.GenericOne<nativeint> = LanguagePrimitives.GenericOne<nativeint> @@>, box ~~~1n
-              <@@ LanguagePrimitives.GenericOne<unativeint> = LanguagePrimitives.GenericOne<unativeint> @@>, box ~~~1un
+              <@@ LanguagePrimitives.GenericOne<nativeint> = LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ LanguagePrimitives.GenericOne<unativeint> = LanguagePrimitives.GenericOne<unativeint> @@>, box true
               <@@ 3f = 3f @@>, box true
               <@@ 3. = 3. @@>, box true
               <@@ 3m = 3m @@>, box true
               <@@ "3" = "3" @@>, box true
+              
+              <@@ 3y <> 3y @@>, box false
+              <@@ 3uy <> 3uy @@>, box false
+              <@@ 3s <> 3s @@>, box false
+              <@@ 3us <> 3us @@>, box false
+              <@@ 3 <> 3 @@>, box false
+              <@@ 3u <> 3u @@>, box false
+              <@@ 3L <> 3L @@>, box false
+              <@@ 3UL <> 3UL @@>, box false
+              <@@ '3' <> '3' @@>, box false
+              <@@ LanguagePrimitives.GenericOne<nativeint> <> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ LanguagePrimitives.GenericOne<unativeint> <> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ 3f <> 3f @@>, box false
+              <@@ 3. <> 3. @@>, box false
+              <@@ 3m <> 3m @@>, box false
+              <@@ "3" <> "3" @@>, box false
 
               <@@ byte 3uy @@>, box 3uy
               <@@ byte 3y @@>, box 3uy
