@@ -73,17 +73,12 @@ type internal TcInfo =
 [<NoEquality; NoComparison>]
 type internal TcInfoExtras =
     {
-      /// Accumulated resolutions, last file first
-      tcResolutionsRev: TcResolutions list
+      tcResolutions: TcResolutions
+      tcSymbolUses: TcSymbolUses
+      tcOpenDeclarations: OpenDeclaration[]
 
-      /// Accumulated symbol uses, last file first
-      tcSymbolUsesRev: TcSymbolUses list
-
-      /// Accumulated 'open' declarations, last file first
-      tcOpenDeclarationsRev: OpenDeclaration[] list
-
-      /// Contents of checking files, if any, last file first
-      tcImplFilesRev: TypedImplFile list
+      /// Contents of checking file
+      tcImplFile: TypedImplFile option
       
       /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
       itemKeyStore: ItemKeyStore option
@@ -92,9 +87,9 @@ type internal TcInfoExtras =
       semanticClassificationKeyStore: SemanticClassificationKeyStore option
     }
 
-    member TcSymbolUses: TcSymbolUses list
+    member TcSymbolUses: TcSymbolUses
 
-    member TcImplFiles: TypedImplFile list
+    member TcImplFile: TypedImplFile option
 
 /// Represents the state in the incremental graph associated with checking a file
 [<Sealed>]
@@ -111,6 +106,11 @@ type internal PartialCheckResults =
     /// Peek to see the results.
     /// For thread-safe access to pre-computed results
     /// If `enablePartialTypeChecking` is false then extras will be available
+    member TryPeekTcInfo: unit -> TcInfo option
+
+    /// Peek to see the results.
+    /// For thread-safe access to pre-computed results
+    /// If `enablePartialTypeChecking` is false then extras will be available
     member TryPeekTcInfoWithExtras: unit -> (TcInfo * TcInfoExtras) option
 
     /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
@@ -122,6 +122,10 @@ type internal PartialCheckResults =
     /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
     /// extras will also be available.
     member GetOrComputeTcInfo: unit -> NodeCode<TcInfo>
+
+    /// Compute the "TcImplFiles" part of the results, which include the TcImplFiles from all previous
+    /// files in the compilation order.  Will be empty if `enablePartialTypeChecking` is true
+    member GetOrComputeTcImplFiles: unit -> NodeCode<TypedImplFile list>
 
     /// Compute the "ItemKeyStore" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
@@ -184,6 +188,13 @@ type internal IncrementalBuilder =
       ///
       /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
       member GetCheckResultsBeforeFileInProjectEvenIfStale: filename:string -> PartialCheckResults option
+
+      /// Get the typecheck state of a slot, without checking if it is up-to-date w.r.t.
+      /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
+      /// This is a very quick operation.
+      ///
+      /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
+      member GetCheckResultsForFileInProjectEvenIfStale: filename:string -> PartialCheckResults option
 
       /// Get the preceding typecheck state of a slot, but only if it is up-to-date w.r.t.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.

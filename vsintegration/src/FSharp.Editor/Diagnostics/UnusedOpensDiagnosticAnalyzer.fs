@@ -20,17 +20,15 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 type internal UnusedOpensDiagnosticAnalyzer
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
-    static let userOpName = "UnusedOpensAnalyzer"
-
-    static member GetUnusedOpenRanges(document: Document, options, checker: FSharpChecker) : Async<Option<_ * _ * range list>> =
+    static let userOpName = nameof(UnusedOpensDiagnosticAnalyzer)
+    
+    static member GetUnusedOpenRanges(document: Document) : Async<Option<_ * _ * range list>> =
         asyncMaybe {
-            do! Option.guard document.FSharpOptions.CodeFixes.UnusedOpens
+            do! Option.guard document.Project.IsFSharpCodeFixesUnusedOpensEnabled
             let! sourceText = document.GetTextAsync()
-            let! parseResults, _, checkResults = checker.ParseAndCheckDocument(document, options, userOpName = userOpName)
+            let! parseResults, checkResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
             let! unusedOpens = UnusedOpens.getUnusedOpens(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
             return parseResults, checkResults, unusedOpens
         } 
@@ -43,13 +41,11 @@ type internal UnusedOpensDiagnosticAnalyzer
 
             asyncMaybe {
                 do Trace.TraceInformation("{0:n3} (start) UnusedOpensAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
-                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync()
-                let checker = checkerProvider.Checker
-                let! parseResults, checkResults, unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document, projectOptions, checker)
+                let! parseResults, checkResults, unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document)
             
                 // We run analyzers as part of unused opens to give lower priority
-                let! analyzerDiagnostics = checker.AnalyzeFileInProject(parseResults, checkResults, projectOptions, userOpName=userOpName) |> liftAsync
+                let! analyzerDiagnostics = document.FSharpAnalyzeFileInProject(parseResults, checkResults, userOpName=userOpName) |> liftAsync
                 let analyzerDiagnostics = FSharpDocumentDiagnosticAnalyzer.CleanDiagnostics(document.FilePath, analyzerDiagnostics, sourceText)
                 return 
                     unusedOpens

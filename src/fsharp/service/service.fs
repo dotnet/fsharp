@@ -26,6 +26,7 @@ open FSharp.Compiler.Driver
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IO
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Symbols
@@ -34,6 +35,7 @@ open FSharp.Compiler.Tokenization
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TcGlobals 
+open FSharp.Compiler.TypedTree
 open FSharp.Compiler.BuildGraph
 
 [<AutoOpen>]
@@ -538,7 +540,7 @@ type BackgroundCompiler(
          builder: IncrementalBuilder,
          tcPrior: PartialCheckResults,
          tcInfo: TcInfo,
-         tcInfoExtras: TcInfoExtras,
+         tcPriorImplFiles: TypedImplFile list,
          creationDiags: FSharpDiagnostic[]) : NodeCode<CheckFileCacheValue> = 
 
         node {
@@ -546,7 +548,6 @@ type BackgroundCompiler(
             // For scripts, this will have been recorded by GetProjectOptionsFromScript.
             let tcConfig = tcPrior.TcConfig
             let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
-            let tcPriorImplFiles = tcInfoExtras.TcImplFiles
 
             let! checkAnswer = 
                 FSharpCheckFileResults.CheckOneFile
@@ -583,8 +584,8 @@ type BackgroundCompiler(
          fileVersion: int,
          builder: IncrementalBuilder,
          tcPrior: PartialCheckResults,
-         tcInfo: TcInfo,
-         tcInfoExtras: TcInfoExtras,
+         tcPriorInfo: TcInfo,
+         tcPriorImplFiles: TypedImplFile list,
          creationDiags: FSharpDiagnostic[]) =
 
          node {
@@ -593,7 +594,7 @@ type BackgroundCompiler(
             | _ ->
                 let lazyCheckFile =
                     getCheckFileNode 
-                        (parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, tcInfoExtras, creationDiags)
+                        (parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcPriorInfo, tcPriorImplFiles, creationDiags)
                         (fun () ->
                             Interlocked.Increment(&actualCheckFileCount) |> ignore
                         )
@@ -625,9 +626,9 @@ type BackgroundCompiler(
 
                 match builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename with
                 | Some tcPrior ->
-                    match tcPrior.TryPeekTcInfoWithExtras() with
-                    | Some (tcInfo, tcInfoExtras) ->
-                        let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, tcInfoExtras, creationDiags)
+                    match tcPrior.TryPeekTcInfo() with
+                    | Some tcPriorInfo ->
+                        let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcPriorInfo, [], creationDiags)
                         return Some checkResults
                     | None ->
                         return None
@@ -648,8 +649,9 @@ type BackgroundCompiler(
                 | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
                 | _ ->
                     let! tcPrior = builder.GetCheckResultsBeforeFileInProject (filename)
-                    let! (tcInfo, tcInfoExtras) = tcPrior.GetOrComputeTcInfoWithExtras()
-                    return! bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, tcInfoExtras, creationDiags)
+                    let! tcPriorInfo = tcPrior.GetOrComputeTcInfo()
+                    let! tcPriorImplFiles = tcPrior.GetOrComputeTcImplFiles()
+                    return! bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcPriorInfo, tcPriorImplFiles, creationDiags)
         }
 
     /// Parses and checks the source file and returns untyped AST and check results.
@@ -677,13 +679,14 @@ type BackgroundCompiler(
                     return (parseResults, FSharpCheckFileAnswer.Succeeded checkResults)
                 | _ ->
                     let! tcPrior = builder.GetCheckResultsBeforeFileInProject (filename)
-                    let! (tcInfo, tcInfoExtras) = tcPrior.GetOrComputeTcInfoWithExtras()
+                    let! tcPriorInfo = tcPrior.GetOrComputeTcInfo()
+                    let! tcPriorImplFiles = tcPrior.GetOrComputeTcImplFiles()
                     // Do the parsing.
                     let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList (builder.SourceFiles), options.UseScriptResolutionRules)
                     GraphNode.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
                     let parseDiags, parseTree, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName, suggestNamesForErrors)
                     let parseResults = FSharpParseFileResults(parseDiags, parseTree, Some sourceText, anyErrors, builder.AllDependenciesDeprecated)
-                    let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcInfo, tcInfoExtras, creationDiags)
+                    let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, fileVersion, builder, tcPrior, tcPriorInfo, tcPriorImplFiles, creationDiags)
 
                     Logger.LogBlockMessageStop (filename + strGuid + "-Successful") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
 
@@ -755,14 +758,14 @@ type BackgroundCompiler(
                 let! tcProj = builder.GetFullCheckResultsAfterFileInProject (filename)
 
                 let! tcInfo, tcInfoExtras = tcProj.GetOrComputeTcInfoWithExtras()
+                let! tcImplFiles = tcProj.GetOrComputeTcImplFiles()
 
-                let tcResolutionsRev = tcInfoExtras.tcResolutionsRev
-                let tcSymbolUsesRev = tcInfoExtras.tcSymbolUsesRev
-                let tcOpenDeclarationsRev = tcInfoExtras.tcOpenDeclarationsRev
+                let tcResolutions = tcInfoExtras.tcResolutions
+                let tcSymbolUses = tcInfoExtras.tcSymbolUses
+                let tcOpenDeclarations = tcInfoExtras.tcOpenDeclarations
                 let latestCcuSigForFile = tcInfo.latestCcuSigForFile
                 let tcState = tcInfo.tcState
                 let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
-                let tcImplFiles = tcInfoExtras.tcImplFilesRev |> List.rev
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
                 let tcErrors = tcInfo.TcErrors
                 let errorOptions = builder.TcConfig.errorSeverityOptions
@@ -790,12 +793,12 @@ type BackgroundCompiler(
                             tcState.Ccu, 
                             tcProj.TcImports, 
                             tcEnvAtEnd.AccessRights,
-                            List.head tcResolutionsRev, 
-                            List.head tcSymbolUsesRev,
+                            tcResolutions, 
+                            tcSymbolUses,
                             tcEnvAtEnd.NameEnv,
                             loadClosure, 
                             tcImplFiles,
-                            List.head tcOpenDeclarationsRev) 
+                            tcOpenDeclarations) 
                 return (parseResults, typedResults)
           }
 
@@ -859,9 +862,9 @@ type BackgroundCompiler(
             let errorOptions = tcProj.TcConfig.errorSeverityOptions
             let fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation
 
-            let! tcInfo, tcInfoExtras = tcProj.GetOrComputeTcInfoWithExtras()
+            // Although we do not use 'tcInfoExtras', computing it will make sure we get an extra info.
+            let! tcInfo, _tcInfoExtras = tcProj.GetOrComputeTcInfoWithExtras()
 
-            let tcSymbolUses = tcInfoExtras.TcSymbolUses
             let topAttribs = tcInfo.topAttribs
             let tcState = tcInfo.tcState
             let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
@@ -870,6 +873,20 @@ type BackgroundCompiler(
             let diagnostics =
                 [| yield! creationDiags;
                     yield! DiagnosticHelpers.CreateDiagnostics (errorOptions, true, fileName, tcErrors, suggestNamesForErrors) |]
+            let getSymbolUses() =
+                builder.SourceFiles
+                |> Array.ofList
+                |> Array.map (fun x ->
+                    match builder.GetCheckResultsForFileInProjectEvenIfStale x with
+                    | Some partialCheckResults ->
+                        match partialCheckResults.TryPeekTcInfoWithExtras() with
+                        | Some(_, tcInfoExtras) ->
+                            tcInfoExtras.TcSymbolUses
+                        | _ ->
+                            TcSymbolUses.Empty
+                    | _ ->
+                        TcSymbolUses.Empty
+                )
             let results = 
                 FSharpCheckProjectResults
                     (options.ProjectFileName,
@@ -877,7 +894,7 @@ type BackgroundCompiler(
                     builder.KeepAssemblyContents,
                     diagnostics, 
                     Some(tcProj.TcGlobals, tcProj.TcImports, tcState.Ccu, tcState.CcuSig, 
-                        tcSymbolUses, topAttribs, tcAssemblyDataOpt, ilAssemRef, 
+                        (Choice1Of2 getSymbolUses), topAttribs, tcAssemblyDataOpt, ilAssemRef, 
                         tcEnvAtEnd.AccessRights, tcAssemblyExprOpt,
                         Array.ofList tcDependencyFiles,
                         options))
