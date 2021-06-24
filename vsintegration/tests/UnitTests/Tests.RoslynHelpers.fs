@@ -2,6 +2,7 @@
 
 open System
 open System.IO
+open System.Text
 open System.Reflection
 open System.Linq
 open System.Composition.Hosting
@@ -200,7 +201,7 @@ type TestHostServices() =
 [<AbstractClass;Sealed>]
 type RoslynTestHelpers private () =
 
-    static member CreateProjectInfoWithSingleDocument(docFilePath) =
+    static member CreateProjectInfoWithSingleDocument(projName, docFilePath) =
         let isScript = String.Equals(Path.GetExtension(docFilePath), ".fsx", StringComparison.OrdinalIgnoreCase)
 
         let projId = ProjectId.CreateNewId()
@@ -211,13 +212,14 @@ type RoslynTestHelpers private () =
                 docId,
                 docFilePath, 
                 filePath=docFilePath,
+                loader = new FileTextLoader(docFilePath, Encoding.Default),
                 sourceCodeKind= if isScript then SourceCodeKind.Script else SourceCodeKind.Regular)
 
         let projFilePath = "C:\\test.fsproj"
         ProjectInfo.Create(
             projId,
             VersionStamp.Create(DateTime.UtcNow),
-            projFilePath, 
+            projName, 
             "test.dll", 
             LanguageNames.FSharp,
             documents = [docInfo],
