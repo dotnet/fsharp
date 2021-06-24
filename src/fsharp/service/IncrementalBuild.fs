@@ -429,7 +429,7 @@ type BoundModel private (tcConfig: TcConfig,
         match tcInfoNode with
         | TcInfoNode(_, fullGraphNode) ->
             match fullGraphNode.TryPeekValue() with
-            | ValueSome(tcInfo, tcInfoExtras) -> Some(tcInfo, tcInfoExtras)
+            | ValueSome(_, tcInfoExtras) -> Some tcInfoExtras
             | _ -> None
 
     member _.GetOrComputeTcInfo() =

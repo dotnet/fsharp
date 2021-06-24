@@ -111,7 +111,7 @@ type internal PartialCheckResults =
     /// Peek to see the results.
     /// For thread-safe access to pre-computed results
     /// If `enablePartialTypeChecking` is false then extras will be available
-    member TryPeekTcInfoWithExtras: unit -> (TcInfo * TcInfoExtras) option
+    member TryPeekTcInfoExtras: unit -> TcInfoExtras option
 
     /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
     /// extras will also be available, otherwise they will be empty

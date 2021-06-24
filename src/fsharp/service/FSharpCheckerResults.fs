@@ -2230,12 +2230,12 @@ type FSharpCheckProjectResults
     member _.HasCriticalErrors = details.IsNone
 
     member _.AssemblySignature =
-        let (tcGlobals, tcImports, thisCcu, ccuSig, _builderOrSymbolUses, topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, _symbolUses, topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         FSharpAssemblySignature(tcGlobals, thisCcu, ccuSig, tcImports, topAttribs, ccuSig)
 
     member _.TypedImplementationFiles =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, _ccuSig, _builderOrSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, _ccuSig, _symbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let mimpls =
             match tcAssemblyExpr with
             | None -> []
@@ -2244,7 +2244,7 @@ type FSharpCheckProjectResults
 
     member info.AssemblyContents =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, ccuSig, _builderOrSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, _symbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let mimpls =
             match tcAssemblyExpr with
             | None -> []
@@ -2253,7 +2253,7 @@ type FSharpCheckProjectResults
 
     member _.GetOptimizedAssemblyContents() =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, ccuSig, _builderOrSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, _symbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let mimpls =
             match tcAssemblyExpr with
             | None -> []
@@ -2272,12 +2272,12 @@ type FSharpCheckProjectResults
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member _.GetUsesOfSymbol(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) =
-        let (tcGlobals, _tcImports, _thisCcu, _ccuSig, builderOrSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, _tcImports, _thisCcu, _ccuSig, symbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
 
         let results =
-            match builderOrSymbolUses with
-            | Choice1Of2 builder ->
-                builder()
+            match symbolUses with
+            | Choice1Of2 getSymbolUses ->
+                getSymbolUses()
                 |> Array.collect (fun uses -> uses.GetUsesOfSymbol symbol.Item)
             | Choice2Of2 tcSymbolUses ->
                 tcSymbolUses.GetUsesOfSymbol symbol.Item
@@ -2292,13 +2292,13 @@ type FSharpCheckProjectResults
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member _.GetAllUsesOfAllSymbols(?cancellationToken: CancellationToken) =
-        let (tcGlobals, tcImports, thisCcu, ccuSig, builderOrSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, symbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let cenv = SymbolEnv(tcGlobals, thisCcu, Some ccuSig, tcImports)
 
         let tcSymbolUses =
-            match builderOrSymbolUses with
-            | Choice1Of2 builder ->
-                builder()
+            match symbolUses with
+            | Choice1Of2 getSymbolUses ->
+                getSymbolUses()
             | Choice2Of2 tcSymbolUses ->
                 [|tcSymbolUses|]
 

@@ -879,8 +879,8 @@ type BackgroundCompiler(
                 |> Array.map (fun x ->
                     match builder.GetCheckResultsForFileInProjectEvenIfStale x with
                     | Some partialCheckResults ->
-                        match partialCheckResults.TryPeekTcInfoWithExtras() with
-                        | Some(_, tcInfoExtras) ->
+                        match partialCheckResults.TryPeekTcInfoExtras() with
+                        | Some tcInfoExtras ->
                             tcInfoExtras.TcSymbolUses
                         | _ ->
                             TcSymbolUses.Empty
