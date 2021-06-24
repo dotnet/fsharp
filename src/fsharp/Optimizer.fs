@@ -1686,9 +1686,9 @@ let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
         match expr with
         | Expr.Match (sp, inputRange, decision, targets, fullRange, ty) ->
             // Recurse down every if/match branch
-            let rewrittenTargets = targets |> Array.choose (fun (TTarget (vals, targetExpr, sp)) ->
+            let rewrittenTargets = targets |> Array.choose (fun (TTarget (vals, targetExpr, sp, flags)) ->
                 match dive g m requisites targetExpr with
-                | Some rewritten -> TTarget (vals, rewritten, sp) |> Some
+                | Some rewritten -> TTarget (vals, rewritten, sp, flags) |> Some
                 | _ -> None)
 
             // If not all branches can be rewritten, keep the original expression as it is
@@ -1700,7 +1700,7 @@ let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
             // Replace tuple allocation with mutations of locals
             let _, _, _, vrefs = requisites.Value
             List.map2 (mkValSet m) vrefs tupleElements
-            |> mkSequentials DebugPointAtSequential.StmtOnly g m
+            |> mkSequentials DebugPointAtSequential.SuppressStmt g m
             |> Some
         | Expr.Sequential (e1, e2, kind, sp, m) ->
             match dive g m requisites e2 with
