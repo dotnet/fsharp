@@ -29,14 +29,6 @@ open Microsoft.CodeAnalysis.Host.Mef
 
 #nowarn "9" // NativePtr.toNativeInt
 
-// Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
-// Diagnostic providers can be executed in environment that does not use MEF so they can rely only
-// on services exposed by the workspace
-type internal IFSharpWorkspaceService =
-    inherit IWorkspaceService
-    abstract Checker: FSharpChecker
-    abstract FSharpProjectOptionsManager: FSharpProjectOptionsManager
-
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
     
@@ -269,10 +261,11 @@ type internal FSharpPackage() as this =
                     let miscFilesWorkspace = this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
                     let _singleFileWorkspaceMap = 
                         new SingleFileWorkspaceMap(
-                            workspace, 
-                            miscFilesWorkspace, 
-                            optionsManager, 
-                            projectContextFactory, 
+                            FSharpMiscellaneousFileService(
+                                workspace,
+                                miscFilesWorkspace,
+                                FSharpWorkspaceProjectContextFactory(projectContextFactory)
+                            ),
                             rdt)
                     let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, optionsManager, projectContextFactory)
                     ()
