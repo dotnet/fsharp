@@ -409,8 +409,8 @@ type BackgroundCompiler(
                 | _ ->
                     // The builder could be re-created,
                     //    clear the check file caches that are associated with it.
-                    //    We must do this in order to not return stale results when a reference
-                    //    in the project changes/added/removed.
+                    //    We must do this in order to not return stale results when a references
+                    //    in the project get changed/added/removed.
                     parseCacheLock.AcquireLock(fun ltok -> 
                         options.SourceFiles
                         |> Array.iter (fun sourceFile ->
