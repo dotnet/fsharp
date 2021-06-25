@@ -114,15 +114,17 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
         )
 
     let tryRemove (document: Document) =
-        optionsManager.ClearSingleFileOptionsCache(document.Id)
+        let projIds = document.Project.Solution.GetDependentProjectIds(document.Project.Id)
+        if projIds.Count = 0 then
+            optionsManager.ClearSingleFileOptionsCache(document.Id)
 
-        match files.TryRemove(document.FilePath) with
-        | true, projectContext ->
-            let projIds = document.Project.Solution.GetDependentProjectIds(document.Project.Id)
-            if projIds.Count = 0 then
-                (projectContext :> IDisposable).Dispose()
-        | _ ->
-            ()
+            match files.TryRemove(document.FilePath) with
+            | true, projectContext ->
+                let projIds = document.Project.Solution.GetDependentProjectIds(document.Project.Id)
+                if projIds.Count = 0 then
+                    (projectContext :> IDisposable).Dispose()
+            | _ ->
+                ()
 
     do
         optionsManager.ScriptUpdated.Add(fun scriptProjectOptions ->
