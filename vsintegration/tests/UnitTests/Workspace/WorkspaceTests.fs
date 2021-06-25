@@ -392,7 +392,6 @@ module Script1
 
 let x = 1
                 """
-            |> ignore
 
             assertEmptyDocumentDiagnostics workspace filePath2
 
@@ -442,7 +441,6 @@ module Script1
 
 let x = 1
                 """
-            |> ignore
 
             assertEmptyDocumentDiagnostics workspace filePath2
 
