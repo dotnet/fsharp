@@ -120,9 +120,7 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
 
             match files.TryRemove(document.FilePath) with
             | true, projectContext ->
-                let projIds = document.Project.Solution.GetDependentProjectIds(document.Project.Id)
-                if projIds.Count = 0 then
-                    (projectContext :> IDisposable).Dispose()
+                (projectContext :> IDisposable).Dispose()
             | _ ->
                 ()
 
