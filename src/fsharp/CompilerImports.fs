@@ -108,7 +108,7 @@ let PickleToResource inMem file (g: TcGlobals) scope rName rNameB p x =
 
     let byteStorageB =
         if inMem then
-            ByteStorage.FromByteArrayAndCopy(bytesB.AsMemory(), useBackingMemoryMappedFile = true)
+            ByteStorage.FromMemoryAndCopy(bytesB.AsMemory(), useBackingMemoryMappedFile = true)
         else
             ByteStorage.FromByteArray(bytesB.AsMemory().ToArray())
 
@@ -120,6 +120,7 @@ let PickleToResource inMem file (g: TcGlobals) scope rName rNameB p x =
           Access = ILResourceAccess.Public
           CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
           MetadataIndex = NoMetadataIdx }
+
     let resourceB = 
         if bytesB.Length > 0 then 
             Some 
