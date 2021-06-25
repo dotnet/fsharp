@@ -195,12 +195,16 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
                         lock gate (fun () ->
                             projRefs
                             |> Array.iter (fun proj ->
-                                if proj.IsFSharpMiscellaneousOrMetadata then
-                                    match proj.Documents |> Seq.tryExactlyOne with
-                                    | Some doc when not (workspace.IsDocumentOpen(doc.Id)) ->
-                                        tryRemove doc
-                                    | _ ->
-                                        ()
+                                let proj = args.NewSolution.GetProject(proj.Id)
+                                match proj with
+                                | null -> ()
+                                | _ ->
+                                    if proj.IsFSharpMiscellaneousOrMetadata then
+                                        match proj.Documents |> Seq.tryExactlyOne with
+                                        | Some doc when not (workspace.IsDocumentOpen(doc.Id)) ->
+                                            tryRemove doc
+                                        | _ ->
+                                            ()
                             )
                         )
             | _ ->
