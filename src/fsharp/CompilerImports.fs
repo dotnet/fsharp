@@ -112,8 +112,6 @@ let PickleToResource inMem file (g: TcGlobals) scope rName rNameB p x =
         else
             ByteStorage.FromByteArray(bytesB.AsMemory().ToArray())
 
-    (bytesB :> IDisposable).Dispose()
-
     let resource =
         { Name = rName
           Location = ILResourceLocation.Local(byteStorage)
@@ -122,7 +120,7 @@ let PickleToResource inMem file (g: TcGlobals) scope rName rNameB p x =
           MetadataIndex = NoMetadataIdx }
 
     let resourceB = 
-        if bytesB.Length > 0 then 
+        if bytesB.AsMemory().Length > 0 then 
             Some 
               { Name = rNameB
                 Location = ILResourceLocation.Local(byteStorageB)
@@ -132,6 +130,9 @@ let PickleToResource inMem file (g: TcGlobals) scope rName rNameB p x =
               }
         else
             None
+
+    (bytesB :> IDisposable).Dispose()
+
     resource, resourceB
           
 let GetSignatureData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) : PickledDataWithReferences<PickledCcuInfo> =
