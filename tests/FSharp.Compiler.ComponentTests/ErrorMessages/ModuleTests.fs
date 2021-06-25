@@ -41,20 +41,31 @@ module Modules =
                                  "Ignoring attributes on module abbreviation")
                                  
     [<Fact>]
-    let ``Attribute to the right without preview``() =
-        FSharp """module [<Experimental "Hello">] L1 = List"""
-        |> typecheck
-        |> shouldFail
-        |> withSingleDiagnostic (Error 536, Line 1, Col 1, Line 1, Col 7,
-                                 "The 'Internal' accessibility attribute is not allowed on module abbreviation. Module abbreviations are always private.")
-    [<Fact>]
     let ``Attribute to the right``() =
         FSharp """module [<Experimental "Hello">] L1 = List"""
         |> withLangVersionPreview
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 536, Line 1, Col 1, Line 1, Col 7,
-                                 "The 'Internal' accessibility attribute is not allowed on module abbreviation. Module abbreviations are always private.")
+        |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 35,
+                                 "Ignoring attributes on module abbreviation")
+                                 
+    [<Fact>]
+    let ``Attribute to the right without preview (typecheck)``() =
+        FSharp """module [<Experimental "Hello">] L1 = List"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 35,
+                                 "Ignoring attributes on module abbreviation")
+    [<Fact>]
+    let ``Attribute to the right without preview (compile)``() =
+        FSharp """module [<Experimental "Hello">] L1 = List"""
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            Error 3350, Line 1, Col 8, Line 1, Col 35, "Feature 'attributes to the right of the 'module' keyword' is not available in F# 5.0. Please use language version 'preview' or greater."
+            Error 535, Line 1, Col 1, Line 1, Col 35, "Ignoring attributes on module abbreviation"
+            Error 222, Line 1, Col 1, Line 1, Col 42, "Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration."
+        ]
                                  
     [<Fact>]
     let ``Attribute on both sides``() =
@@ -62,12 +73,12 @@ module Modules =
         |> withLangVersionPreview
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 536, Line 1, Col 1, Line 1, Col 7,
-                                 "The 'Internal' accessibility attribute is not allowed on module abbreviation. Module abbreviations are always private.")
+        |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 32,
+                                 "Ignoring attributes on module abbreviation")
                                  
     [<Fact>]
     let ``Attributes applied successfully``() =
-        FSharp """
+        Fsx """
 [<System.Obsolete "Hi">] module [<Experimental "Hello">] rec L1 = type L2() = do ()
 match typeof<L1.L2>.DeclaringType.GetCustomAttrubtes false with
 | [|:? CompilationMappingAttribute as compilationMapping; :? System.ObsoleteAttribute as obsolete; :? ExperimentalAttribute as experimental|] ->
@@ -81,7 +92,7 @@ match typeof<L1.L2>.DeclaringType.GetCustomAttrubtes false with
         |> shouldSucceed
     [<Fact>]
     let ``Attributes applied successfully 2``() =
-        FSharp """
+        Fsx """
 open System
 open System.ComponentModel
 [<Obsolete "Hi"; NonSerialized>] [<Bindable true; AmbientValue false>] module [<Experimental "Hello"; Category "Oi">][<DefaultValue 'H'; Description "Howdy">] private rec L1 = type L2() = do ()

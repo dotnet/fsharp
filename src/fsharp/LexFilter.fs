@@ -1428,15 +1428,11 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //  Applied when a ':' or '=' token is seen 
         //  Otherwise it's a 'head' module declaration, so ignore it 
         | _, (CtxtModuleHead (moduleTokenPos, prevToken) :: _) ->
-            match prevToken, token with 
-            | MODULE, GLOBAL when moduleTokenPos.Column < tokenStartPos.Column -> 
-                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, token))
+            match prevToken, token with
+            | MODULE, (LBRACK_LESS | PUBLIC | PRIVATE | INTERNAL) when moduleTokenPos.Column < tokenStartPos.Column -> 
                 returnToken tokenLexbufState token
-            | MODULE, (PUBLIC | PRIVATE | INTERNAL) when moduleTokenPos.Column < tokenStartPos.Column -> 
-                returnToken tokenLexbufState token
-            | (MODULE | DOT | REC), (REC | IDENT _) when moduleTokenPos.Column < tokenStartPos.Column -> 
-                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, token))
-                returnToken tokenLexbufState token
+            | MODULE, GLOBAL
+            | (MODULE | DOT | REC | GREATER_RBRACK), (REC | IDENT _)
             | IDENT _, DOT when moduleTokenPos.Column < tokenStartPos.Column -> 
                 replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, token))
                 returnToken tokenLexbufState token
