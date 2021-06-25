@@ -506,4 +506,5 @@ let y = 1
             assertEmptyDocumentDiagnostics workspace filePath1
 
         finally
+            try File.Delete(dllPath1) with | _ -> ()
             try File.Delete(filePath1) with | _ -> ()
