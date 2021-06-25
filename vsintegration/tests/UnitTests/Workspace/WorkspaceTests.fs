@@ -22,12 +22,41 @@ open NUnit.Framework
 [<TestFixture>]
 module WorkspaceTests =
 
+    let compileFileAsDll (workspace: Workspace) filePath =
+        let workspaceService = workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
+        let tmpRealDllPath = Path.ChangeExtension(filePath, ".dll")
+
+        try
+            let result, _ =
+                workspaceService.Checker.Compile([|"fsc.dll";filePath;$"-o:{ tmpRealDllPath }";"--deterministic+";"--optimize+";"--target:library"|])
+                |> Async.RunSynchronously
+
+            if result.Length > 0 then
+                failwith "Compilation has errors."
+
+            tmpRealDllPath
+        with
+        | _ ->
+            try File.Delete(tmpRealDllPath) with | _ -> ()
+            reraise()
+
     let createOnDiskScript src =
         let tmpFilePath = Path.GetTempFileName()
         let tmpRealFilePath = Path.ChangeExtension(tmpFilePath, ".fsx")
         try File.Delete(tmpFilePath) with | _ -> ()
         File.WriteAllText(tmpRealFilePath, src)
         tmpRealFilePath
+
+    let createOnDiskCompiledScriptAsDll (workspace: Workspace) src =
+        let tmpFilePath = Path.GetTempFileName()
+        let tmpRealFilePath = Path.ChangeExtension(tmpFilePath, ".fsx")
+        try File.Delete(tmpFilePath) with | _ -> ()
+        File.WriteAllText(tmpRealFilePath, src)
+
+        try
+            compileFileAsDll workspace tmpRealFilePath
+        finally
+            try File.Delete(tmpRealFilePath) with | _ -> ()
 
     let createWorkspace() =
         new AdhocWorkspace(TestHostServices())
@@ -134,8 +163,8 @@ module WorkspaceTests =
 
     [<Test>]
     let ``Script file opened in misc files workspace will get transferred to normal workspace``() =
-        let workspace = createWorkspace()
-        let miscFilesWorkspace = createMiscFileWorkspace()
+        use workspace = createWorkspace()
+        use miscFilesWorkspace = createMiscFileWorkspace()
         let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
 
         let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
@@ -175,8 +204,8 @@ let x = 1
 
     [<Test>]
     let ``Script file referencing another script should have no diagnostics``() =
-        let workspace = createWorkspace()
-        let miscFilesWorkspace = createMiscFileWorkspace()
+        use workspace = createWorkspace()
+        use miscFilesWorkspace = createMiscFileWorkspace()
         let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
 
         let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
@@ -213,9 +242,9 @@ let x = Script1.x
             try File.Delete(filePath2) with | _ -> ()
 
     [<Test>]
-    let ``Script file referencing another script will correct update when the referenced script file changes``() =
-        let workspace = createWorkspace()
-        let miscFilesWorkspace = createMiscFileWorkspace()
+    let ``Script file referencing another script will correctly update when the referenced script file changes``() =
+        use workspace = createWorkspace()
+        use miscFilesWorkspace = createMiscFileWorkspace()
         let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
 
         let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
@@ -265,9 +294,9 @@ let x = 1
             try File.Delete(filePath2) with | _ -> ()
 
     [<Test>]
-    let ``Script file referencing another script will correct update when the referenced script file changes with opening in reverse order``() =
-        let workspace = createWorkspace()
-        let miscFilesWorkspace = createMiscFileWorkspace()
+    let ``Script file referencing another script will correctly update when the referenced script file changes with opening in reverse order``() =
+        use workspace = createWorkspace()
+        use miscFilesWorkspace = createMiscFileWorkspace()
         let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
 
         let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
@@ -315,3 +344,41 @@ let x = 1
         finally
             try File.Delete(filePath1) with | _ -> ()
             try File.Delete(filePath2) with | _ -> ()
+
+    [<Test>]
+    let ``Script file referencing a DLL will correctly update when the referenced DLL file changes``() =
+        use workspace = createWorkspace()
+        use miscFilesWorkspace = createMiscFileWorkspace()
+        let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
+
+        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
+
+        let dllPath1 = 
+            createOnDiskCompiledScriptAsDll workspace
+                """
+module Script1
+
+let x = 1
+                """
+
+        let filePath1 = 
+            createOnDiskScript 
+                $"""
+module Script2
+#r "{ Path.GetFileName(dllPath1) }"
+
+let x = Script1.x
+                """
+        
+        try
+            let projInfo1 = RoslynTestHelpers.CreateProjectInfoWithSingleDocument(filePath1, filePath1)
+
+            addProject miscFilesWorkspace projInfo1
+
+            openDocument miscFilesWorkspace (getDocument miscFilesWorkspace filePath1).Id          
+
+            let doc1 = getDocument workspace filePath1
+            assertEmptyDocumentDiagnostics doc1
+
+        finally
+            try File.Delete(filePath1) with | _ -> ()
