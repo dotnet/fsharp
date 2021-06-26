@@ -560,7 +560,6 @@ and GenUnionCaseRef (amap: ImportMap) m tyenv i (fspecs: RecdField[]) offsetInfo
 
     match offsetInfo with
     | Some maxReferenceTypeFieldsInAlt ->
-        // reference types first
         let referenceOffsetStart = 8 // todo this relies on a single int32 tag at offset 0
         let referenceWidth = 8
         let referenceTypeFields, valueTypeFields =
@@ -7901,23 +7900,23 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                let tdef = tdef.WithKind(ilTypeDefKind).WithLayout(tdLayout).WithEncoding(tdEncoding)
                tdef, None
 
-           | TUnionRepr tyconUnion ->
+           | TUnionRepr _ ->
                let layout, offsetInfo =
                    if isStructTy g thisTy then
                        // The runtime does not allow explicit layout in generic structs
-                       if ilThisTy.GenericArgs.IsEmpty then
+                       if ilThisTy.GenericArgs.IsEmpty && tycon.UnionCasesArray.Length > 1 then
                            let maxReferenceTypeFieldsInAlt =
-                                tyconUnion.CasesTable.UnionCasesAsList
-                                |> List.map (fun x ->
+                                tycon.UnionCasesArray
+                                |> Array.map (fun x ->
                                     x.RecdFieldsArray
                                     |> Array.filter (fun y ->
                                         match y.FormalType with
                                         | TType_app (tyconRef, _) -> not tyconRef.IsStructOrEnumTycon
                                         | _ -> false)
                                     |> Array.length)
-                                |> List.max
+                                |> Array.max
 
-                           ILTypeDefLayout.Explicit { Size = Some 1; Pack = Some 0us }, Some maxReferenceTypeFieldsInAlt
+                           ILTypeDefLayout.Explicit { Size = None; Pack = None }, Some maxReferenceTypeFieldsInAlt
                        // todo isn't this always true since isStructTy is true?
                        elif ilTypeDefKind = ILTypeDefKind.ValueType then
                            // Structs with no instance fields get size 1, pack 0
