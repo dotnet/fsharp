@@ -47,7 +47,7 @@ type Context =
     | CtxtTypeDefns of Position    // 'type <here> =', not removed when we find the "="
     
     | CtxtNamespaceHead of Position * token
-    | CtxtModuleHead of Position * token
+    | CtxtModuleHead of Position * token * LexingModuleAttributes
     | CtxtMemberHead of Position 
     | CtxtMemberBody of Position 
     // If bool is true then this is "whole file" 
@@ -65,7 +65,7 @@ type Context =
 
     member c.StartPos = 
         match c with 
-        | CtxtNamespaceHead (p, _) | CtxtModuleHead (p, _) | CtxtException p | CtxtModuleBody (p, _) | CtxtNamespaceBody p
+        | CtxtNamespaceHead (p, _) | CtxtModuleHead (p, _, _) | CtxtException p | CtxtModuleBody (p, _) | CtxtNamespaceBody p
         | CtxtLetDecl (_, p) | CtxtDo p | CtxtInterfaceHead p | CtxtTypeDefns p | CtxtParen (_, p) | CtxtMemberHead p | CtxtMemberBody p
         | CtxtWithAsLet p
         | CtxtWithAsAugment p
@@ -108,6 +108,7 @@ type Context =
   
 and AddBlockEnd = AddBlockEnd | NoAddBlockEnd | AddOneSidedBlockEnd
 and FirstInSequence = FirstInSeqBlock | NotFirstInSeqBlock
+and LexingModuleAttributes = LexingModuleAttributes | NotLexingModuleAttributes
 
 
 let isInfix token = 
@@ -1427,14 +1428,17 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //  Transition rule. CtxtModuleHead ~~~> push CtxtModuleBody; push CtxtSeqBlock 
         //  Applied when a ':' or '=' token is seen 
         //  Otherwise it's a 'head' module declaration, so ignore it 
-        | _, (CtxtModuleHead (moduleTokenPos, prevToken) :: _) ->
+        | _, (CtxtModuleHead (moduleTokenPos, prevToken, NotLexingModuleAttributes) :: _) ->
             match prevToken, token with
-            | MODULE, (LBRACK_LESS | PUBLIC | PRIVATE | INTERNAL) when moduleTokenPos.Column < tokenStartPos.Column -> 
+            | MODULE, (PUBLIC | PRIVATE | INTERNAL) when moduleTokenPos.Column < tokenStartPos.Column -> 
                 returnToken tokenLexbufState token
             | MODULE, GLOBAL
-            | (MODULE | DOT | REC | GREATER_RBRACK), (REC | IDENT _)
+            | (MODULE | GREATER_RBRACK | REC | DOT), (REC | IDENT _)
             | IDENT _, DOT when moduleTokenPos.Column < tokenStartPos.Column -> 
-                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, token))
+                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, token, NotLexingModuleAttributes))
+                returnToken tokenLexbufState token
+            | _, LBRACK_LESS -> 
+                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, token, LexingModuleAttributes))
                 returnToken tokenLexbufState token
             | _, (EQUALS | COLON) -> 
                 if debug then dprintf "CtxtModuleHead: COLON/EQUALS, pushing CtxtModuleBody and CtxtSeqBlock\n"
@@ -1449,12 +1453,18 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 match tokenTup.Token with 
                 | Parser.EOF _ -> 
                     returnToken tokenLexbufState token
-                | _ -> 
+                | _ ->
+                    // 
                     delayToken tokenTup 
                     pushCtxt tokenTup (CtxtModuleBody (moduleTokenPos, true))
                     pushCtxtSeqBlockAt (tokenTup, true, AddBlockEnd) 
                     hwTokenFetch false
-
+        | _, (CtxtModuleHead (moduleTokenPos, _prevToken, LexingModuleAttributes) :: _) ->
+            match token with
+            | GREATER_RBRACK -> 
+                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, token, NotLexingModuleAttributes))
+            | _ -> ()
+            returnToken tokenLexbufState token
         //  Offside rule for SeqBlock.  
         //      f x
         //      g x
@@ -1765,7 +1775,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         | MODULE, (_ :: _) -> 
             insertComingSoonTokens("MODULE", MODULE_COMING_SOON, MODULE_IS_HERE)
             if debug then dprintf "MODULE: entering CtxtModuleHead, awaiting EQUALS to go to CtxtSeqBlock (%a)\n" outputPos tokenStartPos
-            pushCtxt tokenTup (CtxtModuleHead (tokenStartPos, token))
+            pushCtxt tokenTup (CtxtModuleHead (tokenStartPos, token, NotLexingModuleAttributes))
             pool.Return tokenTup
             hwTokenFetch useBlockRule
                 

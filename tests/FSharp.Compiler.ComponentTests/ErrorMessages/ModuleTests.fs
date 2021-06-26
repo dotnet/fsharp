@@ -80,7 +80,7 @@ module Modules =
     let ``Attributes applied successfully``() =
         Fsx """
 [<System.Obsolete "Hi">] module [<Experimental "Hello">] rec L1 = type L2() = do ()
-match typeof<L1.L2>.DeclaringType.GetCustomAttrubtes false with
+match typeof<L1.L2>.DeclaringType.GetCustomAttributes false with
 | [|:? CompilationMappingAttribute as compilationMapping; :? System.ObsoleteAttribute as obsolete; :? ExperimentalAttribute as experimental|] ->
     if compilationMapping.SourceConstructFlags <> SourceConstructFlags.Module then failwithf "CompilationMapping attribute did not contain the correct SourceConstructFlags: %A" compilationMapping.SourceConstructFlags
     if obsolete.Message <> "Hi" then failwithf "Obsolete attribute did not contain the correct message: %s" obsolete.Message
@@ -96,7 +96,7 @@ match typeof<L1.L2>.DeclaringType.GetCustomAttrubtes false with
 open System
 open System.ComponentModel
 [<Obsolete "Hi"; NonSerialized>] [<Bindable true; AmbientValue false>] module [<Experimental "Hello"; Category "Oi">][<DefaultValue 'H'; Description "Howdy">] private rec L1 = type L2() = do ()
-match typeof<L1.L2>.DeclaringType.GetCustomAttrubtes false with
+match typeof<L1.L2>.DeclaringType.GetCustomAttributes false with
 | [|:? CompilationMappingAttribute as compilationMapping
     :? ObsoleteAttribute as obsolete
     :? NonSerializedAttribute
