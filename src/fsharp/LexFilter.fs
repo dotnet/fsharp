@@ -1427,18 +1427,27 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                    
         //  Transition rule. CtxtModuleHead ~~~> push CtxtModuleBody; push CtxtSeqBlock 
         //  Applied when a ':' or '=' token is seen 
-        //  Otherwise it's a 'head' module declaration, so ignore it 
-        | _, (CtxtModuleHead (moduleTokenPos, prevToken, NotLexingModuleAttributes) :: _) ->
+        //  Otherwise it's a 'head' module declaration, so ignore it
+
+        //  Here prevToken is either 'module', 'rec', 'global' (invalid), '.', or ident, because we skip attribute tokens and access modifier tokens
+        | _, (CtxtModuleHead (moduleTokenPos, prevToken, lexingModuleAttributes) :: _) ->
             match prevToken, token with
+            | _, GREATER_RBRACK when lexingModuleAttributes = LexingModuleAttributes
+                                     && moduleTokenPos.Column < tokenStartPos.Column ->
+                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, prevToken, NotLexingModuleAttributes))
+                returnToken tokenLexbufState token
+            | _ when lexingModuleAttributes = LexingModuleAttributes
+                     && moduleTokenPos.Column < tokenStartPos.Column ->
+                returnToken tokenLexbufState token
             | MODULE, (PUBLIC | PRIVATE | INTERNAL) when moduleTokenPos.Column < tokenStartPos.Column -> 
                 returnToken tokenLexbufState token
             | MODULE, GLOBAL
-            | (MODULE | GREATER_RBRACK | REC | DOT), (REC | IDENT _)
+            | (MODULE | REC | DOT), (REC | IDENT _)
             | IDENT _, DOT when moduleTokenPos.Column < tokenStartPos.Column -> 
                 replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, token, NotLexingModuleAttributes))
                 returnToken tokenLexbufState token
-            | _, LBRACK_LESS -> 
-                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, token, LexingModuleAttributes))
+            | MODULE, LBRACK_LESS when moduleTokenPos.Column < tokenStartPos.Column  ->
+                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, prevToken, LexingModuleAttributes))
                 returnToken tokenLexbufState token
             | _, (EQUALS | COLON) -> 
                 if debug then dprintf "CtxtModuleHead: COLON/EQUALS, pushing CtxtModuleBody and CtxtSeqBlock\n"
@@ -1454,17 +1463,11 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 | Parser.EOF _ -> 
                     returnToken tokenLexbufState token
                 | _ ->
-                    // 
+                    // We have reached other tokens without encountering '=' or ':', so this is a module declaration spanning the whole file
                     delayToken tokenTup 
                     pushCtxt tokenTup (CtxtModuleBody (moduleTokenPos, true))
                     pushCtxtSeqBlockAt (tokenTup, true, AddBlockEnd) 
                     hwTokenFetch false
-        | _, (CtxtModuleHead (moduleTokenPos, _prevToken, LexingModuleAttributes) :: _) ->
-            match token with
-            | GREATER_RBRACK -> 
-                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, token, NotLexingModuleAttributes))
-            | _ -> ()
-            returnToken tokenLexbufState token
         //  Offside rule for SeqBlock.  
         //      f x
         //      g x
