@@ -3,21 +3,21 @@
 module internal FSharp.Compiler.Infos
 
 open System
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.XmlDoc
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -106,6 +106,30 @@ type SkipUnrefInterfaces = Yes | No
 /// Collect the set of immediate declared interface types for an F# type, but do not
 /// traverse the type hierarchy to collect further interfaces.
 let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
+
+    let getInterfaces ty (tcref:TyconRef) tinst =
+        match metadataOfTy g ty with
+#if !NO_EXTENSIONTYPING
+        | ProvidedTypeMetadata info ->
+            [ for ity in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
+                yield Import.ImportProvidedType amap m ity ]
+#endif
+        | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
+            // ImportILType may fail for an interface if the assembly load set is incomplete and the interface
+            // comes from another assembly. In this case we simply skip the interface:
+            // if we don't skip it, then compilation will just fail here, and if type checking
+            // succeeds with fewer non-dereferencable interfaces reported then it would have
+            // succeeded with more reported. There are pathological corner cases where this
+            // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always
+            // assume those are present.
+            tdef.Implements |> List.choose (fun ity ->
+                if skipUnref = SkipUnrefInterfaces.No || CanImportILType scoref amap m ity then
+                    Some (ImportILType scoref amap m tinst ity)
+                else
+                    None)
+        | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+            tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map (instType (mkInstForAppTy g ty))
+
     let itys =
         match tryAppTy g ty with
         | ValueSome(tcref, tinst) ->
@@ -123,31 +147,17 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
                   yield mkAppTy g.system_GenericIComparable_tcref [ty]
                   yield mkAppTy g.system_GenericIEquatable_tcref [ty]]
             else
-                match metadataOfTy g ty with
-#if !NO_EXTENSIONTYPING
-                | ProvidedTypeMetadata info ->
-                    [ for ity in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
-                          yield Import.ImportProvidedType amap m ity ]
-#endif
-                | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
+                getInterfaces ty tcref tinst
+        | _ ->
+            let tyWithMetadata = convertToTypeWithMetadataIfPossible g ty
+            match tryAppTy g tyWithMetadata with
+            | ValueSome (tcref, tinst) ->
+                if isAnyTupleTy g ty then
+                    getInterfaces tyWithMetadata tcref tinst
+                else
+                    []
+            | _ -> []
 
-                    // ImportILType may fail for an interface if the assembly load set is incomplete and the interface
-                    // comes from another assembly. In this case we simply skip the interface:
-                    // if we don't skip it, then compilation will just fail here, and if type checking
-                    // succeeds with fewer non-dereferencable interfaces reported then it would have
-                    // succeeded with more reported. There are pathological corner cases where this
-                    // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always
-                    // assume those are present.
-                    tdef.Implements |> List.choose (fun ity ->
-                         if skipUnref = SkipUnrefInterfaces.No || CanImportILType scoref amap m ity then
-                             Some (ImportILType scoref amap m tinst ity)
-                         else None)
-
-                | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
-                    tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map (instType (mkInstForAppTy g ty))
-        | _ -> []
-
-    
     // NOTE: Anonymous record types are not directly considered to implement IComparable,
     // IComparable<T> or IEquatable<T>. This is because whether they support these interfaces depend on their
     // consitutent types, which may not yet be known in type inference.
@@ -1107,7 +1117,7 @@ type MethInfo =
     member x.IsConstructor =
         match x with
         | ILMeth(_, ilmeth, _) -> ilmeth.IsConstructor
-        | FSMeth(_g, _, vref, _) -> (vref.MemberInfo.Value.MemberFlags.MemberKind = MemberKind.Constructor)
+        | FSMeth(_g, _, vref, _) -> (vref.MemberInfo.Value.MemberFlags.MemberKind = SynMemberKind.Constructor)
         | DefaultStructCtor _ -> true
 #if !NO_EXTENSIONTYPING
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsConstructor), m)
@@ -1165,7 +1175,7 @@ type MethInfo =
     member x.IsNewSlot =
         (x.IsVirtual &&
           (match x with
-           | ILMeth(_, x, _) -> x.IsNewSlot
+           | ILMeth(_, x, _) -> x.IsNewSlot || (isInterfaceTy x.TcGlobals x.ApparentEnclosingType && not x.IsFinal)
            | FSMeth(_, _, vref, _) -> vref.IsDispatchSlotMember
 #if !NO_EXTENSIONTYPING
            | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsHideBySig), m) // REVIEW: Check this is correct
@@ -1399,7 +1409,7 @@ type MethInfo =
             [ [ for p in ilMethInfo.ParamMetadata do
                  let isParamArrayArg = TryFindILAttribute g.attrib_ParamArrayAttribute p.CustomAttrs
                  let reflArgInfo =
-                     match TryDecodeILAttribute g g.attrib_ReflectedDefinitionAttribute.TypeRef p.CustomAttrs with
+                     match TryDecodeILAttribute g.attrib_ReflectedDefinitionAttribute.TypeRef p.CustomAttrs with
                      | Some ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
                      | Some _ -> ReflectedArgInfo.Quote false
                      | _ -> ReflectedArgInfo.None

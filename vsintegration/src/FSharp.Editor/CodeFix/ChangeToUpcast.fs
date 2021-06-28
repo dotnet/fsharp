@@ -14,7 +14,7 @@ type internal FSharpChangeToUpcastCodeFixProvider() =
 
     let fixableDiagnosticIds = set ["FS3198"]
 
-    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override this.RegisterCodeFixesAsync context : Task =
         asyncMaybe {

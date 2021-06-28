@@ -1,33 +1,22 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public FSharp.Compiler.SyntaxTreeOps
+module FSharp.Compiler.SyntaxTreeOps
 
-open Internal.Utilities.Text.Parsing
-
-open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
-open FSharp.Compiler.Range
-open FSharp.Compiler.XmlDoc
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 
-//----------------------------------------------------------------------
-// Construct syntactic AST nodes
-//-----------------------------------------------------------------------
-
+/// Generate implicit argument names in parsing
 type SynArgNameGenerator() =
     let mutable count = 0
     let generatedArgNamePrefix = "_arg"
 
-    member __.New() : string = count <- count + 1; generatedArgNamePrefix + string count
-    member __.Reset() = count <- 0
-
-//----------------------------------------------------------------------
-// AST and parsing utilities.
-//----------------------------------------------------------------------
+    member _.New() : string = count <- count + 1; generatedArgNamePrefix + string count
+    member _.Reset() = count <- 0
 
 let ident (s, r) = Ident(s, r)
 
@@ -70,7 +59,7 @@ let mkSynCompGenSimplePatVar id = SynSimplePat.Id (id, None, true, false, false,
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
 let (|LongOrSingleIdent|_|) inp =
     match inp with
-    | SynExpr.LongIdent (isOpt, lidwd, altId, _m) -> Some (isOpt, lidwd, altId, lidwd.RangeSansAnyExtraDot)
+    | SynExpr.LongIdent (isOpt, lidwd, altId, _m) -> Some (isOpt, lidwd, altId, lidwd.RangeWithoutAnyExtraDot)
     | SynExpr.Ident id -> Some (false, LongIdentWithDots([id], []), None, id.idRange)
     | _ -> None
 
@@ -100,13 +89,13 @@ let rec IsControlFlowExpression e =
     | SynExpr.Typed (e, _, _) -> IsControlFlowExpression e
     | _ -> false
 
-let mkAnonField (ty: SynType) = Field([], false, None, ty, false, PreXmlDoc.Empty, None, ty.Range)
+let mkSynAnonField (ty: SynType) = SynField([], false, None, ty, false, PreXmlDoc.Empty, None, ty.Range)
 
-let mkNamedField (ident, ty: SynType, m) = Field([], false, Some ident, ty, false, PreXmlDoc.Empty, None, m)
+let mkSynNamedField (ident, ty: SynType, m) = SynField([], false, Some ident, ty, false, PreXmlDoc.Empty, None, m)
 
-let mkSynPatVar vis (id: Ident) = SynPat.Named (SynPat.Wild id.idRange, id, false, vis, id.idRange)
+let mkSynPatVar vis (id: Ident) = SynPat.Named (id, false, vis, id.idRange)
 
-let mkSynThisPatVar (id: Ident) = SynPat.Named (SynPat.Wild id.idRange, id, true, None, id.idRange)
+let mkSynThisPatVar (id: Ident) = SynPat.Named (id, true, None, id.idRange)
 
 let mkSynPatMaybeVar lidwd vis m =  SynPat.LongIdent (lidwd, None, None, SynArgPats.Pats [], vis, m)
 
@@ -151,7 +140,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
         SynSimplePat.Attrib(p2, attribs, m),
         laterF
 
-    | SynPat.Named (SynPat.Wild _, v, thisV, _, m) ->
+    | SynPat.Named (v, thisV, _, m) ->
         SynSimplePat.Id (v, None, false, thisV, false, m),
         None
 
@@ -172,9 +161,14 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
                 // It may be a real variable, in which case we want to maintain its name.
                 // But it may also be a nullary union case or some other identifier.
                 // In this case, we want to use an alternate compiler generated name for the hidden variable.
-                let altNameRefCell = Some (ref (Undecided (mkSynId m (synArgNameGenerator.New()))))
+                let altNameRefCell = Some (ref (SynSimplePatAlternativeIdInfo.Undecided (mkSynId m (synArgNameGenerator.New()))))
                 let item = mkSynIdGetWithAlt m id altNameRefCell
                 false, altNameRefCell, id, item
+            | SynPat.Named(ident, _, _, _)
+            | SynPat.As(_, SynPat.Named(ident, _, _, _), _) ->
+                // named pats should be referred to as their name in docs, tooltips, etc.
+                let item = mkSynIdGet m ident.idText
+                false, None, ident, item
             | _ ->
                 let nm = synArgNameGenerator.New()
                 let id = mkSynId m nm
@@ -182,8 +176,8 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
                 true, None, id, item
         SynSimplePat.Id (id, altNameRefCell, isCompGen, false, false, id.idRange),
         Some (fun e ->
-                let clause = Clause(p, None, e, m, DebugPointForTarget.No)
-                SynExpr.Match (NoDebugPointAtInvisibleBinding, item, [clause], clause.Range))
+                let clause = SynMatchClause(p, None, e, m, DebugPointForTarget.No)
+                SynExpr.Match (DebugPointAtBinding.NoneAtInvisible, item, [clause], clause.Range))
 
 let appFunOpt funOpt x = match funOpt with None -> x | Some f -> f x
 
@@ -382,7 +376,7 @@ let arbExpr (debugStr, range: range) = SynExpr.ArbitraryAfterError (debugStr, ra
 let unionRangeWithListBy projectRangeFromThing m listOfThing = 
     (m, listOfThing) ||> List.fold (fun m thing -> unionRanges m (projectRangeFromThing thing))
 
-let mkAttributeList attrs range =
+let mkAttributeList attrs range : SynAttributeList list =
     [{ Attributes = attrs
        Range = range }]
 
@@ -393,6 +387,21 @@ let ConcatAttributesLists (attrsLists: SynAttributeList list) =
 
 let (|Attributes|) synAttributes =
     ConcatAttributesLists synAttributes
+
+let (|TyparDecls|) (typarDecls: SynTyparDecls option) =
+    typarDecls
+    |> Option.map (fun x -> x.TyparDecls)
+    |> Option.defaultValue []
+
+let (|TyparsAndConstraints|) (typarDecls: SynTyparDecls option) =
+    typarDecls
+    |> Option.map (fun x -> x.TyparDecls, x.Constraints)
+    |> Option.defaultValue ([], [])
+
+let (|ValTyparDecls|) (SynValTyparDecls(typarDecls, canInfer)) =
+    typarDecls
+    |> Option.map (fun x -> x.TyparDecls, x.Constraints, canInfer)
+    |> Option.defaultValue ([], [], canInfer)
 
 let rangeOfNonNilAttrs (attrs: SynAttributes) =
     (attrs.Head.Range, attrs.Tail) ||> unionRangeWithListBy (fun a -> a.Range)
@@ -489,7 +498,7 @@ module SynInfo =
     /// rather than member signatures.
     let AdjustMemberArgs memFlags infosForArgs =
         match infosForArgs with
-        | [] when memFlags=MemberKind.Member -> [] :: infosForArgs
+        | [] when memFlags = SynMemberKind.Member -> [] :: infosForArgs
         | _ -> infosForArgs
 
     /// For 'let' definitions, we infer syntactic argument information from the r.h.s. of a definition, if it
@@ -515,7 +524,7 @@ module SynInfo =
     /// Infer the syntactic information for a 'let' or 'member' definition, based on the argument pattern,
     /// any declared return information (e.g. .NET attributes on the return element), and the r.h.s. expression
     /// in the case of 'let' definitions.
-    let InferSynValData (memberFlagsOpt, pat, retInfo, origRhsExpr) =
+    let InferSynValData (memberFlagsOpt: SynMemberFlags option, pat, retInfo, origRhsExpr) =
 
         let infosForExplicitArgs =
             match pat with
@@ -557,63 +566,63 @@ let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
 let mkSynBinding (xmlDoc, headPat) (vis, isInline, isMutable, mBind, spBind, retInfo, origRhsExpr, mRhs, staticOptimizations, attrs, memberFlagsOpt) =
     let info = SynInfo.InferSynValData (memberFlagsOpt, Some headPat, retInfo, origRhsExpr)
     let rhsExpr, retTyOpt = mkSynBindingRhs staticOptimizations origRhsExpr mRhs retInfo
-    Binding (vis, NormalBinding, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, rhsExpr, mBind, spBind)
+    SynBinding (vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, rhsExpr, mBind, spBind)
 
-let NonVirtualMemberFlags k =
+let NonVirtualMemberFlags k : SynMemberFlags =
     { MemberKind=k
       IsInstance=true
       IsDispatchSlot=false
       IsOverrideOrExplicitImpl=false
       IsFinal=false }
 
-let CtorMemberFlags =
-    { MemberKind=MemberKind.Constructor
+let CtorMemberFlags : SynMemberFlags =
+    { MemberKind=SynMemberKind.Constructor
       IsInstance=false
       IsDispatchSlot=false
       IsOverrideOrExplicitImpl=false
       IsFinal=false }
 
-let ClassCtorMemberFlags =
-    { MemberKind=MemberKind.ClassConstructor
+let ClassCtorMemberFlags : SynMemberFlags =
+    { MemberKind=SynMemberKind.ClassConstructor
       IsInstance=false
       IsDispatchSlot=false
       IsOverrideOrExplicitImpl=false
       IsFinal=false }
 
-let OverrideMemberFlags k =
+let OverrideMemberFlags k : SynMemberFlags =
     { MemberKind=k
       IsInstance=true
       IsDispatchSlot=false
       IsOverrideOrExplicitImpl=true
       IsFinal=false }
 
-let AbstractMemberFlags k =
+let AbstractMemberFlags k : SynMemberFlags =
     { MemberKind=k
       IsInstance=true
       IsDispatchSlot=true
       IsOverrideOrExplicitImpl=false
       IsFinal=false }
 
-let StaticMemberFlags k =
+let StaticMemberFlags k : SynMemberFlags =
     { MemberKind=k
       IsInstance=false
       IsDispatchSlot=false
       IsOverrideOrExplicitImpl=false
       IsFinal=false }
 
-let inferredTyparDecls = SynValTyparDecls([], true, [])
+let inferredTyparDecls = SynValTyparDecls(None, true)
 
-let noInferredTypars = SynValTyparDecls([], false, [])
+let noInferredTypars = SynValTyparDecls(None, false)
 
 let rec synExprContainsError inpExpr =
-    let rec walkBind (Binding(_, _, _, _, _, _, _, _, _, synExpr, _, _)) = walkExpr synExpr
+    let rec walkBind (SynBinding(_, _, _, _, _, _, _, _, _, synExpr, _, _)) = walkExpr synExpr
 
     and walkExprs es = es |> List.exists walkExpr
 
     and walkBinds es = es |> List.exists walkBind
 
     and walkMatchClauses cl =
-        cl |> List.exists (fun (Clause(_, whenExpr, e, _, _)) -> walkExprOpt whenExpr || walkExpr e)
+        cl |> List.exists (fun (SynMatchClause(_, whenExpr, e, _, _)) -> walkExprOpt whenExpr || walkExpr e)
 
     and walkExprOpt eOpt = eOpt |> Option.exists walkExpr
 
@@ -680,7 +689,7 @@ let rec synExprContainsError inpExpr =
               walkExprs flds
 
           | SynExpr.ObjExpr (_, _, bs, is, _, _) ->
-              walkBinds bs || walkBinds [ for (InterfaceImpl(_, bs, _)) in is do yield! bs  ]
+              walkBinds bs || walkBinds [ for (SynInterfaceImpl(_, bs, _)) in is do yield! bs  ]
 
           | SynExpr.ForEach (_, _, _, _, e1, e2, _)
           | SynExpr.While (_, e1, e2, _) ->
@@ -731,10 +740,17 @@ let rec synExprContainsError inpExpr =
           | SynExpr.LetOrUseBang  (rhs=e1;body=e2;andBangs=es) ->
               walkExpr e1 || walkExprs [ for (_,_,_,_,e,_) in es do yield e ] || walkExpr e2
 
-          | SynExpr.InterpolatedString (parts, _m) ->
+          | SynExpr.InterpolatedString (parts, _, _m) ->
               walkExprs 
                   (parts |> List.choose (function 
                       | SynInterpolatedStringPart.String _ -> None
                       | SynInterpolatedStringPart.FillExpr (x, _) -> Some x))
 
     walkExpr inpExpr
+
+let (|ParsedHashDirectiveArguments|) (input: ParsedHashDirectiveArgument list) =
+    List.map
+        (function
+        | ParsedHashDirectiveArgument.String (s, _, _) -> s
+        | ParsedHashDirectiveArgument.SourceIdentifier (_, v, _) -> v)
+        input

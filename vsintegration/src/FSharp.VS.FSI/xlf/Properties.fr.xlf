@@ -12,6 +12,11 @@
         <target state="translated">Si la valeur est true et que l'ordinateur actuel est de type 64 bits, exécutez F# Interactive en tant que processus 64 bits.  (Sinon, F# Interactive est un processus 32 bits.)</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpInteractiveMisc">
+        <source>Misc</source>
+        <target state="translated">Divers</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
         <source>F# Interactive options</source>
         <target state="translated">Options de F# Interactive</target>
@@ -20,11 +25,6 @@
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
         <target state="translated">Arguments supplémentaires de la ligne de commande passés à l'exécutable F# Interactive par Visual Studio. (les indicateurs d'optimisation et de débogage sont ignorés si le débogage de script est activé)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpInteractiveMisc">
-        <source>Misc</source>
-        <target state="translated">Divers</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreview">
@@ -65,6 +65,16 @@
       <trans-unit id="FSharpInteractiveDebugging">
         <source>Debugging</source>
         <target state="translated">Débogage</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCore">
+        <source>Use .NET Core Scripting</source>
+        <target state="translated">Utiliser les scripts .NET Core</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCoreDescr">
+        <source>Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</source>
+        <target state="translated">Activer l'édition et l'exécution de scripts .NET Core pour tous les scripts F# et la fenêtre F# Interactive</target>
         <note />
       </trans-unit>
     </body>

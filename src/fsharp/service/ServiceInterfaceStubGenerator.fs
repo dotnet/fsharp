@@ -1,18 +1,19 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.EditorServices
 
 open System
 open System.Diagnostics
-
-open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.Range
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open Internal.Utilities.Library 
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Symbols.FSharpSymbolPatterns
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
-        
-#if !FX_NO_INDENTED_TEXT_WRITER
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Tokenization
+
 [<AutoOpen>]
 module internal CodeGenerationUtils =
     open System.IO
@@ -22,33 +23,33 @@ module internal CodeGenerationUtils =
         let stringWriter = new StringWriter()
         let indentWriter = new IndentedTextWriter(stringWriter, " ")
 
-        member __.Write(s: string) =
+        member _.Write(s: string) =
             indentWriter.Write("{0}", s)
 
-        member __.Write(s: string, [<ParamArray>] objs: obj []) =
+        member _.Write(s: string, [<ParamArray>] objs: obj []) =
             indentWriter.Write(s, objs)
 
-        member __.WriteLine(s: string) =
+        member _.WriteLine(s: string) =
             indentWriter.WriteLine("{0}", s)
 
-        member __.WriteLine(s: string, [<ParamArray>] objs: obj []) =
+        member _.WriteLine(s: string, [<ParamArray>] objs: obj []) =
             indentWriter.WriteLine(s, objs)
 
         member x.WriteBlankLines count =
             for _ in 0 .. count - 1 do
                 x.WriteLine ""
 
-        member __.Indent i = 
+        member _.Indent i = 
             indentWriter.Indent <- indentWriter.Indent + i
 
-        member __.Unindent i = 
+        member _.Unindent i = 
             indentWriter.Indent <- max 0 (indentWriter.Indent - i)
 
-        member __.Dump() =
+        member _.Dump() =
             indentWriter.InnerWriter.ToString()
 
         interface IDisposable with
-            member __.Dispose() =
+            member _.Dispose() =
                 stringWriter.Dispose()
                 indentWriter.Dispose()
 
@@ -70,7 +71,7 @@ module internal CodeGenerationUtils =
     /// Represent environment where a captured identifier should be renamed
     type NamesWithIndices = Map<string, Set<int>>
 
-    let keywordSet = set PrettyNaming.KeywordNames
+    let keywordSet = set FSharpKeywords.KeywordNames
 
     /// Rename a given argument if the identifier has been used
     let normalizeArgName (namesWithIndices: NamesWithIndices) nm =
@@ -103,14 +104,16 @@ module internal CodeGenerationUtils =
 /// Capture information about an interface in ASTs
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type InterfaceData =
-    | Interface of SynType * SynMemberDefns option
-    | ObjExpr of SynType * SynBinding list
+    | Interface of interfaceType: SynType * memberDefns: SynMemberDefns option
+    | ObjExpr of objType: SynType * bindings: SynBinding list
+
     member x.Range =
         match x with
         | InterfaceData.Interface(ty, _) -> 
             ty.Range
         | InterfaceData.ObjExpr(ty, _) -> 
             ty.Range
+
     member x.TypeParameters = 
         match x with
         | InterfaceData.Interface(StripParenTypes ty, _)
@@ -124,11 +127,11 @@ type InterfaceData =
                     sprintf "- %s" s
 
             let rec (|TypeIdent|_|) = function
-                | SynType.Var(SynTypar.Typar(s, req, _), _) ->
+                | SynType.Var(SynTypar(s, req, _), _) ->
                     match req with
-                    | NoStaticReq -> 
+                    | TyparStaticReq.None -> 
                         Some ("'" + s.idText)
-                    | HeadTypeStaticReq -> 
+                    | TyparStaticReq.HeadType -> 
                         Some ("^" + s.idText)
                 | SynType.LongIdent(LongIdentWithDots(xs, _)) ->
                     xs |> Seq.map (fun x -> x.idText) |> String.concat "." |> Some
@@ -175,18 +178,25 @@ module InterfaceStubGenerator =
     type internal Context =
         {
             Writer: ColumnIndentedTextWriter
+
             /// Map generic types to specific instances for specialized interface implementation
             TypeInstantations: Map<string, string>
+
             /// Data for interface instantiation
             ArgInstantiations: (FSharpGenericParameter * FSharpType) seq
+
             /// Indentation inside method bodies
             Indentation: int
+
             /// Object identifier of the interface e.g. 'x', 'this', '__', etc.
             ObjectIdent: string
+
             /// A list of lines represents skeleton of each member
             MethodBody: string []
+
             /// Context in order to display types in the short form
             DisplayContext: FSharpDisplayContext
+
         }
 
     // Adapt from MetadataFormat module in FSharp.Formatting 
@@ -222,7 +232,7 @@ module InterfaceStubGenerator =
         let nm, namesWithIndices = normalizeArgName namesWithIndices nm
         
         // Detect an optional argument
-        let isOptionalArg = Symbol.hasAttribute<OptionalArgumentAttribute> arg.Attributes
+        let isOptionalArg = arg.HasAttribute<OptionalArgumentAttribute>()
         let argName = if isOptionalArg then "?" + nm else nm
         (if hasTypeAnnotation && argName <> "()" then 
             argName + ": " + formatType ctx arg.Type
@@ -299,7 +309,7 @@ module InterfaceStubGenerator =
         else displayName
 
     let internal isEventMember (m: FSharpMemberOrFunctionOrValue) =
-        m.IsEvent || Symbol.hasAttribute<CLIEventAttribute> m.Attributes
+        m.IsEvent || m.HasAttribute<CLIEventAttribute>()
     
     let internal formatMember (ctx: Context) m verboseMode = 
         let getParamArgs (argInfos: FSharpParameter list list) (ctx: Context) (v: FSharpMemberOrFunctionOrValue) = 
@@ -331,7 +341,7 @@ module InterfaceStubGenerator =
                 | _, true, _, name -> name + parArgs
                 // Ordinary functions or values
                 | false, _, _, name when
-                    not (Symbol.hasAttribute<RequireQualifiedAccessAttribute> v.ApparentEnclosingEntity.Attributes) -> 
+                    not (v.ApparentEnclosingEntity.HasAttribute<RequireQualifiedAccessAttribute>()) -> 
                     name + " " + parArgs
                 // Ordinary static members or things (?) that require fully qualified access
                 | _, _, _, name -> name + parArgs
@@ -485,10 +495,10 @@ module InterfaceStubGenerator =
         |> Seq.distinct
 
     /// Get members in the decreasing order of inheritance chain
-    let getInterfaceMembers (e: FSharpEntity) = 
+    let GetInterfaceMembers (entity: FSharpEntity) = 
         seq {
-            for (iface, instantiations) in getInterfaces e do
-                yield! iface.TryGetMembersFunctionsAndValues
+            for (iface, instantiations) in getInterfaces entity do
+                yield! iface.TryGetMembersFunctionsAndValues()
                        |> Seq.choose (fun m -> 
                            // Use this hack when FCS doesn't return enough information on .NET properties and events
                            if m.IsProperty || m.IsEventAddMethod || m.IsEventRemoveMethod then 
@@ -497,8 +507,8 @@ module InterfaceStubGenerator =
          }
 
     /// Check whether an interface is empty
-    let hasNoInterfaceMember e =
-        getInterfaceMembers e |> Seq.isEmpty
+    let HasNoInterfaceMember entity =
+        GetInterfaceMembers entity |> Seq.isEmpty
 
     let internal (|LongIdentPattern|_|) = function
         | SynPat.LongIdent(LongIdentWithDots(xs, _), _, _, _, _, _) ->
@@ -512,14 +522,14 @@ module InterfaceStubGenerator =
     // On merged properties (consisting both getters and setters), they have the same range values,
     // so we use 'get_' and 'set_' prefix to ensure corresponding symbols are retrieved correctly.
     let internal (|MemberNameAndRange|_|) = function
-        | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
-                    _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = MemberKind.PropertyGet ->
+        | SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
+                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = SynMemberKind.PropertyGet ->
             if name.StartsWithOrdinal("get_") then Some(name, range) else Some("get_" + name, range)
-        | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
-                    _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = MemberKind.PropertySet ->
+        | SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
+                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = SynMemberKind.PropertySet ->
             if name.StartsWithOrdinal("set_") then Some(name, range) else Some("set_" + name, range)
-        | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, LongIdentPattern(name, range), 
-                    _retTy, _expr, _bindingRange, _seqPoint) ->
+        | SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, LongIdentPattern(name, range), 
+                     _retTy, _expr, _bindingRange, _seqPoint) ->
             Some(name, range)
         | _ ->
             None
@@ -527,7 +537,8 @@ module InterfaceStubGenerator =
     /// Get associated member names and ranges
     /// In case of properties, intrinsic ranges might not be correct for the purpose of getting
     /// positions of 'member', which indicate the indentation for generating new members
-    let getMemberNameAndRanges = function
+    let GetMemberNameAndRanges interfaceData = 
+        match interfaceData with
         | InterfaceData.Interface(_, None) -> 
             []
         | InterfaceData.Interface(_, Some memberDefns) -> 
@@ -549,7 +560,7 @@ module InterfaceStubGenerator =
     ///  (1) Crack ASTs to get member names and their associated ranges
     ///  (2) Check symbols of those members based on ranges
     ///  (3) If any symbol found, capture its member signature 
-    let getImplementedMemberSignatures (getMemberByLocation: string * range -> FSharpSymbolUse option) displayContext interfaceData = 
+    let GetImplementedMemberSignatures (getMemberByLocation: string * range -> FSharpSymbolUse option) displayContext interfaceData = 
         let formatMemberSignature (symbolUse: FSharpSymbolUse) =            
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as m ->
@@ -568,7 +579,7 @@ module InterfaceStubGenerator =
                 None
         async {
             let symbolUses = 
-                getMemberNameAndRanges interfaceData
+                GetMemberNameAndRanges interfaceData
                 |> List.toArray
                 |> Array.map getMemberByLocation
             return symbolUses |> Array.choose (Option.bind formatMemberSignature >> Option.map String.Concat)
@@ -576,14 +587,14 @@ module InterfaceStubGenerator =
         }
 
     /// Check whether an entity is an interface or type abbreviation of an interface
-    let rec isInterface (e: FSharpEntity) =
-        e.IsInterface || (e.IsFSharpAbbreviation && isInterface e.AbbreviatedType.TypeDefinition)
+    let rec IsInterface (entity: FSharpEntity) =
+        entity.IsInterface || (entity.IsFSharpAbbreviation && IsInterface entity.AbbreviatedType.TypeDefinition)
 
     /// Generate stub implementation of an interface at a start column
-    let formatInterface startColumn indentation (typeInstances: string []) objectIdent
+    let FormatInterface startColumn indentation (typeInstances: string []) objectIdent
             (methodBody: string) (displayContext: FSharpDisplayContext) excludedMemberSignatures
             (e: FSharpEntity) verboseMode =
-        Debug.Assert(isInterface e, "The entity should be an interface.")
+        Debug.Assert(IsInterface e, "The entity should be an interface.")
         let lines = String.getLines methodBody
         use writer = new ColumnIndentedTextWriter()
         let typeParams = Seq.map getTypeParameterName e.GenericParameters
@@ -604,7 +615,7 @@ module InterfaceStubGenerator =
         let ctx = { Writer = writer; TypeInstantations = instantiations; ArgInstantiations = Seq.empty;
                     Indentation = indentation; ObjectIdent = objectIdent; MethodBody = lines; DisplayContext = displayContext }
         let missingMembers =
-            getInterfaceMembers e
+            GetInterfaceMembers e
             |> Seq.groupBy (fun (m, insts) ->               
                 match m with
                 | _ when isEventMember m  ->
@@ -668,7 +679,7 @@ module InterfaceStubGenerator =
             writer.Dump()
 
     /// Find corresponding interface declaration at a given position
-    let tryFindInterfaceDeclaration (pos: pos) (parsedInput: ParsedInput) =
+    let TryFindInterfaceDeclaration (pos: pos) (parsedInput: ParsedInput) =
         let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) = 
             List.tryPick walkSynModuleOrNamespace moduleOrNamespaceList
 
@@ -702,7 +713,7 @@ module InterfaceStubGenerator =
                 | SynModuleDecl.Open _ -> 
                     None
 
-        and walkSynTypeDefn(TypeDefn(_componentInfo, representation, members, range)) = 
+        and walkSynTypeDefn(SynTypeDefn(_componentInfo, representation, members, _, range)) = 
             if not <| rangeContainsPos range pos then
                 None
             else
@@ -747,7 +758,7 @@ module InterfaceStubGenerator =
                 | SynMemberDefn.Inherit _ -> None
                 | SynMemberDefn.ImplicitInherit (_, expr, _, _) -> walkExpr expr
 
-        and walkBinding (Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, _headPat, _retTy, expr, _bindingRange, _seqPoint)) =
+        and walkBinding (SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, _headPat, _retTy, expr, _bindingRange, _seqPoint)) =
             walkExpr expr
 
         and walkExpr expr =
@@ -782,7 +793,7 @@ module InterfaceStubGenerator =
                         if rangeContainsPos ty.Range pos then
                             Some (InterfaceData.ObjExpr(ty, binds))
                         else
-                            ifaces |> List.tryPick (fun (InterfaceImpl(ty, binds, range)) ->
+                            ifaces |> List.tryPick (fun (SynInterfaceImpl(ty, binds, range)) ->
                                 if rangeContainsPos range pos then 
                                     Some (InterfaceData.ObjExpr(ty, binds))
                                 else None)
@@ -806,10 +817,10 @@ module InterfaceStubGenerator =
                      walkExpr synExpr
 
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) -> 
-                    synMatchClauseList |> List.tryPick (fun (Clause(_, _, e, _, _)) -> walkExpr e)
+                    synMatchClauseList |> List.tryPick (fun (SynMatchClause(_, _, e, _, _)) -> walkExpr e)
                 | SynExpr.Match (_sequencePointInfoForBinding, synExpr, synMatchClauseList, _range) ->
                     walkExpr synExpr
-                    |> Option.orElse (synMatchClauseList |> List.tryPick (fun (Clause(_, _, e, _, _)) -> walkExpr e))
+                    |> Option.orElse (synMatchClauseList |> List.tryPick (fun (SynMatchClause(_, _, e, _, _)) -> walkExpr e))
 
                 | SynExpr.Lazy (synExpr, _range) ->
                     walkExpr synExpr
@@ -927,4 +938,3 @@ module InterfaceStubGenerator =
             None
         | ParsedInput.ImplFile input -> 
             walkImplFileInput input
-#endif

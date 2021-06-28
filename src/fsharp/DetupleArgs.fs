@@ -2,16 +2,16 @@
 
 module internal FSharp.Compiler.Detuple 
 
-open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.Lib
+open Internal.Utilities.Collections
+open Internal.Utilities.Library 
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.XmlDoc
 
 // This pass has one aim.
 // - to eliminate tuples allocated at call sites (due to uncurried style)
@@ -631,10 +631,10 @@ type env =
 
       prefix: string
 
-      m: Range.range
+      m: range
     }
 
-    override __.ToString() = "<env>"
+    override _.ToString() = "<env>"
 
 let suffixE env s = {env with prefix = env.prefix + s}
 
@@ -665,7 +665,7 @@ let buildProjections env bindings x xtys =
         xtys 
         |> List.mapi (fun i xty ->
             let vi, vix = newLocalN env i xty
-            let bind = mkBind NoDebugPointAtInvisibleBinding vi (mkTupleFieldGet env.eg (tupInfoRef, x, xtys, i, env.m))
+            let bind = mkBind DebugPointAtBinding.NoneAtInvisible vi (mkTupleFieldGet env.eg (tupInfoRef, x, xtys, i, env.m))
             bind, vix)
         |> List.unzip
 

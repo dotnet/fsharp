@@ -17,6 +17,16 @@
         <target state="translated">功能“{0}”需要 {1} 或更高语言版本的 F# 库。</target>
         <note />
       </trans-unit>
+      <trans-unit id="containerDeprecated">
+        <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
+        <target state="translated">"AssemblyKeyNameAttribute" 已被弃用。请改为使用 "AssemblyKeyFileAttribute"。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="containerSigningUnsupportedOnThisPlatform">
+        <source>Key container signing is not supported on this platform.</source>
+        <target state="translated">此平台上不支持密钥容器签名。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">可用重载:\n{0}</target>
@@ -87,6 +97,11 @@
         <target state="translated">默认接口成员消耗</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDiscardUseValue">
+        <source>discard pattern in use binding</source>
+        <target state="translated">放弃使用绑定模式</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
         <target state="translated">无点 float32 文本</target>
@@ -122,6 +137,11 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
+        <source>non-variable patterns to the right of 'as' patterns</source>
+        <target state="translated">"as" 模式右侧的非变量模式</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">可以为 null 的可选互操作</target>
@@ -142,6 +162,11 @@
         <target state="translated">包管理</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePrintfBinaryFormat">
+        <source>binary formatting for integers</source>
+        <target state="translated">整数的二进制格式设置</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
         <target state="translated">空格松弛法</target>
@@ -155,6 +180,11 @@
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">字符串内插</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStructActivePattern">
+        <source>struct representation for active patterns</source>
+        <target state="translated">活动模式的结构表示形式</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -237,6 +267,11 @@
         <target state="translated">以偏移量 {0} 开始的资源标头格式不正确。</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAllSigs">
+        <source>Print the inferred interfaces of all compilation files to associated signature files</source>
+        <target state="translated">将所有编译文件的推断接口打印到关联的签名文件</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">显示语言版本的允许值，指定语言版本，如“最新”或“预览”</target>
@@ -255,6 +290,11 @@
       <trans-unit id="optsVersion">
         <source>Display compiler version banner and exit</source>
         <target state="translated">显示编译器版本横幅并退出</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsWin32icon">
+        <source>Specify a Win32 icon file (.ico)</source>
+        <target state="translated">指定 Win32 图标文件(.ico)</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -312,6 +352,21 @@
         <target state="translated">注册的 PackageManager 不支持 #i</target>
         <note />
       </trans-unit>
+      <trans-unit id="scriptSdkNotDetermined">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
+        <target state="translated">无法确定此脚本的 .NET SDK。如果脚本在使用 "global.json" 的目录中，请确保已安装相关的 .NET SDK。目录“{1}”中 "{0} --version" 的输出为“{2}”，退出代码为“{3}”。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedNoHost">
+        <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
+        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedUnexpected">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
+        <target state="translated">无法确定此脚本的 .NET SDK。如果脚本在使用 "global.json" 的目录中，请确保已安装相关的 .NET SDK。出现意外错误“{0}”。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
         <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
         <target state="translated">此版本的 F# 不支持此功能。你可能需要添加 /langversion:preview 才可使用此功能。</target>
@@ -357,9 +412,19 @@
         <target state="translated">内插字符串中的对齐无效</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidStructReturn">
+        <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
+        <target state="translated">只允许在部分活动模式定义中对值、函数和方法使用 "[&lt;Struct&gt;]"</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">use! 不得与 and! 结合使用</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
+        <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
+        <target state="translated">[&lt;Literal&gt;] 声明不能对其标识符使用活动模式</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
@@ -2748,8 +2813,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMemberKindPropertyGetSetNotExpected">
-        <source>MemberKind.PropertyGetSet only expected in parse trees</source>
-        <target state="translated">仅分析树中需要 MemberKind.PropertyGetSet</target>
+        <source>SynMemberKind.PropertyGetSet only expected in parse trees</source>
+        <target state="translated">分析树中只应有 SynMemberKind.PropertyGetSet</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainValues">

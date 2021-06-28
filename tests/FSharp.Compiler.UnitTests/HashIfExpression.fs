@@ -12,12 +12,13 @@ open Internal.Utilities
 open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Lexer
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 
 type public HashIfExpression() =
     let preludes    = [|"#if "; "#elif "|]
@@ -55,7 +56,7 @@ type public HashIfExpression() =
         let errorLogger =
             {
                 new ErrorLogger("TestErrorLogger") with
-                    member x.DiagnosticSink(e, isError)    = if isError then errors.Add e else warnings.Add e
+                    member x.DiagnosticSink(e, sev)    = if sev = FSharpDiagnosticSeverity.Error then errors.Add e else warnings.Add e
                     member x.ErrorCount         = errors.Count
             }
 
@@ -69,7 +70,7 @@ type public HashIfExpression() =
 
         let parser (s : string) =
             let isFeatureSupported (_featureId:LanguageFeature) = true
-            let lexbuf          = LexBuffer<char>.FromChars (isFeatureSupported, s.ToCharArray ())
+            let lexbuf          = LexBuffer<char>.FromChars (true, isFeatureSupported, s.ToCharArray ())
             lexbuf.StartPos     <- startPos
             lexbuf.EndPos       <- startPos
             let tokenStream     = PPLexer.tokenstream args

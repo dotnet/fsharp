@@ -12,6 +12,11 @@
         <target state="translated">Jeśli ustawiono wartość true i obecnie jest używany komputer 64-bitowy, należy uruchomić narzędzie F# Interactive jako proces 64-bitowy. W przeciwnym razie narzędzie F# Interactive zostanie uruchomione jako proces 32-bitowy.</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpInteractiveMisc">
+        <source>Misc</source>
+        <target state="translated">Różne</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
         <source>F# Interactive options</source>
         <target state="translated">Opcje narzędzia F# Interactive</target>
@@ -20,11 +25,6 @@
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
         <target state="translated">Argumenty wiersza polecenia przekazywane do pliku wykonywalnego narzędzia F# Interactive przez program Visual Studio. (Flagi optymalizacji i debugowania są ignorowane, jeśli włączone jest debugowanie skryptów).</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpInteractiveMisc">
-        <source>Misc</source>
-        <target state="translated">Różne</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreview">
@@ -65,6 +65,16 @@
       <trans-unit id="FSharpInteractiveDebugging">
         <source>Debugging</source>
         <target state="translated">Debugowanie</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCore">
+        <source>Use .NET Core Scripting</source>
+        <target state="translated">Użyj wykonywania skryptów .NET Core</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCoreDescr">
+        <source>Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</source>
+        <target state="translated">Włącz edycję i wykonywanie skryptów .NET Core dla wszystkich skryptów języka F# i okna narzędzia F# Interactive</target>
         <note />
       </trans-unit>
     </body>

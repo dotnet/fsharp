@@ -3,6 +3,7 @@
 namespace Internal.Utilities
 
 open Microsoft.FSharp.Core
+open System.IO
 
 module internal FSharpEnvironment =
 
@@ -29,8 +30,7 @@ module internal FSharpEnvironment =
 
     val toolingCompatiblePaths: unit -> string list
 
-    val searchToolPaths:
-      path:string option -> compilerToolPaths:seq<string> -> seq<string>
+    val searchToolPaths: path:string option -> compilerToolPaths:seq<string> -> seq<string>
 
     val getTypeProviderAssembly:
       runTimeAssemblyFileName:string *
@@ -39,4 +39,26 @@ module internal FSharpEnvironment =
       raiseError:(string option -> exn -> System.Reflection.Assembly option)
            -> System.Reflection.Assembly option
 
+    val getFSharpCompilerLocation: unit -> string
+
+    val getDefaultFSharpCoreLocation: unit -> string
+
+    val getDefaultFsiLibraryLocation: unit -> string
+
     val getCompilerToolsDesignTimeAssemblyPaths: compilerToolPaths:seq<string> -> seq<string>
+
+    val fsiLibraryName: string
+
+    val getFSharpCoreLibraryName: string
+
+    val isWindows: bool
+
+    val dotnet: string
+
+    val getDotnetHostPath: unit -> string option
+
+    val getDotnetHostDirectories: unit -> string []
+
+    val getDotnetHostDirectory: unit -> string option
+
+    val getDotnetHostSubDirectories: string -> DirectoryInfo []

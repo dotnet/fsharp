@@ -1,11 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public FSharp.Compiler.SyntaxTreeOps
+module internal FSharp.Compiler.SyntaxTreeOps
 
-
-open FSharp.Compiler
-open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
+open FSharp.Compiler.Syntax
 
 [<Class>]
 type SynArgNameGenerator =
@@ -49,9 +48,9 @@ val (|SingleIdent|_|): inp:SynExpr -> Ident option
 /// This affects placement of sequence points
 val IsControlFlowExpression: e:SynExpr -> bool
 
-val mkAnonField: ty:SynType -> SynField
+val mkSynAnonField: ty:SynType -> SynField
 
-val mkNamedField: ident:Ident * ty:SynType * m:range -> SynField
+val mkSynNamedField: ident:Ident * ty:SynType * m:range -> SynField
 
 val mkSynPatVar: vis:SynAccess option -> id:Ident -> SynPat
 
@@ -154,6 +153,10 @@ val ConcatAttributesLists: attrsLists:SynAttributeList list -> SynAttribute list
 
 val ( |Attributes| ): synAttributes:SynAttributeList list -> SynAttribute list
 
+val ( |TyparDecls| ): typarDecls: SynTyparDecls option -> SynTyparDecl list
+val ( |TyparsAndConstraints| ): typarDecls: SynTyparDecls option -> SynTyparDecl list * SynTypeConstraint list
+val ( |ValTyparDecls| ): valTyparDecls: SynValTyparDecls -> SynTyparDecl list * SynTypeConstraint list * bool
+
 val rangeOfNonNilAttrs: attrs:SynAttributes -> range
 
 val stripParenTypes: synType:SynType -> SynType
@@ -221,7 +224,7 @@ module SynInfo =
     /// Transform a property declared using '[static] member P = expr' to a method taking a "unit" argument.
     /// This is similar to IncorporateEmptyTupledArgForPropertyGetter, but applies to member definitions
     /// rather than member signatures.
-    val AdjustMemberArgs: memFlags:MemberKind -> infosForArgs:'a list list -> 'a list list
+    val AdjustMemberArgs: memFlags:SynMemberKind -> infosForArgs:'a list list -> 'a list list
 
     /// For 'let' definitions, we infer syntactic argument information from the r.h.s. of a definition, if it
     /// is an immediate 'fun ... -> ...' or 'function ...' expression. This is noted in the F# language specification.
@@ -235,31 +238,33 @@ module SynInfo =
     /// Infer the syntactic information for a 'let' or 'member' definition, based on the argument pattern,
     /// any declared return information (e.g. .NET attributes on the return element), and the r.h.s. expression
     /// in the case of 'let' definitions.
-    val InferSynValData: memberFlagsOpt:MemberFlags option * pat:SynPat option * retInfo:SynReturnInfo option * origRhsExpr:SynExpr -> SynValData
+    val InferSynValData: memberFlagsOpt:SynMemberFlags option * pat:SynPat option * retInfo:SynReturnInfo option * origRhsExpr:SynExpr -> SynValData
   
 val mkSynBindingRhs: staticOptimizations:(SynStaticOptimizationConstraint list * SynExpr) list -> rhsExpr:SynExpr -> mRhs:range -> retInfo:SynReturnInfo option -> SynExpr * SynBindingReturnInfo option
 
 val mkSynBinding:
-    xmlDoc:XmlDoc.PreXmlDoc * headPat:SynPat ->
+    xmlDoc:PreXmlDoc * headPat:SynPat ->
       vis:SynAccess option * isInline:bool * isMutable:bool * mBind:range * 
-      spBind:DebugPointForBinding * retInfo:SynReturnInfo option * origRhsExpr:SynExpr * mRhs:range *
-      staticOptimizations:(SynStaticOptimizationConstraint list * SynExpr) list * attrs:SynAttributes * memberFlagsOpt:MemberFlags option 
+      spBind:DebugPointAtBinding * retInfo:SynReturnInfo option * origRhsExpr:SynExpr * mRhs:range *
+      staticOptimizations:(SynStaticOptimizationConstraint list * SynExpr) list * attrs:SynAttributes * memberFlagsOpt:SynMemberFlags option 
         -> SynBinding
 
-val NonVirtualMemberFlags: k:MemberKind -> MemberFlags
+val NonVirtualMemberFlags: k:SynMemberKind -> SynMemberFlags
 
-val CtorMemberFlags: MemberFlags
+val CtorMemberFlags: SynMemberFlags
 
-val ClassCtorMemberFlags: MemberFlags
+val ClassCtorMemberFlags: SynMemberFlags
 
-val OverrideMemberFlags: k:MemberKind -> MemberFlags
+val OverrideMemberFlags: k:SynMemberKind -> SynMemberFlags
 
-val AbstractMemberFlags: k:MemberKind -> MemberFlags
+val AbstractMemberFlags: k:SynMemberKind -> SynMemberFlags
 
-val StaticMemberFlags: k:MemberKind -> MemberFlags
+val StaticMemberFlags: k:SynMemberKind -> SynMemberFlags
 
 val inferredTyparDecls: SynValTyparDecls
 
 val noInferredTypars: SynValTyparDecls
 
 val synExprContainsError: inpExpr:SynExpr -> bool
+
+val ( |ParsedHashDirectiveArguments| ) : ParsedHashDirectiveArgument list -> string list

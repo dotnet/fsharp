@@ -17,6 +17,16 @@
         <target state="translated">O recurso '{0}' exige a biblioteca F# para a versão da linguagem {1} ou posterior.</target>
         <note />
       </trans-unit>
+      <trans-unit id="containerDeprecated">
+        <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
+        <target state="translated">O 'AssemblyKeyNameAttribute' foi preterido. Use o 'AssemblyKeyFileAttribute'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="containerSigningUnsupportedOnThisPlatform">
+        <source>Key container signing is not supported on this platform.</source>
+        <target state="translated">Não há suporte para a assinatura do contêiner de chave nesta plataforma.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">Sobrecargas disponíveis:\n{0}</target>
@@ -87,6 +97,11 @@
         <target state="translated">consumo de membro da interface padrão</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDiscardUseValue">
+        <source>discard pattern in use binding</source>
+        <target state="translated">descartar o padrão em uso de associação</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
         <target state="translated">literal float32 sem ponto</target>
@@ -122,6 +137,11 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
+        <source>non-variable patterns to the right of 'as' patterns</source>
+        <target state="translated">padrões não-variáveis à direita dos padrões 'as'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">interoperabilidade opcional anulável</target>
@@ -142,6 +162,11 @@
         <target state="translated">gerenciamento de pacotes</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePrintfBinaryFormat">
+        <source>binary formatting for integers</source>
+        <target state="translated">formatação binária para números inteiros</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
         <target state="translated">atenuação de espaço em branco</target>
@@ -155,6 +180,11 @@
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolação da cadeia de caracteres</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStructActivePattern">
+        <source>struct representation for active patterns</source>
+        <target state="translated">representação estrutural para padrões ativos</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -237,6 +267,11 @@
         <target state="translated">O cabeçalho do recurso que começa no deslocamento {0} está malformado.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAllSigs">
+        <source>Print the inferred interfaces of all compilation files to associated signature files</source>
+        <target state="translated">Imprimir as interfaces inferidas de todos os arquivos de compilação para os arquivos de assinatura associados</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Exibe os valores permitidos para a versão do idioma, especifica a versão do idioma, como 'mais recente ' ou 'prévia'</target>
@@ -255,6 +290,11 @@
       <trans-unit id="optsVersion">
         <source>Display compiler version banner and exit</source>
         <target state="translated">Exibir a faixa de versão do compilador e sair</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsWin32icon">
+        <source>Specify a Win32 icon file (.ico)</source>
+        <target state="translated">Especificar um arquivo de ícone do Win32 (.ico)</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -312,6 +352,21 @@
         <target state="translated">O PackageManagers registrado não dá suporte a #i</target>
         <note />
       </trans-unit>
+      <trans-unit id="scriptSdkNotDetermined">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
+        <target state="translated">Não foi possível determinar o SDK do .NET para esse script. Se o script estiver em um diretório usando um 'global.json', verifique se o SDK relevante do .NET está instalado. A saída de '{0} --version' no diretório '{1}' foi: '{2}' e o código de saída foi '{3}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedNoHost">
+        <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
+        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedUnexpected">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
+        <target state="translated">Não foi possível determinar o SDK do .NET deste script. Se o script estiver em um diretório que usa um 'global.json', verifique se o SDK do .NET relevante está instalado. Erro inesperado '{0}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
         <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
         <target state="translated">Este recurso não tem suporte nesta versão do F#. Talvez seja necessário adicionar /langversion:preview para usar este recurso.</target>
@@ -357,9 +412,19 @@
         <target state="translated">Alinhamento inválido na cadeia de caracteres interpolada</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidStructReturn">
+        <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
+        <target state="translated">O uso de '[&lt;Struct&gt;]' em valores, funções e métodos somente é permitido em definições de padrões ativos parciais</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">use! não pode ser combinado com and!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
+        <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
+        <target state="translated">Uma declaração [&lt;Literal&gt;] não pode usar um padrão ativo para seu identificador</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
@@ -2748,8 +2813,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMemberKindPropertyGetSetNotExpected">
-        <source>MemberKind.PropertyGetSet only expected in parse trees</source>
-        <target state="translated">MemberKind.PropertyGetSet só é esperado em árvores de análise</target>
+        <source>SynMemberKind.PropertyGetSet only expected in parse trees</source>
+        <target state="translated">SynMemberKind.PropertyGetSet só é esperado em árvores de análise</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainValues">

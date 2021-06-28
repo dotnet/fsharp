@@ -247,6 +247,16 @@
         <target state="translated">新建文件夹(&amp;D)</target>
         <note />
       </trans-unit>
+      <trans-unit id="cmdidQuitProcess|ButtonText">
+        <source>Quit F# Interactive Process</source>
+        <target state="translated">退出 F# 交互进程</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cmdidQuitProcess|CommandName">
+        <source>FSharp.Interactive.QuitProcess</source>
+        <target state="translated">FSharp.Interactive.QuitProcess</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

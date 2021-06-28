@@ -15,8 +15,8 @@ open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Core.Printf
 open Microsoft.FSharp.Text.StructuredPrintfImpl
-open Microsoft.FSharp.Text.StructuredPrintfImpl.LayoutOps
-open Microsoft.FSharp.Text.StructuredPrintfImpl.TaggedTextOps
+open Microsoft.FSharp.Text.StructuredPrintfImpl.Layout
+open Microsoft.FSharp.Text.StructuredPrintfImpl.TaggedText
 
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
 
@@ -244,7 +244,7 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>]
         let expr (e: Expr ) = e.GetLayout long
         let exprs (es: Expr list) = es |> List.map expr
         let parens ls = bracketL (commaListL ls)
-        let pairL l1 l2 = bracketL (l1 ^^ sepL Literals.comma ^^ l2)
+        let pairL l1 l2 = bracketL (l1 ^^ sepL comma ^^ l2)
         let listL ls = squareBracketL (commaListL ls)
         let combTaggedL nm ls = wordL nm ^^ parens ls
         let combL nm ls = combTaggedL (tagKeyword nm) ls

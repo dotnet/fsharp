@@ -7,14 +7,34 @@
         <target state="translated">Aggiungere il carattere '=' mancante alla definizione di tipo</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingFunKeyword">
+        <source>Add missing 'fun' keyword</source>
+        <target state="translated">Aggiungi la parola chiave mancante 'fun'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddMissingInstanceMemberParameter">
+        <source>Add missing instance member parameter</source>
+        <target state="translated">Aggiungi parametro membro di istanza mancante</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">Aggiungi la parola chiave 'new'</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddTypeAnnotation">
+        <source>Add type annotation</source>
+        <target state="translated">Aggiungere l'annotazione di tipo</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
         <target state="translated">Converti in record anonimo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToNotEqualsEqualityExpression">
+        <source>Use '&lt;&gt;' for inequality check</source>
+        <target state="translated">Usare '&lt;&gt;' per il controllo di disuguaglianza</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
@@ -33,7 +53,7 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTopLevelValuesClassificationType">
-        <source>F# Dispostable Values (top-level)</source>
+        <source>F# Disposable Values (top-level)</source>
         <target state="translated">Valori eliminabili F# (primo livello)</target>
         <note />
       </trans-unit>
@@ -64,7 +84,7 @@
       </trans-unit>
       <trans-unit id="MakeOuterBindingRecursive">
         <source>Make '{0}' recursive</source>
-        <target state="new">Make '{0}' recursive</target>
+        <target state="translated">Imposta '{0}' come ricorsivo</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -74,22 +94,27 @@
       </trans-unit>
       <trans-unit id="RemoveReturn">
         <source>Remove 'return'</source>
-        <target state="new">Remove 'return'</target>
+        <target state="translated">Rimuovi 'return'</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
-        <target state="new">Remove 'return!'</target>
+        <target state="translated">Rimuovi 'return!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnusedBinding">
+        <source>Remove unused binding</source>
+        <target state="translated">Rimuovi il binding inutilizzato</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveYield">
         <source>Remove 'yield'</source>
-        <target state="new">Remove 'yield'</target>
+        <target state="translated">Rimuovi 'yield'</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveYieldBang">
-        <source>Remove yield!'</source>
-        <target state="new">Remove yield!'</target>
+        <source>Remove 'yield!'</source>
+        <target state="translated">Rimuovi 'yield!'</target>
         <note />
       </trans-unit>
       <trans-unit id="RenameValueToUnderscore">
@@ -224,12 +249,17 @@
       </trans-unit>
       <trans-unit id="UseFSharpLambda">
         <source>Use F# lambda syntax</source>
-        <target state="new">Use F# lambda syntax</target>
+        <target state="translated">Usa la sintassi lambda di F#</target>
         <note />
       </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">
         <source>Use '&lt;-' to mutate value</source>
         <target state="translated">Usare '&lt;-' per modificare il valore</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseNameof">
+        <source>Use 'nameof'</source>
+        <target state="translated">Usa 'nameof'</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">
@@ -245,6 +275,11 @@
       <trans-unit id="UseNotForNegation">
         <source>Use 'not' to negate expression</source>
         <target state="translated">Usare 'not' per negare l'espressione</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseValueInsteadOfDeref">
+        <source>Use '.Value' to dereference expression</source>
+        <target state="translated">Usa '.Value' per dereferenziare l'espressione</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">

@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="invalidTimeoutValue">
         <source>Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</source>
-        <target state="new">Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</target>
+        <target state="translated">Ungültiger Wert für Timeout "{0}", gültige Werte: keine, -1 und ganzzahlige Millisekundenwerte für die Wartezeit</target>
         <note />
       </trans-unit>
       <trans-unit id="loadNugetPackage">
@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="missingTimeoutValue">
         <source>Missing value for timeout</source>
-        <target state="new">Missing value for timeout</target>
+        <target state="translated">Fehlender Wert für Timeout</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsed">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="timedoutResolvingPackages">
         <source>Timed out resolving packages, process: '{0}' '{1}'</source>
-        <target state="new">Timed out resolving packages, process: '{0}' '{1}'</target>
+        <target state="translated">Timeout beim Auflösen von Paketen, Prozess: "{0}" "{1}"</target>
         <note />
       </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">

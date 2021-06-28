@@ -13,27 +13,6 @@ FSharp.Compiler.Service.dll を利用するアプリケーションまたはプ�
 
 動的コンパイルや動的実行を行う場合、FSharp.Core.optdata と FSharp.Core.sigdata も含める必要があるかもしれませんが、これらについては下記の指針をご覧ください。
 
-あなたのアプリケーションにリダイレクトをバインドする
-----------------------------------------------------
-
-FSharp.Compiler.Service.dll コンポーネントは FSharp.Core 4.3.0.0 に依存しています。通例、あなたのアプリケーションはこれより後のバージョンの FSharp.Core をターゲットにしており、FSharp.Core 4.3.0.0 をあなたのアプリケーションで用いる FSharp.Core.dll の最終バージョンにちゃんと転送させるように[バインド リダイレクト](https://msdn.microsoft.com/ja-jp/library/7wd6ex19(v=vs.110).aspx)が必要になるでしょう。バインド リダイレクト ファイルは通常ビルドツールによって自動的に生成されます。そうでない場合、下記のようなファイル(あなたのツールが ``HostedCompiler.exe`` という名前で、バインド リダイレクト ファイルが ``HostedCompiler.exe.config`` という名前の場合)を使うことが出来ます。
-
-    <?xml version="1.0" encoding="utf-8" ?>
-    <configuration>
-        <runtime>
-          <assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">
-            <dependentAssembly>
-              <assemblyIdentity name="FSharp.Core" publicKeyToken="b03f5f7f11d50a3a" culture="neutral"/>
-              <bindingRedirect oldVersion="2.0.0.0-4.3.0.0" newVersion="4.3.1.0"/>
-            </dependentAssembly>
-            <dependentAssembly>
-              <assemblyIdentity name="System.Collections.Immutable" publicKeyToken="b03f5f7f11d50a3a" culture="neutral" />
-              <bindingRedirect oldVersion="1.0.0.0-1.2.0.0" newVersion="1.2.1.0" />
-            </dependentAssembly>
-          </assemblyBinding>
-        </runtime>
-    </configuration>
-
 どの FSharp.Core と .NET フレームワークがコンパイル時に参照される？
 --------------------------------------
 

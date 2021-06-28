@@ -59,11 +59,11 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <PropertyGroup Condition="'$(DisableAutoSetFscCompilerPath)' != 'true' and '$(DOTNET_HOST_PATH)' != ''">
     <FscToolPath Condition="'$(FscToolPath)' == ''">$([System.IO.Path]::GetDirectoryName($(DOTNET_HOST_PATH)))</FscToolPath>
     <FscToolExe Condition="'$(FscToolExe)' == ''">$([System.IO.Path]::GetFileName($(DOTNET_HOST_PATH)))</FscToolExe>
-    <DotnetFscCompilerPath Condition="'$(DotnetFscCompilerPath)' == ''">"$(MSBuildThisFileDirectory)fsc.exe"</DotnetFscCompilerPath>
+    <DotnetFscCompilerPath Condition="'$(DotnetFscCompilerPath)' == ''">"$(MSBuildThisFileDirectory)fsc.dll"</DotnetFscCompilerPath>
 
     <FsiToolPath Condition="'$(FsiToolPath)' == ''">$([System.IO.Path]::GetDirectoryName($(DOTNET_HOST_PATH)))</FsiToolPath>
     <FsiToolExe Condition="'$(FsiToolExe)' == ''">$([System.IO.Path]::GetFileName($(DOTNET_HOST_PATH)))</FsiToolExe>
-    <DotnetFsiCompilerPath Condition="'$(DotnetFscCompilerPath)' == ''">"$(MSBuildThisFileDirectory)fsi.exe"</DotnetFsiCompilerPath>
+    <DotnetFsiCompilerPath Condition="'$(DotnetFscCompilerPath)' == ''">"$(MSBuildThisFileDirectory)fsi.dll"</DotnetFsiCompilerPath>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(DisableImplicitSystemValueTupleReference)' != 'true'
@@ -84,19 +84,27 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
     <PackageReference
         Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)"
-        Condition = "'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' != ''"/>
+        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' != ''">
+      <ExcludeAssets Condition="'$(FSharpCoreIncludeDocFileInOutput)' != 'true'">contentFiles</ExcludeAssets>
+    </PackageReference>
 
     <PackageReference
         Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersion)"
-        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(DisableFSharpCorePreviewCheck)' == 'true'"/>
+        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(DisableFSharpCorePreviewCheck)' == 'true'">
+      <ExcludeAssets Condition="'$(FSharpCoreIncludeDocFileInOutput)' != 'true'">contentFiles</ExcludeAssets>
+    </PackageReference>
 
     <PackageReference
         Include="FSharp.Core" Version="$(FSharpCorePreviewPackageVersion)"
-        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(DisableFSharpCorePreviewCheck)' != 'true'"/>
+        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(DisableFSharpCorePreviewCheck)' != 'true'">
+      <ExcludeAssets Condition="'$(FSharpCoreIncludeDocFileInOutput)' != 'true'">contentFiles</ExcludeAssets>
+    </PackageReference>
 
     <PackageReference
         Include="FSharp.Core" Version="$(FSCorePackageVersion)"
-        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' != 'true'"/>
+        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' != 'true'">
+      <ExcludeAssets Condition="'$(FSharpCoreIncludeDocFileInOutput)' != 'true'">contentFiles</ExcludeAssets>
+    </PackageReference>
 
   </ItemGroup>
 

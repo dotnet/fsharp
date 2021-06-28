@@ -26,6 +26,9 @@ module Constants =
     [<Literal>]
     let FSharpEditorFactoryPhysicalViewAttributes = 2
 
+    [<Literal>]
+    let FSharpAnalysisSaveFileHandler = "FSharp Analysis Save File Handler"
+
 [<Guid(Constants.FSharpEditorFactoryIdString)>]
 type FSharpEditorFactory(parentPackage: ShellPackage) =
 
@@ -67,9 +70,9 @@ type FSharpEditorFactory(parentPackage: ShellPackage) =
     
     interface IVsEditorFactory with
 
-        member __.Close() = VSConstants.S_OK
+        member _.Close() = VSConstants.S_OK
 
-        member __.CreateEditorInstance(_grfCreateDoc, _pszMkDocument, _pszPhysicalView, _pvHier, _itemid, punkDocDataExisting, ppunkDocView, ppunkDocData, pbstrEditorCaption, pguidCmdUI, pgrfCDW) =
+        member _.CreateEditorInstance(_grfCreateDoc, _pszMkDocument, _pszPhysicalView, _pvHier, _itemid, punkDocDataExisting, ppunkDocView, ppunkDocData, pbstrEditorCaption, pguidCmdUI, pgrfCDW) =
             ppunkDocView <- IntPtr.Zero
             ppunkDocData <- IntPtr.Zero
             pbstrEditorCaption <- String.Empty
@@ -99,7 +102,7 @@ type FSharpEditorFactory(parentPackage: ShellPackage) =
                     let textBuffer = editorAdaptersFactoryService.CreateVsTextBufferAdapter(oleServiceProvider, contentType)
                     setWindowBuffer oleServiceProvider textBuffer &ppunkDocView &ppunkDocData &pbstrEditorCaption
 
-        member __.MapLogicalView(rguidLogicalView, pbstrPhysicalView) =
+        member _.MapLogicalView(rguidLogicalView, pbstrPhysicalView) =
             pbstrPhysicalView <- null
 
             match rguidLogicalView with
@@ -112,7 +115,7 @@ type FSharpEditorFactory(parentPackage: ShellPackage) =
             | _ ->
                 VSConstants.E_NOTIMPL
 
-        member __.SetSite(packageServiceProvider) =
+        member _.SetSite(packageServiceProvider) =
             oleServiceProviderOpt <- Some packageServiceProvider
             VSConstants.S_OK
         

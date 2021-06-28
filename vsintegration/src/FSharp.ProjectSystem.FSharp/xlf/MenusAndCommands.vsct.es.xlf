@@ -247,6 +247,16 @@
         <target state="translated">N&amp;ueva carpeta</target>
         <note />
       </trans-unit>
+      <trans-unit id="cmdidQuitProcess|ButtonText">
+        <source>Quit F# Interactive Process</source>
+        <target state="translated">Salir del proceso de F# interactivo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cmdidQuitProcess|CommandName">
+        <source>FSharp.Interactive.QuitProcess</source>
+        <target state="translated">FSharp.Interactive.QuitProcess</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

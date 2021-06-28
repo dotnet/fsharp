@@ -8,7 +8,10 @@ open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
 open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Tokenization
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Salsa.Salsa
 open Salsa
@@ -262,7 +265,7 @@ type UsingMSBuild() =
             [ "type C() = "
               "    member this.F() = ()"
               "    interface System.IComparable with "
-              "        member __.CompareTo(v:obj) = 1" ]
+              "        member _.CompareTo(v:obj) = 1" ]
             )
 
     [<Test; Category("Expensive")>]

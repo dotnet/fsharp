@@ -40,8 +40,8 @@ let evalExpression text =
     | Some value -> sprintf "%A" value.ReflectionValue
     | None -> sprintf "null or no result"
 
-let formatErrors (errs: FSharpErrorInfo[]) = 
-   [ for err in errs do yield sprintf "%s %d,%d - %d,%d; %s" (match err.Severity with FSharpErrorSeverity.Error -> "error" | FSharpErrorSeverity.Warning -> "warning") err.StartLineAlternate err.StartColumn err.EndLineAlternate err.EndColumn err.Message ]
+let formatErrors (errs: FSharpDiagnostic[]) = 
+   [ for err in errs do yield sprintf "%s %d,%d - %d,%d; %s" (match err.Severity with FSharpDiagnosticSeverity.Error -> "error" | FSharpDiagnosticSeverity.Warning -> "warning") err.StartLineAlternate err.StartColumn err.EndLineAlternate err.EndColumn err.Message ]
 
 let showErrorsAndResult (x, errs) = 
    [ match x with 
@@ -49,7 +49,7 @@ let showErrorsAndResult (x, errs) =
        | Choice2Of2 (exn:exn) -> yield sprintf "exception %s" exn.Message
      yield! formatErrors errs ]
 
-let showErrors (x, errs: FSharpErrorInfo[]) = 
+let showErrors (x, errs: FSharpDiagnostic[]) = 
    [ match x with 
        | Choice1Of2 () -> ()
        | Choice2Of2 (exn:exn) -> yield sprintf "exception %s" exn.Message

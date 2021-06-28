@@ -3,7 +3,6 @@
 namespace Internal.Utilities.Collections
 
 open System.Collections.Generic
-open Microsoft.FSharp.Collections
                                  
 // Each entry in the HashMultiMap dictionary has at least one entry. Under normal usage each entry has _only_
 // one entry. So use two hash tables: one for the main entries and one for the overflow.

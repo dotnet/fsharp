@@ -5,20 +5,20 @@ module internal FSharp.Compiler.Import
 
 open System.Collections.Concurrent
 open System.Collections.Generic
-
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.XmlDoc
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -30,6 +30,9 @@ type AssemblyLoader =
 
     /// Resolve an Abstract IL assembly reference to a Ccu
     abstract FindCcuFromAssemblyRef : CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
+
+    abstract TryFindXmlDocumentationInfo : assemblyName: string -> XmlDocumentationInfo option
+
 #if !NO_EXTENSIONTYPING
 
     /// Get a flag indicating if an assembly is a provided assembly, plus the
@@ -362,7 +365,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                 |   None -> 
                         let methodName = minfo.PUntaint((fun minfo -> minfo.Name), m)
                         let typeName = declaringGenericTypeDefn.PUntaint((fun declaringGenericTypeDefn -> declaringGenericTypeDefn.FullName), m)
-                        error(NumberedError(FSComp.SR.etIncorrectProvidedMethod(ExtensionTyping.DisplayNameOfTypeProvider(minfo.TypeProvider, m), methodName, metadataToken, typeName), m))
+                        error(Error(FSComp.SR.etIncorrectProvidedMethod(ExtensionTyping.DisplayNameOfTypeProvider(minfo.TypeProvider, m), methodName, metadataToken, typeName), m))
          | _ -> 
          match mbase.OfType<ProvidedConstructorInfo>() with 
          | Some cinfo when cinfo.PUntaint((fun x -> x.DeclaringType.IsGenericType), m) -> 
@@ -388,7 +391,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                 |   Some found -> found.Coerce(m)
                 |   None -> 
                     let typeName = declaringGenericTypeDefn.PUntaint((fun x -> x.FullName), m)
-                    error(NumberedError(FSComp.SR.etIncorrectProvidedConstructor(ExtensionTyping.DisplayNameOfTypeProvider(cinfo.TypeProvider, m), typeName), m))
+                    error(Error(FSComp.SR.etIncorrectProvidedConstructor(ExtensionTyping.DisplayNameOfTypeProvider(cinfo.TypeProvider, m), typeName), m))
          | _ -> mbase
 
      let rty = 
@@ -580,7 +583,7 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
     ] |> Map.ofList
 
 /// Import an IL assembly as a new TAST CCU
-let ImportILAssembly(amap: (unit -> ImportMap), m, auxModuleLoader, ilScopeRef, sourceDir, filename, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
+let ImportILAssembly(amap: (unit -> ImportMap), m, auxModuleLoader, xmlDocInfoLoader: IXmlDocumentationInfoLoader option, ilScopeRef, sourceDir, filename, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
     invalidateCcu |> ignore
     let aref =   
         match ilScopeRef with 
@@ -609,6 +612,11 @@ let ImportILAssembly(amap: (unit -> ImportMap), m, auxModuleLoader, ilScopeRef, 
           FileName = filename
           MemberSignatureEquality= (fun ty1 ty2 -> typeEquivAux EraseAll (amap()).g ty1 ty2)
           TryGetILModuleDef = (fun () -> Some ilModule)
-          TypeForwarders = forwarders }
+          TypeForwarders = forwarders
+          XmlDocumentationInfo = 
+            match xmlDocInfoLoader, filename with
+            | Some xmlDocInfoLoader, Some filename -> xmlDocInfoLoader.TryLoad(filename, ilModule)
+            | _ -> None
+        }
                 
     CcuThunk.Create(nm, ccuData)

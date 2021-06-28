@@ -7,7 +7,7 @@
     <TargetFramework>net472</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <TargetExt>.exe</TargetExt>
-    <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
+    <NoWarn>$(NoWarn);44;45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags)  --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <Win32Resource>..\fsi\fsi.res</Win32Resource>
@@ -30,7 +30,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
     <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectReference Include="..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />

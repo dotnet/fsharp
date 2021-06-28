@@ -3,11 +3,12 @@
 namespace FSharp.Test.Utilities
 
 open FSharp.Compiler.Interactive.Shell
-open FSharp.Compiler.Scripting
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.IO
+open FSharp.Compiler.Diagnostics
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Assert
 open FSharp.Test.Utilities.Utilities
+open FSharp.Test.ScriptHelpers
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open NUnit.Framework
@@ -101,7 +102,9 @@ module rec Compiler =
     let private getSource (src: TestType) : string =
         match src with
         | Text t -> t
-        | Path p -> System.IO.File.ReadAllText p
+        | Path p ->
+            use stream = FileSystem.OpenFileForReadShim(p)
+            stream.ReadAllText()
 
     let private fsFromString (source: string) (kind: SourceKind) : FSharpCompilationSource =
         match source with
@@ -121,29 +124,29 @@ module rec Compiler =
         | null -> failwith "Source cannot be null"
         | _ ->
             { Source          = Text source
-              LangVersion     = CSharpLanguageVersion.CSharp8
-              TargetFramework = TargetFramework.NetCoreApp31
+              LangVersion     = CSharpLanguageVersion.CSharp9
+              TargetFramework = TargetFramework.Current
               Name            = None
               References      = [] }
 
-    let private fromFSharpErrorInfo (errors: FSharpErrorInfo[]) : ErrorInfo list =
-        let toErrorInfo (e: FSharpErrorInfo) : ErrorInfo =
+    let private fromFSharpDiagnostic (errors: FSharpDiagnostic[]) : ErrorInfo list =
+        let toErrorInfo (e: FSharpDiagnostic) : ErrorInfo =
             let errorNumber = e.ErrorNumber
             let severity = e.Severity
 
-            let error = if severity = FSharpErrorSeverity.Warning then Warning errorNumber else Error errorNumber
+            let error = if severity = FSharpDiagnosticSeverity.Warning then Warning errorNumber else Error errorNumber
 
             { Error   = error
               Range   =
-                  { StartLine   = e.StartLineAlternate
+                  { StartLine   = e.StartLine
                     StartColumn = e.StartColumn
-                    EndLine     = e.EndLineAlternate
+                    EndLine     = e.EndLine
                     EndColumn   = e.EndColumn }
               Message = e.Message }
 
         errors
         |> List.ofArray
-        |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
+        |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
         |> List.map toErrorInfo
 
     let private partitionErrors diagnostics = diagnostics |> List.partition (fun e -> match e.Error with Error _ -> true | _ -> false)
@@ -274,9 +277,9 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings : TestResult =
 
-        let ((err: FSharpErrorInfo[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
+        let ((err: FSharpDiagnostic[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
-        let diagnostics = err |> fromFSharpErrorInfo
+        let diagnostics = err |> fromFSharpDiagnostic
 
         let result =
             { OutputPath   = None
@@ -367,7 +370,7 @@ module rec Compiler =
         let parseResults = CompilerAssert.Parse source
         let failed = parseResults.ParseHadErrors
 
-        let diagnostics =  parseResults.Errors |> fromFSharpErrorInfo
+        let diagnostics =  parseResults.Diagnostics |> fromFSharpDiagnostic
 
         let result =
             { OutputPath   = None
@@ -386,21 +389,21 @@ module rec Compiler =
         | FS fs -> parseFSharp fs
         | _ -> failwith "Parsing only supported for F#."
 
-    let private typecheckFSharpSourceAndReturnErrors (fsSource: FSharpCompilationSource) : FSharpErrorInfo [] =
+    let private typecheckFSharpSourceAndReturnErrors (fsSource: FSharpCompilationSource) : FSharpDiagnostic [] =
         let source = getSource fsSource.Source
         let options = fsSource.Options |> Array.ofList
 
         let name = match fsSource.Name with | None -> "test.fs" | Some n -> n
 
-        let (err: FSharpErrorInfo []) = CompilerAssert.TypeCheckWithOptionsAndName options name source
+        let (err: FSharpDiagnostic []) = CompilerAssert.TypeCheckWithOptionsAndName options name source
 
         err
 
     let private typecheckFSharpSource (fsSource: FSharpCompilationSource) : TestResult =
 
-        let (err: FSharpErrorInfo []) = typecheckFSharpSourceAndReturnErrors fsSource
+        let (err: FSharpDiagnostic []) = typecheckFSharpSourceAndReturnErrors fsSource
 
-        let diagnostics = err |> fromFSharpErrorInfo
+        let diagnostics = err |> fromFSharpDiagnostic
 
         let result =
             { OutputPath   = None
@@ -424,6 +427,17 @@ module rec Compiler =
     let typecheck (cUnit: CompilationUnit) : TestResult =
         match cUnit with
         | FS fs -> typecheckFSharp fs
+        | _ -> failwith "Typecheck only supports F#"
+
+    let typecheckResults (cUnit: CompilationUnit) : FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults =
+        match cUnit with
+        | FS fsSource ->
+            let source = getSource fsSource.Source
+            let options = fsSource.Options |> Array.ofList
+
+            let name = match fsSource.Name with | None -> "test.fs" | Some n -> n
+
+            CompilerAssert.TypeCheck(options, name, source)
         | _ -> failwith "Typecheck only supports F#"
 
     let run (result: TestResult) : TestResult =
@@ -450,9 +464,9 @@ module rec Compiler =
 
         use script = new FSharpScript(additionalArgs=options)
 
-        let ((evalresult: Result<FsiValue option, exn>), (err: FSharpErrorInfo[])) = script.Eval(source)
+        let ((evalresult: Result<FsiValue option, exn>), (err: FSharpDiagnostic[])) = script.Eval(source)
 
-        let diagnostics = err |> fromFSharpErrorInfo
+        let diagnostics = err |> fromFSharpDiagnostic
 
         let result =
             { OutputPath   = None
@@ -502,9 +516,9 @@ module rec Compiler =
         | _ -> failwith "FSI running only supports F#."
 
 
-    let private createBaselineErrors (baseline: Baseline) actualErrors extension : unit =
+    let private createBaselineErrors (baseline: Baseline) (actualErrors: string) extension : unit =
         match baseline.SourceFilename with
-        | Some f -> File.WriteAllText(Path.ChangeExtension(f, extension), actualErrors)
+        | Some f -> FileSystem.OpenFileForWriteShim(Path.ChangeExtension(f, extension)).Write(actualErrors)
         | _ -> ()
 
     let private verifyFSBaseline (fs) : unit =
@@ -605,8 +619,8 @@ module rec Compiler =
             // TODO: Check all "categories", collect all results and print alltogether.
             checkEqual "Errors count"  expected.Length errors.Length
 
-            List.zip errors expected
-            |> List.iter (fun (actualError, expectedError) ->
+            (errors, expected)
+            ||> List.iter2 (fun actualError expectedError ->
                            let { Error = actualError; Range = actualRange; Message = actualMessage } = actualError
                            let { Error = expectedError; Range = expectedRange; Message = expectedMessage } = expectedError
                            checkEqual "Error" expectedError actualError

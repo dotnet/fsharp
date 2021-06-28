@@ -23,13 +23,13 @@ namespace Microsoft.FSharp.Collections
 
       let cast (e : IEnumerator) : IEnumerator<'T> =
           { new IEnumerator<'T> with
-                member __.Current = unbox<'T> e.Current
+                member _.Current = unbox<'T> e.Current
             interface IEnumerator with
-                member __.Current = unbox<'T> e.Current :> obj
-                member __.MoveNext() = e.MoveNext()
-                member __.Reset() = noReset()
+                member _.Current = unbox<'T> e.Current :> obj
+                member _.MoveNext() = e.MoveNext()
+                member _.Reset() = noReset()
             interface System.IDisposable with
-                member __.Dispose() =
+                member _.Dispose() =
                     match e with
                     | :? System.IDisposable as e -> e.Dispose()
                     | _ -> ()   }
@@ -39,20 +39,20 @@ namespace Microsoft.FSharp.Collections
       type EmptyEnumerator<'T>() =
           let mutable started = false
           interface IEnumerator<'T> with
-                member __.Current =
+                member _.Current =
                   check started
                   (alreadyFinished() : 'T)
 
           interface System.Collections.IEnumerator with
-              member __.Current =
+              member _.Current =
                   check started
                   (alreadyFinished() : obj)
-              member __.MoveNext() =
+              member _.MoveNext() =
                   if not started then started <- true
                   false
-              member __.Reset() = noReset()
+              member _.Reset() = noReset()
           interface System.IDisposable with
-                member __.Dispose() = ()
+                member _.Dispose() = ()
                 
       let Empty<'T> () = (new EmptyEnumerator<'T>() :> IEnumerator<'T>)
 
@@ -60,9 +60,9 @@ namespace Microsoft.FSharp.Collections
       type EmptyEnumerable<'T> =
             | EmptyEnumerable
             interface IEnumerable<'T> with
-                member __.GetEnumerator() = Empty<'T>()
+                member _.GetEnumerator() = Empty<'T>()
             interface IEnumerable with
-                member __.GetEnumerator() = (Empty<'T>() :> IEnumerator)
+                member _.GetEnumerator() = (Empty<'T>() :> IEnumerator)
 
       let readAndClear r =
           lock r (fun () -> match !r with None -> None | Some _ as res -> r := None; res)
@@ -79,10 +79,10 @@ namespace Microsoft.FSharp.Collections
           let dispose() = readAndClear state |> Option.iter closef
           let finish() = try dispose() finally curr <- None
           {  new IEnumerator<'U> with
-                 member __.Current = getCurr()
+                 member _.Current = getCurr()
              interface IEnumerator with
-                 member __.Current = box (getCurr())
-                 member __.MoveNext() =
+                 member _.Current = box (getCurr())
+                 member _.MoveNext() =
                      start()
                      match !state with
                      | None -> false (* we started, then reached the end, then got another MoveNext *)
@@ -91,33 +91,33 @@ namespace Microsoft.FSharp.Collections
                          | None -> finish(); false
                          | Some _ as x -> curr <- x; true
 
-                 member __.Reset() = noReset()
+                 member _.Reset() = noReset()
              interface System.IDisposable with
-                 member __.Dispose() = dispose() }
+                 member _.Dispose() = dispose() }
 
       [<Sealed>]
       type Singleton<'T>(v:'T) =
           let mutable started = false
           interface IEnumerator<'T> with
-                member __.Current = v
+                member _.Current = v
           interface IEnumerator with
-              member __.Current = box v
-              member __.MoveNext() = if started then false else (started <- true; true)
-              member __.Reset() = noReset()
+              member _.Current = box v
+              member _.MoveNext() = if started then false else (started <- true; true)
+              member _.Reset() = noReset()
           interface System.IDisposable with
-              member __.Dispose() = ()
+              member _.Dispose() = ()
 
       let Singleton x = (new Singleton<'T>(x) :> IEnumerator<'T>)
 
       let EnumerateThenFinally f (e : IEnumerator<'T>) =
           { new IEnumerator<'T> with
-                member __.Current = e.Current
+                member _.Current = e.Current
             interface IEnumerator with
-                member __.Current = (e :> IEnumerator).Current
-                member __.MoveNext() = e.MoveNext()
-                member __.Reset() = noReset()
+                member _.Current = (e :> IEnumerator).Current
+                member _.MoveNext() = e.MoveNext()
+                member _.Reset() = noReset()
             interface System.IDisposable with
-                member __.Dispose() =
+                member _.Dispose() =
                     try
                         e.Dispose()
                     finally
@@ -130,9 +130,9 @@ namespace Microsoft.FSharp.Collections
 
       let mkSeq f =
             { new IEnumerable<'U> with
-                member __.GetEnumerator() = f()
+                member _.GetEnumerator() = f()
               interface IEnumerable with
-                member __.GetEnumerator() = (f() :> IEnumerator) }
+                member _.GetEnumerator() = (f() :> IEnumerator) }
 
 namespace Microsoft.FSharp.Core.CompilerServices
 
@@ -156,8 +156,8 @@ namespace Microsoft.FSharp.Core.CompilerServices
             static member Comparer =
                 let gcomparer = HashIdentity.Structural<'T>
                 { new IEqualityComparer<StructBox<'T>> with
-                       member __.GetHashCode(v) = gcomparer.GetHashCode(v.Value)
-                       member __.Equals(v1,v2) = gcomparer.Equals(v1.Value,v2.Value) }
+                       member _.GetHashCode(v) = gcomparer.GetHashCode(v.Value)
+                       member _.Equals(v1,v2) = gcomparer.Equals(v1.Value,v2.Value) }
 
         let Generate openf compute closef =
             mkSeq (fun () -> IEnumerator.generateWhileSome openf compute closef)
@@ -187,7 +187,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         [<Sealed>]
         type FinallyEnumerable<'T>(compensation: unit -> unit, restf: unit -> seq<'T>) =
             interface IEnumerable<'T> with
-                member __.GetEnumerator() =
+                member _.GetEnumerator() =
                     try
                         let ie = restf().GetEnumerator()
                         match ie with
@@ -215,7 +215,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
             [<DefaultValue(false)>] // false = unchecked
             val mutable private currElement : 'T
 
-            member __.Finish() =
+            member _.Finish() =
                 finished <- true
                 try
                     match currInnerEnum with
@@ -250,7 +250,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 if finished then IEnumerator.alreadyFinished() else x.currElement
 
             interface IFinallyEnumerator with
-                member __.AppendFinallyAction(f) =
+                member _.AppendFinallyAction(f) =
                     compensations <- f :: compensations
 
             interface IEnumerator<'T> with
@@ -291,7 +291,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                             takeOuter()
                       takeInner ()
 
-                member __.Reset() = IEnumerator.noReset()
+                member _.Reset() = IEnumerator.noReset()
 
             interface System.IDisposable with
                 member x.Dispose() =
@@ -347,6 +347,10 @@ namespace Microsoft.FSharp.Core.CompilerServices
                      { new System.IDisposable with
                           member x.Dispose() = removeHandler h } }
 
+        let inline SetFreshConsTail cons tail = cons.( :: ).1 <- tail
+
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        let inline FreshConsNoTail head = head :: (# "ldnull" : 'T list #)
 
     [<AbstractClass>]
     type GeneratedSequenceBase<'T>() =
@@ -399,4 +403,138 @@ namespace Microsoft.FSharp.Core.CompilerServices
             //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
             member x.MoveNext() = x.MoveNextImpl()
 
-            member __.Reset() = raise <| new System.NotSupportedException()
+            member _.Reset() = raise <| new System.NotSupportedException()
+
+    [<Struct; NoEquality; NoComparison>]
+    type ListCollector<'T> =
+        [<DefaultValue(false)>]
+        val mutable Result : 'T list
+
+        [<DefaultValue(false)>]
+        val mutable LastCons : 'T list
+
+        member this.Add (value: 'T) =
+            match box this.Result with 
+            | null -> 
+                let ra = RuntimeHelpers.FreshConsNoTail value
+                this.Result <- ra
+                this.LastCons <- ra
+            | _ -> 
+                let ra = RuntimeHelpers.FreshConsNoTail value
+                RuntimeHelpers.SetFreshConsTail this.LastCons ra
+                this.LastCons <- ra
+
+        member this.AddMany (values: seq<'T>) =
+            // cook a faster iterator for lists and arrays
+            match values with 
+            | :? ('T[]) as valuesAsArray -> 
+                for v in valuesAsArray do
+                   this.Add v
+            | :? ('T list) as valuesAsList -> 
+                for v in valuesAsList do
+                   this.Add v
+            | _ ->
+                for v in values do
+                   this.Add v
+
+        // In the particular case of closing with a final add of an F# list
+        // we can simply stitch the list into the end of the resulting list
+        member this.AddManyAndClose (values: seq<'T>) =
+            match values with 
+            | :? ('T list) as valuesAsList -> 
+                let res =
+                    match box this.Result with 
+                    | null -> 
+                        valuesAsList
+                    | _ -> 
+                        RuntimeHelpers.SetFreshConsTail this.LastCons valuesAsList
+                        this.Result
+                this.Result <- Unchecked.defaultof<_>
+                this.LastCons <- Unchecked.defaultof<_>
+                res
+            | _ ->
+                this.AddMany values
+                this.Close()
+
+        member this.Close() =
+            match box this.Result with 
+            | null -> []
+            | _ ->
+                RuntimeHelpers.SetFreshConsTail this.LastCons []
+                let res = this.Result
+                this.Result <- Unchecked.defaultof<_>
+                this.LastCons <- Unchecked.defaultof<_>
+                res
+
+    // Optimized for 0, 1 and 2 sized arrays
+    [<Struct; NoEquality; NoComparison>]
+    type ArrayCollector<'T> =
+        [<DefaultValue(false)>]
+        val mutable ResizeArray: ResizeArray<'T>
+
+        [<DefaultValue(false)>]
+        val mutable First: 'T
+
+        [<DefaultValue(false)>]
+        val mutable Second: 'T
+
+        [<DefaultValue(false)>]
+        val mutable Count: int
+
+        member this.Add (value: 'T) = 
+            match this.Count with 
+            | 0 -> 
+                this.Count <- 1
+                this.First <- value
+            | 1 -> 
+                this.Count <- 2
+                this.Second <- value
+            | 2 ->
+                let ra = ResizeArray<'T>()
+                ra.Add(this.First)
+                ra.Add(this.Second)
+                ra.Add(value)
+                this.Count <- 3
+                this.ResizeArray <- ra
+            | _ -> 
+                this.ResizeArray.Add(value)
+
+        member this.AddMany (values: seq<'T>) =
+            if this.Count > 2 then
+                this.ResizeArray.AddRange(values)
+            else
+                // cook a faster iterator for lists and arrays
+                match values with 
+                | :? ('T[]) as valuesAsArray -> 
+                    for v in valuesAsArray do
+                       this.Add v
+                | :? ('T list) as valuesAsList -> 
+                    for v in valuesAsList do
+                       this.Add v
+                | _ ->
+                    for v in values do
+                       this.Add v
+
+        member this.AddManyAndClose (values: seq<'T>) =
+            this.AddMany(values)
+            this.Close()
+
+        member this.Close() =
+            match this.Count with 
+            | 0 -> Array.Empty<'T>()
+            | 1 -> 
+                let res = [| this.First |]
+                this.Count <- 0
+                this.First <- Unchecked.defaultof<_>
+                res
+            | 2 -> 
+                let res = [| this.First; this.Second |]
+                this.Count <- 0
+                this.First <- Unchecked.defaultof<_>
+                this.Second <- Unchecked.defaultof<_>
+                res           
+            | _ ->
+                let res = this.ResizeArray.ToArray()
+                this <- ArrayCollector<'T>()
+                res
+            
