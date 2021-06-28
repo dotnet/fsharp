@@ -112,7 +112,7 @@ type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =
             None
 
     let appendPathSeparator (p: string) =
-        let separator = string string System.IO.Path.PathSeparator
+        let separator = string System.IO.Path.PathSeparator
         if not(p.EndsWith(separator, StringComparison.OrdinalIgnoreCase)) then
             p + separator
         else
