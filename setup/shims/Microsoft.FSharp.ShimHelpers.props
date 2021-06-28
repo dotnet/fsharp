@@ -1,0 +1,22 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <MicrosoftFSharpShimHelpersPropsIncluded>true</MicrosoftFSharpShimHelpersPropsIncluded>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(FSharpTryUseLegacyCompiler)' != 'true'">
+
+    <!-- We are in the msbuild/VS build path only, we want to forward to the installed net sdk always -->
+    <FSharpCompilerPath Condition="'$(FSharpCompilerPath)' == ''">$(NetCoreRoot)sdk/$(NETCoreSdkVersion)/FSharp/</FSharpCompilerPath>
+
+    <FscToolPath>$(NetCoreRoot)</FscToolPath>
+    <FscToolExe>$(NetCoreRoot)dotnet.exe</FscToolExe>
+    <DotnetFscCompilerPath>"$(FSharpCompilerPath)fsc.dll"</DotnetFscCompilerPath>
+
+    <FsiToolPath>$(NetCoreRoot)</FsiToolPath>
+    <FsiToolExe>$(NetCoreRoot)dotnet.exe</FsiToolExe>
+    <DotnetFsiCompilerPath>"$(FSharpCompilerPath)fsi.dll"</DotnetFsiCompilerPath>
+
+  </PropertyGroup>
+
+</Project>
