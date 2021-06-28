@@ -7,7 +7,7 @@
 #load "../FSharp.Test.Utilities/TestFramework.fs"
 #load "single-test.fs"
 #else
-[<NUnit.Framework.Category "Type Provider">]
+[<NUnit.Framework.Category "Type Provider";NUnit.Framework.NonParallelizable>]
 module FSharp.Test.FSharpSuite.TypeProviderTests
 #endif
 
@@ -18,6 +18,8 @@ open NUnit.Framework
 open TestFramework
 open Scripting
 open SingleTest
+
+open FSharp.Compiler.IO
 
 #if !NETCOREAPP
 // All tests which do a manual invoke of the F# compiler are disabled
@@ -202,6 +204,7 @@ let helloWorldCSharp () =
 [<TestCase("EVIL_PROVIDER_DoesNotHaveConstructor")>]
 [<TestCase("EVIL_PROVIDER_ConstructorThrows")>]
 [<TestCase("EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments")>]
+[<NonParallelizable>]
 let ``negative type provider tests`` (name:string) =
     let cfg = testConfig "typeProviders/negTests"
     let dir = cfg.Directory
@@ -241,12 +244,13 @@ let ``negative type provider tests`` (name:string) =
         let preprocess name pref =
             let dirp = (dir |> Commands.pathAddBackslash)
             do
-            File.ReadAllText(sprintf "%s%s.%sbslpp" dirp name pref)
-                .Replace("<ASSEMBLY>", getfullpath cfg (sprintf "provider_%s.dll" name))
-                .Replace("<FILEPATH>",dirp)
-                .Replace("<URIPATH>",sprintf "file:///%s" dirp)
-                |> fun txt -> File.WriteAllText(sprintf "%s%s.%sbsl" dirp name pref,txt)
-
+            FileSystem.OpenFileForReadShim(sprintf "%s%s.%sbslpp" dirp name pref)
+                      .ReadAllText()
+                      .Replace("<ASSEMBLY>", getfullpath cfg (sprintf "provider_%s.dll" name))
+                      .Replace("<FILEPATH>",dirp)
+                      .Replace("<URIPATH>",sprintf "file:///%s" dirp)
+                      |> fun txt -> FileSystem.OpenFileForWriteShim(sprintf "%s%s.%sbsl" dirp name pref).Write(txt)
+                      
         if name = "ProviderAttribute_EmptyConsume" || name = "providerAttributeErrorConsume" then ()
         else fsc cfg "--define:%s --out:provider_%s.dll -a" name name ["provider.fsx"]
 

@@ -97,6 +97,11 @@
         <target state="translated">standardmäßige Schnittstellenmembernutzung</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDiscardUseValue">
+        <source>discard pattern in use binding</source>
+        <target state="translated">Das Verwerfen des verwendeten Musters ist verbindlich.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
         <target state="translated">punktloses float32-Literal</target>
@@ -132,6 +137,11 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
+        <source>non-variable patterns to the right of 'as' patterns</source>
+        <target state="translated">Nicht-Variablenmuster rechts neben as-Mustern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">Interop, NULL-Werte zulassend, optional</target>
@@ -152,6 +162,11 @@
         <target state="translated">Paketverwaltung</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePrintfBinaryFormat">
+        <source>binary formatting for integers</source>
+        <target state="translated">binäre Formatierung für ganze Zahlen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
         <target state="translated">Lockerung für Leerraum</target>
@@ -165,6 +180,11 @@
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">Zeichenfolgeninterpolation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStructActivePattern">
+        <source>struct representation for active patterns</source>
+        <target state="translated">Strukturdarstellung für aktive Muster</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -249,7 +269,7 @@
       </trans-unit>
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
-        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <target state="translated">Drucken der abgeleiteten Schnittstellen aller Dateien an zugehörige Signaturdateien</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -274,7 +294,7 @@
       </trans-unit>
       <trans-unit id="optsWin32icon">
         <source>Specify a Win32 icon file (.ico)</source>
-        <target state="new">Specify a Win32 icon file (.ico)</target>
+        <target state="translated">Win32-Symboldatei (ICO) angeben</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -337,6 +357,11 @@
         <target state="translated">Das .NET SDK für dieses Skript konnte nicht ermittelt werden. Wenn sich das Skript in einem Verzeichnis mit "global.json" befindet, stellen Sie sicher, dass das entsprechende .NET SDK installiert ist. Ausgabe von "{0} --version" im Verzeichnis "{1}": {2}. Exitcode: {3}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedNoHost">
+        <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
+        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
         <target state="translated">Das .NET SDK für dieses Skript konnte nicht ermittelt werden. Wenn sich das Skript in einem Verzeichnis mit "global.json" befindet, stellen Sie sicher, dass das entsprechende .NET SDK installiert ist. Unerwarteter Fehler: {0}.</target>
@@ -385,6 +410,11 @@
       <trans-unit id="tcInvalidAlignmentInInterpolatedString">
         <source>Invalid alignment in interpolated string</source>
         <target state="translated">Ungültige Ausrichtung in interpolierter Zeichenfolge.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidStructReturn">
+        <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
+        <target state="translated">Die Verwendung von "[&lt;Struct&gt;]" für Werte, Funktionen und Methoden ist nur für partielle aktive Musterdefinitionen zulässig.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
@@ -7444,7 +7474,7 @@
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="translated">Ein byref-Zeiger, der von einer Funktion oder Methode zurückgegeben wird, wird explizit als von F# 4.5 stammend dereferenziert. Verwenden Sie den &amp;-Operator (z.B. "&amp;f(x)" oder "&amp;obj.Method(arg1, arg2)"), um den Rückgabewert als Zeiger abzurufen.</target>
+        <target state="translated">Ein byref-Zeiger, der von einer Funktion oder Methode zurückgegeben wird, wird explizit als von F# 4.5 stammend dereferenziert. Verwenden Sie den Operator (z.B. "&amp;f(x)" oder "&amp;obj.Method(arg1, arg2)"), um den Rückgabewert als Zeiger abzurufen.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">
