@@ -649,11 +649,14 @@ hashDirectiveArgs:
 
 
 /* One argument to a #directive */
-hashDirectiveArg: 
+hashDirectiveArg:
   | string 
-      { let s, _ = $1
-        s }
-      
+      { let s, kind = $1
+        ParsedHashDirectiveArgument.String (s, kind, lhs parseState) }
+  | sourceIdentifier 
+      { let c,v = $1
+        ParsedHashDirectiveArgument.SourceIdentifier (c, v, lhs parseState) }
+
 
 /*--------------------------------------------------------------------------*/
 /* F# Language Proper - signature files */
