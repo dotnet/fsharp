@@ -139,7 +139,7 @@
       </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
         <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="new">non-variable patterns to the right of 'as' patterns</target>
+        <target state="translated">Nicht-Variablenmuster rechts neben as-Mustern</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
