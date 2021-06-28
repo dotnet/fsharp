@@ -91,6 +91,21 @@ extern int private c()
                 |> should equal expected
             | _ -> Assert.Fail (sprintf "Couldn't get mfv: %s" name))
 
+    [<Test>]
+    let ``Range of attribute should be included in SynDecl.Let and SynBinding`` () =
+        let parseResults =
+            getParseResults
+                """
+[<DllImport("oleacc.dll")>]
+extern int AccessibleChildren()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(false, [ SynBinding(range = mb) ] , ml)
+        ]) ])) ->
+            assertRange (2, 0) (3, 31) ml
+            assertRange (2, 0) (3, 31) mb
+        | _ -> Assert.Fail "Could not get valid AST"
 
 module XmlDocSig =
 

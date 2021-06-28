@@ -2699,9 +2699,10 @@ cPrototype:
                                   mRhs)
         (fun attrs _ -> 
             let bindingId = SynPat.LongIdent (LongIdentWithDots([nm], []), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
+            let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let binding = mkSynBinding 
                               (xmlDoc, bindingId) 
-                              (vis, false, false, mBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None)
+                              (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None)
             [], [binding]) }
 
 /* A list of arguments in an 'extern' DllImport function definition */
