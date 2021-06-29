@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
         <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="new">non-variable patterns to the right of 'as' patterns</target>
+        <target state="translated">Nicht-Variablenmuster rechts neben as-Mustern</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
@@ -7479,7 +7479,7 @@
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="translated">Ein byref-Zeiger, der von einer Funktion oder Methode zurückgegeben wird, wird explizit als von F# 4.5 stammend dereferenziert. Verwenden Sie den &amp;-Operator (z.B. "&amp;f(x)" oder "&amp;obj.Method(arg1, arg2)"), um den Rückgabewert als Zeiger abzurufen.</target>
+        <target state="translated">Ein byref-Zeiger, der von einer Funktion oder Methode zurückgegeben wird, wird explizit als von F# 4.5 stammend dereferenziert. Verwenden Sie den Operator (z.B. "&amp;f(x)" oder "&amp;obj.Method(arg1, arg2)"), um den Rückgabewert als Zeiger abzurufen.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">

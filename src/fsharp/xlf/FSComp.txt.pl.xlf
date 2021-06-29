@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
         <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="new">non-variable patterns to the right of 'as' patterns</target>
+        <target state="translated">stałe wzorce po prawej stronie wzorców typu „as”</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">

@@ -303,6 +303,20 @@ type SynTypeConstraint =
        typeArgs: SynType list *
        range: range
 
+    member x.Range =
+        match x with
+        | WhereTyparIsValueType(range=range)
+        | WhereTyparIsReferenceType(range=range)
+        | WhereTyparIsUnmanaged(range=range)
+        | WhereTyparSupportsNull(range=range)
+        | WhereTyparIsComparable(range=range)
+        | WhereTyparIsEquatable(range=range)
+        | WhereTyparDefaultsToType(range=range)
+        | WhereTyparSubtypeOfType(range=range)
+        | WhereTyparSupportsMember(range=range)
+        | WhereTyparIsEnum(range=range)
+        | WhereTyparIsDelegate(range=range) -> range
+
 [<RequireQualifiedAccess>]
 type SynTyparDecls =
     | PostfixList of decls: SynTyparDecl list * constraints: SynTypeConstraint list * range: range
@@ -930,7 +944,6 @@ type SynIndexerArg =
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePat =
-
     | Id of
         ident: Ident *
         altNameRefCell: SynSimplePatAlternativeIdInfo ref option *
@@ -948,6 +961,12 @@ type SynSimplePat =
         pat: SynSimplePat *
         attributes: SynAttributes *
         range: range
+
+    member x.Range =
+        match x with
+        | SynSimplePat.Id(range=range)
+        | SynSimplePat.Typed(range=range)
+        | SynSimplePat.Attrib(range=range) -> range
 
 [<RequireQualifiedAccess>]
 type SynSimplePatAlternativeIdInfo =
@@ -970,7 +989,6 @@ type SynStaticOptimizationConstraint =
 
 [<NoEquality; NoComparison;RequireQualifiedAccess>]
 type SynSimplePats =
-
     | SimplePats of
         pats: SynSimplePat list *
         range: range
@@ -979,6 +997,11 @@ type SynSimplePats =
         pats: SynSimplePats *
         targetType: SynType *
         range: range
+
+    member x.Range =
+        match x with
+        | SynSimplePats.SimplePats(range=range)
+        | SynSimplePats.Typed(range=range) -> range
 
 [<RequireQualifiedAccess>]
 type SynArgPats =
@@ -1804,10 +1827,20 @@ type SynModuleOrNamespaceSig =
         | SynModuleOrNamespaceSig (range=m) -> m
 
 [<NoEquality; NoComparison>]
+type ParsedHashDirectiveArgument =
+     | String of value: string * stringKind: SynStringKind * range: Range
+     | SourceIdentifier of constant: string * value: string * range: Range
+
+     member this.Range =
+         match this with
+         | ParsedHashDirectiveArgument.String (range=m)
+         | ParsedHashDirectiveArgument.SourceIdentifier (range=m) -> m
+
+[<NoEquality; NoComparison>]
 type ParsedHashDirective =
     | ParsedHashDirective of
         ident: string *
-        args: string list *
+        args: ParsedHashDirectiveArgument list *
         range: range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
