@@ -937,6 +937,7 @@ type IncrementalBuilderInitialState =
 #endif
         allDependencies: string []
         defaultTimeStamp: DateTime
+        checkTimeStamps: bool
         mutable isImportsInvalidated: bool
     }
 
@@ -956,7 +957,8 @@ type IncrementalBuilderInitialState =
                             importsInvalidatedByTypeProvider: Event<unit>,
 #endif
                             allDependencies,
-                            defaultTimeStamp: DateTime) =
+                            defaultTimeStamp: DateTime,
+                            checkTimeStamps: bool) =
 
         let initialState =
             {
@@ -978,6 +980,7 @@ type IncrementalBuilderInitialState =
 #endif
                 allDependencies = allDependencies
                 defaultTimeStamp = defaultTimeStamp
+                checkTimeStamps = checkTimeStamps
                 isImportsInvalidated = false
             }
 #if !NO_EXTENSIONTYPING
@@ -1377,7 +1380,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                        keepAllBackgroundSymbolUses,
                        enableBackgroundItemKeyStoreAndSemanticClassification,
                        enablePartialTypeChecking: bool,
-                       dependencyProvider) =
+                       dependencyProvider,
+                       checkTimeStamps: bool) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
 
@@ -1603,7 +1607,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     importsInvalidatedByTypeProvider,
 #endif
                     allDependencies,
-                    defaultTimeStamp)
+                    defaultTimeStamp,
+                    checkTimeStamps)
 
             let builder = IncrementalBuilder(initialState, IncrementalBuilderState.Create(initialState))
             return Some builder

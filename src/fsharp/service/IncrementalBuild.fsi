@@ -255,7 +255,8 @@ type internal IncrementalBuilder =
           keepAllBackgroundSymbolUses: bool *
           enableBackgroundItemKeyStoreAndSemanticClassification: bool *
           enablePartialTypeChecking: bool *
-          dependencyProvider: DependencyProvider option
+          dependencyProvider: DependencyProvider option *
+          checkTimeStamps: bool
              -> NodeCode<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.

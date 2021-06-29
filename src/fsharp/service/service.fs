@@ -172,7 +172,8 @@ type FSharpProject private (options: FSharpProjectOptions, builder: IncrementalB
                  tryGetMetadataSnapshot, suggestNamesForErrors, false,
                  true,
                  true,
-                 (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None))
+                 (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None),
+                 false)
         
         let builderOpt, diagnostics =
             NodeCode.RunImmediate(nodeCode, ct)
@@ -434,7 +435,8 @@ type BackgroundCompiler(
                    tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses,
                    enableBackgroundItemKeyStoreAndSemanticClassification,
                    enablePartialTypeChecking,
-                   (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None))
+                   (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None),
+                   true)
 
         match builderOpt with 
         | None -> ()
