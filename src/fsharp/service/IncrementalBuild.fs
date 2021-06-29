@@ -937,7 +937,7 @@ type IncrementalBuilderInitialState =
 #endif
         allDependencies: string []
         defaultTimeStamp: DateTime
-        checkTimeStamps: bool
+        isMutable: bool
         mutable isImportsInvalidated: bool
     }
 
@@ -958,7 +958,7 @@ type IncrementalBuilderInitialState =
 #endif
                             allDependencies,
                             defaultTimeStamp: DateTime,
-                            checkTimeStamps: bool) =
+                            isMutable: bool) =
 
         let initialState =
             {
@@ -980,7 +980,7 @@ type IncrementalBuilderInitialState =
 #endif
                 allDependencies = allDependencies
                 defaultTimeStamp = defaultTimeStamp
-                checkTimeStamps = checkTimeStamps
+                isMutable = isMutable
                 isImportsInvalidated = false
             }
 #if !NO_EXTENSIONTYPING
@@ -1037,6 +1037,9 @@ module IncrementalBuilderStateHelpers =
         })
 
     and computeStampedFileName (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) slot fileInfo =
+        if not initialState.isMutable then state
+        else
+
         let currentStamp = state.stampedFileNames.[slot]
         let stamp = StampFileNameTask cache fileInfo
 
@@ -1074,36 +1077,42 @@ module IncrementalBuilderStateHelpers =
             state
 
     and computeStampedFileNames (initialState: IncrementalBuilderInitialState) state (cache: TimeStampCache) =
-        let mutable i = 0
-        (state, initialState.fileNames)
-        ||> Block.fold (fun state fileInfo ->
-            let newState = computeStampedFileName initialState state cache i fileInfo
-            i <- i + 1
-            newState
-        )
+        if initialState.isMutable then
+            let mutable i = 0
+            (state, initialState.fileNames)
+            ||> Block.fold (fun state fileInfo ->
+                let newState = computeStampedFileName initialState state cache i fileInfo
+                i <- i + 1
+                newState
+            )
+        else
+            state
 
     and computeStampedReferencedAssemblies (initialState: IncrementalBuilderInitialState) state canTriggerInvalidation (cache: TimeStampCache) =
-        let stampedReferencedAssemblies = state.stampedReferencedAssemblies.ToBuilder()
+        if initialState.isMutable then
+            let stampedReferencedAssemblies = state.stampedReferencedAssemblies.ToBuilder()
 
-        let mutable referencesUpdated = false
-        initialState.referencedAssemblies
-        |> Block.iteri (fun i asmInfo ->
+            let mutable referencesUpdated = false
+            initialState.referencedAssemblies
+            |> Block.iteri (fun i asmInfo ->
 
-            let currentStamp = state.stampedReferencedAssemblies.[i]
-            let stamp = StampReferencedAssemblyTask cache asmInfo
+                let currentStamp = state.stampedReferencedAssemblies.[i]
+                let stamp = StampReferencedAssemblyTask cache asmInfo
 
-            if currentStamp <> stamp then
-                referencesUpdated <- true
-                stampedReferencedAssemblies.[i] <- stamp
-        )
+                if currentStamp <> stamp then
+                    referencesUpdated <- true
+                    stampedReferencedAssemblies.[i] <- stamp
+            )
 
-        if referencesUpdated then
-            // Build is invalidated. The build must be rebuilt with the newly updated references.
-            if not initialState.isImportsInvalidated && canTriggerInvalidation then
-                initialState.isImportsInvalidated <- true
-            { state with
-                stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
-            }
+            if referencesUpdated then
+                // Build is invalidated. The build must be rebuilt with the newly updated references.
+                if not initialState.isImportsInvalidated && canTriggerInvalidation then
+                    initialState.isImportsInvalidated <- true
+                { state with
+                    stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
+                }
+            else
+                state
         else
             state
 
@@ -1182,31 +1191,43 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         }
 
     let MaxTimeStampInDependencies stamps =
-        if Seq.isEmpty stamps then
-            defaultTimeStamp
+        if initialState.isMutable then
+            if Seq.isEmpty stamps then
+                defaultTimeStamp
+            else
+                stamps
+                |> Seq.max
         else
-            stamps
-            |> Seq.max
+            defaultTimeStamp
 
     let computeProjectTimeStamp (state: IncrementalBuilderState) =
-        let t1 = MaxTimeStampInDependencies state.stampedReferencedAssemblies
-        let t2 = MaxTimeStampInDependencies state.logicalStampedFileNames
-        max t1 t2
+        if initialState.isMutable then
+            let t1 = MaxTimeStampInDependencies state.stampedReferencedAssemblies
+            let t2 = MaxTimeStampInDependencies state.logicalStampedFileNames
+            max t1 t2
+        else
+            defaultTimeStamp
 
     let gate = obj()
     let mutable currentState = state 
 
     let setCurrentState state cache (ct: CancellationToken) =
-        lock gate (fun () ->
-            ct.ThrowIfCancellationRequested()
-            currentState <- computeStampedFileNames initialState state cache
-        )
+        if initialState.isMutable then
+            lock gate (fun () ->
+                ct.ThrowIfCancellationRequested()
+                currentState <- computeStampedFileNames initialState state cache
+            )
+        else
+            ()
 
     let checkFileTimeStamps (cache: TimeStampCache) =
-        node {
-            let! ct = NodeCode.CancellationToken
-            setCurrentState currentState cache ct
-        }
+        if initialState.isMutable then
+            node {
+                let! ct = NodeCode.CancellationToken
+                setCurrentState currentState cache ct
+            }
+        else
+            node { () }
 
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
 
@@ -1381,7 +1402,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                        enableBackgroundItemKeyStoreAndSemanticClassification,
                        enablePartialTypeChecking: bool,
                        dependencyProvider,
-                       checkTimeStamps: bool) =
+                       isMutable: bool) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
 
@@ -1608,7 +1629,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 #endif
                     allDependencies,
                     defaultTimeStamp,
-                    checkTimeStamps)
+                    isMutable)
 
             let builder = IncrementalBuilder(initialState, IncrementalBuilderState.Create(initialState))
             return Some builder

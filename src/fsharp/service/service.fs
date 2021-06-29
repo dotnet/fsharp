@@ -120,67 +120,67 @@ type FSharpProject private (options: FSharpProjectOptions, builder: IncrementalB
         }
         |> Async.AwaitNodeCode
 
-    static member Create(options: FSharpProjectOptions, ?legacyReferenceResolver, ?suggestNamesForErrors: bool, ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot, ?ct: CancellationToken) =
-        let legacyReferenceResolver = defaultArg legacyReferenceResolver (SimulatedMSBuildReferenceResolver.getResolver())
-        let suggestNamesForErrors = defaultArg suggestNamesForErrors true
-        let tryGetMetadataSnapshot = defaultArg tryGetMetadataSnapshot (fun _ -> None)
-        let ct = defaultArg ct CancellationToken.None
+    static member CreateAsync(options: FSharpProjectOptions, ?legacyReferenceResolver, ?suggestNamesForErrors: bool, ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot) =
+        node {
+            let legacyReferenceResolver = defaultArg legacyReferenceResolver (SimulatedMSBuildReferenceResolver.getResolver())
+            let suggestNamesForErrors = defaultArg suggestNamesForErrors true
+            let tryGetMetadataSnapshot = defaultArg tryGetMetadataSnapshot (fun _ -> None)
 
-        let projectReferences =  
-            [ for r in options.ReferencedProjects do
+            let projectReferences =  
+                [ for r in options.ReferencedProjects do
 
-               match r with
-               | FSharpReferencedProject.FSharpReference _ ->
-                   failwith "FSharpProject does not support a FSharpReferencedProject.FSharpReference. Instead, use FSharpReferencedProject.FSharpProject."
+                   match r with
+                   | FSharpReferencedProject.FSharpReference _ ->
+                       failwith "FSharpProject does not support a FSharpReferencedProject.FSharpReference. Instead, use FSharpReferencedProject.FSharpProject."
                             
-                | FSharpReferencedProject.PEReference(nm,stamp,delayedReader) ->
-                    yield
-                        { new IProjectReference with 
-                            member x.EvaluateRawContents() = 
-                              node {
-                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> NodeCode.FromCancellable
-                                match ilReaderOpt with
-                                | Some ilReader ->
+                    | FSharpReferencedProject.PEReference(nm,stamp,delayedReader) ->
+                        yield
+                            { new IProjectReference with 
+                                member x.EvaluateRawContents() = 
+                                  node {
+                                    let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> NodeCode.FromCancellable
+                                    match ilReaderOpt with
+                                    | Some ilReader ->
+                                        let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
+                                        return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
+                                    | _ ->
+                                        return None
+                                  }
+                                member x.TryGetLogicalTimeStamp(_) = stamp |> Some
+                                member x.FileName = nm }
+
+                    | FSharpReferencedProject.ILModuleReference(nm,getStamp,getReader) ->
+                        yield
+                            { new IProjectReference with 
+                                member x.EvaluateRawContents() = 
+                                  node {
+                                    let ilReader = getReader()
                                     let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
                                     return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
-                                | _ ->
-                                    return None
-                              }
-                            member x.TryGetLogicalTimeStamp(_) = stamp |> Some
-                            member x.FileName = nm }
+                                  }
+                                member x.TryGetLogicalTimeStamp(_) = getStamp() |> Some
+                                member x.FileName = nm }
+                    ]
 
-                | FSharpReferencedProject.ILModuleReference(nm,getStamp,getReader) ->
-                    yield
-                        { new IProjectReference with 
-                            member x.EvaluateRawContents() = 
-                              node {
-                                let ilReader = getReader()
-                                let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
-                                return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
-                              }
-                            member x.TryGetLogicalTimeStamp(_) = getStamp() |> Some
-                            member x.FileName = nm }
-                ]
+            let keepAssemblyContents = false
 
-        let keepAssemblyContents = false
-
-        let nodeCode =
-            IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions
-                (legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, None, Array.toList options.SourceFiles, 
-                 Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
-                 options.UseScriptResolutionRules, keepAssemblyContents, false,
-                 tryGetMetadataSnapshot, suggestNamesForErrors, false,
-                 true,
-                 true,
-                 (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None),
-                 false)
+            let! builderOpt, diagnostics =
+                IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions
+                    (legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, None, Array.toList options.SourceFiles, 
+                     Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
+                     options.UseScriptResolutionRules, keepAssemblyContents, false,
+                     tryGetMetadataSnapshot, suggestNamesForErrors, false,
+                     true,
+                     true,
+                     (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None),
+                     false)
         
-        let builderOpt, diagnostics =
-            NodeCode.RunImmediate(nodeCode, ct)
-        
-        match builderOpt with
-        | None -> Result.Error(diagnostics)
-        | Some builder -> Result.Ok(FSharpProject(options, builder, diagnostics, suggestNamesForErrors, keepAssemblyContents))
+            return
+                match builderOpt with
+                | None -> Result.Error(diagnostics)
+                | Some builder -> Result.Ok(FSharpProject(options, builder, diagnostics, suggestNamesForErrors, keepAssemblyContents))
+        }
+        |> Async.AwaitNodeCode
 
 //----------------------------------------------------------------------------
 // BackgroundCompiler
