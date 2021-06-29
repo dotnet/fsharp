@@ -167,7 +167,7 @@ let x = Script1.x
             Assert.IsEmpty(checkProjectResults.Diagnostics)
 
             updateFileOnDisk filePath1
-                $"""
+                """
 module Script2
 
 let x = Script1.x
@@ -181,7 +181,7 @@ let y = Script1.y
             Assert.IsNotEmpty(checkProjectResults.Diagnostics)
 
             updateCompiledDllOnDisk checker dllPath1
-                $"""
+                """
 module Script1
 
 let x = 1
