@@ -728,11 +728,14 @@ type IncrementalBuilderInitialState =
         enablePartialTypeChecking: bool
         beforeFileChecked: Event<string>
         fileChecked: Event<string>
+        fileParsed: Event<string>
+        projectChecked: Event<unit>
 #if !NO_EXTENSIONTYPING
         importsInvalidatedByTypeProvider: Event<unit>
 #endif
         allDependencies: string []
         defaultTimeStamp: DateTime
+        mutable isImportsInvalidated: bool
     }
 
     static member Create(
@@ -752,24 +755,33 @@ type IncrementalBuilderInitialState =
 #endif
                             allDependencies,
                             defaultTimeStamp: DateTime) =
-        {
-            initialBoundModel = initialBoundModel
-            tcGlobals = tcGlobals
-            nonFrameworkAssemblyInputs = nonFrameworkAssemblyInputs
-            tcConfig = tcConfig
-            outfile = outfile
-            assemblyName = assemblyName
-            lexResourceManager = lexResourceManager
-            sourceFiles = sourceFiles
-            enablePartialTypeChecking = enablePartialTypeChecking
-            beforeFileChecked = beforeFileChecked
-            fileChecked = fileChecked
+
+        let initialState =
+            {
+                initialBoundModel = initialBoundModel
+                tcGlobals = tcGlobals
+                nonFrameworkAssemblyInputs = nonFrameworkAssemblyInputs
+                tcConfig = tcConfig
+                outfile = outfile
+                assemblyName = assemblyName
+                lexResourceManager = lexResourceManager
+                sourceFiles = sourceFiles
+                enablePartialTypeChecking = enablePartialTypeChecking
+                beforeFileChecked = beforeFileChecked
+                fileChecked = fileChecked
+                fileParsed = Event<string>()
+                projectChecked = Event<unit>()
 #if !NO_EXTENSIONTYPING
-            importsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
+                importsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
 #endif
-            allDependencies = allDependencies
-            defaultTimeStamp = defaultTimeStamp
-        }
+                allDependencies = allDependencies
+                defaultTimeStamp = defaultTimeStamp
+                isImportsInvalidated = false
+            }
+#if !NO_EXTENSIONTYPING
+        importsInvalidatedByTypeProvider.Publish.Add(fun () -> initialState.isImportsInvalidated <- true)
+#endif
+        initialState
 
 /// Manages an incremental build graph for the build of a single F# project
 type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
@@ -790,15 +802,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
 #endif
     let allDependencies = initialState.allDependencies
     let defaultTimeStamp = initialState.defaultTimeStamp
-
-    let fileParsed = new Event<string>()
-    let projectChecked = new Event<unit>()
-
-    let mutable isImportsInvalidated = false
-
-#if !NO_EXTENSIONTYPING
-    do importsInvalidatedByTypeProvider.Publish.Add(fun () -> isImportsInvalidated <- true)
-#endif
+    let fileParsed = initialState.fileParsed
+    let projectChecked = initialState.projectChecked
 
     //----------------------------------------------------
     // START OF BUILD TASK FUNCTIONS
@@ -1114,8 +1119,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
 
         if referencesUpdated then
             // Build is invalidated. The build must be rebuilt with the newly updated references.
-            if not isImportsInvalidated && canTriggerInvalidation then
-                isImportsInvalidated <- true
+            if not initialState.isImportsInvalidated && canTriggerInvalidation then
+                initialState.isImportsInvalidated <- true
             { state with
                 stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
             }
@@ -1220,10 +1225,10 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
 
     member _.IsReferencesInvalidated = 
         // fast path
-        if isImportsInvalidated then true
+        if initialState.isImportsInvalidated then true
         else 
             computeStampedReferencedAssemblies currentState true (TimeStampCache(defaultTimeStamp)) |> ignore
-            isImportsInvalidated
+            initialState.isImportsInvalidated
 
     member _.AllDependenciesDeprecated = allDependencies
 
