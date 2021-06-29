@@ -701,112 +701,8 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
         member _.HasAnyFSharpSignatureDataAttribute =  true
         member _.HasMatchingFSharpSignatureDataAttribute = true
 
-[<NoComparison;NoEquality>]
-type IncrementalBuilderState =
-    {
-        // stampedFileNames represent the real stamps of the files.
-        // logicalStampedFileNames represent the stamps of the files that are used to calculate the project's logical timestamp.
-        stampedFileNames: ImmutableArray<DateTime>
-        logicalStampedFileNames: ImmutableArray<DateTime>
-        stampedReferencedAssemblies: ImmutableArray<DateTime>
-        initialBoundModel: GraphNode<BoundModel>
-        boundModels: ImmutableArray<GraphNode<BoundModel>>
-        finalizedBoundModel: GraphNode<((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime)>
-    }
-
-[<NoComparison;NoEquality>]
-type IncrementalBuilderInitialState =
-    {
-        initialBoundModel: BoundModel
-        tcGlobals: TcGlobals
-        nonFrameworkAssemblyInputs: (Choice<string, IProjectReference> * (TimeStampCache -> DateTime)) list
-        tcConfig: TcConfig
-        outfile: string
-        assemblyName: string
-        lexResourceManager: Lexhelp.LexResourceManager
-        sourceFiles: (range * string * (bool * bool)) list
-        enablePartialTypeChecking: bool
-        beforeFileChecked: Event<string>
-        fileChecked: Event<string>
-        fileParsed: Event<string>
-        projectChecked: Event<unit>
-#if !NO_EXTENSIONTYPING
-        importsInvalidatedByTypeProvider: Event<unit>
-#endif
-        allDependencies: string []
-        defaultTimeStamp: DateTime
-        mutable isImportsInvalidated: bool
-    }
-
-    static member Create(
-                            initialBoundModel: BoundModel,
-                            tcGlobals,
-                            nonFrameworkAssemblyInputs,
-                            tcConfig: TcConfig,
-                            outfile,
-                            assemblyName,
-                            lexResourceManager,
-                            sourceFiles,
-                            enablePartialTypeChecking,
-                            beforeFileChecked: Event<string>,
-                            fileChecked: Event<string>,
-#if !NO_EXTENSIONTYPING
-                            importsInvalidatedByTypeProvider: Event<unit>,
-#endif
-                            allDependencies,
-                            defaultTimeStamp: DateTime) =
-
-        let initialState =
-            {
-                initialBoundModel = initialBoundModel
-                tcGlobals = tcGlobals
-                nonFrameworkAssemblyInputs = nonFrameworkAssemblyInputs
-                tcConfig = tcConfig
-                outfile = outfile
-                assemblyName = assemblyName
-                lexResourceManager = lexResourceManager
-                sourceFiles = sourceFiles
-                enablePartialTypeChecking = enablePartialTypeChecking
-                beforeFileChecked = beforeFileChecked
-                fileChecked = fileChecked
-                fileParsed = Event<string>()
-                projectChecked = Event<unit>()
-#if !NO_EXTENSIONTYPING
-                importsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
-#endif
-                allDependencies = allDependencies
-                defaultTimeStamp = defaultTimeStamp
-                isImportsInvalidated = false
-            }
-#if !NO_EXTENSIONTYPING
-        importsInvalidatedByTypeProvider.Publish.Add(fun () -> initialState.isImportsInvalidated <- true)
-#endif
-        initialState
-
-/// Manages an incremental build graph for the build of a single F# project
-type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
-
-    let initialBoundModel = initialState.initialBoundModel
-    let tcGlobals = initialState.tcGlobals
-    let nonFrameworkAssemblyInputs = initialState.nonFrameworkAssemblyInputs
-    let tcConfig = initialState.tcConfig
-    let outfile = initialState.outfile
-    let assemblyName = initialState.assemblyName
-    let lexResourceManager = initialState.lexResourceManager
-    let sourceFiles = initialState.sourceFiles
-    let enablePartialTypeChecking = initialState.enablePartialTypeChecking
-    let beforeFileChecked = initialState.beforeFileChecked
-    let fileChecked = initialState.fileChecked
-#if !NO_EXTENSIONTYPING
-    let importsInvalidatedByTypeProvider = initialState.importsInvalidatedByTypeProvider
-#endif
-    let allDependencies = initialState.allDependencies
-    let defaultTimeStamp = initialState.defaultTimeStamp
-    let fileParsed = initialState.fileParsed
-    let projectChecked = initialState.projectChecked
-
-    //----------------------------------------------------
-    // START OF BUILD TASK FUNCTIONS
+[<AutoOpen>]
+module IncrementalBuilderHelpers =
 
     /// Get the timestamp of the given file name.
     let StampFileNameTask (cache: TimeStampCache) (_m: range, filename: string, _isLastCompiland) =
@@ -817,7 +713,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
         timeStamper cache
 
     // Link all the assemblies together and produce the input typecheck accumulator
-    static let CombineImportedAssembliesTask (
+    let CombineImportedAssembliesTask (
                                               assemblyName, 
                                               tcConfig: TcConfig, 
                                               tcConfigP, 
@@ -929,7 +825,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
         }
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask (boundModels: ImmutableArray<BoundModel>) =
+    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals enablePartialTypeChecking assemblyName outfile (boundModels: block<BoundModel>) =
       node {
         let errorLogger = CompilationErrorLogger("FinalizeTypeCheckTask", tcConfig.errorSeverityOptions)
         use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
@@ -1017,53 +913,134 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
         return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalBoundModelWithErrors
     }
 
-    // END OF BUILD TASK FUNCTIONS
-    // ---------------------------------------------------------------------------------------------
-
-    // ---------------------------------------------------------------------------------------------
-    // START OF BUILD DESCRIPTION
-
-    let GetSyntaxTree (sourceRange: range, filename: string, isLastCompiland) =
+    let GetSyntaxTree tcConfig fileParsed lexResourceManager (sourceRange: range, filename: string, isLastCompiland) =
         SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, filename, isLastCompiland)
 
-    // Inputs
-    let fileNames = sourceFiles |> Array.ofList // TODO: This should be an immutable array.
-    let referencedAssemblies =  nonFrameworkAssemblyInputs |> Array.ofList // TODO: This should be an immutable array.
+[<NoComparison;NoEquality>]
+type IncrementalBuilderInitialState =
+    {
+        initialBoundModel: BoundModel
+        tcGlobals: TcGlobals
+        referencedAssemblies: block<(Choice<string, IProjectReference> * (TimeStampCache -> DateTime))>
+        tcConfig: TcConfig
+        outfile: string
+        assemblyName: string
+        lexResourceManager: Lexhelp.LexResourceManager
+        fileNames: block<(range * string * (bool * bool))>
+        enablePartialTypeChecking: bool
+        beforeFileChecked: Event<string>
+        fileChecked: Event<string>
+        fileParsed: Event<string>
+        projectChecked: Event<unit>
+#if !NO_EXTENSIONTYPING
+        importsInvalidatedByTypeProvider: Event<unit>
+#endif
+        allDependencies: string []
+        defaultTimeStamp: DateTime
+        mutable isImportsInvalidated: bool
+    }
 
-    let createBoundModelGraphNode initialBoundModel (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) i =
-        let fileInfo = fileNames.[i]
+    static member Create(
+                            initialBoundModel: BoundModel,
+                            tcGlobals,
+                            nonFrameworkAssemblyInputs,
+                            tcConfig: TcConfig,
+                            outfile,
+                            assemblyName,
+                            lexResourceManager,
+                            sourceFiles,
+                            enablePartialTypeChecking,
+                            beforeFileChecked: Event<string>,
+                            fileChecked: Event<string>,
+#if !NO_EXTENSIONTYPING
+                            importsInvalidatedByTypeProvider: Event<unit>,
+#endif
+                            allDependencies,
+                            defaultTimeStamp: DateTime) =
+
+        let initialState =
+            {
+                initialBoundModel = initialBoundModel
+                tcGlobals = tcGlobals
+                referencedAssemblies = nonFrameworkAssemblyInputs |> Block.ofSeq
+                tcConfig = tcConfig
+                outfile = outfile
+                assemblyName = assemblyName
+                lexResourceManager = lexResourceManager
+                fileNames = sourceFiles |> Block.ofSeq
+                enablePartialTypeChecking = enablePartialTypeChecking
+                beforeFileChecked = beforeFileChecked
+                fileChecked = fileChecked
+                fileParsed = Event<string>()
+                projectChecked = Event<unit>()
+#if !NO_EXTENSIONTYPING
+                importsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
+#endif
+                allDependencies = allDependencies
+                defaultTimeStamp = defaultTimeStamp
+                isImportsInvalidated = false
+            }
+#if !NO_EXTENSIONTYPING
+        importsInvalidatedByTypeProvider.Publish.Add(fun () -> initialState.isImportsInvalidated <- true)
+#endif
+        initialState
+
+[<NoComparison;NoEquality>]
+type IncrementalBuilderState =
+    {
+        // stampedFileNames represent the real stamps of the files.
+        // logicalStampedFileNames represent the stamps of the files that are used to calculate the project's logical timestamp.
+        stampedFileNames: block<DateTime>
+        logicalStampedFileNames: block<DateTime>
+        stampedReferencedAssemblies: block<DateTime>
+        initialBoundModel: GraphNode<BoundModel>
+        boundModels: block<GraphNode<BoundModel>>
+        finalizedBoundModel: GraphNode<((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime)>
+    }
+
+[<AutoOpen>]
+module IncrementalBuilderStateHelpers =
+
+    let createBoundModelGraphNode (initialState: IncrementalBuilderInitialState) initialBoundModel (boundModels: blockbuilder<GraphNode<BoundModel>>) i =
+        let fileInfo = initialState.fileNames.[i]
         let prevBoundModelGraphNode =
             match i with
             | 0 (* first file *) -> initialBoundModel
             | _ -> boundModels.[i - 1]
-        let syntaxTree = GetSyntaxTree fileInfo
+        let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo
         GraphNode(node {
             let! prevBoundModel = prevBoundModelGraphNode.GetOrComputeValue()
-            return! TypeCheckTask enablePartialTypeChecking prevBoundModel syntaxTree
+            return! TypeCheckTask initialState.enablePartialTypeChecking prevBoundModel syntaxTree
         })
 
-    let rec createFinalizeBoundModelGraphNode (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) =
+    let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: blockbuilder<GraphNode<BoundModel>>) =
         GraphNode(node {
             // Compute last bound model then get all the evaluated models.
             let! _ = boundModels.[boundModels.Count - 1].GetOrComputeValue()
             let boundModels =
-                boundModels
-                |> Seq.map (fun x -> x.TryPeekValue().Value)
-                |> ImmutableArray.CreateRange
+                boundModels.ToImmutable()
+                |> Block.map (fun x -> x.TryPeekValue().Value)
 
-            let! result = FinalizeTypeCheckTask boundModels
+            let! result = 
+                FinalizeTypeCheckTask 
+                    initialState.tcConfig 
+                    initialState.tcGlobals 
+                    initialState.enablePartialTypeChecking 
+                    initialState.assemblyName 
+                    initialState.outfile 
+                    boundModels
             let result = (result, DateTime.UtcNow)
             return result
         })
 
-    and computeStampedFileName (state: IncrementalBuilderState) (cache: TimeStampCache) slot fileInfo =
+    and computeStampedFileName (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) slot fileInfo =
         let currentStamp = state.stampedFileNames.[slot]
         let stamp = StampFileNameTask cache fileInfo
 
         if currentStamp <> stamp then
             match state.boundModels.[slot].TryPeekValue() with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
-            | ValueSome(boundModel) when enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
+            | ValueSome(boundModel) when initialState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
                 let newBoundModel = boundModel.ClearTcInfoExtras()
                 { state with
                     boundModels = state.boundModels.RemoveAt(slot).Insert(slot, GraphNode(node { return newBoundModel }))
@@ -1077,14 +1054,14 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
 
                 // Invalidate the file and all files below it.
                 for j = 0 to stampedFileNames.Count - slot - 1 do
-                    let stamp = StampFileNameTask cache fileNames.[slot + j]
+                    let stamp = StampFileNameTask cache initialState.fileNames.[slot + j]
                     stampedFileNames.[slot + j] <- stamp
                     logicalStampedFileNames.[slot + j] <- stamp
-                    boundModels.[slot + j] <- createBoundModelGraphNode state.initialBoundModel boundModels (slot + j)
+                    boundModels.[slot + j] <- createBoundModelGraphNode initialState state.initialBoundModel boundModels (slot + j)
 
                 { state with
                     // Something changed, the finalized view of the project must be invalidated.
-                    finalizedBoundModel = createFinalizeBoundModelGraphNode boundModels
+                    finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
 
                     stampedFileNames = stampedFileNames.ToImmutable()
                     logicalStampedFileNames = logicalStampedFileNames.ToImmutable()
@@ -1093,21 +1070,21 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
         else
             state
 
-    and computeStampedFileNames state (cache: TimeStampCache) =
+    and computeStampedFileNames (initialState: IncrementalBuilderInitialState) state (cache: TimeStampCache) =
         let mutable i = 0
-        (state, fileNames)
-        ||> Array.fold (fun state fileInfo ->
-            let newState = computeStampedFileName state cache i fileInfo
+        (state, initialState.fileNames)
+        ||> Block.fold (fun state fileInfo ->
+            let newState = computeStampedFileName initialState state cache i fileInfo
             i <- i + 1
             newState
         )
 
-    and computeStampedReferencedAssemblies state canTriggerInvalidation (cache: TimeStampCache) =
+    and computeStampedReferencedAssemblies (initialState: IncrementalBuilderInitialState) state canTriggerInvalidation (cache: TimeStampCache) =
         let stampedReferencedAssemblies = state.stampedReferencedAssemblies.ToBuilder()
 
         let mutable referencesUpdated = false
-        referencedAssemblies
-        |> Array.iteri (fun i asmInfo ->
+        initialState.referencedAssemblies
+        |> Block.iteri (fun i asmInfo ->
 
             let currentStamp = state.stampedReferencedAssemblies.[i]
             let stamp = StampReferencedAssemblyTask cache asmInfo
@@ -1126,6 +1103,55 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
             }
         else
             state
+
+type IncrementalBuilderState with
+
+    (*
+        The data below represents a dependency graph.
+
+        ReferencedAssembliesStamps => FileStamps => BoundModels => FinalizedBoundModel
+    *)
+    static member Create(initialState: IncrementalBuilderInitialState) =
+        let defaultTimeStamp = initialState.defaultTimeStamp
+        let initialBoundModel = initialState.initialBoundModel
+        let fileNames = initialState.fileNames
+        let referencedAssemblies = initialState.referencedAssemblies
+
+        let cache = TimeStampCache(defaultTimeStamp)
+        let initialBoundModel = GraphNode(node { return initialBoundModel })
+        let boundModels = BlockBuilder.create fileNames.Length
+
+        for slot = 0 to fileNames.Length - 1 do
+            boundModels.Add(createBoundModelGraphNode initialState initialBoundModel boundModels slot)
+
+        let state =
+            {
+                stampedFileNames = Block.init fileNames.Length (fun _ -> DateTime.MinValue)
+                logicalStampedFileNames = Block.init fileNames.Length (fun _ -> DateTime.MinValue)
+                stampedReferencedAssemblies = Block.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
+                initialBoundModel = initialBoundModel
+                boundModels = boundModels.ToImmutable()
+                finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
+            }
+        let state = computeStampedReferencedAssemblies initialState state false cache
+        let state = computeStampedFileNames initialState state cache
+        state
+
+/// Manages an incremental build graph for the build of a single F# project
+type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: IncrementalBuilderState) =
+
+    let initialBoundModel = initialState.initialBoundModel
+    let tcConfig = initialState.tcConfig
+    let fileNames = initialState.fileNames
+    let beforeFileChecked = initialState.beforeFileChecked
+    let fileChecked = initialState.fileChecked
+#if !NO_EXTENSIONTYPING
+    let importsInvalidatedByTypeProvider = initialState.importsInvalidatedByTypeProvider
+#endif
+    let allDependencies = initialState.allDependencies
+    let defaultTimeStamp = initialState.defaultTimeStamp
+    let fileParsed = initialState.fileParsed
+    let projectChecked = initialState.projectChecked
 
     let tryGetSlot (state: IncrementalBuilderState) slot =
         match state.boundModels.[slot].TryPeekValue() with
@@ -1159,46 +1185,18 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
             stamps
             |> Seq.max
 
-    // END OF BUILD DESCRIPTION
-    // ---------------------------------------------------------------------------------------------
-
-    (*
-        The data below represents a dependency graph.
-
-        ReferencedAssembliesStamps => FileStamps => BoundModels => FinalizedBoundModel
-    *)
-
-    let gate = obj ()
-    let mutable currentState =
-        let cache = TimeStampCache(defaultTimeStamp)
-        let initialBoundModel = GraphNode(node { return initialBoundModel })
-        let boundModels = ImmutableArray.CreateBuilder(fileNames.Length)
-
-        for slot = 0 to fileNames.Length - 1 do
-            boundModels.Add(createBoundModelGraphNode initialBoundModel boundModels slot)
-
-        let state =
-            {
-                stampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
-                logicalStampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
-                stampedReferencedAssemblies = Array.init referencedAssemblies.Length (fun _ -> DateTime.MinValue) |> ImmutableArray.CreateRange
-                initialBoundModel = initialBoundModel
-                boundModels = boundModels.ToImmutable()
-                finalizedBoundModel = createFinalizeBoundModelGraphNode boundModels
-            }
-        let state = computeStampedReferencedAssemblies state false cache
-        let state = computeStampedFileNames state cache
-        state
-
     let computeProjectTimeStamp (state: IncrementalBuilderState) =
         let t1 = MaxTimeStampInDependencies state.stampedReferencedAssemblies
         let t2 = MaxTimeStampInDependencies state.logicalStampedFileNames
         max t1 t2
 
+    let gate = obj()
+    let mutable currentState = state 
+
     let setCurrentState state cache (ct: CancellationToken) =
         lock gate (fun () ->
             ct.ThrowIfCancellationRequested()
-            currentState <- computeStampedFileNames state cache
+            currentState <- computeStampedFileNames initialState state cache
         )
 
     let checkFileTimeStamps (cache: TimeStampCache) =
@@ -1227,7 +1225,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
         // fast path
         if initialState.isImportsInvalidated then true
         else 
-            computeStampedReferencedAssemblies currentState true (TimeStampCache(defaultTimeStamp)) |> ignore
+            computeStampedReferencedAssemblies initialState currentState true (TimeStampCache(defaultTimeStamp)) |> ignore
             initialState.isImportsInvalidated
 
     member _.AllDependenciesDeprecated = allDependencies
@@ -1258,7 +1256,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
 
     member builder.TryGetCheckResultsBeforeFileInProject (filename) =
         let cache = TimeStampCache defaultTimeStamp
-        let tmpState = computeStampedFileNames currentState cache
+        let tmpState = computeStampedFileNames initialState currentState cache
 
         let slotOfFile = builder.GetSlotOfFileName filename
         match tryGetBeforeSlot tmpState slotOfFile with
@@ -1331,7 +1329,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
         }
 
     member _.GetLogicalTimeStampForProject(cache) =
-        let tmpState = computeStampedFileNames currentState cache
+        let tmpState = computeStampedFileNames initialState currentState cache
         computeProjectTimeStamp tmpState
 
     member _.TryGetSlotOfFileName(filename: string) =
@@ -1341,7 +1339,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
                    String.Compare(filename, f2, StringComparison.CurrentCultureIgnoreCase)=0
                 || String.Compare(FileSystem.GetFullPathShim filename, FileSystem.GetFullPathShim f2, StringComparison.CurrentCultureIgnoreCase)=0
             result
-        match fileNames |> Array.tryFindIndex CompareFileNames with
+        match fileNames |> Seq.tryFindIndex CompareFileNames with
         | Some slot -> Some slot
         | None -> None
 
@@ -1359,10 +1357,10 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
         let slotOfFile = builder.GetSlotOfFileName filename
         let fileInfo = fileNames.[slotOfFile]
         // re-parse on demand instead of retaining
-        let syntaxTree = GetSyntaxTree fileInfo
+        let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo
         syntaxTree.Parse None
 
-    member _.SourceFiles  = sourceFiles  |> List.map (fun (_, f, _) -> f)
+    member _.SourceFiles  = fileNames |> Seq.map (fun (_, f, _) -> f) |> List.ofSeq
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
@@ -1607,7 +1605,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
                     allDependencies,
                     defaultTimeStamp)
 
-            let builder = IncrementalBuilder(initialState)
+            let builder = IncrementalBuilder(initialState, IncrementalBuilderState.Create(initialState))
             return Some builder
           with e ->
             errorRecoveryNoRange e
