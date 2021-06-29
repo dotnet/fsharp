@@ -4,9 +4,10 @@
 module internal FSharp.Compiler.CompilerDiagnostics
 
 open System.Text
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
 
 #if DEBUG
 module internal CompilerService =
@@ -59,7 +60,7 @@ val SplitRelatedDiagnostics: PhasedDiagnostic -> PhasedDiagnostic * PhasedDiagno
 val OutputPhasedDiagnostic: StringBuilder -> PhasedDiagnostic -> flattenErrors: bool -> suggestNames: bool -> unit
 
 /// Output an error or warning to a buffer
-val OutputDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  isError:bool -> StringBuilder -> PhasedDiagnostic -> unit
+val OutputDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle * severity: FSharpDiagnosticSeverity -> StringBuilder -> PhasedDiagnostic -> unit
 
 /// Output extra context information for an error or warning to a buffer
 val OutputDiagnosticContext: prefix:string -> fileLineFunction:(string -> int -> string) -> StringBuilder -> PhasedDiagnostic -> unit
@@ -89,11 +90,11 @@ type DiagnosticDetailedInfo =
 /// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
 type Diagnostic = 
-    | Short of bool * string
-    | Long of bool * DiagnosticDetailedInfo
+    | Short of FSharpDiagnosticSeverity * string
+    | Long of FSharpDiagnosticSeverity * DiagnosticDetailedInfo
 
 /// Part of LegacyHostedCompilerForTesting
-val CollectDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  isError:bool * PhasedDiagnostic * suggestNames: bool -> seq<Diagnostic>
+val CollectDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle * severity: FSharpDiagnosticSeverity * PhasedDiagnostic * suggestNames: bool -> seq<Diagnostic>
 
 /// Get an error logger that filters the reporting of warnings based on scoped pragma information
 val GetErrorLoggerFilteringByScopedPragmas: checkFile:bool * ScopedPragma list * ErrorLogger  -> ErrorLogger
@@ -101,9 +102,9 @@ val GetErrorLoggerFilteringByScopedPragmas: checkFile:bool * ScopedPragma list *
 val SanitizeFileName: fileName: string -> implicitIncludeDir: string -> string
 
 /// Indicates if we should report a warning
-val ReportWarning: FSharpErrorSeverityOptions -> PhasedDiagnostic -> bool
+val ReportWarning: FSharpDiagnosticOptions -> PhasedDiagnostic -> bool
 
 /// Indicates if we should report a warning as an error
-val ReportWarningAsError: FSharpErrorSeverityOptions -> PhasedDiagnostic -> bool
+val ReportWarningAsError: FSharpDiagnosticOptions -> PhasedDiagnostic -> bool
 
 

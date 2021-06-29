@@ -4,6 +4,6 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 [<Sealed>]
 type NavigableTextRun(classificationTypeName:string, text:string, navigateAction:unit -> unit) =
-    member __.ClassificationTypeName = classificationTypeName
-    member __.Text = text
-    member __.NavigateAction = navigateAction
+    member _.ClassificationTypeName = classificationTypeName
+    member _.Text = text
+    member _.NavigateAction = navigateAction

@@ -2,13 +2,13 @@
 
 module internal FSharp.Compiler.AutoBox 
 
-open FSharp.Compiler.AbstractIL.Internal
+open Internal.Utilities.Collections
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.Lib
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 
@@ -23,12 +23,15 @@ type cenv =
 
 /// Find all the mutable locals that escape a method, function or lambda expression
 let DecideEscapes syntacticArgs body =
-    let cantBeFree v = 
+    let isMutableEscape v = 
         let passedIn = ListSet.contains valEq v syntacticArgs 
-        not passedIn && (v.IsMutable && v.ValReprInfo.IsNone) 
+        not passedIn &&
+        v.IsMutable &&
+        v.ValReprInfo.IsNone &&
+        not (Optimizer.IsKnownOnlyMutableBeforeUse (mkLocalValRef v))
 
     let frees = freeInExpr CollectLocals body
-    frees.FreeLocals |> Zset.filter cantBeFree 
+    frees.FreeLocals |> Zset.filter isMutableEscape 
 
 /// Find all the mutable locals that escape a lambda expression, ignoring the arguments to the lambda
 let DecideLambda exprF cenv topValInfo expr ety z   = 

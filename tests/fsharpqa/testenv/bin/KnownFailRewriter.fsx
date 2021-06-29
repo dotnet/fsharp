@@ -102,7 +102,7 @@ module FSharpInfo =
     let IsFSharpCompilerDebug () = 
         let o = Microsoft.Win32.Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\FSharp\4.1\Runtime\v4.0", null, null)
         if o <> null then
-            let path = System.IO.Path.Combine( o :?> string, "FSharp.Compiler.Private.dll")
+            let path = System.IO.Path.Combine( o :?> string, "FSharp.Compiler.Service.dll")
             let asm = System.Reflection.Assembly.LoadFrom(path)
 
             match asm.GetCustomAttributes(typeof<System.Diagnostics.DebuggableAttribute>, false) with

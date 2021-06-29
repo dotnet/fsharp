@@ -1,11 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.Lib
+module internal Internal.Utilities.Library.Extras
 
-open System.Collections.Generic
 open System.IO
 open System.Text
-open FSharp.Compiler.AbstractIL.Internal 
+open System.Globalization
+open System.Collections.Generic
+open Internal.Utilities.Collections
 
 val debug: bool
 
@@ -22,19 +23,25 @@ val GetEnvInteger: e:string -> dflt:int -> int
 val dispose: x:System.IDisposable -> unit
 
 module Bits =
+    /// Get the least significant byte of a 32-bit integer
     val b0: n:int -> int
-    val b1: n:int -> int
-    val b2: n:int -> int
-    val b3: n:int -> int
-    val pown32: n:int -> int
-    val pown64: n:int -> int64
-    val mask32: m:int32 -> n:int -> int
-    val mask64: m:int32 -> n:int -> int64
 
-module Filename =
-    val fullpath: cwd:string -> nm:string -> string
-    val hasSuffixCaseInsensitive: suffix:string -> filename:string -> bool
-    val isDll: file:string -> bool
+    /// Get the 2nd least significant byte of a 32-bit integer
+    val b1: n:int -> int
+
+    /// Get the 3rd least significant byte of a 32-bit integer
+    val b2: n:int -> int
+
+    /// Get the most significant byte of a 32-bit integer
+    val b3: n:int -> int
+
+    val pown32: n:int -> int
+
+    val pown64: n:int -> int64
+
+    val mask32: m:int32 -> n:int -> int
+
+    val mask64: m:int32 -> n:int -> int64
 
 module Bool =
     val order: IComparer<bool>
@@ -52,11 +59,13 @@ module Pair =
         IComparer<'T1 * 'T2>
 
 type NameSet = Zset<string>
+
 module NameSet =
     val ofList: l:string list -> NameSet
 
 module NameMap =
     val domain: m:Map<string,'a> -> Zset<string>
+
     val domainL: m:Map<string,'a> -> string list
 
 module Check =
@@ -110,7 +119,7 @@ module ListAssoc =
 module ListSet =
     val inline contains: f:('a -> 'b -> bool) -> x:'a -> l:'b list -> bool
 
-    /// NOTE: O(n)! 
+    /// NOTE: O(n)!
     val insert: f:('a -> 'a -> bool) -> x:'a -> l:'a list -> 'a list
 
     val unionFavourRight : f:('a -> 'a -> bool) -> l1:'a list -> l2:'a list -> 'a list
@@ -131,7 +140,7 @@ module ListSet =
 
     val unionFavourLeft : f:('a -> 'a -> bool) -> l1:'a list -> l2:'a list -> 'a list
 
-    /// NOTE: not tail recursive! 
+    /// NOTE: not tail recursive!
     val intersect : f:('a -> 'b -> bool) -> l1:'b list -> l2:'a list -> 'a list
 
     /// Note: if duplicates appear, keep the ones toward the _front_ of the list
@@ -205,7 +214,7 @@ type Graph<'Data,'Id when 'Id: comparison> =
             edges:('Data * 'Data) list -> Graph<'Data,'Id>
       member GetNodeData: nodeId:'Id -> 'Data
       member IterateCycles: f:('Data list -> unit) -> unit
-  
+
 /// In some cases we play games where we use 'null' as a more efficient representation
 /// in F#. The functions below are used to give initial values to mutable fields.
 /// This is an unsafe trick, as it relies on the fact that the type of values
@@ -239,15 +248,15 @@ module AsyncUtil =
         | AsyncException of exn
         | AsyncCanceled of System.OperationCanceledException
         static member Commit: res:AsyncResult<'T> -> Async<'T>
-    
+
     /// When using .NET 4.0 you can replace this type by <see cref="Task{T}"/>
     [<SealedAttribute>]
     type AsyncResultCell<'T> =
-  
+
         new: unit -> AsyncResultCell<'T>
         member RegisterResult: res:AsyncResult<'T> -> unit
         member AsyncResult: Async<'T>
-    
+
 module UnmanagedProcessExecutionOptions =
     val EnableHeapTerminationOnCorruption: unit -> unit
 
@@ -260,7 +269,7 @@ type MaybeLazy<'T> =
     | Lazy of System.Lazy<'T>
     member Force: unit -> 'T
     member Value: 'T
-  
+
 val inline vsnd: struct ('T * 'T) -> 'T
 
 /// Track a set of resources to cleanup
@@ -272,3 +281,13 @@ type DisposablesTracker =
     member Register: i:System.IDisposable -> unit
 
     interface System.IDisposable
+
+/// Specialized parallel functions for an array.
+/// Different from Array.Parallel as it will try to minimize the max degree of parallelism.
+/// Will flatten aggregate exceptions that contain one exception.
+[<RequireQualifiedAccess>]
+module ArrayParallel =
+
+    val inline map : ('T -> 'U) -> 'T [] -> 'U []
+
+    val inline mapi : (int -> 'T -> 'U) -> 'T [] -> 'U []

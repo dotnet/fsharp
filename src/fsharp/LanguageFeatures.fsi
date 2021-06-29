@@ -24,6 +24,10 @@ type LanguageFeature =
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
+    | StructActivePattern
+    | PrintfBinaryFormat
+    | UseBindingValueDiscard
+    | NonVariablePatternsToRightOfAsPatterns
 
 /// LanguageVersion management
 type LanguageVersion =

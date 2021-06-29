@@ -3,10 +3,10 @@
 module internal FSharp.Compiler.CheckExpressions
 
 open System
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
@@ -16,11 +16,11 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
-open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.XmlDoc
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
@@ -131,7 +131,7 @@ exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * 
 exception FunctionValueUnexpected of DisplayEnv * TType * range
 exception UnionPatternsBindDifferentNames of range
 exception VarBoundTwice of Ident
-exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
+exception ValueRestriction of DisplayEnv * InfoReader * bool * Val * Typar * range
 exception ValNotMutable of DisplayEnv * ValRef * range
 exception ValNotLocal of DisplayEnv * ValRef * range
 exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
@@ -309,7 +309,7 @@ type DeclKind =
 
     static member ImplicitlyStatic: DeclKind -> bool
 
-    static member AllowedAttribTargets: MemberFlags option -> DeclKind -> AttributeTargets
+    static member AllowedAttribTargets: SynMemberFlags option -> DeclKind -> AttributeTargets
 
     // Note: now always true
     static member CanGeneralizeConstrainedTypars: DeclKind -> bool
@@ -404,7 +404,7 @@ type NormalizedBinding =
       pat: SynPat * 
       rhsExpr: NormalizedBindingRhs *
       mBinding: range *
-      spBinding: DebugPointForBinding
+      spBinding: DebugPointAtBinding
 
 /// RecursiveBindingInfo - flows through initial steps of TcLetrec 
 type RecursiveBindingInfo =
@@ -508,13 +508,13 @@ val unionGeneralizedTypars: typarSets:Typar list list -> Typar list
 val AddDeclaredTypars: check: CheckForDuplicateTyparFlag -> typars: Typar list -> env: TcEnv -> TcEnv
 
 /// Add a value to the environment, producing a new environment. Report to the sink.
-val AddLocalVal: NameResolution.TcResultsSink -> scopem: range -> v: Val -> TcEnv -> TcEnv
+val AddLocalVal: g: TcGlobals -> NameResolution.TcResultsSink -> scopem: range -> v: Val -> TcEnv -> TcEnv
 
 /// Add a value to the environment, producing a new environment
-val AddLocalValPrimitive: v: Val -> TcEnv -> TcEnv
+val AddLocalValPrimitive: g: TcGlobals -> v: Val -> TcEnv -> TcEnv
 
 /// Add a list of values to the environment, producing a new environment. Report to the sink.
-val AddLocalVals: tcSink: TcResultsSink -> scopem: range -> vals: Val list -> env: TcEnv -> TcEnv
+val AddLocalVals: g: TcGlobals -> tcSink: TcResultsSink -> scopem: range -> vals: Val list -> env: TcEnv -> TcEnv
 
 /// Set the type of a 'Val' after it has been fully inferred.
 val AdjustRecType: vspec: Val -> vscheme: ValScheme -> unit
@@ -523,10 +523,10 @@ val AdjustRecType: vspec: Val -> vscheme: ValScheme -> unit
 val AnalyzeAndMakeAndPublishRecursiveValue: overridesOK:OverridesOK -> isGeneratedEventVal:bool -> cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv * recBindIdx:int -> NormalizedRecBindingDefn -> (PreCheckingRecursiveBinding list * Val list) * (UnscopedTyparEnv * int)
 
 /// Check that a member can be included in an interface
-val CheckForNonAbstractInterface: declKind:DeclKind -> tcref:TyconRef -> memberFlags:MemberFlags -> m:range -> unit    
+val CheckForNonAbstractInterface: declKind:DeclKind -> tcref:TyconRef -> memberFlags:SynMemberFlags -> m:range -> unit    
 
 /// Check the flags on a member definition for consistency
-val CheckMemberFlags: optIntfSlotTy:'a option -> newslotsOK:NewSlotsOK -> overridesOK:OverridesOK -> memberFlags:MemberFlags -> m:range -> unit
+val CheckMemberFlags: optIntfSlotTy:'a option -> newslotsOK:NewSlotsOK -> overridesOK:OverridesOK -> memberFlags:SynMemberFlags -> m:range -> unit
 
 /// Check a super type is valid
 val CheckSuperType: cenv:TcFileState -> ty:TType -> m:range -> unit    
@@ -603,7 +603,7 @@ val MakeAndPublishSimpleVals: cenv: TcFileState -> env: TcEnv -> names: NameMap<
 val MakeAndPublishSafeThisVal: cenv: TcFileState -> env: TcEnv -> thisIdOpt: Ident option -> thisTy: TType -> Val option
 
 /// Make initial information for a member value
-val MakeMemberDataAndMangledNameForMemberVal: g: TcGlobals * tcref: TyconRef * isExtrinsic: bool * attrs: Attribs * optImplSlotTys: TType list * memberFlags: MemberFlags * valSynData: SynValInfo * id: Ident * isCompGen: bool -> PreValMemberInfo
+val MakeMemberDataAndMangledNameForMemberVal: g: TcGlobals * tcref: TyconRef * isExtrinsic: bool * attrs: Attribs * optImplSlotTys: TType list * memberFlags: SynMemberFlags * valSynData: SynValInfo * id: Ident * isCompGen: bool -> PreValMemberInfo
 
 /// Return a new environment suitable for processing declarations in the interior of a type definition
 val MakeInnerEnvForTyconRef: env: TcEnv -> tcref: TyconRef -> isExtrinsicExtension: bool -> TcEnv
@@ -635,7 +635,7 @@ val SetTyparRigid: DisplayEnv -> range -> Typar -> unit
 /// Check and publish a value specification (in a signature or 'abstract' member) to the
 /// module/namespace type accumulator and return the resulting Val(s).  Normally only one
 /// 'Val' results but CLI events may produce both and add_Event and _remove_Event Val.
-val TcAndPublishValSpec: cenv: TcFileState * env: TcEnv * containerInfo: ContainerInfo * declKind: DeclKind * memFlagsOpt: MemberFlags option * tpenv: UnscopedTyparEnv * valSpfn: SynValSig -> Val list * UnscopedTyparEnv
+val TcAndPublishValSpec: cenv: TcFileState * env: TcEnv * containerInfo: ContainerInfo * declKind: DeclKind * memFlagsOpt: SynMemberFlags option * tpenv: UnscopedTyparEnv * valSpfn: SynValSig -> Val list * UnscopedTyparEnv
 
 /// Check a set of attributes
 val TcAttributes: cenv: TcFileState -> env: TcEnv -> attrTgt: AttributeTargets -> synAttribs: SynAttribute list -> Attrib list
@@ -722,7 +722,7 @@ val TcTypeOrMeasureAndRecover: optKind: TyparKind option -> cenv: TcFileState ->
 val TcTypeAndRecover: cenv: TcFileState -> newOk: ImplicitlyBoundTyparsAllowed -> checkCxs: CheckConstraints -> occ: ItemOccurence -> env: TcEnv -> tpenv: UnscopedTyparEnv -> ty: SynType -> TType * UnscopedTyparEnv
 
 /// Check a specification of a value or member in a signature or an abstract member
-val TcValSpec: cenv: TcFileState -> TcEnv -> DeclKind -> ImplicitlyBoundTyparsAllowed -> ContainerInfo -> MemberFlags option -> thisTyOpt: TType option -> UnscopedTyparEnv -> SynValSig -> Attrib list -> ValSpecResult list * UnscopedTyparEnv
+val TcValSpec: cenv: TcFileState -> TcEnv -> DeclKind -> ImplicitlyBoundTyparsAllowed -> ContainerInfo -> SynMemberFlags option -> thisTyOpt: TType option -> UnscopedTyparEnv -> SynValSig -> Attrib list -> ValSpecResult list * UnscopedTyparEnv
 
 /// Given the declaration of a function or member, process it to produce the ValReprInfo
 /// giving the names and attributes relevant to arguments and return, but before type

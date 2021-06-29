@@ -6,16 +6,15 @@ open System
 
 open Microsoft.CodeAnalysis
 
-open FSharp.Compiler.SourceCodeServices
-
-open FSharp.Compiler.Range
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
 open Microsoft.VisualStudio.Shell.Interop
 
 type internal QuickInfoNavigation
     (
         statusBar: StatusBar,
-        checker: FSharpChecker,
-        projectInfoManager: FSharpProjectOptionsManager,
+        metadataAsSource: FSharpMetadataAsSourceService,
         initialDoc: Document,
         thisSymbolUseRange: range
     ) =
@@ -23,12 +22,12 @@ type internal QuickInfoNavigation
     let workspace = initialDoc.Project.Solution.Workspace
     let solution = workspace.CurrentSolution
 
-    member __.IsTargetValid (range: range) =
+    member _.IsTargetValid (range: range) =
         range <> rangeStartup &&
         range <> thisSymbolUseRange &&
         solution.TryGetDocumentIdFromFSharpRange (range, initialDoc.Project.Id) |> Option.isSome
 
-    member __.RelativePath (range: range) =
+    member _.RelativePath (range: range) =
         let relativePathEscaped =
             match solution.FilePath with
             | null -> range.FileName
@@ -37,13 +36,13 @@ type internal QuickInfoNavigation
                 Uri(sfp).MakeRelativeUri(targetUri).ToString()
         relativePathEscaped |> Uri.UnescapeDataString
 
-    member __.NavigateTo (range: range) =
+    member _.NavigateTo (range: range) =
         asyncMaybe {
             let targetPath = range.FileName
             let! targetDoc = solution.TryGetDocumentFromFSharpRange (range, initialDoc.Project.Id)
             let! targetSource = targetDoc.GetTextAsync()
             let! targetTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (targetSource, range)
-            let gtd = GoToDefinition(checker, projectInfoManager)
+            let gtd = GoToDefinition(metadataAsSource)
 
             // To ensure proper navigation decsions, we need to check the type of document the navigation call
             // is originating from and the target we're provided by default:

@@ -2,17 +2,15 @@
 
 module internal FSharp.Compiler.Driver 
 
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
-open FSharp.Compiler.CheckExpressions
-open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -27,21 +25,11 @@ type ConsoleLoggerProvider =
     new : unit -> ConsoleLoggerProvider
     inherit ErrorLoggerProvider
 
-/// Encode the F# interface data into a set of IL attributes and resources
-val EncodeSignatureData:
-    tcConfig:TcConfig *
-    tcGlobals:TcGlobals *
-    exportRemapping:Remap *
-    generatedCcu: CcuThunk *
-    outfile: string *
-    isIncrementalBuild: bool
-      -> ILAttribute list * ILResource list
-
 /// The main (non-incremental) compilation entry point used by fsc.exe
 val mainCompile: 
     ctok: CompilationThreadToken *
     argv: string[] * 
-    legacyReferenceResolver: ReferenceResolver.Resolver * 
+    legacyReferenceResolver: LegacyReferenceResolver * 
     bannerAlreadyPrinted: bool * 
     reduceMemoryUsage: ReduceMemoryFlag * 
     defaultCopyFSharpCore: CopyFSharpCoreFlag * 
@@ -54,7 +42,7 @@ val mainCompile:
 /// An additional compilation entry point used by FSharp.Compiler.Service taking syntax trees as input
 val compileOfAst: 
     ctok: CompilationThreadToken *
-    legacyReferenceResolver: ReferenceResolver.Resolver * 
+    legacyReferenceResolver: LegacyReferenceResolver * 
     reduceMemoryUsage: ReduceMemoryFlag * 
     assemblyName:string * 
     target:CompilerTarget * 

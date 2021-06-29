@@ -4,21 +4,25 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Collections.Generic
+open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
-open FSharp.Compiler
-open FSharp.Compiler.Layout
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Range
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
+
+type RoslynTaggedText = Microsoft.CodeAnalysis.TaggedText
 
 [<RequireQualifiedAccess>]
 module internal RoslynHelpers =
     let joinWithLineBreaks segments =
-        let lineBreak = TaggedTextOps.Literals.lineBreak
+        let lineBreak = TaggedText.lineBreak
         match segments |> List.filter (Seq.isEmpty >> not) with
         | [] -> Seq.empty
         | xs -> xs |> List.reduce (fun acc elem -> seq { yield! acc; yield lineBreak; yield! elem })
@@ -40,8 +44,8 @@ module internal RoslynHelpers =
         let endLine = sourceText.Lines.GetLineFromPosition textSpan.End
         mkRange 
             fileName 
-            (Pos.fromZ startLine.LineNumber (textSpan.Start - startLine.Start))
-            (Pos.fromZ endLine.LineNumber (textSpan.End - endLine.Start))
+            (Position.fromZ startLine.LineNumber (textSpan.Start - startLine.Start))
+            (Position.fromZ endLine.LineNumber (textSpan.End - endLine.Start))
 
     let GetCompletedTaskResult(task: Task<'TResult>) =
         if task.Status = TaskStatus.RanToCompletion then
@@ -50,50 +54,50 @@ module internal RoslynHelpers =
             Assert.Exception(task.Exception.GetBaseException())
             raise(task.Exception.GetBaseException())
 
-    /// maps from `LayoutTag` of the F# Compiler to Roslyn `TextTags` for use in tooltips
+    /// maps from `TextTag` of the F# Compiler to Roslyn `TextTags` for use in tooltips
     let roslynTag = function
-        | LayoutTag.ActivePatternCase
-        | LayoutTag.ActivePatternResult
-        | LayoutTag.UnionCase
-        | LayoutTag.Enum -> TextTags.Enum
-        | LayoutTag.Struct -> TextTags.Struct
-        | LayoutTag.TypeParameter -> TextTags.TypeParameter
-        | LayoutTag.Alias
-        | LayoutTag.Class
-        | LayoutTag.Union
-        | LayoutTag.Record
-        | LayoutTag.UnknownType // Default to class until/unless we use classification data
-        | LayoutTag.Module -> TextTags.Class
-        | LayoutTag.Interface -> TextTags.Interface
-        | LayoutTag.Keyword -> TextTags.Keyword
-        | LayoutTag.Member
-        | LayoutTag.Function
-        | LayoutTag.Method -> TextTags.Method
-        | LayoutTag.RecordField
-        | LayoutTag.Property -> TextTags.Property
-        | LayoutTag.Parameter // parameter?
-        | LayoutTag.Local -> TextTags.Local
-        | LayoutTag.Namespace -> TextTags.Namespace
-        | LayoutTag.Delegate -> TextTags.Delegate
-        | LayoutTag.Event -> TextTags.Event
-        | LayoutTag.Field -> TextTags.Field
-        | LayoutTag.LineBreak -> TextTags.LineBreak
-        | LayoutTag.Space -> TextTags.Space
-        | LayoutTag.NumericLiteral -> TextTags.NumericLiteral
-        | LayoutTag.Operator -> TextTags.Operator
-        | LayoutTag.StringLiteral -> TextTags.StringLiteral
-        | LayoutTag.Punctuation -> TextTags.Punctuation
-        | LayoutTag.Text
-        | LayoutTag.ModuleBinding // why no 'Identifier'? Does it matter?
-        | LayoutTag.UnknownEntity -> TextTags.Text
+        | TextTag.ActivePatternCase
+        | TextTag.ActivePatternResult
+        | TextTag.UnionCase
+        | TextTag.Enum -> TextTags.Enum
+        | TextTag.Struct -> TextTags.Struct
+        | TextTag.TypeParameter -> TextTags.TypeParameter
+        | TextTag.Alias
+        | TextTag.Class
+        | TextTag.Union
+        | TextTag.Record
+        | TextTag.UnknownType // Default to class until/unless we use classification data
+        | TextTag.Module -> TextTags.Class
+        | TextTag.Interface -> TextTags.Interface
+        | TextTag.Keyword -> TextTags.Keyword
+        | TextTag.Member
+        | TextTag.Function
+        | TextTag.Method -> TextTags.Method
+        | TextTag.RecordField
+        | TextTag.Property -> TextTags.Property
+        | TextTag.Parameter // parameter?
+        | TextTag.Local -> TextTags.Local
+        | TextTag.Namespace -> TextTags.Namespace
+        | TextTag.Delegate -> TextTags.Delegate
+        | TextTag.Event -> TextTags.Event
+        | TextTag.Field -> TextTags.Field
+        | TextTag.LineBreak -> TextTags.LineBreak
+        | TextTag.Space -> TextTags.Space
+        | TextTag.NumericLiteral -> TextTags.NumericLiteral
+        | TextTag.Operator -> TextTags.Operator
+        | TextTag.StringLiteral -> TextTags.StringLiteral
+        | TextTag.Punctuation -> TextTags.Punctuation
+        | TextTag.Text
+        | TextTag.ModuleBinding // why no 'Identifier'? Does it matter?
+        | TextTag.UnknownEntity -> TextTags.Text
 
-    let CollectTaggedText (list: List<_>) (t:TaggedText) = list.Add(TaggedText(roslynTag t.Tag, t.Text))
+    let CollectTaggedText (list: List<_>) (t:TaggedText) = list.Add(RoslynTaggedText(roslynTag t.Tag, t.Text))
 
     type VolatileBarrier() =
         [<VolatileField>]
         let mutable isStopped = false
-        member __.Proceed = not isStopped
-        member __.Stop() = isStopped <- true
+        member _.Proceed = not isStopped
+        member _.Stop() = isStopped <- true
 
     // This is like Async.StartAsTask, but
     //  1. if cancellation occurs we explicitly associate the cancellation with cancellationToken
@@ -106,8 +110,7 @@ module internal RoslynHelpers =
         let task = tcs.Task
         let disposeReg() = barrier.Stop(); if not task.IsCanceled then reg.Dispose()
         Async.StartWithContinuations(
-                  async { do! Async.SwitchToThreadPool()
-                          return! computation }, 
+                  computation, 
                   continuation=(fun result -> 
                       disposeReg()
                       tcs.TrySetResult(result) |> ignore
@@ -132,16 +135,21 @@ module internal RoslynHelpers =
     let StartAsyncUnitAsTask cancellationToken (computation:Async<unit>) = 
         StartAsyncAsTask cancellationToken computation  :> Task
 
-    let ConvertError(error: FSharpErrorInfo, location: Location) =
+    let ConvertError(error: FSharpDiagnostic, location: Location) =
         // Normalize the error message into the same format that we will receive it from the compiler.
         // This ensures that IntelliSense and Compiler errors in the 'Error List' are de-duplicated.
         // (i.e the same error does not appear twice, where the only difference is the line endings.)
-        let normalizedMessage = error.Message |> ErrorLogger.NormalizeErrorString |> ErrorLogger.NewlineifyErrorString
+        let normalizedMessage = error.Message |> FSharpDiagnostic.NormalizeErrorString |> FSharpDiagnostic.NewlineifyErrorString
 
-        let id = "FS" + error.ErrorNumber.ToString("0000")
+        let id = error.ErrorNumberText
         let emptyString = LocalizableString.op_Implicit("")
         let description = LocalizableString.op_Implicit(normalizedMessage)
-        let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
+        let severity = 
+           match error.Severity with
+           | FSharpDiagnosticSeverity.Error -> DiagnosticSeverity.Error 
+           | FSharpDiagnosticSeverity.Warning -> DiagnosticSeverity.Warning
+           | FSharpDiagnosticSeverity.Info -> DiagnosticSeverity.Info
+           | FSharpDiagnosticSeverity.Hidden -> DiagnosticSeverity.Hidden
         let customTags = 
             match error.ErrorNumber with
             | 1182 -> FSharpDiagnosticCustomTags.Unnecessary
@@ -173,7 +181,7 @@ module internal OpenDeclarationHelper =
     /// <param name="sourceText">SourceText.</param>
     /// <param name="ctx">Insertion context. Typically returned from tryGetInsertionContext</param>
     /// <param name="ns">Namespace to open.</param>
-    let insertOpenDeclaration (sourceText: SourceText) (ctx: InsertContext) (ns: string) : SourceText * int =
+    let insertOpenDeclaration (sourceText: SourceText) (ctx: InsertionContext) (ns: string) : SourceText * int =
         let mutable minPos = None
 
         let insert line lineStr (sourceText: SourceText) : SourceText =
@@ -188,7 +196,7 @@ module internal OpenDeclarationHelper =
             sourceText.WithChanges(TextChange(TextSpan(pos, 0), lineStr + lineBreak))
 
         let getLineStr line = sourceText.Lines.[line].ToString().Trim()
-        let pos = ParsedInput.adjustInsertionPoint getLineStr ctx
+        let pos = ParsedInput.AdjustInsertionPoint getLineStr ctx
         let docLine = Line.toZ pos.Line
         let lineStr = (String.replicate pos.Column " ") + "open " + ns
 
@@ -215,3 +223,8 @@ module internal OpenDeclarationHelper =
             else sourceText
 
         sourceText, minPos |> Option.defaultValue 0
+
+[<AutoOpen>]
+module internal TaggedText =
+    let toString (tts: TaggedText[]) =
+        tts |> Array.map (fun tt -> tt.Text) |> String.concat ""

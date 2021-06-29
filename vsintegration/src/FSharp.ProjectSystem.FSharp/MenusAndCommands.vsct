@@ -47,6 +47,9 @@
     <CommandPlacement guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" priority="0x0800">
       <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
     </CommandPlacement>
+    <CommandPlacement guid="guidFsiConsoleCmdSet" id="cmdidQuitProcess" priority="0x0900">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
+    </CommandPlacement>
     <CommandPlacement guid ="FSharpProjectCmdSet"  id ="MyFSharpGroup" priority ="0x100">
       <Parent guid ="guidSHLMainMenu" id ="IDM_VS_CTXT_ITEMNODE" />
     </CommandPlacement>
@@ -122,6 +125,14 @@
         <Strings>
           <CommandName>FSharp.Interactive.DetachDebugger</CommandName>
           <ButtonText>Stop Debugging</ButtonText>
+        </Strings>
+        <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
+      </Button>
+
+      <Button guid="guidFsiConsoleCmdSet" id="cmdidQuitProcess" priority="0x0102" type="Button">
+        <Strings>
+          <CommandName>FSharp.Interactive.QuitProcess</CommandName>
+          <ButtonText>Quit F# Interactive Process</ButtonText>
         </Strings>
         <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
       </Button>
@@ -338,6 +349,10 @@
 
     <!-- CRTL-Shift-D when in FSI ToolWindow is detach debugger -->
     <KeyBinding guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" editor="guidFsiToolWindow" key1="D" mod1="Control Shift" />
+
+    <!-- CRTL-Shift-D when in FSI ToolWindow is detach debugger -->
+    <KeyBinding guid="guidFsiConsoleCmdSet" id="cmdidQuitProcess" editor="guidFsiToolWindow" key1="Q" mod1="Control Alt" />
+
     <KeyBinding guid="FSharpProjectCmdSet" id="MoveUpCmd" editor="SlnExplorerGuid" key1="VK_UP" mod1="Alt" />
     <KeyBinding guid="FSharpProjectCmdSet" id="MoveDownCmd" editor="SlnExplorerGuid" key1="VK_DOWN" mod1="Alt" />
   </KeyBindings>
@@ -375,6 +390,7 @@
       <IDSymbol name="cmdidFsiConsole" value="0x101" />
       <IDSymbol name="cmdidAttachDebugger" value="0x104" />
       <IDSymbol name="cmdidDetachDebugger" value="0x105" />
+      <IDSymbol name="cmdidQuitProcess" value="0x106" />
      </GuidSymbol>
 
     <GuidSymbol name="guidFsiConsoleBmp" value="{01F8DC29-935A-4460-8D5D-F213B4CFA7EA}" >

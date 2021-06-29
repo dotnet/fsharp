@@ -1,14 +1,13 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.AbstractIL.Extensions.ILX.EraseClosures
+module internal FSharp.Compiler.AbstractIL.ILX.EraseClosures
 
-
-open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractIL.Extensions.ILX
-open FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
+open Internal.Utilities.Library 
+open FSharp.Compiler.AbstractIL.ILX
+open FSharp.Compiler.AbstractIL.ILX.Types 
 open FSharp.Compiler.AbstractIL.Morphs 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Syntax.PrettyNaming
 
 // -------------------------------------------------------------------- 
 // Erase closures and function types
@@ -105,10 +104,13 @@ let isSupportedDirectCall apps =
 // for more refined types later.
 // -------------------------------------------------------------------- 
 
-let mkFuncTypeRef n = 
-    if n = 1 then mkILTyRef (IlxSettings.ilxFsharpCoreLibScopeRef (), IlxSettings.ilxNamespace () + ".FSharpFunc`2")
-    else mkILNestedTyRef (IlxSettings.ilxFsharpCoreLibScopeRef (), 
-                         [IlxSettings.ilxNamespace () + ".OptimizedClosures"], 
+[<Literal>]
+let fsharpCoreNamespace = "Microsoft.FSharp.Core"
+
+let mkFuncTypeRef fsharpCoreAssemblyScopeRef n = 
+    if n = 1 then mkILTyRef (fsharpCoreAssemblyScopeRef, fsharpCoreNamespace + ".FSharpFunc`2")
+    else mkILNestedTyRef (fsharpCoreAssemblyScopeRef, 
+                         [fsharpCoreNamespace + ".OptimizedClosures"], 
                          "FSharpFunc`"+ string (n + 1))
 type cenv = 
     {
@@ -125,7 +127,7 @@ type cenv =
       addMethodGeneratedAttrs: ILMethodDef -> ILMethodDef
     }
 
-    override __.ToString() = "<cenv>"
+    override _.ToString() = "<cenv>"
 
   
 let addMethodGeneratedAttrsToTypeDef cenv (tdef: ILTypeDef) = 
@@ -133,8 +135,8 @@ let addMethodGeneratedAttrsToTypeDef cenv (tdef: ILTypeDef) =
 
 let newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs) =
     { ilg = ilg
-      tref_Func = Array.init 10 (fun i -> mkFuncTypeRef(i+1))
-      mkILTyFuncTy = ILType.Boxed (mkILNonGenericTySpec (mkILTyRef (IlxSettings.ilxFsharpCoreLibScopeRef (), IlxSettings.ilxNamespace () + ".FSharpTypeFunc"))) 
+      tref_Func = Array.init 10 (fun i -> mkFuncTypeRef ilg.fsharpCoreAssemblyScopeRef (i+1))
+      mkILTyFuncTy = ILType.Boxed (mkILNonGenericTySpec (mkILTyRef (ilg.fsharpCoreAssemblyScopeRef, fsharpCoreNamespace + ".FSharpTypeFunc"))) 
       addMethodGeneratedAttrs = addMethodGeneratedAttrs
       addFieldGeneratedAttrs = addFieldGeneratedAttrs
       addFieldNeverAttrs = addFieldNeverAttrs }
@@ -145,7 +147,7 @@ let mkILCurriedFuncTy cenv dtys rty = List.foldBack (mkILFuncTy cenv) dtys rty
 
 let typ_Func cenv (dtys: ILType list) rty = 
     let n = dtys.Length
-    let tref = if n <= 10 then cenv.tref_Func.[n-1] else mkFuncTypeRef n   
+    let tref = if n <= 10 then cenv.tref_Func.[n-1] else mkFuncTypeRef cenv.ilg.fsharpCoreAssemblyScopeRef n   
     mkILBoxedTy tref (dtys @ [rty])
 
 let rec mkTyOfApps cenv apps =
@@ -312,15 +314,17 @@ let convILMethodBody (thisClo, boxReturnTy) (il: ILMethodBody) =
         match boxReturnTy with
         | None    -> code
         | Some ty -> morphILInstrsInILCode (convReturnInstr ty) code
-    {il with MaxStack=newMax; IsZeroInit=true; Code= code }
+    { il with MaxStack = newMax; Code = code }
 
 let convMethodBody thisClo = function
-    | MethodBody.IL il -> MethodBody.IL (convILMethodBody (thisClo, None) il)
+    | MethodBody.IL il -> 
+        let convil = convILMethodBody (thisClo, None) il.Value
+        MethodBody.IL (lazy convil)
     | x -> x
 
 let convMethodDef thisClo (md: ILMethodDef)  =
-    let b' = convMethodBody thisClo (md.Body.Contents)
-    md.With(body=mkMethBodyAux b')
+    let b' = convMethodBody thisClo (md.Body)
+    md.With(body=notlazy b')
 
 // -------------------------------------------------------------------- 
 // Make fields for free variables of a type abstraction.
@@ -466,6 +470,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
           else 
               // CASE 1b. Build a type application. 
               let boxReturnTy = Some nowReturnTy (* box prior to all I_ret *)
+              let convil = convILMethodBody (Some nowCloSpec, boxReturnTy) (Lazy.force clo.cloCode)
               let nowApplyMethDef =
                 mkILGenericVirtualMethod
                   ("Specialize", 
@@ -473,7 +478,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                    addedGenParams,  (* method is generic over added ILGenericParameterDefs *)
                    [], 
                    mkILReturn(cenv.ilg.typ_Object), 
-                   MethodBody.IL (convILMethodBody (Some nowCloSpec, boxReturnTy) (Lazy.force clo.cloCode)))
+                   MethodBody.IL (lazy convil))
               let ctorMethodDef = 
                   mkILStorageCtor 
                     (None, 
@@ -565,12 +570,13 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 let nowEnvParentClass = typ_Func cenv (typesOfILParams nowParams) nowReturnTy 
 
                 let cloTypeDef = 
+                    let convil = convILMethodBody (Some nowCloSpec, None)  (Lazy.force clo.cloCode)
                     let nowApplyMethDef =
                         mkILNonGenericVirtualMethod
                           ("Invoke", ILMemberAccess.Public, 
                            nowParams, 
                            mkILReturn nowReturnTy, 
-                           MethodBody.IL (convILMethodBody (Some nowCloSpec, None)  (Lazy.force clo.cloCode)))
+                           MethodBody.IL (lazy convil))
 
                     let ctorMethodDef = 
                         mkILStorageCtor 

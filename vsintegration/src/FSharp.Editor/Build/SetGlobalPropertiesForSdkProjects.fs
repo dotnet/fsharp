@@ -22,6 +22,6 @@ type internal SetGlobalPropertiesForSdkProjects
     ) =
     inherit StaticGlobalPropertiesProviderBase(projectService.Services)
 
-    override __.GetGlobalPropertiesAsync(_cancellationToken: CancellationToken): Task<IImmutableDictionary<string, string>> =
-        let properties = Empty.PropertiesMap.Add("FSharpCompilerPath", Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
+    override _.GetGlobalPropertiesAsync(_cancellationToken: CancellationToken): Task<IImmutableDictionary<string, string>> =
+        let properties = Empty.PropertiesMap.Add("FSharpCompilerPath", Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Tools"))
         Task.FromResult<IImmutableDictionary<string, string>>(properties)

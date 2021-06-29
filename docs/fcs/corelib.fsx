@@ -4,6 +4,25 @@
 Compiler Services: Notes on FSharp.Core.dll
 =================================================
 
+Versions of FSharp.Core involved in the operation of FSharp.Compiler.Service
+---------------------------------------------
+
+There are three versions of FSharp.Core relevant to the operation of FSharp.Compiler.Service:
+
+1. **The FSharp.Compiler.Service.dll static reference to FSharp.Core** - The FCS DLL and nuget have a static minbound dependency on FSharp.Core.
+
+   This is just a normal .NET dependency like any other, it expresses the minimum surface area of FSharp.Core that the implementation of FSharp.Compiler.Service (and any components that depend on it) needs.  It could be a reference to a reference assembly if we supported that.  In theory this could be very low and all is cool - if we could implement FCS in terms of FSharp.Core 2.0.0.0 then that could be the minbound (indeed in theory we could implement FCS pretty almost without any use of FSharp.Core functionality at all, though obviously we don't)
+
+   In practice this is 0-2 versions behind latest FSharp.Core.
+
+2. **The runtime reference to FSharp.Core in a tool, application or test suite that includes FSharp.Compiler.Service** - This is the actual version of FSharp.Core used when, say, fsc.exe or devenv.exe or fsi.exe or fsdocs.exe runs.
+
+   This must be at least as high as (1) and is usually the very latest FSharp.Core available (in or out of repo tree).  This is important to the operation of the FCS-based tool because it is used for execution of scripts, and the default compilation reference for scripts.  If scripts are going to use a particular language feature then this must be sufficient to support the language feature
+
+3. **The FSharp.Core reference in a compilation or analysis being processed by FSharp.Compiler.Service**.
+
+   This can be anything - 2.0.0.0, 4.0.0.0 or 5.0.0 or whatever.  For script compilation and execution is is the same as (2).  It must be sufficient to support language features used in the compilation.
+
 Shipping an FSharp.Core with your application
 ---------------------------------------------
 
@@ -13,32 +32,6 @@ include a copy of FSharp.Core.dll as part of your application.
 For example, if you build a ``HostedCompiler.exe``, you will normally place an FSharp.Core.dll (say 4.3.1.0) alongside
 your ``HostedCompiler.exe``.
 
-Binding redirects for your application
---------------------------------------
-
-The FSharp.Compiler.Service.dll component depends on FSharp.Core 4.4.0.0.  Normally your application will target
-a later version of FSharp.Core, and you may need a [binding redirect](https://docs.microsoft.com/en-us/dotnet/framework/configure-apps/redirect-assembly-versions) to ensure
-that other versions of FSharp.Core forward to the final version of FSharp.Core.dll your application uses.
-Binding redirect files are normally generated automatically by build tools. If not, you can use one like this
-(if your tool is called ``HostedCompiler.exe``, the binding redirect file is called ``HostedCompiler.exe.config``)
-
-Some other dependencies may also need to be reconciled and forwarded.
-
-    <?xml version="1.0" encoding="utf-8" ?>
-    <configuration>
-        <runtime>
-          <assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">
-            <dependentAssembly>
-              <assemblyIdentity name="FSharp.Core" publicKeyToken="b03f5f7f11d50a3a" culture="neutral"/>
-              <bindingRedirect oldVersion="2.0.0.0-4.4.0.0" newVersion="4.4.1.0"/>
-            </dependentAssembly>
-            <dependentAssembly>
-              <assemblyIdentity name="System.Collections.Immutable" publicKeyToken="b03f5f7f11d50a3a" culture="neutral" />
-              <bindingRedirect oldVersion="1.0.0.0-1.2.0.0" newVersion="1.2.1.0" />
-            </dependentAssembly>
-          </assemblyBinding>
-        </runtime>
-    </configuration>
 
 Which FSharp.Core and .NET Framework gets referenced in compilation?
 --------------------------------------
@@ -89,6 +82,7 @@ Summary
 
 In this design note we have discussed three things:
 
+- the versions of FSharp.Core relevant to the operation of FSharp.Compiler.Service.dll
 - which FSharp.Core.dll is used to run your compilation tools
 - how  to configure binding redirects for the FSharp.Core.dll used to run your compilation tools
 - which FSharp.Core.dll and/or framework assemblies are  referenced during the checking and compilations performed by your tools.

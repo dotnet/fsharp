@@ -8,8 +8,10 @@
     <DisableOutputPathCopying>true</DisableOutputPathCopying>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>$(RepoRoot)tests\fsharpqa\testenv\bin</OutputPath>
+    <NoWarn>$(NoWarn);44</NoWarn>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Prefer32Bit>true</Prefer32Bit>
+    <NGenBinary>true</NGenBinary>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,7 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
 
 </Project>

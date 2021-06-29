@@ -9,20 +9,18 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor.SymbolHelpers
-open FSharp.Compiler.SourceCodeServices.Keywords
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Tokenization.FSharpKeywords
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "FSharpRenameParamToMatchSignature"); Shared>]
 type internal FSharpRenameParamToMatchSignature
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     
     inherit CodeFixProvider()
-    static let userOpName = "RenameParamToMatchSignature"
+
     let fixableDiagnosticIds = ["FS3218"]
         
         
@@ -44,17 +42,17 @@ type internal FSharpRenameParamToMatchSignature
                                 let document = context.Document
                                 let! cancellationToken = Async.CancellationToken |> liftAsync
                                 let! sourceText = document.GetTextAsync(cancellationToken)
-                                let! symbolUses = getSymbolUsesOfSymbolAtLocationInDocument (document, context.Span.Start, projectInfoManager, checkerProvider.Checker, userOpName) 
+                                let! symbolUses = getSymbolUsesOfSymbolAtLocationInDocument (document, context.Span.Start) 
                                 let changes = 
                                     [| for symbolUse in symbolUses do
-                                            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) with 
+                                            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with 
                                             | None -> ()
                                             | Some span -> 
                                                 let textSpan = Tokenizer.fixupSpan(sourceText, span)
                                                 yield TextChange(textSpan, replacement) |]
                                 return changes 
                             }
-                        let title = CompilerDiagnostics.getErrorMessage (ReplaceWithSuggestion suggestion)
+                        let title = CompilerDiagnostics.GetErrorMessage (FSharpDiagnosticKind.ReplaceWithSuggestion suggestion)
                         let codefix = CodeFixHelpers.createTextChangeCodeFix(title, context, computeChanges)
                         context.RegisterCodeFix(codefix, diagnostics)
             | _ -> ()

@@ -5,22 +5,25 @@ module internal FSharp.Compiler.MethodCalls
 
 open Internal.Utilities
 
+open Internal.Utilities.Library 
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Lib
+open FSharp.Compiler.IO
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -211,14 +214,13 @@ let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnown
                     calledArgTy
                 // If at the beginning of inference then use a type variable.
                 else 
-                    let destTy = destNullableTy g calledArgTy
                     match calledArg.OptArgInfo with
-                    // Use the type variable from the Nullable if called arg is not optional.
-                    | NotOptional when isTyparTy g destTy ->
-                        destTy
+                    // If inference has not solved the kind of Nullable on the called arg and is not optional then use this.
+                    | NotOptional when isTyparTy g (destNullableTy g calledArgTy) ->
+                        calledArgTy
                     | _ ->
                         let compgenId = mkSynId range0 unassignedTyparName
-                        mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
+                        mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false))
             else
                 calledArgTy
 
@@ -765,7 +767,7 @@ let BuildILMethInfoCall g amap m isProp (minfo: ILMethInfo) valUseFlags minst di
     let ilMethRef = minfo.ILMethodRef
     let newobj = ctor && (match valUseFlags with NormalValUse -> true | _ -> false)
     let exprTy = if ctor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnTy(amap, m, minst)
-    let retTy = if not ctor && ilMethRef.ReturnType = ILType.Void then [] else [exprTy]
+    let retTy = if not ctor && (stripILModifiedFromTy ilMethRef.ReturnType) = ILType.Void then [] else [exprTy]
     let isDllImport = minfo.IsDllImport g
     Expr.Op (TOp.ILCall (useCallvirt, isProtected, valu, newobj, valUseFlags, isProp, isDllImport, ilMethRef, minfo.DeclaringTypeInst, minst, retTy), [], args, m),
     exprTy
@@ -787,7 +789,7 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
             match arity, args with 
             | (0|1), [] when typeEquiv g (domainOfFunTy g fty) g.unit_ty -> mkUnit g m, (args, rangeOfFunTy g fty)
             | 0, (arg :: argst) -> 
-                let msg = Layout.showL (Layout.sepListL (Layout.rightL (Layout.TaggedTextOps.tagText ";")) (List.map exprL args))
+                let msg = LayoutRender.showL (Layout.sepListL (Layout.rightL (TaggedText.tagText ";")) (List.map exprL args))
                 warning(InternalError(sprintf "Unexpected zero arity, args = %s" msg, m))
                 arg, (argst, rangeOfFunTy g fty)
             | 1, (arg :: argst) -> arg, (argst, rangeOfFunTy g fty)
@@ -1515,7 +1517,7 @@ module ProvidedMethodCalls =
                 let testExpr = exprToExpr test
                 let ifTrueExpr = exprToExpr thenBranch
                 let ifFalseExpr = exprToExpr elseBranch
-                let te = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
+                let te = mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
                 None, (te, tyOfExpr g te)
             | ProvidedVarExpr providedVar ->
                 let _, vTe = varToExpr (exprType.PApply((fun _ -> providedVar), m))
@@ -1690,7 +1692,7 @@ module ProvidedMethodCalls =
             | true, v -> v
             | _ ->
                 let typeProviderDesignation = ExtensionTyping.DisplayNameOfTypeProvider (pe.TypeProvider, m)
-                error(NumberedError(FSComp.SR.etIncorrectParameterExpression(typeProviderDesignation, vRaw.Name), m))
+                error(Error(FSComp.SR.etIncorrectParameterExpression(typeProviderDesignation, vRaw.Name), m))
                 
         and exprToExpr expr =
             let _, (resExpr, _) = exprToExprAndWitness false expr

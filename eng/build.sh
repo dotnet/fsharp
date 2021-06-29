@@ -29,6 +29,7 @@ usage()
   echo "  --ci                       Building in CI"
   echo "  --docker                   Run in a docker container if applicable"
   echo "  --skipAnalyzers            Do not run analyzers during build operations"
+  echo "  --skipBuild                Do not run the build"
   echo "  --prepareMachine           Prepare machine for CI run, clean up processes after build"
   echo "  --sourceBuild              Simulate building for source-build"
   echo ""
@@ -60,6 +61,7 @@ binary_log=false
 force_bootstrap=false
 ci=false
 skip_analyzers=false
+skip_build=false
 prepare_machine=false
 source_build=false
 properties=""
@@ -125,6 +127,9 @@ while [[ $# > 0 ]]; do
       ;;
     --skipanalyzers)
       skip_analyzers=true
+      ;;
+    --skipbuild)
+      skip_build=true
       ;;
     --preparemachine)
       prepare_machine=true
@@ -193,7 +198,7 @@ function TestUsingNUnit() {
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
-  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\"$filterArgs"
+  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\"$filterArgs --blame --results-directory $artifacts_dir/TestResults/$configuration"
   "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
 }
 
@@ -247,8 +252,8 @@ function BuildSolution {
       /p:Configuration=$bootstrap_config
 
     mkdir -p "$bootstrap_dir"
-    cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp3.1 $bootstrap_dir/fslex
-    cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp3.1 $bootstrap_dir/fsyacc
+    cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/net5.0 $bootstrap_dir/fslex
+    cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/net5.0 $bootstrap_dir/fsyacc
   fi
   if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
     BuildMessage="Error building bootstrap"
@@ -257,28 +262,30 @@ function BuildSolution {
       /p:Configuration=$bootstrap_config \
 
 
-    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp3.1 $bootstrap_dir/fsc
+    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/net5.0 $bootstrap_dir/fsc
   fi
 
-  # do real build
-  BuildMessage="Error building solution"
-  MSBuild $toolset_build_proj \
-    $bl \
-    /v:$verbosity \
-    /p:Configuration=$configuration \
-    /p:Projects="$projects" \
-    /p:RepoRoot="$repo_root" \
-    /p:Restore=$restore \
-    /p:Build=$build \
-    /p:Rebuild=$rebuild \
-    /p:Pack=$pack \
-    /p:Publish=$publish \
-    /p:UseRoslynAnalyzers=$enable_analyzers \
-    /p:ContinuousIntegrationBuild=$ci \
-    /p:QuietRestore=$quiet_restore \
-    /p:QuietRestoreBinaryLog="$binary_log" \
-    /p:DotNetBuildFromSource=$source_build \
-    $properties
+  if [[ "$skip_build" != true ]]; then
+    # do real build
+    BuildMessage="Error building solution"
+    MSBuild $toolset_build_proj \
+      $bl \
+      /v:$verbosity \
+      /p:Configuration=$configuration \
+      /p:Projects="$projects" \
+      /p:RepoRoot="$repo_root" \
+      /p:Restore=$restore \
+      /p:Build=$build \
+      /p:Rebuild=$rebuild \
+      /p:Pack=$pack \
+      /p:Publish=$publish \
+      /p:UseRoslynAnalyzers=$enable_analyzers \
+      /p:ContinuousIntegrationBuild=$ci \
+      /p:QuietRestore=$quiet_restore \
+      /p:QuietRestoreBinaryLog="$binary_log" \
+      /p:ArcadeBuildFromSource=$source_build \
+      $properties
+  fi
 }
 
 function TrapAndReportError {
@@ -297,7 +304,7 @@ InitializeDotNetCli $restore
 BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
-  coreclrtestframework=netcoreapp3.1
+  coreclrtestframework=net5.0
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework

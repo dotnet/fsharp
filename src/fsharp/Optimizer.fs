@@ -6,29 +6,30 @@
 module internal FSharp.Compiler.Optimizer
 
 open Internal.Utilities
-open Internal.Utilities.StructuredFormat
-
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Layout
-open FSharp.Compiler.Layout.TaggedTextOps
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Layout
+open FSharp.Compiler.Text.LayoutRender
+open FSharp.Compiler.Text.TaggedText
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypedTreePickle
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic
@@ -396,7 +397,7 @@ type cenv =
       emitTailcalls: bool
       
       /// cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
-      casApplied : Dictionary<Stamp, bool>
+      casApplied: Dictionary<Stamp, bool>
     }
 
     override x.ToString() = "<cenv>"
@@ -512,28 +513,19 @@ let mkValInfo info (v: Val) = { ValExprInfo=info.Info; ValMakesNoCriticalTailcal
 (* Bind a value *)
 let BindInternalLocalVal cenv (v: Val) vval env = 
     let vval = if v.IsMutable then UnknownValInfo else vval
-#if CHECKED
-#else
+
     match vval.ValExprInfo with 
     | UnknownValue -> env
-    | _ -> 
-#endif
+    | _ ->
         cenv.localInternalVals.[v.Stamp] <- vval
         env
         
 let BindExternalLocalVal cenv (v: Val) vval env = 
-#if CHECKED
-    CheckInlineValueIsComplete v vval
-#endif
-
     let vval = if v.IsMutable then {vval with ValExprInfo=UnknownValue } else vval
-    let env = 
-#if CHECKED
-#else
+    let env =
         match vval.ValExprInfo with 
         | UnknownValue -> env  
-        | _ -> 
-#endif
+        | _ ->
             { env with localExternalVals=env.localExternalVals.Add (v.Stamp, vval) }
     // If we're compiling fslib then also bind the value as a non-local path to 
     // allow us to resolve the compiler-non-local-references that arise from env.fs
@@ -560,21 +552,14 @@ let rec BindValsInModuleOrNamespace cenv (mval: LazyModuleInfo) env =
     env
 
 let inline BindInternalValToUnknown cenv v env = 
-#if CHECKED
-    BindInternalLocalVal cenv v UnknownValue env
-#else
     ignore cenv 
     ignore v
     env
-#endif
+
 let inline BindInternalValsToUnknown cenv vs env = 
-#if CHECKED
-    List.foldBack (BindInternalValToUnknown cenv) vs env
-#else
     ignore cenv
     ignore vs
     env
-#endif
 
 let BindTypeVar tyv typeinfo env = { env with typarInfos= (tyv, typeinfo) :: env.typarInfos } 
 
@@ -605,9 +590,6 @@ let GetInfoForLocalValue cenv env (v: Val) m =
             | None -> 
                 if v.MustInline then
                     errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
-#if CHECKED
-                warning(Error(FSComp.SR.optLocalValueNotFoundDuringOptimization(v.DisplayName), m)) 
-#endif
                 UnknownValInfo 
 
 let TryGetInfoForCcu env (ccu: CcuThunk) = env.globalModuleInfos.TryFind(ccu.AssemblyName)
@@ -1252,17 +1234,17 @@ let RemapOptimizationInfo g tmenv =
 let AbstractAndRemapModulInfo msg g m (repackage, hidden) info =
     let mrpi = mkRepackageRemapping repackage
 #if DEBUG
-    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data prior to trim: \n%s\n" msg outputRange m (Layout.showL (Display.squashTo 192 (moduleInfoL g info)))
+    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data prior to trim: \n%s\n" msg outputRange m (showL (Display.squashTo 192 (moduleInfoL g info)))
 #else
     ignore (msg, m)
 #endif
     let info = info |> AbstractLazyModulInfoByHiding false hidden
 #if DEBUG
-    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after trim:\n%s\n" msg outputRange m (Layout.showL (Display.squashTo 192 (moduleInfoL g info)))
+    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after trim:\n%s\n" msg outputRange m (showL (Display.squashTo 192 (moduleInfoL g info)))
 #endif
     let info = info |> RemapOptimizationInfo g mrpi
 #if DEBUG
-    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after remap:\n%s\n" msg outputRange m (Layout.showL (Display.squashTo 192 (moduleInfoL g info)))
+    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after remap:\n%s\n" msg outputRange m (showL (Display.squashTo 192 (moduleInfoL g info)))
 #endif
     info
 
@@ -1270,8 +1252,11 @@ let AbstractAndRemapModulInfo msg g m (repackage, hidden) info =
 // Misc helpers
 //------------------------------------------------------------------------- 
 
-// Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
+/// Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
 let [<Literal>] suffixForVariablesThatMayNotBeEliminated = "$cont"
+
+/// Indicates a ValRef generated to facilitate tuple eliminations
+let [<Literal>] suffixForTupleElementAssignmentTarget = "$tupleElem"
 
 /// Type applications of F# "type functions" may cause side effects, e.g. 
 /// let x<'a> = printfn "hello"; typeof<'a> 
@@ -1292,6 +1277,18 @@ let ValueOfExpr expr =
     if IsSmallConstExpr expr then 
       ConstExprValue(0, expr)
     else UnknownValue
+
+let IsMutableStructuralBindingForTupleElement (vref: ValRef) =
+    vref.IsCompilerGenerated &&
+    vref.LogicalName.EndsWith suffixForTupleElementAssignmentTarget
+
+let IsMutableForOutArg (vref: ValRef) =
+    vref.IsCompilerGenerated &&
+    vref.LogicalName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)
+
+let IsKnownOnlyMutableBeforeUse (vref: ValRef) =
+    IsMutableStructuralBindingForTupleElement vref || 
+    IsMutableForOutArg vref
 
 //-------------------------------------------------------------------------
 // Dead binding elimination 
@@ -1593,7 +1590,12 @@ let MakeStructuralBindingTemp (v: Val) i (arg: Expr) argTy =
     let name = v.LogicalName + "_" + string i
     let v, ve = mkCompGenLocal arg.Range name argTy
     ve, mkCompGenBind v arg
-           
+
+let MakeMutableStructuralBindingForTupleElement (v: Val) i (arg: Expr) argTy =
+    let name = sprintf "%s_%d%s" v.LogicalName i suffixForTupleElementAssignmentTarget
+    let v, ve = mkMutableCompGenLocal arg.Range name argTy
+    ve, mkCompGenBind v arg
+
 let ExpandStructuralBindingRaw cenv expr =
     assert cenv.settings.ExpandStructuralValues()
     match expr with
@@ -1627,6 +1629,86 @@ let rec RearrangeTupleBindings expr fin =
         | Some b -> Some (mkLetBind m bind b)
         | None -> None
     | Expr.Op (TOp.Tuple tupInfo, _, _, _) when not (evalTupInfoIsStruct tupInfo) -> Some (fin expr)
+    | Expr.Sequential (e1, e2, kind, sp, m) ->
+        match RearrangeTupleBindings e2 fin with
+        | Some b -> Some (Expr.Sequential (e1, b, kind, sp, m))
+        | None -> None
+    | _ -> None
+
+// Attempts to rewrite tuple bindings containing ifs/matches by introducing a mutable local for each tuple element.
+// These are assigned to exactly once from each branch in order to eliminate tuple allocations. The tuple binding
+// is also rearranged such that OptimizeTupleFieldGet may kick in (see RearrangeTupleBindings comment above).
+// First class use of a tuple at the end of any branch prevents this rewrite.
+//
+// Roughly speaking, the following expression:
+//
+//    let a, b =
+//        if cond () then
+//            1, 2
+//        elif cond2 () then
+//            3, 4
+//        else
+//            5, 6
+//    in ...
+//
+// becomes
+//
+//    let mutable a = Unchecked.defaultof<_>
+//    let mutable b = Unchecked.defaultof<_>
+//
+//    if cond () then
+//        a <- 1
+//        b <- 2
+//    elif cond2 () then
+//        a <- 3
+//        b <- 4
+//    else
+//        a <- 5
+//        b <- 6
+//    in ...
+let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
+    let rec dive g m (requisites: Lazy<_>) expr =
+        match expr with
+        | Expr.Match (sp, inputRange, decision, targets, fullRange, ty) ->
+            // Recurse down every if/match branch
+            let rewrittenTargets = targets |> Array.choose (fun (TTarget (vals, targetExpr, sp)) ->
+                match dive g m requisites targetExpr with
+                | Some rewritten -> TTarget (vals, rewritten, sp) |> Some
+                | _ -> None)
+
+            // If not all branches can be rewritten, keep the original expression as it is
+            if rewrittenTargets.Length <> targets.Length then
+                None
+            else
+                Expr.Match (sp, inputRange, decision, rewrittenTargets, fullRange, ty) |> Some
+        | Expr.Op (TOp.Tuple tupInfo, _, tupleElements, m) when not (evalTupInfoIsStruct tupInfo) ->
+            // Replace tuple allocation with mutations of locals
+            let _, _, _, vrefs = requisites.Value
+            List.map2 (mkValSet m) vrefs tupleElements
+            |> mkSequentials DebugPointAtSequential.StmtOnly g m
+            |> Some
+        | Expr.Sequential (e1, e2, kind, sp, m) ->
+            match dive g m requisites e2 with
+            | Some rewritten -> Expr.Sequential (e1, rewritten, kind, sp, m) |> Some
+            | _ -> None
+        | Expr.Let (bind, body, m, _) ->
+            match dive g m requisites body with
+            | Some rewritten -> mkLetBind m bind rewritten |> Some
+            | _ -> None
+        | _ -> None
+
+    let requisites = lazy (
+        let argTys = destRefTupleTy g v.Type
+        let inits = argTys |> List.map (mkNull m)
+        let ves, binds = List.mapi2 (MakeMutableStructuralBindingForTupleElement v) inits argTys |> List.unzip
+        let vrefs = binds |> List.map (fun (TBind (v, _, _)) -> mkLocalValRef v)
+        argTys, ves, binds, vrefs)
+
+    match dive g m requisites rhs with
+    | Some rewrittenRhs ->
+        let argTys, ves, binds, _ = requisites.Value
+        let rhsAndTupleBinding = mkCompGenSequential m rewrittenRhs (mkLet tgtSeqPtOpt m v (mkRefTupled g m ves argTys) body)
+        mkLetsBind m binds rhsAndTupleBinding |> Some
     | _ -> None
 
 let ExpandStructuralBinding cenv expr =
@@ -1638,7 +1720,9 @@ let ExpandStructuralBinding cenv expr =
               CanExpandStructuralBinding v) ->
         match RearrangeTupleBindings rhs (fun top -> mkLet tgtSeqPtOpt m v top body) with
         | Some e -> ExpandStructuralBindingRaw cenv e
-        | None -> expr
+        | None ->
+            // RearrangeTupleBindings could have failed because the rhs branches
+            TryRewriteBranchingTupleBinding cenv.g v rhs tgtSeqPtOpt body m |> Option.defaultValue expr
 
     // Expand 'let v = Some arg in ...' to 'let tmp = arg in let v = Some tp in ...'
     // Used to give names to values of optional arguments prior as we inline.
@@ -2138,7 +2222,7 @@ and OptimizeExprOpReductionsAfter cenv env (op, tyargs, argsR, arginfos, m) =
         | _ -> None
     match knownValue with 
     | Some valu -> 
-        match TryOptimizeVal cenv env (false, valu, m) with 
+        match TryOptimizeVal cenv env (None, false, valu, m) with 
         | Some res -> OptimizeExpr cenv env res (* discard e1 since guard ensures it has no effects *)
         | None -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu
     | None -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos UnknownValue
@@ -2283,6 +2367,14 @@ and OptimizeFastIntegerForLoop cenv env (spStart, v, e1, dir, e2, e3, m) =
                   when not (snd(OptimizeExpr cenv env arre)).HasEffect -> 
 
             mkLdlen cenv.g (e2R.Range) arre, CSharpForLoopUp
+
+        | FSharpForLoopUp, Expr.Op (TOp.ILAsm ([ (AI_sub | AI_sub_ovf)], _), _, [Expr.Op (TOp.ILCall(_,_,_,_,_,_,_, mth, _,_,_), _, [arre], _) as lenOp; Expr.Const (Const.Int32 1, _, _)], _) 
+                  when 
+                        mth.Name = "get_Length" && (mth.DeclaringTypeRef.FullName = "System.Span`1" || mth.DeclaringTypeRef.FullName = "System.ReadOnlySpan`1") 
+                        && not (snd(OptimizeExpr cenv env arre)).HasEffect -> 
+
+            lenOp, CSharpForLoopUp
+
 
         // detect upwards for loops with constant bounds, but not MaxValue!
         | FSharpForLoopUp, Expr.Const (Const.Int32 n, _, _) 
@@ -2467,7 +2559,7 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
 
 /// Make optimization decisions once we know the optimization information
 /// for a value
-and TryOptimizeVal cenv env (mustInline, valInfoForVal, m) = 
+and TryOptimizeVal cenv env (vOpt: ValRef option, mustInline, valInfoForVal, m) = 
 
     match valInfoForVal with 
     // Inline all constants immediately 
@@ -2475,15 +2567,25 @@ and TryOptimizeVal cenv env (mustInline, valInfoForVal, m) =
         Some (Expr.Const (c, m, ty))
 
     | SizeValue (_, detail) ->
-        TryOptimizeVal cenv env (mustInline, detail, m) 
+        TryOptimizeVal cenv env (vOpt, mustInline, detail, m) 
 
     | ValValue (vR, detail) -> 
          // Inline values bound to other values immediately 
          // Prefer to inline using the more specific info if possible 
          // If the more specific info didn't reveal an inline then use the value 
-         match TryOptimizeVal cenv env (mustInline, detail, m) with 
+         match TryOptimizeVal cenv env (vOpt, mustInline, detail, m) with 
           | Some e -> Some e
-          | None -> Some(exprForValRef m vR)
+          | None -> 
+              // If we have proven 'v = compilerGeneratedValue'
+              // and 'v' is being eliminated in favour of 'compilerGeneratedValue'
+              // then replace the name of 'compilerGeneratedValue'
+              // by 'v' and mark it not compiler generated so we preserve good debugging and names
+              match vOpt with 
+              | Some v when not v.IsCompilerGenerated && vR.IsCompilerGenerated -> 
+                  vR.Deref.SetIsCompilerGenerated(false)
+                  vR.Deref.SetLogicalName(v.LogicalName)
+              | _ -> ()
+              Some(exprForValRef m vR)
 
     | ConstExprValue(_size, expr) ->
         Some (remarkExpr m (copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated expr))
@@ -2502,24 +2604,26 @@ and TryOptimizeVal cenv env (mustInline, valInfoForVal, m) =
     | _ -> None 
   
 and TryOptimizeValInfo cenv env m vinfo = 
-    if vinfo.HasEffect then None else TryOptimizeVal cenv env (false, vinfo.Info, m)
+    if vinfo.HasEffect then None else TryOptimizeVal cenv env (None, false, vinfo.Info, m)
 
 /// Add 'v1 = v2' information into the information stored about a value
 and AddValEqualityInfo g m (v: ValRef) info =
     // ValValue is information that v = v2, where v2 does not change 
     // So we can't record this information for mutable values. An exception can be made
     // for "outArg" values arising from method calls since they are only temporarily mutable
-    // when their address is passed to the method call.
-    if v.IsMutable && not (v.IsCompilerGenerated && v.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)) then 
+    // when their address is passed to the method call. Another exception are mutable variables
+    // created for tuple elimination in branching tuple bindings because they are assigned to
+    // exactly once.
+    if not v.IsMutable || IsKnownOnlyMutableBeforeUse v then 
+        { info with Info = MakeValueInfoForValue g m v info.Info }
+    else
         info 
-    else 
-        {info with Info= MakeValueInfoForValue g m v info.Info}
 
 /// Optimize/analyze a use of a value
 and OptimizeVal cenv env expr (v: ValRef, m) =
     let valInfoForVal = GetInfoForVal cenv env m v 
 
-    match TryOptimizeVal cenv env (v.MustInline, valInfoForVal.ValExprInfo, m) with
+    match TryOptimizeVal cenv env (Some v, v.MustInline, valInfoForVal.ValExprInfo, m) with
     | Some e -> 
        // don't reoptimize inlined lambdas until they get applied to something
        match e with 
@@ -3159,7 +3263,7 @@ and TryOptimizeDecisionTreeTest cenv test vinfo =
     | DecisionTreeTest.IsNull, StripConstValue c2 -> Some(c2=Const.Zero)
     | DecisionTreeTest.IsInst (_srcty1, _tgty1), _ -> None
     // These should not occur in optimization
-    | DecisionTreeTest.ActivePatternCase (_, _, _vrefOpt1, _, _), _ -> None
+    | DecisionTreeTest.ActivePatternCase _, _ -> None
     | _ -> None
 
 /// Optimize/analyze a switch construct from pattern matching 
