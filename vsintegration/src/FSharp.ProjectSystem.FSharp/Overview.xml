@@ -1,0 +1,257 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet href="../../../Common/Overview.xsl" type="text/xsl"?>
+<!-- // Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<VSSDKSample>
+  <ImagePath>../../../Common</ImagePath>
+  <Status>
+    <Accessibility>true</Accessibility>
+    <ArchitectureDiagram>false</ArchitectureDiagram>
+    <Comments>true</Comments>
+    <Documentation>true</Documentation>
+    <ErrorHandling>true</ErrorHandling>
+    <FollowSDKCodingStandards>true</FollowSDKCodingStandards>
+    <Localizable>true</Localizable>
+    <Overview>true</Overview>
+    <ScenarioTests>true</ScenarioTests>
+    <Supported>true</Supported>
+    <UnitTests>true</UnitTests>
+    <Style>Example</Style>
+  </Status>
+  <Overview>
+    <ShortName>C# Example.FSharpProject</ShortName>
+    <LongName>FSharp Project</LongName>
+    <Phrase>Integrating a project type for FSharp.</Phrase>
+  </Overview>
+  <Introduction>
+    <Summary>
+      This sample is a component of FSharp integration inside Visual Studio and it demostrates how to create a project type and a winforms designer.
+      The sample is based on the Project Framework and references the source code installed with the VSSDK.
+      Support is also included for the WPF designer.
+      The main goals of this sample are:
+    </Summary>
+    <Goal>Creating a Visual Studio project type for building Windows Forms applications using Iron FSharp</Goal>
+    <Goal>Creating a Visual Studio project type for building Web Application Projects using Iron FSharp</Goal>
+    <Goal>Creating a Visual Studio project type for building Web Site Projects using Iron FSharp</Goal>
+    <Goal>Creating a Visual Studio project type for building WPF Applications using Iron FSharp</Goal>
+    <Image width="400" height="400">Project.jpg</Image>
+  </Introduction>
+  <SampleInfo>
+    <State>
+    </State>
+    <Type>Example</Type>
+    <Complexity>3</Complexity>
+    <Screenshot>Project.jpg</Screenshot>
+    <Area>Iron FSharp</Area>
+    <Language>C#</Language>
+    <Folder>VisualStudioIntegration\Samples\FSharpIntegration\</Folder>
+    <SampleSolution>Project\FSharpProject.sln</SampleSolution>
+    <FolderUnitTest>VisualStudioIntegration\Samples\FSharpIntegration\Project\TDD\</FolderUnitTest>
+    <UnitTestStartup>FSharpProject.UnitTest.sln</UnitTestStartup>
+    <Doc />
+    <Keywords>
+      <Keyword>Iron FSharp</Keyword>
+      <Keyword>Project</Keyword>
+    </Keywords>
+  </SampleInfo>
+  <BuildingTheSample>
+    <Step>
+      Open the FSharpProject.sln solution.
+    </Step>
+    <Step>
+      Press F5 to build the sample, register it in the experimental hive, and launch Visual Studio from the experimental hive.
+    </Step>
+  </BuildingTheSample>
+  <RunningTheSample>
+    <SampleTask>
+      <Description>
+        To see the sample's functionality...
+      </Description>
+      <Step>
+        On the <bold>File</bold> menu, click <bold>New Project</bold> to display the <bold>New Project</bold> dialog box.
+      </Step>
+      <Step>
+        Create a new <bold>FSharpProject Console Application</bold>.
+        The new solution appears in <bold>Solution Explorer</bold>, the file Program.py appears in the code editor, and the project 
+        properties appear in the <bold>Properties Browser</bold>.
+      </Step>
+      <Step>
+        Right-click the project node and click <bold>Properties</bold>.
+      </Step>
+      <Step>
+        The <bold>Property Pages</bold> dialog box appears and displays the common and configuration properties.
+      </Step>
+      <Step>
+        Close the dialog box. Press F5 to build and run the FSharp program Program.py.
+        A console window opens, displays "Hello VSIP!", and closes.
+      </Step>
+    </SampleTask>
+  </RunningTheSample>
+  <AdditionalResources>
+    <Resource>
+      <Title>Visual Studio SDK Website</Title>
+      <URL>http://msdn.microsoft.com/vstudio/extend</URL>
+    </Resource>
+  </AdditionalResources>
+  <UnitTests>
+    <Test>
+      Create an instance and make sure the instance implements IVsPackage.
+    </Test>
+    <Test>
+	    Make sure that the project can add a reference.
+    </Test>
+  </UnitTests>
+  <FunctionalTests>
+    <Test>
+	    Make sure that the project can add new FSharp items.
+    </Test>
+    <Test>
+	    Make sure that the project can add a reference.
+    </Test>
+  </FunctionalTests>
+  <ProjectFiles>
+    <File>
+      <Name>Automation.cs</Name>
+      <Description>
+        Contains a number of classes that enables automation of the FSharp project and py files in the Iron FSharp Project. Especially the project object enables the CodeModel
+      </Description>
+    </File>
+    <File>
+      <Name>ConfigurationPropertyPages.cs</Name>
+      <Description>
+        Contains a definition for the build property page in the Project Designer.
+      </Description>
+    </File>
+    <File>
+      <Name>EditorFactory.cs</Name>
+      <Description>
+        Contains a definition for the editor factory that creates the editor for editting iron python code files in code/design view
+      </Description>
+    </File>
+    <File>
+      <Name>Enums.cs</Name>
+      <Description>
+        Contains enumerations defined for the Iron FSharp Project.
+      </Description>
+    </File>
+    <File>
+      <Name>Guids.cs</Name>
+      <Description>
+        Defines the Package and Project guids.
+      </Description>
+    </File>
+    <File>
+      <Name>PkgCmd.vsct</Name>
+      <Description>
+        Defines the layout for Iron FSharp specific commands.
+      </Description>
+    </File>
+    <File>
+      <Name>ProjectDocumentsListenerForMainFileUpdates.cs</Name>
+      <Description>Implements a project listener that updates the mainfile project property in the iron python project whenever files are renamed/added/deleted</Description>
+    </File>
+    <File>
+      <Name>PropertyPages.cs</Name>
+      <Description>Contains the implementation for the General Tab in the Projct Designer</Description>
+    </File>
+    <File>
+      <Name>FSharpConfigProvider.cs</Name>
+      <Description>Enables the Any CPU Platform name for Iron FSharp Projects</Description>
+    </File>
+    <File>
+      <Name>FSharpFileNode.cs</Name>
+      <Description>Contains Iron FSharp specific implementation details of FileNode</Description>
+    </File>
+    <File>
+      <Name>FSharpFileNodeProperties.cs</Name>
+      <Description>Contains a definition of the Iron FSharp specific Node properties. The class derives from SingleFileNodeProperties which means that a Custom Tool can be associated with a py file.</Description>
+    </File>
+    <File>
+      <Name>FSharpMenus.cs</Name>
+      <Description>
+        Defines CommandIDs matching the commands defined symbols in PkgCmd.vsct.
+      </Description>
+    </File>
+    <File>
+      <Name>FSharpProjectFactory.cs</Name>
+      <Description>
+        Defines the Iron FSharp project factory.
+      </Description>
+    </File>
+    <File>
+      <Name>FSharpProjectFileConstants.cs</Name>
+      <Description>
+        Defines constants used by the Iron FSharp project file.
+      </Description>
+    </File>
+    <File>
+      <Name>FSharpProjectNode.cs</Name>
+      <Description>
+        Contains the implementation for the project node in the Iron FSharp Project.
+      </Description>
+    </File>
+    <File>
+      <Name>FSharpProjectNodeProperties.cs</Name>
+      <Description>Defines Iron FSharp specific Node Properties for the ProjectNode object</Description>
+    </File>
+    <File>
+      <Name>FSharpPrjectPackage.cs</Name>
+      <Description>
+        Defines the package object for Iron FSharp project package.
+      </Description>
+    </File>
+    <File>
+      <Name>FSharpProjectReferenceNode.cs</Name>
+      <Description>
+        Defines Iron FSharp Project specific requirements for project to project references.
+      </Description>
+    </File>
+    <File>
+      <Name>FSharpReferenceContainerNode.cs</Name>
+      <Description>
+        Defines the reference container node for Iron FSharp projects.
+      </Description>
+    </File>
+    <File>
+      <Name>SelectionElementValueChangedListener.cs</Name>
+      <Description>Defines a Selection changed listener that enables the RunGenerator on a python file node to be triggered when focus is removed from an active iron python document window</Description>
+    </File>
+    <File>
+      <Name>VSMDFSharpProvider.cs</Name>
+      <Description>Contains the definition of the FSharp CodeDOM Provider. The provider listen for reference event in order to stay in sync with list of references in the FSharp project</Description>
+    </File>
+    <File>
+      <Name>WPFProviders\FSharpEventBindingProvider.cs</Name>
+      <Description>Contains the FSharpEventBindingProvider which provides the communication between the WPF designer and the associated code file for adding and navigating to event handlers.</Description>
+    </File>
+    <File>
+      <Name>WPFProviders\FSharpRuntimeNameProvider.cs</Name>
+      <Description>Contains the FSharpRuntimeNameFactory which contains logic to generate uniquely named code fields for WPF designer scenarios.</Description>
+    </File>
+    <File>
+      <Name>WPFProviders\FSharpWPFFlavor.cs</Name>
+      <Description>
+        Contains the definition of the Iron FSharp project flavor of the WPFFlavor.
+      </Description>
+    </File>
+    <File>
+      <Name>WPFProviders\FSharpWPFProjectFactory.cs</Name>
+      <Description>
+        Defines the factory object for the Iron FSharp project flavor of the WPFFlavor.
+      </Description>
+    </File>
+  </ProjectFiles>
+  <History>
+    <Change>
+      <Date>2005-11-21</Date>
+      <Description>Created this sample for the Visual Studio SDK.</Description>
+    </Change>
+    <Change>
+      <Date>2007-07-19</Date>
+      <Description>Added support for WPF Applications.</Description>
+    </Change>
+    <Change>
+      <Date>2007-10-10</Date>
+      <Description>Fixed bugs related to references.</Description>
+    </Change>
+  </History>
+</VSSDKSample>

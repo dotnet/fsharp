@@ -1,18 +1,24 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// Blobs of bytes, cross-compiling
-namespace FSharp.Compiler.IO
+/// Blobs of bytes, cross-compiling 
+namespace FSharp.Compiler.AbstractIL.Internal
 
 open System.IO
 open System.IO.MemoryMappedFiles
+open Internal.Utilities
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.Internal 
 
-module internal Bytes =
+module Utils =
+    val runningOnMono: bool
+
+module internal Bytes = 
     /// returned int will be 0 <= x <= 255
-    val get: byte[] -> int -> int
+    val get: byte[] -> int -> int    
     val zeroCreate: int -> byte[]
-    /// each int must be 0 <= x <= 255
-    val ofInt32Array: int[] ->  byte[]
-    /// each int will be 0 <= x <= 255
+    /// each int must be 0 <= x <= 255 
+    val ofInt32Array: int[] ->  byte[] 
+    /// each int will be 0 <= x <= 255 
 
     val blit: byte[] -> int -> byte[] -> int -> int -> unit
 
@@ -22,7 +28,7 @@ module internal Bytes =
 /// A view over bytes.
 /// May be backed by managed or unmanaged memory, or memory mapped file.
 [<AbstractClass>]
-type ByteMemory =
+type internal ByteMemory =
 
     abstract Item: int -> byte with get
 
@@ -54,7 +60,7 @@ type ByteMemory =
     abstract AsReadOnlyStream: unit -> Stream
 
 [<Struct;NoEquality;NoComparison>]
-type ReadOnlyByteMemory =
+type internal ReadOnlyByteMemory =
 
     new: ByteMemory -> ReadOnlyByteMemory
 
@@ -81,7 +87,7 @@ type ReadOnlyByteMemory =
     member AsStream: unit -> Stream
 
 [<AutoOpen>]
-module MemoryMappedFileExtensions =
+module internal MemoryMappedFileExtensions =
 
     type MemoryMappedFile with
 
@@ -89,7 +95,7 @@ module MemoryMappedFileExtensions =
         /// If the given ByteMemory's length is zero or a memory mapped file is not supported, the result will be None.
         static member TryFromByteMemory : bytes: ReadOnlyByteMemory -> MemoryMappedFile option
 
-type ByteMemory with
+type internal ByteMemory with
 
     member AsReadOnly: unit -> ReadOnlyByteMemory
 
@@ -114,8 +120,8 @@ type ByteMemory with
 
 /// Imperative buffers and streams of byte[]
 [<Sealed>]
-type internal ByteBuffer =
-    member Close : unit -> byte[]
+type internal ByteBuffer = 
+    member Close : unit -> byte[] 
     member EmitIntAsByte : int -> unit
     member EmitIntsAsBytes : int[] -> unit
     member EmitByte : byte -> unit
@@ -136,9 +142,9 @@ type internal ByteStream =
     member ReadByte : unit -> byte
     member ReadBytes : int -> ReadOnlyByteMemory
     member ReadUtf8String : int -> string
-    member Position : int
+    member Position : int 
     static member FromBytes : ReadOnlyByteMemory * start:int * length:int -> ByteStream
-
+    
 #if LAZY_UNPICKLE
     member CloneAndSeek : int -> ByteStream
     member Skip : int -> unit

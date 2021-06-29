@@ -2,11 +2,13 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
 open FSharp.Test
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Utilities
+
+
 
 [<TestFixture>]
 module InterfaceTests =
@@ -201,7 +203,7 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
             |]
             ``Many Instantiations of the same interface``
             [|
-                (FSharpDiagnosticSeverity.Error, 3350, (24, 6, 24, 20), "Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version 5.0 or greater.")
+                (FSharpErrorSeverity.Error, 3350, (24, 6, 24, 20), "Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version 5.0 or greater.")
             |]
 
     [<Test>]

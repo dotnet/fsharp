@@ -114,11 +114,11 @@ type CodeLensGeneralTagger (view, buffer) as self =
 
     interface ITagger<CodeLensGeneralTag> with
         [<CLIEvent>]
-        override _.TagsChanged = tagsChangedEvent.Publish
+        override __.TagsChanged = tagsChangedEvent.Publish
 
         /// Returns the tags which reserve the correct space for adornments
         /// Notice, it's asumed that the data in the collection is valid.
-        override _.GetTags spans =
+        override __.GetTags spans =
             try
                 seq {
                     for span in spans do

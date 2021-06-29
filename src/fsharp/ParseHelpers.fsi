@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.ParseHelpers
+module public FSharp.Compiler.ParseHelpers
 
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.Text
-open FSharp.Compiler.Xml
+open FSharp.Compiler.Range
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
 
@@ -21,30 +21,28 @@ val warningStringOfCoords: line:int -> column:int -> string
 
 val warningStringOfPos: p:pos -> string
 
-val posOfLexPosition: p:Position -> pos
+val internal posOfLexPosition: p:Position -> pos
 
-val mkSynRange: p1:Position -> p2:Position -> range
+val internal mkSynRange: p1:Position -> p2:Position -> range
 
-type LexBuffer<'Char> with
-    member LexemeRange: range
+type internal LexBuffer<'Char> with
+    member internal LexemeRange: range
 
-val lhs: parseState:IParseState -> range
+val internal lhs: parseState:IParseState -> range
 
-val rhs2: parseState:IParseState -> i:int -> j:int -> range
+val internal rhs2: parseState:IParseState -> i:int -> j:int -> range
 
-val rhs: parseState:IParseState -> i:int -> range
+val internal rhs: parseState:IParseState -> i:int -> range
 
-type IParseState with
-    member SynArgNameGenerator: SyntaxTreeOps.SynArgNameGenerator
-    member ResetSynArgNameGenerator: unit -> unit
+type internal IParseState with
+    member internal SynArgNameGenerator: SyntaxTreeOps.SynArgNameGenerator
+    member internal ResetSynArgNameGenerator: unit -> unit
 
 module LexbufLocalXmlDocStore =
-
-    val ClearXmlDoc: lexbuf:UnicodeLexing.Lexbuf -> unit
-
-    val SaveXmlDocLine: lexbuf:UnicodeLexing.Lexbuf * lineText:string * range:range -> unit
-
-    val GrabXmlDocBeforeMarker: lexbuf:UnicodeLexing.Lexbuf * markerRange:range -> PreXmlDoc
+    val private xmlDocKey: string
+    val internal ClearXmlDoc: lexbuf:UnicodeLexing.Lexbuf -> unit
+    val internal SaveXmlDocLine: lexbuf:UnicodeLexing.Lexbuf * lineText:string * range:range -> unit
+    val internal GrabXmlDocBeforeMarker: lexbuf:UnicodeLexing.Lexbuf * markerRange:range -> XmlDoc.PreXmlDoc
   
 type LexerIfdefStackEntry =
     | IfDefIf
@@ -77,13 +75,9 @@ type LexerStringKind =
     { IsByteString: bool
       IsInterpolated: bool
       IsInterpolatedFirst: bool }
-
     static member ByteString: LexerStringKind
-
     static member InterpolatedStringFirst: LexerStringKind
-
     static member InterpolatedStringPart: LexerStringKind
-
     static member String: LexerStringKind
     
 type LexerInterpolatedStringNesting =
@@ -108,6 +102,8 @@ type LexerContinuation =
     
 and LexCont = LexerContinuation
 
-val ParseAssemblyCodeInstructions: s:string -> reportLibraryOnlyFeatures: bool -> isFeatureSupported:(Features.LanguageFeature -> bool) -> m:range -> ILInstr[]
+val internal internalParseAssemblyCodeInstructions: s:string -> isFeatureSupported:(Features.LanguageFeature -> bool) -> m:range -> ILInstr[]
 
-val ParseAssemblyCodeType: s:string -> reportLibraryOnlyFeatures: bool -> isFeatureSupported:(Features.LanguageFeature -> bool) -> m:range -> ILType
+val ParseAssemblyCodeInstructions: s:string -> m:range -> ILInstr array val internal internalParseAssemblyCodeType: s:string -> isFeatureSupported:(Features.LanguageFeature -> bool) -> m:range -> ILType
+
+val ParseAssemblyCodeType: s:string -> m:range -> ILType

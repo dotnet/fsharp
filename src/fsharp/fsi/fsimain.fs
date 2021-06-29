@@ -25,14 +25,13 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Interactive.Shell.Settings
-open FSharp.Compiler.CodeAnalysis
 
 #nowarn "55"
 #nowarn "40" // let rec on value 'fsiConfig'
 
 
 // Hardbinding dependencies should we NGEN fsi.exe
-[<Dependency("FSharp.Compiler.Service",LoadHint.Always)>] do ()
+[<Dependency("FSharp.Compiler.Private",LoadHint.Always)>] do ()
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
 // Standard attributes
 [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
@@ -67,7 +66,7 @@ type WinFormsEventLoop() =
     let mutable lcid = None
     // Set the default thread exception handler
     let mutable restart = false
-    member _.LCID with get () = lcid and set v = lcid <- v
+    member __.LCID with get () = lcid and set v = lcid <- v
     interface IEventLoop with
          member x.Run() =  
              restart <- false
@@ -226,32 +225,32 @@ let evaluateSession(argv: string[]) =
         // Update the configuration to include 'StartServer', WinFormsEventLoop and 'GetOptionalConsoleReadLine()'
         let rec fsiConfig = 
             { new FsiEvaluationSessionHostConfig () with 
-                member _.FormatProvider = fsiConfig0.FormatProvider
-                member _.FloatingPointFormat = fsiConfig0.FloatingPointFormat
-                member _.AddedPrinters = fsiConfig0.AddedPrinters
-                member _.ShowDeclarationValues = fsiConfig0.ShowDeclarationValues
-                member _.ShowIEnumerable = fsiConfig0.ShowIEnumerable
-                member _.ShowProperties = fsiConfig0.ShowProperties
-                member _.PrintSize = fsiConfig0.PrintSize  
-                member _.PrintDepth = fsiConfig0.PrintDepth
-                member _.PrintWidth = fsiConfig0.PrintWidth
-                member _.PrintLength = fsiConfig0.PrintLength
-                member _.ReportUserCommandLineArgs args = fsiConfig0.ReportUserCommandLineArgs args
-                member _.EventLoopRun() = 
+                member __.FormatProvider = fsiConfig0.FormatProvider
+                member __.FloatingPointFormat = fsiConfig0.FloatingPointFormat
+                member __.AddedPrinters = fsiConfig0.AddedPrinters
+                member __.ShowDeclarationValues = fsiConfig0.ShowDeclarationValues
+                member __.ShowIEnumerable = fsiConfig0.ShowIEnumerable
+                member __.ShowProperties = fsiConfig0.ShowProperties
+                member __.PrintSize = fsiConfig0.PrintSize  
+                member __.PrintDepth = fsiConfig0.PrintDepth
+                member __.PrintWidth = fsiConfig0.PrintWidth
+                member __.PrintLength = fsiConfig0.PrintLength
+                member __.ReportUserCommandLineArgs args = fsiConfig0.ReportUserCommandLineArgs args
+                member __.EventLoopRun() = 
 #if !FX_NO_WINFORMS
                     match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with 
                     | Some l -> (l :> IEventLoop).Run()
                     | _ -> 
 #endif
                     fsiConfig0.EventLoopRun()
-                member _.EventLoopInvoke(f) = 
+                member __.EventLoopInvoke(f) = 
 #if !FX_NO_WINFORMS
                     match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with 
                     | Some l -> (l :> IEventLoop).Invoke(f)
                     | _ -> 
 #endif
                     fsiConfig0.EventLoopInvoke(f)
-                member _.EventLoopScheduleRestart() = 
+                member __.EventLoopScheduleRestart() = 
 #if !FX_NO_WINFORMS
                     match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with 
                     | Some l -> (l :> IEventLoop).ScheduleRestart()
@@ -259,12 +258,12 @@ let evaluateSession(argv: string[]) =
 #endif
                     fsiConfig0.EventLoopScheduleRestart()
 
-                member _.UseFsiAuxLib = fsiConfig0.UseFsiAuxLib
+                member __.UseFsiAuxLib = fsiConfig0.UseFsiAuxLib
 
-                member _.StartServer(fsiServerName) = StartServer fsiSession fsiServerName
+                member __.StartServer(fsiServerName) = StartServer fsiSession fsiServerName
                 
                 // Connect the configuration through to the 'fsi' Event loop
-                member _.GetOptionalConsoleReadLine(probe) = getConsoleReadLine(probe) }
+                member __.GetOptionalConsoleReadLine(probe) = getConsoleReadLine(probe) }
 
         // Create the console
         and fsiSession : FsiEvaluationSession = FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error, collectible=false, legacyReferenceResolver=legacyReferenceResolver)
@@ -316,7 +315,7 @@ let MainMain argv =
     let savedOut = Console.Out
     use __ =
         { new IDisposable with
-            member _.Dispose() =
+            member __.Dispose() =
                 try 
                     Console.SetOut(savedOut)
                 with _ -> ()}

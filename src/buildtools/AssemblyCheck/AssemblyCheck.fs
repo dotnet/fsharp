@@ -15,51 +15,34 @@ module AssemblyCheck =
     let private devVersionPattern = new Regex(@"-(ci|dev)", RegexOptions.Compiled)
 
     let verifyEmbeddedPdb (filename:string)  =
-        let isManagedDll =
-            try
-                // Is il assembly? throws if not
-                let _ = AssemblyName.GetAssemblyName(filename).Version
-                true
-            with
-            | :? System.BadImageFormatException -> false       // uninterested in embedded pdbs for native dlls
+        use fileStream = File.OpenRead(filename)
+        let reader = new PEReader(fileStream)
+        let mutable hasEmbeddedPdb = false
 
-        if isManagedDll then
-            use fileStream = File.OpenRead(filename)
-            let reader = new PEReader(fileStream)
-            let mutable hasEmbeddedPdb = false
+        try
+            for entry in reader.ReadDebugDirectory() do
+                match entry.Type with
+                | DebugDirectoryEntryType.CodeView ->
+                    let _ = reader.ReadCodeViewDebugDirectoryData(entry)
+                    ()
 
-            try
-                for entry in reader.ReadDebugDirectory() do
-                    match entry.Type with
-                    | DebugDirectoryEntryType.CodeView ->
-                        let _ = reader.ReadCodeViewDebugDirectoryData(entry)
-                        ()
+                | DebugDirectoryEntryType.EmbeddedPortablePdb ->
+                    let _ = reader.ReadEmbeddedPortablePdbDebugDirectoryData(entry)
+                    hasEmbeddedPdb <- true
+                    ()
 
-                    | DebugDirectoryEntryType.EmbeddedPortablePdb ->
-                        let _ = reader.ReadEmbeddedPortablePdbDebugDirectoryData(entry)
-                        hasEmbeddedPdb <- true
-                        ()
+                | DebugDirectoryEntryType.PdbChecksum ->
+                    let _ = reader.ReadPdbChecksumDebugDirectoryData(entry)
+                    ()
 
-                    | DebugDirectoryEntryType.PdbChecksum ->
-                        let _ = reader.ReadPdbChecksumDebugDirectoryData(entry)
-                        ()
-
-                    | _ -> ()
-            with
-            | e -> printfn "Error validating assembly %s\nMessage: %s" filename (e.ToString())
-
-            hasEmbeddedPdb
-        else
-            true
+                | _ -> ()
+        with | e -> printfn "Error validating assembly %s\nMessage: %s" filename (e.ToString())
+        hasEmbeddedPdb
 
     let verifyAssemblies (binariesPath:string) =
 
         let excludedAssemblies =
             [ ] |> Set.ofList
-
-        let maybeNativeExe =
-            [ "fsi.exe"
-              "fsc.exe" ] |> Set.ofList
 
         let fsharpAssemblies =
             [ "FSharp*.dll"
@@ -80,12 +63,8 @@ module AssemblyCheck =
         let failedVersionCheck =
             fsharpAssemblies
             |> List.filter (fun a ->
-                try
-                    let assemblyVersion = AssemblyName.GetAssemblyName(a).Version
-                    assemblyVersion = versionZero || assemblyVersion = versionOne
-                with | :? System.BadImageFormatException ->
-                    // fsc.exe and fsi.exe are il on the desktop and native on the coreclr
-                    Set.contains (Path.GetFileName(a)) maybeNativeExe |> not)
+                let assemblyVersion = AssemblyName.GetAssemblyName(a).Version
+                assemblyVersion = versionZero || assemblyVersion = versionOne)
 
         if failedVersionCheck.Length > 0 then
             printfn "The following assemblies had a version of %A or %A" versionZero versionOne

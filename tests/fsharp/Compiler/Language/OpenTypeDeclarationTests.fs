@@ -2,7 +2,7 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Utilities
@@ -2248,7 +2248,7 @@ let main _ =
             Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 39, (9, 5, 9, 6), "The value or constructor 'M' is not defined.")
+            (FSharpErrorSeverity.Error, 39, (9, 5, 9, 6), "The value or constructor 'M' is not defined.")
         |])
 
 #endif

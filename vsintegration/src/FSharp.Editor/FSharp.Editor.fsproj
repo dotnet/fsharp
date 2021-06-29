@@ -7,6 +7,8 @@
     <NoWarn>$(NoWarn);75</NoWarn>
     <NoWarn>$(NoWarn);44</NoWarn><!-- warning about Roslyn API only for F# and TypeScript -->
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
+    <DefaultValueTuplePackageVersion>$(SystemValueTupleVersion)</DefaultValueTuplePackageVersion>
     <OtherFlags>$(OtherFlags) --warnon:1182 --subsystemversion:6.00</OtherFlags>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
@@ -26,12 +28,11 @@
     <Compile Include="Common\Logger.fsi" />
     <Compile Include="Common\Logger.fs" />
     <Compile Include="Common\Pervasive.fs" />
-    <Compile Include="Common\Constants.fs" />
     <Compile Include="Common\Extensions.fs" />
+    <Compile Include="Common\Constants.fs" />
     <Compile Include="Common\Error.fs" />
     <Compile Include="Common\Logging.fs" />
     <Compile Include="Common\RoslynHelpers.fs" />
-    <Compile Include="Common\FSharpCodeAnalysisExtensions.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
     <Compile Include="Common\Vs.fs" />
     <Compile Include="Options\SettingsPersistence.fs" />
@@ -42,16 +43,14 @@
     <Compile Include="LanguageService\TextViewCreationListener.fs" />
     <Compile Include="LanguageService\Tokenizer.fs" />
     <Compile Include="LanguageService\Symbols.fs" />
+    <Compile Include="LanguageService\FSharpCheckerExtensions.fs" />
     <Compile Include="LanguageService\IProjectSite.fs" />
     <Compile Include="LanguageService\ProvideFSharpVersionRegistrationAttribute.fs" />
-    <Compile Include="LanguageService\MetadataAsSource.fs" />
+    <Compile Include="LanguageService\FSharpCheckerProvider.fs" />
     <Compile Include="LanguageService\FSharpProjectOptionsManager.fs" />
-    <Compile Include="LanguageService\IFSharpWorkspaceService.fs" />
     <Compile Include="LanguageService\SingleFileWorkspaceMap.fs" />
     <Compile Include="LanguageService\LegacyProjectWorkspaceMap.fs" />
-    <Compile Include="LanguageService\FSharpAnalysisSaveFileCommandHandler.fs" />
     <Compile Include="LanguageService\LanguageService.fs" />
-    <Compile Include="LanguageService\WorkspaceExtensions.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
     <Compile Include="LanguageService\SymbolHelpers.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
@@ -89,23 +88,15 @@
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
     <Compile Include="Commands\XmlDocCommandService.fs" />
-    <Compile Include="Refactor\ChangeTypeofWithNameToNameofExpression.fs" />
-    <Compile Include="Refactor\AddExplicitTypeToParameter.fs" />
-    <Compile Include="Refactor\ChangeDerefToValueRefactoring.fs" />
     <Compile Include="CodeFix\CodeFixHelpers.fs" />
-    <Compile Include="CodeFix\AddInstanceMemberParameter.fs" />
-    <Compile Include="CodeFix\AddTypeAnnotationToObjectOfIndeterminateType.fs" />
-    <Compile Include="CodeFix\AddMissingRecToMutuallyRecFunctions.fs" />
     <Compile Include="CodeFix\ConvertCSharpLambdaToFSharpLambda.fs" />
     <Compile Include="CodeFix\MakeOuterBindingRecursive.fs" />
     <Compile Include="CodeFix\RemoveReturnOrYield.fs" />
-    <Compile Include="CodeFix\AddMissingFunKeyword.fs" />
     <Compile Include="CodeFix\ConvertToAnonymousRecord.fs" />
     <Compile Include="CodeFix\UseMutationWhenValueIsMutable.fs" />
     <Compile Include="CodeFix\MakeDeclarationMutable.fs" />
     <Compile Include="CodeFix\ChangeToUpcast.fs" />
     <Compile Include="CodeFix\AddMissingEqualsToTypeDefinition.fs" />
-    <Compile Include="CodeFix\ConvertToNotEqualsEqualityExpression.fs" />
     <Compile Include="CodeFix\ConvertToSingleEqualsEqualityExpression.fs" />
     <Compile Include="CodeFix\ChangeRefCellDerefToNotExpression.fs" />
     <Compile Include="CodeFix\WrapExpressionInParentheses.fs" />
@@ -114,7 +105,6 @@
     <Compile Include="CodeFix\AddOpenCodeFixProvider.fs" />
     <Compile Include="CodeFix\ProposeUppercaseLabel.fs" />
     <Compile Include="CodeFix\ReplaceWithSuggestion.fs" />
-    <Compile Include="CodeFix\RemoveUnusedBinding.fs" />
     <Compile Include="CodeFix\RenameUnusedValue.fs" />
     <Compile Include="CodeFix\ImplementInterfaceCodeFixProvider.fs" />
     <Compile Include="CodeFix\SimplifyName.fs" />
@@ -134,7 +124,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
     <ProjectReference Include="..\FSharp.PatternMatcher\FSharp.PatternMatcher.csproj" />
     <ProjectReference Include="..\FSharp.UIResources\FSharp.UIResources.csproj" />
     <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
@@ -180,8 +170,9 @@
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="System.Design" Version="$(SystemDesignVersion)" />
+    <PackageReference Include="System.ValueTuple" Version="$(SystemValueTupleVersion)" />
     <PackageReference Include="VSSDK.VSLangProj" Version="$(VSSDKVSLangProjVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" />
+	<PackageReference Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" />
   </ItemGroup>
 
   <ItemGroup>

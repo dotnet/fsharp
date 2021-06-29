@@ -81,16 +81,16 @@ module ExtraTopLevelOperators =
             member s.Remove(_ : 'Key) = (raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated))) : bool) 
 
         interface IReadOnlyDictionary<'Key, 'T> with
-            member _.Item with get key = t.[makeSafeKey key]
-            member _.Keys = t.Keys |> Seq.map getKey
-            member _.TryGetValue(key, r) =
+            member __.Item with get key = t.[makeSafeKey key]
+            member __.Keys = t.Keys |> Seq.map getKey
+            member __.TryGetValue(key, r) =
                 match t.TryGetValue (makeSafeKey key) with
                 | false, _ -> false
                 | true, value ->
                     r <- value
                     true
-            member _.Values = (t :> IReadOnlyDictionary<_,_>).Values
-            member _.ContainsKey k = t.ContainsKey (makeSafeKey k)
+            member __.Values = (t :> IReadOnlyDictionary<_,_>).Values
+            member __.ContainsKey k = t.ContainsKey (makeSafeKey k)
 
         interface ICollection<KeyValuePair<'Key, 'T>> with 
             member s.Add(_) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
@@ -106,7 +106,7 @@ module ExtraTopLevelOperators =
             member s.Count = t.Count
 
         interface IReadOnlyCollection<KeyValuePair<'Key, 'T>> with
-            member _.Count = t.Count
+            member __.Count = t.Count
 
         interface IEnumerable<KeyValuePair<'Key, 'T>> with
             member s.GetEnumerator() =
@@ -128,15 +128,15 @@ module ExtraTopLevelOperators =
                         kvps.[index]
 
                     {new IEnumerator<_> with
-                        member _.Current = current ()
+                        member __.Current = current ()
                       interface System.Collections.IEnumerator with
-                            member _.Current = box(current())
-                            member _.MoveNext() =
+                            member __.Current = box(current())
+                            member __.MoveNext() =
                                 if index < endIndex then
                                     index <- index + 1
                                     index < endIndex
                                 else false
-                            member _.Reset() = index <- -1
+                            member __.Reset() = index <- -1
                       interface System.IDisposable with 
                             member self.Dispose() = () }
 #endif
@@ -306,12 +306,12 @@ namespace Microsoft.FSharp.Core.CompilerServices
     type TypeProviderAssemblyAttribute(assemblyName : string) = 
         inherit System.Attribute()
         new () = TypeProviderAssemblyAttribute(null)
-        member _.AssemblyName = assemblyName
+        member __.AssemblyName = assemblyName
 
     [<AttributeUsage(AttributeTargets.All, AllowMultiple = false)>]
     type TypeProviderXmlDocAttribute(commentText: string) = 
         inherit System.Attribute()
-        member _.CommentText = commentText
+        member __.CommentText = commentText
 
     [<AttributeUsage(AttributeTargets.All, AllowMultiple = false)>]
     type TypeProviderDefinitionLocationAttribute() = 

@@ -21,21 +21,21 @@ open Microsoft.VisualStudio.Shell
 [<AllowNullLiteral>]
 type internal FSharpNavigableSymbol(item: FSharpNavigableItem, span: SnapshotSpan, gtd: GoToDefinition, statusBar: StatusBar) =
     interface INavigableSymbol with
-        member _.Navigate(_: INavigableRelationship) =
+        member __.Navigate(_: INavigableRelationship) =
             gtd.NavigateToItem(item, statusBar)
 
-        member _.Relationships = seq { yield PredefinedNavigableRelationships.Definition }
+        member __.Relationships = seq { yield PredefinedNavigableRelationships.Definition }
 
-        member _.SymbolSpan = span
+        member __.SymbolSpan = span
 
-type internal FSharpNavigableSymbolSource(metadataAsSource, serviceProvider: IServiceProvider) =
+type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager, serviceProvider: IServiceProvider) =
     
     let mutable disposed = false
-    let gtd = GoToDefinition(metadataAsSource)
+    let gtd = GoToDefinition(checkerProvider.Checker, projectInfoManager)
     let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
 
     interface INavigableSymbolSource with
-        member _.GetNavigableSymbolAsync(triggerSpan: SnapshotSpan, cancellationToken: CancellationToken) =
+        member __.GetNavigableSymbolAsync(triggerSpan: SnapshotSpan, cancellationToken: CancellationToken) =
             // Yes, this is a code smell. But this is how the editor API accepts what we would treat as None.
             if disposed then null
             else
@@ -43,7 +43,7 @@ type internal FSharpNavigableSymbolSource(metadataAsSource, serviceProvider: ISe
                     let snapshot = triggerSpan.Snapshot
                     let position = triggerSpan.Start.Position
                     let document = snapshot.GetOpenDocumentInCurrentContextWithChanges()
-                    let! sourceText = document.GetTextAsync(cancellationToken) |> liftTaskAsync
+                    let! sourceText = document.GetTextAsync() |> liftTaskAsync
                     
                     statusBar.Message(SR.LocatingSymbol())
                     use _ = statusBar.Animate()
@@ -54,34 +54,17 @@ type internal FSharpNavigableSymbolSource(metadataAsSource, serviceProvider: ISe
                     // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
                     try
                         // This call to Wait() is fine because we want to be able to provide the error message in the status bar.
-                        gtdTask.Wait(cancellationToken)
+                        gtdTask.Wait()
                         statusBar.Clear()
 
                         if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
-                            let result, range = gtdTask.Result.Value
+                            let navigableItem, range = gtdTask.Result.Value
 
                             let declarationTextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
                             let declarationSpan = Span(declarationTextSpan.Start, declarationTextSpan.Length)
                             let symbolSpan = SnapshotSpan(snapshot, declarationSpan)
 
-                            match result with
-                            | FSharpGoToDefinitionResult.NavigableItem(navItem) ->
-                                return FSharpNavigableSymbol(navItem, symbolSpan, gtd, statusBar) :> INavigableSymbol
-
-                            | FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences) ->
-                                let nav =
-                                    { new INavigableSymbol with
-                                        member _.Navigate(_: INavigableRelationship) =
-                                            // Need to new up a CTS here instead of re-using the other one, since VS
-                                            // will navigate disconnected from the outer routine, leading to an
-                                            // OperationCancelledException if you use the one defined outside.
-                                            use ct = new CancellationTokenSource()
-                                            gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, ct.Token, statusBar)
-
-                                        member _.Relationships = seq { yield PredefinedNavigableRelationships.Definition }
-
-                                        member _.SymbolSpan = symbolSpan }
-                                return nav
+                            return FSharpNavigableSymbol(navigableItem, symbolSpan, gtd, statusBar) :> INavigableSymbol
                         else 
                             statusBar.TempMessage(SR.CannotDetermineSymbol())
 
@@ -96,7 +79,7 @@ type internal FSharpNavigableSymbolSource(metadataAsSource, serviceProvider: ISe
                 |> Async.map Option.toObj
                 |> RoslynHelpers.StartAsyncAsTask cancellationToken
         
-        member _.Dispose() =
+        member __.Dispose() =
             disposed <- true
 
 [<Export(typeof<INavigableSymbolSourceProvider>)>]
@@ -107,9 +90,10 @@ type internal FSharpNavigableSymbolService
     [<ImportingConstructor>]
     (
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
-        metadataAsSource: FSharpMetadataAsSourceService
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
     interface INavigableSymbolSourceProvider with
-        member _.TryCreateNavigableSymbolSource(_: ITextView, _: ITextBuffer) =
-            new FSharpNavigableSymbolSource(metadataAsSource, serviceProvider) :> INavigableSymbolSource
+        member __.TryCreateNavigableSymbolSource(_: ITextView, _: ITextBuffer) =
+            new FSharpNavigableSymbolSource(checkerProvider, projectInfoManager, serviceProvider) :> INavigableSymbolSource

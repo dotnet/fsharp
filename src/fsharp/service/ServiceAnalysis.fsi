@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.EditorServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Text
+open FSharp.Compiler.Range
 
 module public UnusedOpens =
 

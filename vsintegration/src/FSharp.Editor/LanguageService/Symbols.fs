@@ -1,22 +1,34 @@
 ﻿[<AutoOpen>]
 module internal Microsoft.VisualStudio.FSharp.Editor.Symbols
 
+open System
+open System.Collections.Generic
 open System.IO
+open System.Threading
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+
 open Microsoft.CodeAnalysis
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.EditorServices
-open FSharp.Compiler.Symbols
+open Microsoft.CodeAnalysis.Classification
+open Microsoft.CodeAnalysis.Text
+
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SyntaxTree
+
 
 [<RequireQualifiedAccess; NoComparison>] 
 type SymbolDeclarationLocation = 
     | CurrentDocument
     | Projects of Project list * isLocalForProject: bool
 
+
 [<NoComparison>]
 type SymbolUse =
     { SymbolUse: FSharpSymbolUse 
       IsUsed: bool
-      FullNames: ShortIdent[] }
+      FullNames: Idents[] }
+
 
 type FSharpSymbol with
     member this.IsInternalToProject =

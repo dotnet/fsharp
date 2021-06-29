@@ -16,24 +16,23 @@ open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Extensions
 
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.EditorServices
-open FSharp.Compiler.Symbols
-open FSharp.Compiler.Syntax
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text
-open FSharp.Compiler.Tokenization
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging
+
 open Microsoft.VisualStudio.Shell.Interop
+
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Classification
+
+open Internal.Utilities.StructuredFormat
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Utilities
 
 type internal CodeLens(taggedText, computed, fullTypeSignature, uiElement) =
-    member val TaggedText: Async<(ResizeArray<TaggedText> * QuickInfoNavigation) option> = taggedText
+    member val TaggedText: Async<(ResizeArray<Layout.TaggedText> * QuickInfoNavigation) option> = taggedText
     member val Computed: bool = computed with get, set
     member val FullTypeSignature: string = fullTypeSignature 
     member val UiElement: UIElement = uiElement with get, set
@@ -44,7 +43,8 @@ type internal FSharpCodeLensService
         workspace: Workspace, 
         documentId: Lazy<DocumentId>,
         buffer: ITextBuffer, 
-        metadataAsSource: FSharpMetadataAsSourceService,
+        checker: FSharpChecker,
+        projectInfoManager: FSharpProjectOptionsManager,
         classificationFormatMapService: IClassificationFormatMapService,
         typeMap: Lazy<FSharpClassificationTypeMap>,
         codeLens : CodeLensDisplayService,
@@ -52,28 +52,29 @@ type internal FSharpCodeLensService
     ) as self =
 
     let lineLens = codeLens
+    let userOpName = "FSharpCodeLensService"
 
     let visit pos parseTree = 
-        SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxVisitorBase<_>() with 
-            member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+        AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with 
+            member __.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                 defaultTraverse(expr)
             
-            override _.VisitInheritSynMemberDefn (_, _, _, _, _, range) = Some range
+            override __.VisitInheritSynMemberDefn (_, _, _, _, range) = Some range
 
-            override _.VisitTypeAbbrev(_, _, range) = Some range
+            override __.VisitTypeAbbrev( _, range) = Some range
 
-            override _.VisitLetOrUse(_, _, _, bindings, range) =
-                match bindings |> Seq.tryFind (fun b -> b.RangeOfHeadPattern.StartLine = pos.Line) with
+            override __.VisitLetOrUse(_, _, bindings, range) =
+                match bindings |> Seq.tryFind (fun b -> b.RangeOfHeadPat.StartLine = pos.Line) with
                 | Some entry ->
-                    Some entry.RangeOfBindingWithRhs
+                    Some entry.RangeOfBindingAndRhs
                 | None ->
                     // We choose to use the default range because
                     // it wasn't possible to find the complete range
                     // including implementation code.
                     Some range
 
-            override _.VisitBinding (_, fn, binding) =
-                Some binding.RangeOfBindingWithRhs
+            override __.VisitBinding (fn, binding) =
+                Some binding.RangeOfBindingAndRhs
         })
 
     let formatMap = lazy classificationFormatMapService.GetClassificationFormatMap "tooltip"
@@ -83,7 +84,7 @@ type internal FSharpCodeLensService
     let mutable bufferChangedCts = new CancellationTokenSource()
     let uiContext = SynchronizationContext.Current
 
-    let layoutTagToFormatting (layoutTag: TextTag) =
+    let layoutTagToFormatting (layoutTag: LayoutTag) =
         layoutTag
         |> RoslynHelpers.roslynTag
         |> FSharpClassificationTags.GetClassificationTypeName
@@ -129,7 +130,7 @@ type internal FSharpCodeLensService
 
                     let inl =
                         match text with
-                        | :? NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
+                        | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
                             let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
                             h.Click.Add (fun _ -> 
                                 navigation.NavigateTo nav.Range)
@@ -154,8 +155,8 @@ type internal FSharpCodeLensService
             logInfof "Rechecking code due to buffer edit!"
 #endif
             let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
-            let! parseFileResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpUseMutationWhenValueIsMutableFixProvider)) |> liftAsync
-            let parsedInput = parseFileResults.ParseTree
+            let! _, options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, bufferChangedCts.Token, userOpName)
+            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(document, options, "LineLens", allowStaleResults=true)
 #if DEBUG
             logInfof "Getting uses of all symbols!"
 #endif
@@ -189,9 +190,9 @@ type internal FSharpCodeLensService
                                 let displayContext = Option.defaultValue displayContext maybeContext
                                 let typeLayout = func.FormatLayout displayContext
                                 let taggedText = ResizeArray()        
-                                typeLayout |> Seq.iter taggedText.Add
+                                Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
                                 let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>()) 
-                                let navigation = QuickInfoNavigation(statusBar, metadataAsSource, document, realPosition)
+                                let navigation = QuickInfoNavigation(statusBar, checker, projectInfoManager, document, realPosition)
                                 // Because the data is available notify that this line should be updated, displaying the results
                                 return Some (taggedText, navigation)
                             | None -> 
@@ -406,7 +407,7 @@ type internal FSharpCodeLensService
            } |> Async.Start
         end
 
-    member _.BufferChanged ___ =
+    member __.BufferChanged ___ =
         bufferChangedCts.Cancel() // Stop all ongoing async workflow. 
         bufferChangedCts.Dispose()
         bufferChangedCts <- new CancellationTokenSource()

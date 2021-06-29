@@ -346,22 +346,22 @@ a.
             [
                 [
                 "type A() ="
-                "   member _.X = ()"
+                "   member __.X = ()"
                 "   member this."
                 ]
                 [
                 "type A() ="
-                "   member _.X = ()"
+                "   member __.X = ()"
                 "   member private this."
                 ]
                 [
                 "type A() ="
-                "   member _.X = ()"
+                "   member __.X = ()"
                 "   member public this."
                 ]
                 [
                 "type A() ="
-                "   member _.X = ()"
+                "   member __.X = ()"
                 "   member internal this."
                 ]
 
@@ -519,10 +519,10 @@ a.
             [
                 "type Foo = Foo"
                 "    with"
-                "        member _.Bar = 1"
-                "        member _.PublicMethodForIntellisense() = 2"
-                "        member internal _.InternalMethod() = 3"
-                "        member private _.PrivateProperty = 4"
+                "        member __.Bar = 1"
+                "        member __.PublicMethodForIntellisense() = 2"
+                "        member internal __.InternalMethod() = 3"
+                "        member private __.PrivateProperty = 4"
                 ""
                 "let u: Unit ="
                 "    [ Foo ]"
@@ -3864,7 +3864,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ @"
                     type C() = 
                         let someValue = ""abc""
-                        member _.M() = 
+                        member __.M() = 
                           let x = 1
                           match someValue. with
                             let x = 1
@@ -4526,8 +4526,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         
         // Save file2
         ReplaceFileInMemory file2 [""]
-        SaveFileToDisk file2    
-        let file3 = OpenFile(project,"File3.fs")
+        SaveFileToDisk file2      
         TakeCoffeeBreak(this.VS)
 
         gpatcc.AssertExactly(notAA[file2; file3], notAA[file2;file3])
@@ -5125,7 +5124,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
         Assert.IsTrue(completions.Length>0)
 
     [<Test>]
-    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member this.``BadCompletionAfterQuicklyTyping.Bug72561``() =        
         let code = [ "        " ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -5548,8 +5546,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 type T() = 
-                    member _.P with get() = new T()
-                    member _.M() = [|1..2|]
+                    member __.P with get() = new T()
+                    member __.M() = [|1..2|]
                 let t = new T()
                 t.P.M()(*marker*)  """,
             marker = "(*marker*)",
@@ -5560,7 +5558,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 type T() = 
-                    member _.M() = [|1..2|]
+                    member __.M() = [|1..2|]
 
                 type R = { P : T } 
                     
@@ -7150,6 +7148,7 @@ let rec f l =
         let (_, _, file) = this.CreateSingleFileProject(code)
 
         TakeCoffeeBreak(this.VS)
+        let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
 
         // In this case, we quickly type "." and then get dot-completions
         // For "level <- Module" this shows completions from the "Module" (e.g. "Module.Other")
@@ -7162,6 +7161,7 @@ let rec f l =
         let completions = AutoCompleteAtCursor file
         AssertCompListContainsAll(completions, ["Length"])
         AssertCompListDoesNotContainAny(completions, ["AbstractClassAttribute"]) 
+        gpatcc.AssertExactly(0,0)
 
     [<Test>]
     member this.``SelfParameter.InDoKeywordScope``() =

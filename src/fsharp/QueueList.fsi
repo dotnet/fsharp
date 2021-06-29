@@ -1,4 +1,4 @@
-namespace Internal.Utilities.Collections
+namespace Internal.Utilities
 
 /// Iterable functional collection with O(1) append-1 time. Useful for data structures where elements get added at the
 /// end but the collection must occasionally be iterated. Iteration is slower and may allocate because 

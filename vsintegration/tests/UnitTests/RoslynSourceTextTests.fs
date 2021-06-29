@@ -6,7 +6,7 @@ open System
 open NUnit.Framework
 
 open Microsoft.VisualStudio.FSharp.Editor
-open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
 
 [<TestFixture>]

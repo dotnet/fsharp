@@ -11,14 +11,13 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
 
-open FSharp.Compiler.EditorServices
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SyntaxTree
 
-open Microsoft.VisualStudio.FSharp.Editor
-
-type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph
+type private FSharpGlyph = FSharp.Compiler.SourceCodeServices.FSharpGlyph
 type private FSharpRoslynGlyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
+
 
 type Path with
     static member GetFullPathSafe path =
@@ -38,12 +37,6 @@ type ProjectId with
     member this.ToFSharpProjectIdString() =
         this.Id.ToString("D").ToLowerInvariant()
 
-type Project with
-    member this.IsFSharpMiscellaneous = this.Name = FSharpConstants.FSharpMiscellaneousFilesName
-    member this.IsFSharpMetadata = this.Name.StartsWith(FSharpConstants.FSharpMetadataName)
-    member this.IsFSharpMiscellaneousOrMetadata = this.IsFSharpMiscellaneous || this.IsFSharpMetadata
-    member this.IsFSharp = this.Language = LanguageNames.FSharp
-
 type Document with
     member this.TryGetLanguageService<'T when 'T :> ILanguageService>() =
         match this.Project with
@@ -54,9 +47,6 @@ type Document with
             | languageServices ->
                 languageServices.GetService<'T>()
                 |> Some
-
-    member this.IsFSharpScript =
-        isScriptFile this.FilePath
 
 module private SourceText =
 
@@ -77,7 +67,7 @@ module private SourceText =
         let sourceText =
             { 
                 new Object() with
-                    override _.GetHashCode() =
+                    override __.GetHashCode() =
                         let checksum = sourceText.GetChecksum()
                         let contentsHash = if not checksum.IsDefault then Hash.combineValues checksum else 0
                         let encodingHash = if not (isNull sourceText.Encoding) then sourceText.Encoding.GetHashCode() else 0
@@ -89,24 +79,24 @@ module private SourceText =
 
                 interface ISourceText with
             
-                    member _.Item with get index = sourceText.[index]
+                    member __.Item with get index = sourceText.[index]
 
-                    member _.GetLineString(lineIndex) =
+                    member __.GetLineString(lineIndex) =
                         sourceText.Lines.[lineIndex].ToString()
 
-                    member _.GetLineCount() =
+                    member __.GetLineCount() =
                         sourceText.Lines.Count
 
-                    member _.GetLastCharacterPosition() =
+                    member __.GetLastCharacterPosition() =
                         if sourceText.Lines.Count > 0 then
                             (sourceText.Lines.Count, sourceText.Lines.[sourceText.Lines.Count - 1].Span.Length)
                         else
                             (0, 0)
 
-                    member _.GetSubTextString(start, length) =
+                    member __.GetSubTextString(start, length) =
                         sourceText.GetSubText(TextSpan(start, length)).ToString()
 
-                    member _.SubTextEquals(target, startIndex) =
+                    member __.SubTextEquals(target, startIndex) =
                         if startIndex < 0 || startIndex >= sourceText.Length then
                             invalidArg "startIndex" "Out of range."
 
@@ -129,14 +119,14 @@ module private SourceText =
 
                         didEqual
 
-                    member _.ContentEquals(sourceText) =
+                    member __.ContentEquals(sourceText) =
                         match sourceText with
                         | :? SourceText as sourceText -> sourceText.ContentEquals(sourceText)
                         | _ -> false
 
-                    member _.Length = sourceText.Length
+                    member __.Length = sourceText.Length
 
-                    member _.CopyTo(sourceIndex, destination, destinationIndex, count) =
+                    member __.CopyTo(sourceIndex, destination, destinationIndex, count) =
                         sourceText.CopyTo(sourceIndex, destination, destinationIndex, count)
             }
 
@@ -147,7 +137,7 @@ type SourceText with
     member this.ToFSharpSourceText() =
         SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(SourceText.create))
 
-type NavigationItem with
+type FSharpNavigationDeclarationItem with
     member x.RoslynGlyph : FSharpRoslynGlyph =
         match x.Glyph with
         | FSharpGlyph.Class

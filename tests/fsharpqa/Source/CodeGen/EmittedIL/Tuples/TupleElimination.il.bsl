@@ -34,20 +34,20 @@
 }
 .mresource public FSharpSignatureData.TupleElimination
 {
-  // Offset: 0x00000000 Length: 0x0000022A
+  // Offset: 0x00000000 Length: 0x00000228
 }
 .mresource public FSharpOptimizationData.TupleElimination
 {
   // Offset: 0x00000230 Length: 0x0000007B
 }
 .module TupleElimination.exe
-// MVID: {60CB69C6-DFDD-92DF-A745-0383C669CB60}
+// MVID: {5F1FA088-DFDD-92DF-A745-038388A01F5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06AF0000
+// Image base: 0x07100000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -62,7 +62,7 @@
     .maxstack  4
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 15,27 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Tuples\\TupleElimination.fs'
+    .line 5,5 : 15,27 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Tuples\\TupleElimination.fs'
     IL_0000:  ldstr      "%A"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,!!a>::.ctor(string)
     IL_000a:  stloc.0
@@ -83,9 +83,9 @@
     // Code size       79 (0x4f)
     .maxstack  5
     .locals init ([0] class [mscorlib]System.Collections.Generic.Dictionary`2<int32,int32> dic,
-             [1] int32 i,
-             [2] bool b,
-             [3] int64 l,
+             [1] int32 V_1,
+             [2] bool V_2,
+             [3] int64 V_3,
              [4] bool V_4,
              [5] class [mscorlib]System.Tuple`2<bool,int64> t)
     .line 7,7 : 5,64 ''
@@ -94,7 +94,7 @@
     .line 9,9 : 31,48 ''
     IL_0006:  ldloc.0
     IL_0007:  ldc.i4.1
-    IL_0008:  ldloca.s   i
+    IL_0008:  ldloca.s   V_1
     IL_000a:  callvirt   instance bool class [mscorlib]System.Collections.Generic.Dictionary`2<int32,int32>::TryGetValue(!0,
                                                                                                                          !1&)
     IL_000f:  stloc.2
@@ -108,7 +108,7 @@
     IL_001d:  nop
     .line 14,14 : 38,65 ''
     IL_001e:  ldstr      "123"
-    IL_0023:  ldloca.s   l
+    IL_0023:  ldloca.s   V_3
     IL_0025:  call       bool [mscorlib]System.Int64::TryParse(string,
                                                                int64&)
     IL_002a:  stloc.s    V_4

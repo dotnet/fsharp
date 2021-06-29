@@ -20,14 +20,12 @@ Getting checked expressions
 To access the type-checked, resolved expressions, you need to create an instance of `InteractiveChecker`.
 
 To use the interactive checker, reference `FSharp.Compiler.Service.dll` and open the
-relevant namespaces:
+`SourceCodeServices` namespace:
 *)
 #r "FSharp.Compiler.Service.dll"
 open System
 open System.IO
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.EditorServices
-open FSharp.Compiler.Symbols
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 (**
 
@@ -77,7 +75,8 @@ type MyClass() =
 let checkProjectResults = 
     parseAndCheckSingleFile(input2)
 
-checkProjectResults.Diagnostics // should be empty
+checkProjectResults.Errors // should be empty
+
 
 (**
 
@@ -171,93 +170,93 @@ Here is a generic expression visitor:
 let rec visitExpr f (e:FSharpExpr) = 
     f e
     match e with 
-    | FSharpExprPatterns.AddressOf(lvalueExpr) -> 
+    | BasicPatterns.AddressOf(lvalueExpr) -> 
         visitExpr f lvalueExpr
-    | FSharpExprPatterns.AddressSet(lvalueExpr, rvalueExpr) -> 
+    | BasicPatterns.AddressSet(lvalueExpr, rvalueExpr) -> 
         visitExpr f lvalueExpr; visitExpr f rvalueExpr
-    | FSharpExprPatterns.Application(funcExpr, typeArgs, argExprs) -> 
+    | BasicPatterns.Application(funcExpr, typeArgs, argExprs) -> 
         visitExpr f funcExpr; visitExprs f argExprs
-    | FSharpExprPatterns.Call(objExprOpt, memberOrFunc, typeArgs1, typeArgs2, argExprs) -> 
+    | BasicPatterns.Call(objExprOpt, memberOrFunc, typeArgs1, typeArgs2, argExprs) -> 
         visitObjArg f objExprOpt; visitExprs f argExprs
-    | FSharpExprPatterns.Coerce(targetType, inpExpr) -> 
+    | BasicPatterns.Coerce(targetType, inpExpr) -> 
         visitExpr f inpExpr
-    | FSharpExprPatterns.FastIntegerForLoop(startExpr, limitExpr, consumeExpr, isUp) -> 
+    | BasicPatterns.FastIntegerForLoop(startExpr, limitExpr, consumeExpr, isUp) -> 
         visitExpr f startExpr; visitExpr f limitExpr; visitExpr f consumeExpr
-    | FSharpExprPatterns.ILAsm(asmCode, typeArgs, argExprs) -> 
+    | BasicPatterns.ILAsm(asmCode, typeArgs, argExprs) -> 
         visitExprs f argExprs
-    | FSharpExprPatterns.ILFieldGet (objExprOpt, fieldType, fieldName) -> 
+    | BasicPatterns.ILFieldGet (objExprOpt, fieldType, fieldName) -> 
         visitObjArg f objExprOpt
-    | FSharpExprPatterns.ILFieldSet (objExprOpt, fieldType, fieldName, valueExpr) -> 
+    | BasicPatterns.ILFieldSet (objExprOpt, fieldType, fieldName, valueExpr) -> 
         visitObjArg f objExprOpt
-    | FSharpExprPatterns.IfThenElse (guardExpr, thenExpr, elseExpr) -> 
+    | BasicPatterns.IfThenElse (guardExpr, thenExpr, elseExpr) -> 
         visitExpr f guardExpr; visitExpr f thenExpr; visitExpr f elseExpr
-    | FSharpExprPatterns.Lambda(lambdaVar, bodyExpr) -> 
+    | BasicPatterns.Lambda(lambdaVar, bodyExpr) -> 
         visitExpr f bodyExpr
-    | FSharpExprPatterns.Let((bindingVar, bindingExpr), bodyExpr) -> 
+    | BasicPatterns.Let((bindingVar, bindingExpr), bodyExpr) -> 
         visitExpr f bindingExpr; visitExpr f bodyExpr
-    | FSharpExprPatterns.LetRec(recursiveBindings, bodyExpr) -> 
+    | BasicPatterns.LetRec(recursiveBindings, bodyExpr) -> 
         List.iter (snd >> visitExpr f) recursiveBindings; visitExpr f bodyExpr
-    | FSharpExprPatterns.NewArray(arrayType, argExprs) -> 
+    | BasicPatterns.NewArray(arrayType, argExprs) -> 
         visitExprs f argExprs
-    | FSharpExprPatterns.NewDelegate(delegateType, delegateBodyExpr) -> 
+    | BasicPatterns.NewDelegate(delegateType, delegateBodyExpr) -> 
         visitExpr f delegateBodyExpr
-    | FSharpExprPatterns.NewObject(objType, typeArgs, argExprs) -> 
+    | BasicPatterns.NewObject(objType, typeArgs, argExprs) -> 
         visitExprs f argExprs
-    | FSharpExprPatterns.NewRecord(recordType, argExprs) ->  
+    | BasicPatterns.NewRecord(recordType, argExprs) ->  
         visitExprs f argExprs
-    | FSharpExprPatterns.NewAnonRecord(recordType, argExprs) ->  
+    | BasicPatterns.NewAnonRecord(recordType, argExprs) ->  
         visitExprs f argExprs
-    | FSharpExprPatterns.NewTuple(tupleType, argExprs) -> 
+    | BasicPatterns.NewTuple(tupleType, argExprs) -> 
         visitExprs f argExprs
-    | FSharpExprPatterns.NewUnionCase(unionType, unionCase, argExprs) -> 
+    | BasicPatterns.NewUnionCase(unionType, unionCase, argExprs) -> 
         visitExprs f argExprs
-    | FSharpExprPatterns.Quote(quotedExpr) -> 
+    | BasicPatterns.Quote(quotedExpr) -> 
         visitExpr f quotedExpr
-    | FSharpExprPatterns.FSharpFieldGet(objExprOpt, recordOrClassType, fieldInfo) -> 
+    | BasicPatterns.FSharpFieldGet(objExprOpt, recordOrClassType, fieldInfo) -> 
         visitObjArg f objExprOpt
-    | FSharpExprPatterns.AnonRecordGet(objExpr, recordOrClassType, fieldInfo) -> 
+    | BasicPatterns.AnonRecordGet(objExpr, recordOrClassType, fieldInfo) -> 
         visitExpr f objExpr
-    | FSharpExprPatterns.FSharpFieldSet(objExprOpt, recordOrClassType, fieldInfo, argExpr) -> 
+    | BasicPatterns.FSharpFieldSet(objExprOpt, recordOrClassType, fieldInfo, argExpr) -> 
         visitObjArg f objExprOpt; visitExpr f argExpr
-    | FSharpExprPatterns.Sequential(firstExpr, secondExpr) -> 
+    | BasicPatterns.Sequential(firstExpr, secondExpr) -> 
         visitExpr f firstExpr; visitExpr f secondExpr
-    | FSharpExprPatterns.TryFinally(bodyExpr, finalizeExpr) -> 
+    | BasicPatterns.TryFinally(bodyExpr, finalizeExpr) -> 
         visitExpr f bodyExpr; visitExpr f finalizeExpr
-    | FSharpExprPatterns.TryWith(bodyExpr, _, _, catchVar, catchExpr) -> 
+    | BasicPatterns.TryWith(bodyExpr, _, _, catchVar, catchExpr) -> 
         visitExpr f bodyExpr; visitExpr f catchExpr
-    | FSharpExprPatterns.TupleGet(tupleType, tupleElemIndex, tupleExpr) -> 
+    | BasicPatterns.TupleGet(tupleType, tupleElemIndex, tupleExpr) -> 
         visitExpr f tupleExpr
-    | FSharpExprPatterns.DecisionTree(decisionExpr, decisionTargets) -> 
+    | BasicPatterns.DecisionTree(decisionExpr, decisionTargets) -> 
         visitExpr f decisionExpr; List.iter (snd >> visitExpr f) decisionTargets
-    | FSharpExprPatterns.DecisionTreeSuccess (decisionTargetIdx, decisionTargetExprs) -> 
+    | BasicPatterns.DecisionTreeSuccess (decisionTargetIdx, decisionTargetExprs) -> 
         visitExprs f decisionTargetExprs
-    | FSharpExprPatterns.TypeLambda(genericParam, bodyExpr) -> 
+    | BasicPatterns.TypeLambda(genericParam, bodyExpr) -> 
         visitExpr f bodyExpr
-    | FSharpExprPatterns.TypeTest(ty, inpExpr) -> 
+    | BasicPatterns.TypeTest(ty, inpExpr) -> 
         visitExpr f inpExpr
-    | FSharpExprPatterns.UnionCaseSet(unionExpr, unionType, unionCase, unionCaseField, valueExpr) -> 
+    | BasicPatterns.UnionCaseSet(unionExpr, unionType, unionCase, unionCaseField, valueExpr) -> 
         visitExpr f unionExpr; visitExpr f valueExpr
-    | FSharpExprPatterns.UnionCaseGet(unionExpr, unionType, unionCase, unionCaseField) -> 
+    | BasicPatterns.UnionCaseGet(unionExpr, unionType, unionCase, unionCaseField) -> 
         visitExpr f unionExpr
-    | FSharpExprPatterns.UnionCaseTest(unionExpr, unionType, unionCase) -> 
+    | BasicPatterns.UnionCaseTest(unionExpr, unionType, unionCase) -> 
         visitExpr f unionExpr
-    | FSharpExprPatterns.UnionCaseTag(unionExpr, unionType) -> 
+    | BasicPatterns.UnionCaseTag(unionExpr, unionType) -> 
         visitExpr f unionExpr
-    | FSharpExprPatterns.ObjectExpr(objType, baseCallExpr, overrides, interfaceImplementations) -> 
+    | BasicPatterns.ObjectExpr(objType, baseCallExpr, overrides, interfaceImplementations) -> 
         visitExpr f baseCallExpr
         List.iter (visitObjMember f) overrides
         List.iter (snd >> List.iter (visitObjMember f)) interfaceImplementations
-    | FSharpExprPatterns.TraitCall(sourceTypes, traitName, typeArgs, typeInstantiation, argTypes, argExprs) -> 
+    | BasicPatterns.TraitCall(sourceTypes, traitName, typeArgs, typeInstantiation, argTypes, argExprs) -> 
         visitExprs f argExprs
-    | FSharpExprPatterns.ValueSet(valToSet, valueExpr) -> 
+    | BasicPatterns.ValueSet(valToSet, valueExpr) -> 
         visitExpr f valueExpr
-    | FSharpExprPatterns.WhileLoop(guardExpr, bodyExpr) -> 
+    | BasicPatterns.WhileLoop(guardExpr, bodyExpr) -> 
         visitExpr f guardExpr; visitExpr f bodyExpr
-    | FSharpExprPatterns.BaseValue baseType -> ()
-    | FSharpExprPatterns.DefaultValue defaultType -> ()
-    | FSharpExprPatterns.ThisValue thisType -> ()
-    | FSharpExprPatterns.Const(constValueObj, constType) -> ()
-    | FSharpExprPatterns.Value(valueToGet) -> ()
+    | BasicPatterns.BaseValue baseType -> ()
+    | BasicPatterns.DefaultValue defaultType -> ()
+    | BasicPatterns.ThisValue thisType -> ()
+    | BasicPatterns.Const(constValueObj, constType) -> ()
+    | BasicPatterns.Value(valueToGet) -> ()
     | _ -> failwith (sprintf "unrecognized %+A" e)
 
 and visitExprs f exprs = 

@@ -5,8 +5,8 @@ namespace FSharp.Compiler.ComponentTests.ErrorMessages
 open Xunit
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Compiler
-open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.AbstractIL.Internal
 
 module ``Numeric Literals`` =
 
@@ -59,6 +59,8 @@ module ``Numeric Literals`` =
 
     [<Fact>]
     let ``1N is invalid numeric literal in FSI``() =
+        if Utils.runningOnMono then ()
+        else 
             CompilerAssert.RunScriptWithOptions [| "--langversion:5.0"; "--test:ErrorRanges" |]
                 """
 let x = 1N

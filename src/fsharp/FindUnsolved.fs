@@ -3,9 +3,9 @@
 /// Find unsolved, uninstantiated type variables
 module internal FSharp.Compiler.FindUnsolved
 
-open Internal.Utilities.Collections
-open Internal.Utilities.Library
 open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -191,7 +191,7 @@ and accDiscrim cenv env d =
     | DecisionTreeTest.Const _
     | DecisionTreeTest.IsNull -> ()
     | DecisionTreeTest.IsInst (srcty, tgty) -> accTy cenv env srcty; accTy cenv env tgty
-    | DecisionTreeTest.ActivePatternCase (exp, tys, _, _, _, _) -> 
+    | DecisionTreeTest.ActivePatternCase (exp, tys, _, _, _) -> 
         accExpr cenv env exp
         accTypeInst cenv env tys
     | DecisionTreeTest.Error _ -> ()

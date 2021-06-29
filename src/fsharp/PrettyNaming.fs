@@ -2,7 +2,7 @@
 
 /// Some general F# utilities for mangling / unmangling / manipulating names.
 /// Anything to do with special names of identifiers and other lexical rules 
-module public FSharp.Compiler.Syntax.PrettyNaming
+module public FSharp.Compiler.PrettyNaming
 
 open System
 open System.Collections.Generic
@@ -12,10 +12,11 @@ open System.Text
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
-open Internal.Utilities.Library
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Layout
+open FSharp.Compiler.AbstractIL.Internal.Library
+
+open Internal.Utilities
+open Internal.Utilities.StructuredFormat
+open Internal.Utilities.StructuredFormat.LayoutOps
 
 //------------------------------------------------------------------------
 // Operator name compilation
@@ -191,17 +192,18 @@ let private compileCustomOpName =
             // Cache the compiled name so it can be reused.
             opName)
 
-/// Maps the built-in F# operators to their mangled operator names.
-let standardOpNames =
-    let opNames = Dictionary<_,  _> (opNameTable.Length, StringComparer.Ordinal)
-    for x, y in opNameTable do
-        opNames.Add (x, y)
-    opNames
-
 /// Compiles an operator into a mangled operator name.
 /// For example, "!%" becomes "op_DereferencePercent".
 /// This function accepts both built-in and custom operators.
-let CompileOpName op =
+let CompileOpName =
+    /// Maps the built-in F# operators to their mangled operator names.
+    let standardOpNames =
+        let opNames = Dictionary<_,  _> (opNameTable.Length, StringComparer.Ordinal)
+        for x, y in opNameTable do
+            opNames.Add (x, y)
+        opNames
+
+    fun op ->
         match standardOpNames.TryGetValue op with
         | true, x -> x
         | false, _ ->
@@ -279,18 +281,19 @@ let private decompileCustomOpName =
             decompile sb opNamePrefixLen
 
     
-/// Maps the mangled operator names of built-in F# operators back to the operators.
-let standardOpsDecompile =
-    let ops = Dictionary<string, string> (opNameTable.Length, StringComparer.Ordinal)
-    for x, y in opNameTable do
-        ops.Add(y, x)
-    ops
-
 /// Decompiles a mangled operator name back into an operator.
 /// For example, "op_DereferencePercent" becomes "!%".
 /// This function accepts mangled names for both built-in and custom operators.
-let DecompileOpName opName =
-        match standardOpsDecompile.TryGetValue opName with
+let DecompileOpName =
+    /// Maps the mangled operator names of built-in F# operators back to the operators.
+    let standardOps =
+        let ops = Dictionary<string, string> (opNameTable.Length, StringComparer.Ordinal)
+        for x, y in opNameTable do
+            ops.Add(y, x)
+        ops
+
+    fun opName ->
+        match standardOps.TryGetValue opName with
         | true, res -> res
         | false, _ ->
             if IsMangledOpName opName then
@@ -305,7 +308,7 @@ let DemangleOperatorName nm =
     
 let DemangleOperatorNameAsLayout nonOpTagged nm =
     let nm = DecompileOpName nm
-    if IsOperatorOrBacktickedName nm then wordL (TaggedText.tagPunctuation "(") ^^ wordL (TaggedText.tagOperator nm) ^^ wordL (TaggedText.tagPunctuation ")")
+    if IsOperatorOrBacktickedName nm then wordL (TaggedTextOps.tagPunctuation "(") ^^ wordL (TaggedTextOps.tagOperator nm) ^^ wordL (TaggedTextOps.tagPunctuation ")")
     else wordL (nonOpTagged nm)
 
 let opNameCons = CompileOpName "::"
@@ -411,29 +414,31 @@ let IsPunctuation s =
 let IsTernaryOperator s = 
     (DecompileOpName s = qmarkSet)
 
-/// EQUALS, INFIX_COMPARE_OP, LESS, GREATER
-let relational = [| "=";"!=";"<";">";"$"|]
+let IsInfixOperator =
 
-/// INFIX_AT_HAT_OP
-let concat = [| "@";"^" |]
+    /// EQUALS, INFIX_COMPARE_OP, LESS, GREATER
+    let relational = [| "=";"!=";"<";">";"$"|]
 
-/// PLUS_MINUS_OP, MINUS
-let plusMinus = [| "+"; "-" |]
+    /// INFIX_AT_HAT_OP
+    let concat = [| "@";"^" |]
 
-/// PERCENT_OP, STAR, INFIX_STAR_DIV_MOD_OP
-let otherMath = [| "*";"/";"%" |]
+    /// PLUS_MINUS_OP, MINUS
+    let plusMinus = [| "+"; "-" |]
 
-/// Characters ignored at the start of the operator name
-/// when determining whether an operator is an infix operator.
-let ignoredChars = [| '.'; '?' |]
+    /// PERCENT_OP, STAR, INFIX_STAR_DIV_MOD_OP
+    let otherMath = [| "*";"/";"%" |]
 
-// Certain operator idents are parsed as infix expression operators.
-// The parsing as infix operators is hardwired in the grammar [see declExpr productions]
-// where certain operator tokens are accepted in infix forms, i.e. <expr> <op> <expr>.
-// The lexer defines the strings that lead to those tokens.
-//------
-// This function recognises these "infix operator" names.
-let IsInfixOperator s = (* where s is assumed to be a compiled name *) 
+    /// Characters ignored at the start of the operator name
+    /// when determining whether an operator is an infix operator.
+    let ignoredChars = [| '.'; '?' |]
+
+    fun s (* where s is assumed to be a compiled name *) ->
+    // Certain operator idents are parsed as infix expression operators.
+    // The parsing as infix operators is hardwired in the grammar [see declExpr productions]
+    // where certain operator tokens are accepted in infix forms, i.e. <expr> <op> <expr>.
+    // The lexer defines the strings that lead to those tokens.
+    //------
+    // This function recognises these "infix operator" names.
     let s = DecompileOpName s
     let skipIgnoredChars = s.TrimStart(ignoredChars)
     let afterSkipStartsWith prefix   = skipIgnoredChars.StartsWithOrdinal(prefix)
@@ -623,7 +628,7 @@ let IsActivePatternName (name: string) =
         isCoreActivePatternName name 1 false
 
 type ActivePatternInfo = 
-    | APInfo of bool * (string  * range) list * range
+    | APInfo of bool * (string  * Range.range) list * Range.range
 
     member x.IsTotal = let (APInfo(p, _, _)) = x in p
 
@@ -633,23 +638,23 @@ type ActivePatternInfo =
 
     member x.Range = let (APInfo(_, _, m)) = x in m
 
-let ActivePatternInfoOfValName nm (m: range) = 
+let ActivePatternInfoOfValName nm (m: Range.range) = 
     // Note: The approximate range calculations in this code assume the name is of the form "(|A|B|)" not "(|  A   |   B   |)"
     // The ranges are used for IDE refactoring support etc.  If names of the second type are used,
     // renaming may be inaccurate/buggy. However names of the first form are dominant in F# code.
-    let rec loop (nm: string) (mp: range) = 
+    let rec loop (nm: string) (mp: Range.range) = 
         let n = nm.IndexOf '|'
         if n > 0 then 
-            let m1 = Range.mkRange mp.FileName mp.Start (Position.mkPos mp.StartLine (mp.StartColumn + n))
-            let m2 = Range.mkRange mp.FileName (Position.mkPos mp.StartLine (mp.StartColumn + n + 1)) mp.End
+            let m1 = Range.mkRange mp.FileName mp.Start (Range.mkPos mp.StartLine (mp.StartColumn + n))
+            let m2 = Range.mkRange mp.FileName (Range.mkPos mp.StartLine (mp.StartColumn + n + 1)) mp.End
             (nm.[0..n-1], m1) :: loop nm.[n+1..] m2
         else
-            let m1 = Range.mkRange mp.FileName mp.Start (Position.mkPos mp.StartLine (mp.StartColumn + nm.Length))
+            let m1 = Range.mkRange mp.FileName mp.Start (Range.mkPos mp.StartLine (mp.StartColumn + nm.Length))
             [(nm, m1)]
     let nm = DecompileOpName nm
     if IsActivePatternName nm then 
         // Skip the '|' at each end when recovering ranges
-        let m0 = Range.mkRange m.FileName (Position.mkPos m.StartLine (m.StartColumn + 1)) (Position.mkPos m.EndLine (m.EndColumn - 1)) 
+        let m0 = Range.mkRange m.FileName (Range.mkPos m.StartLine (m.StartColumn + 1)) (Range.mkPos m.EndLine (m.EndColumn - 1)) 
         let names = loop nm.[1..nm.Length-2] m0
         let resH, resT = List.frontAndBack names
         Some(if fst resT = "_" then APInfo(false, resH, m) else APInfo(true, names, m))
@@ -749,10 +754,6 @@ module CustomOperations =
     let Into = "into"
 
 let unassignedTyparName = "?"
-
-let FormatAndOtherOverloadsString remainingOverloads = FSComp.SR.typeInfoOtherOverloads(remainingOverloads)
-
-let GetLongNameFromString x = SplitNamesForILPath x
 
 //--------------------------------------------------------------------------
 // Resource format for pickled data

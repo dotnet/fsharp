@@ -2,7 +2,9 @@
 
 namespace Internal.Utilities
 
-open FSharp.Core.OptimizedClosures
+open Microsoft.FSharp.Core
+open Microsoft.FSharp.Core.OptimizedClosures
+
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module internal ResizeArray =

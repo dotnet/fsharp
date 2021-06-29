@@ -20,29 +20,29 @@ type internal ISetThemeColors = abstract member SetColors: unit -> unit
 type MaybeBuilder () =
     // 'T -> M<'T>
     [<DebuggerStepThrough>]
-    member inline _.Return value: 'T option =
+    member inline __.Return value: 'T option =
         Some value
 
     // M<'T> -> M<'T>
     [<DebuggerStepThrough>]
-    member inline _.ReturnFrom value: 'T option =
+    member inline __.ReturnFrom value: 'T option =
         value
 
     // unit -> M<'T>
     [<DebuggerStepThrough>]
-    member inline _.Zero (): unit option =
+    member inline __.Zero (): unit option =
         Some ()     // TODO: Should this be None?
 
     // (unit -> M<'T>) -> M<'T>
     [<DebuggerStepThrough>]
-    member _.Delay (f: unit -> 'T option): 'T option =
+    member __.Delay (f: unit -> 'T option): 'T option =
         f ()
 
     // M<'T> -> M<'T> -> M<'T>
     // or
     // M<unit> -> M<'T> -> M<'T>
     [<DebuggerStepThrough>]
-    member inline _.Combine (r1, r2: 'T option): 'T option =
+    member inline __.Combine (r1, r2: 'T option): 'T option =
         match r1 with
         | None ->
             None
@@ -51,12 +51,12 @@ type MaybeBuilder () =
 
     // M<'T> * ('T -> M<'U>) -> M<'U>
     [<DebuggerStepThrough>]
-    member inline _.Bind (value, f: 'T -> 'U option): 'U option =
+    member inline __.Bind (value, f: 'T -> 'U option): 'U option =
         Option.bind f value
 
     // 'T * ('T -> M<'U>) -> M<'U> when 'U :> IDisposable
     [<DebuggerStepThrough>]
-    member _.Using (resource: ('T :> System.IDisposable), body: _ -> _ option): _ option =
+    member __.Using (resource: ('T :> System.IDisposable), body: _ -> _ option): _ option =
         try body resource
         finally
             if not <| obj.ReferenceEquals (null, box resource) then
@@ -88,23 +88,23 @@ let maybe = MaybeBuilder()
 [<Sealed>]
 type AsyncMaybeBuilder () =
     [<DebuggerStepThrough>]
-    member _.Return value : Async<'T option> = Some value |> async.Return
+    member __.Return value : Async<'T option> = Some value |> async.Return
 
     [<DebuggerStepThrough>]
-    member _.ReturnFrom value : Async<'T option> = value
+    member __.ReturnFrom value : Async<'T option> = value
 
     [<DebuggerStepThrough>]
-    member _.ReturnFrom (value: 'T option) : Async<'T option> = async.Return value
+    member __.ReturnFrom (value: 'T option) : Async<'T option> = async.Return value
 
     [<DebuggerStepThrough>]
-    member _.Zero () : Async<unit option> =
+    member __.Zero () : Async<unit option> =
         Some () |> async.Return
 
     [<DebuggerStepThrough>]
-    member _.Delay (f : unit -> Async<'T option>) : Async<'T option> = async.Delay f
+    member __.Delay (f : unit -> Async<'T option>) : Async<'T option> = async.Delay f
 
     [<DebuggerStepThrough>]
-    member _.Combine (r1, r2 : Async<'T option>) : Async<'T option> =
+    member __.Combine (r1, r2 : Async<'T option>) : Async<'T option> =
         async {
             let! r1' = r1
             match r1' with
@@ -113,7 +113,7 @@ type AsyncMaybeBuilder () =
         }
 
     [<DebuggerStepThrough>]
-    member _.Bind (value: Async<'T option>, f : 'T -> Async<'U option>) : Async<'U option> =
+    member __.Bind (value: Async<'T option>, f : 'T -> Async<'U option>) : Async<'U option> =
         async {
             let! value' = value
             match value' with
@@ -122,14 +122,14 @@ type AsyncMaybeBuilder () =
         }
 
     [<DebuggerStepThrough>]
-    member _.Bind (value: System.Threading.Tasks.Task<'T>, f : 'T -> Async<'U option>) : Async<'U option> =
+    member __.Bind (value: System.Threading.Tasks.Task<'T>, f : 'T -> Async<'U option>) : Async<'U option> =
         async {
             let! value' = Async.AwaitTask value
             return! f value'
         }
 
     [<DebuggerStepThrough>]
-    member _.Bind (value: 'T option, f : 'T -> Async<'U option>) : Async<'U option> =
+    member __.Bind (value: 'T option, f : 'T -> Async<'U option>) : Async<'U option> =
         async {
             match value with
             | None -> return None
@@ -137,7 +137,7 @@ type AsyncMaybeBuilder () =
         }
 
     [<DebuggerStepThrough>]
-    member _.Using (resource : ('T :> IDisposable), body : 'T -> Async<'U option>) : Async<'U option> =
+    member __.Using (resource : ('T :> IDisposable), body : 'T -> Async<'U option>) : Async<'U option> =
         async {
             use resource = resource
             return! body resource
@@ -156,11 +156,11 @@ type AsyncMaybeBuilder () =
             x.While (enum.MoveNext, x.Delay (fun () -> body enum.Current)))
 
     [<DebuggerStepThrough>]
-    member inline _.TryWith (computation : Async<'T option>, catchHandler : exn -> Async<'T option>) : Async<'T option> =
+    member inline __.TryWith (computation : Async<'T option>, catchHandler : exn -> Async<'T option>) : Async<'T option> =
             async.TryWith (computation, catchHandler)
 
     [<DebuggerStepThrough>]
-    member inline _.TryFinally (computation : Async<'T option>, compensation : unit -> unit) : Async<'T option> =
+    member inline __.TryFinally (computation : Async<'T option>, compensation : unit -> unit) : Async<'T option> =
             async.TryFinally (computation, compensation)
 
 let asyncMaybe = AsyncMaybeBuilder()
@@ -172,14 +172,6 @@ let inline liftAsync (computation : Async<'T>) : Async<'T option> =
     }
 
 let liftTaskAsync task = task |> Async.AwaitTask |> liftAsync
-
-module Array =
-    /// Returns a new array with an element replaced with a given value.
-    let replace index value (array: _ []) =
-        if index >= array.Length then raise (IndexOutOfRangeException "index")
-        let res = Array.copy array
-        res.[index] <- value
-        res
 
 module Async =
     let map (f: 'T -> 'U) (a: Async<'T>) : Async<'U> =

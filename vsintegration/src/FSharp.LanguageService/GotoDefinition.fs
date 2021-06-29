@@ -8,9 +8,8 @@ open System
 open System.Diagnostics
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop 
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.EditorServices
-open FSharp.Compiler.Tokenization
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 
 module internal OperatorToken =
     
@@ -74,23 +73,23 @@ module internal GotoDefinition =
                         |> GotoDefinitionResult_DEPRECATED.MakeError
                     else
                       match typedResults.GetDeclarationLocation (line+1, colIdent, lineStr, qualId, false) with
-                      | FindDeclResult.DeclNotFound(reason) ->
+                      | FSharpFindDeclResult.DeclNotFound(reason) ->
                           if makeAnotherAttempt then gotoDefinition true
                           else
                           Trace.Write("LanguageService", sprintf "Goto definition failed: Reason %+A" reason)
                           let text = 
                               match reason with                    
-                              | FindDeclFailureReason.Unknown _message -> Strings.GotoDefinitionFailed_Generic()
-                              | FindDeclFailureReason.NoSourceCode -> Strings.GotoDefinitionFailed_NotSourceCode()
-                              | FindDeclFailureReason.ProvidedType(typeName) -> String.Format(Strings.GotoDefinitionFailed_ProvidedType(), typeName)
-                              | FindDeclFailureReason.ProvidedMember(name) -> String.Format(Strings.GotoDefinitionFailed_ProvidedMember(), name)
+                              | FSharpFindDeclFailureReason.Unknown _message -> Strings.GotoDefinitionFailed_Generic()
+                              | FSharpFindDeclFailureReason.NoSourceCode -> Strings.GotoDefinitionFailed_NotSourceCode()
+                              | FSharpFindDeclFailureReason.ProvidedType(typeName) -> String.Format(Strings.GotoDefinitionFailed_ProvidedType(), typeName)
+                              | FSharpFindDeclFailureReason.ProvidedMember(name) -> String.Format(Strings.GotoDefinitionFailed_ProvidedMember(), name)
                           GotoDefinitionResult_DEPRECATED.MakeError text
-                      | FindDeclResult.DeclFound m when System.IO.File.Exists m.FileName -> 
+                      | FSharpFindDeclResult.DeclFound m when System.IO.File.Exists m.FileName -> 
                           let span = TextSpan (iStartLine = m.StartLine-1, iEndLine = m.StartLine-1, iStartIndex = m.StartColumn, iEndIndex = m.StartColumn) 
                           GotoDefinitionResult_DEPRECATED.MakeSuccess(m.FileName, span)
-                      | FindDeclResult.DeclFound _ (* File does not exist *) -> 
+                      | FSharpFindDeclResult.DeclFound _ (* File does not exist *) -> 
                           GotoDefinitionResult_DEPRECATED.MakeError(Strings.GotoDefinitionFailed_NotSourceCode())
-                      | FindDeclResult.ExternalDecl _ -> 
+                      | FSharpFindDeclResult.ExternalDecl _ -> 
                           GotoDefinitionResult_DEPRECATED.MakeError(Strings.GotoDefinitionFailed_NotSourceCode())
                 else
                     Trace.Write("LanguageService", "Goto definition: No 'TypeCheckInfo' available")

@@ -4,7 +4,8 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.Text
-open FSharp.Compiler.CodeAnalysis
+open Microsoft.CodeAnalysis.Editor
+open FSharp.Compiler.SourceCodeServices
 open System.Runtime.InteropServices
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
@@ -12,7 +13,11 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 type internal FSharpBraceMatchingService 
     [<ImportingConstructor>]
     (
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
+    
+    static let userOpName = "BraceMatching"
 
     static member GetBraceMatchingResult(checker: FSharpChecker, sourceText: SourceText, fileName, parsingOptions: FSharpParsingOptions, position: int, userOpName: string, [<Optional; DefaultParameterValue(false)>] forFormatting: bool) = 
         async {
@@ -32,9 +37,9 @@ type internal FSharpBraceMatchingService
     interface IFSharpBraceMatcher with
         member this.FindBracesAsync(document, position, cancellationToken) = 
             asyncMaybe {
-                let! checker, _, parsingOptions, _ = document.GetFSharpCompilationOptionsAsync(nameof(FSharpBraceMatchingService)) |> liftAsync
+                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! (left, right) = FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, document.Name, parsingOptions, position, nameof(FSharpBraceMatchingService))
+                let! (left, right) = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, parsingOptions, position, userOpName)
                 let! leftSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, left)
                 let! rightSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, right)
                 return FSharpBraceMatchingResult(leftSpan, rightSpan)

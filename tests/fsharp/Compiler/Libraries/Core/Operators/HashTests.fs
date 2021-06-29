@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Test.Utilities
 
 [<TestFixture>]
@@ -20,7 +20,7 @@ module ``Hash Tests`` =
             """
 hash id |> ignore
             """
-            FSharpDiagnosticSeverity.Error
+            FSharpErrorSeverity.Error
             1
             (2, 6, 2, 8)
             "The type '('a -> 'a)' does not support the 'equality' constraint because it is a function type"

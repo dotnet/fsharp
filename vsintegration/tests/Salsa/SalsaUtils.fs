@@ -7,8 +7,7 @@ open System.IO
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.TextManager.Interop
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.EditorServices
+open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
 
 open Salsa.Salsa

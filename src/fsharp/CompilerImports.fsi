@@ -5,24 +5,24 @@
 module internal FSharp.Compiler.CompilerImports
 
 open System
-open Internal.Utilities.Library
+
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerConfig
-open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Optimizer
+open FSharp.Compiler.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.BuildGraph
-open FSharp.Compiler.Text
 open FSharp.Core.CompilerServices
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif
+
+open Microsoft.DotNet.DependencyManager
 
 /// This exception is an old-style way of reporting a diagnostic
 exception AssemblyNotResolved of (*originalName*) string * range
@@ -41,27 +41,13 @@ val IsOptimizationDataResource: ILResource -> bool
 
 /// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource: ILResource -> bool
-
 val GetSignatureDataResourceName: ILResource -> string
 
-/// Encode the F# interface data into a set of IL attributes and resources
-val EncodeSignatureData:
-    tcConfig:TcConfig *
-    tcGlobals:TcGlobals *
-    exportRemapping:Remap *
-    generatedCcu: CcuThunk *
-    outfile: string *
-    isIncrementalBuild: bool
-      -> ILAttribute list * ILResource list
+/// Write F# signature data as an IL resource
+val WriteSignatureData: TcConfig * TcGlobals * Remap * CcuThunk * filename: string * inMem: bool -> ILResource
 
-val EncodeOptimizationData: 
-    tcGlobals:TcGlobals *
-    tcConfig:TcConfig *
-    outfile: string *
-    exportRemapping:Remap *
-    (CcuThunk * #CcuOptimizationInfo) *
-    isIncrementalBuild: bool
-      -> ILResource list
+/// Write F# optimization data as an IL resource
+val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk * Optimizer.LazyModuleInfo -> ILResource
 
 [<RequireQualifiedAccess>]
 type ResolveAssemblyReferenceMode =
@@ -123,18 +109,11 @@ type TcAssemblyResolutions =
 
     member GetAssemblyResolutions: unit -> AssemblyResolution list
 
-    static member SplitNonFoundationalResolutions: tcConfig: TcConfig -> AssemblyResolution list * AssemblyResolution list * UnresolvedAssemblyReference list
+    static member SplitNonFoundationalResolutions: ctok: CompilationThreadToken * tcConfig: TcConfig -> AssemblyResolution list * AssemblyResolution list * UnresolvedAssemblyReference list
 
-    static member BuildFromPriorResolutions: tcConfig: TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
+    static member BuildFromPriorResolutions: ctok: CompilationThreadToken * tcConfig: TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
 
-    static member GetAssemblyResolutionInformation: tcConfig: TcConfig -> AssemblyResolution list * UnresolvedAssemblyReference list
-
-[<Sealed>]
-type RawFSharpAssemblyData =
-
-    new : ilModule: ILModuleDef * ilAssemblyRefs: ILAssemblyRef list -> RawFSharpAssemblyData
-
-    interface IRawFSharpAssemblyData
+    static member GetAssemblyResolutionInformation: ctok: CompilationThreadToken * tcConfig: TcConfig -> AssemblyResolution list * UnresolvedAssemblyReference list
 
 /// Represents a table of imported assemblies with their resolutions.
 /// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
@@ -174,10 +153,10 @@ type TcImports =
 
     /// Try to find the given assembly reference by simple name.  Used in magic assembly resolution.  Effectively does implicit
     /// unification of assemblies by simple assembly name.
-    member TryFindExistingFullyQualifiedPathBySimpleAssemblyName: string -> string option
+    member TryFindExistingFullyQualifiedPathBySimpleAssemblyName: CompilationThreadToken * string -> string option
 
     /// Try to find the given assembly reference.
-    member TryFindExistingFullyQualifiedPathByExactAssemblyRef: ILAssemblyRef -> string option
+    member TryFindExistingFullyQualifiedPathByExactAssemblyRef: CompilationThreadToken * ILAssemblyRef -> string option
 
 #if !NO_EXTENSIONTYPING
     /// Try to find a provider-generated assembly
@@ -191,24 +170,31 @@ type TcImports =
     member internal Base: TcImports option
 
     static member BuildFrameworkTcImports:
+        CompilationThreadToken *
         TcConfigProvider *
         AssemblyResolution list *
         AssemblyResolution list
-            -> NodeCode<TcGlobals * TcImports>
+            -> Cancellable<TcGlobals * TcImports>
 
     static member BuildNonFrameworkTcImports:
+        CompilationThreadToken * 
         TcConfigProvider * 
+        TcGlobals * 
         TcImports * 
         AssemblyResolution list * 
         UnresolvedAssemblyReference list * 
         DependencyProvider 
-            -> NodeCode<TcImports>
+            -> Cancellable<TcImports>
 
     static member BuildTcImports:
+        ctok: CompilationThreadToken *
         tcConfigP: TcConfigProvider * 
         dependencyProvider: DependencyProvider 
-            -> NodeCode<TcGlobals * TcImports>
+            -> Cancellable<TcGlobals * TcImports>
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
 val RequireDLL: ctok: CompilationThreadToken * tcImports: TcImports * tcEnv: TcEnv * thisAssemblyName: string * referenceRange: range * file: string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
+
+/// This list is the default set of references for "non-project" files. 
+val DefaultReferencesForScriptsAndOutOfProjectSources: bool -> string list

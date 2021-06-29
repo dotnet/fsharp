@@ -18,7 +18,7 @@
 *)
 
 #r "FSharp.Compiler.Service.dll"
-open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.SourceCodeServices
 open System.IO
 
 let scs = FSharpChecker.Create()

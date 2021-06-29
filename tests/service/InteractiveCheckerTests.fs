@@ -11,10 +11,10 @@ module FSharp.Compiler.Service.Tests.InteractiveChecker
 open NUnit.Framework
 open FsUnit
 open System
+open FSharp.Compiler
+open FSharp.Compiler.Range
 open FSharp.Compiler.Service.Tests.Common
-open FSharp.Compiler.Syntax
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Range
+open FSharp.Compiler.SyntaxTree
 
 let internal longIdentToString (longIdent: LongIdent) =
     String.Join(".", longIdent |> List.map (fun ident -> ident.ToString()))
@@ -27,11 +27,11 @@ let internal identsAndRanges (input: ParsedInput) =
     let identAndRange ident (range: range) =
         (ident, rangeToTuple range)
     let extractFromComponentInfo (componentInfo: SynComponentInfo) =
-        let ((SynComponentInfo.SynComponentInfo(_attrs, _typarDecls, _typarConstraints, longIdent, _, _, _, range))) = componentInfo
+        let ((SynComponentInfo.ComponentInfo(_attrs, _typarDecls, _typarConstraints, longIdent, _, _, _, range))) = componentInfo
         // TODO : attrs, typarDecls and typarConstraints
         [identAndRange (longIdentToString longIdent) range]
     let extractFromTypeDefn (typeDefn: SynTypeDefn) =
-        let (SynTypeDefn(componentInfo, _repr, _members, _, _)) = typeDefn
+        let (SynTypeDefn.TypeDefn(componentInfo, _repr, _members, _)) = typeDefn
         // TODO : repr and members
         extractFromComponentInfo componentInfo
     let rec extractFromModuleDecl (moduleDecl: SynModuleDecl) =
@@ -59,9 +59,11 @@ let internal identsAndRanges (input: ParsedInput) =
     | ParsedInput.SigFile _ -> []
 
 let internal parseAndExtractRanges code =
-    let file = "Test.fs"
+    let file = "Test"
     let result = parseSourceCode (file, code)
-    result |> identsAndRanges
+    match result with
+    | Some tree -> tree |> identsAndRanges
+    | None -> failwith "fail to parse..."
 
 let input =
     """

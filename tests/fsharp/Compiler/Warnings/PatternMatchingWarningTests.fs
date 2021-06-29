@@ -2,7 +2,7 @@
 
 open NUnit.Framework
 open FSharp.Test.Utilities
-open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>]
 module PatternMatchingWarningTests =

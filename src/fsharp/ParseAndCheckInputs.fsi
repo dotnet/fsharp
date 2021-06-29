@@ -3,19 +3,19 @@
 /// Contains logic to coordinate the parsing and checking of one or a group of files
 module internal FSharp.Compiler.ParseAndCheckInputs
 
-open Internal.Utilities.Library
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
-open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Syntax
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.UnicodeLexing
+open FSharp.Compiler.TcGlobals
+open Microsoft.DotNet.DependencyManager
 
 val IsScript: string -> bool
 
@@ -30,7 +30,7 @@ type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>
 val DeduplicateParsedInputModuleName: ModuleNamesDict -> ParsedInput -> ParsedInput * ModuleNamesDict
 
 /// Parse a single input (A signature file or implementation file)
-val ParseInput: (Lexbuf -> Parser.token) * ErrorLogger * Lexbuf * string option * string * isLastCompiland:(bool * bool) -> ParsedInput
+val ParseInput: (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland:(bool * bool) -> ParsedInput
 
 /// A general routine to process hash directives
 val ProcessMetaCommandsFromInput : 
@@ -47,10 +47,7 @@ val ApplyMetaCommandsFromInputToTcConfig: TcConfig * ParsedInput * string * Depe
 val ApplyNoWarnsToTcConfig: TcConfig * ParsedInput * string -> TcConfig
 
 /// Parse one input file
-val ParseOneInputFile: TcConfig * Lexhelp.LexResourceManager * conditionalCompilationDefines: string list * string * isLastCompiland: (bool * bool) * ErrorLogger * retryLocked: bool -> ParsedInput
-
-/// Parse multiple input files from disk
-val ParseInputFiles: TcConfig * Lexhelp.LexResourceManager * conditionalCompilationDefines: string list * string list * ErrorLogger * Exiter * createErrorLogger: (Exiter -> CapturingErrorLogger) * retryLocked: bool -> (ParsedInput * string) list
+val ParseOneInputFile: TcConfig * Lexhelp.LexResourceManager * string list * string * isLastCompiland: (bool * bool) * ErrorLogger * (*retryLocked*) bool -> ParsedInput option
 
 /// Get the initial type checking environment including the loading of mscorlib/System.Core, FSharp.Core
 /// applying the InternalsVisibleTo in referenced assemblies and opening 'Checked' if requested.
@@ -83,7 +80,7 @@ val GetInitialTcState:
     range * string * TcConfig * TcGlobals * TcImports * NiceNameGenerator * TcEnv -> TcState
 
 /// Check one input, returned as an Eventually computation
-val TypeCheckOneInput:
+val TypeCheckOneInputEventually :
     checkForErrors:(unit -> bool) *
     TcConfig *
     TcImports *
@@ -93,7 +90,7 @@ val TypeCheckOneInput:
     TcState *
     ParsedInput *
     skipImplIfSigExists: bool
-      -> Cancellable<(TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState>
+      -> Eventually<(TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState>
 
 /// Finish the checking of multiple inputs 
 val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option * 'U) list * TcState -> (TcEnv * TopAttribs * 'T list * 'U list) * TcState
@@ -102,7 +99,7 @@ val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option * 'U) list * 
 val TypeCheckClosedInputSetFinish:
     TypedImplFile list *
     TcState
-      -> TcState * TypedImplFile list * ModuleOrNamespace
+      -> TcState * TypedImplFile list
 
 /// Check a closed set of inputs 
 val TypeCheckClosedInputSet:
@@ -116,7 +113,7 @@ val TypeCheckClosedInputSet:
       -> TcState * TopAttribs * TypedImplFile list * TcEnv
 
 /// Check a single input and finish the checking
-val TypeCheckOneInputAndFinish :
+val TypeCheckOneInputAndFinishEventually :
     checkForErrors: (unit -> bool) *
     TcConfig *
     TcImports *
@@ -125,7 +122,7 @@ val TypeCheckOneInputAndFinish :
     NameResolution.TcResultsSink *
     TcState *
     ParsedInput 
-      -> Cancellable<(TcEnv * TopAttribs * TypedImplFile list * ModuleOrNamespaceType list) * TcState>
+      -> Eventually<(TcEnv * TopAttribs * TypedImplFile list * ModuleOrNamespaceType list) * TcState>
 
 val GetScopedPragmasForInput: input: ParsedInput -> ScopedPragma list
 
@@ -133,13 +130,8 @@ val ParseOneInputLexbuf:
     tcConfig: TcConfig *
     lexResourceManager: Lexhelp.LexResourceManager *
     conditionalCompilationDefines: string list *
-    lexbuf: Lexbuf *
+    lexbuf: UnicodeLexing.Lexbuf *
     filename: string *
     isLastCompiland: (bool * bool) *
     errorLogger: ErrorLogger
-      -> ParsedInput
-
-val EmptyParsedInput:
-    filename: string *
-    isLastCompiland: (bool * bool)
-      -> ParsedInput 
+      ->  ParsedInput option

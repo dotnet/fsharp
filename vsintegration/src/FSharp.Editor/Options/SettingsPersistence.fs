@@ -58,14 +58,14 @@ type SettingsStore(serviceProvider: IServiceProvider) =
         |> Option.iter (fun json -> try JsonConvert.PopulateObject(json, copy) with _ -> ())
         copy
 
-    member _.Get() = getCached()
+    member __.Get() = getCached()
 
     // Used by the AbstractOptionPage to populate dialog controls.
     // We always have the latest value in the cache so we just return
     // cloned value here because it may be altered by the UI if declared with [<CLIMutable>]
-    member _.LoadSettings() = getCached() |> clone
+    member __.LoadSettings() = getCached() |> clone
 
-    member _.SaveSettings settings =
+    member __.SaveSettings settings =
         // We replace default serialization with Newtonsoft.Json for easy schema evolution.
         // For example, if we add a new bool field to the record, representing another checkbox in Options dialog
         // deserialization will still work fine. When we pass default value to JsonConvert.PopulateObject it will
@@ -74,7 +74,7 @@ type SettingsStore(serviceProvider: IServiceProvider) =
         |> Async.AwaitTask |> Async.Start
 
     // This is the point we retrieve the initial value and subscribe to watch for changes
-    member _.Register (defaultSettings : 'options) =
+    member __.Register (defaultSettings : 'options) =
         defaultSettings |> updateFromStore |> keepInCache
         let subset = defaultSettings.GetType() |> storageKey |> settingsManager.GetSubset
         // this event is also raised when a setting change occurs in another VS instance, so we can keep everything in sync

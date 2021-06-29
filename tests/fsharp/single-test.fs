@@ -2,12 +2,13 @@
 
 open System
 open System.IO
+open System.Diagnostics
 open System.Reflection
+open NUnit.Framework
 open TestFramework
 open HandleExpects
-open FSharp.Compiler.IO
 
-type Permutation =
+type Permutation = 
     | FSC_CORECLR
     | FSC_CORECLR_BUILDONLY
     | FSI_CORECLR
@@ -94,7 +95,7 @@ let generateOverrides =
 // Arguments:
 //    pc = ProjectConfiguration
 //    outputType = OutputType.Exe, OutputType.Library or OutputType.Script
-//    targetFramework optimize = "net472" or net5.0 etc ...
+//    targetFramework optimize = "net472" OR NETCOREAPP3.1 etc ...
 //    optimize = true or false
 //    configuration = "Release" or "Debug"
 //
@@ -209,12 +210,12 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
     let extraSources = ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
     let utilitySources = [__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs"]
     let referenceItems =  if String.IsNullOrEmpty(copyFiles) then [] else [copyFiles]
-    let framework = "net5.0"
+    let framework = "netcoreapp3.1"
 
     // Arguments:
     //    outputType = OutputType.Exe, OutputType.Library or OutputType.Script
     //    compilerType = "coreclr" or "net40"
-    //    targetFramework optimize = "net472" OR net5.0 etc ...
+    //    targetFramework optimize = "net472" OR NETCOREAPP3.1 etc ...
     //    optimize = true or false
     let executeSingleTestBuildAndRun outputType compilerType targetFramework optimize buildOnly =
         let mutable result = false
@@ -249,7 +250,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
         let findFirstSourceFile (pc:ProjectConfiguration)  =
             let sources = List.append pc.SourceItems pc.ExtraSourceItems
-            let found = sources |> List.tryFind(fun source -> FileSystem.FileExistsShim(Path.Combine(directory, source)))
+            let found = sources |> List.tryFind(fun source -> File.Exists(Path.Combine(directory, source)))
             match found with
             | Some p -> Path.Combine(directory, p)
             | None -> failwith "Missing SourceFile in test case"
@@ -278,7 +279,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                     let cfg = { cfg with Directory = directory }
                     let result = execBothToOutNoCheck cfg directory buildOutputFile cfg.DotNetExe  (sprintf "run -f %s" targetFramework)
                     if not (buildOnly) then
-                        result |> checkResult
+                        result |> checkResult 
                         testOkFile.CheckExists()
                 executeFsc compilerType targetFramework
                 if buildOnly then verifyResults (findFirstSourceFile pc) buildOutputFile
@@ -303,9 +304,9 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                 printfn "Filename: %s" projectFileName
 
     match p with
-    | FSC_CORECLR -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" true false
-    | FSC_CORECLR_BUILDONLY -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" true true
-    | FSI_CORECLR -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net5.0" true false
+    | FSC_CORECLR -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "netcoreapp3.1" true false
+    | FSC_CORECLR_BUILDONLY -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "netcoreapp3.1" true true
+    | FSI_CORECLR -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "netcoreapp3.1" true false
 
 #if !NETCOREAPP
     | FSC_BUILDONLY -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" false true
@@ -313,7 +314,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
     | FSC_OPT_MINUS_DEBUG -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" false false
     | FSI_FILE -> executeSingleTestBuildAndRun OutputType.Script "net40" "net472" true false
 
-    | FSI_STDIN ->
+    | FSI_STDIN -> 
         use cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
         let sources = extraSources |> List.filter (fileExists cfg)
@@ -322,11 +323,11 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
         testOkFile.CheckExists()
 
-    | GENERATED_SIGNATURE ->
+    | GENERATED_SIGNATURE -> 
         use cleanup = (cleanUpFSharpCore cfg)
 
-        let source1 =
-            ["test.ml"; "test.fs"; "test.fsx"]
+        let source1 = 
+            ["test.ml"; "test.fs"; "test.fsx"] 
             |> List.rev
             |> List.tryFind (fileExists cfg)
 
@@ -334,22 +335,22 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
         log "Generated signature file..."
         fsc cfg "%s --sig:tmptest.fsi" cfg.fsc_flags ["tmptest.fs"]
-        (if FileSystem.FileExistsShim("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build") |> ignore
+        (if File.Exists("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build") |> ignore
 
         log "Compiling against generated signature file..."
         fsc cfg "%s -o:tmptest1.exe" cfg.fsc_flags ["tmptest.fsi";"tmptest.fs"]
-        (if FileSystem.FileExistsShim("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build") |> ignore
+        (if File.Exists("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build") |> ignore
 
         log "Verifying built .exe..."
         peverify cfg "tmptest1.exe"
 
-    | AS_DLL ->
+    | AS_DLL -> 
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
         // THe second compilation will not utilize the information from the first in any meaningful way, but the
         // compiler will unpickle the interface and optimization data, so we test unpickling as well.
         use cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
-
+        
         let sources = extraSources |> List.filter (fileExists cfg)
 
         fsc cfg "%s --optimize -a -o:test--optimize-lib.dll -g --langversion:preview " cfg.fsc_flags sources
@@ -363,13 +364,13 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         testOkFile.CheckExists()
 #endif
 
-let singleTestBuildAndRunAux cfg p =
+let singleTestBuildAndRunAux cfg p = 
     singleTestBuildAndRunCore cfg "" p "latest"
 
-let singleTestBuildAndRunWithCopyDlls  cfg copyFiles p =
+let singleTestBuildAndRunWithCopyDlls  cfg copyFiles p = 
     singleTestBuildAndRunCore cfg copyFiles p "latest"
 
-let singleTestBuildAndRun dir p =
+let singleTestBuildAndRun dir p = 
     let cfg = testConfig dir
     singleTestBuildAndRunAux cfg p
 
@@ -386,29 +387,29 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
             }
 
     // REM == Set baseline (fsc vs vs, in case the vs baseline exists)
-    let VSBSLFILE =
+    let VSBSLFILE = 
         if (sprintf "%s.vsbsl" testname) |> (fileExists cfg)
         then sprintf "%s.vsbsl" testname
         else sprintf "%s.bsl" testname
 
     let sources = [
         let src = [ testname + ".mli"; testname + ".fsi"; testname + ".ml"; testname + ".fs"; testname +  ".fsx";
-                    testname + "a.mli"; testname + "a.fsi"; testname + "a.ml"; testname + "a.fs";
+                    testname + "a.mli"; testname + "a.fsi"; testname + "a.ml"; testname + "a.fs"; 
                     testname + "b.mli"; testname + "b.fsi"; testname + "b.ml"; testname + "b.fs"; ]
 
         yield! src |> List.filter (fileExists cfg)
 
-        if fileExists cfg "helloWorldProvider.dll" then
+        if fileExists cfg "helloWorldProvider.dll" then 
             yield "-r:helloWorldProvider.dll"
 
-        if fileExists cfg (testname + "-pre.fs") then
+        if fileExists cfg (testname + "-pre.fs") then 
             yield (sprintf "-r:%s-pre.dll" testname)
 
         ]
 
     if fileExists cfg (testname + "-pre.fs")
         then
-            fsc cfg "%s -a -o:%s-pre.dll" cfg.fsc_flags testname [testname + "-pre.fs"]
+            fsc cfg "%s -a -o:%s-pre.dll" cfg.fsc_flags testname [testname + "-pre.fs"] 
         else ()
 
     if fileExists cfg (testname + "-pre.fsx") then
@@ -433,18 +434,18 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
     let vbslDiff = fsdiff cfg (sprintf "%s.vserr" testname) VSBSLFILE
 
     match diff,vbslDiff with
-    | "","" ->
+    | "","" -> 
         log "Good, output %s.err matched %s.bsl" testname testname
         log "Good, output %s.vserr matched %s" testname VSBSLFILE
-    | l,"" ->
-        log "***** %s.err %s.bsl differed: a bug or baseline may need updating" testname testname
+    | l,"" ->        
+        log "***** %s.err %s.bsl differed: a bug or baseline may need updating" testname testname        
         failwithf "%s.err %s.bsl differ; %A" testname testname l
     | "",l ->
         log "Good, output %s.err matched %s.bsl" testname testname
         log "***** %s.vserr %s differed: a bug or baseline may need updating" testname VSBSLFILE
         failwithf "%s.vserr %s differ; %A" testname VSBSLFILE l
-    | l1,l2 ->
-        log "***** %s.err %s.bsl differed: a bug or baseline may need updating" testname testname
+    | l1,l2 ->    
+        log "***** %s.err %s.bsl differed: a bug or baseline may need updating" testname testname 
         log "***** %s.vserr %s differed: a bug or baseline may need updating" testname VSBSLFILE
         failwithf "%s.err %s.bsl differ; %A; %s.vserr %s differ; %A" testname testname l1 testname VSBSLFILE l2
 

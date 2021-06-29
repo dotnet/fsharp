@@ -16,7 +16,7 @@ type internal FSharpWrapExpressionInParenthesesFixProvider() =
 
     let fixableDiagnosticIds = set ["FS0597"]
         
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
     
     override this.RegisterCodeFixesAsync context : Task =
         async {
@@ -24,13 +24,14 @@ type internal FSharpWrapExpressionInParenthesesFixProvider() =
 
             let getChangedText (sourceText: SourceText) =
                 sourceText.WithChanges(TextChange(TextSpan(context.Span.Start, 0), "("))
-                          .WithChanges(TextChange(TextSpan(context.Span.End + 1, 0), ")"))
+                          .WithChanges(TextChange(TextSpan(context.Span.End, 0), ")"))
 
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title,
                     (fun (cancellationToken: CancellationToken) ->
                         async {
+                            let! cancellationToken = Async.CancellationToken
                             let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                             return context.Document.WithText(getChangedText sourceText)
                         } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),

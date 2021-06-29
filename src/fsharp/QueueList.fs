@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Internal.Utilities.Collections 
+namespace Internal.Utilities 
 
 open System.Collections
 open System.Collections.Generic
@@ -79,3 +79,14 @@ module internal QueueList =
     let appendOne (x:QueueList<_>) y = x.AppendOne(y)
 
     let append (x:QueueList<_>) (ys:QueueList<_>) = x.Append(ys)
+
+#if QUEUE_LIST_UNITTESTS
+module internal Test = 
+    let mutable q = QueueList.empty
+
+    for i = 0 to 100 do 
+        if q |> QueueList.toList <> [0..i-1] then printfn "fail pre check, i = %d" i
+        q <- q.AppendOne(i)
+        if q |> QueueList.toList <> [0..i] then printfn "fail post check, i = %d" i *)
+#endif
+

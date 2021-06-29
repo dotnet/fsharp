@@ -4,16 +4,13 @@
 module internal FSharp.Compiler.ErrorResolutionHints
 
 open Internal.Utilities
-open Internal.Utilities.Library
+open FSharp.Compiler.AbstractIL.Internal.Library
 open System.Collections
 open System.Collections.Generic
 
 let maxSuggestions = 5
-
 let minThresholdForSuggestions = 0.7
-
 let highConfidenceThreshold = 0.85
-
 let minStringLengthForSuggestion = 3
 
 /// We report a candidate if its edit distance is <= the threshold.
@@ -38,18 +35,18 @@ let DemangleOperator (nm: string) =
 type SuggestionBufferEnumerator(tail: int, data: KeyValuePair<float,string> []) =
     let mutable current = data.Length
     interface IEnumerator<string> with
-        member _.Current 
+        member __.Current 
             with get () = 
                 let kvpr = &data.[current]
                 kvpr.Value
     interface System.Collections.IEnumerator with
-        member _.Current with get () = box data.[current].Value
-        member _.MoveNext() =
+        member __.Current with get () = box data.[current].Value
+        member __.MoveNext() =
             current <- current - 1
             current > tail || (current = tail && data.[current] <> Unchecked.defaultof<_>)
-        member _.Reset () = current <- data.Length
+        member __.Reset () = current <- data.Length
     interface System.IDisposable with
-        member _.Dispose () = ()
+        member __.Dispose () = ()
 
 type SuggestionBuffer(idText: string) = 
     let data = Array.zeroCreate<KeyValuePair<float,string>>(maxSuggestions)
@@ -71,7 +68,7 @@ type SuggestionBuffer(idText: string) =
                 data.[pos - 1] <- KeyValuePair(k,v)
                 if tail > 0 then tail <- tail - 1
 
-    member _.Add (suggestion: string) =
+    member __.Add (suggestion: string) =
         if not disableSuggestions then
             if suggestion = idText then // some other parse error happened
                 disableSuggestions <- true
@@ -90,9 +87,9 @@ type SuggestionBuffer(idText: string) =
                 then
                     insert(similarity, suggestion) |> ignore
     
-    member _.Disabled with get () = disableSuggestions
+    member __.Disabled with get () = disableSuggestions
 
-    member _.IsEmpty with get () = disableSuggestions || (tail = maxSuggestions - 1)
+    member __.IsEmpty with get () = disableSuggestions || (tail = maxSuggestions - 1)
 
     interface IEnumerable<string> with
         member this.GetEnumerator () = 

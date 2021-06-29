@@ -5,7 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open NUnit.Framework
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Utilities
-open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.SourceCodeServices
 
 #if NETCOREAPP
 
@@ -51,8 +51,8 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-            (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -173,8 +173,8 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-            (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for those members: 
+            (FSharpErrorSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for those members: 
 \t'ITest.DefaultMethod() : unit'
 \t'ITest.NonDefaultMethod() : unit'
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
@@ -221,8 +221,8 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-            (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -263,8 +263,8 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-            (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for those members: 
+            (FSharpErrorSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for those members: 
 	'ITest.Method1() : unit'
 	'ITest.Method2() : unit'
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
@@ -312,8 +312,8 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3350, (9, 15, 9, 20), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-            (FSharpDiagnosticSeverity.Error, 366, (9, 15, 9, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3350, (9, 15, 9, 20), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 366, (9, 15, 9, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -360,7 +360,7 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 855, (11, 19, 11, 32), "No abstract or interface member was found that corresponds to this override")
+            (FSharpErrorSeverity.Error, 855, (11, 19, 11, 32), "No abstract or interface member was found that corresponds to this override")
         |])
 
     [<Test>]
@@ -410,8 +410,8 @@ let f () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3350, (14, 7, 14, 8), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-            (FSharpDiagnosticSeverity.Error, 3350, (14, 9, 14, 10), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 3350, (14, 7, 14, 8), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 3350, (14, 9, 14, 10), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
         |])
 
     [<Test>]
@@ -461,7 +461,7 @@ let f () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3350, (14, 5, 14, 27), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 3350, (14, 5, 14, 27), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
         |])
 
     [<Test>]
@@ -498,7 +498,7 @@ let f () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3350, (8, 5, 8, 22), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 3350, (8, 5, 8, 22), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
         |])
 
     [<Test>]
@@ -535,7 +535,7 @@ let f () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3350, (8, 5, 8, 19), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 3350, (8, 5, 8, 19), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
         |])
 
     [<Test>]
@@ -576,7 +576,7 @@ let f1 () =
             Compilation.Create(fsharpSource, Fsx, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3350, (9, 5, 9, 15), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 3350, (9, 5, 9, 15), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
         |])
 
     [<Test>]
@@ -626,11 +626,11 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 363, (8, 15, 8, 17), "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface.")
-            (FSharpDiagnosticSeverity.Error, 3350, (9, 15, 9, 17), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-            (FSharpDiagnosticSeverity.Error, 366, (9, 15, 9, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
-            (FSharpDiagnosticSeverity.Error, 3350, (8, 15, 8, 17), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-            (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 363, (8, 15, 8, 17), "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface.")
+            (FSharpErrorSeverity.Error, 3350, (9, 15, 9, 17), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 366, (9, 15, 9, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3350, (8, 15, 8, 17), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 366, (8, 15, 8, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -681,8 +681,8 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3350, (10, 15, 10, 17), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-            (FSharpDiagnosticSeverity.Error, 366, (10, 15, 10, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3350, (10, 15, 10, 17), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 366, (10, 15, 10, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -937,8 +937,8 @@ type Test2 () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3350, (10, 15, 10, 22), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-            (FSharpDiagnosticSeverity.Error, 358, (10, 15, 10, 22), "The override for 'M<'U> : 'U * int -> unit' was ambiguous")
+            (FSharpErrorSeverity.Error, 3350, (10, 15, 10, 22), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 358, (10, 15, 10, 22), "The override for 'M<'U> : 'U * int -> unit' was ambiguous")
         |])
 
 #else
@@ -985,9 +985,9 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3351, (8, 15, 8, 20), "Feature 'default interface member consumption' is not supported by target runtime.")
-            (FSharpDiagnosticSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-            (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3351, (8, 15, 8, 20), "Feature 'default interface member consumption' is not supported by target runtime.")
+            (FSharpErrorSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -1028,7 +1028,7 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3351, (8, 15, 8, 20), "Feature 'default interface member consumption' is not supported by target runtime.")
+            (FSharpErrorSeverity.Error, 3351, (8, 15, 8, 20), "Feature 'default interface member consumption' is not supported by target runtime.")
         |])
 
     [<Test>]
@@ -1078,8 +1078,8 @@ let f () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3351, (14, 5, 14, 27), "Feature 'default interface member consumption' is not supported by target runtime.")
-            (FSharpDiagnosticSeverity.Error, 3350, (14, 5, 14, 27), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 3351, (14, 5, 14, 27), "Feature 'default interface member consumption' is not supported by target runtime.")
+            (FSharpErrorSeverity.Error, 3350, (14, 5, 14, 27), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
         |])
 
 #endif
@@ -1128,7 +1128,7 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -1209,7 +1209,7 @@ type Test () =
 
     interface ITest with
 
-        member _.NonDefaultMethod () =
+        member __.NonDefaultMethod () =
             Console.Write("NonDefaultMethod")
 
 [<EntryPoint>]
@@ -1271,7 +1271,7 @@ type Test () =
     interface ITest with
 
         // protected member
-        member _.M1() = 
+        member __.M1() = 
             Console.Write("Protected")
 
 type Test2 () =
@@ -1280,7 +1280,7 @@ type Test2 () =
     interface ITest2 with
 
         // protected member
-        member _.M1() =
+        member __.M1() =
             Console.Write("ProtectedOverride")
 
 [<EntryPoint>]
@@ -1344,7 +1344,7 @@ open CSharpTest
 let main _ =
     let test =
         { new ITest with
-            member _.M1() =
+            member __.M1() =
                 Console.Write("ObjExprProtected") }
     test.M2 ()
 
@@ -1352,7 +1352,7 @@ let main _ =
 
     let test2 =
         { new ITest2 with
-            member _.M1() = 
+            member __.M1() = 
                 Console.Write("ObjExprProtected2") }
     test2.M2 ()
     0
@@ -1410,7 +1410,7 @@ type Test () =
     interface ITest with
 
         // protected member
-        member _.M1() = 
+        member __.M1() = 
             Console.Write("Protected")
 
 type Test2 () =
@@ -1419,7 +1419,7 @@ type Test2 () =
     interface ITest2 with
 
         // protected member
-        member _.M1() =
+        member __.M1() =
             Console.Write("ProtectedOverride")
 
 let f () =
@@ -1441,8 +1441,8 @@ let f () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 491, (26, 5, 26, 15), "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
-            (FSharpDiagnosticSeverity.Error, 491, (31, 5, 31, 16), "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+            (FSharpErrorSeverity.Error, 491, (26, 5, 26, 15), "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+            (FSharpErrorSeverity.Error, 491, (31, 5, 31, 16), "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
         |])
 
     [<Test>]
@@ -1494,7 +1494,7 @@ type Test () =
             (this :> ITest).M1()
 
         // protected member
-        member _.M1() = 
+        member __.M1() = 
             Console.Write("Protected")
 
 type Test2 () =
@@ -1509,7 +1509,7 @@ type Test2 () =
             (this :> ITest).M1()
 
         // protected member
-        member _.M1() =
+        member __.M1() =
             Console.Write("ProtectedOverride")
             """
 
@@ -1521,10 +1521,10 @@ type Test2 () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 629, (10, 9, 10, 27), "Method 'M1' is not accessible from this code location")
-            (FSharpDiagnosticSeverity.Error, 629, (15, 13, 15, 31), "Method 'M1' is not accessible from this code location")
-            (FSharpDiagnosticSeverity.Error, 629, (25, 9, 25, 28), "Method 'M1' is not accessible from this code location")
-            (FSharpDiagnosticSeverity.Error, 629, (30, 13, 30, 31), "Method 'M1' is not accessible from this code location")
+            (FSharpErrorSeverity.Error, 629, (10, 9, 10, 27), "Method 'M1' is not accessible from this code location")
+            (FSharpErrorSeverity.Error, 629, (15, 13, 15, 31), "Method 'M1' is not accessible from this code location")
+            (FSharpErrorSeverity.Error, 629, (25, 9, 25, 28), "Method 'M1' is not accessible from this code location")
+            (FSharpErrorSeverity.Error, 629, (30, 13, 30, 31), "Method 'M1' is not accessible from this code location")
         |])
 
     [<Test>]
@@ -1556,7 +1556,7 @@ type Test () =
 
     interface ITest with
 
-        member _.NonDefaultMethod () =
+        member __.NonDefaultMethod () =
             Console.Write("NonDefaultMethod")
 
 [<EntryPoint>]
@@ -1606,7 +1606,7 @@ type Test () =
 
     interface ITest with
 
-        member _.NonDefaultMethod () =
+        member __.NonDefaultMethod () =
             Console.Write("NonDefaultMethod")
 
 let f () =
@@ -1623,7 +1623,7 @@ let f () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 39, (16, 10, 16, 23), "The type 'ITest' does not define the field, constructor or member 'DefaultMethod'. Maybe you want one of the following:
+            (FSharpErrorSeverity.Error, 39, (16, 10, 16, 23), "The type 'ITest' does not define the field, constructor or member 'DefaultMethod'. Maybe you want one of the following:
    NonDefaultMethod")
         |])
 
@@ -1673,7 +1673,7 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 855, (11, 19, 11, 32), "No abstract or interface member was found that corresponds to this override")
+            (FSharpErrorSeverity.Error, 855, (11, 19, 11, 32), "No abstract or interface member was found that corresponds to this override")
         |])
 
     [<Test>]
@@ -1708,10 +1708,10 @@ type Test () =
 
     interface ITest with
 
-        member _.DefaultMethod () =
+        member __.DefaultMethod () =
             Console.Write("IVT-")
 
-        member _.NonDefaultMethod () =
+        member __.NonDefaultMethod () =
             Console.Write("NonDefaultMethod")
 
 [<EntryPoint>]
@@ -1797,7 +1797,7 @@ open CSharpTest
 
 [<EntryPoint>]
 let main _ =
-    let test = { new ITest with member _.NonDefaultMethod () = Console.Write("ObjExpr") }
+    let test = { new ITest with member __.NonDefaultMethod () = Console.Write("ObjExpr") }
     test.DefaultMethod ()
     Console.Write("-")
     test.NonDefaultMethod();
@@ -1851,7 +1851,7 @@ let test = { new ITest }
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 366, (7, 12, 7, 25), "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 366, (7, 12, 7, 25), "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -1883,10 +1883,10 @@ type Test () =
 
     interface ITest with
 
-        member _.DefaultMethod () =
+        member __.DefaultMethod () =
             Console.Write("OverrideDefaultMethod")
 
-        member _.NonDefaultMethod () =
+        member __.NonDefaultMethod () =
             Console.Write("NonDefaultMethod")
 
 [<EntryPoint>]
@@ -1936,9 +1936,9 @@ open CSharpTest
 let main _ =
     let test =
         { new ITest with
-            member _.DefaultMethod () =
+            member __.DefaultMethod () =
                 Console.Write("ObjExprOverrideDefaultMethod")
-            member _.NonDefaultMethod () =
+            member __.NonDefaultMethod () =
                 Console.Write("ObjExprNonDefaultMethod") }
     test.DefaultMethod ()
     Console.Write("-")
@@ -2082,16 +2082,16 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 363, (9, 15, 9, 21), "The interface 'ITest1' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface.")
-            (FSharpDiagnosticSeverity.Error, 3352, (10, 15, 10, 21), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 3352, (10, 15, 10, 21), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 366, (10, 15, 10, 21), "No implementation was given for those members: 
+            (FSharpErrorSeverity.Error, 363, (9, 15, 9, 21), "The interface 'ITest1' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface.")
+            (FSharpErrorSeverity.Error, 3352, (10, 15, 10, 21), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 3352, (10, 15, 10, 21), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (10, 15, 10, 21), "No implementation was given for those members: 
 	'ITest1.Method1() : unit'
 	'ITest1.Method2() : unit'
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
-            (FSharpDiagnosticSeverity.Error, 3352, (9, 15, 9, 21), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 3352, (9, 15, 9, 21), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 366, (9, 15, 9, 21), "No implementation was given for those members: 
+            (FSharpErrorSeverity.Error, 3352, (9, 15, 9, 21), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 3352, (9, 15, 9, 21), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (9, 15, 9, 21), "No implementation was given for those members: 
 	'ITest1.Method1() : unit'
 	'ITest1.Method2() : unit'
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
@@ -2165,9 +2165,9 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3352, (9, 15, 9, 21), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 3352, (9, 15, 9, 21), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 366, (9, 15, 9, 21), "No implementation was given for those members: 
+            (FSharpErrorSeverity.Error, 3352, (9, 15, 9, 21), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 3352, (9, 15, 9, 21), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (9, 15, 9, 21), "No implementation was given for those members: 
 	'ITest1.Method1() : unit'
 	'ITest1.Method2() : unit'
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
@@ -2243,9 +2243,9 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3352, (9, 15, 9, 28), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 3352, (9, 15, 9, 28), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 366, (9, 15, 9, 28), "No implementation was given for those members: 
+            (FSharpErrorSeverity.Error, 3352, (9, 15, 9, 28), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 3352, (9, 15, 9, 28), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (9, 15, 9, 28), "No implementation was given for those members: 
 	'ITest1.Method1() : unit'
 	'ITest1.Method2() : unit'
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
@@ -2321,9 +2321,9 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3352, (13, 15, 13, 28), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 3352, (13, 15, 13, 28), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 366, (13, 15, 13, 28), "No implementation was given for those members: 
+            (FSharpErrorSeverity.Error, 3352, (13, 15, 13, 28), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 3352, (13, 15, 13, 28), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (13, 15, 13, 28), "No implementation was given for those members: 
 	'ITest1.Method1() : unit'
 	'ITest1.Method2() : unit'
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
@@ -2393,9 +2393,9 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3352, (13, 15, 13, 28), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 3352, (13, 15, 13, 28), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 366, (13, 15, 13, 28), "No implementation was given for those members: 
+            (FSharpErrorSeverity.Error, 3352, (13, 15, 13, 28), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 3352, (13, 15, 13, 28), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (13, 15, 13, 28), "No implementation was given for those members: 
 	'ITest1.Method1() : unit'
 	'ITest1.Method2() : unit'
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
@@ -2459,9 +2459,9 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3352, (13, 15, 13, 28), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 3352, (13, 15, 13, 28), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 366, (13, 15, 13, 28), "No implementation was given for those members: 
+            (FSharpErrorSeverity.Error, 3352, (13, 15, 13, 28), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 3352, (13, 15, 13, 28), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (13, 15, 13, 28), "No implementation was given for those members: 
 	'ITest1.Method1() : unit'
 	'ITest1.Method2() : unit'
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
@@ -2527,9 +2527,9 @@ type Test () =
 
     interface ICombinedTest with
 
-        member _.Method1 () = Console.Write("FSharpICombinedTest-Method1")
+        member __.Method1 () = Console.Write("FSharpICombinedTest-Method1")
 
-        member _.Method2 () = Console.Write("FSharpICombinedTest-Method2")
+        member __.Method2 () = Console.Write("FSharpICombinedTest-Method2")
 
 [<EntryPoint>]
 let main _ =
@@ -2597,9 +2597,9 @@ type Test () =
 
     interface ICombinedTest with
 
-        member _.Method1 () = Console.Write("FSharpICombinedTest-Method1")
+        member __.Method1 () = Console.Write("FSharpICombinedTest-Method1")
 
-        member _.Method2 () = Console.Write("FSharpICombinedTest-Method2")
+        member __.Method2 () = Console.Write("FSharpICombinedTest-Method2")
 
 [<EntryPoint>]
 let main _ =
@@ -2675,9 +2675,9 @@ type Test () =
     interface ITest2
     interface ITest1 with
 
-        member _.Method1 () = Console.Write("FSharpExplicitTest-Method1")
+        member __.Method1 () = Console.Write("FSharpExplicitTest-Method1")
 
-        member _.Method2 () = Console.Write("FSharpExplicitTest-Method2")
+        member __.Method2 () = Console.Write("FSharpExplicitTest-Method2")
     interface ITest3
 
 [<EntryPoint>]
@@ -2748,7 +2748,7 @@ type Test () =
 
     interface ICombinedTest with
 
-        member _.Method2 () = Console.Write("FSharpICombinedTest-Method2")
+        member __.Method2 () = Console.Write("FSharpICombinedTest-Method2")
             """
 
         let csCmpl =
@@ -2759,8 +2759,8 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3352, (14, 15, 14, 28), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 366, (14, 15, 14, 28), "No implementation was given for 'ITest1.Method1() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3352, (14, 15, 14, 28), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (14, 15, 14, 28), "No implementation was given for 'ITest1.Method1() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -3063,7 +3063,7 @@ type Test () =
 
     interface ICombinedSideTest with
 
-        member _.Method2 () = ()
+        member __.Method2 () = ()
 
     interface IFinalCombinedTest
 
@@ -3263,19 +3263,19 @@ type Test () =
 
     interface IBase with
 
-         member _.Method () = Console.Write("IBase")
+         member __.Method () = Console.Write("IBase")
 
     interface IA1 with
 
-        member _.Method () = Console.Write("IA1")
+        member __.Method () = Console.Write("IA1")
 
     interface IB1 with
 
-        member _.Method () = Console.Write("IB1")
+        member __.Method () = Console.Write("IB1")
 
     interface IC1 with
 
-        member _.Method () = Console.Write("IC1")
+        member __.Method () = Console.Write("IC1")
 
     interface IDiamond1
     interface IDiamond2
@@ -3396,7 +3396,7 @@ type Test () =
 
     interface IBase with
 
-        member _.Method () = Console.Write "123"
+        member __.Method () = Console.Write "123"
 
     interface IC2
     interface IDiamond2
@@ -3500,9 +3500,9 @@ type Test () =
     interface ICombinedSideTest
     interface ITest1 with
 
-        member _.Method1 () = ()
+        member __.Method1 () = ()
 
-        member _.Method2 () = ()
+        member __.Method2 () = ()
 
 [<EntryPoint>]
 let main _ =
@@ -3620,7 +3620,7 @@ type Test2 () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 366, (10, 15, 10, 32), "No implementation was given for 'ITest1.Method2() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 366, (10, 15, 10, 32), "No implementation was given for 'ITest1.Method2() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -3647,7 +3647,7 @@ type Test () =
 
     interface ITest with
 
-        member _.NonDefaultMethod () =
+        member __.NonDefaultMethod () =
             Console.Write("NonDefaultMethod")
 
 [<EntryPoint>]
@@ -3692,9 +3692,9 @@ type Test () =
 
     interface ITest with
 
-        member _.A with get () = "OverrideA"
+        member __.A with get () = "OverrideA"
 
-        member _.NonDefaultMethod () =
+        member __.NonDefaultMethod () =
             Console.Write("NonDefaultMethod")
 
 [<EntryPoint>]
@@ -3892,11 +3892,11 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 363, (8, 15, 8, 17), "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface.")
-            (FSharpDiagnosticSeverity.Error, 3352, (9, 15, 9, 17), "Interface member 'IA.M() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 366, (9, 15, 9, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
-            (FSharpDiagnosticSeverity.Error, 3352, (8, 15, 8, 17), "Interface member 'IA.M() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 363, (8, 15, 8, 17), "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface.")
+            (FSharpErrorSeverity.Error, 3352, (9, 15, 9, 17), "Interface member 'IA.M() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (9, 15, 9, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3352, (8, 15, 8, 17), "Interface member 'IA.M() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (8, 15, 8, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -3947,8 +3947,8 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3352, (10, 15, 10, 17), "Interface member 'IA.M() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 366, (10, 15, 10, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3352, (10, 15, 10, 17), "Interface member 'IA.M() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (10, 15, 10, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -3990,7 +3990,7 @@ type Test () =
     interface IC
     interface IA with
 
-        member _.M () = Console.Write("M")
+        member __.M () = Console.Write("M")
 
 [<EntryPoint>]
 let main _ =
@@ -4077,9 +4077,9 @@ type Test () =
     interface IC
     interface IA with
 
-        member _.M () = Console.Write("M")
+        member __.M () = Console.Write("M")
 
-        member _.M (_x: single) = Console.Write("fs_single")
+        member __.M (_x: single) = Console.Write("fs_single")
 
 [<EntryPoint>]
 let main _ =
@@ -4169,7 +4169,7 @@ type Test () =
     interface IC
     interface IA with
 
-        member _.M () = Console.Write("M")
+        member __.M () = Console.Write("M")
             """
 
         let csCmpl =
@@ -4180,7 +4180,7 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 366, (12, 15, 12, 17), "No implementation was given for 'IA.M(x: float32) : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 366, (12, 15, 12, 17), "No implementation was given for 'IA.M(x: float32) : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -4227,16 +4227,16 @@ type Test () =
 
     interface IA<int> with
 
-        member _.M(_x: int) = Console.Write("InTest")
+        member __.M(_x: int) = Console.Write("InTest")
 
-        member _.M<'Item> (x: int, y: 'Item) = 
+        member __.M<'Item> (x: int, y: 'Item) = 
             Console.Write(x.ToString())
             Console.Write(y.ToString ())
 
-        member _.M<'TTT> (x: 'TTT) =
+        member __.M<'TTT> (x: 'TTT) =
             Console.Write(x.ToString ())
 
-        member _.M (x: int, text: string) =
+        member __.M (x: int, text: string) =
             Console.Write("ABC")
             Console.Write(x.ToString())
             Console.Write(text)
@@ -4351,9 +4351,9 @@ type Test () =
     interface IC
     interface IA<string> with
 
-        member _.M(_x: string) = Console.Write("Test.String")
+        member __.M(_x: string) = Console.Write("Test.String")
 
-        member _.Prop2 with set _ = Console.Write("Test.Prop2")
+        member __.Prop2 with set _ = Console.Write("Test.Prop2")
 
 [<EntryPoint>]
 let main _ =
@@ -4448,7 +4448,7 @@ type Test () =
     interface IC
     interface IA<string> with
 
-        member _.M(_x: string) = Console.Write("Test.String")
+        member __.M(_x: string) = Console.Write("Test.String")
             """
 
         let csCmpl =
@@ -4459,8 +4459,8 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3352, (12, 15, 12, 25), "Interface member 'IA.set_Prop2(value: string) : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 366, (12, 15, 12, 25), "No implementation was given for 'IA.set_Prop2(value: string) : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3352, (12, 15, 12, 25), "Interface member 'IA.set_Prop2(value: string) : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (12, 15, 12, 25), "No implementation was given for 'IA.set_Prop2(value: string) : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -4509,11 +4509,11 @@ let test =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 363, (8, 7, 8, 21), "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface.")
-            (FSharpDiagnosticSeverity.Error, 3352, (7, 5, 8, 21), "Interface member 'IA.M() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 366, (7, 5, 8, 21), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
-            (FSharpDiagnosticSeverity.Error, 3352, (8, 7, 8, 21), "Interface member 'IA.M() : unit' does not have a most specific implementation.")
-            (FSharpDiagnosticSeverity.Error, 366, (8, 7, 8, 21), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 363, (8, 7, 8, 21), "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface.")
+            (FSharpErrorSeverity.Error, 3352, (7, 5, 8, 21), "Interface member 'IA.M() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (7, 5, 8, 21), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3352, (8, 7, 8, 21), "Interface member 'IA.M() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (8, 7, 8, 21), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -4797,7 +4797,7 @@ let f () =
             Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 39, (6, 17, 6, 29), "The type 'CSharpClass' does not define the field, constructor or member 'StaticMethod'.")
+            (FSharpErrorSeverity.Error, 39, (6, 17, 6, 29), "The type 'CSharpClass' does not define the field, constructor or member 'StaticMethod'.")
         |])
 
     [<Test>]
@@ -4847,7 +4847,7 @@ let f () =
             Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 39, (11, 17, 11, 29), "The type 'FSharpClass' does not define the field, constructor or member 'StaticMethod'.")
+            (FSharpErrorSeverity.Error, 39, (11, 17, 11, 29), "The type 'FSharpClass' does not define the field, constructor or member 'StaticMethod'.")
         |])
 
     [<Test>]
@@ -4897,7 +4897,7 @@ let f () =
             Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 1, (9, 5, 9, 15), "The type 'CSharpClass' does not support the operator 'StaticMethod'")
+            (FSharpErrorSeverity.Error, 1, (9, 5, 9, 15), "The type 'CSharpClass' does not support the operator 'StaticMethod'")
         |])
 
     [<Test>]
@@ -4950,7 +4950,7 @@ let f () =
             Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 1, (14, 5, 14, 15), "The type 'FSharpClass' does not support the operator 'StaticMethod'")
+            (FSharpErrorSeverity.Error, 1, (14, 5, 14, 15), "The type 'FSharpClass' does not support the operator 'StaticMethod'")
         |])
 
 #else
@@ -4997,9 +4997,9 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3351, (8, 15, 8, 20), "Feature 'default interface member consumption' is not supported by target runtime.")
-            (FSharpDiagnosticSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-            (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3351, (8, 15, 8, 20), "Feature 'default interface member consumption' is not supported by target runtime.")
+            (FSharpErrorSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -5049,8 +5049,8 @@ let f () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 3351, (14, 5, 14, 27), "Feature 'default interface member consumption' is not supported by target runtime.")
-            (FSharpDiagnosticSeverity.Error, 3350, (14, 5, 14, 27), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+            (FSharpErrorSeverity.Error, 3351, (14, 5, 14, 27), "Feature 'default interface member consumption' is not supported by target runtime.")
+            (FSharpErrorSeverity.Error, 3350, (14, 5, 14, 27), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
         |])
 
 #endif

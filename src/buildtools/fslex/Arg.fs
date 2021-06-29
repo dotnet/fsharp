@@ -52,13 +52,13 @@ type ArgParser() =
       sbuf.ToString()
 
 
-    static member ParsePartial(cursor,argv,arguments:seq<ArgInfo>,?otherArgs,?usageText) =
-        let otherArgs = defaultArg otherArgs (fun _ -> ())
+    static member ParsePartial(cursor,argv,argSpecs:seq<ArgInfo>,?other,?usageText) =
+        let other = defaultArg other (fun _ -> ())
         let usageText = defaultArg usageText ""
         let nargs = Array.length argv 
         incr cursor;
-        let arguments = arguments |> Seq.toList
-        let specs = arguments |> List.map (fun (arg:ArgInfo) -> arg.Name, arg.ArgType)
+        let argSpecs = argSpecs |> Seq.toList
+        let specs = argSpecs |> List.map (fun (arg:ArgInfo) -> arg.Name, arg.ArgType)
         while !cursor < nargs do
           let arg = argv.[!cursor] 
           let rec findMatchingArg args = 
@@ -66,7 +66,7 @@ type ArgParser() =
             | ((s, action) :: _) when s = arg -> 
                let getSecondArg () = 
                    if !cursor + 1 >= nargs then 
-                     raise(Bad("option "+s+" needs an argument.\n"+getUsage arguments usageText));
+                     raise(Bad("option "+s+" needs an argument.\n"+getUsage argSpecs usageText));
                    argv.[!cursor+1] 
                  
                match action with 
@@ -85,12 +85,12 @@ type ArgParser() =
                  cursor := !cursor + 2
                | IntArg f -> 
                  let arg2 = getSecondArg () 
-                 let arg2 = try int32 arg2 with _ -> raise(Bad(getUsage arguments usageText)) in  
+                 let arg2 = try int32 arg2 with _ -> raise(Bad(getUsage argSpecs usageText)) in  
                  f arg2;
                  cursor := !cursor + 2;
                | FloatArg f -> 
                  let arg2 = getSecondArg() 
-                 let arg2 = try float arg2 with _ -> raise(Bad(getUsage arguments usageText)) in 
+                 let arg2 = try float arg2 with _ -> raise(Bad(getUsage argSpecs usageText)) in 
                  f arg2; 
                  cursor := !cursor + 2;
                | RestArg f -> 
@@ -102,26 +102,26 @@ type ArgParser() =
             | (_ :: more)  -> findMatchingArg more 
             | [] -> 
                 if arg = "-help" || arg = "--help" || arg = "/help" || arg = "/help" || arg = "/?" then
-                    raise (HelpText (getUsage arguments usageText))
+                    raise (HelpText (getUsage argSpecs usageText))
                 // Note: for '/abc/def' does not count as an argument
                 // Note: '/abc' does
                 elif arg.Length>0 && (arg.[0] = '-' || (arg.[0] = '/' && not (arg.Length > 1 && arg.[1..].Contains ("/")))) then
-                    raise (Bad ("unrecognized argument: "+ arg + "\n" + getUsage arguments usageText))
+                    raise (Bad ("unrecognized argument: "+ arg + "\n" + getUsage argSpecs usageText))
                 else 
-                   otherArgs arg;
+                   other arg;
                    incr cursor
           findMatchingArg specs 
 
-    static member Usage (arguments,?usage) = 
+    static member Usage (specs,?usage) = 
         let usage = defaultArg usage ""
-        System.Console.Error.WriteLine (getUsage (Seq.toList arguments) usage)
+        System.Console.Error.WriteLine (getUsage (Seq.toList specs) usage)
 
     #if FX_NO_COMMAND_LINE_ARGS
     #else
-    static member Parse (arguments,?otherArgs,?usageText) = 
+    static member Parse (specs,?other,?usageText) = 
         let current = ref 0
         let argv = System.Environment.GetCommandLineArgs() 
-        try ArgParser.ParsePartial (current, argv, arguments, ?otherArgs=otherArgs, ?usageText=usageText)
+        try ArgParser.ParsePartial (current, argv, specs, ?other=other, ?usageText=usageText)
         with 
           | Bad h 
           | HelpText h -> 

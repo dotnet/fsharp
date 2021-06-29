@@ -3,11 +3,18 @@
 namespace Microsoft.VisualStudio.FSharp.Interactive
 
 open System
+open System.IO
+open System.Diagnostics
+open System.Globalization
+open System.Windows.Forms
 open System.Runtime.InteropServices
+open System.ComponentModel.Design
+open Microsoft.Win32
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Interactive
 open Microsoft.VisualStudio.OLE.Interop
 open Microsoft.VisualStudio.Shell
+open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Package
 open Microsoft.VisualStudio.TextManager.Interop
 open System.ComponentModel.Composition
@@ -55,11 +62,6 @@ type FsiPropertyPage() =
     [<ResourceDisplayName(SRProperties.FSharpInteractivePreviewMode)>]
     [<ResourceDescription(SRProperties.FSharpInteractivePreviewModeDescr)>]
     member this.FsiPreview with get() = SessionsProperties.fsiPreview and set (x:bool) = SessionsProperties.fsiPreview <- x
-
-    [<ResourceCategory(SRProperties.FSharpInteractivePreview)>]
-    [<ResourceDisplayName(SRProperties.FSharpInteractiveUseNetCore)>]
-    [<ResourceDescription(SRProperties.FSharpInteractiveUseNetCoreDescr)>]
-    member this.FsiUseNetCore with get() = SessionsProperties.fsiUseNetCore and set (x:bool) = SessionsProperties.fsiUseNetCore <- x
 
 // CompletionSet
 type internal FsiCompletionSet(imageList,source:Source) =

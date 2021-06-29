@@ -17,10 +17,10 @@ Creating the tokenizer
 ---------------------
 
 To use the tokenizer, reference `FSharp.Compiler.Service.dll` and open the
-`FSharp.Compiler.Tokenization` namespace:
+`SourceCodeServices` namespace:
 *)
 #r "FSharp.Compiler.Service.dll"
-open FSharp.Compiler.Tokenization
+open FSharp.Compiler.SourceCodeServices
 (**
 Now you can create an instance of `FSharpSourceTokenizer`. The class takes two 
 arguments - the first is the list of defined symbols and the second is the

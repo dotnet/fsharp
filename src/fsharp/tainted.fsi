@@ -4,10 +4,13 @@ namespace FSharp.Compiler
 
 #if !NO_EXTENSIONTYPING
 
-open Internal.Utilities.Library
-open FSharp.Core.CompilerServices
+
+open System
+open System.Reflection
+open Microsoft.FSharp.Core.CompilerServices
+open FSharp.Compiler.Range
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.Text
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 [<Sealed>]
 type internal TypeProviderToken = 
@@ -96,6 +99,7 @@ type internal Tainted<'T> =
     /// Assert that the value is of 'U and coerce the value.
     /// If coercion fails, the failure will be blamed on a type provider
     member Coerce<'U> : range:range -> Tainted<'U>
+
 
 [<RequireQualifiedAccess>]
 module internal Tainted =

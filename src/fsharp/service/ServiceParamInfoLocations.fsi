@@ -5,14 +5,14 @@
 // type checking and intellisense-like environment-reporting.
 //----------------------------------------------------------------------------
 
-namespace FSharp.Compiler.EditorServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.Syntax
-open FSharp.Compiler.Text
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 
 /// Represents the locations relevant to activating parameter info in an IDE
 [<Sealed>]
-type public ParameterLocations =
+type public FSharpNoteworthyParamInfoLocations =
 
     /// The text of the long identifier prior to the open-parentheses
     member LongId : string list
@@ -36,7 +36,7 @@ type public ParameterLocations =
     member NamedParamNames : string option []  
 
     /// Find the information about parameter info locations at a particular source location
-    static member Find : pos * ParsedInput -> ParameterLocations option
+    static member Find : pos * ParsedInput -> FSharpNoteworthyParamInfoLocations option
 
 module internal SynExprAppLocationsImpl =
     val getAllCurriedArgsAtPosition: pos: pos -> parseTree: ParsedInput -> range list option

@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Internal.Utilities.XmlAdapters
+module internal FSharp.Compiler.XmlAdapters
 
   val s_escapeChars : char []
 

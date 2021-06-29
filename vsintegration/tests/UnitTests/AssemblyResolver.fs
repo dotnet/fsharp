@@ -51,4 +51,4 @@ module AssemblyResolver =
 type public AssemblyResolverTestFixture () =
 
     [<OneTimeSetUp>]
-    member public _.Init () = AssemblyResolver.addResolver ()
+    member public __.Init () = AssemblyResolver.addResolver ()

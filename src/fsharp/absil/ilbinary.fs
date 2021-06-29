@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.AbstractIL.BinaryConstants 
+module internal FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
 
 open FSharp.Compiler.AbstractIL.IL 
-open Internal.Utilities.Library
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 [<Struct>]
 type TableName(idx: int) = 

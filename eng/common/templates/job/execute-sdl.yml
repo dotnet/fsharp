@@ -45,7 +45,6 @@ jobs:
             buildId: $(AzDOBuildId)
             artifactName: ${{ artifactName }}
             downloadPath: $(Build.ArtifactStagingDirectory)\artifacts
-            checkDownloadedFiles: true
     - ${{ if eq(parameters.artifactNames, '') }}:
       - task: DownloadBuildArtifacts@0
         displayName: Download Build Artifacts
@@ -58,7 +57,6 @@ jobs:
           downloadType: specific files
           itemPattern: "**"
           downloadPath: $(Build.ArtifactStagingDirectory)\artifacts
-          checkDownloadedFiles: true
   - powershell: eng/common/sdl/extract-artifact-packages.ps1
       -InputPath $(Build.ArtifactStagingDirectory)\artifacts\BlobArtifacts
       -ExtractPath $(Build.ArtifactStagingDirectory)\artifacts\BlobArtifacts
@@ -85,7 +83,7 @@ jobs:
       continueOnError: ${{ parameters.sdlContinueOnError }}
   - ${{ if eq(parameters.overrideParameters, '') }}:
     - powershell: eng/common/sdl/execute-all-sdl-tools.ps1
-        -GuardianPackageName Microsoft.Guardian.Cli.0.53.3
+        -GuardianPackageName Microsoft.Guardian.Cli.win10-x64.0.20.1
         -NugetPackageDirectory $(Build.SourcesDirectory)\.packages
         -AzureDevOpsAccessToken $(dn-bot-dotnet-build-rw-code-rw)
         ${{ parameters.additionalParameters }}

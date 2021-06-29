@@ -4,7 +4,7 @@ namespace FSharp.Compiler.Scripting.UnitTests
 
 open System
 open System.Threading.Tasks
-open FSharp.Test.ScriptHelpers
+open FSharp.Compiler.Scripting
 open Xunit
 
 type CompletionTests() =

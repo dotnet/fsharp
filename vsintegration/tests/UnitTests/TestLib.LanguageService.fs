@@ -12,9 +12,9 @@ open Salsa.VsOpsUtils
 open Salsa.VsMocks
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
+open FSharp.Compiler
 open System.Text.RegularExpressions 
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp
 
 #nowarn "52" // The value has been copied to ensure the original is not mutated
@@ -159,7 +159,7 @@ type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, init
     static member StartNew(vs) =
         TakeCoffeeBreak(vs)
         let n = IncrementalBuilderEventTesting.GetCurrentIncrementalBuildEventNum()
-        new GlobalParseAndTypeCheckCounter(FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount, n, vs)
+        new GlobalParseAndTypeCheckCounter(FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic, n, vs)
     member private this.GetEvents() = 
         TakeCoffeeBreak(vs)
         let n = IncrementalBuilderEventTesting.GetCurrentIncrementalBuildEventNum()
@@ -422,7 +422,7 @@ type LanguageServiceBaseTests() =
             failwith "LanguageServiceBaseTests.UsingNewVS was called when 'active' instance of VS is not 'default' one - this may denote that tests contains errors"
         currentVS <- ops.CreateVisualStudio()
         { new System.IDisposable with 
-            member _.Dispose() = 
+            member __.Dispose() = 
                 if box currentVS = box defaultVS then
                     failwith "At this moment 'current' instance of VS cannot be the same as the 'default' one. This may denote that tests contains errors."
                 GlobalFunctions.Cleanup(currentVS)

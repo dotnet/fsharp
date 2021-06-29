@@ -1,11 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.EditorServices
+namespace FSharp.Compiler
 
 open System
-open Internal.Utilities.Library
-open FSharp.Compiler.Syntax
-open FSharp.Compiler.Tokenization
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.SourceCodeServices
 
 /// Qualified long name.
 type PartialLongName =
@@ -20,8 +19,7 @@ type PartialLongName =
       EndColumn: int
 
       /// Position of the last dot.
-      LastDotPos: int option
-    }
+      LastDotPos: int option }
     
     /// Empty partial long name.
     static member Empty(endColumn: int) = { QualifyingIdents = []; PartialIdent = ""; EndColumn = endColumn; LastDotPos = None }

@@ -3,18 +3,17 @@
 // This component is used by the 'fsharpqa' tests for faster in-memory compilation.  It should be removed and the 
 // proper compiler service API used instead.
 
-namespace FSharp.Compiler.CodeAnalysis.Hosted
+namespace Legacy.FSharp.Compiler.Hosted
 
 open System
 open System.IO
 open System.Text.RegularExpressions
-open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open Internal.Utilities.Library 
+open FSharp.Compiler.AbstractIL.Internal.Library 
 
 /// build issue location
 type internal Location =
@@ -91,16 +90,16 @@ type internal FscCompiler(legacyReferenceResolver) =
     /// converts short and long issue types to the same CompilationIssue representation
     let convert issue : CompilationIssue = 
         match issue with
-        | Diagnostic.Short(severity, text) -> 
+        | Diagnostic.Short(isError, text) -> 
             {
                 Location = emptyLocation
                 Code = ""
                 Subcategory = ""
                 File = ""
                 Text = text
-                Type = if (severity = FSharpDiagnosticSeverity.Error) then CompilationIssueType.Error else CompilationIssueType.Warning
+                Type = if isError then CompilationIssueType.Error else CompilationIssueType.Warning
             }
-        | Diagnostic.Long(severity, details) ->
+        | Diagnostic.Long(isError, details) ->
             let loc, file = 
                 match details.Location with
                 | Some l when not l.IsEmpty -> 
@@ -117,7 +116,7 @@ type internal FscCompiler(legacyReferenceResolver) =
                 Subcategory = details.Canonical.Subcategory
                 File = file
                 Text = details.Message
-                Type = if (severity = FSharpDiagnosticSeverity.Error) then CompilationIssueType.Error else CompilationIssueType.Warning
+                Type = if isError then CompilationIssueType.Error else CompilationIssueType.Warning
             }
 
     /// test if --test:ErrorRanges flag is set

@@ -6,17 +6,15 @@ open System
 open System.Reflection
 open System.Runtime.CompilerServices
 
-open Internal.Utilities.Library 
-open Internal.Utilities.Library.Extras
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.ILBinaryReader 
-open FSharp.Compiler.CompilerConfig
-open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Text
+open FSharp.Compiler.Driver
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.AbstractIL.Internal.Library 
 
-[<Dependency("FSharp.Compiler.Service",LoadHint.Always)>] 
+[<Dependency("FSharp.Compiler.Private",LoadHint.Always)>] 
 do ()
 
 [<EntryPoint>]
@@ -29,7 +27,7 @@ let main(argv) =
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
 
     // An SDL recommendation
-    UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption()
+    Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption()
 
     try 
 
@@ -90,5 +88,5 @@ let main(argv) =
 
     with e -> 
         // Last-chance error recovery (note, with a poor error range)
-        errorRecovery e Range.range0
+        errorRecovery e FSharp.Compiler.Range.range0
         1

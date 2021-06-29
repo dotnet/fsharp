@@ -1,21 +1,21 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.AbstractIL.StrongNameSign
+module internal FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 
 #nowarn "9"
 
-    open System
-    open System.IO
-    open System.Collections.Immutable
-    open System.Reflection.PortableExecutable
-    open System.Security.Cryptography
-    open System.Reflection
-    open System.Runtime.CompilerServices
-    open System.Runtime.InteropServices
+open System
+open System.IO
+open System.Collections.Immutable
+open System.Reflection
+open System.Reflection.PortableExecutable
+open System.Security.Cryptography
+open System.Runtime.InteropServices
+open System.Runtime.CompilerServices
 
-    open Internal.Utilities
-    open Internal.Utilities.Library
-    open FSharp.Compiler.IO
+
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Utils
 
     type KeyType =
     | Public
@@ -245,7 +245,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         patchSignature stream peReader signature
 
     let signFile filename keyBlob =
-        use fs = FileSystem.OpenFileForWriteShim(filename, FileMode.Open, FileAccess.ReadWrite)
+        use fs = File.Open(filename, FileMode.Open, FileAccess.ReadWrite)
         signStream fs keyBlob
 
     let signatureSize (pk:byte[]) =
@@ -272,9 +272,9 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
     type pubkey = byte[]
     type pubkeyOptions = byte[] * bool
 
-    let signerOpenPublicKeyFile filePath = FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
+    let signerOpenPublicKeyFile filePath = FileSystem.ReadAllBytesShim filePath
 
-    let signerOpenKeyPairFile filePath = FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
+    let signerOpenKeyPairFile filePath = FileSystem.ReadAllBytesShim filePath
 
     let signerGetPublicKeyForKeyPair (kp: keyPair) : pubkey = getPublicKeyForKeyPair kp
 
@@ -400,9 +400,9 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                         ([<MarshalAs(UnmanagedType.Interface)>] _metaHost :
                             ICLRMetaHost byref)) : unit = failwith "CreateInterface"
 
-    let legacySignerOpenPublicKeyFile filePath = FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
+    let legacySignerOpenPublicKeyFile filePath = FileSystem.ReadAllBytesShim filePath
 
-    let legacySignerOpenKeyPairFile filePath = FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
+    let legacySignerOpenKeyPairFile filePath = FileSystem.ReadAllBytesShim filePath
 
     let mutable iclrsn: ICLRStrongName option = None
     let getICLRStrongName () =
@@ -492,12 +492,10 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         iclrSN.StrongNameSignatureVerificationEx(fileName, true, &ok) |> ignore
 #endif
 
-    let failWithContainerSigningUnsupportedOnThisPlatform() = failwith (FSComp.SR.containerSigningUnsupportedOnThisPlatform() |> snd)
-
     //---------------------------------------------------------------------
     // Strong name signing
     //---------------------------------------------------------------------
-    type ILStrongNameSigner =
+    type ILStrongNameSigner =  
         | PublicKeySigner of pubkey
         | PublicKeyOptionsSigner of pubkeyOptions
         | KeyPair of keyPair
@@ -518,10 +516,10 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                 legacySignerCloseKeyContainer containerName
 #else
                 ignore containerName
-                failWithContainerSigningUnsupportedOnThisPlatform()
+                failwith ("Key container signing is not supported on this platform")
 #endif
         member s.IsFullySigned =
-            match s with
+            match s with 
             | PublicKeySigner _ -> false
             | PublicKeyOptionsSigner pko -> let _, usePublicSign = pko
                                             usePublicSign
@@ -530,11 +528,11 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
 #if !FX_NO_CORHOST_SIGNER
                 true
 #else
-                failWithContainerSigningUnsupportedOnThisPlatform()
+                failwith ("Key container signing is not supported on this platform")
 #endif
 
-        member s.PublicKey =
-            match s with
+        member s.PublicKey = 
+            match s with 
             | PublicKeySigner pk -> pk
             | PublicKeyOptionsSigner pko -> let pk, _ = pko
                                             pk
@@ -544,7 +542,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                 legacySignerGetPublicKeyForKeyContainer containerName
 #else
                 ignore containerName
-                failWithContainerSigningUnsupportedOnThisPlatform()
+                failwith ("Key container signing is not supported on this platform")
 #endif
 
         member s.SignatureSize =
@@ -554,7 +552,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                 with e ->
                   failwith ("A call to StrongNameSignatureSize failed ("+e.Message+")")
                   0x80
-            match s with
+            match s with 
             | PublicKeySigner pk -> pkSignatureSize pk
             | PublicKeyOptionsSigner pko -> let pk, _ = pko
                                             pkSignatureSize pk
@@ -564,11 +562,11 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                 pkSignatureSize (legacySignerGetPublicKeyForKeyContainer containerName)
 #else
                 ignore containerName
-                failWithContainerSigningUnsupportedOnThisPlatform()
+                failwith ("Key container signing is not supported on this platform")
 #endif
 
-        member s.SignFile file =
-            match s with
+        member s.SignFile file = 
+            match s with 
             | PublicKeySigner _ -> ()
             | PublicKeyOptionsSigner _ -> ()
             | KeyPair kp -> signerSignFileWithKeyPair file kp
@@ -577,5 +575,5 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                 legacySignerSignFileWithKeyContainer file containerName
 #else
                 ignore containerName
-                failWithContainerSigningUnsupportedOnThisPlatform()
+                failwith ("Key container signing is not supported on this platform")
 #endif

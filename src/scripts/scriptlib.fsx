@@ -166,7 +166,7 @@ module Scripting =
     type OutPipe (writer: TextWriter) =
         member x.Post (msg:string) = lock writer (fun () -> writer.WriteLine(msg))
         interface System.IDisposable with 
-           member _.Dispose() = writer.Flush()
+           member __.Dispose() = writer.Flush()
 
     let redirectTo (writer: TextWriter) = new OutPipe (writer)
 

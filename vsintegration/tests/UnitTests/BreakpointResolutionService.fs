@@ -13,8 +13,8 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
 
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Text
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
 
 open UnitTests.TestLib.LanguageService
 
@@ -33,6 +33,7 @@ type BreakpointResolutionServiceTests()  =
         LoadTime = DateTime.MaxValue
         OriginalLoadReferences = []
         UnresolvedReferences = None
+        ExtraProjectInfo = None
         Stamp = None
     }
     let code = "
@@ -72,10 +73,10 @@ let main argv =
         let searchPosition = code.IndexOf(searchToken)
         Assert.IsTrue(searchPosition >= 0, "SearchToken '{0}' is not found in code", searchToken)
         
-        let document, sourceText = RoslynTestHelpers.CreateDocument(fileName, code)
+        let sourceText = SourceText.From(code)
         let searchSpan = TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
-
-        let actualResolutionOption = FSharpBreakpointResolutionService.GetBreakpointLocation(document, searchSpan) |> Async.RunSynchronously
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        let actualResolutionOption = FSharpBreakpointResolutionService.GetBreakpointLocation(checker, sourceText, fileName, searchSpan, parsingOptions) |> Async.RunSynchronously
         
         match actualResolutionOption with
         | None -> Assert.IsTrue(expectedResolution.IsNone, "BreakpointResolutionService failed to resolve breakpoint position")

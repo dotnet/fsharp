@@ -2,7 +2,9 @@
 
 namespace Internal.Utilities.Collections
 
+open System
 open System.Collections.Generic
+
 
 /// Hash tables, by default based on F# structural "hash" and (=) functions. 
 /// The table may map a single key to multiple bindings.

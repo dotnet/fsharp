@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-/// Write Abstract IL structures at runtime using Reflection.Emit
+//----------------------------------------------------------------------------
+// Write Abstract IL structures at runtime using Reflection.Emit
+//----------------------------------------------------------------------------
+
+
 module internal FSharp.Compiler.AbstractIL.ILRuntimeWriter    
 
 open System.Reflection

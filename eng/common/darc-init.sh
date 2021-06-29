@@ -6,7 +6,7 @@ versionEndpoint='https://maestro-prod.westus2.cloudapp.azure.com/api/assets/darc
 verbosity='minimal'
 
 while [[ $# > 0 ]]; do
-  opt="$(echo "$1" | tr "[:upper:]" "[:lower:]")"
+  opt="$(echo "$1" | awk '{print tolower($0)}')"
   case "$opt" in
     --darcversion)
       darcVersion=$2

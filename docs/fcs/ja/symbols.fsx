@@ -19,8 +19,9 @@
 // F#コンパイラAPIへの参照
 #r "FSharp.Compiler.Service.dll"
 
+open System
 open System.IO
-open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 
 // インタラクティブチェッカーのインスタンスを作成

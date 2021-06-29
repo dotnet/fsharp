@@ -328,8 +328,6 @@ this file.
               VisualStudioStyleErrors="$(VisualStudioStyleErrors)"
               WarningLevel="$(WarningLevel)"
               WarningsAsErrors="$(WarningsAsErrors)"
-              WarnOn="$(WarnOn)"
-              Win32IconFile ="$(ApplicationIcon)"
               Win32ManifestFile="$(Win32Manifest)"
               Win32ResourceFile="$(Win32Resource)">
           <Output TaskParameter="CommandLineArgs" ItemName="FscCommandLineArgs" />

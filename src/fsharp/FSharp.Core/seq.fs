@@ -66,20 +66,20 @@ namespace Microsoft.FSharp.Collections
                   else
                       state <- Finished
                       false
-              member _.Reset() = noReset()
+              member __.Reset() = noReset()
           interface System.IDisposable with
               member this.Dispose() = this.Dispose()
 
       let map f (e : IEnumerator<_>) : IEnumerator<_>=
           upcast
               { new MapEnumerator<_>() with
-                    member _.DoMoveNext (curr : byref<_>) =
+                    member __.DoMoveNext (curr : byref<_>) =
                         if e.MoveNext() then
                             curr <- f e.Current
                             true
                         else
                             false
-                    member _.Dispose() = e.Dispose()
+                    member __.Dispose() = e.Dispose()
               }
 
       let mapi f (e : IEnumerator<_>) : IEnumerator<_> =
@@ -87,21 +87,21 @@ namespace Microsoft.FSharp.Collections
           let mutable i = -1
           upcast
               { new MapEnumerator<_>() with
-                     member _.DoMoveNext curr =
+                     member __.DoMoveNext curr =
                         i <- i + 1
                         if e.MoveNext() then
                            curr <- f.Invoke(i, e.Current)
                            true
                         else
                            false
-                     member _.Dispose() = e.Dispose()
+                     member __.Dispose() = e.Dispose()
               }
 
       let map2 f (e1 : IEnumerator<_>) (e2 : IEnumerator<_>) : IEnumerator<_>=
           let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)
           upcast
               { new MapEnumerator<_>() with
-                     member _.DoMoveNext curr =
+                     member __.DoMoveNext curr =
                         let n1 = e1.MoveNext()
                         let n2 = e2.MoveNext()
                         if n1 && n2 then
@@ -109,7 +109,7 @@ namespace Microsoft.FSharp.Collections
                            true
                         else
                            false
-                     member _.Dispose() =
+                     member __.Dispose() =
                         try
                             e1.Dispose()
                         finally
@@ -121,14 +121,14 @@ namespace Microsoft.FSharp.Collections
           let mutable i = -1
           upcast
               { new MapEnumerator<_>() with
-                     member _.DoMoveNext curr =
+                     member __.DoMoveNext curr =
                         i <- i + 1
                         if (e1.MoveNext() && e2.MoveNext()) then
                            curr <- f.Invoke(i, e1.Current, e2.Current)
                            true
                         else
                            false
-                     member _.Dispose() =
+                     member __.Dispose() =
                         try
                             e1.Dispose()
                         finally
@@ -139,7 +139,7 @@ namespace Microsoft.FSharp.Collections
         let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(f)
         upcast
             { new MapEnumerator<_>() with
-                   member _.DoMoveNext curr =
+                   member __.DoMoveNext curr =
                       let n1 = e1.MoveNext()
                       let n2 = e2.MoveNext()
                       let n3 = e3.MoveNext()
@@ -149,7 +149,7 @@ namespace Microsoft.FSharp.Collections
                          true
                       else
                          false
-                   member _.Dispose() =
+                   member __.Dispose() =
                       try
                           e1.Dispose()
                       finally
@@ -169,48 +169,48 @@ namespace Microsoft.FSharp.Collections
               | Some x -> x
 
           { new IEnumerator<'U> with
-                member _.Current = get()
+                member __.Current = get()
             interface IEnumerator with
-                member _.Current = box (get())
-                member _.MoveNext() =
+                member __.Current = box (get())
+                member __.MoveNext() =
                     if not started then started <- true
                     curr <- None
                     while (curr.IsNone && e.MoveNext()) do
                         curr <- f e.Current
                     Option.isSome curr
-                member _.Reset() = noReset()
+                member __.Reset() = noReset()
             interface System.IDisposable with
-                member _.Dispose() = e.Dispose()  }
+                member __.Dispose() = e.Dispose()  }
 
       let filter f (e : IEnumerator<'T>) =
           let mutable started = false
           let this =
               { new IEnumerator<'T> with
-                    member _.Current = check started; e.Current
+                    member __.Current = check started; e.Current
                 interface IEnumerator with
-                    member _.Current = check started; box e.Current
-                    member _.MoveNext() =
+                    member __.Current = check started; box e.Current
+                    member __.MoveNext() =
                         let rec next() =
                             if not started then started <- true
                             e.MoveNext() && (f e.Current || next())
                         next()
-                    member _.Reset() = noReset()
+                    member __.Reset() = noReset()
                 interface System.IDisposable with
-                    member _.Dispose() = e.Dispose() }
+                    member __.Dispose() = e.Dispose() }
           this
 
       let unfold f x : IEnumerator<_> =
           let mutable state = x
           upcast
               { new MapEnumerator<_>() with
-                    member _.DoMoveNext curr =
+                    member __.DoMoveNext curr =
                         match f state with
                         |   None -> false
                         |   Some (r,s) ->
                                 curr <- r
                                 state <- s
                                 true
-                    member _.Dispose() = ()
+                    member __.Dispose() = ()
               }
 
       let upto lastOption f =
@@ -244,10 +244,10 @@ namespace Microsoft.FSharp.Collections
                   // forced or re-forced immediately.
                   current.Force()
               { new IEnumerator<'U> with
-                    member _.Current = getCurrent()
+                    member __.Current = getCurrent()
                 interface IEnumerator with
-                    member _.Current = box (getCurrent())
-                    member _.MoveNext() =
+                    member __.Current = box (getCurrent())
+                    member __.MoveNext() =
                         if index = completed then
                             false
                         elif index = unstarted then
@@ -261,15 +261,15 @@ namespace Microsoft.FSharp.Collections
                                 setIndex (index + 1)
                                 true
 
-                    member _.Reset() = noReset()
+                    member __.Reset() = noReset()
                 interface System.IDisposable with
-                    member _.Dispose() = () }
+                    member __.Dispose() = () }
 
       [<Sealed>]
       type ArrayEnumerator<'T>(arr: 'T array) =
           let mutable curr = -1
           let mutable len = arr.Length
-          member _.Get() =
+          member __.Get() =
                if curr >= 0 then
                  if curr >= len then alreadyFinished()
                  else arr.[curr]
@@ -278,7 +278,7 @@ namespace Microsoft.FSharp.Collections
           interface IEnumerator<'T> with
                 member x.Current = x.Get()
           interface System.Collections.IEnumerator with
-                member _.MoveNext() =
+                member __.MoveNext() =
                        if curr >= len then false
                        else
                          curr <- curr + 1
@@ -335,10 +335,10 @@ namespace Microsoft.FSharp.Collections
         //                         yield n }
 
         type GenerateThen<'T>(g:Generator<'T>, cont : unit -> Generator<'T>) =
-            member _.Generator = g
-            member _.Cont = cont
+            member __.Generator = g
+            member __.Cont = cont
             interface Generator<'T> with
-                 member _.Apply = (fun () ->
+                 member __.Apply = (fun () ->
                       match appG g with
                       | Stop ->
                           // OK, move onto the generator given by the continuation
@@ -349,7 +349,7 @@ namespace Microsoft.FSharp.Collections
 
                       | Goto next ->
                           Goto(GenerateThen<_>.Bind(next, cont)))
-                 member _.Disposer =
+                 member __.Disposer =
                       g.Disposer
 
             static member Bind (g:Generator<'T>, cont) =
@@ -386,9 +386,9 @@ namespace Microsoft.FSharp.Collections
             let mutable g = g
             let mutable curr = None
             let mutable finished = false
-            member _.Generator = g
+            member __.Generator = g
             interface IEnumerator<'T> with
-                member _.Current = 
+                member __.Current = 
                     match curr with 
                     | Some v -> v 
                     | None -> invalidOp (SR.GetString(SR.moveNextNotCalledOrFinished))
@@ -408,21 +408,21 @@ namespace Microsoft.FSharp.Collections
                     | Goto next ->
                         (g <- next)
                         (x :> IEnumerator).MoveNext()
-                member _.Reset() = IEnumerator.noReset()
+                member __.Reset() = IEnumerator.noReset()
             interface System.IDisposable with
-                member _.Dispose() =
+                member __.Dispose() =
                     if not finished then disposeG g
 
         // Internal type, used to optimize Enumerator/Generator chains
         type LazyGeneratorWrappingEnumerator<'T>(e:IEnumerator<'T>) =
-            member _.Enumerator = e
+            member __.Enumerator = e
             interface Generator<'T> with
-                member _.Apply = (fun () ->
+                member __.Apply = (fun () ->
                     if e.MoveNext() then
                         Yield e.Current
                     else
                         Stop)
-                member _.Disposer= Some e.Dispose
+                member __.Disposer= Some e.Dispose
 
         let EnumerateFromGenerator(g:Generator<'T>) =
             match g with

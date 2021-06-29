@@ -1,28 +1,33 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// ILX extensions to Abstract IL types and instructions F# 
-module internal FSharp.Compiler.AbstractIL.ILX.Types
+module internal FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 
+open Internal.Utilities
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.IL 
 
-/// Union case field
+// -------------------------------------------------------------------- 
+// Union references 
+// -------------------------------------------------------------------- 
+
 [<Sealed>]
-type IlxUnionCaseField = 
-    new: ILFieldDef -> IlxUnionCaseField
+type IlxUnionField = 
+    new: ILFieldDef -> IlxUnionField
     member Type: ILType
     member Name: string
     /// The name used for the field in parameter or IL field position.
     member LowerName: string 
     member ILField: ILFieldDef
     
-/// Union alternative
-type IlxUnionCase = 
+type IlxUnionAlternative = 
     { altName: string
-      altFields: IlxUnionCaseField[]
+      altFields: IlxUnionField[]
       altCustomAttrs: ILAttributes }
 
-    member FieldDefs: IlxUnionCaseField[]
-    member FieldDef:  int -> IlxUnionCaseField
+    member FieldDefs: IlxUnionField[]
+    member FieldDef:  int -> IlxUnionField
     member Name:  string
     member IsNullary :  bool
     member FieldTypes:  ILType[]
@@ -34,9 +39,8 @@ type IlxUnionHasHelpers =
    | SpecialFSharpListHelpers 
    | SpecialFSharpOptionHelpers 
    
-/// Union references 
 type IlxUnionRef = 
-    | IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionCase[] * bool (* cudNullPermitted *)  * IlxUnionHasHelpers (* cudHasHelpers *)
+    | IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionAlternative[] * bool (* cudNullPermitted *)  * IlxUnionHasHelpers (* cudHasHelpers *)
 
 type IlxUnionSpec = 
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
@@ -45,9 +49,9 @@ type IlxUnionSpec =
 
     member GenericArgs:  ILGenericArgs
 
-    member Alternatives:  IlxUnionCase list
+    member Alternatives:  IlxUnionAlternative list
 
-    member AlternativesArray:  IlxUnionCase[]
+    member AlternativesArray:  IlxUnionAlternative[]
 
     member Boxity:  ILBoxity
 
@@ -57,9 +61,9 @@ type IlxUnionSpec =
 
     member HasHelpers:  IlxUnionHasHelpers
 
-    member Alternative:  int -> IlxUnionCase
+    member Alternative:  int -> IlxUnionAlternative
 
-    member FieldDef: int -> int -> IlxUnionCaseField
+    member FieldDef: int -> int -> IlxUnionField
 
 // -------------------------------------------------------------------- 
 // Closure references 
@@ -137,7 +141,7 @@ type IlxUnionInfo =
 
       cudDebugDisplayAttributes: ILAttribute list
 
-      cudAlternatives: IlxUnionCase[]
+      cudAlternatives: IlxUnionAlternative[]
 
       cudNullPermitted: bool
 

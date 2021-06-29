@@ -7,12 +7,15 @@ open System.Collections.Immutable
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.Structure
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Structure
 
-open FSharp.Compiler.EditorServices
-open FSharp.Compiler.EditorServices.Structure
-open FSharp.Compiler.Syntax
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices.Structure
+open FSharp.Compiler.SyntaxTree
 
 module internal BlockStructure =
     let scopeToBlockType = function
@@ -141,15 +144,18 @@ module internal BlockStructure =
 open BlockStructure
  
 [<Export(typeof<IFSharpBlockStructureService>)>]
-type internal FSharpBlockStructureService [<ImportingConstructor>] () =
+type internal FSharpBlockStructureService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager) =
+        
+    static let userOpName = "FSharpBlockStructure"
 
     interface IFSharpBlockStructureService with
  
-        member _.GetBlockStructureAsync(document, cancellationToken) : Task<FSharpBlockStructure> =
+        member __.GetBlockStructureAsync(document, cancellationToken) : Task<FSharpBlockStructure> =
             asyncMaybe {
+                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpBlockStructureService)) |> liftAsync
-                return createBlockSpans document.Project.IsFSharpBlockStructureEnabled sourceText parseResults.ParseTree |> Seq.toImmutableArray
+                let! parsedInput = checkerProvider.Checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
+                return createBlockSpans document.FSharpOptions.Advanced.IsBlockStructureEnabled sourceText parsedInput |> Seq.toImmutableArray
             } 
             |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)
             |> Async.map FSharpBlockStructure

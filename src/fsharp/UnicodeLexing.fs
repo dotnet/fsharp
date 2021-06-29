@@ -1,25 +1,28 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// Functions for Unicode char-based lexing
 module internal FSharp.Compiler.UnicodeLexing
+
+//------------------------------------------------------------------
+// Functions for Unicode char-based lexing (new code).
+//
 
 open System.IO
 open Internal.Utilities.Text.Lexing
 
 type Lexbuf =  LexBuffer<char>
 
-let StringAsLexbuf (reportLibraryOnlyFeatures, supportsFeature, s: string) =
-    LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, supportsFeature, s.ToCharArray())
+let StringAsLexbuf (supportsFeature, s: string) =
+    LexBuffer<char>.FromChars (supportsFeature, s.ToCharArray())
 
-let FunctionAsLexbuf (reportLibraryOnlyFeatures, supportsFeature, bufferFiller) =
-    LexBuffer<char>.FromFunction(reportLibraryOnlyFeatures, supportsFeature, bufferFiller)
+let FunctionAsLexbuf (supportsFeature, bufferFiller) =
+    LexBuffer<char>.FromFunction(supportsFeature, bufferFiller)
 
-let SourceTextAsLexbuf (reportLibraryOnlyFeatures, supportsFeature, sourceText) =
-    LexBuffer<char>.FromSourceText(reportLibraryOnlyFeatures, supportsFeature, sourceText)
+let SourceTextAsLexbuf (supportsFeature, sourceText) =
+    LexBuffer<char>.FromSourceText(supportsFeature, sourceText)
 
-let StreamReaderAsLexbuf (reportLibraryOnlyFeatures, supportsFeature, reader: StreamReader) =
+let StreamReaderAsLexbuf (supportsFeature, reader: StreamReader) =
     let mutable isFinished = false
-    FunctionAsLexbuf (reportLibraryOnlyFeatures, supportsFeature, fun (chars, start, length) ->
+    FunctionAsLexbuf (supportsFeature, fun (chars, start, length) ->
         if isFinished then 0
         else
             let nBytesRead = reader.Read(chars, start, length)

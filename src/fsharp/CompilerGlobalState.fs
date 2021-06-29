@@ -5,8 +5,8 @@
 module FSharp.Compiler.CompilerGlobalState
 
 open System.Collections.Generic
-open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.Text
+open FSharp.Compiler.Range
+open FSharp.Compiler.PrettyNaming
 
 /// Generates compiler-generated names. Each name generated also includes the StartLine number of the range passed in
 /// at the point of first generation.
@@ -82,11 +82,11 @@ type internal CompilerGlobalState () =
     /// A name generator used by IlxGen for static fields, some generated arguments and other things.
     let ilxgenGlobalNng = NiceNameGenerator ()
 
-    member _.NiceNameGenerator = globalNng
+    member __.NiceNameGenerator = globalNng
 
-    member _.StableNameGenerator = globalStableNameGenerator
+    member __.StableNameGenerator = globalStableNameGenerator
 
-    member _.IlxGenNiceNameGenerator = ilxgenGlobalNng
+    member __.IlxGenNiceNameGenerator = ilxgenGlobalNng
 
 /// Unique name generator for stamps attached to lambdas and object expressions
 type Unique = int64

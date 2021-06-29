@@ -272,9 +272,8 @@ type AsyncModule() =
                 | e -> Assert.Fail(sprintf "Unexpected error %A" e)
             }
         Async.RunSynchronously test
-
-    // test is flaky: https://github.com/dotnet/fsharp/issues/11586
-    //[<Fact>]
+    
+    [<Fact>]
     member this.``OnCancel.RaceBetweenCancellationHandlerAndDisposingHandlerRegistration``() = 
         let test() = 
             use flag = new ManualResetEvent(false)
@@ -297,8 +296,7 @@ type AsyncModule() =
 
         for _i = 1 to 300 do test()
 
-    // test is flaky: https://github.com/dotnet/fsharp/issues/11586
-    //[<Fact>]
+    [<Fact>]
     member this.``OnCancel.RaceBetweenCancellationAndDispose``() = 
         let flag = ref 0
         let cts = new System.Threading.CancellationTokenSource()
@@ -306,7 +304,7 @@ type AsyncModule() =
             use disp =
                 cts.Cancel()
                 { new IDisposable with
-                    override _.Dispose() = incr flag }
+                    override __.Dispose() = incr flag }
             while true do
                 do! Async.Sleep 50
             }
@@ -316,13 +314,13 @@ type AsyncModule() =
             :? System.OperationCanceledException -> ()
         Assert.AreEqual(1, !flag)
 
-    // test is flaky: https://github.com/dotnet/fsharp/issues/11586
-    //[<Fact>]
+    [<Fact>]
     member this.``OnCancel.CancelThatWasSignalledBeforeRunningTheComputation``() = 
         let test() = 
             let cts = new System.Threading.CancellationTokenSource()
             let go e (flag : bool ref) = async {
                 let! _ = Async.AwaitWaitHandle e
+                sleep 500
                 use! _holder = Async.OnCancel(fun () -> flag := true)
                 while true do
                     do! Async.Sleep 100
@@ -332,6 +330,7 @@ type AsyncModule() =
             let finish = new System.Threading.ManualResetEvent(false)
             let cancelledWasCalled = ref false
             Async.StartWithContinuations(go evt cancelledWasCalled, ignore, ignore, (fun _ -> finish.Set() |> ignore),  cancellationToken = cts.Token)
+            sleep 500
             evt.Set() |> ignore
             cts.Cancel()
 

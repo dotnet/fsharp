@@ -12,7 +12,7 @@ module ``String Tests`` =
         let mutable x = x
         let mutable y = y
     
-        member _.Sum () = x + y
+        member __.Sum () = x + y
    
         interface IFormattable with
             member x.ToString (format: string, _ : IFormatProvider) = 

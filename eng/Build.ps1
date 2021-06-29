@@ -14,7 +14,7 @@
 # it's fine to call `build.ps1 -build -testDesktop` followed by repeated calls to
 # `.\build.ps1 -testDesktop`.
 
-[CmdletBinding(PositionalBinding = $false)]
+[CmdletBinding(PositionalBinding=$false)]
 param (
     [string][Alias('c')]$configuration = "Debug",
     [string][Alias('v')]$verbosity = "m",
@@ -61,7 +61,7 @@ param (
     [switch]$noVisualStudio,
     [switch]$sourceBuild,
 
-    [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
+    [parameter(ValueFromRemainingArguments=$true)][string[]]$properties)
 
 Set-StrictMode -version 2.0
 $ErrorActionPreference = "Stop"
@@ -120,8 +120,8 @@ function Print-Usage() {
 # specified.
 function Process-Arguments() {
     if ($help -or (($properties -ne $null) -and ($properties.Contains("/help") -or $properties.Contains("/?")))) {
-        Print-Usage
-        exit 0
+       Print-Usage
+       exit 0
     }
 
     $script:nodeReuse = $False;
@@ -177,32 +177,34 @@ function Process-Arguments() {
 
 function Update-Arguments() {
     if ($script:noVisualStudio) {
-        $script:bootstrapTfm = "net5.0"
+        $script:bootstrapTfm = "netcoreapp3.1"
         $script:msbuildEngine = "dotnet"
     }
 
-    if ($bootstrapTfm -eq "net5.0") {
+    if ($bootstrapTfm -eq "netcoreapp3.1") {
         if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
             $script:bootstrap = $True
         }
-    }
-    else {
+    } else {
         if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.exe") -or (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
             $script:bootstrap = $True
         }
     }
 }
 
-function BuildSolution([string] $solutionName) {
-    Write-Host "${solutionName}:"
+function BuildSolution() {
+    # VisualFSharp.sln can't be built with dotnet due to WPF, WinForms and VSIX build task dependencies
+    $solution = "VisualFSharp.sln"
+
+    Write-Host "$($solution):"
 
     $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.binlog") } else { "" }
 
-    $projects = Join-Path $RepoRoot  $solutionName
+    $projects = Join-Path $RepoRoot $solution
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset
     $quietRestore = !$ci
-    $testTargetFrameworks = if ($testCoreClr) { "net5.0" } else { "" }
+    $testTargetFrameworks = if ($testCoreClr) { "netcoreapp3.1" } else { "" }
 
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
@@ -272,7 +274,6 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $testLogPath = "$ArtifactsDir\TestResults\$configuration\${projectName}_$targetFramework.xml"
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
     $args = "test $testProject -c $configuration -f $targetFramework -v n --test-adapter-path $testadapterpath --logger ""nunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
-    $args += " --blame --results-directory $ArtifactsDir\TestResults\$configuration"
 
     if (-not $noVisualStudio -or $norestore) {
         $args += " --no-restore"
@@ -296,6 +297,32 @@ function TestUsingXUnit([string] $testProject, [string] $targetFramework, [strin
 
 function TestUsingNUnit([string] $testProject, [string] $targetFramework, [string]$testadapterpath) {
     TestUsingMsBuild -testProject $testProject -targetFramework $targetFramework -testadapterpath $testadapterpath -noTestFilter $false
+}
+
+function BuildCompiler() {
+    if ($bootstrapTfm -eq "netcoreapp3.1") {
+        $dotnetPath = InitializeDotNetCli
+        $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+        $fscProject = "`"$RepoRoot\src\fsharp\fsc\fsc.fsproj`""
+        $fsiProject = "`"$RepoRoot\src\fsharp\fsi\fsi.fsproj`""
+
+        $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
+        $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
+
+        if ($binaryLog) {
+            $logFilePath = Join-Path $LogDir "fscBootstrapLog.binlog"
+            $args += " /bl:$logFilePath"
+        }
+        $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp3.1" + $argNoRestore + $argNoIncremental
+        Exec-Console $dotnetExe $args
+
+        if ($binaryLog) {
+            $logFilePath = Join-Path $LogDir "fsiBootstrapLog.binlog"
+            $args += " /bl:$logFilePath"
+        }
+        $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp3.1" + $argNoRestore + $argNoIncremental
+        Exec-Console $dotnetExe $args
+    }
 }
 
 function Prepare-TempDir() {
@@ -325,7 +352,8 @@ function TryDownloadDotnetFrameworkSdk() {
     # If we are not running as admin user, don't bother grabbing ndp sdk -- since we don't need sn.exe
     $isAdmin = Test-IsAdmin
     Write-Host "TryDownloadDotnetFrameworkSdk -- Test-IsAdmin = '$isAdmin'"
-    if ($isAdmin -eq $true) {
+    if ($isAdmin -eq $true)
+    {
         # Get program files(x86) location
         if (${env:ProgramFiles(x86)} -eq $null) {
             $programFiles = $env:ProgramFiles
@@ -377,7 +405,7 @@ function TryDownloadDotnetFrameworkSdk() {
                 $windowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
                 # x86 environment variable
                 Write-Host "set WindowsSDK_ExecutablePath_x86=$WindowsSDK_ExecutablePath_x86"
-                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x86", "$newWindowsSDK_ExecutablePath_x86", [System.EnvironmentVariableTarget]::Machine)
+                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x86","$newWindowsSDK_ExecutablePath_x86",[System.EnvironmentVariableTarget]::Machine)
                 $env:WindowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
             }
         }
@@ -389,7 +417,7 @@ function TryDownloadDotnetFrameworkSdk() {
                 $windowsSDK_ExecutablePath_x64 = $newWindowsSDK_ExecutablePath_x64
                 # x64 environment variable
                 Write-Host "set WindowsSDK_ExecutablePath_x64=$WindowsSDK_ExecutablePath_x64"
-                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x64", "$newWindowsSDK_ExecutablePath_x64", [System.EnvironmentVariableTarget]::Machine)
+                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x64","$newWindowsSDK_ExecutablePath_x64",[System.EnvironmentVariableTarget]::Machine)
                 $env:WindowsSDK_ExecutablePath_x64 = $newWindowsSDK_ExecutablePath_x64
             }
         }
@@ -397,22 +425,22 @@ function TryDownloadDotnetFrameworkSdk() {
 }
 
 function EnablePreviewSdks() {
-    if (Test-Path variable:global:_MSBuildExe) {
-        return
-    }
-    $vsInfo = LocateVisualStudio
-    if ($vsInfo -eq $null) {
-        # Preview SDKs are allowed when no Visual Studio instance is installed
-        return
-    }
+  if (Test-Path variable:global:_MSBuildExe) {
+    return
+  }
+  $vsInfo = LocateVisualStudio
+  if ($vsInfo -eq $null) {
+    # Preview SDKs are allowed when no Visual Studio instance is installed
+    return
+  }
 
-    $vsId = $vsInfo.instanceId
-    $vsMajorVersion = $vsInfo.installationVersion.Split('.')[0]
+  $vsId = $vsInfo.instanceId
+  $vsMajorVersion = $vsInfo.installationVersion.Split('.')[0]
 
-    $instanceDir = Join-Path ${env:USERPROFILE} "AppData\Local\Microsoft\VisualStudio\$vsMajorVersion.0_$vsId"
-    Create-Directory $instanceDir
-    $sdkFile = Join-Path $instanceDir "sdk.txt"
-    'UsePreviews=True' | Set-Content $sdkFile
+  $instanceDir = Join-Path ${env:USERPROFILE} "AppData\Local\Microsoft\VisualStudio\$vsMajorVersion.0_$vsId"
+  Create-Directory $instanceDir
+  $sdkFile = Join-Path $instanceDir "sdk.txt"
+  'UsePreviews=True' | Set-Content $sdkFile
 }
 
 try {
@@ -438,11 +466,6 @@ try {
     $buildTool = InitializeBuildTool
     $toolsetBuildProj = InitializeToolset
     TryDownloadDotnetFrameworkSdk
-
-    $dotnetPath = InitializeDotNetCli
-    $env:DOTNET_ROOT = "$dotnetPath"
-    Get-Item -Path Env:
-
     if ($bootstrap) {
         $script:BuildMessage = "Failure building bootstrap compiler"
         $bootstrapDir = Make-BootstrapBuild
@@ -451,10 +474,9 @@ try {
     $script:BuildMessage = "Failure building product"
     if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish) {
         if ($noVisualStudio) {
-            BuildSolution "FSharp.sln"
-        }
-        else {
-            BuildSolution "VisualFSharp.sln"
+            BuildCompiler
+        } else {
+            BuildSolution
         }
     }
 
@@ -465,12 +487,11 @@ try {
     $script:BuildCategory = "Test"
     $script:BuildMessage = "Failure running tests"
     $desktopTargetFramework = "net472"
-    $coreclrTargetFramework = "net5.0"
+    $coreclrTargetFramework = "netcoreapp3.1"
 
     if ($testDesktop) {
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
@@ -521,7 +542,6 @@ try {
     }
 
     if ($testCompilerService) {
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
     }
 
@@ -530,7 +550,7 @@ try {
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\"
     }
 `
-        if ($testScripting) {
+    if ($testScripting) {
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
     }
@@ -559,11 +579,11 @@ try {
         $nupkgs = @(Get-ChildItem "$artifactsDir\packages\$configuration\Shipping\*.nupkg" -recurse)
         $nupkgs | Foreach {
             Exec-Console """$sourcelink"" test ""$_"""
-            if (-not $?) { $nupkgtestFailed = $true }
+            if (-not $?) { $nupkgtestFailed = $true}
         }
     }
     if ($nupkgtestFailed) {
-        throw "Error Verifying nupkgs have access to the source code"
+            throw "Error Verifying nupkgs have access to the source code"
     }
 
     ExitWithExitCode 0

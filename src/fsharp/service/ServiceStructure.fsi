@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.EditorServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.Syntax
-open FSharp.Compiler.Text
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 
 module public Structure =
 
@@ -75,7 +75,7 @@ module public Structure =
         /// HintSpan in BlockSpan
         Range: range
         /// TextSpan in BlockSpan
-        CollapseRange: range
+        CollapseRange:range
     }
 
     /// Returns outlining ranges for given parsed input.

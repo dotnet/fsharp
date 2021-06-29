@@ -11,7 +11,7 @@
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
 
 #if COMPILER
-namespace FSharp.Compiler.Text
+namespace Internal.Utilities.StructuredFormat
 #else
 // FSharp.Core.dll:
 namespace Microsoft.FSharp.Text.StructuredPrintfImpl
@@ -31,7 +31,7 @@ open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Collections
 
 [<StructuralEquality; NoComparison>]
-type TextTag =
+type LayoutTag =
     | ActivePatternCase
     | ActivePatternResult
     | Alias
@@ -67,10 +67,9 @@ type TextTag =
     | UnknownType
     | UnknownEntity
 
-type TaggedText(tag: TextTag, text: string) =
-    member x.Tag = tag
-    member x.Text = text
-    override x.ToString() = text + "(tag: " + tag.ToString() + ")"
+type TaggedText =
+    abstract Tag: LayoutTag
+    abstract Text: string
 
 type TaggedTextWriter =
     abstract Write: t: TaggedText -> unit
@@ -116,41 +115,16 @@ type IEnvironment =
     abstract MaxColumns: int
     abstract MaxRows: int
 
-[<AutoOpen>]
-module TaggedText =
-    let mkTag tag text = TaggedText(tag, text)
+module TaggedTextOps =
+    let mkTag tag text = 
+        { new TaggedText with 
+            member _.Tag = tag
+            member _.Text = text }
 
     let length (tt: TaggedText) = tt.Text.Length
     let toText (tt: TaggedText) = tt.Text
-    let tagClass name = mkTag TextTag.Class name
-    let tagUnionCase t = mkTag TextTag.UnionCase t
-    let tagField t = mkTag TextTag.Field t
-    let tagNumericLiteral t = mkTag TextTag.NumericLiteral t
-    let tagKeyword t = mkTag TextTag.Keyword t
-    let tagStringLiteral t = mkTag TextTag.StringLiteral t
-    let tagLocal t = mkTag TextTag.Local t
-    let tagText t = mkTag TextTag.Text t
-    let tagRecordField t = mkTag TextTag.RecordField t
-    let tagProperty t = mkTag TextTag.Property t
-    let tagMethod t = mkTag TextTag.Method t
-    let tagPunctuation t = mkTag TextTag.Punctuation t
-    let tagOperator t = mkTag TextTag.Operator t
-    let tagSpace t = mkTag TextTag.Space t
 
-    let leftParen = tagPunctuation "("
-    let rightParen = tagPunctuation ")"
-    let comma = tagPunctuation ","
-    let semicolon = tagPunctuation ";"
-    let questionMark = tagPunctuation "?"
-    let leftBracket = tagPunctuation "["
-    let rightBracket = tagPunctuation "]"
-    let leftBrace= tagPunctuation "{"
-    let rightBrace = tagPunctuation "}"
-    let space = tagSpace " "
-    let equals = tagOperator "="
-
-#if COMPILER
-    let tagAlias t = mkTag TextTag.Alias t
+    let tagAlias t = mkTag LayoutTag.Alias t
     let keywordFunctions =
         [
             "raise"
@@ -182,97 +156,80 @@ module TaggedText =
             "unativeint"
         ]
         |> Set.ofList
-    let tagDelegate t = mkTag TextTag.Delegate t
-    let tagEnum t = mkTag TextTag.Enum t
-    let tagEvent t = mkTag TextTag.Event t
-    let tagInterface t = mkTag TextTag.Interface t
-    let tagLineBreak t = mkTag TextTag.LineBreak t
-    let tagRecord t = mkTag TextTag.Record t
-    let tagModule t = mkTag TextTag.Module t
-    let tagModuleBinding name = if keywordFunctions.Contains name then mkTag TextTag.Keyword name else mkTag TextTag.ModuleBinding name
-    let tagFunction t = mkTag TextTag.Function t
-    let tagNamespace t = mkTag TextTag.Namespace t
-    let tagParameter t = mkTag TextTag.Parameter t
-    let tagStruct t = mkTag TextTag.Struct t
-    let tagTypeParameter t = mkTag TextTag.TypeParameter t
-    let tagActivePatternCase t = mkTag TextTag.ActivePatternCase t
-    let tagActivePatternResult t = mkTag TextTag.ActivePatternResult t
-    let tagUnion t = mkTag TextTag.Union t
-    let tagMember t = mkTag TextTag.Member t
-    let tagUnknownEntity t = mkTag TextTag.UnknownEntity t
-    let tagUnknownType t = mkTag TextTag.UnknownType t
+    let tagClass name = mkTag LayoutTag.Class name
+    let tagUnionCase t = mkTag LayoutTag.UnionCase t
+    let tagDelegate t = mkTag LayoutTag.Delegate t
+    let tagEnum t = mkTag LayoutTag.Enum t
+    let tagEvent t = mkTag LayoutTag.Event t
+    let tagField t = mkTag LayoutTag.Field t
+    let tagInterface t = mkTag LayoutTag.Interface t
+    let tagKeyword t = mkTag LayoutTag.Keyword t
+    let tagLineBreak t = mkTag LayoutTag.LineBreak t
+    let tagLocal t = mkTag LayoutTag.Local t
+    let tagRecord t = mkTag LayoutTag.Record t
+    let tagRecordField t = mkTag LayoutTag.RecordField t
+    let tagMethod t = mkTag LayoutTag.Method t
+    let tagModule t = mkTag LayoutTag.Module t
+    let tagModuleBinding name = if keywordFunctions.Contains name then mkTag LayoutTag.Keyword name else mkTag LayoutTag.ModuleBinding name
+    let tagFunction t = mkTag LayoutTag.Function t
+    let tagNamespace t = mkTag LayoutTag.Namespace t
+    let tagNumericLiteral t = mkTag LayoutTag.NumericLiteral t
+    let tagOperator t = mkTag LayoutTag.Operator t
+    let tagParameter t = mkTag LayoutTag.Parameter t
+    let tagProperty t = mkTag LayoutTag.Property t
+    let tagSpace t = mkTag LayoutTag.Space t
+    let tagStringLiteral t = mkTag LayoutTag.StringLiteral t
+    let tagStruct t = mkTag LayoutTag.Struct t
+    let tagTypeParameter t = mkTag LayoutTag.TypeParameter t
+    let tagText t = mkTag LayoutTag.Text t
+    let tagPunctuation t = mkTag LayoutTag.Punctuation t
 
-    // common tagged literals
-    let lineBreak = tagLineBreak "\n"
-    let leftBraceBar = tagPunctuation "{|"
-    let rightBraceBar = tagPunctuation "|}"
-    let arrow = tagPunctuation "->"
-    let dot = tagPunctuation "."
-    let leftAngle = tagPunctuation "<"
-    let rightAngle = tagPunctuation ">"
-    let colon = tagPunctuation ":"
-    let minus = tagPunctuation "-"
-    let keywordTrue = tagKeyword "true"
-    let keywordFalse = tagKeyword "false"
-    let structUnit = tagStruct "unit"
-    let keywordStatic = tagKeyword "static"
-    let keywordMember = tagKeyword "member"
-    let keywordVal = tagKeyword "val"
-    let keywordEvent = tagKeyword "event"
-    let keywordWith = tagKeyword "with"
-    let keywordSet = tagKeyword "set"
-    let keywordGet = tagKeyword "get"
-    let bar = tagPunctuation "|"
-    let keywordStruct = tagKeyword "struct"
-    let keywordInherit = tagKeyword "inherit"
-    let keywordEnd = tagKeyword "end"
-    let keywordNested = tagKeyword "nested"
-    let keywordType = tagKeyword "type"
-    let keywordDelegate = tagKeyword "delegate"
-    let keywordOf = tagKeyword "of"
-    let keywordInternal = tagKeyword "internal"
-    let keywordPrivate = tagKeyword "private"
-    let keywordAbstract = tagKeyword "abstract"
-    let keywordOverride = tagKeyword "override"
-    let keywordEnum = tagKeyword "enum"
-    let leftBracketBar = tagPunctuation  "[|"
-    let rightBracketBar = tagPunctuation "|]"
-    let keywordTypeof = tagKeyword "typeof"
-    let keywordTypedefof = tagKeyword "typedefof"
-    let leftBracketAngle = tagPunctuation "[<"
-    let rightBracketAngle = tagPunctuation ">]"
-    let star = tagOperator "*"
-    let keywordNew = tagKeyword "new"
-#endif     
+    module Literals =
+        // common tagged literals
+        let lineBreak = tagLineBreak "\n"
+        let space = tagSpace " "
+        let comma = tagPunctuation ","
+        let semicolon = tagPunctuation ";"
+        let leftParen = tagPunctuation "("
+        let rightParen = tagPunctuation ")"
+        let leftBracket = tagPunctuation "["
+        let rightBracket = tagPunctuation "]"
+        let leftBrace= tagPunctuation "{"
+        let rightBrace = tagPunctuation "}"
+        let leftBraceBar = tagPunctuation "{|"
+        let rightBraceBar = tagPunctuation "|}"
+        let equals = tagOperator "="
+        let arrow = tagPunctuation "->"
+        let questionMark = tagPunctuation "?"
+     
+module LayoutOps = 
+    open TaggedTextOps
 
-[<AutoOpen>]
-module Layout = 
+    let mkNode l r joint =
+        Node(l, r, joint)
 
     // constructors
     let objL (value:obj) = 
         match value with 
-        | :? string as s -> Leaf (false, mkTag TextTag.Text s, false)
+        | :? string as s -> Leaf (false, mkTag LayoutTag.Text s, false)
         | o -> ObjLeaf (false, o, false)
 
-    let wordL text = Leaf (false, text, false)
+    let sLeaf (l, t, r) = Leaf (l, t, r)
 
-    let sepL text = Leaf (true , text, true)   
+    let wordL text = sLeaf (false, text, false)
 
-    let rightL text = Leaf (true , text, false)   
+    let sepL text = sLeaf (true , text, true)   
 
-    let leftL text = Leaf (false, text, true)
+    let rightL text = sLeaf (true , text, false)   
 
-    let emptyL = Leaf (true, mkTag TextTag.Text "", true)
+    let leftL text = sLeaf (false, text, true)
+
+    let emptyL = sLeaf (true, mkTag LayoutTag.Text "", true)
 
     let isEmptyL layout = 
         match layout with 
         | Leaf(true, s, true) -> s.Text = ""
         | _ -> false
-
-    let mkNode l r joint =
-        if isEmptyL l then r else
-        if isEmptyL r then l else
-        Node(l, r, joint)
 
     let aboveL layout1 layout2 = mkNode layout1 layout2 (Broken 0)
 
@@ -291,19 +248,11 @@ module Layout =
 
     let (---) layout1 layout2 = mkNode layout1 layout2 (Breakable 2)
 
-    let (----)  layout1 layout2 = mkNode layout1 layout2 (Breakable 3)
-
-    let (-----) layout1 layout2 = mkNode layout1 layout2 (Breakable 4)    
-
     let (@@) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 0)) layout1 layout2
 
     let (@@-) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 1)) layout1 layout2
 
     let (@@--) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 2)) layout1 layout2
-    
-    let (@@---) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 3)) layout1 layout2
-        
-    let (@@----) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 4)) layout1 layout2
 
     let tagListL tagger els =
         match els with 
@@ -316,17 +265,17 @@ module Layout =
                 | y :: ys -> process' (tagger prefixL ++ y) ys
             process' x xs
             
-    let commaListL layouts = tagListL (fun prefixL -> prefixL ^^ rightL comma) layouts
+    let commaListL layouts = tagListL (fun prefixL -> prefixL ^^ rightL Literals.comma) layouts
 
-    let semiListL layouts = tagListL (fun prefixL -> prefixL ^^ rightL semicolon) layouts
+    let semiListL layouts = tagListL (fun prefixL -> prefixL ^^ rightL Literals.semicolon) layouts
 
     let spaceListL layouts = tagListL (fun prefixL -> prefixL) layouts
 
     let sepListL layout1 layouts = tagListL (fun prefixL -> prefixL ^^ layout1) layouts
 
-    let bracketL layout = leftL leftParen ^^ layout ^^ rightL rightParen
+    let bracketL layout = leftL Literals.leftParen ^^ layout ^^ rightL Literals.rightParen
 
-    let tupleL layouts = bracketL (sepListL (sepL comma) layouts)
+    let tupleL layouts = bracketL (sepListL (sepL Literals.comma) layouts)
 
     let aboveListL layouts = 
         match layouts with
@@ -340,13 +289,13 @@ module Layout =
         | Some x -> wordL (tagUnionCase "Some") -- (selector x)
 
     let listL selector value =
-        leftL leftBracket ^^ sepListL (sepL semicolon) (List.map selector value) ^^ rightL rightBracket
+        leftL Literals.leftBracket ^^ sepListL (sepL Literals.semicolon) (List.map selector value) ^^ rightL Literals.rightBracket
 
     let squareBracketL layout =
-        leftL leftBracket ^^ layout ^^ rightL rightBracket    
+        leftL Literals.leftBracket ^^ layout ^^ rightL Literals.rightBracket    
 
     let braceL layout =
-        leftL leftBrace ^^ layout ^^ rightL rightBrace
+        leftL Literals.leftBrace ^^ layout ^^ rightL Literals.rightBrace
 
     let boundedUnfoldL
         (itemL: 'a -> Layout)
@@ -522,7 +471,9 @@ module ReflectUtils =
 
 module Display = 
     open ReflectUtils
-    
+    open LayoutOps
+    open TaggedTextOps
+
     let string_of_int (i:int) = i.ToString()
 
     let typeUsesSystemObjectToString (ty:System.Type) =
@@ -739,7 +690,7 @@ module Display =
             | Node (l, r, _) -> 
                 let jm = Layout.JuxtapositionMiddle (l, r)
                 let z = addL z pos l
-                let z = if jm then z else addText z space
+                let z = if jm then z else addText z Literals.space
                 let pos = index z
                 let z = addL z pos r
                 z 
@@ -773,8 +724,8 @@ module Display =
     let unitL = wordL (tagPunctuation "()")
           
     let makeRecordL nameXs =
-        let itemL (name, xL) = (wordL name ^^ wordL equals) -- xL
-        let braceL xs = (wordL leftBrace) ^^ xs ^^ (wordL rightBrace)
+        let itemL (name, xL) = (wordL name ^^ wordL Literals.equals) -- xL
+        let braceL xs = (wordL Literals.leftBrace) ^^ xs ^^ (wordL Literals.rightBrace)
             
         nameXs
         |> List.map itemL
@@ -784,25 +735,25 @@ module Display =
     let makePropertiesL nameXs =
         let itemL (name, v) = 
             let labelL = wordL name 
-            (labelL ^^ wordL equals)
+            (labelL ^^ wordL Literals.equals)
             ^^ (match v with 
-                | None -> wordL questionMark
+                | None -> wordL Literals.questionMark
                 | Some xL -> xL)
-            ^^ (rightL semicolon)
-        let braceL xs = (leftL leftBrace) ^^ xs ^^ (rightL rightBrace)
+            ^^ (rightL Literals.semicolon)
+        let braceL xs = (leftL Literals.leftBrace) ^^ xs ^^ (rightL Literals.rightBrace)
         braceL (aboveListL (List.map itemL nameXs))
 
     let makeListL itemLs =
-        (leftL leftBracket) 
-        ^^ sepListL (rightL semicolon) itemLs 
-        ^^ (rightL rightBracket)
+        (leftL Literals.leftBracket) 
+        ^^ sepListL (rightL Literals.semicolon) itemLs 
+        ^^ (rightL Literals.rightBracket)
 
     let makeArrayL xs =
         (leftL (tagPunctuation "[|")) 
-        ^^ sepListL (rightL semicolon) xs 
+        ^^ sepListL (rightL Literals.semicolon) xs 
         ^^ (rightL (tagPunctuation "|]"))
 
-    let makeArray2L xs = leftL leftBracket ^^ aboveListL xs ^^ rightL rightBracket  
+    let makeArray2L xs = leftL Literals.leftBracket ^^ aboveListL xs ^^ rightL Literals.rightBracket  
 
     let getProperty (ty: Type) (obj: obj) name =
         ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |],CultureInfo.InvariantCulture)
@@ -1026,13 +977,13 @@ module Display =
             // tuples up args to UnionConstruction or ExceptionConstructor. no node count.
             match recd with 
             | [(_,x)] -> nestedObjL depthLim Precedence.BracketIfTupleOrNotAtomic x 
-            | txs -> leftL leftParen ^^ commaListL (List.map (snd >> nestedObjL depthLim Precedence.BracketIfTuple) txs) ^^ rightL rightParen
+            | txs -> leftL Literals.leftParen ^^ commaListL (List.map (snd >> nestedObjL depthLim Precedence.BracketIfTuple) txs) ^^ rightL Literals.rightParen
 
         and bracketIfL flag basicL =
-            if flag then (leftL leftParen) ^^ basicL ^^ (rightL rightParen) else basicL
+            if flag then (leftL Literals.leftParen) ^^ basicL ^^ (rightL Literals.rightParen) else basicL
 
         and tupleValueL depthLim prec vals tupleType =
-            let basicL = sepListL (rightL comma) (List.map (nestedObjL depthLim Precedence.BracketIfTuple ) (Array.toList vals))
+            let basicL = sepListL (rightL Literals.comma) (List.map (nestedObjL depthLim Precedence.BracketIfTuple ) (Array.toList vals))
             let fields = bracketIfL (prec <= Precedence.BracketIfTuple) basicL
             match tupleType with
             | TupleType.Value -> structL ^^ fields
@@ -1167,7 +1118,7 @@ module Display =
         and objectValueWithPropertiesL depthLim (ty: Type) (obj: obj) =
 
             // This buries an obj in the layout, rendered at squash time via a leafFormatter.
-            let basicL = Layout.objL obj
+            let basicL = LayoutOps.objL obj
             let props = ty.GetProperties(BindingFlags.GetField ||| BindingFlags.Instance ||| BindingFlags.Public)
             let fields = ty.GetFields(BindingFlags.Instance ||| BindingFlags.Public) |> Array.map (fun i -> i :> MemberInfo)
             let propsAndFields = 
@@ -1259,7 +1210,7 @@ module Display =
                 | _ ->
                     countNodes 1
                     // This buries an obj in the layout, rendered at squash time via a leafFormatter.
-                    Layout.objL obj
+                    LayoutOps.objL obj
 
         member _.Format(showMode, x:'a, xty:Type) =
             objL showMode opts.PrintDepth  Precedence.BracketIfTuple (x, xty)
@@ -1334,8 +1285,8 @@ module Display =
 
     let asTaggedTextWriter (writer: TextWriter) =
         { new TaggedTextWriter with
-            member _.Write(t) = writer.Write t.Text
-            member _.WriteLine() = writer.WriteLine() }
+            member __.Write(t) = writer.Write t.Text
+            member __.WriteLine() = writer.WriteLine() }
 
     let output_layout_tagged options writer layout = 
         layout |> squash_layout options 

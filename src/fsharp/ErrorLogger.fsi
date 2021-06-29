@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.ErrorLogger
+module public FSharp.Compiler.ErrorLogger
 
 open System
-open FSharp.Compiler.Diagnostics
+open FSharp.Compiler 
+open FSharp.Compiler.Range
 open FSharp.Compiler.Features
-open FSharp.Compiler.Text
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccessAttribute>]
@@ -40,6 +40,8 @@ exception StopProcessingExn of exn option
 val ( |StopProcessing|_| ): exn:exn -> unit option
 
 val StopProcessing<'T> : exn
+
+exception NumberedError of (int * string) * range
 
 exception Error of (int * string) * range
 
@@ -138,7 +140,7 @@ type ErrorLogger =
 
     member DebugDisplay: unit -> string
 
-    abstract member DiagnosticSink: phasedError:PhasedDiagnostic * severity:FSharpDiagnosticSeverity -> unit
+    abstract member DiagnosticSink: phasedError:PhasedDiagnostic * isError:bool -> unit
 
     abstract member ErrorCount: int
   
@@ -153,14 +155,14 @@ type CapturingErrorLogger =
 
     member CommitDelayedDiagnostics: errorLogger:ErrorLogger -> unit
 
-    override DiagnosticSink: phasedError:PhasedDiagnostic * severity:FSharpDiagnosticSeverity -> unit
+    override DiagnosticSink: phasedError:PhasedDiagnostic * isError:bool -> unit
 
-    member Diagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+    member Diagnostics: (PhasedDiagnostic * bool) list
 
     override ErrorCount: int
   
 [<Class>]
-type CompileThreadStatic =
+type internal CompileThreadStatic =
 
     static member BuildPhase: BuildPhase with get, set
 
@@ -206,7 +208,7 @@ val error: exn:exn -> 'a
 
 val simulateError: p:PhasedDiagnostic -> 'a
 
-val diagnosticSink: phasedError:PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+val diagnosticSink: phasedError:PhasedDiagnostic * isError:bool -> unit
 
 val errorSink: pe:PhasedDiagnostic -> unit
 
@@ -221,6 +223,8 @@ val errorRecoveryNoRange: exn:exn -> unit
 val report: f:(unit -> 'a) -> 'a
 
 val deprecatedWithError: s:string -> m:range -> unit
+
+val mutable reportLibraryOnlyFeatures: bool
 
 val libraryOnlyError: m:range -> unit
 
@@ -316,11 +320,21 @@ val NewlineifyErrorString: message:string -> string
 /// NOTE: newlines are recognized and replaced with stringThatIsAProxyForANewlineInFlatErrors (ASCII 29, the 'group separator'), 
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
 val NormalizeErrorString: text:string -> string
+
+type FSharpErrorSeverityOptions =
+    { WarnLevel: int
+      GlobalWarnAsError: bool
+      WarnOff: int list
+      WarnOn: int list
+      WarnAsError: int list
+      WarnAsWarn: int list }
+
+    static member Default: FSharpErrorSeverityOptions
   
-val checkLanguageFeatureError: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> unit
+val internal checkLanguageFeatureError: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> unit
 
-val checkLanguageFeatureErrorRecover: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> unit
+val internal checkLanguageFeatureErrorRecover: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> unit
 
-val tryLanguageFeatureErrorOption: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> exn option
+val internal tryLanguageFeatureErrorOption: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> exn option
 
-val languageFeatureNotSupportedInLibraryError: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> 'a
+val internal languageFeatureNotSupportedInLibraryError: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> 'a

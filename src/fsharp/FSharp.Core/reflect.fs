@@ -158,87 +158,6 @@ module internal Impl =
                 param)
         expr.Compile ()
 
-    let compileTupleConstructor tupleEncField getTupleConstructorMethod typ =
-        let rec constituentTuple (typ: Type) elements startIndex =
-            Expression.New (
-                getTupleConstructorMethod typ,
-                [
-                    let genericArgs = typ.GetGenericArguments ()
-
-                    for paramIndex in 0 .. genericArgs.Length - 1 do
-                        let genericArg = genericArgs.[paramIndex]
-                        
-                        if paramIndex = tupleEncField then
-                            constituentTuple genericArg elements (startIndex + paramIndex) :> Expression
-                        else
-                            Expression.Convert (Expression.ArrayAccess (elements, Expression.Constant (startIndex + paramIndex)), genericArg)
-                ])
-
-        let elements = Expression.Parameter (typeof<obj[]>, "elements")
-
-        let expr =
-            Expression.Lambda<Func<obj[], obj>> (
-                Expression.Convert (
-                    constituentTuple typ elements 0,
-                    typeof<obj>
-                ),
-                elements
-            )
-
-        expr.Compile ()
-
-    let compileTupleReader tupleEncField getTupleElementAccessors typ =
-        let rec writeTupleIntoArray (typ: Type) (tuple: Expression) outputArray startIndex = seq {
-            let elements =
-                match getTupleElementAccessors typ with
-                // typ is a struct tuple and its elements are accessed via fields 
-                | Choice1Of2 (fi: FieldInfo[]) -> fi |> Array.map (fun fi -> Expression.Field (tuple, fi), fi.FieldType)
-                // typ is a class tuple and its elements are accessed via properties 
-                | Choice2Of2 (pi: PropertyInfo[]) -> pi |> Array.map (fun pi -> Expression.Property (tuple, pi), pi.PropertyType)
-
-            for index, (element, elementType) in elements |> Array.indexed do
-                if index = tupleEncField then
-                    let innerTupleParam = Expression.Parameter (elementType, "innerTuple")
-                    Expression.Block (
-                        [ innerTupleParam ],
-                        [
-                            yield Expression.Assign (innerTupleParam, element) :> Expression
-                            yield! writeTupleIntoArray elementType innerTupleParam outputArray (startIndex + index)
-                        ]
-                    ) :> Expression
-                else
-                    Expression.Assign (
-                        Expression.ArrayAccess (outputArray, Expression.Constant (index + startIndex)),
-                        Expression.Convert (element, typeof<obj>)
-                    ) :> Expression }
-
-        let param = Expression.Parameter (typeof<obj>, "outerTuple")
-        let outputArray = Expression.Variable (typeof<obj[]>, "output")
-        let rec outputLength tupleEncField (typ: Type) =
-            let genericArgs = typ.GetGenericArguments ()
-
-            if genericArgs.Length > tupleEncField then
-                tupleEncField + outputLength tupleEncField genericArgs.[genericArgs.Length - 1]
-            else
-                genericArgs.Length
-
-        let expr =
-            Expression.Lambda<Func<obj, obj[]>> (
-                Expression.Block (
-                    [ outputArray ],
-                    [
-                        yield Expression.Assign (
-                            outputArray,
-                            Expression.NewArrayBounds (typeof<obj>, Expression.Constant (outputLength tupleEncField typ))
-                        ) :> Expression
-                        yield! writeTupleIntoArray typ (Expression.Convert (param, typ)) outputArray 0
-                        yield outputArray :> Expression
-                    ]
-                ),
-                param)
-
-        expr.Compile ()
-
     //-----------------------------------------------------------------
     // ATTRIBUTE DECOMPILATION
 
@@ -686,19 +605,16 @@ module internal Impl =
           (fun (args: obj[]) ->
               ctor.Invoke(BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public, null, args, null))
 
-    let getTupleElementAccessors (typ: Type) =
-        if typ.IsValueType then
-            Choice1Of2 (typ.GetFields (instanceFieldFlags ||| BindingFlags.Public) |> orderTupleFields)
-        else
-            Choice2Of2 (typ.GetProperties (instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties)
-
     let rec getTupleReader (typ: Type) =
         let etys = typ.GetGenericArguments()
         // Get the reader for the outer tuple record
         let reader =
-            match getTupleElementAccessors typ with
-            | Choice1Of2 fi -> fun obj -> fi |> Array.map (fun f -> f.GetValue obj)
-            | Choice2Of2 pi -> fun obj -> pi |> Array.map (fun p -> p.GetValue (obj, null))
+            if typ.IsValueType then
+                let fields = (typ.GetFields (instanceFieldFlags ||| BindingFlags.Public) |> orderTupleFields)
+                ((fun (obj: obj) -> fields |> Array.map (fun field -> field.GetValue obj)))
+            else
+                let props = (typ.GetProperties (instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties)
+                ((fun (obj: obj) -> props |> Array.map (fun prop -> prop.GetValue (obj, null))))
         if etys.Length < maxTuple
         then reader
         else
@@ -861,7 +777,7 @@ type UnionCaseInfo(typ: System.Type, tag: int) =
 
     let getMethInfo() = getUnionCaseConstructorMethod (typ, tag, BindingFlags.Public ||| BindingFlags.NonPublic)
 
-    member _.Name =
+    member __.Name =
         match names with
         | None ->
             let conv = getUnionTagConverter (typ, BindingFlags.Public ||| BindingFlags.NonPublic)
@@ -870,27 +786,27 @@ type UnionCaseInfo(typ: System.Type, tag: int) =
         | Some conv ->
             conv tag
 
-    member _.DeclaringType = typ
+    member __.DeclaringType = typ
 
-    member _.GetFields() =
+    member __.GetFields() =
         fieldsPropsOfUnionCase (typ, tag, BindingFlags.Public ||| BindingFlags.NonPublic)
 
-    member _.GetCustomAttributes() =
+    member __.GetCustomAttributes() =
         getMethInfo().GetCustomAttributes false
 
-    member _.GetCustomAttributes attributeType =
+    member __.GetCustomAttributes attributeType =
         getMethInfo().GetCustomAttributes(attributeType, false)
 
-    member _.GetCustomAttributesData() =
+    member __.GetCustomAttributesData() =
         getMethInfo().CustomAttributes |> Seq.toArray :> IList<_>
 
-    member _.Tag = tag
+    member __.Tag = tag
 
     override x.ToString() = typ.Name + "." + x.Name
 
     override x.GetHashCode() = typ.GetHashCode() + tag
 
-    override _.Equals(obj: obj) =
+    override __.Equals(obj: obj) =
         match obj with
         | :? UnionCaseInfo as uci -> uci.DeclaringType = typ && uci.Tag = tag
         | _ -> false
@@ -982,7 +898,7 @@ type FSharpType =
 
 type DynamicFunction<'T1, 'T2>() =
     inherit FSharpFunc<obj -> obj, obj>()
-    override _.Invoke(impl: obj -> obj) : obj =
+    override __.Invoke(impl: obj -> obj) : obj =
         box<('T1 -> 'T2)> (fun inp -> unbox<'T2>(impl (box<'T1>(inp))))
 
 [<AbstractClass; Sealed>]
@@ -1064,7 +980,7 @@ type FSharpValue =
 
     static member PreComputeTupleReader(tupleType: Type) : (obj -> obj[])  =
         checkTupleType("tupleType", tupleType)
-        (compileTupleReader tupleEncField getTupleElementAccessors tupleType).Invoke
+        getTupleReader tupleType
 
     static member PreComputeTuplePropertyInfo(tupleType: Type, index: int) =
         checkTupleType("tupleType", tupleType)
@@ -1072,7 +988,7 @@ type FSharpValue =
 
     static member PreComputeTupleConstructor(tupleType: Type) =
         checkTupleType("tupleType", tupleType)
-        (compileTupleConstructor tupleEncField getTupleConstructorMethod tupleType).Invoke
+        getTupleConstructor tupleType
 
     static member PreComputeTupleConstructorInfo(tupleType: Type) =
         checkTupleType("tupleType", tupleType)

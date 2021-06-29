@@ -6,7 +6,7 @@ module internal FSharp.Compiler.LexFilter
 
 open Internal.Utilities.Text.Lexing
 open FSharp.Compiler 
-open Internal.Utilities.Library
+open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
@@ -2227,13 +2227,6 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
     and rulesForBothSoftWhiteAndHardWhite(tokenTup: TokenTup) = 
           match tokenTup.Token with 
-          | HASH_IDENT (ident) ->
-              let hashPos = new LexbufState(tokenTup.StartPos, tokenTup.StartPos.ShiftColumnBy(1), false)
-              let identPos = new LexbufState(tokenTup.StartPos.ShiftColumnBy(1), tokenTup.EndPos, false)
-              delayToken(new TokenTup(IDENT(ident), identPos, tokenTup.LastTokenPos))
-              delayToken(new TokenTup(HASH, hashPos, tokenTup.LastTokenPos))
-              true
-
           // Insert HIGH_PRECEDENCE_PAREN_APP if needed 
           | IDENT _ when (nextTokenIsAdjacentLParenOrLBrack tokenTup).IsSome ->
               let dotTokenTup = peekNextTokenTup()
@@ -2367,9 +2360,9 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     // Part VI. Publish the new lexer function.  
     //--------------------------------------------------------------------------
 
-    member _.LexBuffer = lexbuf
+    member __.LexBuffer = lexbuf
 
-    member _.GetToken() = 
+    member __.GetToken() = 
         if not initialized then 
             let _firstTokenTup = peekInitial()
             ()

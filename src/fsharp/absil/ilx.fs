@@ -1,10 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Defines an extension of the IL algebra
-module internal FSharp.Compiler.AbstractIL.ILX.Types
+module internal FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 
 open FSharp.Compiler.AbstractIL.IL 
-open Internal.Utilities.Library 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+
+// --------------------------------------------------------------------
+// Define an extension of the IL instruction algebra
+// -------------------------------------------------------------------- 
 
 let mkLowerName (nm: string) =
     // Use the lower case name of a field or constructor as the field/parameter name if it differs from the uppercase name
@@ -12,16 +16,17 @@ let mkLowerName (nm: string) =
     if lowerName = nm then "_" + nm else lowerName
 
 [<Sealed>]
-type IlxUnionCaseField(fd: ILFieldDef) =
+type IlxUnionField(fd: ILFieldDef) =
     let lowerName = mkLowerName fd.Name
     member x.ILField = fd
     member x.Type = x.ILField.FieldType
     member x.Name = x.ILField.Name
     member x.LowerName = lowerName
     
-type IlxUnionCase = 
+
+type IlxUnionAlternative = 
     { altName: string
-      altFields: IlxUnionCaseField[]
+      altFields: IlxUnionField[]
       altCustomAttrs: ILAttributes }
 
     member x.FieldDefs = x.altFields
@@ -37,7 +42,7 @@ type IlxUnionHasHelpers =
    | SpecialFSharpOptionHelpers 
    
 type IlxUnionRef = 
-    | IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionCase[] * bool * (* hasHelpers: *) IlxUnionHasHelpers 
+    | IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionAlternative[] * bool * (* hasHelpers: *) IlxUnionHasHelpers 
 
 type IlxUnionSpec = 
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
@@ -52,6 +57,7 @@ type IlxUnionSpec =
     member x.Alternative idx = x.AlternativesArray.[idx]
     member x.FieldDef idx fidx = x.Alternative(idx).FieldDef(fidx)
 
+
 type IlxClosureLambdas = 
     | Lambdas_forall of ILGenericParameterDef * IlxClosureLambdas
     | Lambdas_lambda of ILParameter * IlxClosureLambdas
@@ -63,7 +69,7 @@ type IlxClosureApps =
   | Apps_done of ILType
 
 let rec instAppsAux n inst = function
-  | Apps_tyapp (ty, rty) -> Apps_tyapp(instILTypeAux n inst ty, instAppsAux n inst rty)
+    Apps_tyapp (ty, rty) -> Apps_tyapp(instILTypeAux n inst ty, instAppsAux n inst rty)
   | Apps_app (dty, rty) ->  Apps_app(instILTypeAux n inst dty, instAppsAux n inst rty)
   | Apps_done rty ->  Apps_done(instILTypeAux n inst rty)
 
@@ -142,11 +148,8 @@ type IlxUnionInfo =
 
       /// generate the helpers? 
       cudDebugProxies: bool 
-
       cudDebugDisplayAttributes: ILAttribute list
-
-      cudAlternatives: IlxUnionCase[]
-
+      cudAlternatives: IlxUnionAlternative[]
       cudNullPermitted: bool
 
       /// debug info for generated code for classunions 

@@ -3,7 +3,7 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 open FSharp.Test.Utilities
-open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>]
 module ``Validate ExperimentalAttribute and LanguageVersion`` =
@@ -27,7 +27,7 @@ module TestModule =
     let ``ExperimentalAttribute warn when preview not specified``() =
         CompilerAssert.TypeCheckSingleError
             experimentalSource
-            FSharpDiagnosticSeverity.Warning
+            FSharpErrorSeverity.Warning
             57
             (7, 8, 7, 17)
             "Preview library feature, requires '--langversion:preview'. This warning can be disabled using '--nowarn:57' or '#nowarn \"57\"'."

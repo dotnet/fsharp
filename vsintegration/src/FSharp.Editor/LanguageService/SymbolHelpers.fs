@@ -10,38 +10,59 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 
-open FSharp.Compiler
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Symbols
-open FSharp.Compiler.Text
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor.Symbols 
 
 module internal SymbolHelpers =
     /// Used for local code fixes in a document, e.g. to rename local parameters
-    let getSymbolUsesOfSymbolAtLocationInDocument (document: Document, position: int) =
+    let getSymbolUsesOfSymbolAtLocationInDocument (document: Document, position: int, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, userOpName) =
         asyncMaybe {
-            let userOpName = "getSymbolUsesOfSymbolAtLocationInDocument"
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
-            let! defines = document.GetFSharpCompilationDefinesAsync(userOpName) |> liftAsync
-
             let! cancellationToken = Async.CancellationToken |> liftAsync
             let! sourceText = document.GetTextAsync(cancellationToken)
+            let! textVersion = document.GetTextVersionAsync(cancellationToken) 
+            let textVersionHash = textVersion.GetHashCode()
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName) 
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
+            let settings = document.FSharpOptions
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.FilePath, textVersionHash, sourceText, projectOptions, settings.LanguageServicePerformance, userOpName = userOpName) 
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
             let! ct = Async.CancellationToken |> liftAsync
             let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, cancellationToken=ct)
             return symbolUses
         }
 
-    let getSymbolUsesInProjects (symbol: FSharpSymbol, projects: Project list, onFound: Document -> TextSpan -> range -> Async<unit>) =
+    let getSymbolUsesInProjects (symbol: FSharpSymbol, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, projects: Project list, onFound: Document -> TextSpan -> range -> Async<unit>, userOpName) =
         projects
-        |> Seq.map (fun project -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects"))
+        |> Seq.map (fun project ->
+            async {
+                match! projectInfoManager.TryGetOptionsByProject(project, CancellationToken.None) with
+                | Some (_parsingOptions, projectOptions) ->
+                    for filePath in projectOptions.SourceFiles do
+                        let! symbolUses = checker.FindBackgroundReferencesInFile(filePath, projectOptions, symbol, canInvalidateProject = false, userOpName = userOpName)
+                        let documentOpt = project.Solution.TryGetDocumentFromPath(filePath, project.Id)
+                        match documentOpt with
+                        | Some document ->
+                            let! ct = Async.CancellationToken
+                            let! sourceText = document.GetTextAsync ct |> Async.AwaitTask
+                            for symbolUse in symbolUses do 
+                                match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
+                                | Some textSpan ->
+                                    do! onFound document textSpan symbolUse
+                                | _ ->
+                                    ()
+                        | _ ->
+                            ()
+                | _ -> ()
+            })
         |> Async.Sequential
 
-    let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults, solution: Solution) =
+    let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults,
+                                 projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, solution: Solution, userOpName) =
         async {
             let toDict (symbolUseRanges: range seq) =
                 let groups =
@@ -57,7 +78,7 @@ module internal SymbolHelpers =
             | SymbolDeclarationLocation.CurrentDocument ->
                 let! ct = Async.CancellationToken
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbol, ct)
-                return toDict (symbolUses |> Seq.map (fun symbolUse -> symbolUse.Range))
+                return toDict (symbolUses |> Seq.map (fun symbolUse -> symbolUse.RangeAlternate))
             | SymbolDeclarationLocation.Projects (projects, isInternalToProject) -> 
                 let symbolUseRanges = ImmutableArray.CreateBuilder()
                     
@@ -73,7 +94,7 @@ module internal SymbolHelpers =
                     fun _ _ symbolUseRange ->
                         async { symbolUseRanges.Add symbolUseRange }
 
-                let! _ = getSymbolUsesInProjects (symbol, projects, onFound)
+                let! _ = getSymbolUsesInProjects (symbol, projectInfoManager, checker, projects, onFound, userOpName)
                     
                 // Distinct these down because each TFM will produce a new 'project'.
                 // Unless guarded by a #if define, symbols with the same range will be added N times
@@ -91,23 +112,22 @@ module internal SymbolHelpers =
     // A better approach is to use something like createTextChangeCodeFix below, with a delayed function to compute a set of changes to be applied
     // simultaneously.  But that doesn't work for this case, as we want a set of changes to apply acrosss the whole solution.
 
-    let changeAllSymbolReferences (document: Document, symbolSpan: TextSpan, textChanger: string -> string)
+    let changeAllSymbolReferences (document: Document, symbolSpan: TextSpan, textChanger: string -> string, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, userOpName)
         : Async<(Func<CancellationToken, Task<Solution>> * OriginalText) option> =
         asyncMaybe {
-            let userOpName = "changeAllSymbolReferences"
             do! Option.guard (symbolSpan.Length > 0)
             let! cancellationToken = liftAsync Async.CancellationToken
             let! sourceText = document.GetTextAsync(cancellationToken)
             let originalText = sourceText.ToString(symbolSpan)
             do! Option.guard (originalText.Length > 0)
-
-            let! symbol = document.TryFindFSharpLexerSymbolAsync(symbolSpan.Start, SymbolLookupKind.Greedy, false, false, userOpName)
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, symbolSpan.Start, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)
             let textLinePos = sourceText.Lines.GetLinePosition(symbolSpan.Start)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
             let newText = textChanger originalText
             // defer finding all symbol uses throughout the solution
@@ -115,7 +135,7 @@ module internal SymbolHelpers =
                 Func<_,_>(fun (cancellationToken: CancellationToken) ->
                     async {
                         let! symbolUsesByDocumentId = 
-                            getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, document.Project.Solution)
+                            getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, projectInfoManager, checker, document.Project.Solution, userOpName)
                         
                         let mutable solution = document.Project.Solution
                             

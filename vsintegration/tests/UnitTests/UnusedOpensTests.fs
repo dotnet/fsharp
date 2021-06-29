@@ -4,10 +4,9 @@ module Tests.ServiceAnalysis.UnusedOpens
 
 open System
 open NUnit.Framework
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.EditorServices
-open FSharp.Compiler.Text
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
+
 
 /// like "should equal", but validates same-type
 let shouldEqual (x: 'a) (y: 'a) = Assert.AreEqual(x, y, sprintf "Expected: %A\nActual: %A" x y)
@@ -25,6 +24,7 @@ let private projectOptions : FSharpProjectOptions =
       LoadTime = DateTime.MaxValue
       OriginalLoadReferences = []
       UnresolvedReferences = None
+      ExtraProjectInfo = None
       Stamp = None }
 
 let private checker = FSharpChecker.Create()
@@ -221,7 +221,7 @@ let ``open declaration is not marked as unused if an extension property is used`
     """
 module Module =
     type System.String with
-        member _.ExtensionProperty = ()
+        member __.ExtensionProperty = ()
 open Module
 let _ = "a long string".ExtensionProperty
 """
@@ -232,7 +232,7 @@ let ``open declaration is marked as unused if an extension property is not used`
     """
 module Module =
     type System.String with
-        member _.ExtensionProperty = ()
+        member __.ExtensionProperty = ()
 open Module
 let _ = "a long string".Trim()
 """
@@ -244,7 +244,7 @@ let ``open declaration is not marked as unused if an extension method is used``(
 type Class() = class end
 module Module =
     type Class with
-        member _.ExtensionMethod() = ()
+        member __.ExtensionMethod() = ()
 open Module
 let x = Class()
 let _ = x.ExtensionMethod()
@@ -257,7 +257,7 @@ let ``open declaration is marked as unused if an extension method is not used``(
 type Class() = class end
 module Module =
     type Class with
-        member _.ExtensionMethod() = ()
+        member __.ExtensionMethod() = ()
 open Module
 let x = Class()
 """
@@ -582,7 +582,7 @@ let ``open declaration is not marked as unused if a related type extension is us
 module Module =
     open System
     type String with
-        member _.Method() = ()
+        member __.Method() = ()
 """
     => []
 
@@ -593,7 +593,7 @@ open System.IO.Compression
 
 type OutliningHint() as self =
     do self.E.Add (fun (e: GZipStream) -> ()) 
-    member _.E: IEvent<_> = Unchecked.defaultof<_> 
+    member __.E: IEvent<_> = Unchecked.defaultof<_> 
 """
     => []
 
@@ -636,7 +636,7 @@ type IInterface =
 
 type IClass() =
     interface IInterface with
-        member _.Property = 0
+        member __.Property = 0
 
 let f (x: IClass) = (x :> IInterface).Property
 """

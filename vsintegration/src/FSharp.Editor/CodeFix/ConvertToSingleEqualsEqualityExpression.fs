@@ -3,10 +3,12 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
+open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
+open Microsoft.CodeAnalysis.CodeActions
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ConvertToSingleEqualsEqualityExpression"); Shared>]
 type internal FSharpConvertToSingleEqualsEqualityExpressionCodeFixProvider() =
@@ -14,7 +16,7 @@ type internal FSharpConvertToSingleEqualsEqualityExpressionCodeFixProvider() =
 
     let fixableDiagnosticIds = set ["FS0043"]
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override this.RegisterCodeFixesAsync context : Task =
         asyncMaybe {

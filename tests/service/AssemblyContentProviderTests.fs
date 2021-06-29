@@ -11,8 +11,7 @@ open System
 open System.IO
 open System.Text
 open NUnit.Framework
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.EditorServices
+open FSharp.Compiler.SourceCodeServices
 
 let private filePath = "C:\\test.fs"
 
@@ -27,6 +26,7 @@ let private projectOptions : FSharpProjectOptions =
       LoadTime = DateTime.MaxValue
       OriginalLoadReferences = []
       UnresolvedReferences = None
+      ExtraProjectInfo = None
       Stamp = None }
 
 let private checker = FSharpChecker.Create()
@@ -51,7 +51,7 @@ let (=>) (source: string) (expected: string list) =
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> checkFileResults
 
     let actual = 
-        AssemblyContent.GetAssemblySignatureContent AssemblyContentType.Full checkFileResults.PartialAssemblySignature
+        AssemblyContentProvider.getAssemblySignatureContent AssemblyContentType.Full checkFileResults.PartialAssemblySignature
         |> List.map (fun x -> x.CleanedIdents |> String.concat ".") 
         |> List.sort
 

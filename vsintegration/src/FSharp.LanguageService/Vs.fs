@@ -3,12 +3,18 @@
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 open System
+open System.IO
+open System.Collections
+open System.Collections.Generic
+open System.Reflection
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
+open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.TextManager.Interop
-open FSharp.Compiler.Text
+open Microsoft.VisualStudio.OLE.Interop
+open FSharp.Compiler.Range
 open System.Runtime.InteropServices
 
 /// Helper methods for interoperating with COM                

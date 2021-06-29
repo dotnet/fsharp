@@ -9,10 +9,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 open System
 open Microsoft.VisualStudio.TextManager.Interop 
 open Microsoft.VisualStudio.Text
-open FSharp.Compiler
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.EditorServices
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 open Microsoft.VisualStudio.FSharp.Interactive.Session
 
@@ -93,7 +90,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
             |   _ ->       
                 // For scripts, GetProjectOptionsFromScript involves parsing and sync op, so is run on the language service thread later
                 // For projects, we need to access RDT on UI thread, so do it on the GUI thread now
-                if CompilerEnvironment.MustBeSingleFileProject(fileName) then
+                if SourceFile.MustBeSingleFileProject(fileName) then
                     let data = 
                         lazy // This portion is executed on the language service thread
                             let timestamp = if source=null then System.DateTime(2000,1,1) else source.OpenedTime // source is null in unit tests
@@ -112,7 +109,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                     let rdt = getServiceProvider().RunningDocumentTable
                     let projectSite = getProjectSitesAndFiles().FindOwningProject_DEPRECATED(rdt,fileName)
                     let enableInMemoryCrossProjectReferences = true
-                    let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, getServiceProvider(), fileName, false)
+                    let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, getServiceProvider(), None(*projectId*), fileName, None(*extraProjectInfo*), None(*FSharpProjectOptionsTable*), false)
                     let projectFileName = projectSite.ProjectFileName
                     let data = 
                         {   ProjectSite = projectSite
@@ -195,14 +192,15 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
 
                         // Type-checking
                         let typedResults,aborted = 
-                            match interactiveChecker.CheckFileInProject(parseResults,req.FileName,req.Timestamp,FSharp.Compiler.Text.SourceText.ofString(req.Text),checkOptions) |> Async.RunSynchronously with 
-                            | FSharpCheckFileAnswer.Aborted -> 
+                            match interactiveChecker.CheckFileInProjectAllowingStaleCachedResults(parseResults,req.FileName,req.Timestamp,req.Text,checkOptions) |> Async.RunSynchronously with 
+                            | None -> None,false
+                            | Some FSharpCheckFileAnswer.Aborted -> 
                                 // isResultObsolete returned true during the type check.
                                 None,true
-                            | FSharpCheckFileAnswer.Succeeded results -> Some results, false
+                            | Some (FSharpCheckFileAnswer.Succeeded results) -> Some results, false
 
                         sr := None
-                        parseResults,typedResults,true,aborted,int64 req.Timestamp
+                        parseResults,typedResults,true,aborted,req.Timestamp
                 
                 // Now that we have the parseResults, we can SetDependencyFiles().
                 // 
@@ -218,9 +216,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                     // Furthermore, if the project is out-of-date behave just as if we were notified dependency files changed.  
                     if outOfDateProjectFileNames.Contains(projectFileName) then
                         interactiveChecker.InvalidateConfiguration(checkOptions)
-                        interactiveChecker.ParseAndCheckProject(checkOptions)
-                        |> Async.RunSynchronously
-                        |> ignore
+                        interactiveChecker.CheckProjectInBackground(checkOptions) 
                         outOfDateProjectFileNames.Remove(projectFileName) |> ignore
 
                 else
@@ -235,21 +231,17 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                         req.IsAborted <- aborted
                         // On 'FullTypeCheck', send a message to the reactor to start the background compile for this project, just in case
                         if req.Reason = BackgroundRequestReason.FullTypeCheck then    
-                            interactiveChecker.ParseAndCheckProject(checkOptions)
-                            |> Async.RunSynchronously
-                            |> ignore
+                            interactiveChecker.CheckProjectInBackground(checkOptions) 
 
                     | Some typedResults -> 
                         // Post the parse errors. 
                         if containsFreshFullTypeCheck then 
-                            for error in typedResults.Diagnostics do
-                                let span = new TextSpan(iStartLine=error.StartLine-1,iStartIndex=error.StartColumn,iEndLine=error.EndLine-1,iEndIndex=error.EndColumn)                             
+                            for error in typedResults.Errors do
+                                let span = new TextSpan(iStartLine=error.StartLineAlternate-1,iStartIndex=error.StartColumn,iEndLine=error.EndLineAlternate-1,iEndIndex=error.EndColumn)                             
                                 let sev = 
                                     match error.Severity with 
-                                    | FSharpDiagnosticSeverity.Hidden -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Hint
-                                    | FSharpDiagnosticSeverity.Info -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Hint
-                                    | FSharpDiagnosticSeverity.Warning -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning
-                                    | FSharpDiagnosticSeverity.Error -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error
+                                    | FSharpErrorSeverity.Warning -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning
+                                    | FSharpErrorSeverity.Error -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error
                                 req.ResultSink.AddError(req.FileName, error.Subcategory, error.Message, span, sev)
                           
 
@@ -258,15 +250,13 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                         let scope = new FSharpIntellisenseInfo_DEPRECATED(parseResults, req.Line, req.Col, req.Snapshot, typedResults, projectSite, req.View, colorizer, getDocumentationBuilder(), provideMethodList) 
 
                         req.ResultIntellisenseInfo <- scope
-                        req.ResultTimestamp <- int resultTimestamp  // This will be different from req.Timestamp when we're using stale results.
+                        req.ResultTimestamp <- resultTimestamp  // This will be different from req.Timestamp when we're using stale results.
                         req.ResultClearsDirtinessOfFile <- containsFreshFullTypeCheck
 
 
                         // On 'FullTypeCheck', send a message to the reactor to start the background compile for this project, just in case
                         if req.Reason = BackgroundRequestReason.FullTypeCheck then    
-                            interactiveChecker.ParseAndCheckProject(checkOptions)
-                            |> Async.RunSynchronously
-                            |> ignore
+                            interactiveChecker.CheckProjectInBackground(checkOptions) 
                             
                         // On 'QuickInfo', get the text for the quick info while we're off the UI thread, instead of doing it later
                         if req.Reason = BackgroundRequestReason.QuickInfo then 
@@ -301,7 +291,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
             // OK, the last request is still active, so try to wait again
             lastParseFileRequest.Result.TryWaitForBackgroundRequestCompletion(millisecondsTimeout) 
 
-    member _.OnActiveViewChanged(_textView: IVsTextView) =
+    member __.OnActiveViewChanged(_textView: IVsTextView) =
         parseFileResults <- None
         lastParseFileRequest <- null // abandon any request for untyped parse information, without cancellation
 
@@ -310,7 +300,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
     //
     // THIS MUST ONLY RETURN TRUE IF ---> ExecuteBackgroundRequest is equivalent to fetching a recent,
     // perhaps out-of-date scope.
-    member _.IsRecentScopeSufficientForBackgroundRequest(reason:BackgroundRequestReason) = 
+    member __.IsRecentScopeSufficientForBackgroundRequest(reason:BackgroundRequestReason) = 
     
         match reason with 
         | BackgroundRequestReason.MatchBraces 

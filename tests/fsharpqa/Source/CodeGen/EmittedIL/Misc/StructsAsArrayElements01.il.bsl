@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 4:4:3:0
 }
 .assembly StructsAsArrayElements01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.StructsAsArrayElements01
 {
-  // Offset: 0x00000000 Length: 0x00000754
+  // Offset: 0x00000000 Length: 0x00000758
 }
 .mresource public FSharpOptimizationData.StructsAsArrayElements01
 {
-  // Offset: 0x00000758 Length: 0x0000022C
+  // Offset: 0x00000760 Length: 0x0000022C
 }
 .module StructsAsArrayElements01.dll
-// MVID: {60B68B7F-29F3-6E68-A745-03837F8BB660}
+// MVID: {5B17FC4F-29F3-6E68-A745-03834FFC175B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06A80000
+// Image base: 0x00E30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -66,14 +66,14 @@
             instance int32  CompareTo(valuetype StructsAsArrayElements01/T obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       34 (0x22)
+      // Code size       38 (0x26)
       .maxstack  4
       .locals init ([0] valuetype StructsAsArrayElements01/T& V_0,
                [1] class [mscorlib]System.Collections.IComparer V_1,
                [2] int32 V_2,
                [3] int32 V_3)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 7,7 : 6,7 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\StructsAsArrayElements01.fs'
+      .line 7,7 : 6,7 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\StructsAsArrayElements01.fs'
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
@@ -88,15 +88,19 @@
       IL_0018:  ldloc.3
       IL_0019:  bge.s      IL_001d
 
-      .line 100001,100001 : 0,0 ''
-      IL_001b:  ldc.i4.m1
-      IL_001c:  ret
+      IL_001b:  br.s       IL_001f
+
+      IL_001d:  br.s       IL_0021
 
       .line 100001,100001 : 0,0 ''
-      IL_001d:  ldloc.2
-      IL_001e:  ldloc.3
-      IL_001f:  cgt
-      IL_0021:  ret
+      IL_001f:  ldc.i4.m1
+      IL_0020:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_0021:  ldloc.2
+      IL_0022:  ldloc.3
+      IL_0023:  cgt
+      IL_0025:  ret
     } // end of method T::CompareTo
 
     .method public hidebysig virtual final 
@@ -118,7 +122,7 @@
                                       class [mscorlib]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       40 (0x28)
+      // Code size       44 (0x2c)
       .maxstack  4
       .locals init ([0] valuetype StructsAsArrayElements01/T V_0,
                [1] valuetype StructsAsArrayElements01/T& V_1,
@@ -143,15 +147,19 @@
       IL_001c:  ldloc.s    V_4
       IL_001e:  bge.s      IL_0022
 
-      .line 100001,100001 : 0,0 ''
-      IL_0020:  ldc.i4.m1
-      IL_0021:  ret
+      IL_0020:  br.s       IL_0024
+
+      IL_0022:  br.s       IL_0026
 
       .line 100001,100001 : 0,0 ''
-      IL_0022:  ldloc.3
-      IL_0023:  ldloc.s    V_4
-      IL_0025:  cgt
-      IL_0027:  ret
+      IL_0024:  ldc.i4.m1
+      IL_0025:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_0026:  ldloc.3
+      IL_0027:  ldloc.s    V_4
+      IL_0029:  cgt
+      IL_002b:  ret
     } // end of method T::CompareTo
 
     .method public hidebysig virtual final 

@@ -31,10 +31,12 @@ type internal FSharpChangePrefixNegationToInfixSubtractionodeFixProvider() =
             // This won't ever actually happen, but eh why not
             do! Option.guard (pos < sourceText.Length)
 
-            let mutable ch = sourceText.[pos]
+            let mutable ch = sourceText.GetSubText(TextSpan(pos, 1)).ToString().[0]
+
             while pos < sourceText.Length && Char.IsWhiteSpace(ch) do
                 pos <- pos + 1
-                ch <- sourceText.[pos]
+                let text = sourceText.GetSubText(TextSpan(pos, 1))
+                ch <- text.ToString().[0]
 
             // Bail if this isn't a negation
             do! Option.guard (ch = '-')

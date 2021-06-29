@@ -10,9 +10,9 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.MethodCalls
-open FSharp.Compiler.Syntax
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
@@ -94,7 +94,7 @@ type ContextInfo =
 type OverloadInformation = 
     {
         methodSlot: CalledMeth<Expr>
-        infoReader: InfoReader
+        amap : ImportMap
         error: exn
     }
 

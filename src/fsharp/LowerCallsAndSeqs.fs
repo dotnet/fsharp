@@ -2,19 +2,17 @@
 
 module internal FSharp.Compiler.LowerCallsAndSeqs
 
-open Internal.Utilities.Collections
-open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
+open FSharp.Compiler.Lib
 open FSharp.Compiler.MethodCalls
-open FSharp.Compiler.Syntax
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.TypeRelations
+open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -65,7 +63,7 @@ let LowerImplFile g assembly =
 let mkLambdaNoType g m uv e =
     mkLambda m uv (e, tyOfExpr g e)
 
-let callNonOverloadedILMethod g amap m methName ty args =
+let callNonOverloadedMethod g amap m methName ty args =
     match TryFindIntrinsicMethInfo (InfoReader(g, amap)) m AccessibleFromSomeFSharpCode methName ty  with
     | [] -> error(InternalError("No method called '"+methName+"' was found", m))
     | ILMeth(g, ilMethInfo, _) :: _  ->
@@ -118,105 +116,6 @@ let (|Seq|_|) g expr =
 let IsPossibleSequenceExpr g overallExpr =
     match overallExpr with Seq g _ -> true | _ -> false
 
-/// Detect a 'yield x' within a 'seq { ... }'
-let (|SeqYield|_|) g expr =
-    match expr with
-    | ValApp g g.seq_singleton_vref (_, [arg], m) -> Some (arg, m)
-    | _ -> None
-
-/// Detect a 'expr; expr' within a 'seq { ... }'
-let (|SeqAppend|_|) g expr =
-    match expr with
-    | ValApp g g.seq_append_vref (_, [arg1; arg2], m) -> Some (arg1, arg2, m)
-    | _ -> None
-
-/// Detect a 'while gd do expr' within a 'seq { ... }'
-let (|SeqWhile|_|) g expr =
-    match expr with
-    | ValApp g g.seq_generated_vref (_, [Expr.Lambda (_, _, _, [dummyv], gd, _, _);arg2], m) 
-         when not (isVarFreeInExpr dummyv gd) ->
-        
-        // The debug point for 'while' is attached to the second argument, see TcSequenceExpression
-        let mWhile = arg2.Range
-        Some (gd, arg2, mWhile, m)
-
-    | _ ->
-        None
-
-let (|SeqTryFinally|_|) g expr =
-    match expr with
-    | ValApp g g.seq_finally_vref (_, [arg1;(Expr.Lambda (_, _, _, [dummyv], compensation, _, _) as arg2)], m) 
-        when not (isVarFreeInExpr dummyv compensation) ->
-
-        // The debug point for 'try' and 'finally' are attached to the first and second arguments
-        // respectively, see TcSequenceExpression
-        let mTry = arg1.Range
-        let mFinally = arg2.Range
-
-        Some (arg1, compensation, mTry, mFinally, m)
-
-    | _ ->
-        None
-
-let (|SeqUsing|_|) g expr =
-    match expr with
-    | ValApp g g.seq_using_vref ([_;_;elemTy], [resource;Expr.Lambda (_, _, _, [v], body, mBind, _)], m) ->
-        Some (resource, v, body, elemTy, mBind, m)
-    | _ ->
-        None
-
-let (|SeqForEach|_|) g expr =
-    match expr with
-    // Nested for loops are represented by calls to Seq.collect
-    | ValApp g g.seq_collect_vref ([_inpElemTy;_enumty2;genElemTy], [Expr.Lambda (_, _, _, [v], body, mFor, _); inp], m) ->
-        // The debug point mFor at the 'for' gets attached to the first argument, see TcSequenceExpression
-        Some (inp, v, body, genElemTy, mFor, m)
-
-    // "for x in e -> e2" is converted to a call to Seq.map by the F# type checker. This could be removed, except it is also visible in F# quotations.
-    | ValApp g g.seq_map_vref ([_inpElemTy;genElemTy], [Expr.Lambda (_, _, _, [v], body, mFor, _); inp], m) ->
-        // The debug point mFor at the 'for' gets attached to the first argument, see TcSequenceExpression
-        Some (inp, v, mkCallSeqSingleton g body.Range genElemTy body, genElemTy, mFor, m)
-
-    | _ -> None
-
-let (|SeqDelay|_|) g expr =
-    match expr with
-    | ValApp g g.seq_delay_vref ([elemTy], [Expr.Lambda (_, _, _, [v], e, _, _)], _m) 
-        when not (isVarFreeInExpr v e) -> 
-        Some (e, elemTy)
-    | _ -> None
-
-let (|SeqEmpty|_|) g expr =
-    match expr with
-    | ValApp g g.seq_empty_vref (_, [], m) -> Some (m)
-    | _ -> None
-
-let (|SeqToList|_|) g expr =
-    match expr with
-    | ValApp g g.seq_to_list_vref (_, [seqExpr], m) -> Some (seqExpr, m)
-    | _ -> None
-
-let (|SeqToArray|_|) g expr =
-    match expr with
-    | ValApp g g.seq_to_array_vref (_, [seqExpr], m) -> Some (seqExpr, m)
-    | _ -> None
-
-let tyConfirmsToSeq g ty = 
-    match tryTcrefOfAppTy g ty with
-    | ValueSome tcref ->
-        tyconRefEq g tcref g.tcref_System_Collections_Generic_IEnumerable
-    | _ -> false 
-
-let (|SeqElemTy|_|) g amap m ty =
-    match SearchEntireHierarchyOfType (tyConfirmsToSeq g) g amap m ty with
-    | None ->
-        // printfn "FAILED - yield! did not yield a sequence! %s" (stringOfRange m)
-        None
-    | Some seqTy ->
-        // printfn "found yield!"
-        let inpElemTy = List.head (argsOfAppTy g seqTy)
-        Some inpElemTy
-
 /// Analyze a TAST expression to detect the elaborated form of a sequence expression.
 /// Then compile it to a state machine represented as a TAST containing goto, return and label nodes.
 /// The returned state machine will also contain references to state variables (from internal 'let' bindings),
@@ -228,6 +127,64 @@ let (|SeqElemTy|_|) g amap m ty =
 /// We then allocate an integer pc for each state label and proceed with the second phase, which builds two related state machine
 /// expressions: one for 'MoveNext' and one for 'Dispose'.
 let ConvertSequenceExprToObject g amap overallExpr =
+    /// Detect a 'yield x' within a 'seq { ... }'
+    let (|SeqYield|_|) expr =
+        match expr with
+        | ValApp g g.seq_singleton_vref (_, [arg], m) -> Some (arg, m)
+        | _ -> None
+
+    /// Detect a 'expr; expr' within a 'seq { ... }'
+    let (|SeqAppend|_|) expr =
+        match expr with
+        | ValApp g g.seq_append_vref (_, [arg1; arg2], m) -> Some (arg1, arg2, m)
+        | _ -> None
+
+    /// Detect a 'while gd do expr' within a 'seq { ... }'
+    let (|SeqWhile|_|) expr =
+        match expr with
+        | ValApp g g.seq_generated_vref (_, [Expr.Lambda (_, _, _, [dummyv], gd, _, _);arg2], m) 
+             when not (isVarFreeInExpr dummyv gd) ->
+            Some (gd, arg2, m)
+        | _ ->
+            None
+
+    let (|SeqTryFinally|_|) expr =
+        match expr with
+        | ValApp g g.seq_finally_vref (_, [arg1;Expr.Lambda (_, _, _, [dummyv], compensation, _, _)], m) 
+            when not (isVarFreeInExpr dummyv compensation) ->
+            Some (arg1, compensation, m)
+        | _ ->
+            None
+
+    let (|SeqUsing|_|) expr =
+        match expr with
+        | ValApp g g.seq_using_vref ([_;_;elemTy], [resource;Expr.Lambda (_, _, _, [v], body, _, _)], m) ->
+            Some (resource, v, body, elemTy, m)
+        | _ ->
+            None
+
+    let (|SeqFor|_|) expr =
+        match expr with
+        // Nested for loops are represented by calls to Seq.collect
+        | ValApp g g.seq_collect_vref ([_inpElemTy;_enumty2;genElemTy], [Expr.Lambda (_, _, _, [v], body, _, _); inp], m) ->
+            Some (inp, v, body, genElemTy, m)
+        // "for x in e -> e2" is converted to a call to Seq.map by the F# type checker. This could be removed, except it is also visible in F# quotations.
+        | ValApp g g.seq_map_vref ([_inpElemTy;genElemTy], [Expr.Lambda (_, _, _, [v], body, _, _); inp], m) ->
+            Some (inp, v, mkCallSeqSingleton g body.Range genElemTy body, genElemTy, m)
+        | _ -> None
+
+    let (|SeqDelay|_|) expr =
+        match expr with
+        | ValApp g g.seq_delay_vref ([elemTy], [Expr.Lambda (_, _, _, [v], e, _, _)], _m) 
+            when not (isVarFreeInExpr v e) -> 
+            Some (e, elemTy)
+        | _ -> None
+
+    let (|SeqEmpty|_|) expr =
+        match expr with
+        | ValApp g g.seq_empty_vref (_, [], m) -> Some (m)
+        | _ -> None
+
     /// Implement a decision to represent a 'let' binding as a non-escaping local variable (rather than a state machine variable)
     let RepresentBindingAsLocal (bind: Binding) res2 m =
         if verbose then 
@@ -250,7 +207,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
         let (TBind(v, e, sp)) = bind
         let sp, spm =
             match sp with
-            | DebugPointAtBinding.Yes m -> DebugPointAtSequential.Both, m
+            | DebugPointAtBinding m -> DebugPointAtSequential.Both, m
             | _ -> DebugPointAtSequential.StmtOnly, e.Range
         let vref = mkLocalValRef v
         { res2 with
@@ -288,7 +245,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                  expr =
 
         match expr with
-        | SeqYield g (e, m) ->
+        | SeqYield(e, m) ->
             // printfn "found Seq.singleton"
                  //this.pc <- NEXT
                  //curr <- e
@@ -297,9 +254,9 @@ let ConvertSequenceExprToObject g amap overallExpr =
             let label = IL.generateCodeLabel()
             Some { phase2 = (fun (pcVar, currVar, _nextv, pcMap) ->
                         let generate =
-                            mkSequential DebugPointAtSequential.Both m
+                            mkCompGenSequential m
                                 (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
-                                (mkCompGenSequential m
+                                (mkSequential DebugPointAtSequential.Both m
                                     (mkValSet m currVar e)
                                     (mkCompGenSequential m
                                         (Expr.Op (TOp.Return, [], [mkOne g m], m))
@@ -317,12 +274,12 @@ let ConvertSequenceExprToObject g amap overallExpr =
                    asyncVars = emptyFreeVars
                   }
 
-        | SeqDelay g (delayedExpr, _elemTy) ->
+        | SeqDelay(delayedExpr, _elemTy) ->
             // printfn "found Seq.delay"
             // note, using 'isWholeExpr' here prevents 'seq { yield! e }' and 'seq { 0 .. 1000 }' from being compiled
             ConvertSeqExprCode isWholeExpr isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel delayedExpr
 
-        | SeqAppend g (e1, e2, m) ->
+        | SeqAppend(e1, e2, m) ->
             // printfn "found Seq.append"
             let res1 = ConvertSeqExprCode false false noDisposeContinuationLabel currentDisposeContinuationLabel e1
             let res2 = ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e2
@@ -339,7 +296,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 Some { phase2 = (fun ctxt ->
                             let generate1, dispose1, checkDispose1 = res1.phase2 ctxt
                             let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
-                            let generate = mkSequential DebugPointAtSequential.Both m generate1 generate2
+                            let generate = mkCompGenSequential m generate1 generate2
                             // Order shouldn't matter here, since disposals actions are linked together by goto's  (each ends in a goto).
                             // However leaving as is for now.
                             let dispose = mkCompGenSequential m dispose2 dispose1
@@ -352,7 +309,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
             | _ ->
                 None
 
-        | SeqWhile g (guardExpr, bodyExpr, mWhile, m) ->
+        | SeqWhile(guardExpr, bodyExpr, m) ->
             // printfn "found Seq.while"
             let resBody = ConvertSeqExprCode false false noDisposeContinuationLabel currentDisposeContinuationLabel bodyExpr
             match resBody with
@@ -365,7 +322,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
 
                 Some { phase2 = (fun ctxt ->
                             let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
-                            let generate = mkWhile g (DebugPointAtWhile.Yes mWhile, NoSpecialWhileLoopMarker, guardExpr, generate2, m)
+                            let generate = mkWhile g (DebugPointAtWhile.Yes guardExpr.Range, NoSpecialWhileLoopMarker, guardExpr, generate2, m)
                             let dispose = dispose2
                             let checkDispose = checkDispose2
                             generate, dispose, checkDispose)
@@ -376,16 +333,16 @@ let ConvertSequenceExprToObject g amap overallExpr =
             | _ ->
                 None
 
-        | SeqUsing g (resource, v, body, elemTy, mBind, m) ->
+        | SeqUsing(resource, v, body, elemTy, m) ->
             // printfn "found Seq.using"
             let reduction =
-                mkLet (DebugPointAtBinding.Yes mBind) m v resource
+                mkLet (DebugPointAtBinding body.Range) m v resource
                     (mkCallSeqFinally g m elemTy body
                         (mkUnitDelayLambda g m
                             (mkCallDispose g m v.Type (exprForVal m v))))
             ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel reduction
 
-        | SeqForEach g (inp, v, body, genElemTy, mFor, m) ->
+        | SeqFor(inp, v, body, genElemTy, m) ->
             // printfn "found Seq.for"
             let inpElemTy = v.Type
             let inpEnumTy = mkIEnumeratorTy g inpElemTy
@@ -395,14 +352,14 @@ let ConvertSequenceExprToObject g amap overallExpr =
             //       let v = enum.Current
             //       body ]]
             let reduction =
-                mkCallSeqUsing g m inpEnumTy genElemTy (callNonOverloadedILMethod g amap m "GetEnumerator" (mkSeqTy g inpElemTy) [inp])
+                mkCallSeqUsing g m inpEnumTy genElemTy (callNonOverloadedMethod g amap m "GetEnumerator" (mkSeqTy g inpElemTy) [inp])
                     (mkLambdaNoType g m enumv
-                       (mkCallSeqGenerated g m genElemTy (mkUnitDelayLambda g mFor (callNonOverloadedILMethod g amap m "MoveNext" inpEnumTy [enume]))
-                          (mkInvisibleLet m v (callNonOverloadedILMethod g amap m "get_Current" inpEnumTy [enume])
+                       (mkCallSeqGenerated g m genElemTy (mkUnitDelayLambda g m (callNonOverloadedMethod g amap m "MoveNext" inpEnumTy [enume]))
+                          (mkInvisibleLet m v (callNonOverloadedMethod g amap m "get_Current" inpEnumTy [enume])
                               (mkCoerceIfNeeded g (mkSeqTy g genElemTy) (tyOfExpr g body) body))))
             ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel reduction
 
-        | SeqTryFinally g (e1, compensation, mTry, mFinally, m) ->
+        | SeqTryFinally(e1, compensation, m) ->
             // printfn "found Seq.try/finally"
             let innerDisposeContinuationLabel = IL.generateCodeLabel()
             let resBody = ConvertSeqExprCode false false noDisposeContinuationLabel innerDisposeContinuationLabel e1
@@ -416,8 +373,8 @@ let ConvertSequenceExprToObject g amap overallExpr =
                                 let compensation = copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated compensation
                                 mkCompGenSequential m
                                     // set the PC to the inner finally, so that if an exception happens we run the right finally
-                                    (mkSequential DebugPointAtSequential.StmtOnly m
-                                        (mkValSet mTry pcVar (mkInt32 g m pcMap.[innerDisposeContinuationLabel]))
+                                    (mkCompGenSequential m
+                                        (mkValSet m pcVar (mkInt32 g m pcMap.[innerDisposeContinuationLabel]))
                                         generate1 )
                                     // set the PC past the try/finally before trying to run it, to make sure we only run it once
                                     (mkLabelled m innerDisposeContinuationLabel
@@ -430,8 +387,8 @@ let ConvertSequenceExprToObject g amap overallExpr =
                                     dispose1
                                     // set the PC past the try/finally before trying to run it, to make sure we only run it once
                                     (mkLabelled m innerDisposeContinuationLabel
-                                        (mkSequential DebugPointAtSequential.StmtOnly m
-                                            (mkValSet mFinally pcVar (mkInt32 g m pcMap.[currentDisposeContinuationLabel]))
+                                        (mkCompGenSequential m
+                                            (mkValSet m pcVar (mkInt32 g m pcMap.[currentDisposeContinuationLabel]))
                                             (mkCompGenSequential m
                                                 compensation
                                                 (Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m)))))
@@ -449,7 +406,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
             | _ ->
                 None
 
-        | SeqEmpty g m ->
+        | SeqEmpty m ->
             // printfn "found Seq.empty"
             Some { phase2 = (fun _ ->
                             let generate = mkUnit g  m
@@ -461,14 +418,14 @@ let ConvertSequenceExprToObject g amap overallExpr =
                    significantClose = false
                    asyncVars = emptyFreeVars }
 
-        | Expr.Sequential (expr1, expr2, NormalSeq, sp, m) ->
-            match ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel expr2 with
+        | Expr.Sequential (x1, x2, NormalSeq, ty, m) ->
+            match ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel x2 with
             | Some res2->
                 // printfn "found sequential execution"
                 Some { res2 with
                         phase2 = (fun ctxt ->
                             let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
-                            let generate = Expr.Sequential (expr1, generate2, NormalSeq, sp, m)
+                            let generate = Expr.Sequential (x1, generate2, NormalSeq, ty, m)
                             let dispose = dispose2
                             let checkDispose = checkDispose2
                             generate, dispose, checkDispose) }
@@ -585,9 +542,18 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 // printfn "FAILED - not worth compiling an unrecognized immediate yield! %s " (stringOfRange m)
                 None
             else
-                match tyOfExpr g arbitrarySeqExpr with
-                | SeqElemTy g amap m inpElemTy ->
+                let tyConfirmsToSeq g ty = 
+                    match tryTcrefOfAppTy g ty with
+                    | ValueSome tcref ->
+                        tyconRefEq g tcref g.tcref_System_Collections_Generic_IEnumerable
+                    | _ -> false 
+                match SearchEntireHierarchyOfType (tyConfirmsToSeq g) g amap m (tyOfExpr g arbitrarySeqExpr) with
+                | None ->
+                    // printfn "FAILED - yield! did not yield a sequence! %s" (stringOfRange m)
+                    None
+                | Some ty ->
                     // printfn "found yield!"
+                    let inpElemTy = List.head (argsOfAppTy g ty)
                     if isTailCall then
                              //this.pc <- NEXT
                              //nextEnumerator <- e
@@ -617,7 +583,6 @@ let ConvertSequenceExprToObject g amap overallExpr =
                     else
                         let v, ve = mkCompGenLocal m "v" inpElemTy
                         ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel (mkCallSeqCollect g m inpElemTy inpElemTy (mkLambdaNoType g m v (mkCallSeqSingleton g m inpElemTy ve)) arbitrarySeqExpr)
-                | _  -> None
 
 
     match overallExpr with
@@ -681,7 +646,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
 
             // A utility to add a jump table to the three generated methods
             let addJumpTable isDisposal expr =
-                let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
+                let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m )
                 let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointForTarget.No)
                 let dtree =
                   TDSwitch(pcExpr,
@@ -748,7 +713,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 //  goto startLabel
                 // DONE_DISPOSE:
                 let whileLoop =
-                    let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
+                    let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m)
                     let addResultTarget e = mbuilder.AddResultTarget(e, DebugPointForTarget.No)
                     let dtree =
                         TDSwitch(pcExpr,
@@ -775,7 +740,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 // --loop--
                 // if exn != null then raise exn
                 mkLet
-                    DebugPointAtBinding.NoneAtLet m exnV  (Expr.Const (Const.Zero, m, g.exn_ty))
+                    NoDebugPointAtLetBinding m exnV  (Expr.Const (Const.Zero, m, g.exn_ty))
                         (mkCompGenSequential m whileLoop doRaise)
 
             // Add the jump table to the GenerateNext method
@@ -813,229 +778,3 @@ let ConvertSequenceExprToObject g amap overallExpr =
     | _ -> None
 
 
-/// Build the 'test and dispose' part of a 'use' statement
-let BuildDisposableCleanup tcVal (g: TcGlobals) infoReader m (v: Val) =
-    let disposeMethod = 
-        match GetIntrinsicMethInfosOfType infoReader (Some "Dispose") AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m g.system_IDisposable_ty with
-        | [x] -> x
-        | _ -> error(InternalError(FSComp.SR.tcCouldNotFindIDisposable(), m))
-    // For struct types the test is simpler
-    if isStructTy g v.Type then
-        assert (TypeFeasiblySubsumesType 0 g infoReader.amap m g.system_IDisposable_ty CanCoerce v.Type)
-        // We can use NeverMutates here because the variable is going out of scope, there is no need to take a defensive
-        // copy of it.
-        let disposeExpr, _ = BuildMethodCall tcVal g infoReader.amap NeverMutates m false disposeMethod NormalValUse [] [exprForVal v.Range v] []
-        //callNonOverloadedILMethod g infoReader.amap m "Dispose" g.system_IDisposable_ty [exprForVal v.Range v]
-        
-        disposeExpr
-    else
-        let disposeObjVar, disposeObjExpr = mkCompGenLocal m "objectToDispose" g.system_IDisposable_ty
-        let disposeExpr, _ = BuildMethodCall tcVal g infoReader.amap PossiblyMutates m false disposeMethod NormalValUse [] [disposeObjExpr] []
-        let inpe = mkCoerceExpr(exprForVal v.Range v, g.obj_ty, m, v.Type)
-        mkIsInstConditional g m g.system_IDisposable_ty inpe disposeObjVar disposeExpr (mkUnit g m)
-
-let mkCallCollectorMethod tcVal (g: TcGlobals) infoReader m name collExpr args =
-    let listCollectorTy = tyOfExpr g collExpr
-    let addMethod = 
-        match GetIntrinsicMethInfosOfType infoReader (Some name) AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m listCollectorTy with
-        | [x] -> x
-        | _ -> error(InternalError("no " + name + " method found on Collector", m))
-    let expr, _ = BuildMethodCall tcVal g infoReader.amap DefinitelyMutates m false addMethod NormalValUse [] [collExpr] args
-    expr
-
-let mkCallCollectorAdd tcVal (g: TcGlobals) infoReader m collExpr arg =
-    mkCallCollectorMethod tcVal g infoReader m "Add" collExpr [arg]
-
-let mkCallCollectorAddMany tcVal (g: TcGlobals) infoReader m collExpr arg =
-    mkCallCollectorMethod tcVal g infoReader m "AddMany" collExpr [arg]
-
-let mkCallCollectorAddManyAndClose tcVal (g: TcGlobals) infoReader m collExpr arg =
-    mkCallCollectorMethod tcVal g infoReader m "AddManyAndClose" collExpr [arg]
-
-let mkCallCollectorClose tcVal (g: TcGlobals) infoReader m collExpr =
-    mkCallCollectorMethod tcVal g infoReader m "Close" collExpr []
-
-let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
-    let infoReader = InfoReader(g, amap)
-    let collVal, collExpr = mkMutableCompGenLocal m "@collector" collectorTy
-    //let collExpr = mkValAddr m false (mkLocalValRef collVal)
-    let rec ConvertSeqExprCode isUninteresting isTailcall expr =
-        match expr with
-        | SeqYield g (e, m) -> 
-            let exprR = mkCallCollectorAdd tcVal (g: TcGlobals) infoReader m collExpr e
-            Result.Ok (false, exprR)
-
-        | SeqDelay g (delayedExpr, _elemTy) ->
-            ConvertSeqExprCode isUninteresting isTailcall delayedExpr
-
-        | SeqAppend g (e1, e2, m) ->
-            let res1 = ConvertSeqExprCode false false e1
-            let res2 = ConvertSeqExprCode false isTailcall e2
-            match res1, res2 with 
-            | Result.Ok (_, e1R), Result.Ok (closed2, e2R) -> 
-                let exprR = mkSequential DebugPointAtSequential.Both m e1R e2R
-                Result.Ok (closed2, exprR)
-            | Result.Error msg, _ | _, Result.Error msg -> Result.Error msg
-
-        | SeqWhile g (guardExpr, bodyExpr, mWhile, m) ->
-            let resBody = ConvertSeqExprCode false false bodyExpr
-            match resBody with 
-            | Result.Ok (_, bodyExprR) ->
-                let exprR = mkWhile g (DebugPointAtWhile.Yes mWhile, NoSpecialWhileLoopMarker, guardExpr, bodyExprR, m)
-                Result.Ok (false, exprR)
-            | Result.Error msg -> Result.Error msg
-
-        | SeqUsing g (resource, v, bodyExpr, _elemTy, mBind, m) ->
-            let resBody = ConvertSeqExprCode false false bodyExpr
-            match resBody with 
-            | Result.Ok (_, bodyExprR) ->
-                // printfn "found Seq.using"
-                let cleanupE = BuildDisposableCleanup tcVal g infoReader m v
-                let exprR = 
-                    mkLet (DebugPointAtBinding.Yes mBind) m v resource
-                        (mkTryFinally g (bodyExprR, cleanupE, m, tyOfExpr g bodyExpr, DebugPointAtTry.Body, DebugPointAtFinally.No))
-                Result.Ok (false, exprR)
-            | Result.Error msg -> Result.Error msg
-
-        | SeqForEach g (inp, v, bodyExpr, _genElemTy, mFor, m) ->
-            let resBody = ConvertSeqExprCode false false bodyExpr
-            match resBody with 
-            | Result.Ok (_, bodyExprR) ->
-                // printfn "found Seq.for"
-                let inpElemTy = v.Type
-                let inpEnumTy = mkIEnumeratorTy g inpElemTy
-                let enumv, enumve = mkCompGenLocal m "enum" inpEnumTy
-                let guardExpr = callNonOverloadedILMethod g amap m "MoveNext" inpEnumTy [enumve]
-                let cleanupE = BuildDisposableCleanup tcVal g infoReader m enumv
-                let exprR =
-                    mkInvisibleLet m enumv (callNonOverloadedILMethod g amap m "GetEnumerator" (mkSeqTy g inpElemTy) [inp])
-                        (mkTryFinally g 
-                            (mkWhile g (DebugPointAtWhile.Yes mFor, NoSpecialWhileLoopMarker, guardExpr, 
-                                    (mkInvisibleLet m v 
-                                        (callNonOverloadedILMethod g amap m "get_Current" inpEnumTy [enumve]))
-                                        bodyExprR, m), 
-                                cleanupE, m, tyOfExpr g bodyExpr, DebugPointAtTry.Body, DebugPointAtFinally.Body))
-                Result.Ok (false, exprR)
-            | Result.Error msg -> Result.Error msg
-
-        | SeqTryFinally g (bodyExpr, compensation, mTry, mFinally, m) ->
-            let resBody = ConvertSeqExprCode false false bodyExpr
-            match resBody with 
-            | Result.Ok (_, bodyExprR) ->
-                let exprR =
-                    mkTryFinally g (bodyExprR, compensation, m, tyOfExpr g bodyExpr, DebugPointAtTry.Yes mTry, DebugPointAtFinally.Yes mFinally)
-                Result.Ok (false, exprR)
-            | Result.Error msg -> Result.Error msg
-
-        | SeqEmpty g m ->
-            let exprR = mkUnit g m
-            Result.Ok(false, exprR)
-
-        | Expr.Sequential (x1, bodyExpr, NormalSeq, ty, m) ->
-            let resBody = ConvertSeqExprCode isUninteresting isTailcall bodyExpr
-            match resBody with 
-            | Result.Ok (closed, bodyExprR) ->
-                let exprR = Expr.Sequential (x1, bodyExprR, NormalSeq, ty, m)
-                Result.Ok(closed, exprR)
-            | Result.Error msg -> Result.Error msg
-
-        | Expr.Let (bind, bodyExpr, m, _) ->
-            let resBody = ConvertSeqExprCode isUninteresting isTailcall bodyExpr
-            match resBody with 
-            | Result.Ok (closed, bodyExprR) ->
-                let exprR = mkLetBind m bind bodyExprR
-                Result.Ok(closed, exprR)
-            | Result.Error msg -> Result.Error msg
-
-        | Expr.LetRec (binds, bodyExpr, m, _) ->
-            let resBody = ConvertSeqExprCode isUninteresting isTailcall bodyExpr
-            match resBody with 
-            | Result.Ok (closed, bodyExprR) ->
-                let exprR = mkLetRecBinds m binds bodyExprR
-                Result.Ok(closed, exprR)
-            | Result.Error msg -> Result.Error msg
-
-        | Expr.Match (spBind, exprm, pt, targets, m, ty) ->
-            // lower all the targets. abandon if any fail to lower
-            let resTargets =
-                targets |> Array.map (fun (TTarget(vs, targetExpr, spTarget)) -> 
-                    match ConvertSeqExprCode false false targetExpr with 
-                    | Result.Ok (_, targetExprR) -> 
-                        Result.Ok (TTarget(vs, targetExprR, spTarget))
-                    | Result.Error msg -> Result.Error msg )
-            if resTargets |> Array.forall (function Result.Ok _ -> true | _ -> false) then
-                let tglArray = Array.map (function Result.Ok v -> v | _ -> failwith "unreachable") resTargets
-
-                let exprR = primMkMatch (spBind, exprm, pt, tglArray, m, ty)
-                Result.Ok(false, exprR)
-            else
-                resTargets |> Array.pick (function Result.Error msg -> Some (Result.Error msg) | _ -> None)
-
-        // yield! e ---> (for x in e -> x)
-
-        | arbitrarySeqExpr ->
-            let m = arbitrarySeqExpr.Range
-            if isUninteresting then
-                // printfn "FAILED - not worth compiling an unrecognized Seq.toList at %s " (stringOfRange m)
-                Result.Error ()
-            else
-                // If we're the final in a sequential chain then we can AddMany, Close and return
-                if isTailcall then 
-                    let exprR = mkCallCollectorAddManyAndClose tcVal (g: TcGlobals) infoReader m collExpr arbitrarySeqExpr
-                    // Return 'true' to indicate the collector was closed and the overall result of the expression is the result
-                    Result.Ok(true, exprR)
-                else
-                    let exprR = mkCallCollectorAddMany tcVal (g: TcGlobals) infoReader m collExpr arbitrarySeqExpr
-                    Result.Ok(false, exprR)
-
-
-    // Perform conversion
-    match ConvertSeqExprCode true true overallSeqExpr with 
-    | Result.Ok (closed, overallSeqExprR) ->
-        mkInvisibleLet m collVal (mkDefault (m, collectorTy)) 
-            (if closed then 
-                // If we ended with AddManyAndClose then we're done
-                overallSeqExprR
-             else
-                mkCompGenSequential m 
-                    overallSeqExprR
-                    (mkCallCollectorClose tcVal g infoReader m collExpr))
-        |> Some
-    | Result.Error () -> 
-        None
-
-let (|OptionalCoerce|) expr = 
-    match expr with
-    | Expr.Op (TOp.Coerce, _, [arg], _) -> arg
-    | _ -> expr
-
-// Making 'seq' optional means this kicks in for FSharp.Core, see TcArrayOrListSequenceExpression
-// which only adds a 'seq' call outside of FSharp.Core
-let (|OptionalSeq|_|) g amap expr =
-    match expr with
-    // use 'seq { ... }' as an indicator
-    | Seq g (e, elemTy) -> 
-        Some (e, elemTy)
-    | _ -> 
-    // search for the relevant element type
-    match tyOfExpr g expr with
-    | SeqElemTy g amap expr.Range elemTy ->
-        Some (expr, elemTy)
-    | _ -> None
-
-let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
-    // If ListCollector is in FSharp.Core then this optimization kicks in
-    if g.ListCollector_tcr.CanDeref then
-
-        match overallExpr with
-        | SeqToList g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
-            let collectorTy = g.mk_ListCollector_ty overallElemTy
-            LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
-        
-        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
-            let collectorTy = g.mk_ArrayCollector_ty overallElemTy
-            LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
-
-        | _ -> None
-    else
-        None

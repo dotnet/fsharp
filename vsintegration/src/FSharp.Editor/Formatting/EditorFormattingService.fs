@@ -6,13 +6,13 @@ open System.Composition
 open System.Collections.Generic
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Formatting
+open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
-open FSharp.Compiler
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Tokenization
+open FSharp.Compiler.SourceCodeServices
 open System.Threading
 open System.Windows.Forms
 
@@ -20,6 +20,8 @@ open System.Windows.Forms
 type internal FSharpEditorFormattingService
     [<ImportingConstructor>]
     (
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: FSharpProjectOptionsManager,
         settings: EditorOptions
     ) =
     
@@ -146,23 +148,23 @@ type internal FSharpEditorFormattingService
                 return stripIndentation removeIndentation
         }
 
-    member _.GetFormattingChangesAsync (document: Document, position: int, cancellationToken: CancellationToken) =
+    member __.GetFormattingChangesAsync (document: Document, position: int, cancellationToken: CancellationToken) =
         async {
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
-            let parsingOptions = document.GetFSharpQuickParsingOptions()
-            let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, document.GetFSharpChecker(), indentStyle, parsingOptions, position)
+            let parsingOptions = projectInfoManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(document)
+            let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, checkerProvider.Checker, indentStyle, parsingOptions, position)
             return textChange |> Option.toList |> toIList
         }
         
-    member _.OnPasteAsync (document: Document, span: TextSpan, currentClipboard: string, cancellationToken: CancellationToken) =
+    member __.OnPasteAsync (document: Document, span: TextSpan, currentClipboard: string, cancellationToken: CancellationToken) =
         async {
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let tabSize = options.GetOption<int>(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
             
-            let parsingOptions = document.GetFSharpQuickParsingOptions()
+            let parsingOptions = projectInfoManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(document) 
             let! textChanges = FSharpEditorFormattingService.GetPasteChanges(document.Id, sourceText, document.FilePath, settings.Formatting, tabSize, parsingOptions, currentClipboard, span)
             return textChanges |> Option.defaultValue Seq.empty |> toIList
         }
@@ -173,7 +175,7 @@ type internal FSharpEditorFormattingService
         member val SupportsFormatOnPaste = true
         member val SupportsFormatOnReturn = true
 
-        override _.SupportsFormattingOnTypedCharacter (document, ch) =
+        override __.SupportsFormattingOnTypedCharacter (document, ch) =
             if FSharpIndentationService.IsSmartIndentEnabled document.Project.Solution.Workspace.Options then
                 match ch with
                 | ')' | ']' | '}' -> true
@@ -181,7 +183,7 @@ type internal FSharpEditorFormattingService
             else
                 false
 
-        override _.GetFormattingChangesAsync (_document, _span, cancellationToken) =
+        override __.GetFormattingChangesAsync (_document, _span, cancellationToken) =
             async { return ResizeArray() :> IList<_> }
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
 

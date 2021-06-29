@@ -13,16 +13,22 @@ open Microsoft.VisualStudio.OLE.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.TextManager.Interop
-open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Utilities
-open FSharp.Compiler.EditorServices
+open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
+open FSharp.Compiler.SourceCodeServices
 
 type internal XmlDocCommandFilter 
      (
         wpfTextView: IWpfTextView, 
-        filePath: string,
-        workspace: VisualStudioWorkspace
+        filePath: string, 
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: FSharpProjectOptionsManager,
+        workspace: VisualStudioWorkspaceImpl
      ) =
+
+    static let userOpName = "XmlDocCommand"
+
+    let checker = checkerProvider.Checker
 
     let document =
         // There may be multiple documents with the same file path.
@@ -45,7 +51,7 @@ type internal XmlDocCommandFilter
             ErrorHandler.ThrowOnFailure errorCode |> ignore
 
     interface IOleCommandTarget with
-        member _.Exec(pguidCmdGroup: byref<Guid>, nCmdID: uint32, nCmdexecopt: uint32, pvaIn: IntPtr, pvaOut: IntPtr) =
+        member __.Exec(pguidCmdGroup: byref<Guid>, nCmdID: uint32, nCmdexecopt: uint32, pvaIn: IntPtr, pvaOut: IntPtr) =
             if pguidCmdGroup = VSConstants.VSStd2K && nCmdID = uint32 VSConstants.VSStd2KCmdID.TYPECHAR then
                 match getTypedChar pvaIn with
                 | ('/' | '<') as lastChar ->
@@ -54,17 +60,17 @@ type internal XmlDocCommandFilter
                     let curLine = wpfTextView.Caret.Position.BufferPosition.GetContainingLine().GetText()
                     let lineWithLastCharInserted = curLine.Insert (indexOfCaret, string lastChar)
 
-                    match XmlDocComment.IsBlank lineWithLastCharInserted with
+                    match XmlDocComment.isBlank lineWithLastCharInserted with
                     | Some i when i = indexOfCaret ->
                         asyncMaybe {
                             try
                                 // XmlDocable line #1 are 1-based, editor is 0-based
                                 let curLineNum = wpfTextView.Caret.Position.BufferPosition.GetContainingLine().LineNumber + 1
                                 let! document = document.Value
-                                let! cancellationToken = Async.CancellationToken |> liftAsync
-                                let! sourceText = document.GetTextAsync(cancellationToken)
-                                let! parseResults = document.GetFSharpParseResultsAsync(nameof(XmlDocCommandFilter)) |> liftAsync
-                                let xmlDocables = XmlDocParser.GetXmlDocables (sourceText.ToFSharpSourceText(), parseResults.ParseTree) 
+                                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, CancellationToken.None, userOpName)
+                                let! sourceText = document.GetTextAsync(CancellationToken.None)
+                                let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
+                                let xmlDocables = XmlDocParser.getXmlDocables (sourceText.ToFSharpSourceText(), Some parsedInput) 
                                 let xmlDocablesBelowThisLine = 
                                     // +1 because looking below current line for e.g. a 'member'
                                     xmlDocables |> List.filter (fun (XmlDocable(line,_indent,_paramNames)) -> line = curLineNum+1) 
@@ -100,29 +106,33 @@ type internal XmlDocCommandFilter
             else
                 VSConstants.E_FAIL
 
-        member _.QueryStatus(pguidCmdGroup: byref<Guid>, cCmds: uint32, prgCmds: OLECMD [], pCmdText: IntPtr) =
+        member __.QueryStatus(pguidCmdGroup: byref<Guid>, cCmds: uint32, prgCmds: OLECMD [], pCmdText: IntPtr) =
             if not (isNull nextTarget) then
                 nextTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText)
             else
                 VSConstants.E_FAIL
 
-[<Export(typeof<IWpfTextViewCreationListener>)>]
-[<ContentType(FSharpConstants.FSharpContentTypeName)>]
-[<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
+// Disabled:
+// - https://github.com/Microsoft/visualfsharp/issues/6076
+// - The feature does not work; it should probably use an exposed Roslyn API of some sort
+// - Despite not working, it is a source of UI delays
+//[<Export(typeof<IWpfTextViewCreationListener>)>]
+//[<ContentType(FSharpConstants.FSharpContentTypeName)>]
+//[<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
 type internal XmlDocCommandFilterProvider 
     [<ImportingConstructor>] 
-    (
-     workspace: VisualStudioWorkspace,
+    (checkerProvider: FSharpCheckerProvider,
+     projectInfoManager: FSharpProjectOptionsManager,
+     workspace: VisualStudioWorkspaceImpl,
      textDocumentFactoryService: ITextDocumentFactoryService,
-     editorFactory: IVsEditorAdaptersFactoryService
-    ) =
+     editorFactory: IVsEditorAdaptersFactoryService) =
     interface IWpfTextViewCreationListener with
-        member _.TextViewCreated(textView) = 
+        member __.TextViewCreated(textView) = 
             match editorFactory.GetViewAdapter(textView) with
             | null -> ()
             | textViewAdapter ->
                 match textDocumentFactoryService.TryGetTextDocument(textView.TextBuffer) with
                 | true, doc ->
-                    let commandFilter = XmlDocCommandFilter(textView, doc.FilePath, workspace)
+                    let commandFilter = XmlDocCommandFilter(textView, doc.FilePath, checkerProvider, projectInfoManager, workspace)
                     commandFilter.AttachToViewAdapter textViewAdapter
                 | _ -> ()

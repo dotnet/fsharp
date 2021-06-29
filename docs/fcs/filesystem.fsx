@@ -21,11 +21,9 @@ open System
 open System.IO
 open System.Collections.Generic
 open System.Text
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.IO
-open FSharp.Compiler.Text
+open FSharp.Compiler.AbstractIL.Internal.Library
 
-let defaultFileSystem = FileSystem
+let defaultFileSystem = Shim.FileSystem
 
 let fileName1 = @"c:\mycode\test1.fs" // note, the path doesn't exist
 let fileName2 = @"c:\mycode\test2.fs" // note, the path doesn't exist
@@ -93,7 +91,7 @@ let B = File1.A + File1.A"""
             defaultFileSystem.AssemblyLoad assemblyName 
 
 let myFileSystem = MyFileSystem()
-FileSystem <- MyFileSystem() 
+Shim.FileSystem <- MyFileSystem() 
 
 (**
 
@@ -101,6 +99,7 @@ Doing a compilation with the FileSystem
 ---------------------------------------
 
 *)
+open FSharp.Compiler.SourceCodeServices
 
 let checker = FSharpChecker.Create()
 
@@ -144,6 +143,7 @@ let projectOptions =
       ProjectId = None
       SourceFiles = [| fileName1; fileName2 |]
       OriginalLoadReferences = []
+      ExtraProjectInfo=None
       Stamp = None
       OtherOptions = allFlags 
       ReferencedProjects = [| |]
@@ -154,7 +154,7 @@ let projectOptions =
 
 let results = checker.ParseAndCheckProject(projectOptions) |> Async.RunSynchronously
 
-results.Diagnostics
+results.Errors
 results.AssemblySignature.Entities.Count //2
 results.AssemblySignature.Entities.[0].MembersFunctionsAndValues.Count //1
 results.AssemblySignature.Entities.[0].MembersFunctionsAndValues.[0].DisplayName // "B"

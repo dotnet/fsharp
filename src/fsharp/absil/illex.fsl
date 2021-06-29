@@ -2,16 +2,18 @@
 
 {
 
-module internal FSharp.Compiler.AbstractIL.AsciiLexer 
+module internal FSharp.Compiler.AbstractIL.Internal.AsciiLexer 
 
+open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Text
 open Internal.Utilities.Text.Lexing
-open Internal.Utilities.Library
-
 open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.AsciiParser 
-open FSharp.Compiler.AbstractIL.AsciiConstants 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library
+
+open FSharp.Compiler.AbstractIL.Internal.AsciiParser 
+open FSharp.Compiler.AbstractIL.Internal.AsciiConstants 
 
 
 let lexeme (lexbuf : LexBuffer<char>) = LexBuffer<char>.LexemeString lexbuf

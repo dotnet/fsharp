@@ -13,3 +13,5 @@ let o = {| X = 2; Y = "Hello" |}
 
 printfn "%s" (JsonConvert.SerializeObject o)"
 ```
+
+There are more Dependency Manager extensions, find more about them: [Microsoft.DotNet.DependencyManager](https://github.com/dotnet/fsharp/tree/main/src/fsharp/Microsoft.DotNet.DependencyManager)

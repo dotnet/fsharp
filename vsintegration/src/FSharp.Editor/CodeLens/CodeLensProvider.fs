@@ -23,7 +23,8 @@ type internal CodeLensProvider
     (
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
         textDocumentFactory: ITextDocumentFactoryService,
-        metadataAsSource: FSharpMetadataAsSourceService,
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: FSharpProjectOptionsManager,
         typeMap : FSharpClassificationTypeMap Lazy,
         settings: EditorOptions
     ) =
@@ -49,7 +50,7 @@ type internal CodeLensProvider
                 )
 
             let tagger = CodeLensGeneralTagger(wpfView, buffer)
-            let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, metadataAsSource, componentModel.GetService(), typeMap, tagger, settings)
+            let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, checkerProvider.Checker, projectInfoManager, componentModel.GetService(), typeMap, tagger, settings)
             let provider = (wpfView, (tagger, service))
             wpfView.Closed.Add (fun _ -> taggers.Remove provider |> ignore)
             taggers.Add((wpfView, (tagger, service)))
@@ -68,7 +69,7 @@ type internal CodeLensProvider
                     | _ -> None
                     |> Option.get
                 )
-            let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, metadataAsSource, componentModel.GetService(), typeMap, LineLensDisplayService(wpfView, buffer), settings)
+            let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, checkerProvider.Checker, projectInfoManager, componentModel.GetService(), typeMap, LineLensDisplayService(wpfView, buffer), settings)
             let provider = (wpfView, service)
             wpfView.Closed.Add (fun _ -> lineLensProvider.Remove provider |> ignore)
             lineLensProvider.Add(provider)
@@ -85,7 +86,7 @@ type internal CodeLensProvider
     member val LineLensAdornmentLayerDefinition : AdornmentLayerDefinition = null with get, set
 
     interface IViewTaggerProvider with
-        override _.CreateTagger(view, buffer) =
+        override __.CreateTagger(view, buffer) =
             if settings.CodeLens.Enabled && not settings.CodeLens.ReplaceWithLineLens then
                 let wpfView =
                     match view with
@@ -97,6 +98,6 @@ type internal CodeLensProvider
                 null
 
     interface IWpfTextViewCreationListener with
-        override _.TextViewCreated view =
+        override __.TextViewCreated view =
             if settings.CodeLens.Enabled && settings.CodeLens.ReplaceWithLineLens then
                 addLineLensProviderOnce view (view.TextBuffer) |> ignore

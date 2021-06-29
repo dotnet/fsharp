@@ -9,12 +9,11 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
+open FSharp.Compiler.Range
 open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TcGlobals
 
 exception ObsoleteWarning of string * range
-
 exception ObsoleteError of string * range
 
 type AttribInfo =

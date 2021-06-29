@@ -9,23 +9,23 @@ open System.IO
 
 type ISourceText =
 
-    abstract Item: index: int -> char with get
+    abstract Item : int -> char with get
 
-    abstract GetLineString: lineIndex: int -> string
+    abstract GetLineString : lineIndex: int -> string
 
-    abstract GetLineCount: unit -> int
+    abstract GetLineCount : unit -> int
 
-    abstract GetLastCharacterPosition: unit -> int * int
+    abstract GetLastCharacterPosition : unit -> int * int
 
-    abstract GetSubTextString: start: int * length: int -> string
+    abstract GetSubTextString : start: int * length: int -> string
 
-    abstract SubTextEquals: target: string * startIndex: int -> bool
+    abstract SubTextEquals : target: string * startIndex: int -> bool
 
-    abstract Length: int
+    abstract Length : int
 
-    abstract ContentEquals: sourceText: ISourceText -> bool
+    abstract ContentEquals : sourceText: ISourceText -> bool
 
-    abstract CopyTo: sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit
+    abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit
 
 [<Sealed>]
 type StringText(str: string) =
@@ -49,36 +49,36 @@ type StringText(str: string) =
         // So, it's ok that we do this for now.
         lazy getLines str
 
-    member _.String = str
+    member __.String = str
 
-    override _.GetHashCode() = str.GetHashCode()
-    override _.Equals(obj: obj) = 
+    override __.GetHashCode() = str.GetHashCode()
+    override __.Equals(obj: obj) = 
         match obj with
         | :? StringText as other -> other.String.Equals(str)
         | :? string as other -> other.Equals(str)
         | _ -> false        
-    override _.ToString() = str
+    override __.ToString() = str
 
     interface ISourceText with
 
-        member _.Item with get index = str.[index]
+        member __.Item with get index = str.[index]
 
-        member _.GetLastCharacterPosition() =
+        member __.GetLastCharacterPosition() =
             let lines = getLines.Value
             if lines.Length > 0 then
                 (lines.Length, lines.[lines.Length - 1].Length)
             else
                 (0, 0)
 
-        member _.GetLineString(lineIndex) = 
+        member __.GetLineString(lineIndex) = 
             getLines.Value.[lineIndex]
 
-        member _.GetLineCount() = getLines.Value.Length
+        member __.GetLineCount() = getLines.Value.Length
 
-        member _.GetSubTextString(start, length) = 
+        member __.GetSubTextString(start, length) = 
             str.Substring(start, length)
 
-        member _.SubTextEquals(target, startIndex) =
+        member __.SubTextEquals(target, startIndex) =
             if startIndex < 0 || startIndex >= str.Length then
                 invalidArg "startIndex" "Out of range."
 
@@ -91,14 +91,14 @@ type StringText(str: string) =
 
             str.IndexOf(target, startIndex, target.Length) <> -1              
 
-        member _.Length = str.Length
+        member __.Length = str.Length
 
         member this.ContentEquals(sourceText) =
             match sourceText with
             | :? StringText as sourceText when sourceText = this || sourceText.String = str -> true
             | _ -> false
 
-        member _.CopyTo(sourceIndex, destination, destinationIndex, count) =
+        member __.CopyTo(sourceIndex, destination, destinationIndex, count) =
             str.CopyTo(sourceIndex, destination, destinationIndex, count)
 
 module SourceText =
@@ -177,7 +177,7 @@ namespace Internal.Utilities.Text.Lexing
     type internal LexBufferFiller<'Char> = (LexBuffer<'Char> -> unit)
 
     and [<Sealed>]
-        internal LexBuffer<'Char>(filler: LexBufferFiller<'Char>, reportLibraryOnlyFeatures: bool, supportsFeature:LanguageFeature -> bool) =
+        internal LexBuffer<'Char>(filler: LexBufferFiller<'Char>, supportsFeature:LanguageFeature -> bool) =
         let context = new Dictionary<string,obj>(1)
         let mutable buffer = [||]
         /// number of valid characters beyond bufferScanStart.
@@ -247,36 +247,35 @@ namespace Internal.Utilities.Text.Lexing
                 Array.blit buffer bufferScanStart repl bufferScanStart bufferScanLength
                 buffer <- repl
 
-        member _.ReportLibraryOnlyFeatures = reportLibraryOnlyFeatures
-        member _.SupportsFeature featureId = supportsFeature featureId
+        member __.SupportsFeature featureId = supportsFeature featureId
 
-        static member FromFunction (reportLibraryOnlyFeatures, supportsFeature:LanguageFeature -> bool, f : 'Char[] * int * int -> int) : LexBuffer<'Char> =
+        static member FromFunction (supportsFeature:LanguageFeature -> bool, f : 'Char[] * int * int -> int) : LexBuffer<'Char> =
             let extension= Array.zeroCreate 4096
             let filler (lexBuffer: LexBuffer<'Char>) =
                  let n = f (extension,0,extension.Length)
                  lexBuffer.EnsureBufferSize n
                  Array.blit extension 0 lexBuffer.Buffer lexBuffer.BufferScanPos n
                  lexBuffer.BufferMaxScanLength <- lexBuffer.BufferScanLength + n
-            new LexBuffer<'Char>(filler, reportLibraryOnlyFeatures, supportsFeature)
+            new LexBuffer<'Char>(filler, supportsFeature)
 
         // Important: This method takes ownership of the array
-        static member FromArrayNoCopy (reportLibraryOnlyFeatures, supportsFeature:LanguageFeature -> bool, buffer: 'Char[]) : LexBuffer<'Char> =
-            let lexBuffer = new LexBuffer<'Char>((fun _ -> ()), reportLibraryOnlyFeatures, supportsFeature)
+        static member FromArrayNoCopy (supportsFeature:LanguageFeature -> bool, buffer: 'Char[]) : LexBuffer<'Char> =
+            let lexBuffer = new LexBuffer<'Char>((fun _ -> ()), supportsFeature)
             lexBuffer.Buffer <- buffer
             lexBuffer.BufferMaxScanLength <- buffer.Length
             lexBuffer
 
         // Important: this method does copy the array
-        static member FromArray (reportLibraryOnlyFeatures, supportsFeature: LanguageFeature -> bool, s: 'Char[]) : LexBuffer<'Char> = 
+        static member FromArray (supportsFeature: LanguageFeature -> bool, s: 'Char[]) : LexBuffer<'Char> = 
             let buffer = Array.copy s 
-            LexBuffer<'Char>.FromArrayNoCopy(reportLibraryOnlyFeatures, supportsFeature, buffer)
+            LexBuffer<'Char>.FromArrayNoCopy(supportsFeature, buffer)
 
         // Important: This method takes ownership of the array
-        static member FromChars (reportLibraryOnlyFeatures, supportsFeature:LanguageFeature -> bool, arr:char[]) = LexBuffer.FromArrayNoCopy (reportLibraryOnlyFeatures, supportsFeature, arr)
+        static member FromChars (supportsFeature:LanguageFeature -> bool, arr:char[]) = LexBuffer.FromArrayNoCopy (supportsFeature, arr)
 
-        static member FromSourceText (reportLibraryOnlyFeatures, supportsFeature: LanguageFeature -> bool, sourceText: ISourceText) =
+        static member FromSourceText (supportsFeature: LanguageFeature -> bool, sourceText: ISourceText) =
             let mutable currentSourceIndex = 0
-            LexBuffer<char>.FromFunction(reportLibraryOnlyFeatures, supportsFeature, fun (chars, start, length) ->
+            LexBuffer<char>.FromFunction(supportsFeature, fun (chars, start, length) ->
                 let lengthToCopy = 
                     if currentSourceIndex + length <= sourceText.Length then
                         length

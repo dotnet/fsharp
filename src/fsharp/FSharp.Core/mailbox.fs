@@ -103,7 +103,7 @@ namespace Microsoft.FSharp.Control
             else
                 waitOneWithCancellation timeout
 
-        member _.inbox =
+        member __.inbox =
             match inboxStore with
             | null -> inboxStore <- new System.Collections.Generic.List<'Msg>(1)
             | _ -> ()
@@ -311,7 +311,7 @@ namespace Microsoft.FSharp.Control
             }
 
         interface System.IDisposable with
-            member _.Dispose() =
+            member __.Dispose() =
                 if isNotNull pulse then (pulse :> IDisposable).Dispose()
 
 #if DEBUG
@@ -337,17 +337,17 @@ namespace Microsoft.FSharp.Control
         let mutable started = false
         let errorEvent = new Event<Exception>()
 
-        member _.CurrentQueueLength = mailbox.CurrentQueueLength // nb. unprotected access gives an approximation of the queue length
+        member __.CurrentQueueLength = mailbox.CurrentQueueLength // nb. unprotected access gives an approximation of the queue length
 
-        member _.DefaultTimeout
+        member __.DefaultTimeout
             with get() = defaultTimeout
             and set v = defaultTimeout <- v
 
         [<CLIEvent>]
-        member _.Error = errorEvent.Publish
+        member __.Error = errorEvent.Publish
 
 #if DEBUG
-        member _.UnsafeMessageQueueContents = mailbox.UnsafeContents
+        member __.UnsafeMessageQueueContents = mailbox.UnsafeContents
 #endif
 
         member x.Start() =
@@ -367,9 +367,9 @@ namespace Microsoft.FSharp.Control
 
                 Async.Start(computation=p, cancellationToken=cancellationToken)
 
-        member _.Post message = mailbox.Post message
+        member __.Post message = mailbox.Post message
 
-        member _.TryPostAndReply(buildMessage : (_ -> 'Msg), ?timeout) : 'Reply option =
+        member __.TryPostAndReply(buildMessage : (_ -> 'Msg), ?timeout) : 'Reply option =
             let timeout = defaultArg timeout defaultTimeout
             use resultCell = new ResultCell<_>()
             let msg = buildMessage (new AsyncReplyChannel<_>(fun reply ->
@@ -384,7 +384,7 @@ namespace Microsoft.FSharp.Control
             | None ->  raise (TimeoutException(SR.GetString(SR.mailboxProcessorPostAndReplyTimedOut)))
             | Some res -> res
 
-        member _.PostAndTryAsyncReply(buildMessage, ?timeout) : Async<'Reply option> =
+        member __.PostAndTryAsyncReply(buildMessage, ?timeout) : Async<'Reply option> =
             let timeout = defaultArg timeout defaultTimeout
             let resultCell = new ResultCell<_>()
             let msg = buildMessage (new AsyncReplyChannel<_>(fun reply ->
@@ -419,20 +419,20 @@ namespace Microsoft.FSharp.Control
                         | None ->  return! raise (TimeoutException(SR.GetString(SR.mailboxProcessorPostAndAsyncReplyTimedOut)))
                         | Some res -> return res }
 
-        member _.Receive(?timeout) =
+        member __.Receive(?timeout) =
             mailbox.Receive(timeout=defaultArg timeout defaultTimeout)
 
-        member _.TryReceive(?timeout) =
+        member __.TryReceive(?timeout) =
             mailbox.TryReceive(timeout=defaultArg timeout defaultTimeout)
 
-        member _.Scan(scanner: 'Msg -> (Async<'T>) option, ?timeout) =
+        member __.Scan(scanner: 'Msg -> (Async<'T>) option, ?timeout) =
             mailbox.Scan(scanner, timeout=defaultArg timeout defaultTimeout)
 
-        member _.TryScan(scanner: 'Msg -> (Async<'T>) option, ?timeout) =
+        member __.TryScan(scanner: 'Msg -> (Async<'T>) option, ?timeout) =
             mailbox.TryScan(scanner, timeout=defaultArg timeout defaultTimeout)
 
         interface System.IDisposable with
-            member _.Dispose() = (mailbox :> IDisposable).Dispose()
+            member __.Dispose() = (mailbox :> IDisposable).Dispose()
 
         static member Start(body, ?cancellationToken) =
             let mailboxProcessor = new MailboxProcessor<'Msg>(body, ?cancellationToken=cancellationToken)

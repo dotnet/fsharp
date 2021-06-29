@@ -1,9 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.AbstractIL.AsciiConstants
+module internal FSharp.Compiler.AbstractIL.Internal.AsciiConstants
 
 open Internal.Utilities.Collections
-open Internal.Utilities.Library
+
+open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.IL
 
 /// Table of parsing and pretty printing data for instructions.

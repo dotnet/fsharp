@@ -46,9 +46,9 @@ type internal MissingReferenceCodeFixProvider() =
                 ),
             title)
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray [fixableDiagnosticId]
+    override __.FixableDiagnosticIds = Seq.toImmutableArray [fixableDiagnosticId]
 
-    override _.RegisterCodeFixesAsync context : Task =
+    override __.RegisterCodeFixesAsync context : Task =
         async { 
             let solution = context.Document.Project.Solution
 

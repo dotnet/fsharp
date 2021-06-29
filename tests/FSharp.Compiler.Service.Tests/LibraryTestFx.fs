@@ -1,14 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module Tests.Service.SurfaceArea.LibraryTestFx
+module FSharp.Core.UnitTests.LibraryTestFx
 
 open System
 open System.Collections.Generic
 open System.IO
 open System.Reflection
-open System.Text.RegularExpressions
-
-open FSharp.Compiler.IO
 
 open NUnit.Framework
 
@@ -20,6 +17,9 @@ let sleep(n : int32) =
     System.Threading.Thread.Sleep(n)
 
 module SurfaceArea =
+    open System.Reflection
+    open System
+    open System.Text.RegularExpressions
 
     // gets string form of public surface area for FSharp.CompilerService
     let private getActual () =
@@ -28,6 +28,7 @@ module SurfaceArea =
         let path = Path.Combine(Path.GetDirectoryName(typeof<int list>.Assembly.Location), "FSharp.Compiler.Service.dll")
         let name = AssemblyName.GetAssemblyName (path)
         let asm = Assembly.Load(name)
+        let fsCompilerServiceFullName = asm.FullName
 
         // public types only
         let types = asm.ExportedTypes |> Seq.filter (fun ty -> let ti = ty.GetTypeInfo() in ti.IsPublic || ti.IsNestedPublic) |> Array.ofSeq
@@ -38,20 +39,18 @@ module SurfaceArea =
             let getMembers (t : Type) =
                 let ti = t.GetTypeInfo()
                 let cast (info: #MemberInfo) = (t, info :> MemberInfo)
+                let isDeclaredInFSharpCompilerService (m:MemberInfo) = m.DeclaringType.Assembly.FullName = fsCompilerServiceFullName
                 seq {
-                    yield! ti.DeclaredEvents |> Seq.filter (fun m -> m.AddMethod.IsPublic) |> Seq.map cast
-                    yield! ti.DeclaredProperties |> Seq.filter (fun m -> m.GetMethod.IsPublic) |> Seq.map cast
-                    yield! ti.DeclaredMethods |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
-                    yield! ti.DeclaredFields |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
+                    yield! t.GetRuntimeEvents()     |> Seq.filter (fun m -> m.AddMethod.IsPublic && m |> isDeclaredInFSharpCompilerService) |> Seq.map cast
+                    yield! t.GetRuntimeProperties() |> Seq.filter (fun m -> m.GetMethod.IsPublic && m |> isDeclaredInFSharpCompilerService) |> Seq.map cast
+                    yield! t.GetRuntimeMethods()    |> Seq.filter (fun m -> m.IsPublic && m |> isDeclaredInFSharpCompilerService) |> Seq.map cast
+                    yield! t.GetRuntimeFields()     |> Seq.filter (fun m -> m.IsPublic && m |> isDeclaredInFSharpCompilerService) |> Seq.map cast
                     yield! ti.DeclaredConstructors  |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
                     yield! ti.DeclaredNestedTypes   |> Seq.filter (fun ty -> ty.IsNestedPublic) |> Seq.map cast
                 } |> Array.ofSeq
 
-            [| for (ty,m) in getMembers t do
-                  yield sprintf "%s: %s" (ty.ToString()) (m.ToString())
-               if not t.IsNested then
-                   yield t.ToString()
-            |]
+            getMembers t
+            |> Array.map (fun (ty, m) -> sprintf "%s: %s" (ty.ToString()) (m.ToString()))
 
         let actual =
             types |> Array.collect getTypeMemberStrings
@@ -66,7 +65,7 @@ module SurfaceArea =
 
         let asm, actualNotNormalized = getActual ()
         let actual = actualNotNormalized |> Seq.map normalize |> Seq.filter (String.IsNullOrWhiteSpace >> not) |> set
-
+        
         let expected =
             // Split the "expected" string into individual lines, then normalize it.
             (normalize expected).Split([|"\r\n"; "\n"; "\r"|], StringSplitOptions.RemoveEmptyEntries)
@@ -93,7 +92,7 @@ module SurfaceArea =
                 let workDir = TestContext.CurrentContext.WorkDirectory
                 sprintf "%s\\FSharp.CompilerService.SurfaceArea.%s.txt" workDir platform
 
-            FileSystem.OpenFileForWriteShim(logFile).Write(String.Join("\r\n", actual))
+            System.IO.File.WriteAllText(logFile, String.Join("\r\n", actual))
 
             // The surface areas don't match; prepare an easily-readable output message.
             let msg =
@@ -105,11 +104,8 @@ module SurfaceArea =
                 Printf.bprintf sb "    windiff %s %s" baseline logFile
                 newLine sb
                 newLine sb
-                sb.AppendLine "To update the baseline copy the contents of this:" |> ignore
-                Printf.bprintf sb "    %s" logFile
-                newLine sb
-                sb.AppendLine "into this:" |> ignore
-                Printf.bprintf sb "    %s" baseline
+                sb.AppendLine "To update the baseline run:" |> ignore
+                Printf.bprintf sb "    copy /y %s %s" logFile baseline
                 newLine sb
                 newLine sb
                 sb.Append "Unexpectedly missing (expected, not actual):" |> ignore

@@ -3,6 +3,8 @@
 /// Functions to format error message details
 module internal FSharp.Compiler.ErrorResolutionHints
 
+open Internal.Utilities
+open FSharp.Compiler.AbstractIL.Internal.Library
 open System
 open System.Collections
 open System.Collections.Generic
@@ -14,6 +16,13 @@ val IsInEditDistanceProximity: idText:string -> suggestion:string -> bool
 /// Demangles a suggestion
 val DemangleOperator: nm:string -> string
 
+type SuggestionBufferEnumerator =
+
+    interface IDisposable
+    interface IEnumerator
+    interface IEnumerator<string>
+    new: tail:int * data: KeyValuePair<float,string> [] -> SuggestionBufferEnumerator
+  
 type SuggestionBuffer =
 
     interface IEnumerable

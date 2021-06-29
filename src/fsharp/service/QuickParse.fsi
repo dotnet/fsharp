@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.EditorServices
+namespace FSharp.Compiler
 
-open FSharp.Compiler.Tokenization
+open FSharp.Compiler.SourceCodeServices
 
 /// Qualified long name.
 type public PartialLongName =

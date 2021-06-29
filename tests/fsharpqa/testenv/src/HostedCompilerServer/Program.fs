@@ -1,11 +1,14 @@
 ﻿namespace MLang.Test
 
 open System
+open System.IO
 open System.Net
 open System.Net.Sockets
 open System.Text
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.CodeAnalysis.Hosted
+open System.Threading
+open System.Linq
+open FSharp.Compiler
+open Legacy.FSharp.Compiler.Hosted
 
 [<AutoOpen>]
 module Log =

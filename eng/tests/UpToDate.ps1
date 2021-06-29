@@ -26,8 +26,9 @@ try {
     $FscAssemblyDir = Get-ChildItem -Path $ArtifactsBinDir -Filter "fsc"
     $FsiAssemblyDir = Get-ChildItem -Path $ArtifactsBinDir -Filter "fsi"
     $FsiAnyCpuAssemblyDir = Get-ChildItem -Path $ArtifactsBinDir -Filter "fsiAnyCpu"
+    $DmAssemblyDir = Get-ChildItem -Path $ArtifactsBinDir -Filter "Microsoft.DotNet.DependencyManager"
     $ProjectSystemAssemblyDirs = Get-ChildItem -Path $ArtifactsBinDir -Filter "ProjectSystem*"
-    $FSharpDirs = @($FSharpAssemblyDirs) + @($FscAssemblyDir) + @($FsiAssemblyDir) + @($FsiAnyCpuAssemblyDir) + @($ProjectSystemAssemblyDirs)
+    $FSharpDirs = @($FSharpAssemblyDirs) + @($FscAssemblyDir) + @($FsiAssemblyDir) + @($FsiAnyCpuAssemblyDir) + @($DmAssemblyDir) + @($ProjectSystemAssemblyDirs)
     $FSharpDllPaths = $FSharpDirs | ForEach-Object { Get-ChildItem -Path (Join-Path $ArtifactsBinDir $_) -Recurse -Filter "*.dll" } | ForEach-Object { $_.FullName }
     $FSharpExePaths = $FSharpDirs | ForEach-Object { Get-ChildItem -Path (Join-Path $ArtifactsBinDir $_) -Recurse -Filter "*.exe" } | ForEach-Object { $_.FullName }
     $FSharpAssemblyPaths = @($FSharpDllPaths) + @($FSharpExePaths)

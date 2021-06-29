@@ -6,19 +6,19 @@ open System
 open System.Text
 
 open Internal.Utilities
-open Internal.Utilities.Library
 open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler
-open FSharp.Compiler.IO
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Parser
-open FSharp.Compiler.Syntax
-open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Range
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.XmlDoc
 
 /// The "mock" filename used by fsi.exe when reading from stdin.
 /// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
@@ -35,6 +35,7 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
     member x.ExplicitlySet = status.IsSome
     member x.WarnOnMultipleTokens = warn
     
+
 /// Manage lexer resources (string interning)
 [<Sealed>]
 type LexResourceManager(?capacity: int) =
@@ -88,11 +89,11 @@ let reusingLexbufForParsing lexbuf f =
     with e ->
       raise (WrappedError(e, (try lexbuf.LexemeRange with _ -> range0)))
 
-let resetLexbufPos filename (lexbuf: Lexbuf) = 
-    lexbuf.EndPos <- Position.FirstLine (FileIndex.fileIndexOfFile filename)
+let resetLexbufPos filename (lexbuf: UnicodeLexing.Lexbuf) = 
+    lexbuf.EndPos <- Position.FirstLine (fileIndexOfFile filename)
 
 /// Reset the lexbuf, configure the initial position with the given filename and call the given function
-let usingLexbufForParsing (lexbuf:Lexbuf, filename) f =
+let usingLexbufForParsing (lexbuf:UnicodeLexing.Lexbuf, filename) f =
     resetLexbufPos filename lexbuf
     reusingLexbufForParsing lexbuf (fun () -> f lexbuf)
 
@@ -101,12 +102,12 @@ let usingLexbufForParsing (lexbuf:Lexbuf, filename) f =
 //-----------------------------------------------------------------------
 
 let stringBufferAsString (buf: ByteBuffer) =
-    let buf = buf.AsMemory()
+    let buf = buf.Close()
     if buf.Length % 2 <> 0 then failwith "Expected even number of bytes"
     let chars : char[] = Array.zeroCreate (buf.Length/2)
     for i = 0 to (buf.Length/2) - 1 do
-        let hi = buf.Span.[i*2+1]
-        let lo = buf.Span.[i*2]
+        let hi = buf.[i*2+1]
+        let lo = buf.[i*2]
         let c = char (((int hi) * 256) + (int lo))
         chars.[i] <- c
     System.String(chars)
@@ -117,59 +118,34 @@ let stringBufferAsString (buf: ByteBuffer) =
 /// we just take every second byte we stored.  Note all bytes > 127 should have been 
 /// stored using addIntChar 
 let stringBufferAsBytes (buf: ByteBuffer) = 
-    let bytes = buf.AsMemory()
-    Array.init (bytes.Length / 2) (fun i -> bytes.Span.[i*2]) 
-
-[<Flags>]
-type LexerStringFinisherContext = 
-    | InterpolatedPart = 1
-    | Verbatim = 2
-    | TripleQuote = 4
+    let bytes = buf.Close()
+    Array.init (bytes.Length / 2) (fun i -> bytes.[i*2]) 
 
 type LexerStringFinisher =
-    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> LexerStringFinisherContext -> LexerContinuation -> token)
+    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> LexerContinuation -> token)
 
-    member fin.Finish (buf: ByteBuffer) kind context cont =
+    member fin.Finish (buf: ByteBuffer) kind isInterpolatedStringPart cont =
         let (LexerStringFinisher f)  = fin
-        f buf kind context cont
+        f buf kind isInterpolatedStringPart cont
 
     static member Default =
-        LexerStringFinisher (fun buf kind context cont ->
-            let isPart = context.HasFlag(LexerStringFinisherContext.InterpolatedPart)
-            let isVerbatim = context.HasFlag(LexerStringFinisherContext.Verbatim)
-            let isTripleQuote = context.HasFlag(LexerStringFinisherContext.TripleQuote)
-
+        LexerStringFinisher (fun buf kind isPart cont ->
             if kind.IsInterpolated then 
                 let s = stringBufferAsString buf
-                if kind.IsInterpolatedFirst then
-                    let synStringKind =
-                        if isTripleQuote then
-                            SynStringKind.TripleQuote
-                        elif isVerbatim then
-                            SynStringKind.Verbatim
-                        else
-                            SynStringKind.Regular
+                if kind.IsInterpolatedFirst then 
                     if isPart then 
-                        INTERP_STRING_BEGIN_PART (s, synStringKind, cont)
+                        INTERP_STRING_BEGIN_PART (s, cont)
                     else
-                        INTERP_STRING_BEGIN_END (s, synStringKind, cont)
+                        INTERP_STRING_BEGIN_END (s, cont)
                 else
                     if isPart then
                         INTERP_STRING_PART (s, cont)
                     else
                         INTERP_STRING_END (s, cont)
-            elif kind.IsByteString then
-                let synByteStringKind = if isVerbatim then SynByteStringKind.Verbatim else SynByteStringKind.Regular
-                BYTEARRAY (stringBufferAsBytes buf, synByteStringKind, cont)
+            elif kind.IsByteString then 
+                BYTEARRAY (stringBufferAsBytes buf, cont)
             else
-                let synStringKind =
-                    if isVerbatim then
-                        SynStringKind.Verbatim
-                    elif isTripleQuote then
-                        SynStringKind.TripleQuote
-                    else
-                        SynStringKind.Regular
-                STRING (stringBufferAsString buf, synStringKind, cont)
+                STRING (stringBufferAsString buf, cont)
         ) 
 
 let addUnicodeString (buf: ByteBuffer) (x:string) =
@@ -185,10 +161,10 @@ let addByteChar buf (c:char) = addIntChar buf (int32 c % 256)
 
 /// Sanity check that high bytes are zeros. Further check each low byte <= 127 
 let stringBufferIsBytes (buf: ByteBuffer) = 
-    let bytes = buf.AsMemory()
+    let bytes = buf.Close()
     let mutable ok = true 
     for i = 0 to bytes.Length / 2-1 do
-        if bytes.Span.[i*2+1] <> 0uy then ok <- false
+        if bytes.[i*2+1] <> 0uy then ok <- false
     ok
 
 let newline (lexbuf:LexBuffer<_>) = 
@@ -352,6 +328,9 @@ module Keywords =
           "parallel"; "params";  "process"; "protected"; "pure"
           "sealed"; "trait";  "tailcall"; "virtual" ]
 
+    let private unreserveWords = 
+        keywordList |> List.choose (function (mode, keyword, _) -> if mode = FSHARP then Some keyword else None) 
+
     //------------------------------------------------------------------------
     // Keywords
     //-----------------------------------------------------------------------
@@ -367,12 +346,12 @@ module Keywords =
         
     let KeywordToken s = keywordTable.[s]
 
-    let IdentifierToken args (lexbuf:Lexbuf) (s:string) =
+    let IdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) (s:string) =
         if IsCompilerGeneratedName s then 
             warning(Error(FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved(), lexbuf.LexemeRange))
         args.resourceManager.InternIdentifierToken s
 
-    let KeywordOrIdentifierToken args (lexbuf:Lexbuf) s =
+    let KeywordOrIdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) s =
         match keywordTable.TryGetValue s with
         | true, v ->
             match v with 
@@ -383,7 +362,7 @@ module Keywords =
         | _ ->
             match s with 
             | "__SOURCE_DIRECTORY__" ->
-                let filename = FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex
+                let filename = fileOfFileIndex lexbuf.StartPos.FileIndex
                 let dirname =
                     if String.IsNullOrWhiteSpace(filename) then
                         String.Empty
@@ -396,11 +375,11 @@ module Keywords =
 
                 if String.IsNullOrEmpty dirname then dirname
                 else PathMap.applyDir args.pathMap dirname
-                |> fun dir -> KEYWORD_STRING(s, dir)
+                |> KEYWORD_STRING
             | "__SOURCE_FILE__" -> 
-                KEYWORD_STRING (s, System.IO.Path.GetFileName((FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex))) 
+                KEYWORD_STRING (System.IO.Path.GetFileName((fileOfFileIndex lexbuf.StartPos.FileIndex))) 
             | "__LINE__" -> 
-                KEYWORD_STRING (s, string lexbuf.StartPos.Line)
+                KEYWORD_STRING (string lexbuf.StartPos.Line)
             | _ -> 
                 IdentifierToken args lexbuf s
 

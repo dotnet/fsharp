@@ -92,7 +92,7 @@ namespace Microsoft.FSharp.Control
         /// Use this trampoline on the synchronous stack if none exists, and execute
         /// the given function. The function might write its continuation into the trampoline.
         [<DebuggerHidden>]
-        member _.Execute (firstAction: unit -> AsyncReturn) =
+        member __.Execute (firstAction: unit -> AsyncReturn) =
 
             let thisThreadHadTrampoline = Trampoline.thisThreadHasTrampoline
             Trampoline.thisThreadHasTrampoline <- true
@@ -124,19 +124,19 @@ namespace Microsoft.FSharp.Control
 
         /// Increment the counter estimating the size of the synchronous stack and
         /// return true if time to jump on trampoline.
-        member _.IncrementBindCount() =
+        member __.IncrementBindCount() =
             bindCount <- bindCount + 1
             bindCount >= bindLimitBeforeHijack
 
         /// Prepare to abandon the synchronous stack of the current execution and save the continuation in the trampoline.
-        member _.Set action =
+        member __.Set action =
             assert storedCont.IsNone
             bindCount <- 0
             storedCont <- Some action
             AsyncReturn.Fake()
 
         /// Save the exception continuation during propagation of an exception, or prior to raising an exception
-        member _.OnExceptionRaised (action: econt) =
+        member __.OnExceptionRaised (action: econt) =
             assert storedExnCont.IsNone
             storedExnCont <- Some action
 
@@ -164,7 +164,7 @@ namespace Microsoft.FSharp.Control
 
         /// Execute an async computation after installing a trampoline on its synchronous stack.
         [<DebuggerHidden>]
-        member _.ExecuteWithTrampoline firstAction =
+        member __.ExecuteWithTrampoline firstAction =
             trampoline <- Trampoline()
             trampoline.Execute firstAction
 
@@ -183,16 +183,16 @@ namespace Microsoft.FSharp.Control
             | _ -> this.PostWithTrampoline syncCtxt f
 
         // This should be the only call to Thread.Start in this library. We must always install a trampoline.
-        member _.StartThreadWithTrampoline (f: unit -> AsyncReturn) =
+        member __.StartThreadWithTrampoline (f: unit -> AsyncReturn) =
             Thread(threadStartCallbackForStartThreadWithTrampoline, IsBackground=true).Start(f|>box)
             AsyncReturn.Fake()
 
         /// Save the exception continuation during propagation of an exception, or prior to raising an exception
-        member inline _.OnExceptionRaised econt =
+        member inline __.OnExceptionRaised econt =
             trampoline.OnExceptionRaised econt
 
         /// Call a continuation, but first check if an async computation should trampoline on its synchronous stack.
-        member inline _.HijackCheckThenCall (cont: 'T -> AsyncReturn) res =
+        member inline __.HijackCheckThenCall (cont: 'T -> AsyncReturn) res =
             if trampoline.IncrementBindCount() then
                 trampoline.Set (fun () -> cont res)
             else
@@ -643,7 +643,7 @@ namespace Microsoft.FSharp.Control
 
             let trampolineHolder = ctxt.trampolineHolder
 
-            member _.ContinueImmediate res =
+            member __.ContinueImmediate res =
                 let action () = ctxt.cont res
                 let inline executeImmediately () = trampolineHolder.ExecuteWithTrampoline action
                 let currentSyncCtxt = SynchronizationContext.Current
@@ -657,7 +657,7 @@ namespace Microsoft.FSharp.Control
                 | _ ->
                     trampolineHolder.PostOrQueueWithTrampoline syncCtxt action
 
-            member _.ContinueWithPostOrQueue res =
+            member __.ContinueWithPostOrQueue res =
                 trampolineHolder.PostOrQueueWithTrampoline syncCtxt (fun () -> ctxt.cont res)
 
         /// A utility type to provide a synchronization point between an asynchronous computation
@@ -800,7 +800,7 @@ namespace Microsoft.FSharp.Control
 
         /// Create an instance of an arbitrary delegate type delegating to the given F# function
         type FuncDelegate<'T>(f) =
-            member _.Invoke(sender:obj, a:'T) : unit = ignore sender; f a
+            member __.Invoke(sender:obj, a:'T) : unit = ignore sender; f a
             static member Create<'Delegate when 'Delegate :> Delegate>(f) =
                 let obj = FuncDelegate<'T>(f)
                 let invokeMeth = (typeof<FuncDelegate<'T>>).GetMethod("Invoke", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
@@ -871,9 +871,11 @@ namespace Microsoft.FSharp.Control
 
         [<DebuggerHidden>]
         let RunSynchronously cancellationToken (computation: Async<'T>) timeout =
-            // Reuse the current ThreadPool thread if possible.
-            match Thread.CurrentThread.IsThreadPoolThread, timeout with
-            | true, None -> RunSynchronouslyInCurrentThread (cancellationToken, computation)
+            // Reuse the current ThreadPool thread if possible. Unfortunately
+            // Thread.IsThreadPoolThread isn't available on all profiles so
+            // we approximate it by testing synchronization context for null.
+            match SynchronizationContext.Current, timeout with
+            | null, None -> RunSynchronouslyInCurrentThread (cancellationToken, computation)
             // When the timeout is given we need a dedicated thread
             // which cancels the computation.
             // Performing the cancellation in the ThreadPool eg. by using
@@ -923,44 +925,42 @@ namespace Microsoft.FSharp.Control
 
         // Helper to attach continuation to the given task.
         [<DebuggerHidden>]
-        let taskContinueWith (task: Task<'T>) (ctxt: AsyncActivation<'T>)  =
+        let taskContinueWith (task: Task<'T>) (ctxt: AsyncActivation<'T>) useCcontForTaskCancellation =
 
             let continuation (completedTask: Task<_>) : unit =
                 ctxt.trampolineHolder.ExecuteWithTrampoline (fun () ->
                     if completedTask.IsCanceled then
-                        let edi = ExceptionDispatchInfo.Capture(TaskCanceledException completedTask)
-                        ctxt.econt edi
+                        if useCcontForTaskCancellation then
+                            ctxt.OnCancellation ()
+                        else
+                            let edi = ExceptionDispatchInfo.Capture(TaskCanceledException completedTask)
+                            ctxt.econt edi
                     elif completedTask.IsFaulted then
                         let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
                         ctxt.econt edi
                     else
                         ctxt.cont completedTask.Result) |> unfake
 
-            if task.IsCompleted then
-                continuation task |> fake
-            else
-                task.ContinueWith(Action<Task<'T>>(continuation), TaskContinuationOptions.ExecuteSynchronously)
-                |> ignore |> fake
+            task.ContinueWith(Action<Task<'T>>(continuation)) |> ignore |> fake
 
         [<DebuggerHidden>]
-        let taskContinueWithUnit (task: Task) (ctxt: AsyncActivation<unit>) =
+        let taskContinueWithUnit (task: Task) (ctxt: AsyncActivation<unit>) useCcontForTaskCancellation =
 
             let continuation (completedTask: Task) : unit =
                 ctxt.trampolineHolder.ExecuteWithTrampoline (fun () ->
                     if completedTask.IsCanceled then
-                        let edi = ExceptionDispatchInfo.Capture(TaskCanceledException(completedTask))
-                        ctxt.econt edi
+                        if useCcontForTaskCancellation then
+                            ctxt.OnCancellation ()
+                        else
+                            let edi = ExceptionDispatchInfo.Capture(TaskCanceledException(completedTask))
+                            ctxt.econt edi
                     elif completedTask.IsFaulted then
                         let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
                         ctxt.econt edi
                     else
                         ctxt.cont ()) |> unfake
 
-            if task.IsCompleted then
-                continuation task |> fake
-            else
-                task.ContinueWith(Action<Task>(continuation), TaskContinuationOptions.ExecuteSynchronously)
-                |> ignore |> fake
+            task.ContinueWith(Action<Task>(continuation)) |> ignore |> fake
 
         [<Sealed; AutoSerializable(false)>]
         type AsyncIAsyncResult<'T>(callback: System.AsyncCallback, state:obj) =
@@ -1047,29 +1047,29 @@ namespace Microsoft.FSharp.Control
 
     [<Sealed; CompiledName("FSharpAsyncBuilder")>]
     type AsyncBuilder() =
-        member _.Zero () = unitAsync
+        member __.Zero () = unitAsync
 
-        member _.Delay generator = CreateDelayAsync generator
+        member __.Delay generator = CreateDelayAsync generator
 
-        member inline _.Return value = CreateReturnAsync value
+        member inline __.Return value = CreateReturnAsync value
 
-        member inline _.ReturnFrom (computation:Async<_>) = computation
+        member inline __.ReturnFrom (computation:Async<_>) = computation
 
-        member inline _.Bind (computation, binder) = CreateBindAsync computation binder
+        member inline __.Bind (computation, binder) = CreateBindAsync computation binder
 
-        member _.Using (resource, binder) = CreateUsingAsync resource binder
+        member __.Using (resource, binder) = CreateUsingAsync resource binder
 
-        member _.While (guard, computation) = CreateWhileAsync guard computation
+        member __.While (guard, computation) = CreateWhileAsync guard computation
 
-        member _.For (sequence, body) = CreateForLoopAsync sequence body
+        member __.For (sequence, body) = CreateForLoopAsync sequence body
 
-        member inline _.Combine (computation1, computation2) = CreateSequentialAsync computation1 computation2
+        member inline __.Combine (computation1, computation2) = CreateSequentialAsync computation1 computation2
 
-        member inline _.TryFinally (computation, compensation) = CreateTryFinallyAsync compensation computation
+        member inline __.TryFinally (computation, compensation) = CreateTryFinallyAsync compensation computation
 
-        member inline _.TryWith (computation, catchHandler) = CreateTryWithAsync catchHandler computation
+        member inline __.TryWith (computation, catchHandler) = CreateTryWithAsync catchHandler computation
 
-        // member inline _.TryWithFilter (computation, catchHandler) = CreateTryWithFilterAsync catchHandler computation
+        // member inline __.TryWithFilter (computation, catchHandler) = CreateTryWithFilterAsync catchHandler computation
 
     [<AutoOpen>]
     module AsyncBuilderImpl =
@@ -1692,16 +1692,10 @@ namespace Microsoft.FSharp.Control
             CreateWhenCancelledAsync compensation computation
 
         static member AwaitTask (task:Task<'T>) : Async<'T> =
-            if task.IsCompleted then
-                CreateProtectedAsync (fun ctxt -> taskContinueWith task ctxt)
-            else
-                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWith task ctxt)
+            CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWith task ctxt false)
 
         static member AwaitTask (task:Task) : Async<unit> =
-            if task.IsCompleted then
-                CreateProtectedAsync (fun ctxt -> taskContinueWithUnit task ctxt)
-            else
-                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWithUnit task ctxt)
+            CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWithUnit task ctxt false)
 
     module CommonExtensions =
 

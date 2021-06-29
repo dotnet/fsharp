@@ -5,7 +5,7 @@
 /// Runtime, e.g. between the SSCLI, Mono and the Microsoft CLR.
 ///
 
-module internal FSharp.Compiler.AbstractIL.StrongNameSign
+module internal FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 
 //---------------------------------------------------------------------
 // Strong name signing

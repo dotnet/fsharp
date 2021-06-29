@@ -4,10 +4,8 @@ namespace Tests.Compiler.Watson
 
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.CodeAnalysis
-open Internal.Utilities.Library 
+open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Driver
 open NUnit.Framework

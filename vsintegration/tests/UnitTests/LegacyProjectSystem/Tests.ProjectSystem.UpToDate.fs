@@ -29,7 +29,7 @@ type UpToDate() =
     inherit TheTests()
 
     [<OneTimeSetUp>]
-    member public _.Init () = AssemblyResolver.addResolver ()
+    member public __.Init () = AssemblyResolver.addResolver ()
 
     [<Test>]
     member public this.ItemInputs () =

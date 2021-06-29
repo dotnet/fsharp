@@ -27,7 +27,7 @@ __AndroidToolchain=aarch64-linux-android
 
 for i in "$@"
     do
-        lowerI="$(echo $i | tr "[:upper:]" "[:lower:]")"
+        lowerI="$(echo $i | awk '{print tolower($0)}')"
         case $lowerI in
         -?|-h|--help)
             usage

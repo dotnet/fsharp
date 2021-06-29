@@ -7,34 +7,14 @@
         <target state="translated">형식 정의에 누락된 '=' 추가</target>
         <note />
       </trans-unit>
-      <trans-unit id="AddMissingFunKeyword">
-        <source>Add missing 'fun' keyword</source>
-        <target state="translated">누락된 'fun' 키워드 추가</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="AddMissingInstanceMemberParameter">
-        <source>Add missing instance member parameter</source>
-        <target state="translated">누락된 인스턴스 멤버 매개 변수 추가</target>
-        <note />
-      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">'new' 키워드 추가</target>
         <note />
       </trans-unit>
-      <trans-unit id="AddTypeAnnotation">
-        <source>Add type annotation</source>
-        <target state="translated">형식 주석 추가</target>
-        <note />
-      </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
         <target state="translated">익명 레코드로 변환</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConvertToNotEqualsEqualityExpression">
-        <source>Use '&lt;&gt;' for inequality check</source>
-        <target state="translated">같지 않음 검사에 '&lt;&gt;' 사용</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
@@ -53,8 +33,8 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTopLevelValuesClassificationType">
-        <source>F# Disposable Values (top-level)</source>
-        <target state="translated">F# 삭제 가능한 값(최상위 수준)</target>
+        <source>F# Dispostable Values (top-level)</source>
+        <target state="translated">F# 삭제 가능한 값(최상위)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTypesClassificationType">
@@ -84,7 +64,7 @@
       </trans-unit>
       <trans-unit id="MakeOuterBindingRecursive">
         <source>Make '{0}' recursive</source>
-        <target state="translated">'{0}'을(를) 재귀적으로 만들기</target>
+        <target state="new">Make '{0}' recursive</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -94,27 +74,22 @@
       </trans-unit>
       <trans-unit id="RemoveReturn">
         <source>Remove 'return'</source>
-        <target state="translated">'return' 제거</target>
+        <target state="new">Remove 'return'</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
-        <target state="translated">'return!' 제거</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="RemoveUnusedBinding">
-        <source>Remove unused binding</source>
-        <target state="translated">사용되지 않는 바인딩 제거</target>
+        <target state="new">Remove 'return!'</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveYield">
         <source>Remove 'yield'</source>
-        <target state="translated">'yield' 제거</target>
+        <target state="new">Remove 'yield'</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveYieldBang">
-        <source>Remove 'yield!'</source>
-        <target state="translated">'yield!' 제거</target>
+        <source>Remove yield!'</source>
+        <target state="new">Remove yield!'</target>
         <note />
       </trans-unit>
       <trans-unit id="RenameValueToUnderscore">
@@ -249,17 +224,12 @@
       </trans-unit>
       <trans-unit id="UseFSharpLambda">
         <source>Use F# lambda syntax</source>
-        <target state="translated">F# 람다 구문 사용</target>
+        <target state="new">Use F# lambda syntax</target>
         <note />
       </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">
         <source>Use '&lt;-' to mutate value</source>
         <target state="translated">'&lt;-'를 사용하여 값 변경</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="UseNameof">
-        <source>Use 'nameof'</source>
-        <target state="translated">'nameof' 사용</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">
@@ -275,11 +245,6 @@
       <trans-unit id="UseNotForNegation">
         <source>Use 'not' to negate expression</source>
         <target state="translated">식을 부정하려면 'not' 사용</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="UseValueInsteadOfDeref">
-        <source>Use '.Value' to dereference expression</source>
-        <target state="translated">식을 역참조하려면 '.Value' 사용</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">
