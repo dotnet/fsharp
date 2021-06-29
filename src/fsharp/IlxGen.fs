@@ -562,11 +562,8 @@ and GenUnionCaseRef (amap: ImportMap) m tyenv i (fspecs: RecdField[]) offsetInfo
     | Some maxReferenceTypeFieldsInAlt ->
         let referenceOffsetStart = 8 // todo this relies on a single int32 tag at offset 0
         let referenceWidth = 8
-        let referenceTypeFields, valueTypeFields =
-            fspecs |> Array.partition (fun fspec ->
-                match fspec.FormalType with
-                | TType_app (tyconRef, _) -> not tyconRef.IsStructOrEnumTycon
-                | _ -> false)
+        let valueTypeFields, referenceTypeFields =
+            fspecs |> Array.partition (fun fspec -> isStructTy g fspec.FormalType)
 
         let valueTypeOffsetStart = referenceOffsetStart + maxReferenceTypeFieldsInAlt * referenceWidth
 
@@ -7909,10 +7906,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                 tycon.UnionCasesArray
                                 |> Array.map (fun x ->
                                     x.RecdFieldsArray
-                                    |> Array.filter (fun y ->
-                                        match y.FormalType with
-                                        | TType_app (tyconRef, _) -> not tyconRef.IsStructOrEnumTycon
-                                        | _ -> false)
+                                    |> Array.filter (fun y -> not (isStructTy g y.FormalType))
                                     |> Array.length)
                                 |> Array.max
 
