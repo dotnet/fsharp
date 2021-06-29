@@ -46,6 +46,141 @@ module EnvMisc =
     let maxMBDefault =  GetEnvInteger "FCS_MaxMB" 1000000 // a million MB = 1TB = disabled
     //let maxMBDefault = GetEnvInteger "FCS_maxMB" (if sizeof<int> = 4 then 1700 else 3400)
 
+    let frameworkTcImportsCache = FrameworkImportsCache(frameworkTcImportsCacheStrongSize)
+
+    // We currently share one global dependency provider for all scripts for the FSharpChecker.
+    // For projects, one is used per project.
+    // 
+    // Sharing one for all scripts is necessary for good performance from GetProjectOptionsFromScript,
+    // which requires a dependency provider to process through the project options prior to working out
+    // if the cached incremental builder can be used for the project.
+    let dependencyProviderForScripts = new DependencyProvider()
+
+[<Sealed>]
+type FSharpProject private (options: FSharpProjectOptions, builder: IncrementalBuilder, creationDiags, suggestNamesForErrors, keepAssemblyContents) =
+
+    member this.Invalidated = 
+#if !NO_EXTENSIONTYPING
+        builder.ImportsInvalidatedByTypeProvider
+#else
+        Event<unit>().Publish
+#endif
+
+    member this.GetParseFileResults(filePath) =
+        let parseTree,_,_,parseDiags = builder.GetParseResultsForFile (filePath)
+        let diagnostics = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (builder.TcConfig.errorSeverityOptions, false, filePath, parseDiags, suggestNamesForErrors) |]
+        FSharpParseFileResults(diagnostics = diagnostics, input = parseTree, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
+
+    member this.GetParseAndCheckFileResultsAsync(filePath) =
+        node {
+            let (parseTree, _, _, parseDiags) = builder.GetParseResultsForFile (filePath)
+            let! tcProj = builder.GetFullCheckResultsAfterFileInProject (filePath)
+
+            let! tcInfo, tcInfoExtras = tcProj.GetOrComputeTcInfoWithExtras()
+
+            let tcResolutions = tcInfoExtras.tcResolutions
+            let tcSymbolUses = tcInfoExtras.tcSymbolUses
+            let tcOpenDeclarations = tcInfoExtras.tcOpenDeclarations
+            let latestCcuSigForFile = tcInfo.latestCcuSigForFile
+            let tcState = tcInfo.tcState
+            let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
+            let latestImplementationFile = tcInfoExtras.latestImplFile
+            let tcDependencyFiles = tcInfo.tcDependencyFiles
+            let tcErrors = tcInfo.TcErrors
+            let errorOptions = builder.TcConfig.errorSeverityOptions
+            let parseDiags = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (errorOptions, false, filePath, parseDiags, suggestNamesForErrors) |]
+            let tcErrors = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (errorOptions, false, filePath, tcErrors, suggestNamesForErrors) |]
+            let parseResults = FSharpParseFileResults(diagnostics=parseDiags, input=parseTree, parseHadErrors=false, dependencyFiles=builder.AllDependenciesDeprecated)
+            let loadClosure = None
+            let typedResults = 
+                FSharpCheckFileResults.Make
+                    (filePath, 
+                        options.ProjectFileName, 
+                        tcProj.TcConfig, 
+                        tcProj.TcGlobals, 
+                        options.IsIncompleteTypeCheckEnvironment, 
+                        builder, 
+                        options,
+                        Array.ofList tcDependencyFiles, 
+                        creationDiags, 
+                        parseResults.Diagnostics, 
+                        tcErrors,
+                        keepAssemblyContents,
+                        Option.get latestCcuSigForFile, 
+                        tcState.Ccu, 
+                        tcProj.TcImports, 
+                        tcEnvAtEnd.AccessRights,
+                        tcResolutions, 
+                        tcSymbolUses,
+                        tcEnvAtEnd.NameEnv,
+                        loadClosure, 
+                        latestImplementationFile,
+                        tcOpenDeclarations) 
+            return (parseResults, typedResults)
+        }
+        |> Async.AwaitNodeCode
+
+    static member Create(options: FSharpProjectOptions, ?legacyReferenceResolver, ?suggestNamesForErrors: bool, ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot, ?ct: CancellationToken) =
+        let legacyReferenceResolver = defaultArg legacyReferenceResolver (SimulatedMSBuildReferenceResolver.getResolver())
+        let suggestNamesForErrors = defaultArg suggestNamesForErrors true
+        let tryGetMetadataSnapshot = defaultArg tryGetMetadataSnapshot (fun _ -> None)
+        let ct = defaultArg ct CancellationToken.None
+
+        let projectReferences =  
+            [ for r in options.ReferencedProjects do
+
+               match r with
+               | FSharpReferencedProject.FSharpReference _ ->
+                   failwith "FSharpProject does not support a FSharpReferencedProject.FSharpReference. Instead, use FSharpReferencedProject.FSharpProject."
+                            
+                | FSharpReferencedProject.PEReference(nm,stamp,delayedReader) ->
+                    yield
+                        { new IProjectReference with 
+                            member x.EvaluateRawContents() = 
+                              node {
+                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> NodeCode.FromCancellable
+                                match ilReaderOpt with
+                                | Some ilReader ->
+                                    let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
+                                    return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
+                                | _ ->
+                                    return None
+                              }
+                            member x.TryGetLogicalTimeStamp(_) = stamp |> Some
+                            member x.FileName = nm }
+
+                | FSharpReferencedProject.ILModuleReference(nm,getStamp,getReader) ->
+                    yield
+                        { new IProjectReference with 
+                            member x.EvaluateRawContents() = 
+                              node {
+                                let ilReader = getReader()
+                                let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
+                                return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
+                              }
+                            member x.TryGetLogicalTimeStamp(_) = getStamp() |> Some
+                            member x.FileName = nm }
+                ]
+
+        let keepAssemblyContents = false
+
+        let nodeCode =
+            IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions
+                (legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, None, Array.toList options.SourceFiles, 
+                 Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
+                 options.UseScriptResolutionRules, keepAssemblyContents, false,
+                 tryGetMetadataSnapshot, suggestNamesForErrors, false,
+                 true,
+                 true,
+                 (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None))
+        
+        let builderOpt, diagnostics =
+            NodeCode.RunImmediate(nodeCode, ct)
+        
+        match builderOpt with
+        | None -> Result.Error(diagnostics)
+        | Some builder -> Result.Ok(FSharpProject(options, builder, diagnostics, suggestNamesForErrors, keepAssemblyContents))
+
 //----------------------------------------------------------------------------
 // BackgroundCompiler
 //
@@ -232,16 +367,6 @@ type BackgroundCompiler(
         MruCache<AnyCallerThreadToken, FSharpProjectOptions, LoadClosure>(projectCacheSize, 
             areSame=FSharpProjectOptions.AreSameForChecking, 
             areSimilar=FSharpProjectOptions.UseSameProject)
-
-    let frameworkTcImportsCache = FrameworkImportsCache(frameworkTcImportsCacheStrongSize)
-
-    // We currently share one global dependency provider for all scripts for the FSharpChecker.
-    // For projects, one is used per project.
-    // 
-    // Sharing one for all scripts is necessary for good performance from GetProjectOptionsFromScript,
-    // which requires a dependency provider to process through the project options prior to working out
-    // if the cached incremental builder can be used for the project.
-    let dependencyProviderForScripts = new DependencyProvider()
 
     /// CreateOneIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
