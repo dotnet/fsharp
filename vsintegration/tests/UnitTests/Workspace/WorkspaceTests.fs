@@ -494,7 +494,7 @@ let y = Script1.y
             assertHasDocumentDiagnostics workspace filePath1
 
             updateCompiledDllOnDisk workspace dllPath1
-                $"""
+                """
 module Script1
 
 let x = 1
