@@ -293,7 +293,7 @@ type Tokenizer = unit -> Parser.token
 
 // Show all tokens in the stream, for testing purposes
 let ShowAllTokensAndExit (shortFilename, tokenizer: Tokenizer, lexbuf: LexBuffer<char>) =
-    while true do 
+    while true do
         printf "tokenize - getting one token from %s\n" shortFilename
         let t = tokenizer ()
         printf "tokenize - got %s @ %a\n" (Parser.token_to_string t) outputRange lexbuf.LexemeRange
@@ -302,12 +302,12 @@ let ShowAllTokensAndExit (shortFilename, tokenizer: Tokenizer, lexbuf: LexBuffer
         | _ -> ()
         if lexbuf.IsPastEndOfStream then printf "!!! at end of stream\n"
 
-// Test one of the parser entry points, just for testing purposes 
+// Test one of the parser entry points, just for testing purposes
 let TestInteractionParserAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>) =
-    while true do 
+    while true do
         match (Parser.interaction (fun _ -> tokenizer ()) lexbuf) with
-        | IDefns(l, m) -> printfn "Parsed OK, got %d defs @ %a" l.Length outputRange m
-        | IHash (_, m) -> printfn "Parsed OK, got hash @ %a" outputRange m
+        | ParsedScriptInteraction.Definitions(l, m) -> printfn "Parsed OK, got %d defs @ %a" l.Length outputRange m
+        | ParsedScriptInteraction.HashDirective(_, m) -> printfn "Parsed OK, got hash @ %a" outputRange m
     exit 0
 
 // Report the statistics for testing purposes
