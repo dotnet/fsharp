@@ -832,7 +832,7 @@ module IncrementalBuilderHelpers =
 
         let! results =
             boundModels 
-            |> Seq.map (fun boundModel -> node { 
+            |> Block.map (fun boundModel -> node { 
                 if enablePartialTypeChecking then
                     let! tcInfo = boundModel.GetOrComputeTcInfo()
                     return tcInfo, None
@@ -840,7 +840,7 @@ module IncrementalBuilderHelpers =
                     let! tcInfo, tcInfoExtras = boundModel.GetOrComputeTcInfoWithExtras()
                     return tcInfo, tcInfoExtras.latestImplFile
             })
-            |> Seq.map (fun work ->
+            |> Block.map (fun work ->
                 node {
                     let! tcInfo, latestImplFile = work
                     return (tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile)
@@ -1339,7 +1339,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                    String.Compare(filename, f2, StringComparison.CurrentCultureIgnoreCase)=0
                 || String.Compare(FileSystem.GetFullPathShim filename, FileSystem.GetFullPathShim f2, StringComparison.CurrentCultureIgnoreCase)=0
             result
-        match fileNames |> Seq.tryFindIndex CompareFileNames with
+        match fileNames |> Block.tryFindIndex CompareFileNames with
         | Some slot -> Some slot
         | None -> None
 
@@ -1399,7 +1399,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let tcConfigB, sourceFiles =
 
                 let getSwitchValue switchString =
-                    match commandLineArgs |> Seq.tryFindIndex(fun s -> s.StartsWithOrdinal switchString) with
+                    match commandLineArgs |> List.tryFindIndex(fun s -> s.StartsWithOrdinal switchString) with
                     | Some idx -> Some(commandLineArgs.[idx].Substring(switchString.Length))
                     | _ -> None
 
