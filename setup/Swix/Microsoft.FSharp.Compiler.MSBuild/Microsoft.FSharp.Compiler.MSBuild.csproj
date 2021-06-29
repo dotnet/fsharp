@@ -78,7 +78,7 @@ vs.dependencies
                 type=Required
 
 folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools"
-  file source="$(BinariesFolder)fsc\$(Configuration)\$(TargetFramework)\fsc.exe" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fsc.exe"
+  file source="$(BinariesFolder)fsc\$(Configuration)\$(TargetFramework)\fsc.exe" vs.file.ngen=yes vs.file.ngenArchitecture=x86 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fsc.exe"
   file source="$(BinariesFolder)fsc\$(Configuration)\$(TargetFramework)\fsc.exe.config"
   file source="$(BinariesFolder)fsi\$(Configuration)\$(TargetFramework)\fsi.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X86 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fsi.exe"
   file source="$(BinariesFolder)fsi\$(Configuration)\$(TargetFramework)\fsi.exe.config"
