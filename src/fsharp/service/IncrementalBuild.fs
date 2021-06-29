@@ -701,6 +701,7 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
         member _.HasAnyFSharpSignatureDataAttribute =  true
         member _.HasMatchingFSharpSignatureDataAttribute = true
 
+[<NoComparison;NoEquality>]
 type IncrementalBuilderState =
     {
         // stampedFileNames represent the real stamps of the files.
@@ -713,24 +714,82 @@ type IncrementalBuilderState =
         finalizedBoundModel: GraphNode<((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime)>
     }
 
-/// Manages an incremental build graph for the build of a single F# project
-type IncrementalBuilder(
-                        initialBoundModel: BoundModel,
-                        tcGlobals,
-                        nonFrameworkAssemblyInputs,
-                        tcConfig: TcConfig,
-                        outfile,
-                        assemblyName,
-                        lexResourceManager,
-                        sourceFiles,
-                        enablePartialTypeChecking,
-                        beforeFileChecked: Event<string>,
-                        fileChecked: Event<string>,
+[<NoComparison;NoEquality>]
+type IncrementalBuilderInitialState =
+    {
+        initialBoundModel: BoundModel
+        tcGlobals: TcGlobals
+        nonFrameworkAssemblyInputs: (Choice<string, IProjectReference> * (TimeStampCache -> DateTime)) list
+        tcConfig: TcConfig
+        outfile: string
+        assemblyName: string
+        lexResourceManager: Lexhelp.LexResourceManager
+        sourceFiles: (range * string * (bool * bool)) list
+        enablePartialTypeChecking: bool
+        beforeFileChecked: Event<string>
+        fileChecked: Event<string>
 #if !NO_EXTENSIONTYPING
-                        importsInvalidatedByTypeProvider: Event<unit>,
+        importsInvalidatedByTypeProvider: Event<unit>
 #endif
-                        allDependencies,
-                        defaultTimeStamp: DateTime) =
+        allDependencies: string []
+        defaultTimeStamp: DateTime
+    }
+
+    static member Create(
+                            initialBoundModel: BoundModel,
+                            tcGlobals,
+                            nonFrameworkAssemblyInputs,
+                            tcConfig: TcConfig,
+                            outfile,
+                            assemblyName,
+                            lexResourceManager,
+                            sourceFiles,
+                            enablePartialTypeChecking,
+                            beforeFileChecked: Event<string>,
+                            fileChecked: Event<string>,
+#if !NO_EXTENSIONTYPING
+                            importsInvalidatedByTypeProvider: Event<unit>,
+#endif
+                            allDependencies,
+                            defaultTimeStamp: DateTime) =
+        {
+            initialBoundModel = initialBoundModel
+            tcGlobals = tcGlobals
+            nonFrameworkAssemblyInputs = nonFrameworkAssemblyInputs
+            tcConfig = tcConfig
+            outfile = outfile
+            assemblyName = assemblyName
+            lexResourceManager = lexResourceManager
+            sourceFiles = sourceFiles
+            enablePartialTypeChecking = enablePartialTypeChecking
+            beforeFileChecked = beforeFileChecked
+            fileChecked = fileChecked
+#if !NO_EXTENSIONTYPING
+            importsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
+#endif
+            allDependencies = allDependencies
+            defaultTimeStamp = defaultTimeStamp
+        }
+
+/// Manages an incremental build graph for the build of a single F# project
+type IncrementalBuilder(initialState: IncrementalBuilderInitialState) =
+
+    let initialBoundModel = initialState.initialBoundModel
+    let tcGlobals = initialState.tcGlobals
+    let nonFrameworkAssemblyInputs = initialState.nonFrameworkAssemblyInputs
+    let tcConfig = initialState.tcConfig
+    let outfile = initialState.outfile
+    let assemblyName = initialState.assemblyName
+    let lexResourceManager = initialState.lexResourceManager
+    let sourceFiles = initialState.sourceFiles
+    let enablePartialTypeChecking = initialState.enablePartialTypeChecking
+    let beforeFileChecked = initialState.beforeFileChecked
+    let fileChecked = initialState.fileChecked
+#if !NO_EXTENSIONTYPING
+    let importsInvalidatedByTypeProvider = initialState.importsInvalidatedByTypeProvider
+#endif
+    let allDependencies = initialState.allDependencies
+    let defaultTimeStamp = initialState.defaultTimeStamp
 
     let fileParsed = new Event<string>()
     let projectChecked = new Event<unit>()
@@ -1524,8 +1583,8 @@ type IncrementalBuilder(
                     importsInvalidatedByTypeProvider
                 )
 
-            let builder =
-                new IncrementalBuilder(
+            let initialState =
+                IncrementalBuilderInitialState.Create(
                     initialBoundModel,
                     tcGlobals,
                     nonFrameworkAssemblyInputs,
@@ -1542,6 +1601,8 @@ type IncrementalBuilder(
 #endif
                     allDependencies,
                     defaultTimeStamp)
+
+            let builder = IncrementalBuilder(initialState)
             return Some builder
           with e ->
             errorRecoveryNoRange e
