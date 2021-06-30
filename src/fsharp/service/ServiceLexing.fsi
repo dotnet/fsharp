@@ -347,7 +347,7 @@ module FSharpKeywords =
     val NormalizeIdentifierBackticks : string -> string
 
     /// Keywords paired with their descriptions. Used in completion and quick info.
-    val KeywordsWithDescription : (string * string) list      
+    val KeywordsWithDescription : (string * string) list
 
     /// All the keywords in the F# language
     val KeywordNames: string list
@@ -579,4 +579,3 @@ type public FSharpLexer =
         
     [<Experimental("This FCS API is experimental and subject to change.")>]
     static member Tokenize: text: ISourceText * tokenCallback: (FSharpToken -> unit) * ?langVersion: string * ?filePath: string * ?conditionalCompilationDefines: string list * ?flags: FSharpLexerFlags * ?pathMap: Map<string, string> * ?ct: CancellationToken -> unit
-
