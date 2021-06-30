@@ -340,16 +340,14 @@ module FSharpKeywords =
     val DoesIdentifierNeedQuotation : string -> bool
 
     /// Add backticks if the identifier is a keyword.
+    /// A utility to help determine if an identifier needs to be quoted, this doesn't quote F# keywords.
     val QuoteIdentifierIfNeeded : string -> string
 
     /// Remove backticks if present.
     val NormalizeIdentifierBackticks : string -> string
 
     /// Keywords paired with their descriptions. Used in completion and quick info.
-    val KeywordsWithDescription : (string * string) list
-
-    /// A utility to help determine if an identifier needs to be quoted, this doesn't quote F# keywords.
-    val QuoteIdentifierIfNeeded: string -> string
+    val KeywordsWithDescription : (string * string) list      
 
     /// All the keywords in the F# language
     val KeywordNames: string list
