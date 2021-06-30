@@ -2,6 +2,7 @@ use vs
 
 package name=Microsoft.FSharp.Dependencies
         version=$(VsixVersion)
+        vs.package.productArch=neutral
 
 vs.dependencies
   vs.dependency id=Microsoft.FSharp.SDK

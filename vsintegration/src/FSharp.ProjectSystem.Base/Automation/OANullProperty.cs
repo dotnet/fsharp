@@ -57,6 +57,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             //todo: let_Value
         }
 
+        public void set_IndexedValue(object index1, object index2, object index3, object index4, object value)
+        {
+
+        }
+
         public string Name
         {
             get { return String.Empty; }
@@ -78,11 +83,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         public EnvDTE.Properties Parent
         {
             get { return this.parent; }
-        }
-
-        public void set_IndexedValue(object index1, object index2, object index3, object index4, object value)
-        {
-
         }
 
         public object Value
