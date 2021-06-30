@@ -45,7 +45,8 @@ type UsingMSBuild()  =
 
     // In this bug, if you clean the dependent project, the dependee started getting errors again about the unresolved assembly.
     // The desired behavior is like C#, which is if the assembly disappears from disk, we use cached results of last time it was there.
-    [<Test>]
+    // Disabled due to issue #11752   ---  https://github.com/dotnet/fsharp/issues/11752
+    //[<Test>]
     member public this.``Regression.NoError.Timestamps.Bug3368b``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
