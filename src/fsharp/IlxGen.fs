@@ -829,14 +829,14 @@ type ValStorage =
     | Method of ValReprInfo * ValRef * ILMethodSpec * ILMethodSpec * range * Typars * Typars * CurriedArgInfos * ArgReprInfo list * TraitWitnessInfos * TType list * ArgReprInfo
 
     /// Indicates the value is stored at the given position in the closure environment accessed via "ldarg 0"
-    | Env of ILType * ILFieldSpec * NamedLocalIlxClosureInfo ref option
+    | Env of ILType * ILFieldSpec * (FreeTyvars * NamedLocalIlxClosureInfo ref) option
 
     /// Indicates that the value is an argument of a method being generated
     | Arg of int
 
     /// Indicates that the value is stored in local of the method being generated. NamedLocalIlxClosureInfo is normally empty.
     /// It is non-empty for 'local type functions', see comments on definition of NamedLocalIlxClosureInfo.
-    | Local of idx: int * realloc: bool * NamedLocalIlxClosureInfo ref option
+    | Local of idx: int * realloc: bool * (FreeTyvars * NamedLocalIlxClosureInfo ref) option
 
 /// Indicates if there is a shadow local storage for a local, to make sure it gets a good name in debugging
 and OptionalShadowLocal =
@@ -4883,23 +4883,32 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) eenvouter takenNames ex
     // Partition the free variables when some can be accessed from places besides the immediate environment
     // Also filter out the current value being bound, if any, as it is available from the "this"
     // pointer which gives the current closure itself. This is in the case e.g. let rec f = ... f ...
+    let freeLocals = cloFreeVarResults.FreeLocals |> Zset.elements
     let cloFreeVars =
-        cloFreeVarResults.FreeLocals
-        |> Zset.elements
+        freeLocals
         |> List.filter (fun fv ->
             (thisVars |> List.forall (fun v -> not (valRefEq g (mkLocalValRef fv) v))) &&
             (match StorageForVal cenv.g m fv eenvouter with
              | (StaticField _ | StaticProperty _ | Method _ | Null) -> false
              | _ -> true))
 
-    let cloFreeTyvars = cloFreeVarResults.FreeTyvars.FreeTypars |> Zset.elements
+    // Any closure using values represented as local type functions also captures the type variables captured 
+    // by that local type function 
+    let cloFreeTyvars = 
+        (cloFreeVarResults.FreeTyvars, freeLocals) ||> List.fold (fun ftyvs fv ->
+            match StorageForVal cenv.g m fv eenvouter with
+            | Env (_, _, Some (moreFtyvs, _)) 
+            | Local (_, _, Some (moreFtyvs, _)) -> unionFreeTyvars ftyvs moreFtyvs
+            | _ -> ftyvs)
+
+    let cloFreeTypars = cloFreeTyvars.FreeTypars |> Zset.elements
 
     let cloAttribs = []
 
-    let eenvinner = eenvouter |> EnvForTypars cloFreeTyvars
+    let eenvinner = eenvouter |> EnvForTypars cloFreeTypars
 
     let ilCloTyInner =
-        let ilCloGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
+        let ilCloGenericParams = GenGenericParams cenv eenvinner cloFreeTypars
         mkILFormalBoxedTy ilCloTypeRef ilCloGenericParams
 
     // If generating a named closure, add the closure itself as a var, available via "arg0" .
@@ -4912,7 +4921,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) eenvouter takenNames ex
         let generateWitnesses = ComputeGenerateWitnesses g eenvinner
         if generateWitnesses then
             // The 0 here represents that a closure doesn't reside within a generic class - there are no "enclosing class type parameters" to lop off.
-            GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars
+            GetTraitWitnessInfosOfTypars g 0 cloFreeTypars
         else
             []
 
@@ -4948,7 +4957,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) eenvouter takenNames ex
     let eenvinner = eenvinner |> AddStorageForLocalVals g ilCloFreeVarStorage
 
     // Return a various results
-    (cloAttribs, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner)
+    (cloAttribs, cloFreeTypars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner)
 
 and GetIlxClosureInfo cenv m isLocalTypeFunc canUseStaticField thisVars eenvouter expr =
     let g = cenv.g
@@ -6629,10 +6638,10 @@ and GenSetStorage m cgbuf storage =
 
 and CommitGetStorageSequel cenv cgbuf eenv m ty localCloInfo storeSequel =
     match localCloInfo, storeSequel with
-    | Some {contents =NamedLocalIlxClosureInfoGenerator _cloinfo}, _ ->
+    | Some (_, {contents =NamedLocalIlxClosureInfoGenerator _cloinfo}), _ ->
         error(InternalError("Unexpected generator", m))
 
-    | Some {contents =NamedLocalIlxClosureInfoGenerated cloinfo}, Some (tyargs, args, m, sequel) when not (isNil tyargs) ->
+    | Some (_, {contents =NamedLocalIlxClosureInfoGenerated cloinfo}), Some (tyargs, args, m, sequel) when not (isNil tyargs) ->
         let actualRetTy = GenNamedLocalTyFuncCall cenv cgbuf eenv ty cloinfo tyargs m
         CommitGetStorageSequel cenv cgbuf eenv m actualRetTy None (Some ([], args, m, sequel))
 
@@ -6728,17 +6737,18 @@ and AllocLocalVal cenv cgbuf v eenv repr scopeMarks =
         if isUnitTy g ty && not v.IsMutable then Null, eenv
         else
             match repr with
-            | Some r when IsNamedLocalTypeFuncVal g v r ->
+            | Some repr when IsNamedLocalTypeFuncVal g v repr ->
+                let ftyvs = (freeInExpr CollectTypars repr).FreeTyvars
                 // known, named, non-escaping type functions
                 let cloinfoGenerate eenv =
                     let eenvinner =
                         {eenv with
                              letBoundVars=(mkLocalValRef v) :: eenv.letBoundVars}
-                    let cloinfo, _, _ = GetIlxClosureInfo cenv v.Range true true [] eenvinner (Option.get repr)
+                    let cloinfo, _, _ = GetIlxClosureInfo cenv v.Range true true [] eenvinner repr
                     cloinfo
 
                 let idx, realloc, eenv = AllocLocal cenv cgbuf eenv v.IsCompilerGenerated (v.CompiledName g.CompilerGlobalState, g.ilg.typ_Object, false) scopeMarks
-                Local (idx, realloc, Some(ref (NamedLocalIlxClosureInfoGenerator cloinfoGenerate))), eenv
+                Local (idx, realloc, Some(ftyvs, ref (NamedLocalIlxClosureInfoGenerator cloinfoGenerate))), eenv
             | _ ->
                 // normal local
                 let idx, realloc, eenv = AllocLocal cenv cgbuf eenv v.IsCompilerGenerated (v.CompiledName g.CompilerGlobalState, GenTypeOfVal cenv eenv v, v.IsFixed) scopeMarks
@@ -6759,8 +6769,8 @@ and AllocStorageForBinds cenv cgbuf scopeMarks eenv binds =
        match reprOpt with
        | Some repr ->
            match repr with
-           | Local(_, _, Some g)
-           | Env(_, _, Some g) ->
+           | Local(_, _, Some (_, g))
+           | Env(_, _, Some (_, g)) ->
                match !g with
                | NamedLocalIlxClosureInfoGenerator f -> g := NamedLocalIlxClosureInfoGenerated (f eenv)
                | NamedLocalIlxClosureInfoGenerated _ -> ()

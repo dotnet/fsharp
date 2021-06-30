@@ -74,6 +74,11 @@ module CoreTests =
     let ``genericmeasures-FSI_BASIC`` () = singleTestBuildAndRun "core/genericmeasures" FSI_BASIC
 
     [<Test>]
+    let ``innerpoly-no-optimize-FSC_BASIC`` () = 
+        let cfg = testConfig "core/innerpoly"
+        singleTestBuildAndRunAux { cfg with fsc_flags = sprintf "%s --optimize-" cfg.fsc_flags }  FSC_BASIC
+
+    [<Test>]
     let ``innerpoly-FSC_BASIC`` () = singleTestBuildAndRun "core/innerpoly" FSC_BASIC
 
     [<Test>]
