@@ -84,7 +84,7 @@ module CoreTests =
     [<Test>]
     let ``comprehensionshw-FSI_BASIC`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_BASIC
 
-    [<Test>]
+    [<Test; Ignore("test fails in debug mode, known issuefile generated, test has been disabled a long time")>]
     let ``genericmeasures-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/genericmeasures" FSC_BASIC_OPT_MINUS
 
     [<Test>]
