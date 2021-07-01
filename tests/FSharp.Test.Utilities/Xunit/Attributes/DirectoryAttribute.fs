@@ -40,8 +40,8 @@ type DirectoryAttribute(dir: string) =
         { Source         = Text fsSource
           Baseline       =
                 Some { SourceFilename = Some (path ++ fs)
-                       OutputBaseline = bslSource
-                       ILBaseline     = ilSource }
+                       OutputBaseline = { FilePath = bslFilePath; Content = bslSource }
+                       ILBaseline     = { FilePath = ilFilePath;  Content = ilSource } }
           Options        = []
           OutputType     = Library
           SourceKind     = SourceKind.Fsx
@@ -49,7 +49,7 @@ type DirectoryAttribute(dir: string) =
           IgnoreWarnings = false
           References     = [] } |> FS
 
-    member x.Includes with get() = includes and set v = includes <- v
+    member _.Includes with get() = includes and set v = includes <- v
 
     override _.GetData(_: MethodInfo) =
         let absolutePath = Path.GetFullPath(directory)
