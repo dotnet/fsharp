@@ -17,6 +17,7 @@ module BlockBuilder =
 [<RequireQualifiedAccess>]
 module Block =
 
+    [<GeneralizableValue>]
     val empty<'T> : block<'T>
 
     val init : n: int -> f: (int -> 'T) -> block<'T>
