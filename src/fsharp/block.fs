@@ -177,7 +177,7 @@ module Block =
         builder.Capacity <- builder.Count
         builder.MoveToImmutable()
 
-    let isEmpty (arr: block<_>) = arr.Length = 0
+    let isEmpty (arr: block<_>) = arr.IsEmpty
 
     let fold folder state (arr: block<_>) =
         let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(folder)
