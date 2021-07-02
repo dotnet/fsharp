@@ -23,13 +23,21 @@ type FSharpProject =
     /// This is due to a type provider being invalidated.
     member IsInvalidated : bool
 
+    member ParsingOptions : FSharpParsingOptions
+
+    member Options : FSharpProjectOptions
+
     member GetParseFileResults : filePath: string -> FSharpParseFileResults
 
     member GetParseAndCheckFileResultsAsync : filePath: string -> Async<FSharpParseFileResults * FSharpCheckFileResults>
 
+    member TryGetSemanticClassificationForFileAsync : filePath: string -> Async<SemanticClassificationView option>
+
+    member FindReferencesInFileAsync : filePath: string * symbol: FSharpSymbol -> Async<range seq>
+
     member ToReferencedProject : unit -> FSharpReferencedProject
 
-    static member CreateAsync : options: FSharpProjectOptions * ?legacyReferenceResolver: LegacyReferenceResolver * ?suggestNamesForErrors: bool * ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot -> Async<Result<FSharpProject, FSharpDiagnostic[]>>
+    static member CreateAsync : parsingOptions: FSharpParsingOptions * projectOptions: FSharpProjectOptions * ?legacyReferenceResolver: LegacyReferenceResolver * ?suggestNamesForErrors: bool * ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot -> Async<Result<FSharpProject, FSharpDiagnostic[]>>
 
 [<Sealed; AutoSerializable(false)>]
 /// Used to parse and check F# source code.

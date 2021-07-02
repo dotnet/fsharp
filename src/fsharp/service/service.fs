@@ -57,24 +57,20 @@ module EnvMisc =
     let dependencyProviderForScripts = new DependencyProvider()
 
 [<Sealed>]
-type FSharpProject private (options: FSharpProjectOptions, builder: IncrementalBuilder, creationDiags, suggestNamesForErrors, keepAssemblyContents) =
+type FSharpProject private (parsingOptions: FSharpParsingOptions, projectOptions: FSharpProjectOptions, builder: IncrementalBuilder, creationDiags, suggestNamesForErrors, keepAssemblyContents) =
 
     /// One of the references has been marked invalidated.
     /// This is due to a type provider being invalidated.
     member this.IsInvalidated = builder.IsReferencesInvalidated
 
+    member this.ParsingOptions = parsingOptions
+
+    member this.Options = projectOptions
+
     member this.GetParseFileResults(filePath) =
         let parseTree,_,_,parseDiags = builder.GetParseResultsForFile (filePath)
         let diagnostics = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (builder.TcConfig.errorSeverityOptions, false, filePath, parseDiags, suggestNamesForErrors) |]
         FSharpParseFileResults(diagnostics = diagnostics, input = parseTree, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
-
-    member this.ToReferencedProject() =
-        let rawAssemblyData =
-            node {
-                let! (_, _, tcAssemblyDataOpt, _) = builder.GetCheckResultsAndImplementationsForProject()
-                return tcAssemblyDataOpt
-            }
-        FSharpReferencedProject.FSharpRawAssemblyData(options.ProjectFileName, rawAssemblyData)
 
     member this.GetParseAndCheckFileResultsAsync(filePath) =
         node {
@@ -100,12 +96,12 @@ type FSharpProject private (options: FSharpProjectOptions, builder: IncrementalB
             let typedResults = 
                 FSharpCheckFileResults.Make
                     (filePath, 
-                        options.ProjectFileName, 
+                        projectOptions.ProjectFileName, 
                         tcProj.TcConfig, 
                         tcProj.TcGlobals, 
-                        options.IsIncompleteTypeCheckEnvironment, 
+                        projectOptions.IsIncompleteTypeCheckEnvironment, 
                         builder, 
-                        options,
+                        projectOptions,
                         Array.ofList tcDependencyFiles, 
                         creationDiags, 
                         parseResults.Diagnostics, 
@@ -125,14 +121,45 @@ type FSharpProject private (options: FSharpProjectOptions, builder: IncrementalB
         }
         |> Async.AwaitNodeCode
 
-    static member CreateAsync(options: FSharpProjectOptions, ?legacyReferenceResolver: LegacyReferenceResolver, ?suggestNamesForErrors: bool, ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot) =
+    member this.TryGetSemanticClassificationForFileAsync(filePath) =
+        node {
+            let! checkResults = builder.GetFullCheckResultsAfterFileInProject (filePath)
+            let! scopt = checkResults.GetOrComputeSemanticClassificationIfEnabled()
+            match scopt with
+            | None -> return None
+            | Some sc -> return Some (sc.GetView ())
+        }
+        |> Async.AwaitNodeCode
+
+    member this.FindReferencesInFileAsync(filePath, symbol: FSharpSymbol) =
+        node {
+            if builder.ContainsFile filePath then
+                let! checkResults = builder.GetFullCheckResultsAfterFileInProject filePath
+                let! keyStoreOpt = checkResults.GetOrComputeItemKeyStoreIfEnabled()
+                match keyStoreOpt with
+                | None -> return Seq.empty
+                | Some reader -> return reader.FindAll symbol.Item
+            else
+                return Seq.empty
+        }
+        |> Async.AwaitNodeCode
+
+    member this.ToReferencedProject() =
+        let rawAssemblyData =
+            node {
+                let! (_, _, tcAssemblyDataOpt, _) = builder.GetCheckResultsAndImplementationsForProject()
+                return tcAssemblyDataOpt
+            }
+        FSharpReferencedProject.FSharpRawAssemblyData(projectOptions.ProjectFileName, rawAssemblyData)
+
+    static member CreateAsync(parsingOptions: FSharpParsingOptions, projectOptions: FSharpProjectOptions, ?legacyReferenceResolver: LegacyReferenceResolver, ?suggestNamesForErrors: bool, ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot) =
         node {
             let legacyReferenceResolver = defaultArg legacyReferenceResolver (SimulatedMSBuildReferenceResolver.getResolver())
-            let suggestNamesForErrors = defaultArg suggestNamesForErrors true
+            let suggestNamesForErrors = defaultArg suggestNamesForErrors false
             let tryGetMetadataSnapshot = defaultArg tryGetMetadataSnapshot (fun _ -> None)
 
             let projectReferences =  
-                [ for r in options.ReferencedProjects do
+                [ for r in projectOptions.ReferencedProjects do
 
                     match r with
                     | FSharpReferencedProject.FSharpReference _ ->
@@ -179,19 +206,19 @@ type FSharpProject private (options: FSharpProjectOptions, builder: IncrementalB
 
             let! builderOpt, diagnostics =
                 IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions
-                    (legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, None, Array.toList options.SourceFiles, 
-                     Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
-                     options.UseScriptResolutionRules, keepAssemblyContents, false,
+                    (legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, None, Array.toList projectOptions.SourceFiles, 
+                     Array.toList projectOptions.OtherOptions, projectReferences, projectOptions.ProjectDirectory, 
+                     projectOptions.UseScriptResolutionRules, keepAssemblyContents, false,
                      tryGetMetadataSnapshot, suggestNamesForErrors, false,
                      true,
                      true,
-                     (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None),
+                     (if projectOptions.UseScriptResolutionRules then Some dependencyProviderForScripts else None),
                      false)
         
             return
                 match builderOpt with
                 | None -> Result.Error(diagnostics)
-                | Some builder -> Result.Ok(FSharpProject(options, builder, diagnostics, suggestNamesForErrors, keepAssemblyContents))
+                | Some builder -> Result.Ok(FSharpProject(parsingOptions, projectOptions, builder, diagnostics, suggestNamesForErrors, keepAssemblyContents))
         }
         |> Async.AwaitNodeCode
 
