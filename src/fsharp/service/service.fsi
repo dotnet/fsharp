@@ -6,6 +6,7 @@ namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.IO
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
@@ -14,6 +15,21 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
+
+[<Sealed>]
+type FSharpProject =
+
+    /// One of the references has been marked invalidated.
+    /// This is due to a type provider being invalidated.
+    member IsInvalidated : bool
+
+    member GetParseFileResults : filePath: string -> FSharpParseFileResults
+
+    member GetParseAndCheckFileResultsAsync : filePath: string -> Async<FSharpParseFileResults * FSharpCheckFileResults>
+
+    member ToReferencedProject : unit -> FSharpReferencedProject
+
+    static member CreateAsync : options: FSharpProjectOptions * ?legacyReferenceResolver: LegacyReferenceResolver * ?suggestNamesForErrors: bool * ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot -> Async<Result<FSharpProject, FSharpDiagnostic[]>>
 
 [<Sealed; AutoSerializable(false)>]
 /// Used to parse and check F# source code.

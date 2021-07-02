@@ -125,7 +125,7 @@ type FSharpProject private (options: FSharpProjectOptions, builder: IncrementalB
         }
         |> Async.AwaitNodeCode
 
-    static member CreateAsync(options: FSharpProjectOptions, ?legacyReferenceResolver, ?suggestNamesForErrors: bool, ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot) =
+    static member CreateAsync(options: FSharpProjectOptions, ?legacyReferenceResolver: LegacyReferenceResolver, ?suggestNamesForErrors: bool, ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot) =
         node {
             let legacyReferenceResolver = defaultArg legacyReferenceResolver (SimulatedMSBuildReferenceResolver.getResolver())
             let suggestNamesForErrors = defaultArg suggestNamesForErrors true
