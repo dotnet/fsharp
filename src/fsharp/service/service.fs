@@ -152,11 +152,13 @@ type FSharpProject private (parsingOptions: FSharpParsingOptions, projectOptions
             }
         FSharpReferencedProject.FSharpRawAssemblyData(projectOptions.ProjectFileName, rawAssemblyData)
 
-    static member CreateAsync(parsingOptions: FSharpParsingOptions, projectOptions: FSharpProjectOptions, ?legacyReferenceResolver: LegacyReferenceResolver, ?suggestNamesForErrors: bool, ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot) =
+    static member CreateAsync(projectOptions: FSharpProjectOptions, ?parsingOptions: FSharpParsingOptions, ?legacyReferenceResolver: LegacyReferenceResolver, ?suggestNamesForErrors: bool, ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot) =
         node {
             let legacyReferenceResolver = defaultArg legacyReferenceResolver (SimulatedMSBuildReferenceResolver.getResolver())
             let suggestNamesForErrors = defaultArg suggestNamesForErrors false
             let tryGetMetadataSnapshot = defaultArg tryGetMetadataSnapshot (fun _ -> None)
+            
+            let parsingOptions = defaultArg parsingOptions (FSharpProject.GetParsingOptions(projectOptions))
 
             let projectReferences =  
                 [ for r in projectOptions.ReferencedProjects do
@@ -222,6 +224,115 @@ type FSharpProject private (parsingOptions: FSharpParsingOptions, projectOptions
         }
         |> Async.AwaitNodeCode
 
+    static member GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, ?isInteractive, ?isEditing) =
+        let isEditing = defaultArg isEditing false
+        let isInteractive = defaultArg isInteractive false
+        use errorScope = new ErrorScope()
+        let tcConfigB = 
+            TcConfigBuilder.CreateNew((SimulatedMSBuildReferenceResolver.getResolver()),
+                defaultFSharpBinariesDir=FSharpCheckerResultsSettings.defaultFSharpBinariesDir,
+                reduceMemoryUsage=ReduceMemoryFlag.Yes,
+                implicitIncludeDir="",
+                isInteractive=isInteractive,
+                isInvalidationSupported=false,
+                defaultCopyFSharpCore=CopyFSharpCoreFlag.No,
+                tryGetMetadataSnapshot=(fun _ -> None),
+                sdkDirOverride=None,
+                rangeForErrors=range0)
+
+        // These defines are implied by the F# compiler
+        tcConfigB.conditionalCompilationDefines <- 
+            let define = if isInteractive then "INTERACTIVE" else "COMPILED"
+            define :: tcConfigB.conditionalCompilationDefines
+        if isEditing then 
+            tcConfigB.conditionalCompilationDefines <- "EDITING":: tcConfigB.conditionalCompilationDefines
+
+        // Apply command-line arguments and collect more source files if they are in the arguments
+        let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, argv)
+        FSharpParsingOptions.FromTcConfigBuilder(tcConfigB, Array.ofList sourceFilesNew, isInteractive), errorScope.Diagnostics
+
+    static member GetParsingOptions(projectOptions: FSharpProjectOptions) =
+        let sourceFiles = List.ofArray projectOptions.SourceFiles
+        let argv = List.ofArray projectOptions.OtherOptions
+
+        FSharpProject.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, projectOptions.UseScriptResolutionRules)
+        |> fst
+
+    static member GetProjectOptionsFromScriptAux(filename, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, sdkDirOverride: string option, assumeDotNetFramework: bool option, optionsStamp: int64 option, legacyReferenceResolver, tryGetMetadataSnapshot, _userOpName) =
+        cancellable {
+            use errors = new ErrorScope()
+
+            // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
+            let useFsiAuxLib = defaultArg useFsiAuxLib true
+            let useSdkRefs =  defaultArg useSdkRefs true
+            let reduceMemoryUsage = ReduceMemoryFlag.Yes
+            let previewEnabled = defaultArg previewEnabled false
+
+            // Do we assume .NET Framework references for scripts?
+            let assumeDotNetFramework = defaultArg assumeDotNetFramework true
+            let extraFlags =
+                if previewEnabled then
+                    [| "--langversion:preview" |]
+                else
+                    [||]
+            let otherFlags = defaultArg otherFlags extraFlags
+            let useSimpleResolution = 
+#if ENABLE_MONO_SUPPORT
+                runningOnMono || otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
+#else
+                true
+#endif
+            let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
+            let applyCompilerOptions tcConfigB  = 
+                let fsiCompilerOptions = CompilerOptions.GetCoreFsiCompilerOptions tcConfigB 
+                CompilerOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, Array.toList otherFlags)
+
+            let loadClosure =
+                LoadClosure.ComputeClosureOfScriptText(legacyReferenceResolver, 
+                    FSharpCheckerResultsSettings.defaultFSharpBinariesDir, filename, sourceText, 
+                    CodeContext.Editing, useSimpleResolution, useFsiAuxLib, useSdkRefs, sdkDirOverride, new Lexhelp.LexResourceManager(), 
+                    applyCompilerOptions, assumeDotNetFramework, 
+                    tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProviderForScripts)
+
+            let otherFlags = 
+                [| yield "--noframework"; yield "--warn:3";
+                   yield! otherFlags 
+                   for r in loadClosure.References do yield "-r:" + fst r
+                   for (code,_) in loadClosure.NoWarns do yield "--nowarn:" + code
+                |]
+
+            let options = 
+                {
+                    ProjectFileName = filename + ".fsproj" // Make a name that is unique in this directory.
+                    ProjectId = None
+                    SourceFiles = loadClosure.SourceFiles |> List.map fst |> List.toArray
+                    OtherOptions = otherFlags 
+                    ReferencedProjects= [| |]  
+                    IsIncompleteTypeCheckEnvironment = false
+                    UseScriptResolutionRules = true 
+                    LoadTime = loadedTimeStamp
+                    UnresolvedReferences = Some (FSharpUnresolvedReferencesSet(loadClosure.UnresolvedReferences))
+                    OriginalLoadReferences = loadClosure.OriginalLoadReferences
+                    Stamp = optionsStamp
+                }
+            let diags = loadClosure.LoadClosureRootFileDiagnostics |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false))
+            return options, loadClosure, (diags @ errors.Diagnostics)
+          }
+          |> Cancellable.toAsync
+
+    /// For a given script file, get the ProjectOptions implied by the #load closure
+    static member GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?assumeDotNetFramework, ?sdkDirOverride, ?optionsStamp: int64, ?legacyReferenceResolver, ?tryGetMetadataSnapshot) = 
+        let userOpName = "Unknown"
+        let legacyReferenceResolver = defaultArg legacyReferenceResolver ((SimulatedMSBuildReferenceResolver.getResolver()))
+        let tryGetMetadataSnapshot = defaultArg tryGetMetadataSnapshot (fun _ -> None)
+        async {
+            let! options, _, diags = FSharpProject.GetProjectOptionsFromScriptAux(filename, source, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, sdkDirOverride, assumeDotNetFramework, optionsStamp, legacyReferenceResolver, tryGetMetadataSnapshot, userOpName)
+            return (options, diags)
+        }
+
+    static member MatchBraces(filePath, sourceText, parsingOptions) =
+        let userOpName = "Unknown"
+        ParseAndCheckFile.matchBraces(sourceText, filePath, parsingOptions, userOpName, false)
 //----------------------------------------------------------------------------
 // BackgroundCompiler
 //
@@ -1033,68 +1144,28 @@ type BackgroundCompiler(
     member bc.ParseAndCheckProject(options, userOpName) =
         bc.ParseAndCheckProjectImpl(options, userOpName)
 
-    member _.GetProjectOptionsFromScript(filename, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, sdkDirOverride: string option, assumeDotNetFramework: bool option, optionsStamp: int64 option, _userOpName) = 
-          cancellable {
-            use errors = new ErrorScope()
+    member _.GetProjectOptionsFromScript(filename, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, sdkDirOverride: string option, assumeDotNetFramework: bool option, optionsStamp: int64 option, userOpName) = 
+        async {
+            let! options, loadClosure, diags = 
+                FSharpProject.GetProjectOptionsFromScriptAux(
+                    filename,
+                    sourceText,
+                    previewEnabled,
+                    loadedTimeStamp,
+                    otherFlags,
+                    useFsiAuxLib,
+                    useSdkRefs,
+                    sdkDirOverride,
+                    assumeDotNetFramework,
+                    optionsStamp,
+                    legacyReferenceResolver,
+                    tryGetMetadataSnapshot,
+                    userOpName
+                )
 
-            // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
-            let useFsiAuxLib = defaultArg useFsiAuxLib true
-            let useSdkRefs =  defaultArg useSdkRefs true
-            let reduceMemoryUsage = ReduceMemoryFlag.Yes
-            let previewEnabled = defaultArg previewEnabled false
-
-            // Do we assume .NET Framework references for scripts?
-            let assumeDotNetFramework = defaultArg assumeDotNetFramework true
-            let extraFlags =
-                if previewEnabled then
-                    [| "--langversion:preview" |]
-                else
-                    [||]
-            let otherFlags = defaultArg otherFlags extraFlags
-            let useSimpleResolution = 
-#if ENABLE_MONO_SUPPORT
-                runningOnMono || otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
-#else
-                true
-#endif
-            let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
-            let applyCompilerOptions tcConfigB  = 
-                let fsiCompilerOptions = CompilerOptions.GetCoreFsiCompilerOptions tcConfigB 
-                CompilerOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, Array.toList otherFlags)
-
-            let loadClosure =
-                LoadClosure.ComputeClosureOfScriptText(legacyReferenceResolver, 
-                    FSharpCheckerResultsSettings.defaultFSharpBinariesDir, filename, sourceText, 
-                    CodeContext.Editing, useSimpleResolution, useFsiAuxLib, useSdkRefs, sdkDirOverride, new Lexhelp.LexResourceManager(), 
-                    applyCompilerOptions, assumeDotNetFramework, 
-                    tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProviderForScripts)
-
-            let otherFlags = 
-                [| yield "--noframework"; yield "--warn:3";
-                   yield! otherFlags 
-                   for r in loadClosure.References do yield "-r:" + fst r
-                   for (code,_) in loadClosure.NoWarns do yield "--nowarn:" + code
-                |]
-
-            let options = 
-                {
-                    ProjectFileName = filename + ".fsproj" // Make a name that is unique in this directory.
-                    ProjectId = None
-                    SourceFiles = loadClosure.SourceFiles |> List.map fst |> List.toArray
-                    OtherOptions = otherFlags 
-                    ReferencedProjects= [| |]  
-                    IsIncompleteTypeCheckEnvironment = false
-                    UseScriptResolutionRules = true 
-                    LoadTime = loadedTimeStamp
-                    UnresolvedReferences = Some (FSharpUnresolvedReferencesSet(loadClosure.UnresolvedReferences))
-                    OriginalLoadReferences = loadClosure.OriginalLoadReferences
-                    Stamp = optionsStamp
-                }
             scriptClosureCache.Set(AnyCallerThread, options, loadClosure) // Save the full load closure for later correlation.
-            let diags = loadClosure.LoadClosureRootFileDiagnostics |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false))
-            return options, (diags @ errors.Diagnostics)
-          }
-          |> Cancellable.toAsync
+            return (options, diags)
+        }
             
     member bc.InvalidateConfiguration(options: FSharpProjectOptions, userOpName) =
         if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
@@ -1184,12 +1255,12 @@ type FSharpChecker(legacyReferenceResolver,
             enablePartialTypeChecking)
 
     static let globalInstance = lazy FSharpChecker.Create()
-            
+
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.braceMatchCache. Most recently used cache for brace matching. Accessed on the
     // background UI thread, not on the compiler thread.
     //
     // This cache is safe for concurrent access.
-    let braceMatchCache = MruCache<AnyCallerThreadToken,_,_>(braceMatchCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing) 
+    let braceMatchCache = MruCache<AnyCallerThreadToken,_,_>(braceMatchCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
 
     let mutable maxMemoryReached = false
 
@@ -1480,29 +1551,7 @@ type FSharpChecker(legacyReferenceResolver,
     member _.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, ?isInteractive, ?isEditing) =
         let isEditing = defaultArg isEditing false
         let isInteractive = defaultArg isInteractive false
-        use errorScope = new ErrorScope()
-        let tcConfigB = 
-            TcConfigBuilder.CreateNew(legacyReferenceResolver,
-                defaultFSharpBinariesDir=FSharpCheckerResultsSettings.defaultFSharpBinariesDir,
-                reduceMemoryUsage=ReduceMemoryFlag.Yes,
-                implicitIncludeDir="",
-                isInteractive=isInteractive,
-                isInvalidationSupported=false,
-                defaultCopyFSharpCore=CopyFSharpCoreFlag.No,
-                tryGetMetadataSnapshot=tryGetMetadataSnapshot,
-                sdkDirOverride=None,
-                rangeForErrors=range0)
-
-        // These defines are implied by the F# compiler
-        tcConfigB.conditionalCompilationDefines <- 
-            let define = if isInteractive then "INTERACTIVE" else "COMPILED"
-            define :: tcConfigB.conditionalCompilationDefines
-        if isEditing then 
-            tcConfigB.conditionalCompilationDefines <- "EDITING":: tcConfigB.conditionalCompilationDefines
-
-        // Apply command-line arguments and collect more source files if they are in the arguments
-        let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, argv)
-        FSharpParsingOptions.FromTcConfigBuilder(tcConfigB, Array.ofList sourceFilesNew, isInteractive), errorScope.Diagnostics
+        FSharpProject.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, isInteractive, isEditing)
 
     member ic.GetParsingOptionsFromCommandLineArgs(argv, ?isInteractive: bool, ?isEditing) =
         ic.GetParsingOptionsFromCommandLineArgs([], argv, ?isInteractive=isInteractive, ?isEditing=isEditing)

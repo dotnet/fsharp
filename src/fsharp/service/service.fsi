@@ -37,7 +37,45 @@ type FSharpProject =
 
     member ToReferencedProject : unit -> FSharpReferencedProject
 
-    static member CreateAsync : parsingOptions: FSharpParsingOptions * projectOptions: FSharpProjectOptions * ?legacyReferenceResolver: LegacyReferenceResolver * ?suggestNamesForErrors: bool * ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot -> Async<Result<FSharpProject, FSharpDiagnostic[]>>
+    static member CreateAsync : projectOptions: FSharpProjectOptions * ?parsingOptions: FSharpParsingOptions * ?legacyReferenceResolver: LegacyReferenceResolver * ?suggestNamesForErrors: bool * ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot -> Async<Result<FSharpProject, FSharpDiagnostic[]>>
+
+    static member GetParsingOptions : projectOptions: FSharpProjectOptions -> FSharpParsingOptions
+
+    /// <summary>
+    /// <para>For a given script file, get the FSharpProjectOptions implied by the #load closure.</para>
+    /// <para>All files are read from the FileSystem API, except the file being checked.</para>
+    /// </summary>
+    ///
+    /// <param name="filename">Used to differentiate between scripts, to consider each script a separate project. Also used in formatted error messages.</param>
+    /// <param name="source">The source for the file.</param>
+    /// <param name="previewEnabled">Is the preview compiler enabled.</param>
+    /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
+    /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
+    /// so that references are re-resolved.</param>
+    /// <param name="otherFlags">Other flags for compilation.</param>
+    /// <param name="useFsiAuxLib">Add a default reference to the FSharp.Compiler.Interactive.Settings library.</param>
+    /// <param name="useSdkRefs">Use the implicit references from the .NET SDK.</param>
+    /// <param name="assumeDotNetFramework">Set up compilation and analysis for .NET Framework scripts.</param>
+    /// <param name="sdkDirOverride">Override the .NET SDK used for default references.</param>
+    /// <param name="optionsStamp">An optional unique stamp for the options.</param>
+    /// <param name="legacyReferenceResolver">An optional resolver for legacy MSBuild references</param>
+    /// <param name="tryGetMetadataSnapshot">An optional resolver to access the contents of .NET binaries in a memory-efficient way</param>
+    static member GetProjectOptionsFromScript:
+        filename: string *
+        source: ISourceText *
+        ?previewEnabled:bool *
+        ?loadedTimeStamp: DateTime *
+        ?otherFlags: string[] *
+        ?useFsiAuxLib: bool *
+        ?useSdkRefs: bool *
+        ?assumeDotNetFramework: bool *
+        ?sdkDirOverride: string *
+        ?optionsStamp: int64 *
+        ?legacyReferenceResolver: LegacyReferenceResolver *
+        ?tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
+            -> Async<FSharpProjectOptions * FSharpDiagnostic list>
+
+    static member MatchBraces : filePath: string * sourceText: ISourceText * parsingOptions: FSharpParsingOptions -> (range * range)[]
 
 [<Sealed; AutoSerializable(false)>]
 /// Used to parse and check F# source code.

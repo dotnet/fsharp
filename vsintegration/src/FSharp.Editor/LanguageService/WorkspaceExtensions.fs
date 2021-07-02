@@ -2,22 +2,89 @@
 module internal Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
 
 open System
+open System.IO
+open System.Collections.Generic
+open System.Collections.Concurrent
+open System.Linq
 open System.Runtime.CompilerServices
 open System.Threading
+open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio.LanguageServices
+open Microsoft.VisualStudio.Threading
 open FSharp.NativeInterop
+open Microsoft.VisualStudio.FSharp.Interactive.Session
 
 #nowarn "9" // NativePtr.toNativeInt
 
-[<RequireQualifiedAccess>]
-module private ProjectCache =
+[<AutoOpen>]
+module private Helpers =
+    
+    let mapCpsProjectToSite(project:Project, cpsCommandLineOptions: IDictionary<ProjectId, string[] * string[]>) =
+        let sourcePaths, referencePaths, options =
+            match cpsCommandLineOptions.TryGetValue(project.Id) with
+            | true, (sourcePaths, options) -> sourcePaths, [||], options
+            | false, _ -> [||], [||], [||]
+        let mutable errorReporter = Unchecked.defaultof<_>
+        {
+            new IProjectSite with
+                member _.Description = project.Name
+                member _.CompilationSourceFiles = sourcePaths
+                member _.CompilationOptions =
+                    Array.concat [options; referencePaths |> Array.map(fun r -> "-r:" + r)]
+                member _.CompilationReferences = referencePaths
+                member site.CompilationBinOutputPath = site.CompilationOptions |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
+                member _.ProjectFileName = project.FilePath
+                member _.AdviseProjectSiteChanges(_,_) = ()
+                member _.AdviseProjectSiteCleaned(_,_) = ()
+                member _.AdviseProjectSiteClosed(_,_) = ()
+                member _.IsIncompleteTypeCheckEnvironment = false
+                member _.TargetFrameworkMoniker = ""
+                member _.ProjectGuid =  project.Id.Id.ToString()
+                member _.LoadTime = System.DateTime.Now
+                member _.ProjectProvider = None
+                member _.BuildErrorReporter with get () = errorReporter and set (v) = errorReporter <- v
+        }
 
-    /// This is a cache to maintain FSharpParsingOptions and FSharpProjectOptions per Roslyn Project.
-    /// The Roslyn Project is held weakly meaning when it is cleaned up by the GC, the FSharpProject will be cleaned up by the GC.
-    let Projects = ConditionalWeakTable<Project, FSharpProjectOptionsManager * FSharpProject>()    
+    let hasProjectVersionChanged (oldProject: Project) (newProject: Project) =
+        oldProject.Version <> newProject.Version
+
+    let hasDependentVersionChanged (oldProject: Project) (newProject: Project) (ct: CancellationToken) =
+        let oldProjectMetadataRefs = oldProject.MetadataReferences
+        let newProjectMetadataRefs = newProject.MetadataReferences
+
+        if oldProjectMetadataRefs.Count <> newProjectMetadataRefs.Count then true
+        else
+
+        let oldProjectRefs = oldProject.ProjectReferences
+        let newProjectRefs = newProject.ProjectReferences
+
+        oldProjectRefs.Count() <> newProjectRefs.Count() ||
+        (oldProjectRefs, newProjectRefs)
+        ||> Seq.exists2 (fun p1 p2 ->
+            ct.ThrowIfCancellationRequested()
+            let doesProjectIdDiffer = p1.ProjectId <> p2.ProjectId
+            let p1 = oldProject.Solution.GetProject(p1.ProjectId)
+            let p2 = newProject.Solution.GetProject(p2.ProjectId)
+            doesProjectIdDiffer || 
+            (
+                if p1.IsFSharp then
+                    p1.Version <> p2.Version
+                else
+                    let v1 = p1.GetDependentVersionAsync(ct).Result
+                    let v2 = p2.GetDependentVersionAsync(ct).Result
+                    v1 <> v2
+            )
+        )
+
+    let isProjectInvalidated (oldProject: Project) (newProject: Project) ct =
+        let hasProjectVersionChanged = hasProjectVersionChanged oldProject newProject
+        if newProject.AreFSharpInMemoryCrossProjectReferencesEnabled then
+            hasProjectVersionChanged || hasDependentVersionChanged oldProject newProject ct
+        else
+            hasProjectVersionChanged
 
 type Solution with
 
@@ -25,77 +92,357 @@ type Solution with
     member private this.GetFSharpWorkspaceService() =
         this.Workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
 
+[<RequireQualifiedAccess>]
+module private ProjectCaches =
+
+    // This is used to not constantly emit the same compilation.
+    let weakPEReferences = ConditionalWeakTable<Compilation, FSharpReferencedProject>()
+    let lastSuccessfulCompilations = ConcurrentDictionary<ProjectId, Compilation>()
+
+    /// This is a cache to maintain a FSharpProject per Roslyn Project.
+    /// The Roslyn Project is held weakly meaning when it is cleaned up by the GC, the FSharpProject will be cleaned up by the GC.
+    let Projects = ConditionalWeakTable<Project, AsyncLazy<FSharpProject>>()
+
+    /// This is a cache to maintain a script or misc file as a FSharpProject per Roslyn Document.
+    /// The Roslyn Document is held weakly meaning when it is cleaned up by the GC, the FSharpProject will be cleaned up by the GC.
+    let ScriptOrSingleFiles = ConditionalWeakTable<Document, AsyncLazy<FSharpProject>>()
+    
+let private createPEReference (referencedProject: Project) (comp: Compilation) =
+    let projectId = referencedProject.Id
+
+    match ProjectCaches.weakPEReferences.TryGetValue comp with
+    | true, fsRefProj -> fsRefProj
+    | _ ->
+        let weakComp = WeakReference<Compilation>(comp)
+        let getStream =
+            fun ct ->
+                let tryStream (comp: Compilation) =
+                    let ms = new MemoryStream() // do not dispose the stream as it will be owned on the reference.
+                    let emitOptions = Emit.EmitOptions(metadataOnly = true, includePrivateMembers = false, tolerateErrors = true)
+                    try
+                        let result = comp.Emit(ms, options = emitOptions, cancellationToken = ct)
+
+                        if result.Success then
+                            ProjectCaches.lastSuccessfulCompilations.[projectId] <- comp
+                            ms.Position <- 0L
+                            ms :> Stream
+                            |> Some
+                        else
+                            ms.Dispose() // it failed, dispose of stream
+                            None
+                    with
+                    | _ ->
+                        ms.Dispose() // it failed, dispose of stream
+                        None
+
+                let resultOpt =
+                    match weakComp.TryGetTarget() with
+                    | true, comp -> tryStream comp
+                    | _ -> None
+
+                match resultOpt with
+                | Some _ -> resultOpt
+                | _ ->
+                    match ProjectCaches.lastSuccessfulCompilations.TryGetValue(projectId) with
+                    | true, comp -> tryStream comp
+                    | _ -> None                           
+
+        let fsRefProj =
+            FSharpReferencedProject.CreatePortableExecutable(
+                referencedProject.OutputFilePath, 
+                DateTime.UtcNow,
+                getStream
+            )
+        ProjectCaches.weakPEReferences.Add(comp, fsRefProj)
+        fsRefProj
+
+let tryGetProjectSite (project: Project) =
+    let workspaceService = project.Solution.GetFSharpWorkspaceService()
+    // Cps
+    if workspaceService.CommandLineOptions.ContainsKey project.Id then
+        Some (mapCpsProjectToSite(project, workspaceService.CommandLineOptions))
+    else
+        // Legacy
+        match workspaceService.LegacyProjectSites.TryGetValue project.Id with
+        | true, site -> Some site
+        | _ -> None
+
 let private legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver()
+
+type Workspace with
+
+    member this.GetFSharpTryGetMetadataSnapshotFunction() =
+        let tryGetMetadataSnapshot (path, timeStamp) = 
+            match this with
+            | :? VisualStudioWorkspace as workspace ->
+                try
+                    let md = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetMetadata(workspace, path, timeStamp)
+                    let amd = (md :?> AssemblyMetadata)
+                    let mmd = amd.GetModules().[0]
+                    let mmr = mmd.GetMetadataReader()
+
+                    // "lifetime is timed to Metadata you got from the GetMetadata(...). As long as you hold it strongly, raw 
+                    // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
+                    // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
+                    // You shouldn't dispose it directly."
+
+                    let objToHold = box md
+
+                    // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
+                    // Debug.Assert((FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
+
+                    Some (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
+                with ex -> 
+                    // We catch all and let the backup routines in the F# compiler find the error
+                    Assert.Exception(ex)
+                    None 
+            | _ ->
+                None
+        tryGetMetadataSnapshot
 
 type Project with
 
-    member this.GetOrCreateFSharpProjectAsync(parsingOptions, projectOptions) =
+    member private this.TryCreateFSharpProjectOptionsAsync() =
         async {
-            if not this.IsFSharp then
-                raise(System.OperationCanceledException("Roslyn Project is not FSharp."))
+            let! ct = Async.CancellationToken
 
-            match ProjectCache.Projects.TryGetValue(this) with
-            | true, result -> return result
-            | _ ->
+            // Because this code can be kicked off before the hack, HandleCommandLineChanges, occurs,
+            //     the command line options will not be available and we should bail if one of the project references does not give us anything.
+            let mutable canBail = false
+            
+            let referencedProjects = ResizeArray()
 
-            let tryGetMetadataSnapshot (path, timeStamp) = 
-                match this.Solution.Workspace with
-                | :? VisualStudioWorkspace as workspace ->
-                    try
-                        let md = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetMetadata(workspace, path, timeStamp)
-                        let amd = (md :?> AssemblyMetadata)
-                        let mmd = amd.GetModules().[0]
-                        let mmr = mmd.GetMetadataReader()
+            if this.AreFSharpInMemoryCrossProjectReferencesEnabled then
+                for projectReference in this.ProjectReferences do
+                    let referencedProject = this.Solution.GetProject(projectReference.ProjectId)
+                    if referencedProject.Language = FSharpConstants.FSharpLanguageName then
+                        match! referencedProject.TryCreateFSharpProjectOptionsAsync() with
+                        | None -> canBail <- true
+                        | Some(projectOptions) -> referencedProjects.Add(FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions))
+                    elif referencedProject.SupportsCompilation then
+                        let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
+                        let peRef = createPEReference referencedProject comp
+                        referencedProjects.Add(peRef)
 
-                        // "lifetime is timed to Metadata you got from the GetMetadata(...). As long as you hold it strongly, raw 
-                        // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
-                        // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
-                        // You shouldn't dispose it directly."
+            if canBail then
+                return None
+            else
 
-                        let objToHold = box md
+            match tryGetProjectSite this with
+            | None -> return None
+            | Some projectSite ->             
 
-                        // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
-                        // Debug.Assert((FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
+            let otherOptions =
+                this.ProjectReferences
+                |> Seq.map (fun x -> "-r:" + this.Solution.GetProject(x.ProjectId).OutputFilePath)
+                |> Array.ofSeq
+                |> Array.append (
+                        this.MetadataReferences.OfType<PortableExecutableReference>()
+                        |> Seq.map (fun x -> "-r:" + x.FilePath)
+                        |> Array.ofSeq
+                        |> Array.append (
+                                // Clear any references from CompilationOptions. 
+                                // We get the references from Project.ProjectReferences/Project.MetadataReferences.
+                                projectSite.CompilationOptions
+                                |> Array.filter (fun x -> not (x.Contains("-r:")))
+                            )
+                    )
 
-                        Some (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
-                    with ex -> 
-                        // We catch all and let the backup routines in the F# compiler find the error
-                        Assert.Exception(ex)
-                        None 
-                | _ ->
-                    None
+            let! ver = this.GetDependentVersionAsync(ct) |> Async.AwaitTask
 
-            let! result =
-                FSharpProject.CreateAsync(parsingOptions, projectOptions, 
-                    legacyReferenceResolver = legacyReferenceResolver,
-                    tryGetMetadataSnapshot = tryGetMetadataSnapshot)
+            let projectOptions =
+                {
+                    ProjectFileName = projectSite.ProjectFileName
+                    ProjectId = Some(this.Id.ToFSharpProjectIdString())
+                    SourceFiles = projectSite.CompilationSourceFiles
+                    OtherOptions = otherOptions
+                    ReferencedProjects = referencedProjects.ToArray()
+                    IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
+                    UseScriptResolutionRules = CompilerEnvironment.MustBeSingleFileProject (Path.GetFileName(this.FilePath))
+                    LoadTime = projectSite.LoadTime
+                    UnresolvedReferences = None
+                    OriginalLoadReferences = []
+                    Stamp = Some(int64 (ver.GetHashCode()))
+                }
 
-            match result with
-            | Ok fsProject ->
-                let service = this.Solution.GetFSharpWorkspaceService()
-                let projectOptionsManager = service.FSharpProjectOptionsManager
-                let result = (projectOptionsManager, fsProject)
-                return ProjectCache.Projects.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(fun _ -> result))
-            | Error(diags) ->
-                return raise(System.OperationCanceledException($"Unable to create a FSharpProject:\n%A{ diags }"))
+            // This can happen if we didn't receive the callback from HandleCommandLineChanges yet.
+            if Array.isEmpty projectOptions.SourceFiles then
+                return None
+            else
+                // Clear any caches that need clearing and invalidate the project.
+                let currentSolution = this.Solution.Workspace.CurrentSolution
+
+                ProjectCaches.lastSuccessfulCompilations.ToArray()
+                |> Array.iter (fun pair ->
+                    if not (currentSolution.ContainsProject(pair.Key)) then
+                        ProjectCaches.lastSuccessfulCompilations.TryRemove(pair.Key) |> ignore
+                )
+
+                return Some(projectOptions)
+        }
+
+    member private this.CreateFSharpProjectTask(projectOptions, ct) =
+        let computation =
+            async {
+                if not this.IsFSharp then
+                    raise(System.OperationCanceledException("Roslyn Project is not FSharp."))
+
+                let tryGetMetadataSnapshot = this.Solution.Workspace.GetFSharpTryGetMetadataSnapshotFunction()
+
+                let! result =
+                    FSharpProject.CreateAsync(projectOptions, 
+                        legacyReferenceResolver = legacyReferenceResolver,
+                        tryGetMetadataSnapshot = tryGetMetadataSnapshot)
+
+                match result with
+                | Ok fsProject ->
+                    return fsProject
+                | Error(diags) ->
+                    return raise(System.OperationCanceledException($"Unable to create a FSharpProject:\n%A{ diags }"))
+            }
+        let tcs = TaskCompletionSource<_>()
+        Async.StartWithContinuations(
+            computation,
+            (fun res ->
+                tcs.SetResult(res)
+            ),
+            (fun ex ->
+                tcs.SetException(ex)
+            ),
+            (fun _ ->
+                tcs.SetCanceled()
+            ),
+            ct
+        )
+        tcs.Task
+
+    member private this.GetOrCreateFSharpProjectAsync(projectOptions) =
+        async {
+            let! ct = Async.CancellationToken
+            let create = 
+                ProjectCaches.Projects.GetValue(
+                    this, 
+                    Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(fun _ ->
+                        AsyncLazy((fun () -> this.CreateFSharpProjectTask(projectOptions, ct)))
+                    )
+                )
+            return! create.GetValueAsync(ct) |> Async.AwaitTask
         }
 
 type Document with
 
+    member private this.CreateFSharpScriptOrSingleFileProjectTask(ct) =
+        let computation =
+            async {
+                let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
+
+                let! ct = Async.CancellationToken
+                let! sourceText = this.GetTextAsync(ct) |> Async.AwaitTask
+                let! fileStamp = this.GetTextVersionAsync(ct) |> Async.AwaitTask
+
+                let tryGetMetadataSnapshot = this.Project.Solution.Workspace.GetFSharpTryGetMetadataSnapshotFunction()
+
+                let! scriptProjectOptions, _ =
+                    FSharpProject.GetProjectOptionsFromScript(this.FilePath,
+                        sourceText.ToFSharpSourceText(),
+                        SessionsProperties.fsiPreview,
+                        assumeDotNetFramework=not SessionsProperties.fsiUseNetCore,
+                        legacyReferenceResolver = legacyReferenceResolver,
+                        tryGetMetadataSnapshot = tryGetMetadataSnapshot)
+
+                let project = this.Project
+
+                let otherOptions =
+                    if project.IsFSharpMetadata then
+                        project.ProjectReferences
+                        |> Seq.map (fun x -> "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath)
+                        |> Array.ofSeq
+                        |> Array.append (
+                                project.MetadataReferences.OfType<PortableExecutableReference>()
+                                |> Seq.map (fun x -> "-r:" + x.FilePath)
+                                |> Array.ofSeq)
+                    else
+                        [||]
+
+                let projectOptions =
+                    if isScriptFile this.FilePath then
+                        workspaceService.ScriptUpdatedEvent.Trigger(scriptProjectOptions)
+                        scriptProjectOptions
+                    else
+                        {
+                            ProjectFileName = this.FilePath
+                            ProjectId = None
+                            SourceFiles = [|this.FilePath|]
+                            OtherOptions = otherOptions
+                            ReferencedProjects = [||]
+                            IsIncompleteTypeCheckEnvironment = false
+                            UseScriptResolutionRules = CompilerEnvironment.MustBeSingleFileProject (Path.GetFileName(this.FilePath))
+                            LoadTime = DateTime.Now
+                            UnresolvedReferences = None
+                            OriginalLoadReferences = []
+                            Stamp = Some(int64 (fileStamp.GetHashCode()))
+                        }
+
+                let! result =
+                    FSharpProject.CreateAsync(projectOptions, 
+                        legacyReferenceResolver = legacyReferenceResolver,
+                        tryGetMetadataSnapshot = tryGetMetadataSnapshot)
+
+                match result with
+                | Ok fsProject ->
+                    return fsProject
+                | Error(diags) ->
+                    return raise(System.OperationCanceledException($"Unable to create a FSharpProject:\n%A{ diags }"))
+            }
+        let tcs = TaskCompletionSource<_>()
+        Async.StartWithContinuations(
+            computation,
+            (fun res ->
+                tcs.SetResult(res)
+            ),
+            (fun ex ->
+                tcs.SetException(ex)
+            ),
+            (fun _ ->
+                tcs.SetCanceled()
+            ),
+            ct
+        )
+        tcs.Task
+
+    member private this.GetOrCreateFSharpScriptOrSingleFileProjectAsync() =
+        async {
+            let! ct = Async.CancellationToken
+            let create = 
+                ProjectCaches.ScriptOrSingleFiles.GetValue(
+                    this, 
+                    Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(fun _ ->
+                        AsyncLazy((fun () -> this.CreateFSharpScriptOrSingleFileProjectTask(ct)))
+                    )
+                )
+            return! create.GetValueAsync(ct) |> Async.AwaitTask
+        }
+
     /// Get the FSharpParsingOptions and FSharpProjectOptions from the F# project that is associated with the given F# document.
-    member this.GetFSharpProjectAsync(userOpName) =
+    member this.GetFSharpProjectAsync(_userOpName: string) : Async<FSharpProject> =
         async {
             if this.Project.IsFSharp then
-                match ProjectCache.Projects.TryGetValue(this.Project) with
-                | true, result -> return result
-                | _ ->
-                    let service = this.Project.Solution.GetFSharpWorkspaceService()
-                    let projectOptionsManager = service.FSharpProjectOptionsManager
+                // For now, disallow miscellaneous workspace since we are using the hacky F# miscellaneous files project.
+                if this.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
+                    raise(System.OperationCanceledException("Roslyn Document is FSharp but in the Roslyn MiscellaneousFilesWorkspace."))
+                
+                if this.Project.IsFSharpMiscellaneousOrMetadata then
+                    return! this.GetOrCreateFSharpScriptOrSingleFileProjectAsync()
+                else
                     let! ct = Async.CancellationToken
-                    match! projectOptionsManager.TryGetOptionsForDocumentOrProject(this, ct, userOpName) with
-                    | None -> return raise(System.OperationCanceledException("FSharp project options not found."))
-                    | Some(parsingOptions, _, projectOptions) ->
-                        return! this.Project.GetOrCreateFSharpProjectAsync(parsingOptions, projectOptions)
+                    match ProjectCaches.Projects.TryGetValue(this.Project) with
+                    | true, result -> return! result.GetValueAsync(ct) |> Async.AwaitTask
+                    | _ ->
+                        match! this.Project.TryCreateFSharpProjectOptionsAsync() with
+                        | Some projectOptions ->
+                            return! this.Project.GetOrCreateFSharpProjectAsync(projectOptions)
+                        | _ ->
+                            return raise(System.OperationCanceledException("FSharp project options not found."))
             else
                 return raise(System.OperationCanceledException("Roslyn Document is not FSharp."))
         }
@@ -103,45 +450,41 @@ type Document with
     /// Get the compilation defines from F# project that is associated with the given F# document.
     member this.GetFSharpCompilationDefinesAsync(userOpName) =
         async {
-            let! _, fsProject = this.GetFSharpProjectAsync(userOpName)
+            let! fsProject = this.GetFSharpProjectAsync(userOpName)
             return CompilerEnvironment.GetCompilationDefinesForEditing fsProject.ParsingOptions
         }
-
-    /// Get the instance of the FSharpChecker from the workspace by the given F# document.
-    member this.GetFSharpChecker() =
-        let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
-        workspaceService.Checker
 
     /// A non-async call that quickly gets FSharpParsingOptions of the given F# document.
     /// This tries to get the FSharpParsingOptions by looking at an internal cache; if it doesn't exist in the cache it will create an inaccurate but usable form of the FSharpParsingOptions.
     member this.GetFSharpQuickParsingOptions() =
-        let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
-        workspaceService.FSharpProjectOptionsManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(this)
+        match ProjectCaches.Projects.TryGetValue this.Project with
+        | true, fsProject when fsProject.IsValueCreated -> fsProject.GetValue().ParsingOptions
+        | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile this.Name }
 
     /// A non-async call that quickly gets the defines of the given F# document.
     /// This tries to get the defines by looking at an internal cache; if it doesn't exist in the cache it will create an inaccurate but usable form of the defines.
     member this.GetFSharpQuickDefines() =
-        let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
-        workspaceService.FSharpProjectOptionsManager.GetCompilationDefinesForEditingDocument(this)
+        let parsingOptions = this.GetFSharpQuickParsingOptions()
+        CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
     
     /// Parses the given F# document.
     member this.GetFSharpParseResultsAsync(userOpName) =
         async {
-            let! _, fsProject = this.GetFSharpProjectAsync(userOpName)
+            let! fsProject = this.GetFSharpProjectAsync(userOpName)
             return fsProject.GetParseFileResults(this.FilePath)
         }
 
     /// Parses and checks the given F# document.
     member this.GetFSharpParseAndCheckResultsAsync(userOpName) =
         async {
-            let! _, fsProject = this.GetFSharpProjectAsync(userOpName)
+            let! fsProject = this.GetFSharpProjectAsync(userOpName)
             return! fsProject.GetParseAndCheckFileResultsAsync(this.FilePath)
         }
 
     /// Get the semantic classifications of the given F# document.
     member this.GetFSharpSemanticClassificationAsync(userOpName) =
         async {
-            let! _, fsProject = this.GetFSharpProjectAsync(userOpName)
+            let! fsProject = this.GetFSharpProjectAsync(userOpName)
             match! fsProject.TryGetSemanticClassificationForFileAsync(this.FilePath) with
             | Some results -> return results
             | _ -> return raise(System.OperationCanceledException("Unable to get FSharp semantic classification."))
@@ -150,7 +493,7 @@ type Document with
     /// Find F# references in the given F# document.
     member this.FindFSharpReferencesAsync(symbol, onFound, userOpName) =
         async {
-            let! _, fsProject = this.GetFSharpProjectAsync(userOpName)
+            let! fsProject = this.GetFSharpProjectAsync(userOpName)
             let! symbolUses = fsProject.FindReferencesInFileAsync(this.FilePath, symbol)
             let! ct = Async.CancellationToken
             let! sourceText = this.GetTextAsync ct |> Async.AwaitTask
@@ -173,15 +516,10 @@ type Document with
 
     /// This is only used for testing purposes. It sets the ProjectCache.Projects with the given FSharpProjectOptions and F# document's project.
     member this.SetFSharpProjectOptionsForTesting(projectOptions: FSharpProjectOptions) =
-        let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
-        let parsingOptions, _, _ = 
-            workspaceService.FSharpProjectOptionsManager.TryGetOptionsForDocumentOrProject(this, CancellationToken.None, nameof(this.SetFSharpProjectOptionsForTesting))
-            |> Async.RunSynchronously
-            |> Option.get
-        let result = FSharpProject.CreateAsync(parsingOptions, projectOptions) |> Async.RunSynchronously
+        let result = FSharpProject.CreateAsync(projectOptions) |> Async.RunSynchronously
         match result with
         | Ok fsProject ->
-            ProjectCache.Projects.Add(this.Project, (workspaceService.FSharpProjectOptionsManager, fsProject))
+            ProjectCaches.Projects.Add(this.Project, AsyncLazy(fun () -> Task.FromResult(fsProject)))
         | Error diags ->
             failwithf $"Unable to create a FSharpProject for testing: %A{ diags }"
 
