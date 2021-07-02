@@ -59,17 +59,22 @@ module EnvMisc =
 [<Sealed>]
 type FSharpProject private (options: FSharpProjectOptions, builder: IncrementalBuilder, creationDiags, suggestNamesForErrors, keepAssemblyContents) =
 
-    member this.Invalidated = 
-#if !NO_EXTENSIONTYPING
-        builder.ImportsInvalidatedByTypeProvider
-#else
-        Event<unit>().Publish
-#endif
+    /// One of the references has been marked invalidated.
+    /// This is due to a type provider being invalidated.
+    member this.IsInvalidated = builder.IsReferencesInvalidated
 
     member this.GetParseFileResults(filePath) =
         let parseTree,_,_,parseDiags = builder.GetParseResultsForFile (filePath)
         let diagnostics = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (builder.TcConfig.errorSeverityOptions, false, filePath, parseDiags, suggestNamesForErrors) |]
         FSharpParseFileResults(diagnostics = diagnostics, input = parseTree, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
+
+    member this.ToReferencedProject() =
+        let rawAssemblyData =
+            node {
+                let! (_, _, tcAssemblyDataOpt, _) = builder.GetCheckResultsAndImplementationsForProject()
+                return tcAssemblyDataOpt
+            }
+        FSharpReferencedProject.FSharpRawAssemblyData(options.ProjectFileName, rawAssemblyData)
 
     member this.GetParseAndCheckFileResultsAsync(filePath) =
         node {
@@ -129,9 +134,17 @@ type FSharpProject private (options: FSharpProjectOptions, builder: IncrementalB
             let projectReferences =  
                 [ for r in options.ReferencedProjects do
 
-                   match r with
-                   | FSharpReferencedProject.FSharpReference _ ->
-                       failwith "FSharpProject does not support a FSharpReferencedProject.FSharpReference. Instead, use FSharpReferencedProject.FSharpProject."
+                    match r with
+                    | FSharpReferencedProject.FSharpReference _ ->
+                       // FSharpProject does not support FSharpReferencedProject.FSharpReference as it requires the project lookup in the service.
+                       ()
+
+                    | FSharpReferencedProject.FSharpRawAssemblyData(nm, rawAssemblyData) ->
+                        yield
+                            { new IProjectReference with 
+                                member x.EvaluateRawContents() = rawAssemblyData
+                                member x.TryGetLogicalTimeStamp(_) = DateTime.MinValue |> Some
+                                member x.FileName = nm }
                             
                     | FSharpReferencedProject.PEReference(nm,stamp,delayedReader) ->
                         yield
@@ -160,7 +173,7 @@ type FSharpProject private (options: FSharpProjectOptions, builder: IncrementalB
                                   }
                                 member x.TryGetLogicalTimeStamp(_) = getStamp() |> Some
                                 member x.FileName = nm }
-                    ]
+                ]
 
             let keepAssemblyContents = false
 
@@ -378,6 +391,10 @@ type BackgroundCompiler(
             [ for r in options.ReferencedProjects do
 
                match r with
+               | FSharpReferencedProject.FSharpRawAssemblyData _ ->
+                    // Creating an incremental build in the service does not support FSharpReferencedProject.FSharpRawAssemblyData.
+                    ()
+
                | FSharpReferencedProject.FSharpReference(nm,opts) ->
                    // Don't use cross-project references for FSharp.Core, since various bits of code require a concrete FSharp.Core to exist on-disk.
                    // The only solutions that have these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The only ramification
