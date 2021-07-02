@@ -610,13 +610,15 @@ module rec Compiler =
 
         let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: ErrorInfo list) : unit =
             let errors = source |> List.map (fun error -> { error with Range = adjustRange error.Range libAdjust })
-
+            
             let inline checkEqual k a b =
              if a <> b then
                  Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A\nExpected errors:\n%A" what k a b errors expected)
+            // For lists longer than 100 errors:
+            errors |> List.iter System.Diagnostics.Debug.WriteLine
 
             // TODO: Check all "categories", collect all results and print alltogether.
-            checkEqual "Errors count"  expected.Length errors.Length
+            checkEqual "Errors count" expected.Length errors.Length
 
             (errors, expected)
             ||> List.iter2 (fun actualError expectedError ->

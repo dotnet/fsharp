@@ -31,17 +31,18 @@ type DirectoryAttribute(dir: string) =
             | _ -> None
 
     let createCompilationUnit path fs =
-        let fsSource = (path ++ fs) |> File.ReadAllText
-        let bslFilePath = path ++ (fs + ".bsl")
-        let ilFilePath  = path ++ (fs + ".il")
+        let filePath = path ++ fs
+        let fsSource = File.ReadAllText filePath
+        let bslFilePath = filePath + ".bsl"
+        let ilFilePath  = filePath + ".il"
         let bslSource = readFileOrDefault bslFilePath
         let ilSource = readFileOrDefault ilFilePath
 
         { Source         = Text fsSource
           Baseline       =
-                Some { SourceFilename = Some (path ++ fs)
+                Some { SourceFilename = Some filePath
                        OutputBaseline = { FilePath = bslFilePath; Content = bslSource }
-                       ILBaseline     = { FilePath = ilFilePath;  Content = ilSource } }
+                       ILBaseline     = { FilePath = ilFilePath;  Content = ilSource  } }
           Options        = []
           OutputType     = Library
           SourceKind     = SourceKind.Fsx

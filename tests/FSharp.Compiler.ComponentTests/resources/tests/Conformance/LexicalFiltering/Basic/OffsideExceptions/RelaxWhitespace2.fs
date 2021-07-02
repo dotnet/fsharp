@@ -3551,52 +3551,44 @@ if System.Text.RegularExpressions.Regex.IsMatch(
     """^[a-zA-Z][a-zA-Z0-9']+$"""
    ) then
   ()
-
-// Some random cases
-
-for i in <@
-    1
-@> |> box |> unbox<int seq> do ()
-while <@@
-    1
-@@> |> box |> unbox<bool> do ()
-do ignore <| <@@
-    1
-@@>
-
-function
-| {
-    y = 6
-} -> ()
-<| {
-    y = 7
-}
-function
-| {
-    y = 6
-} when {
-    y = 2
-} = {
-    y = 3
-} -> ()
-<| {
-    y = 7
-}
-function {
-         y = 6
-        } when {
-         y = 2
-        } = {
-         y = 3
-        } -> ()
-<| {
-    y = 7
-}
-
-exception J of {|
-    r : int
-|}
-
+  
+// https://github.com/fsharp/fslang-suggestions/issues/504
+module Q =
+    module Z =
+        type Alpha< ^b, ^a 
+    when ^     a    :  (member Name:string)
+and    ^a:        (member Zip
+   : ^b when
+^b : struct   )
+and             ^a
+:                 (static member(+)
+    :    'a * 'a 
+-> 'a 
+) 
+         > () = 
+            member inline __.X = ()
+        with
+        static member inline Y = ()
+        
+type TypeWithALongName< ^a
+    when ^a:(static member(+):'a * 'a -> 'a )
+    and  ^a:(static member(-):'a * 'a -> 'a )
+    and  ^a:(static member(*):'a * 'a -> 'a )
+    and  ^a:(static member(/):'a * 'a -> 'a )
+> =
+    static member inline X = 2
+type TypeWithALongName2< ^a 
+              when ^a:(static member(+):'a * 'a -> 'a )
+              and  ^a:(static member(-):'a * 'a -> 'a )            
+              and  ^a:(static member(*):'a * 'a -> 'a )            
+              and  ^a:(static member(/):'a * 'a -> 'a )            
+    > = static member inline X = ()
+type TypeWithALongName3< 'a 
+ when 'a: not struct
+ and  ^a:(static member(-):'a * 'a -> 'a )            
+ and  'a:> System.IDisposable      
+ and  ^a:> System.Object         
+> = static member inline X = ()
 // https://github.com/fsharp/fslang-suggestions/issues/470
 
 type ColorAxis(values : int[],
@@ -3705,3 +3697,208 @@ let bar = [|
   1
   2
 |]
+
+// Some random cases
+
+for i in <@
+    1
+@> |> box |> unbox<int seq> do ()
+while <@@
+    1
+@@> |> box |> unbox<bool> do ()
+do ignore <| <@@
+    1
+@@>
+
+function
+| {
+    y = 6
+  } -> ()
+<| {
+    y = 7
+}
+function
+| {
+    y = 6
+  } when {
+    y = 2
+  } = {
+    y = 3
+  } -> ()
+<| {
+    y = 7
+}
+function {
+         y = 6
+        } when {
+         y = 2
+        } = {
+         y = 3
+        } -> ()
+<| {
+    y = 7
+}
+
+exception J of {|
+    r : int
+|}
+
+// Individual testing of special-cased contexts
+
+do (
+    ()
+)
+do ignore (
+    1
+)
+exception J'' of {|
+    r : int
+|}
+exception J' of r : (
+    int
+) with
+    member _.A(
+        _
+    ) = ()
+    member _.A'(_:
+        _
+    ) = ()
+type System.Int32 with
+    member _.A(
+        _
+    ) = ()
+    member _.A'(_:
+        _
+    ) = ()
+for i in <@
+    1
+ @> |> box |> unbox<int seq> do ()
+for i in seq {
+    1
+} |> box |> unbox<int seq> do ()
+while <@
+    1
+@> |> box |> unbox<bool> do ()
+while seq {
+    1
+ } |> box |> unbox<bool> do ()
+try seq {
+    1
+} with _ -> seq { 2 }
+|> ignore<int seq>
+try <@@
+    1
+@@> with _ -> <@@ 2 @@>
+|> ignore<Quotations.Expr>
+if <@
+    1
+@> |> box<int Quotations.Expr> |> unbox<bool> then ()
+if seq {
+    1
+ } |> box<int seq> |> unbox<bool> then ()
+if true then Seq.head <| seq {
+    ()
+} |> id<unit>
+if true then (box<unit Quotations.Expr> >> unbox<unit>) <@
+    ()
+@> |> id<unit>
+if true then () else (box<int seq> >> unbox<unit>) <| seq {
+    1
+} |> id<unit>
+if true then () else (box<int Quotations.Expr> >> unbox<unit>) <@
+    1
+@> |> id<unit>
+fun () -> Seq.head <| seq {
+    ()
+} |> ignore<unit -> unit>
+function () -> Seq.head <| seq {
+              ()
+} |> ignore<unit -> unit>
+
+// Examples in the RFC
+
+type R = { a : int }
+type [<AutoOpen>] H = static member h a = ()
+module rec M1 =
+    let messageLoop (state:int) = async {
+        return! someOther(state)
+    } // Sure
+    let someOther(state:int) = async {
+        return! messageLoop(state)
+    }
+module M2 =
+    let rec messageLoop (state:int) = async {
+        return! someOther(state)
+    }
+    // error FS0010: Unexpected keyword 'and' in definition. Expected incomplete structured construct at or before this point or other token.
+    and someOther(state:int) = async {
+        return! messageLoop(state)
+    }
+let RFC =
+    
+    let a = id [
+        1 // No longer produces warning FS0058 after [RFC FS-1054] less strict indentation on common DSL pattern
+    ]
+    let b = id (
+        1 // warning FS0058: Possible incorrect indentation
+    )
+    let c = (
+        1 // But this is ok
+    )
+    try
+        1
+    with _ -> 2 // Totally fine
+    |> ignore
+    
+    match
+        1
+    with _ -> 2 // error FS0010: Unexpected start of structured construct in expression
+    |> ignore
+    if true then [ 0 ] else [
+        1 // This is fine
+    ]
+    |> ignore
+    if true then <@ 0 @> else <@
+        1 // warning FS0058: Possible incorrect indentation
+    @>
+    |> ignore
+    let d =
+        if [
+            2 // Fine
+           ] = [3] then ()
+    let e =
+        if [3] = [
+            2 // warning FS0058: Possible incorrect indentation
+           ] then ()
+    
+    let f = {
+        a = 1 // Ok
+    }
+    let {
+        a = g
+    } = f // error FS0010: Incomplete structured construct at or before this point in binding. Expected '=' or other token.
+
+    let _ = h { a =
+        2 // Ok
+    }
+    let _ = h ( a =
+        2 // Also ok
+    )
+    let _ = h {| a =
+        2 // warning FS0058: Possible incorrect indentation
+    |}
+
+    let i =
+        if true then ignore [
+            1 // Ok
+        ] else ignore [ 2 ]
+    let j =
+        if true then ignore [ 1 ] else ignore [
+            2 // Ok
+        ]
+    let k =
+        let tru _ = true
+        if tru [
+            1 // warning FS0058: Possible incorrect indentation
+        ] then ()
+    ()
