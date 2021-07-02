@@ -35,6 +35,8 @@ type FSharpProject =
 
     member FindReferencesInFileAsync : filePath: string * symbol: FSharpSymbol -> Async<range seq>
 
+    member UpdateFiles : files: (string * (unit -> ISourceText) * bool) [] -> FSharpProject
+
     member ToReferencedProject : unit -> FSharpReferencedProject
 
     static member CreateAsync : projectOptions: FSharpProjectOptions * ?parsingOptions: FSharpParsingOptions * ?legacyReferenceResolver: LegacyReferenceResolver * ?suggestNamesForErrors: bool * ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot -> Async<Result<FSharpProject, FSharpDiagnostic[]>>

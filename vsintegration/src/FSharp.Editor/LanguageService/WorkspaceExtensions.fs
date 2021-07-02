@@ -3,6 +3,7 @@ module internal Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
 
 open System
 open System.IO
+open System.Collections.Immutable
 open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Linq
@@ -102,10 +103,12 @@ module private ProjectCaches =
     /// This is a cache to maintain a FSharpProject per Roslyn Project.
     /// The Roslyn Project is held weakly meaning when it is cleaned up by the GC, the FSharpProject will be cleaned up by the GC.
     let Projects = ConditionalWeakTable<Project, AsyncLazy<FSharpProject>>()
+    let CurrentProjects = ConcurrentDictionary<ProjectId, Project * FSharpProject>()
 
     /// This is a cache to maintain a script or misc file as a FSharpProject per Roslyn Document.
     /// The Roslyn Document is held weakly meaning when it is cleaned up by the GC, the FSharpProject will be cleaned up by the GC.
     let ScriptOrSingleFiles = ConditionalWeakTable<Document, AsyncLazy<FSharpProject>>()
+    let CurrentScriptOrSingleFiles = ConcurrentDictionary<DocumentId, Project * FSharpProject>()
     
 let private createPEReference (referencedProject: Project) (comp: Compilation) =
     let projectId = referencedProject.Id
@@ -218,7 +221,9 @@ type Project with
                     if referencedProject.Language = FSharpConstants.FSharpLanguageName then
                         match! referencedProject.TryCreateFSharpProjectOptionsAsync() with
                         | None -> canBail <- true
-                        | Some(projectOptions) -> referencedProjects.Add(FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions))
+                        | Some(projectOptions) -> 
+                            let! fsProjectRef = referencedProject.GetOrCreateFSharpProjectAsync(projectOptions)
+                            referencedProjects.Add(fsProjectRef.ToReferencedProject())
                     elif referencedProject.SupportsCompilation then
                         let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
                         let peRef = createPEReference referencedProject comp
@@ -287,18 +292,51 @@ type Project with
                 if not this.IsFSharp then
                     raise(System.OperationCanceledException("Roslyn Project is not FSharp."))
 
-                let tryGetMetadataSnapshot = this.Solution.Workspace.GetFSharpTryGetMetadataSnapshotFunction()
+                let! ct = Async.CancellationToken
 
-                let! result =
-                    FSharpProject.CreateAsync(projectOptions, 
-                        legacyReferenceResolver = legacyReferenceResolver,
-                        tryGetMetadataSnapshot = tryGetMetadataSnapshot)
+                let oldFsProjectOpt, changedDocs = 
+                    match ProjectCaches.CurrentProjects.TryGetValue this.Id with
+                    | true, (oldProj, oldFsProject) ->
+                        let isNotAbleToDiffSnapshot = isProjectInvalidated oldProj this ct
+                        if isNotAbleToDiffSnapshot then
+                            None, Seq.empty
+                        else
+                            Some oldFsProject, this.GetChanges(oldProj).GetChangedDocuments()
+                    | _ ->
+                        None, Seq.empty
 
-                match result with
-                | Ok fsProject ->
+                match oldFsProjectOpt with
+                | Some oldFsProject ->
+                    // Able to make a diff snapshot, only on updated documents.
+                    let files =
+                        changedDocs
+                        |> Seq.map (fun x ->
+                            let doc = this.GetDocument(x)
+                            let getSourceText =
+                                (fun () -> doc.GetTextAsync().Result.ToFSharpSourceText())
+                            let isOpen = this.Solution.Workspace.IsDocumentOpen(x)
+                            (doc.FilePath, getSourceText, isOpen)
+                        )
+                        |> Array.ofSeq
+                    let fsProject = oldFsProject.UpdateFiles(files)
+                    ProjectCaches.CurrentProjects.[this.Id] <- (this, fsProject)
                     return fsProject
-                | Error(diags) ->
-                    return raise(System.OperationCanceledException($"Unable to create a FSharpProject:\n%A{ diags }"))
+                | _ ->
+                    // Unable to make a diff snapshot for the project; re-create it.
+                    let tryGetMetadataSnapshot = this.Solution.Workspace.GetFSharpTryGetMetadataSnapshotFunction()
+
+                    let! result =
+                        FSharpProject.CreateAsync(projectOptions, 
+                            legacyReferenceResolver = legacyReferenceResolver,
+                            tryGetMetadataSnapshot = tryGetMetadataSnapshot)
+
+                    match result with
+                    | Ok fsProject ->
+                        ProjectCaches.CurrentProjects.[this.Id] <- (this, fsProject)
+                        return fsProject
+                    | Error(diags) ->
+                        return raise(System.OperationCanceledException($"Unable to create a FSharpProject:\n%A{ diags }"))
+
             }
         let tcs = TaskCompletionSource<_>()
         Async.StartWithContinuations(
@@ -316,7 +354,7 @@ type Project with
         )
         tcs.Task
 
-    member private this.GetOrCreateFSharpProjectAsync(projectOptions) =
+    member private this.GetOrCreateFSharpProjectAsync(projectOptions) : Async<FSharpProject> =
         async {
             let! ct = Async.CancellationToken
             let create = 
@@ -337,62 +375,91 @@ type Document with
                 let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
 
                 let! ct = Async.CancellationToken
-                let! sourceText = this.GetTextAsync(ct) |> Async.AwaitTask
                 let! fileStamp = this.GetTextVersionAsync(ct) |> Async.AwaitTask
 
-                let tryGetMetadataSnapshot = this.Project.Solution.Workspace.GetFSharpTryGetMetadataSnapshotFunction()
+                let oldFsProjectOpt, changedDocs = 
+                    match ProjectCaches.CurrentScriptOrSingleFiles.TryGetValue this.Id with
+                    | true, (oldProj, oldFsProject) ->
+                        let isNotAbleToDiffSnapshot = isProjectInvalidated oldProj this.Project ct
+                        if isNotAbleToDiffSnapshot then
+                            None, Seq.empty
+                        else
+                            Some oldFsProject, this.Project.GetChanges(oldProj).GetChangedDocuments()
+                    | _ ->
+                        None, Seq.empty
 
-                let! scriptProjectOptions, _ =
-                    FSharpProject.GetProjectOptionsFromScript(this.FilePath,
-                        sourceText.ToFSharpSourceText(),
-                        SessionsProperties.fsiPreview,
-                        assumeDotNetFramework=not SessionsProperties.fsiUseNetCore,
-                        legacyReferenceResolver = legacyReferenceResolver,
-                        tryGetMetadataSnapshot = tryGetMetadataSnapshot)
-
-                let project = this.Project
-
-                let otherOptions =
-                    if project.IsFSharpMetadata then
-                        project.ProjectReferences
-                        |> Seq.map (fun x -> "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath)
+                match oldFsProjectOpt with
+                | Some oldFsProject ->
+                    // Able to make a diff snapshot, only on updated documents.
+                    let files =
+                        changedDocs
+                        |> Seq.map (fun x ->
+                            let doc = this.Project.GetDocument(x)
+                            let getSourceText =
+                                (fun () -> doc.GetTextAsync().Result.ToFSharpSourceText())
+                            let isOpen = this.Project.Solution.Workspace.IsDocumentOpen(x)
+                            (doc.FilePath, getSourceText, isOpen)
+                        )
                         |> Array.ofSeq
-                        |> Array.append (
-                                project.MetadataReferences.OfType<PortableExecutableReference>()
-                                |> Seq.map (fun x -> "-r:" + x.FilePath)
-                                |> Array.ofSeq)
-                    else
-                        [||]
-
-                let projectOptions =
-                    if isScriptFile this.FilePath then
-                        workspaceService.ScriptUpdatedEvent.Trigger(scriptProjectOptions)
-                        scriptProjectOptions
-                    else
-                        {
-                            ProjectFileName = this.FilePath
-                            ProjectId = None
-                            SourceFiles = [|this.FilePath|]
-                            OtherOptions = otherOptions
-                            ReferencedProjects = [||]
-                            IsIncompleteTypeCheckEnvironment = false
-                            UseScriptResolutionRules = CompilerEnvironment.MustBeSingleFileProject (Path.GetFileName(this.FilePath))
-                            LoadTime = DateTime.Now
-                            UnresolvedReferences = None
-                            OriginalLoadReferences = []
-                            Stamp = Some(int64 (fileStamp.GetHashCode()))
-                        }
-
-                let! result =
-                    FSharpProject.CreateAsync(projectOptions, 
-                        legacyReferenceResolver = legacyReferenceResolver,
-                        tryGetMetadataSnapshot = tryGetMetadataSnapshot)
-
-                match result with
-                | Ok fsProject ->
+                    let fsProject = oldFsProject.UpdateFiles(files)
+                    ProjectCaches.CurrentScriptOrSingleFiles.[this.Id] <- (this.Project, fsProject)
                     return fsProject
-                | Error(diags) ->
-                    return raise(System.OperationCanceledException($"Unable to create a FSharpProject:\n%A{ diags }"))
+                | _ ->
+                    let! sourceText = this.GetTextAsync(ct) |> Async.AwaitTask
+
+                    let tryGetMetadataSnapshot = this.Project.Solution.Workspace.GetFSharpTryGetMetadataSnapshotFunction()
+
+                    let! scriptProjectOptions, _ =
+                        FSharpProject.GetProjectOptionsFromScript(this.FilePath,
+                            sourceText.ToFSharpSourceText(),
+                            SessionsProperties.fsiPreview,
+                            assumeDotNetFramework=not SessionsProperties.fsiUseNetCore,
+                            legacyReferenceResolver = legacyReferenceResolver,
+                            tryGetMetadataSnapshot = tryGetMetadataSnapshot)
+
+                    let project = this.Project
+
+                    let otherOptions =
+                        if project.IsFSharpMetadata then
+                            project.ProjectReferences
+                            |> Seq.map (fun x -> "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath)
+                            |> Array.ofSeq
+                            |> Array.append (
+                                    project.MetadataReferences.OfType<PortableExecutableReference>()
+                                    |> Seq.map (fun x -> "-r:" + x.FilePath)
+                                    |> Array.ofSeq)
+                        else
+                            [||]
+
+                    let projectOptions =
+                        if isScriptFile this.FilePath then
+                            workspaceService.ScriptUpdatedEvent.Trigger(scriptProjectOptions)
+                            scriptProjectOptions
+                        else
+                            {
+                                ProjectFileName = this.FilePath
+                                ProjectId = None
+                                SourceFiles = [|this.FilePath|]
+                                OtherOptions = otherOptions
+                                ReferencedProjects = [||]
+                                IsIncompleteTypeCheckEnvironment = false
+                                UseScriptResolutionRules = CompilerEnvironment.MustBeSingleFileProject (Path.GetFileName(this.FilePath))
+                                LoadTime = DateTime.Now
+                                UnresolvedReferences = None
+                                OriginalLoadReferences = []
+                                Stamp = Some(int64 (fileStamp.GetHashCode()))
+                            }
+
+                    let! result =
+                        FSharpProject.CreateAsync(projectOptions, 
+                            legacyReferenceResolver = legacyReferenceResolver,
+                            tryGetMetadataSnapshot = tryGetMetadataSnapshot)
+
+                    match result with
+                    | Ok fsProject ->
+                        return fsProject
+                    | Error(diags) ->
+                        return raise(System.OperationCanceledException($"Unable to create a FSharpProject:\n%A{ diags }"))
             }
         let tcs = TaskCompletionSource<_>()
         Async.StartWithContinuations(

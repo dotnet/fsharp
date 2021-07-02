@@ -152,6 +152,9 @@ type FSharpProject private (parsingOptions: FSharpParsingOptions, projectOptions
             }
         FSharpReferencedProject.FSharpRawAssemblyData(projectOptions.ProjectFileName, rawAssemblyData)
 
+    member this.UpdateFiles(files: (string * (unit -> ISourceText) * bool) []) =
+        FSharpProject(parsingOptions, projectOptions, builder.UpdateFilesAsSnapshot(files), creationDiags, suggestNamesForErrors, keepAssemblyContents)
+
     static member CreateAsync(projectOptions: FSharpProjectOptions, ?parsingOptions: FSharpParsingOptions, ?legacyReferenceResolver: LegacyReferenceResolver, ?suggestNamesForErrors: bool, ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot) =
         node {
             let legacyReferenceResolver = defaultArg legacyReferenceResolver (SimulatedMSBuildReferenceResolver.getResolver())
