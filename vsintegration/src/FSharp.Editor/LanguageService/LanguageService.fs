@@ -27,8 +27,32 @@ open Microsoft.VisualStudio.Text.Outlining
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
+open System.Runtime.CompilerServices
+open Microsoft.VisualStudio.Threading
 
 #nowarn "9" // NativePtr.toNativeInt
+
+[<RequireQualifiedAccess>]
+module FSharpProjectCaches =
+
+    // This is used to not constantly emit the same compilation.
+    let weakPEReferences = ConditionalWeakTable<Compilation, FSharpReferencedProject>()
+    let lastSuccessfulCompilations = ConcurrentDictionary<ProjectId, Compilation>()
+
+    /// This is a cache to maintain a FSharpProject per Roslyn Project.
+    /// The Roslyn Project is held weakly meaning when it is cleaned up by the GC, the FSharpProject will be cleaned up by the GC.
+    let Projects = ConditionalWeakTable<Project, AsyncLazy<FSharpProject>>()
+    let CurrentProjects = ConcurrentDictionary<ProjectId, Project * FSharpProject>()
+
+    /// This is a cache to maintain a script or misc file as a FSharpProject per Roslyn Document.
+    /// The Roslyn Document is held weakly meaning when it is cleaned up by the GC, the FSharpProject will be cleaned up by the GC.
+    let ScriptOrSingleFiles = ConditionalWeakTable<Document, AsyncLazy<FSharpProject>>()
+    let CurrentScriptOrSingleFiles = ConcurrentDictionary<DocumentId, Project * FSharpProject>()
+
+    let Clear() =
+        lastSuccessfulCompilations.Clear()
+        CurrentProjects.Clear()
+        CurrentScriptOrSingleFiles.Clear()
 
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
@@ -72,6 +96,7 @@ type private FSharpSolutionEvents(workspaceService: IFSharpWorkspaceService, met
             metadataAsSource.ClearGeneratedFiles()
             workspaceService.CommandLineOptions.Clear()
             workspaceService.LegacyProjectSites.Clear()
+            FSharpProjectCaches.Clear()
             VSConstants.S_OK
 
         member _.OnAfterLoadProject(_, _) = VSConstants.E_NOTIMPL

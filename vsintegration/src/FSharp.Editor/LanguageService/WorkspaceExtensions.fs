@@ -92,28 +92,11 @@ type Solution with
     /// Get the instance of IFSharpWorkspaceService.
     member private this.GetFSharpWorkspaceService() =
         this.Workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
-
-[<RequireQualifiedAccess>]
-module private ProjectCaches =
-
-    // This is used to not constantly emit the same compilation.
-    let weakPEReferences = ConditionalWeakTable<Compilation, FSharpReferencedProject>()
-    let lastSuccessfulCompilations = ConcurrentDictionary<ProjectId, Compilation>()
-
-    /// This is a cache to maintain a FSharpProject per Roslyn Project.
-    /// The Roslyn Project is held weakly meaning when it is cleaned up by the GC, the FSharpProject will be cleaned up by the GC.
-    let Projects = ConditionalWeakTable<Project, AsyncLazy<FSharpProject>>()
-    let CurrentProjects = ConcurrentDictionary<ProjectId, Project * FSharpProject>()
-
-    /// This is a cache to maintain a script or misc file as a FSharpProject per Roslyn Document.
-    /// The Roslyn Document is held weakly meaning when it is cleaned up by the GC, the FSharpProject will be cleaned up by the GC.
-    let ScriptOrSingleFiles = ConditionalWeakTable<Document, AsyncLazy<FSharpProject>>()
-    let CurrentScriptOrSingleFiles = ConcurrentDictionary<DocumentId, Project * FSharpProject>()
     
 let private createPEReference (referencedProject: Project) (comp: Compilation) =
     let projectId = referencedProject.Id
 
-    match ProjectCaches.weakPEReferences.TryGetValue comp with
+    match FSharpProjectCaches.weakPEReferences.TryGetValue comp with
     | true, fsRefProj -> fsRefProj
     | _ ->
         let weakComp = WeakReference<Compilation>(comp)
@@ -126,7 +109,7 @@ let private createPEReference (referencedProject: Project) (comp: Compilation) =
                         let result = comp.Emit(ms, options = emitOptions, cancellationToken = ct)
 
                         if result.Success then
-                            ProjectCaches.lastSuccessfulCompilations.[projectId] <- comp
+                            FSharpProjectCaches.lastSuccessfulCompilations.[projectId] <- comp
                             ms.Position <- 0L
                             ms :> Stream
                             |> Some
@@ -146,7 +129,7 @@ let private createPEReference (referencedProject: Project) (comp: Compilation) =
                 match resultOpt with
                 | Some _ -> resultOpt
                 | _ ->
-                    match ProjectCaches.lastSuccessfulCompilations.TryGetValue(projectId) with
+                    match FSharpProjectCaches.lastSuccessfulCompilations.TryGetValue(projectId) with
                     | true, comp -> tryStream comp
                     | _ -> None                           
 
@@ -156,7 +139,7 @@ let private createPEReference (referencedProject: Project) (comp: Compilation) =
                 DateTime.UtcNow,
                 getStream
             )
-        ProjectCaches.weakPEReferences.Add(comp, fsRefProj)
+        FSharpProjectCaches.weakPEReferences.Add(comp, fsRefProj)
         fsRefProj
 
 let tryGetProjectSite (project: Project) =
@@ -173,6 +156,11 @@ let tryGetProjectSite (project: Project) =
 let private legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver()
 
 type Workspace with
+
+    member this.ClearFSharpCaches() =
+        FSharpProjectCaches.CurrentScriptOrSingleFiles.Clear()
+        FSharpProjectCaches.CurrentProjects.Clear()
+        FSharpProjectCaches.lastSuccessfulCompilations.Clear()
 
     member this.GetFSharpTryGetMetadataSnapshotFunction() =
         let tryGetMetadataSnapshot (path, timeStamp) = 
@@ -277,10 +265,10 @@ type Project with
                 // Clear any caches that need clearing and invalidate the project.
                 let currentSolution = this.Solution.Workspace.CurrentSolution
 
-                ProjectCaches.lastSuccessfulCompilations.ToArray()
+                FSharpProjectCaches.lastSuccessfulCompilations.ToArray()
                 |> Array.iter (fun pair ->
                     if not (currentSolution.ContainsProject(pair.Key)) then
-                        ProjectCaches.lastSuccessfulCompilations.TryRemove(pair.Key) |> ignore
+                        FSharpProjectCaches.lastSuccessfulCompilations.TryRemove(pair.Key) |> ignore
                 )
 
                 return Some(projectOptions)
@@ -295,7 +283,7 @@ type Project with
                 let! ct = Async.CancellationToken
 
                 let oldFsProjectOpt, changedDocs = 
-                    match ProjectCaches.CurrentProjects.TryGetValue this.Id with
+                    match FSharpProjectCaches.CurrentProjects.TryGetValue this.Id with
                     | true, (oldProj, oldFsProject) ->
                         let isNotAbleToDiffSnapshot = isProjectInvalidated oldProj this ct
                         if isNotAbleToDiffSnapshot then
@@ -319,7 +307,7 @@ type Project with
                         )
                         |> Array.ofSeq
                     let fsProject = oldFsProject.UpdateFiles(files)
-                    ProjectCaches.CurrentProjects.[this.Id] <- (this, fsProject)
+                    FSharpProjectCaches.CurrentProjects.[this.Id] <- (this, fsProject)
                     return fsProject
                 | _ ->
                     // Unable to make a diff snapshot for the project; re-create it.
@@ -332,7 +320,7 @@ type Project with
 
                     match result with
                     | Ok fsProject ->
-                        ProjectCaches.CurrentProjects.[this.Id] <- (this, fsProject)
+                        FSharpProjectCaches.CurrentProjects.[this.Id] <- (this, fsProject)
                         return fsProject
                     | Error(diags) ->
                         return raise(System.OperationCanceledException($"Unable to create a FSharpProject:\n%A{ diags }"))
@@ -358,7 +346,7 @@ type Project with
         async {
             let! ct = Async.CancellationToken
             let create = 
-                ProjectCaches.Projects.GetValue(
+                FSharpProjectCaches.Projects.GetValue(
                     this, 
                     Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(fun _ ->
                         AsyncLazy((fun () -> this.CreateFSharpProjectTask(projectOptions, ct)))
@@ -378,7 +366,7 @@ type Document with
                 let! fileStamp = this.GetTextVersionAsync(ct) |> Async.AwaitTask
 
                 let oldFsProjectOpt, changedDocs = 
-                    match ProjectCaches.CurrentScriptOrSingleFiles.TryGetValue this.Id with
+                    match FSharpProjectCaches.CurrentScriptOrSingleFiles.TryGetValue this.Id with
                     | true, (oldProj, oldFsProject) ->
                         let isNotAbleToDiffSnapshot = isProjectInvalidated oldProj this.Project ct
                         if isNotAbleToDiffSnapshot then
@@ -402,7 +390,7 @@ type Document with
                         )
                         |> Array.ofSeq
                     let fsProject = oldFsProject.UpdateFiles(files)
-                    ProjectCaches.CurrentScriptOrSingleFiles.[this.Id] <- (this.Project, fsProject)
+                    FSharpProjectCaches.CurrentScriptOrSingleFiles.[this.Id] <- (this.Project, fsProject)
                     return fsProject
                 | _ ->
                     let! sourceText = this.GetTextAsync(ct) |> Async.AwaitTask
@@ -481,7 +469,7 @@ type Document with
         async {
             let! ct = Async.CancellationToken
             let create = 
-                ProjectCaches.ScriptOrSingleFiles.GetValue(
+                FSharpProjectCaches.ScriptOrSingleFiles.GetValue(
                     this, 
                     Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(fun _ ->
                         AsyncLazy((fun () -> this.CreateFSharpScriptOrSingleFileProjectTask(ct)))
@@ -502,7 +490,7 @@ type Document with
                     return! this.GetOrCreateFSharpScriptOrSingleFileProjectAsync()
                 else
                     let! ct = Async.CancellationToken
-                    match ProjectCaches.Projects.TryGetValue(this.Project) with
+                    match FSharpProjectCaches.Projects.TryGetValue(this.Project) with
                     | true, result -> return! result.GetValueAsync(ct) |> Async.AwaitTask
                     | _ ->
                         match! this.Project.TryCreateFSharpProjectOptionsAsync() with
@@ -524,7 +512,7 @@ type Document with
     /// A non-async call that quickly gets FSharpParsingOptions of the given F# document.
     /// This tries to get the FSharpParsingOptions by looking at an internal cache; if it doesn't exist in the cache it will create an inaccurate but usable form of the FSharpParsingOptions.
     member this.GetFSharpQuickParsingOptions() =
-        match ProjectCaches.Projects.TryGetValue this.Project with
+        match FSharpProjectCaches.Projects.TryGetValue this.Project with
         | true, fsProject when fsProject.IsValueCreated -> fsProject.GetValue().ParsingOptions
         | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile this.Name }
 
@@ -586,7 +574,7 @@ type Document with
         let result = FSharpProject.CreateAsync(projectOptions) |> Async.RunSynchronously
         match result with
         | Ok fsProject ->
-            ProjectCaches.Projects.Add(this.Project, AsyncLazy(fun () -> Task.FromResult(fsProject)))
+            FSharpProjectCaches.Projects.Add(this.Project, AsyncLazy(fun () -> Task.FromResult(fsProject)))
         | Error diags ->
             failwithf $"Unable to create a FSharpProject for testing: %A{ diags }"
 
