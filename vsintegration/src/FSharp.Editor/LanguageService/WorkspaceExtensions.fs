@@ -193,10 +193,6 @@ type Project with
     member private this.TryCreateFSharpProjectOptionsAsync() =
         async {
             let! ct = Async.CancellationToken
-
-            // Because this code can be kicked off before the hack, HandleCommandLineChanges, occurs,
-            //     the command line options will not be available and we should bail if one of the project references does not give us anything.
-            let mutable canBail = false
             
             let referencedProjects = ResizeArray()
 
@@ -204,19 +200,12 @@ type Project with
                 for projectReference in this.ProjectReferences do
                     let referencedProject = this.Solution.GetProject(projectReference.ProjectId)
                     if referencedProject.Language = FSharpConstants.FSharpLanguageName then
-                        match! referencedProject.TryCreateFSharpProjectOptionsAsync() with
-                        | None -> canBail <- true
-                        | Some(projectOptions) -> 
-                            let! fsProjectRef = referencedProject.GetOrCreateFSharpProjectAsync(projectOptions)
-                            referencedProjects.Add(fsProjectRef.ToReferencedProject())
+                        let! fsProjectRef = referencedProject.GetOrCreateFSharpProjectAsync()
+                        referencedProjects.Add(fsProjectRef.ToReferencedProject())
                     elif referencedProject.SupportsCompilation then
                         let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
                         let peRef = createPEReference referencedProject comp
                         referencedProjects.Add(peRef)
-
-            if canBail then
-                return None
-            else
 
             match tryGetProjectSite this with
             | None -> return None
@@ -271,11 +260,17 @@ type Project with
                 return Some(projectOptions)
         }
 
-    member private this.CreateFSharpProjectTask(projectOptions, ct) =
+    member private this.CreateFSharpProjectTask(ct) =
         let computation =
             async {
                 if not this.IsFSharp then
                     raise(System.OperationCanceledException("Roslyn Project is not FSharp."))
+
+
+                match! this.TryCreateFSharpProjectOptionsAsync() with
+                | None ->
+                    return raise(System.OperationCanceledException("FSharp project options not found."))
+                | Some projectOptions ->
 
                 let! ct = Async.CancellationToken
 
@@ -339,14 +334,14 @@ type Project with
         )
         tcs.Task
 
-    member private this.GetOrCreateFSharpProjectAsync(projectOptions) : Async<FSharpProject> =
+    member private this.GetOrCreateFSharpProjectAsync() : Async<FSharpProject> =
         async {
             let! ct = Async.CancellationToken
             let create = 
                 FSharpProjectCaches.Projects.GetValue(
                     this, 
                     Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(fun _ ->
-                        AsyncLazy((fun () -> this.CreateFSharpProjectTask(projectOptions, ct)))
+                        AsyncLazy((fun () -> this.CreateFSharpProjectTask(ct)))
                     )
                 )
             return! create.GetValueAsync(ct) |> Async.AwaitTask
@@ -489,15 +484,7 @@ type Document with
                 if this.Project.IsFSharpMiscellaneousOrMetadata then
                     return! this.GetOrCreateFSharpScriptOrSingleFileProjectAsync()
                 else
-                    let! ct = Async.CancellationToken
-                    match FSharpProjectCaches.Projects.TryGetValue(this.Project) with
-                    | true, result -> return! result.GetValueAsync(ct) |> Async.AwaitTask
-                    | _ ->
-                        match! this.Project.TryCreateFSharpProjectOptionsAsync() with
-                        | Some projectOptions ->
-                            return! this.Project.GetOrCreateFSharpProjectAsync(projectOptions)
-                        | _ ->
-                            return raise(System.OperationCanceledException("FSharp project options not found."))
+                    return! this.Project.GetOrCreateFSharpProjectAsync()
             else
                 return raise(System.OperationCanceledException("Roslyn Document is not FSharp."))
         }
