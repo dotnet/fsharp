@@ -260,7 +260,7 @@ type Project with
                 return Some(projectOptions)
         }
 
-    member private this.CreateFSharpProjectTask(ct) =
+    member private this.CreateFSharpProjectTask() =
         let computation =
             async {
                 if not this.IsFSharp then
@@ -330,7 +330,7 @@ type Project with
             (fun _ ->
                 tcs.SetCanceled()
             ),
-            ct
+            CancellationToken.None
         )
         tcs.Task
 
@@ -341,7 +341,7 @@ type Project with
                 FSharpProjectCaches.Projects.GetValue(
                     this, 
                     Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(fun _ ->
-                        AsyncLazy((fun () -> this.CreateFSharpProjectTask(ct)))
+                        AsyncLazy((fun () -> this.CreateFSharpProjectTask()))
                     )
                 )
             return! create.GetValueAsync(ct) |> Async.AwaitTask
@@ -349,7 +349,7 @@ type Project with
 
 type Document with
 
-    member private this.CreateFSharpScriptOrSingleFileProjectTask(ct) =
+    member private this.CreateFSharpScriptOrSingleFileProjectTask() =
         let computation =
             async {
                 let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
@@ -456,7 +456,7 @@ type Document with
             (fun _ ->
                 tcs.SetCanceled()
             ),
-            ct
+            CancellationToken.None
         )
         tcs.Task
 
@@ -467,7 +467,7 @@ type Document with
                 FSharpProjectCaches.ScriptOrSingleFiles.GetValue(
                     this, 
                     Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(fun _ ->
-                        AsyncLazy((fun () -> this.CreateFSharpScriptOrSingleFileProjectTask(ct)))
+                        AsyncLazy((fun () -> this.CreateFSharpScriptOrSingleFileProjectTask()))
                     )
                 )
             return! create.GetValueAsync(ct) |> Async.AwaitTask
