@@ -452,6 +452,11 @@ type BoundModel private (tcConfig: TcConfig,
                 let! res = defaultTypeCheck ()
                 return res
             | Some syntaxTree ->
+                let partialCheck =
+                    if partialCheck then
+                        not syntaxTree.IsOpen
+                    else
+                        false
                 let sigNameOpt =
                     if partialCheck then
                         this.BackingSignature
@@ -513,7 +518,7 @@ type BoundModel private (tcConfig: TcConfig,
                                     None
                         }
                         
-                    if partialCheck && not syntaxTree.IsOpen then
+                    if partialCheck then
                         return PartialState tcInfo
                     else
                         // Build symbol keys
