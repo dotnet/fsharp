@@ -223,7 +223,7 @@ module WorkspaceTests =
                         )
                 )
 
-                let success = solution.Workspace.TryApplyChanges(solution)
+                solution.Workspace.TryApplyChanges(solution) |> ignore
 
                 mainProj <- solution.GetProject(currentProj.Id)
 

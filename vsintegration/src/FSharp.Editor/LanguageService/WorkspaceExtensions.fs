@@ -71,12 +71,9 @@ module private Helpers =
             let p2 = newProject.Solution.GetProject(p2.ProjectId)
             doesProjectIdDiffer || 
             (
-                if p1.IsFSharp then
-                    p1.Version <> p2.Version
-                else
-                    let v1 = p1.GetDependentVersionAsync(ct).Result
-                    let v2 = p2.GetDependentVersionAsync(ct).Result
-                    v1 <> v2
+                let v1 = p1.GetDependentVersionAsync(ct).Result
+                let v2 = p2.GetDependentVersionAsync(ct).Result
+                v1 <> v2
             )
         )
 
@@ -372,6 +369,8 @@ type Document with
                         if isNotAbleToDiffSnapshot then
                             None, Seq.empty
                         else
+                            let _v1 = this.Project.GetDependentVersionAsync().Result
+                            let _v2 = oldProj.GetDependentVersionAsync().Result
                             Some oldFsProject, this.Project.GetChanges(oldProj).GetChangedDocuments()
                     | _ ->
                         None, Seq.empty
@@ -445,6 +444,7 @@ type Document with
 
                     match result with
                     | Ok fsProject ->
+                        FSharpProjectCaches.CurrentScriptOrSingleFiles.[this.Id] <- (this.Project, fsProject)
                         return fsProject
                     | Error(diags) ->
                         return raise(System.OperationCanceledException($"Unable to create a FSharpProject:\n%A{ diags }"))
