@@ -149,6 +149,23 @@ module A
         |> typecheck
         |> shouldSucceed
         |> ignore
+    [<Fact>]
+    let RelaxWhitespace2_AllowedBefore7() =
+        Fsx """module M = begin type K = member _.G = 3 end;; module M2 = do begin end;; module M3 = do ()"""
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+    [<Fact>]
+    let RelaxWhitespace2_AllowedBefore8() =
+        Fsx """
+module M = begin
+    type K = member _.G = 3
+end module M2 = do ignore begin 1
+end module M3 = do ()
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
 
     [<Fact>]
     let RelaxWhitespace2_Neg1() =
@@ -325,6 +342,53 @@ function
                         EndColumn = 8 }
               Message =
                "This expression is a function value, i.e. is missing arguments. Its type is R -> unit." }
+        ] |> ignore
+    [<Fact>]
+    let RelaxWhitespace2_Neg9() =
+        Fsx """
+let _ = <@ type Foo(x : int) =
+              member this.Length = x @>     
+
+exit 1
+  
+        """
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Error 10
+              Range = { StartLine = 2
+                        StartColumn = 12
+                        EndLine = 2
+                        EndColumn = 16 }
+              Message =
+               "Incomplete structured construct at or before this point in quotation literal" };
+            { Error = Error 602
+              Range = { StartLine = 2
+                        StartColumn = 9
+                        EndLine = 2
+                        EndColumn = 11 }
+              Message = "Unmatched '<@ @>'" };
+            { Error = Error 10
+              Range = { StartLine = 2
+                        StartColumn = 12
+                        EndLine = 2
+                        EndColumn = 16 }
+              Message =
+               "Unexpected keyword 'type' in binding. Expected incomplete structured construct at or before this point or other token." };
+            { Error = Error 3118
+              Range = { StartLine = 2
+                        StartColumn = 1
+                        EndLine = 2
+                        EndColumn = 4 }
+              Message =
+               "Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword." };
+            { Error = Error 10
+              Range = { StartLine = 3
+                        StartColumn = 38
+                        EndLine = 3
+                        EndColumn = 40 }
+              Message =
+               "Unexpected end of quotation in expression. Expected incomplete structured construct at or before this point or other token." }
         ] |> ignore
 
     [<Theory; File "RelaxWhitespace2.fs">]
