@@ -3385,7 +3385,7 @@ module WitnessTests =
 
     test "check CallWithWitnesses all operators"      
       (let tests = 
-            [ <@@ sin 1.0 @@>, box 0x3FEAED548F090CEELF // Around 0.841470984807897
+            [|<@@ sin 1.0 @@>, box 0x3FEAED548F090CEELF // Around 0.841470984807897
               <@@ sin 1.0f @@>, box 0x3F576AA4lf // = 0.841471f
               <@@ sign 1.0f @@>, box 1
               <@@ sqrt 1.0f<m> @@>, box 1f
@@ -4585,9 +4585,9 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?<>? Nullable<_> 3f @@>, box false
               <@@ Nullable<_> 3. ?<>? Nullable<_> 3. @@>, box false
               <@@ Nullable<_> 3m ?<>? Nullable<_> 3m @@>, box false
-            ]
+            |]
 
-       tests |> List.map (fun (test, eval) -> 
+       tests |> Array.map (fun (test, eval) -> 
            begin
                printfn "--> Checking we can evaluate %A" test
                let res = FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation test
@@ -4618,7 +4618,7 @@ module WitnessTests =
                || (printfn "<-- FAILURE, failed after matching with Quotations.Patterns.(|CallWithWitnesses|_|)"; true)
            | _ ->
                printfn "<!! FAILURE, it did not match Quotations.Patterns.(|CallWithWitnesses|_|)"
-               false) |> List.forall id) // Don't short circuit on a failed test
+               false) |> Array.forall id) // Don't short circuit on a failed test
 
 module MoreWitnessTests =
 
