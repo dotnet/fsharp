@@ -441,21 +441,21 @@ module LeafExpressionConverter =
             | ModuloNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env true x1 x2 false Expression.Modulo <| methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y)
             | NullableModuloNullableQ (_, _, [x1; x2]) -> transBinOpFallback inp env false x1 x2 false Expression.Modulo <| methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y)
 
-            | ConvNullableCharQ (_, _, [x]) | ConvNullableDecimalQ (_, _, [x]) | ConvNullableFloatQ (_, _, [x]) | ConvNullableDoubleQ (_, _, [x])
-            | ConvNullableFloat32Q (_, _, [x]) | ConvNullableSingleQ (_, _, [x]) | ConvNullableSByteQ (_, _, [x]) | ConvNullableInt8Q (_, _, [x])
-            | ConvNullableInt16Q (_, _, [x]) | ConvNullableInt32Q (_, _, [x]) | ConvNullableIntQ (_, _, [x]) | ConvNullableInt64Q (_, _, [x])
-            | ConvNullableByteQ (_, _, [x]) | ConvNullableUInt8Q (_, _, [x]) | ConvNullableUInt16Q (_, _, [x]) | ConvNullableUInt32Q (_, _, [x])
-            | ConvNullableUInt64Q (_, _, [x]) | ConvNullableIntPtrQ (_, _, [x]) | ConvNullableUIntPtrQ (_, _, [x])
+            | ConvNullableCharQ (_, _, [x]) | ConvNullableDecimalQ (_, _, [x]) | ConvNullableFloatQ (_, _, [x]) | ConvNullableDoubleQ (_, _, [x]) -> transConvFallback inp env false x
+            | ConvNullableFloat32Q (_, _, [x]) | ConvNullableSingleQ (_, _, [x]) | ConvNullableSByteQ (_, _, [x]) | ConvNullableInt8Q (_, _, [x]) -> transConvFallback inp env false x
+            | ConvNullableInt16Q (_, _, [x]) | ConvNullableInt32Q (_, _, [x]) | ConvNullableIntQ (_, _, [x]) | ConvNullableInt64Q (_, _, [x]) -> transConvFallback inp env false x
+            | ConvNullableByteQ (_, _, [x]) | ConvNullableUInt8Q (_, _, [x]) | ConvNullableUInt16Q (_, _, [x]) | ConvNullableUInt32Q (_, _, [x]) -> transConvFallback inp env false x
+            | ConvNullableUInt64Q (_, _, [x]) | ConvNullableIntPtrQ (_, _, [x]) | ConvNullableUIntPtrQ (_, _, [x]) -> transConvFallback inp env false x
 
-            | ConvCharQ (_, _, [x]) | ConvDecimalQ (_, _, [x]) | ConvFloatQ (_, _, [x]) | ConvDoubleQ (_, _, [x])
-            | ConvFloat32Q (_, _, [x]) | ConvSingleQ (_, _, [x]) | ConvSByteQ (_, _, [x]) | ConvInt8Q (_, _, [x])
-            | ConvInt16Q (_, _, [x]) | ConvInt32Q (_, _, [x]) | ConvIntQ (_, _, [x]) | ConvInt64Q (_, _, [x])
-            | ConvByteQ (_, _, [x]) | ConvUInt8Q (_, _, [x]) | ConvUInt16Q (_, _, [x]) | ConvUInt32Q (_, _, [x])
+            | ConvCharQ (_, _, [x]) | ConvDecimalQ (_, _, [x]) | ConvFloatQ (_, _, [x]) | ConvDoubleQ (_, _, [x]) -> transConvFallback inp env false x
+            | ConvFloat32Q (_, _, [x]) | ConvSingleQ (_, _, [x]) | ConvSByteQ (_, _, [x]) | ConvInt8Q (_, _, [x]) -> transConvFallback inp env false x
+            | ConvInt16Q (_, _, [x]) | ConvInt32Q (_, _, [x]) | ConvIntQ (_, _, [x]) | ConvInt64Q (_, _, [x]) -> transConvFallback inp env false x
+            | ConvByteQ (_, _, [x]) | ConvUInt8Q (_, _, [x]) | ConvUInt16Q (_, _, [x]) | ConvUInt32Q (_, _, [x]) -> transConvFallback inp env false x
             | ConvUInt64Q (_, _, [x]) | ConvIntPtrQ (_, _, [x]) | ConvUIntPtrQ (_, _, [x]) -> transConvFallback inp env false x
 
-            | CheckedConvCharQ (_, _, [x]) | CheckedConvSByteQ (_, _, [x]) | CheckedConvInt8Q (_, _, [x]) | CheckedConvInt16Q (_, _, [x])
-            | CheckedConvInt32Q (_, _, [x]) | CheckedConvInt64Q (_, _, [x]) | CheckedConvByteQ (_, _, [x]) | CheckedConvUInt8Q (_, _, [x])
-            | CheckedConvUInt16Q (_, _, [x]) | CheckedConvUInt32Q (_, _, [x]) | CheckedConvUInt64Q (_, _, [x]) | CheckedConvIntPtrQ (_, _, [x])
+            | CheckedConvCharQ (_, _, [x]) | CheckedConvSByteQ (_, _, [x]) | CheckedConvInt8Q (_, _, [x]) | CheckedConvInt16Q (_, _, [x]) -> transConvFallback inp env true x
+            | CheckedConvInt32Q (_, _, [x]) | CheckedConvInt64Q (_, _, [x]) | CheckedConvByteQ (_, _, [x]) | CheckedConvUInt8Q (_, _, [x]) -> transConvFallback inp env true x
+            | CheckedConvUInt16Q (_, _, [x]) | CheckedConvUInt32Q (_, _, [x]) | CheckedConvUInt64Q (_, _, [x]) | CheckedConvIntPtrQ (_, _, [x]) -> transConvFallback inp env true x
             | CheckedConvUIntPtrQ (_, _, [x]) -> transConvFallback inp env true x
 
             | ArrayLookupQ (_, [_; _; _], [x1; x2]) ->
