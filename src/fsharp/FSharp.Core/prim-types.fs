@@ -4487,7 +4487,7 @@ namespace Microsoft.FSharp.Core
              when ^T : char       = (# "conv.u" value  : unativeint #)
              when ^T : unativeint = (# "" value  : unativeint #)
              when ^T : byte       = (# "conv.u" value  : unativeint #)
-             when ^T : decimal    = (# "conv.u" (uint64 value) : unativeint #)
+             when ^T : decimal    = (# "conv.u" (Convert.ToUInt64 value) : unativeint #)
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> unativeint) (value))
 
         [<NoDynamicInvocation(isLegacy=true)>]
@@ -5147,6 +5147,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.u.un" value  : unativeint #)
                  when ^T : unativeint = (# "conv.ovf.u.un" value  : unativeint #)
                  when ^T : byte     = (# "conv.ovf.u.un" value  : unativeint #)
+                 when ^T : decimal    = (# "conv.ovf.u.un" (Convert.ToUInt64 value) : unativeint #)
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> unativeint) (value))
 
             [<NoDynamicInvocation(isLegacy=true)>]
@@ -5167,6 +5168,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.i.un" value  : nativeint #)
                  when ^T : unativeint = (# "conv.ovf.i.un" value  : nativeint #)
                  when ^T : byte     = (# "conv.ovf.i.un" value  : nativeint #)
+                 when ^T : decimal    = (# "conv.ovf.i.un" (Convert.ToInt64 value) : unativeint #)
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> nativeint) (value))
 
         module OperatorIntrinsics =
