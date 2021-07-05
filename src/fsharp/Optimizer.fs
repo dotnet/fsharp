@@ -3302,7 +3302,7 @@ and OptimizeNewDelegateExpr cenv env (lambdaId, vsl, body, remake) =
     let arities = vsl.Length
     let bsize = bodyinfo.TotalSize
     let exprR = remake bodyR
-    let valu = CurriedLambdaValue (lambdaId, arities, bsize, exprR, tyOfExpr cenv.g exprR) 
+    let valu = CurriedLambdaValue (lambdaId, arities, bsize, exprR, false, tyOfExpr cenv.g exprR) 
 
     exprR, { TotalSize=bsize + closureTotalSize (* estimate size of new syntactic closure - expensive, in contrast to a method *)
              FunctionSize=1 
