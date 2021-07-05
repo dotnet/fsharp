@@ -3622,6 +3622,7 @@ module WitnessTests =
               <@@ 3. = 3. @@>, box true
               <@@ 3m = 3m @@>, box true
               <@@ "3" = "3" @@>, box true
+              <@@ [3] = [3] @@>, box true
               
               <@@ 3y <> 3y @@>, box false
               <@@ 3uy <> 3uy @@>, box false
@@ -3638,6 +3639,75 @@ module WitnessTests =
               <@@ 3. <> 3. @@>, box false
               <@@ 3m <> 3m @@>, box false
               <@@ "3" <> "3" @@>, box false
+              <@@ [3] <> [3] @@>, box true
+
+              <@@ 3y <= 3y @@>, box true
+              <@@ 3uy <= 3uy @@>, box true
+              <@@ 3s <= 3s @@>, box true
+              <@@ 3us <= 3us @@>, box true
+              <@@ 3 <= 3 @@>, box true
+              <@@ 3u <= 3u @@>, box true
+              <@@ 3L <= 3L @@>, box true
+              <@@ 3UL <= 3UL @@>, box true
+              <@@ '3' <= '3' @@>, box true
+              <@@ LanguagePrimitives.GenericOne<nativeint> <= LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ LanguagePrimitives.GenericOne<unativeint> <= LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ 3f <= 3f @@>, box true
+              <@@ 3. <= 3. @@>, box true
+              <@@ 3m <= 3m @@>, box true
+              <@@ "3" <= "3" @@>, box true
+              <@@ [3] <= [3] @@>, box true
+
+              <@@ 3y < 3y @@>, box false
+              <@@ 3uy < 3uy @@>, box false
+              <@@ 3s < 3s @@>, box false
+              <@@ 3us < 3us @@>, box false
+              <@@ 3 < 3 @@>, box false
+              <@@ 3u < 3u @@>, box false
+              <@@ 3L < 3L @@>, box false
+              <@@ 3UL < 3UL @@>, box false
+              <@@ '3' < '3' @@>, box false
+              <@@ LanguagePrimitives.GenericOne<nativeint> < LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ LanguagePrimitives.GenericOne<unativeint> < LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ 3f < 3f @@>, box false
+              <@@ 3. < 3. @@>, box false
+              <@@ 3m < 3m @@>, box false
+              <@@ "3" < "3" @@>, box false
+              <@@ [3] < [3] @@>, box false
+
+              <@@ 3y >= 3y @@>, box true
+              <@@ 3uy >= 3uy @@>, box true
+              <@@ 3s >= 3s @@>, box true
+              <@@ 3us >= 3us @@>, box true
+              <@@ 3 >= 3 @@>, box true
+              <@@ 3u >= 3u @@>, box true
+              <@@ 3L >= 3L @@>, box true
+              <@@ 3UL >= 3UL @@>, box true
+              <@@ '3' >= '3' @@>, box true
+              <@@ LanguagePrimitives.GenericOne<nativeint> >= LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ LanguagePrimitives.GenericOne<unativeint> >= LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ 3f >= 3f @@>, box true
+              <@@ 3. >= 3. @@>, box true
+              <@@ 3m >= 3m @@>, box true
+              <@@ "3" >= "3" @@>, box true
+              <@@ [3] >= [3] @@>, box true
+
+              <@@ 3y > 3y @@>, box false
+              <@@ 3uy > 3uy @@>, box false
+              <@@ 3s > 3s @@>, box false
+              <@@ 3us > 3us @@>, box false
+              <@@ 3 > 3 @@>, box false
+              <@@ 3u > 3u @@>, box false
+              <@@ 3L > 3L @@>, box false
+              <@@ 3UL > 3UL @@>, box false
+              <@@ '3' > '3' @@>, box false
+              <@@ LanguagePrimitives.GenericOne<nativeint> > LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ LanguagePrimitives.GenericOne<unativeint> > LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ 3f > 3f @@>, box false
+              <@@ 3. > 3. @@>, box false
+              <@@ 3m > 3m @@>, box false
+              <@@ "3" > "3" @@>, box false
+              <@@ [3] > [3] @@>, box false
 
               <@@ byte 3uy @@>, box 3uy
               <@@ byte 3y @@>, box 3uy
@@ -4585,6 +4655,198 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?<>? Nullable<_> 3f @@>, box false
               <@@ Nullable<_> 3. ?<>? Nullable<_> 3. @@>, box false
               <@@ Nullable<_> 3m ?<>? Nullable<_> 3m @@>, box false
+              
+              <@@ Nullable<_> 3y ?<= 3y @@>, box true
+              <@@ Nullable<_> 3uy ?<= 3uy @@>, box true
+              <@@ Nullable<_> 3s ?<= 3s @@>, box true
+              <@@ Nullable<_> 3us ?<= 3us @@>, box true
+              <@@ Nullable<_> 3 ?<= 3 @@>, box true
+              <@@ Nullable<_> 3u ?<= 3u @@>, box true
+              <@@ Nullable<_> 3L ?<= 3L @@>, box true
+              <@@ Nullable<_> 3UL ?<= 3UL @@>, box true
+              <@@ Nullable<_> '3' ?<= '3' @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?<= LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?<= LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ Nullable<_> 3f ?<= 3f @@>, box true
+              <@@ Nullable<_> 3. ?<= 3. @@>, box true
+              <@@ Nullable<_> 3m ?<= 3m @@>, box true
+              <@@ Nullable<_> "3" ?<= "3" @@>, box true
+
+              <@@ 3y <=? Nullable<_> 3y @@>, box true
+              <@@ 3uy <=? Nullable<_> 3uy @@>, box true
+              <@@ 3s <=? Nullable<_> 3s @@>, box true
+              <@@ 3us <=? Nullable<_> 3us @@>, box true
+              <@@ 3 <=? Nullable<_> 3 @@>, box true
+              <@@ 3u <=? Nullable<_> 3u @@>, box true
+              <@@ 3L <=? Nullable<_> 3L @@>, box true
+              <@@ 3UL <=? Nullable<_> 3UL @@>, box true
+              <@@ '3' <=? Nullable<_> '3' @@>, box true
+              <@@ LanguagePrimitives.GenericOne<nativeint> <=? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ LanguagePrimitives.GenericOne<unativeint> <=? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ 3f <=? Nullable<_> 3f @@>, box true
+              <@@ 3. <=? Nullable<_> 3. @@>, box true
+              <@@ 3m <=? Nullable<_> 3m @@>, box true
+              <@@ "3" <=? Nullable<_> "3" @@>, box true
+
+              <@@ Nullable<_> 3y ?<=? Nullable<_> 3y @@>, box true
+              <@@ Nullable<_> 3uy ?<=? Nullable<_> 3uy @@>, box true
+              <@@ Nullable<_> 3s ?<=? Nullable<_> 3s @@>, box true
+              <@@ Nullable<_> 3us ?<=? Nullable<_> 3us @@>, box true
+              <@@ Nullable<_> 3 ?<=? Nullable<_> 3 @@>, box true
+              <@@ Nullable<_> 3u ?<=? Nullable<_> 3u @@>, box true
+              <@@ Nullable<_> 3L ?<=? Nullable<_> 3L @@>, box true
+              <@@ Nullable<_> 3UL ?<=? Nullable<_> 3UL @@>, box true
+              <@@ Nullable<_> '3' ?<=? Nullable<_> '3' @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?<=? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?<=? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ Nullable<_> 3f ?<=? Nullable<_> 3f @@>, box true
+              <@@ Nullable<_> 3. ?<=? Nullable<_> 3. @@>, box true
+              <@@ Nullable<_> 3m ?<=? Nullable<_> 3m @@>, box true
+              <@@ Nullable<_> "3" ?<=? Nullable<_> "3" @@>, box true
+
+              <@@ Nullable<_> 3y ?< 3y @@>, box false
+              <@@ Nullable<_> 3uy ?< 3uy @@>, box false
+              <@@ Nullable<_> 3s ?< 3s @@>, box false
+              <@@ Nullable<_> 3us ?< 3us @@>, box false
+              <@@ Nullable<_> 3 ?< 3 @@>, box false
+              <@@ Nullable<_> 3u ?< 3u @@>, box false
+              <@@ Nullable<_> 3L ?< 3L @@>, box false
+              <@@ Nullable<_> 3UL ?< 3UL @@>, box false
+              <@@ Nullable<_> '3' ?< '3' @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?< LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?< LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ Nullable<_> 3f ?< 3f @@>, box false
+              <@@ Nullable<_> 3. ?< 3. @@>, box false
+              <@@ Nullable<_> 3m ?< 3m @@>, box false
+              <@@ Nullable<_> "3" ?< "3" @@>, box false
+
+              <@@ 3y <? Nullable<_> 3y @@>, box false
+              <@@ 3uy <? Nullable<_> 3uy @@>, box false
+              <@@ 3s <? Nullable<_> 3s @@>, box false
+              <@@ 3us <? Nullable<_> 3us @@>, box false
+              <@@ 3 <? Nullable<_> 3 @@>, box false
+              <@@ 3u <? Nullable<_> 3u @@>, box false
+              <@@ 3L <? Nullable<_> 3L @@>, box false
+              <@@ 3UL <? Nullable<_> 3UL @@>, box false
+              <@@ '3' <? Nullable<_> '3' @@>, box false
+              <@@ LanguagePrimitives.GenericOne<nativeint> <? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ LanguagePrimitives.GenericOne<unativeint> <? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ 3f <? Nullable<_> 3f @@>, box false
+              <@@ 3. <? Nullable<_> 3. @@>, box false
+              <@@ 3m <? Nullable<_> 3m @@>, box false
+              <@@ "3" <? Nullable<_> "3" @@>, box false
+
+              <@@ Nullable<_> 3y ?<? Nullable<_> 3y @@>, box false
+              <@@ Nullable<_> 3uy ?<? Nullable<_> 3uy @@>, box false
+              <@@ Nullable<_> 3s ?<? Nullable<_> 3s @@>, box false
+              <@@ Nullable<_> 3us ?<? Nullable<_> 3us @@>, box false
+              <@@ Nullable<_> 3 ?<? Nullable<_> 3 @@>, box false
+              <@@ Nullable<_> 3u ?<? Nullable<_> 3u @@>, box false
+              <@@ Nullable<_> 3L ?<? Nullable<_> 3L @@>, box false
+              <@@ Nullable<_> 3UL ?<? Nullable<_> 3UL @@>, box false
+              <@@ Nullable<_> '3' ?<? Nullable<_> '3' @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?<? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?<? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ Nullable<_> 3f ?<? Nullable<_> 3f @@>, box false
+              <@@ Nullable<_> 3. ?<? Nullable<_> 3. @@>, box false
+              <@@ Nullable<_> 3m ?<? Nullable<_> 3m @@>, box false
+              <@@ Nullable<_> "3" ?<? Nullable<_> "3" @@>, box false
+
+              <@@ Nullable<_> 3y ?>= 3y @@>, box true
+              <@@ Nullable<_> 3uy ?>= 3uy @@>, box true
+              <@@ Nullable<_> 3s ?>= 3s @@>, box true
+              <@@ Nullable<_> 3us ?>= 3us @@>, box true
+              <@@ Nullable<_> 3 ?>= 3 @@>, box true
+              <@@ Nullable<_> 3u ?>= 3u @@>, box true
+              <@@ Nullable<_> 3L ?>= 3L @@>, box true
+              <@@ Nullable<_> 3UL ?>= 3UL @@>, box true
+              <@@ Nullable<_> '3' ?>= '3' @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?>= LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?>= LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ Nullable<_> 3f ?>= 3f @@>, box true
+              <@@ Nullable<_> 3. ?>= 3. @@>, box true
+              <@@ Nullable<_> 3m ?>= 3m @@>, box true
+              <@@ Nullable<_> "3" ?>= "3" @@>, box true
+
+              <@@ 3y >=? Nullable<_> 3y @@>, box true
+              <@@ 3uy >=? Nullable<_> 3uy @@>, box true
+              <@@ 3s >=? Nullable<_> 3s @@>, box true
+              <@@ 3us >=? Nullable<_> 3us @@>, box true
+              <@@ 3 >=? Nullable<_> 3 @@>, box true
+              <@@ 3u >=? Nullable<_> 3u @@>, box true
+              <@@ 3L >=? Nullable<_> 3L @@>, box true
+              <@@ 3UL >=? Nullable<_> 3UL @@>, box true
+              <@@ '3' >=? Nullable<_> '3' @@>, box true
+              <@@ LanguagePrimitives.GenericOne<nativeint> >=? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ LanguagePrimitives.GenericOne<unativeint> >=? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ 3f >=? Nullable<_> 3f @@>, box true
+              <@@ 3. >=? Nullable<_> 3. @@>, box true
+              <@@ 3m >=? Nullable<_> 3m @@>, box true
+              <@@ "3" >=? Nullable<_> "3" @@>, box true
+
+              <@@ Nullable<_> 3y ?>=? Nullable<_> 3y @@>, box true
+              <@@ Nullable<_> 3uy ?>=? Nullable<_> 3uy @@>, box true
+              <@@ Nullable<_> 3s ?>=? Nullable<_> 3s @@>, box true
+              <@@ Nullable<_> 3us ?>=? Nullable<_> 3us @@>, box true
+              <@@ Nullable<_> 3 ?>=? Nullable<_> 3 @@>, box true
+              <@@ Nullable<_> 3u ?>=? Nullable<_> 3u @@>, box true
+              <@@ Nullable<_> 3L ?>=? Nullable<_> 3L @@>, box true
+              <@@ Nullable<_> 3UL ?>=? Nullable<_> 3UL @@>, box true
+              <@@ Nullable<_> '3' ?>=? Nullable<_> '3' @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?>=? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?>=? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ Nullable<_> 3f ?>=? Nullable<_> 3f @@>, box true
+              <@@ Nullable<_> 3. ?>=? Nullable<_> 3. @@>, box true
+              <@@ Nullable<_> 3m ?>=? Nullable<_> 3m @@>, box true
+              <@@ Nullable<_> "3" ?>=? Nullable<_> "3" @@>, box true
+
+              <@@ Nullable<_> 3y ?> 3y @@>, box false
+              <@@ Nullable<_> 3uy ?> 3uy @@>, box false
+              <@@ Nullable<_> 3s ?> 3s @@>, box false
+              <@@ Nullable<_> 3us ?> 3us @@>, box false
+              <@@ Nullable<_> 3 ?> 3 @@>, box false
+              <@@ Nullable<_> 3u ?> 3u @@>, box false
+              <@@ Nullable<_> 3L ?> 3L @@>, box false
+              <@@ Nullable<_> 3UL ?> 3UL @@>, box false
+              <@@ Nullable<_> '3' ?> '3' @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ Nullable<_> 3f ?> 3f @@>, box false
+              <@@ Nullable<_> 3. ?> 3. @@>, box false
+              <@@ Nullable<_> 3m ?> 3m @@>, box false
+              <@@ Nullable<_> "3" ?> "3" @@>, box false
+
+              <@@ 3y >? Nullable<_> 3y @@>, box false
+              <@@ 3uy >? Nullable<_> 3uy @@>, box false
+              <@@ 3s >? Nullable<_> 3s @@>, box false
+              <@@ 3us >? Nullable<_> 3us @@>, box false
+              <@@ 3 >? Nullable<_> 3 @@>, box false
+              <@@ 3u >? Nullable<_> 3u @@>, box false
+              <@@ 3L >? Nullable<_> 3L @@>, box false
+              <@@ 3UL >? Nullable<_> 3UL @@>, box false
+              <@@ '3' >? Nullable<_> '3' @@>, box false
+              <@@ LanguagePrimitives.GenericOne<nativeint> >? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ LanguagePrimitives.GenericOne<unativeint> >? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ 3f >? Nullable<_> 3f @@>, box false
+              <@@ 3. >? Nullable<_> 3. @@>, box false
+              <@@ 3m >? Nullable<_> 3m @@>, box false
+              <@@ "3" >? Nullable<_> "3" @@>, box false
+
+              <@@ Nullable<_> 3y ?>? Nullable<_> 3y @@>, box false
+              <@@ Nullable<_> 3uy ?>? Nullable<_> 3uy @@>, box false
+              <@@ Nullable<_> 3s ?>? Nullable<_> 3s @@>, box false
+              <@@ Nullable<_> 3us ?>? Nullable<_> 3us @@>, box false
+              <@@ Nullable<_> 3 ?>? Nullable<_> 3 @@>, box false
+              <@@ Nullable<_> 3u ?>? Nullable<_> 3u @@>, box false
+              <@@ Nullable<_> 3L ?>? Nullable<_> 3L @@>, box false
+              <@@ Nullable<_> 3UL ?>? Nullable<_> 3UL @@>, box false
+              <@@ Nullable<_> '3' ?>? Nullable<_> '3' @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?>? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?>? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ Nullable<_> 3f ?>? Nullable<_> 3f @@>, box false
+              <@@ Nullable<_> 3. ?>? Nullable<_> 3. @@>, box false
+              <@@ Nullable<_> 3m ?>? Nullable<_> 3m @@>, box false
+              <@@ Nullable<_> "3" ?>? Nullable<_> "3" @@>, box false
             |]
 
        tests |> Array.map (fun (test, eval) -> 
