@@ -1247,7 +1247,8 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
         let isSemiSemi = match token with SEMICOLON_SEMICOLON -> true | _ -> false
         let relaxWhitespace2OffsideRule =
-            // Offside rule for CtxtLetDecl (in types or modules) / CtxtMemberHead / CtxtTypeDefns (given RelaxWhitespace2)
+            // Offside rule for CtxtLetDecl (in types or modules) / CtxtMemberHead / CtxtTypeDefns... (given RelaxWhitespace2)
+            // This should not be applied to contexts without closing tokens! (CtxtFun, CtxtFunction, CtxtDo, CtxtSeqBlock etc)
             // let (         member Foo (       for x in (       while (
             //     ...           ...                ...              ...
             // ) = ...       ) = ...            ) do ...         ) do ...
@@ -1703,9 +1704,12 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             if debug then dprintf "token at column %d is offside from LET(offsidePos=%a)! delaying token, returning ODECLEND\n" tokenStartCol outputPos offsidePos
             popCtxt()
             insertToken ODECLEND
-
+            
+        // do ignore (
+        //     1
+        // ), 2 // This is a 'unit * int', so for backwards compatibility, do not treat ')' as a continuator
         | _, (CtxtDo offsidePos :: _) 
-                when isSemiSemi || (if relaxWhitespace2OffsideRule || isDoContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+                when isSemiSemi || (if (*relaxWhitespace2OffsideRule ||*) isDoContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from DO(offsidePos=%a)! delaying token, returning ODECLEND\n" tokenStartCol outputPos offsidePos
             popCtxt()
             insertToken ODECLEND

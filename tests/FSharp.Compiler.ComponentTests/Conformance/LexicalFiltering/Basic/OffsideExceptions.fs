@@ -166,6 +166,30 @@ end module M3 = do ()
         |> typecheck
         |> shouldSucceed
         |> ignore
+    [<Fact>]
+    let RelaxWhitespace2_AllowedBefore9() =
+        Fsx """
+let a =
+    fun () -> (
+                1
+    ), 2
+    |> printfn "%O"
+    in ignore<(unit -> int) * unit> a
+let b =
+    fun () -> (
+                1
+    ), 2
+    |> printfn "%O"
+    in ignore<(unit -> int) * unit> b
+let c =
+    do ignore (
+                1
+    ), 2 |> printfn "%O"
+    in ignore<unit * unit> c
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
 
     [<Fact>]
     let RelaxWhitespace2_Neg1() =
