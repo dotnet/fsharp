@@ -3639,7 +3639,7 @@ module WitnessTests =
               <@@ 3. <> 3. @@>, box false
               <@@ 3m <> 3m @@>, box false
               <@@ "3" <> "3" @@>, box false
-              <@@ [3] <> [3] @@>, box true
+              <@@ [3] <> [3] @@>, box false
 
               <@@ 3y <= 3y @@>, box true
               <@@ 3uy <= 3uy @@>, box true
@@ -4670,7 +4670,6 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?<= 3f @@>, box true
               <@@ Nullable<_> 3. ?<= 3. @@>, box true
               <@@ Nullable<_> 3m ?<= 3m @@>, box true
-              <@@ Nullable<_> "3" ?<= "3" @@>, box true
 
               <@@ 3y <=? Nullable<_> 3y @@>, box true
               <@@ 3uy <=? Nullable<_> 3uy @@>, box true
@@ -4686,7 +4685,6 @@ module WitnessTests =
               <@@ 3f <=? Nullable<_> 3f @@>, box true
               <@@ 3. <=? Nullable<_> 3. @@>, box true
               <@@ 3m <=? Nullable<_> 3m @@>, box true
-              <@@ "3" <=? Nullable<_> "3" @@>, box true
 
               <@@ Nullable<_> 3y ?<=? Nullable<_> 3y @@>, box true
               <@@ Nullable<_> 3uy ?<=? Nullable<_> 3uy @@>, box true
@@ -4702,7 +4700,6 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?<=? Nullable<_> 3f @@>, box true
               <@@ Nullable<_> 3. ?<=? Nullable<_> 3. @@>, box true
               <@@ Nullable<_> 3m ?<=? Nullable<_> 3m @@>, box true
-              <@@ Nullable<_> "3" ?<=? Nullable<_> "3" @@>, box true
 
               <@@ Nullable<_> 3y ?< 3y @@>, box false
               <@@ Nullable<_> 3uy ?< 3uy @@>, box false
@@ -4718,7 +4715,6 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?< 3f @@>, box false
               <@@ Nullable<_> 3. ?< 3. @@>, box false
               <@@ Nullable<_> 3m ?< 3m @@>, box false
-              <@@ Nullable<_> "3" ?< "3" @@>, box false
 
               <@@ 3y <? Nullable<_> 3y @@>, box false
               <@@ 3uy <? Nullable<_> 3uy @@>, box false
@@ -4734,7 +4730,6 @@ module WitnessTests =
               <@@ 3f <? Nullable<_> 3f @@>, box false
               <@@ 3. <? Nullable<_> 3. @@>, box false
               <@@ 3m <? Nullable<_> 3m @@>, box false
-              <@@ "3" <? Nullable<_> "3" @@>, box false
 
               <@@ Nullable<_> 3y ?<? Nullable<_> 3y @@>, box false
               <@@ Nullable<_> 3uy ?<? Nullable<_> 3uy @@>, box false
@@ -4750,7 +4745,6 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?<? Nullable<_> 3f @@>, box false
               <@@ Nullable<_> 3. ?<? Nullable<_> 3. @@>, box false
               <@@ Nullable<_> 3m ?<? Nullable<_> 3m @@>, box false
-              <@@ Nullable<_> "3" ?<? Nullable<_> "3" @@>, box false
 
               <@@ Nullable<_> 3y ?>= 3y @@>, box true
               <@@ Nullable<_> 3uy ?>= 3uy @@>, box true
@@ -4766,7 +4760,6 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?>= 3f @@>, box true
               <@@ Nullable<_> 3. ?>= 3. @@>, box true
               <@@ Nullable<_> 3m ?>= 3m @@>, box true
-              <@@ Nullable<_> "3" ?>= "3" @@>, box true
 
               <@@ 3y >=? Nullable<_> 3y @@>, box true
               <@@ 3uy >=? Nullable<_> 3uy @@>, box true
@@ -4782,7 +4775,6 @@ module WitnessTests =
               <@@ 3f >=? Nullable<_> 3f @@>, box true
               <@@ 3. >=? Nullable<_> 3. @@>, box true
               <@@ 3m >=? Nullable<_> 3m @@>, box true
-              <@@ "3" >=? Nullable<_> "3" @@>, box true
 
               <@@ Nullable<_> 3y ?>=? Nullable<_> 3y @@>, box true
               <@@ Nullable<_> 3uy ?>=? Nullable<_> 3uy @@>, box true
@@ -4798,7 +4790,6 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?>=? Nullable<_> 3f @@>, box true
               <@@ Nullable<_> 3. ?>=? Nullable<_> 3. @@>, box true
               <@@ Nullable<_> 3m ?>=? Nullable<_> 3m @@>, box true
-              <@@ Nullable<_> "3" ?>=? Nullable<_> "3" @@>, box true
 
               <@@ Nullable<_> 3y ?> 3y @@>, box false
               <@@ Nullable<_> 3uy ?> 3uy @@>, box false
@@ -4814,7 +4805,6 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?> 3f @@>, box false
               <@@ Nullable<_> 3. ?> 3. @@>, box false
               <@@ Nullable<_> 3m ?> 3m @@>, box false
-              <@@ Nullable<_> "3" ?> "3" @@>, box false
 
               <@@ 3y >? Nullable<_> 3y @@>, box false
               <@@ 3uy >? Nullable<_> 3uy @@>, box false
@@ -4830,7 +4820,6 @@ module WitnessTests =
               <@@ 3f >? Nullable<_> 3f @@>, box false
               <@@ 3. >? Nullable<_> 3. @@>, box false
               <@@ 3m >? Nullable<_> 3m @@>, box false
-              <@@ "3" >? Nullable<_> "3" @@>, box false
 
               <@@ Nullable<_> 3y ?>? Nullable<_> 3y @@>, box false
               <@@ Nullable<_> 3uy ?>? Nullable<_> 3uy @@>, box false
@@ -4846,7 +4835,6 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?>? Nullable<_> 3f @@>, box false
               <@@ Nullable<_> 3. ?>? Nullable<_> 3. @@>, box false
               <@@ Nullable<_> 3m ?>? Nullable<_> 3m @@>, box false
-              <@@ Nullable<_> "3" ?>? Nullable<_> "3" @@>, box false
             |]
 
        tests |> Array.map (fun (test, eval) -> 
