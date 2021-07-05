@@ -94,7 +94,7 @@
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
         <source>attributes to the right of the 'module' keyword</source>
-        <target state="new">attributes to the right of the 'module' keyword</target>
+        <target state="translated">'module' 키워드 오른쪽에 있는 특성</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">

@@ -7539,7 +7539,7 @@ let rec MakeApplicationAndBetaReduceAux g (f, fty, tyargsl: TType list list, arg
       match f with 
       | Expr.TyLambda (_, tyvs, body, _, bodyty) when tyvs.Length = List.length tyargs -> 
           let tpenv = bindTypars tyvs tyargs emptyTyparInst
-          let body = remarkExpr m (instExpr g tpenv body)
+          let body = instExpr g tpenv body
           let bodyty' = instType tpenv bodyty
           MakeApplicationAndBetaReduceAux g (body, bodyty', rest, argsl, m) 
 
