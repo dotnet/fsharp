@@ -1248,7 +1248,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         let isSemiSemi = match token with SEMICOLON_SEMICOLON -> true | _ -> false
         let relaxWhitespace2OffsideRule =
             // Offside rule for CtxtLetDecl (in types or modules) / CtxtMemberHead / CtxtTypeDefns... (given RelaxWhitespace2)
-            // This should not be applied to contexts without closing tokens! (CtxtFun, CtxtFunction, CtxtDo, CtxtSeqBlock etc)
+            // This should not be applied to contexts with optional closing tokens! (CtxtFun, CtxtFunction, CtxtDo, CtxtMemberBody, CtxtSeqBlock etc)
             // let (         member Foo (       for x in (       while (
             //     ...           ...                ...              ...
             // ) = ...       ) = ...            ) do ...         ) do ...
@@ -1707,7 +1707,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             
         // do ignore (
         //     1
-        // ), 2 // This is a 'unit * int', so for backwards compatibility, do not treat ')' as a continuator
+        // ), 2 // This is a 'unit * int', so for backwards compatibility, do not treat ')' as a continuator, don't apply relaxWhitespace2OffsideRule
         | _, (CtxtDo offsidePos :: _) 
                 when isSemiSemi || (if (*relaxWhitespace2OffsideRule ||*) isDoContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from DO(offsidePos=%a)! delaying token, returning ODECLEND\n" tokenStartCol outputPos offsidePos
@@ -1754,8 +1754,13 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             popCtxt()
             reprocess()
 
-        // Pop CtxtMemberBody when offside. Insert an ODECLEND to indicate the end of the member 
-        | _, ((CtxtMemberBody offsidePos) :: _) when isSemiSemi || (if relaxWhitespace2OffsideRule then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+        // Pop CtxtMemberBody when offside. Insert an ODECLEND to indicate the end of the member
+        //     member _.d() = seq {
+        //         1
+        //     }; static member e() = [
+        //         1 // This is not offside for backcompat, don't apply relaxWhitespace2OffsideRule
+        //     ]
+        | _, ((CtxtMemberBody offsidePos) :: _) when isSemiSemi || (if (*relaxWhitespace2OffsideRule*)false then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from MEMBER/OVERRIDE head with offsidePos %a!\n" tokenStartCol outputPos offsidePos
             popCtxt()
             insertToken ODECLEND
@@ -1811,14 +1816,14 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         | _, (CtxtFun offsidePos :: _) 
         // fun () -> async {
         //     1
-        // }, 2 // This is a '(unit -> seq<int>) * int', so for backwards compatibility, do not treat '}' as a continuator
+        // }, 2 // This is a '(unit -> seq<int>) * int', so for backwards compatibility, do not treat '}' as a continuator, don't apply relaxWhitespace2OffsideRule
                     when isSemiSemi || (if (*relaxWhitespace2OffsideRule*)false then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "offside from CtxtFun\n"
             popCtxt()
             insertToken OEND
         // function () -> async {
         //     1
-        // }, 2 // This is a '(unit -> seq<int>) * int', so for backwards compatibility, do not treat '}' as a continuator
+        // }, 2 // This is a '(unit -> seq<int>) * int', so for backwards compatibility, do not treat '}' as a continuator, don't apply relaxWhitespace2OffsideRule
         | _, (CtxtFunction offsidePos :: _) 
                     when isSemiSemi || (if (*relaxWhitespace2OffsideRule*)false then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             popCtxt()

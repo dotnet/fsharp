@@ -169,23 +169,29 @@ end module M3 = do ()
     [<Fact>]
     let RelaxWhitespace2_AllowedBefore9() =
         Fsx """
-let a =
-    fun () -> (
-                1
-    ), 2
-    |> printfn "%O"
-    in ignore<(unit -> int) * unit> a
-let b =
-    fun () -> (
-                1
-    ), 2
-    |> printfn "%O"
-    in ignore<(unit -> int) * unit> b
-let c =
-    do ignore (
-                1
-    ), 2 |> printfn "%O"
-    in ignore<unit * unit> c
+type __() =
+    let a =
+        fun () -> (
+                    1
+        ), 2
+        |> printfn "%O"
+        in let () = ignore<(unit -> int) * unit> a
+    let b =
+        fun () -> (
+                    1
+        ), 2
+        |> printfn "%O"
+        in do ignore<(unit -> int) * unit> b
+    let c =
+        do ignore (
+                    1
+        ), 2 |> printfn "%O"
+        in do ignore<unit * unit> c
+    member _.d() = seq {
+        1
+    }; static member e() = [
+        1
+    ]
         """
         |> typecheck
         |> shouldSucceed
