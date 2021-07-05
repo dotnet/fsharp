@@ -36,13 +36,13 @@
   // Offset: 0x00000748 Length: 0x00000228
 }
 .module TestFunction24.exe
-// MVID: {60B68B97-A643-4587-A745-0383978BB660}
+// MVID: {60D4E6CF-A643-4587-A745-0383CFE6D460}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06EA0000
+// Image base: 0x056D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -865,7 +865,7 @@
   .method public static class [mscorlib]System.Tuple`2<char,char> 
           pinString() cil managed
   {
-    // Code size       77 (0x4d)
+    // Code size       93 (0x5d)
     .maxstack  6
     .locals init ([0] string str,
              [1] native int pChar,
@@ -873,7 +873,11 @@
              [3] native int V_3,
              [4] int32 V_4,
              [5] native int V_5,
-             [6] int32 V_6)
+             [6] native int V_6,
+             [7] native int V_7,
+             [8] int32 V_8,
+             [9] native int V_9,
+             [10] native int V_10)
     .line 28,28 : 5,28 ''
     IL_0000:  ldstr      "Hello World"
     IL_0005:  stloc.0
@@ -909,21 +913,29 @@
     IL_0022:  sizeof     [mscorlib]System.Char
     IL_0028:  mul
     IL_0029:  add
-    IL_002a:  ldobj      [mscorlib]System.Char
-    IL_002f:  ldloc.1
-    IL_0030:  stloc.s    V_5
-    IL_0032:  ldc.i4.1
-    IL_0033:  stloc.s    V_6
-    IL_0035:  ldloc.s    V_5
-    IL_0037:  ldloc.s    V_6
-    IL_0039:  conv.i
-    IL_003a:  sizeof     [mscorlib]System.Char
-    IL_0040:  mul
-    IL_0041:  add
-    IL_0042:  ldobj      [mscorlib]System.Char
-    IL_0047:  newobj     instance void class [mscorlib]System.Tuple`2<char,char>::.ctor(!0,
+    IL_002a:  stloc.s    V_5
+    IL_002c:  ldloc.s    V_5
+    IL_002e:  stloc.s    V_6
+    IL_0030:  ldloc.s    V_6
+    IL_0032:  ldobj      [mscorlib]System.Char
+    IL_0037:  ldloc.1
+    IL_0038:  stloc.s    V_7
+    IL_003a:  ldc.i4.1
+    IL_003b:  stloc.s    V_8
+    IL_003d:  ldloc.s    V_7
+    IL_003f:  ldloc.s    V_8
+    IL_0041:  conv.i
+    IL_0042:  sizeof     [mscorlib]System.Char
+    IL_0048:  mul
+    IL_0049:  add
+    IL_004a:  stloc.s    V_9
+    IL_004c:  ldloc.s    V_9
+    IL_004e:  stloc.s    V_10
+    IL_0050:  ldloc.s    V_10
+    IL_0052:  ldobj      [mscorlib]System.Char
+    IL_0057:  newobj     instance void class [mscorlib]System.Tuple`2<char,char>::.ctor(!0,
                                                                                         !1)
-    IL_004c:  ret
+    IL_005c:  ret
   } // end of method TestFunction24::pinString
 
 } // end of class TestFunction24
