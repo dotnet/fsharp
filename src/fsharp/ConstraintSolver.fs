@@ -1449,16 +1449,16 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
           return TTraitBuiltIn
           
-      // Conversions from (including decimal) numbers / strings to decimals are built-in
+      // Conversions from (including decimal) numbers / strings / chars to decimals are built-in
       | _, _, false, "op_Explicit", [argty] 
           when (// The input type. 
-                (IsNumericOrIntegralEnumType g argty || isStringTy g argty) &&
+                (IsNumericOrIntegralEnumType g argty || isStringTy g argty || isCharTy g argty) &&
                 // The output type
                 (isDecimalTy g rty)) -> 
           return TTraitBuiltIn
           
       // Conversions from decimal numbers to native integers are built-in
-      // The rest of decimal conversions are handled via op_Explicit lookup (which also looks for op_Implicit)
+      // The rest of decimal conversions are handled via op_Explicit lookup on System.Decimal (which also looks for op_Implicit)
       | _, _, false, "op_Explicit", [argty] 
           when (// The input type. 
                 (isDecimalTy g argty) &&
