@@ -369,15 +369,11 @@ let isFpTy g ty =
 
 /// decimal or decimal<_>
 let isDecimalTy g ty = 
-    typeEquivAux EraseMeasures g g.decimal_ty ty 
+    typeEquivAux EraseMeasures g g.decimal_ty ty
 
-let IsNonDecimalNumericOrIntegralEnumType g ty = IsIntegerOrIntegerEnumTy g ty || isFpTy g ty
+let IsNumericOrIntegralEnumType g ty = IsIntegerOrIntegerEnumTy g ty || isFpTy g ty || isDecimalTy g ty
 
-let IsNumericOrIntegralEnumType g ty = IsNonDecimalNumericOrIntegralEnumType g ty || isDecimalTy g ty
-
-let IsNonDecimalNumericType g ty = isIntegerTy g ty || isFpTy g ty
-
-let IsNumericType g ty = IsNonDecimalNumericType g ty || isDecimalTy g ty
+let IsNumericType g ty = isIntegerTy g ty || isFpTy g ty || isDecimalTy g ty
 
 let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
 
@@ -1442,22 +1438,9 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
       | _, _, false, "op_Explicit", [argty] 
           when (// The input type. 
-                (IsNonDecimalNumericOrIntegralEnumType g argty || isStringTy g argty || isCharTy g argty) &&
+                (IsNumericOrIntegralEnumType g argty || isStringTy g argty || isCharTy g argty) &&
                 // The output type
-                (IsNonDecimalNumericOrIntegralEnumType g rty || isCharTy g rty) && 
-                // Exclusion: IntPtr and UIntPtr do not support .Parse() from string 
-                not (isStringTy g argty && isNativeIntegerTy g rty) &&
-                // Exclusion: No conversion from char to decimal
-                not (isCharTy g argty && isDecimalTy g rty)) -> 
-
-          return TTraitBuiltIn
-
-
-      | _, _, false, "op_Explicit", [argty] 
-          when (// The input type. 
-                (IsNumericOrIntegralEnumType g argty || isStringTy g argty) &&
-                // The output type
-                (isDecimalTy g rty)) -> 
+                (IsNumericOrIntegralEnumType g rty || isCharTy g rty)) -> 
 
           return TTraitBuiltIn
 

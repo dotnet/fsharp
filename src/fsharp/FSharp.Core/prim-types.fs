@@ -3014,6 +3014,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u" (convPrim<_,float> value) : unativeint #) 
                 elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.u" (convPrim<_,float32> value) : unativeint #) 
                 elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u" (convPrim<_,char> value) : unativeint #) 
+                elif typeeq<'T, decimal> then convPrim<_,'U> (# "conv.u" (Decimal.op_Explicit (convPrim<_,decimal> value) : uint64) #)
                 elif typeeq<'T, string> then convPrim<_,'U> (ParseUIntPtr (convPrim<_,string> value)) 
                 else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
             elif typeeq<'U, nativeint> then 
@@ -3030,6 +3031,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, float> then convPrim<_,'U> (# "conv.i" (convPrim<_,float> value) : nativeint #) 
                 elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.i" (convPrim<_,float32> value) : nativeint #) 
                 elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u" (convPrim<_,char> value) : nativeint #) 
+                elif typeeq<'T, decimal> then convPrim<_,'U> (# "conv.i" (Decimal.op_Explicit (convPrim<_,decimal> value) : int64) #)
                 elif typeeq<'T, string> then convPrim<_,'U> (ParseIntPtr (convPrim<_,string> value)) 
                 else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
             elif typeeq<'U, char> then 
@@ -3046,6 +3048,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u2" (convPrim<_,float> value) : char #) 
                 elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.u2" (convPrim<_,float32> value) : char #) 
                 elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u2" (convPrim<_,char> value) : char #) 
+                elif typeeq<'T, decimal> then convPrim<_,'U> (Decimal.op_Explicit (convPrim<_,decimal> value) : char) 
                 elif typeeq<'T, string> then convPrim<_,'U> (System.Char.Parse (convPrim<_,string> value)) 
                 else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
             elif typeeq<'U, decimal> then 
@@ -3061,7 +3064,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, unativeint> then convPrim<_,'U> (Convert.ToDecimal (# "conv.u8" (convPrim<_,unativeint> value) : uint64 #)) 
                 elif typeeq<'T, float> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,float> value)) 
                 elif typeeq<'T, float32> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,float32> value)) 
-                elif typeeq<'T, char> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,char> value)) 
+                elif typeeq<'T, char> then convPrim<_,'U> (Decimal.op_Implicit (convPrim<_,char> value)) 
                 elif typeeq<'T, decimal> then convPrim<'T,'U> value 
                 elif typeeq<'T, string> then convPrim<_,'U> (Decimal.Parse(convPrim<_,string> value, NumberStyles.Float,CultureInfo.InvariantCulture)) 
                 else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
@@ -4456,6 +4459,7 @@ namespace Microsoft.FSharp.Core
              when ^T : uint64     = (System.Convert.ToDecimal((# "" value : uint64 #))) 
              when ^T : uint32     = (System.Convert.ToDecimal((# "" value : uint32 #))) 
              when ^T : uint16     = (System.Convert.ToDecimal((# "" value : uint16 #))) 
+             when ^T : char       = (System.Decimal.op_Implicit ((# "" value : char #))) 
              when ^T : unativeint = (System.Convert.ToDecimal(uint64 (# "" value : unativeint #))) 
              when ^T : byte       = (System.Convert.ToDecimal((# "" value : byte #))) 
              when ^T : decimal    = (# "" value : decimal #)
@@ -4483,6 +4487,7 @@ namespace Microsoft.FSharp.Core
              when ^T : char       = (# "conv.u" value  : unativeint #)
              when ^T : unativeint = (# "" value  : unativeint #)
              when ^T : byte       = (# "conv.u" value  : unativeint #)
+             when ^T : decimal    = (# "conv.u" (uint64 value) : unativeint #)
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> unativeint) (value))
 
         [<NoDynamicInvocation(isLegacy=true)>]
@@ -4507,6 +4512,7 @@ namespace Microsoft.FSharp.Core
              when ^T : char       = (# "conv.u" value  : nativeint #)
              when ^T : unativeint = (# "" value  : nativeint #)
              when ^T : byte       = (# "conv.i" value  : nativeint #)
+             when ^T : decimal    = (# "conv.i" (Convert.ToInt64 value) : unativeint #)
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> nativeint) (value))
 
         [<CompiledName("ToString")>]

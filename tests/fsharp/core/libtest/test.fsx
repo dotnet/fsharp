@@ -3659,6 +3659,14 @@ module Optimiations = begin
 
     let _ = check "opt.oi20c77qc" ('a' + '\025') ('z')
     let _ = check "opt.oi20c77wc" ('z' - '\025') ('a')
+    let _ = check "opt.oi20c77ec" (nativeint -3m) (-3n)
+    let _ = check "opt.oi20c77rc" (nativeint 3m) (3n)
+    let _ = check "opt.oi20c77tc" (unativeint 3m) (3un)
+    let _ = check "opt.oi20c77yc" (char 65535m) ('\uFFFF')
+    let _ = check "opt.oi20c77uc" (decimal '\uFFFF') (65535m)
+    let _ = check "opt.oi20c77ic" (nativeint "3") (3n)
+    let _ = check "opt.oi20c77oc" (nativeint "-3") (-3n)
+    let _ = check "opt.oi20c77pc" (unativeint "3") (3un)
 
 end
 
