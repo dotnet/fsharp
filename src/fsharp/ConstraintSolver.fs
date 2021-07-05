@@ -371,9 +371,13 @@ let isFpTy g ty =
 let isDecimalTy g ty = 
     typeEquivAux EraseMeasures g g.decimal_ty ty
 
-let IsNumericOrIntegralEnumType g ty = IsIntegerOrIntegerEnumTy g ty || isFpTy g ty || isDecimalTy g ty
+let IsNonDecimalNumericOrIntegralEnumType g ty = IsIntegerOrIntegerEnumTy g ty || isFpTy g ty
 
-let IsNumericType g ty = isIntegerTy g ty || isFpTy g ty || isDecimalTy g ty
+let IsNumericOrIntegralEnumType g ty = IsNonDecimalNumericOrIntegralEnumType g ty || isDecimalTy g ty
+
+let IsNonDecimalNumericType g ty = isIntegerTy g ty || isFpTy g ty
+
+let IsNumericType g ty = IsNonDecimalNumericType g ty || isDecimalTy g ty
 
 let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
 
@@ -1436,12 +1440,30 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty
           return TTraitBuiltIn
 
+      // Conversions from non-decimal numbers / strings / chars to non-decimal numbers / chars are built-in
       | _, _, false, "op_Explicit", [argty] 
           when (// The input type. 
-                (IsNumericOrIntegralEnumType g argty || isStringTy g argty || isCharTy g argty) &&
+                (IsNonDecimalNumericOrIntegralEnumType g argty || isStringTy g argty || isCharTy g argty) &&
                 // The output type
-                (IsNumericOrIntegralEnumType g rty || isCharTy g rty)) -> 
+                (IsNonDecimalNumericOrIntegralEnumType g rty || isCharTy g rty)) -> 
 
+          return TTraitBuiltIn
+          
+      // Conversions from non-decimal numbers / strings to decimals are built-in
+      | _, _, false, "op_Explicit", [argty] 
+          when (// The input type. 
+                (IsNumericOrIntegralEnumType g argty || isStringTy g argty) &&
+                // The output type
+                (isDecimalTy g rty)) -> 
+          return TTraitBuiltIn
+          
+      // Conversions from decimal numbers to native numbers are built-in
+      // The rest of decimal conversions are handled via op_Explicit lookup (which also looks for op_Implicit)
+      | _, _, false, "op_Explicit", [argty] 
+          when (// The input type. 
+                (isDecimalTy g argty) &&
+                // The output type
+                (isNativeIntegerTy g rty)) -> 
           return TTraitBuiltIn
 
       | [], _, false, "Pow", [argty1; argty2] 
