@@ -14,3 +14,4 @@ if /i "%TEST_UPDATE_BSL%" == "1" (
 )
 
 exit /b 1
+

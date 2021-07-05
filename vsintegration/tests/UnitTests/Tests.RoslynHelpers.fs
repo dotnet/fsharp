@@ -2,6 +2,7 @@
 
 open System
 open System.IO
+open System.Text
 open System.Reflection
 open System.Linq
 open System.Composition.Hosting
@@ -199,6 +200,31 @@ type TestHostServices() =
 
 [<AbstractClass;Sealed>]
 type RoslynTestHelpers private () =
+
+    static member CreateProjectInfoWithSingleDocument(projName, docFilePath) =
+        let isScript = String.Equals(Path.GetExtension(docFilePath), ".fsx", StringComparison.OrdinalIgnoreCase)
+
+        let projId = ProjectId.CreateNewId()
+        let docId = DocumentId.CreateNewId(projId)
+
+        let docInfo =
+            DocumentInfo.Create(
+                docId,
+                docFilePath, 
+                filePath=docFilePath,
+                loader = new FileTextLoader(docFilePath, Encoding.Default),
+                sourceCodeKind= if isScript then SourceCodeKind.Script else SourceCodeKind.Regular)
+
+        let projFilePath = "C:\\test.fsproj"
+        ProjectInfo.Create(
+            projId,
+            VersionStamp.Create(DateTime.UtcNow),
+            projName, 
+            "test.dll", 
+            LanguageNames.FSharp,
+            documents = [docInfo],
+            filePath = projFilePath
+        )
 
     static member CreateDocument (filePath, text: SourceText, ?options: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions) =
         let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)

@@ -622,3 +622,4 @@ module ArrayParallel =
 
     let inline map f (arr: 'T []) =
         arr |> mapi (fun _ item -> f item)
+   

@@ -713,7 +713,7 @@ let fixupApp (penv: penv) (fx, fty, tys, args, m) =
 
     // Is it a val app, where the val has a transform? 
     match fx with
-    | Expr.Val (vref, _, m) -> 
+    | Expr.Val (vref, _, vm) -> 
         let f = vref.Deref
         match hasTransfrom penv f with
         | Some trans -> 
@@ -721,7 +721,7 @@ let fixupApp (penv: penv) (fx, fty, tys, args, m) =
             let callPattern       = trans.transformCallPattern 
             let transformedVal       = trans.transformedVal         
             let fCty     = transformedVal.Type
-            let fCx      = exprForVal m transformedVal
+            let fCx      = exprForVal vm transformedVal
             (* [[f tps args ]] -> transformedVal tps [[COLLAPSED: args]] *)
             let env      = {prefix = "arg";m = m;eg=penv.g}
             let bindings = []
