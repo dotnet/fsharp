@@ -1365,7 +1365,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                     | _ :: CtxtParen((BEGIN|STRUCT), _) :: CtxtSeqBlock(_, _, _) :: _ -> nextOuterMostInterestingContextIsNamespaceOrModule(offsideStack.Tail.Tail) 
                     // at the top of the stack there is an implicit module
                     | _ :: [] -> true 
-                    // aTokenLExprParense is a non-namespace/module
+                    // anything else is a non-namespace/module
                     | _ -> false
                 while not offsideStack.IsEmpty && (not(nextOuterMostInterestingContextIsNamespaceOrModule offsideStack)) &&
                                                     (match offsideStack.Head with 
