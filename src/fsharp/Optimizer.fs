@@ -2599,8 +2599,9 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
         let argsR, arginfos = OptimizeExprsThenConsiderSplits cenv env args 
         OptimizeExprOpFallback cenv env (TOp.TraitCall traitInfo, [], argsR, m) arginfos UnknownValue 
 
-and CopyExprForInlining cenv isCrossAssembly expr m = 
-    if isCrossAssembly then 
+and CopyExprForInlining cenv isCrossAssembly isInlineIfLambda expr m = 
+    // 'InlineIfLambda' doesn't erase ranges, e.g. if the lambda is user code.
+    if isCrossAssembly && not isInlineIfLambda then
         // Debug points are erased when doing cross-assembly inlining
         // Locals are marked compiler generated when doing cross-assembly inlining
         expr
@@ -2645,12 +2646,8 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, mustInline, inlineIfLambda, va
         Some (remarkExpr m (copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated expr))
 
     | CurriedLambdaValue (_, _, _, expr, isCrossAssembly, _) when mustInline || inlineIfLambda ->
-        let expr2 = copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated expr
-        // 'InlineIfLambda' doesn't erase ranges, e.g. if the lambda is user code.
-        if inlineIfLambda then 
-            Some expr2
-        else
-            Some (remarkExpr m expr2)
+        let exprCopy = CopyExprForInlining cenv isCrossAssembly inlineIfLambda expr m
+        Some exprCopy
 
     | TupleValue _ | UnionCaseValue _ | RecdValue _ when mustInline ->
         failwith "tuple, union and record values cannot be marked 'inline'"
@@ -3010,7 +3007,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
 
         // Inlining lambda 
   (* ---------- printf "Inlining lambda near %a = %s\n" outputRange m (showL (exprL f2)) (* JAMES: *) ----------*)
-        let f2R = CopyExprForInlining cenv isCrossAssembly f2 m
+        let f2R = CopyExprForInlining cenv isCrossAssembly false f2 m
 
         // Optimizing arguments after inlining
 
