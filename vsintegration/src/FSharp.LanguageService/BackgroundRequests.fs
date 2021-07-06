@@ -7,7 +7,6 @@
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 open System
-open System.Threading.Tasks
 open Microsoft.VisualStudio.TextManager.Interop 
 open Microsoft.VisualStudio.Text
 open FSharp.Compiler
@@ -18,21 +17,6 @@ open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 open Microsoft.VisualStudio.FSharp.Interactive.Session
 
 #nowarn "44" // use of obsolete CheckFileInProjectAllowingStaleCachedResults
-
-[<AutoOpen>]
-module AsyncExtensions =
-    type Async with
-        static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
-            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-            let ts = TaskCompletionSource<'T>()
-            let task = ts.Task
-            Async.StartWithContinuations(
-                computation,
-                (fun k -> ts.SetResult k),
-                (fun exn -> ts.SetException exn),
-                (fun _ -> ts.SetCanceled()),
-                cancellationToken)
-            task.Result
 
 //
 // Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 

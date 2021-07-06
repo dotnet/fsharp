@@ -13,6 +13,7 @@ open System.Text
 open NUnit.Framework
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Service.Tests.Common
 
 let private filePath = "C:\\test.fs"
 
