@@ -36,13 +36,13 @@
   // Offset: 0x00000460 Length: 0x00000445
 }
 .module OptionalArg01.exe
-// MVID: {60B68B97-4F48-B5AF-A745-0383978BB660}
+// MVID: {60D46F2D-4F48-B5AF-A745-03832D6FD460}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05C20000
+// Image base: 0x06C40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -205,7 +205,7 @@
   {
     // Code size       7 (0x7)
     .maxstack  8
-    .line 19,19 : 5,11 ''
+    .line 10,10 : 23,44 ''
     IL_0000:  ldc.i4.0
     IL_0001:  newobj     instance void class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A>::.ctor(int32)
     IL_0006:  ret
@@ -216,17 +216,20 @@
   {
     // Code size       22 (0x16)
     .maxstack  4
-    .locals init ([0] class OptionalArg01/A V_0,
-             [1] class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A> V_1)
+    .locals init ([0] class OptionalArg01/A v1,
+             [1] class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A> attribs)
     .line 27,27 : 5,17 ''
     IL_0000:  newobj     instance void OptionalArg01/A::.ctor()
     IL_0005:  stloc.0
+    .line 10,10 : 9,44 ''
     IL_0006:  ldc.i4.1
     IL_0007:  newobj     instance void class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A>::.ctor(int32)
     IL_000c:  stloc.1
+    .line 11,11 : 47,62 ''
     IL_000d:  ldloc.1
     IL_000e:  ldloc.0
     IL_000f:  callvirt   instance void class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A>::Add(!0)
+    .line 13,13 : 9,16 ''
     IL_0014:  ldloc.1
     IL_0015:  ret
   } // end of method OptionalArg01::test2
@@ -236,17 +239,20 @@
   {
     // Code size       22 (0x16)
     .maxstack  4
-    .locals init ([0] class OptionalArg01/A V_0,
-             [1] class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A> V_1)
+    .locals init ([0] class OptionalArg01/A v2,
+             [1] class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A> attribs)
     .line 35,35 : 5,17 ''
     IL_0000:  newobj     instance void OptionalArg01/A::.ctor()
     IL_0005:  stloc.0
+    .line 10,10 : 9,44 ''
     IL_0006:  ldc.i4.1
     IL_0007:  newobj     instance void class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A>::.ctor(int32)
     IL_000c:  stloc.1
+    .line 12,12 : 47,62 ''
     IL_000d:  ldloc.1
     IL_000e:  ldloc.0
     IL_000f:  callvirt   instance void class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A>::Add(!0)
+    .line 13,13 : 9,16 ''
     IL_0014:  ldloc.1
     IL_0015:  ret
   } // end of method OptionalArg01::test3
@@ -256,23 +262,27 @@
   {
     // Code size       35 (0x23)
     .maxstack  4
-    .locals init ([0] class OptionalArg01/A V_0,
-             [1] class OptionalArg01/A V_1,
-             [2] class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A> V_2)
+    .locals init ([0] class OptionalArg01/A v1,
+             [1] class OptionalArg01/A v2,
+             [2] class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A> attribs)
     .line 45,45 : 5,25 ''
     IL_0000:  newobj     instance void OptionalArg01/A::.ctor()
     IL_0005:  stloc.0
     IL_0006:  newobj     instance void OptionalArg01/A::.ctor()
     IL_000b:  stloc.1
+    .line 10,10 : 9,44 ''
     IL_000c:  ldc.i4.2
     IL_000d:  newobj     instance void class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A>::.ctor(int32)
     IL_0012:  stloc.2
+    .line 11,11 : 47,62 ''
     IL_0013:  ldloc.2
     IL_0014:  ldloc.0
     IL_0015:  callvirt   instance void class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A>::Add(!0)
+    .line 12,12 : 47,62 ''
     IL_001a:  ldloc.2
     IL_001b:  ldloc.1
     IL_001c:  callvirt   instance void class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A>::Add(!0)
+    .line 13,13 : 9,16 ''
     IL_0021:  ldloc.2
     IL_0022:  ret
   } // end of method OptionalArg01::test4
