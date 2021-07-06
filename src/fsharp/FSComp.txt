@@ -1556,7 +1556,8 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3384,scriptSdkNotDeterminedNoHost,"The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed."
 3385,tcInvalidStructReturn,"The use of '[<Struct>]' on values, functions and methods is only allowed on partial active pattern definitions"
 3386,tcImplicitConversionUsed,"This expression uses an implicit conversion to convert type '%s' to type '%s'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning."
-3387,tcAmbiguousImplicitConversion,"This expression has type '%s' and is only made compatible with type '%s' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'."
+3386,tcImplicitConversionUsed2,"This expression uses the implicit conversion '%s' to convert type '%s' to type '%s'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning."
+3387,tcAmbiguousImplicitConversion,"This expression has type '%s' and is only made compatible with type '%s' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:%s"
 #3501   "This construct is not supported by your version of the F# compiler" CompilerMessage(ExperimentalAttributeMessages.NotSupportedYet, 3501, IsError=true)
 3390,xmlDocBadlyFormed,"This XML comment is invalid: '%s'"
 3390,xmlDocMissingParameterName,"This XML comment is invalid: missing 'name' attribute for parameter or parameter reference"

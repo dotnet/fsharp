@@ -10158,12 +10158,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (bindingTy, m, syn
                      match dispatchSlotsArityMatch with
                      | meths when methInfosEquivByNameAndSig meths -> meths
                      | [] ->
-                         let details =
-                             slots
-                             |> Seq.map (NicePrint.stringOfMethInfo cenv.infoReader m envinner.DisplayEnv)
-                             |> Seq.map (sprintf "%s   %s" System.Environment.NewLine)
-                             |> String.concat ""
-
+                         let details = NicePrint.multiLineStringOfMethInfos cenv.infoReader m envinner.DisplayEnv slots
                          errorR(Error(FSComp.SR.tcOverrideArityMismatch details, memberId.idRange))
                          []
                      | _ -> [] // check that method to override is sealed is located at CheckOverridesAreAllUsedOnce (typrelns.fs)
