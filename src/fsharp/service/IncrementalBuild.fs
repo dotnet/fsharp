@@ -897,16 +897,16 @@ module IncrementalBuilderHelpers =
                                 nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
 
                         if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
-                            None
+                            ProjectAssemblyDataResult.Unavailable true
                         else
-                            Some  (RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generatedCcu, outfile, topAttrs, assemblyName, ilAssemRef) :> IRawFSharpAssemblyData)
+                            ProjectAssemblyDataResult.Available (RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generatedCcu, outfile, topAttrs, assemblyName, ilAssemRef) :> IRawFSharpAssemblyData)
                     with e ->
                         errorRecoveryNoRange e
-                        None
+                        ProjectAssemblyDataResult.Unavailable true
                 ilAssemRef, tcAssemblyDataOpt, Some tcAssemblyExpr
             with e ->
                 errorRecoveryNoRange e
-                mkSimpleAssemblyRef assemblyName, None, None
+                mkSimpleAssemblyRef assemblyName, ProjectAssemblyDataResult.Unavailable true, None
 
         let diagnostics = errorLogger.GetDiagnostics() :: finalInfo.tcErrorsRev
         let! finalBoundModelWithErrors = finalBoundModel.Finish(diagnostics, Some topAttrs)
@@ -995,7 +995,7 @@ type IncrementalBuilderState =
         stampedReferencedAssemblies: block<DateTime>
         initialBoundModel: GraphNode<BoundModel>
         boundModels: block<GraphNode<BoundModel>>
-        finalizedBoundModel: GraphNode<((ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option * BoundModel) * DateTime)>
+        finalizedBoundModel: GraphNode<((ILAssemblyRef * ProjectAssemblyDataResult * TypedImplFile list option * BoundModel) * DateTime)>
     }
 
 [<AutoOpen>]

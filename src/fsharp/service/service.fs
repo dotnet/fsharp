@@ -279,9 +279,12 @@ type BackgroundCompiler(
                                 match ilReaderOpt with
                                 | Some ilReader ->
                                     let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
-                                    return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
+                                    let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
+                                    return ProjectAssemblyDataResult.Available data
                                 | _ ->
-                                    return None
+                                    // Note 'false' - if a PEReference doesn't find an ILModuleReader then we don't
+                                    // continue to try to use an on-disk DLL
+                                    return ProjectAssemblyDataResult.Unavailable false
                               }
                             member x.TryGetLogicalTimeStamp(_) = stamp |> Some
                             member x.FileName = nm }
@@ -293,7 +296,8 @@ type BackgroundCompiler(
                               node {
                                 let ilReader = getReader()
                                 let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
-                                return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
+                                let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
+                                return ProjectAssemblyDataResult.Available data
                               }
                             member x.TryGetLogicalTimeStamp(_) = getStamp() |> Some
                             member x.FileName = nm }
@@ -806,7 +810,7 @@ type BackgroundCompiler(
         | None -> 
             return FSharpCheckProjectResults (options.ProjectFileName, None, keepAssemblyContents, creationDiags, None)
         | Some builder -> 
-            let! (tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt) = builder.GetFullCheckResultsAndImplementationsForProject()
+            let! (tcProj, ilAssemRef, _, tcAssemblyExprOpt) = builder.GetFullCheckResultsAndImplementationsForProject()
             let errorOptions = tcProj.TcConfig.errorSeverityOptions
             let fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation
 
@@ -828,7 +832,7 @@ type BackgroundCompiler(
                     keepAssemblyContents,
                     diagnostics, 
                     Some(tcProj.TcGlobals, tcProj.TcImports, tcState.Ccu, tcState.CcuSig, 
-                        (Choice1Of2 builder), topAttribs, tcAssemblyDataOpt, ilAssemRef, 
+                        (Choice1Of2 builder), topAttribs, ilAssemRef, 
                         tcEnvAtEnd.AccessRights, tcAssemblyExprOpt,
                         Array.ofList tcDependencyFiles,
                         options))
@@ -840,7 +844,7 @@ type BackgroundCompiler(
             let! builderOpt,_ = getOrCreateBuilder (options, userOpName)
             match builderOpt with 
             | None -> 
-                return None
+                return ProjectAssemblyDataResult.Unavailable true
             | Some builder -> 
                 let! (_, _, tcAssemblyDataOpt, _) = builder.GetCheckResultsAndImplementationsForProject()
                 return tcAssemblyDataOpt
