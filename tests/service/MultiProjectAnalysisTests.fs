@@ -819,6 +819,90 @@ let ``Test max memory gets triggered`` () =
 #if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
+let ``Project using in-memory reference to project using generative type provider should ask for file on disk`` () =
+    let options =
+          {ProjectFileName = __SOURCE_DIRECTORY__ + @"/data/My.Custom.App/My.Custom.App.fsproj";
+           ProjectId = None
+           SourceFiles = [|__SOURCE_DIRECTORY__ + @"/data/My.Custom.App/Program.fs"|];
+           Stamp = None
+           OtherOptions =
+            [|yield "--simpleresolution";
+              yield "--noframework";
+              yield "--out:" + __SOURCE_DIRECTORY__ + @"/data/My.Custom.App/bin/Debug/netstandard2.0/My.Custom.App.dll";
+              yield "--subsystemversion:6.00";
+              yield "--highentropyva+";
+              yield "--fullpaths";
+              yield "--flaterrors";
+              yield "--target:exe";
+              yield "--define:DEBUG";
+              yield "--define:TRACE";
+              yield "--debug+";
+              yield "--optimize-";
+              yield "--tailcalls-";
+              yield "--debug:full";
+              yield "--platform:anycpu";
+              for r in mkStandardProjectReferences () do
+                  yield "-r:" + r
+              yield "-r:" + __SOURCE_DIRECTORY__ + @"/data/My.Custom.Lib/bin/Debug/netstandard2.0/My.Custom.Lib.dll"|];
+           ReferencedProjects =
+            [|FSharpReferencedProject.CreateFSharp(__SOURCE_DIRECTORY__ + @"/data/My.Custom.Lib/bin/Debug/netstandard2.0/My.Custom.Lib.dll",
+               {ProjectFileName = __SOURCE_DIRECTORY__ + @"/data/My.Custom.Lib/My.Custom.Lib.fsproj";
+                ProjectId = None
+                SourceFiles = [|__SOURCE_DIRECTORY__ + @"/data/My.Custom.Lib/Library.fs"|];
+                Stamp = None
+                OtherOptions =
+                 [|yield "--simpleresolution";
+                   yield "--noframework";
+                   yield "--out:" + __SOURCE_DIRECTORY__ + @"/data/My.Custom.Lib/bin/Debug/netstandard2.0/My.Custom.Lib.dll";
+                   yield "--subsystemversion:6.00";
+                   yield "--highentropyva+";
+                   yield "--fullpaths";
+                   yield "--flaterrors";
+                   yield "--target:library";
+                   yield "--define:DEBUG";
+                   yield "--define:TRACE";
+                   yield "--debug+";
+                   yield "--optimize-";
+                   yield "--tailcalls-";
+                   yield "--debug:full";
+                   yield "--platform:anycpu";
+                   for r in mkStandardProjectReferences () do
+                       yield "-r:" + r
+                  |];
+                ReferencedProjects = [||];
+                IsIncompleteTypeCheckEnvironment = false;
+                UseScriptResolutionRules = false;
+                LoadTime = System.DateTime.Now
+                UnresolvedReferences = None;
+                OriginalLoadReferences = [] })|];
+           IsIncompleteTypeCheckEnvironment = false;
+           UseScriptResolutionRules = false;
+           LoadTime = System.DateTime.Now
+           UnresolvedReferences = None;
+           OriginalLoadReferences = [];}
+
+    printfn "options: %A" options
+    let fileName = __SOURCE_DIRECTORY__ + @"/data/My.Custom.App/Program.fs"
+    let fileSource = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
+    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, options) |> Async.RunSynchronously
+    let fileCheckResults =
+        match fileCheckAnswer with
+        | FSharpCheckFileAnswer.Succeeded(res) -> res
+        | res -> failwithf "Parsing did not finish... (%A)" res
+
+    printfn "Parse Diagnostics: %A" fileParseResults.Diagnostics
+    printfn "Check Diagnostics: %A" fileCheckResults.Diagnostics
+    fileCheckResults.Diagnostics 
+        |> Array.exists (fun error -> error.Severity = FSharpDiagnosticSeverity.Error) 
+        |> shouldEqual false
+
+//------------------------------------------------------------------------------------
+
+
+[<Test>]
+#if NETCOREAPP
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Type provider project references should not throw exceptions`` () =
     let options =
           {ProjectFileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/TypeProviderConsole.fsproj";
