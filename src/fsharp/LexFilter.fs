@@ -183,13 +183,13 @@ let infixTokenLength token =
 /// Matches against a left-parenthesis-like token that is valid in expressions.
 let (|TokenLExprParen|_|) =
     function
-    | BEGIN | LPAREN | LBRACE _ | LBRACE_BAR | LBRACK | LBRACK_BAR | LQUOTE _ | LESS true
+    | BEGIN | LPAREN | LBRACE _ | LBRACE_BAR | LBRACK | LBRACK_BAR | LQUOTE _ | LESS true | LBRACK_LESS
         -> Some TokenLExprParen
     | _ -> None
 /// Matches against a right-parenthesis-like token that is valid in expressions.
 let (|TokenRExprParen|_|) =
     function
-    | END | RPAREN | RBRACE _ | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ | GREATER true
+    | END | RPAREN | RBRACE _ | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ | GREATER true | GREATER_RBRACK
         -> Some TokenRExprParen
     | _ -> None
 
