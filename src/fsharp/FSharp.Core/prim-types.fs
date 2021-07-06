@@ -5168,7 +5168,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.i.un" value  : nativeint #)
                  when ^T : unativeint = (# "conv.ovf.i.un" value  : nativeint #)
                  when ^T : byte     = (# "conv.ovf.i.un" value  : nativeint #)
-                 when ^T : decimal    = (# "conv.ovf.i.un" (Convert.ToInt64 value) : unativeint #)
+                 when ^T : decimal    = (# "conv.ovf.i" (Convert.ToInt64 value) : unativeint #)
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> nativeint) (value))
 
         module OperatorIntrinsics =
