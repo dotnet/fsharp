@@ -955,31 +955,25 @@ type BackgroundCompiler(
 
     member _.ProjectChecked = projectChecked.Publish
 
-    member _.ClearCachesAsync (_userOpName) =
-        async {
-            return
-                lock gate (fun () ->
-                    parseCacheLock.AcquireLock (fun ltok -> 
-                        checkFileInProjectCache.Clear(ltok)
-                        parseFileCache.Clear(ltok))
-                    incrementalBuildersCache.Clear(AnyCallerThread)
-                    frameworkTcImportsCache.Clear()
-                    scriptClosureCache.Clear (AnyCallerThread)
-                )
-        }
+    member _.ClearCaches() =
+        lock gate (fun () ->
+            parseCacheLock.AcquireLock (fun ltok -> 
+                checkFileInProjectCache.Clear(ltok)
+                parseFileCache.Clear(ltok))
+            incrementalBuildersCache.Clear(AnyCallerThread)
+            frameworkTcImportsCache.Clear()
+            scriptClosureCache.Clear (AnyCallerThread)
+        )
 
-    member _.DownsizeCaches(_userOpName) =
-        async {
-            return
-                lock gate (fun () ->
-                    parseCacheLock.AcquireLock (fun ltok -> 
-                        checkFileInProjectCache.Resize(ltok, newKeepStrongly=1)
-                        parseFileCache.Resize(ltok, newKeepStrongly=1))
-                    incrementalBuildersCache.Resize(AnyCallerThread, newKeepStrongly=1, newKeepMax=1)
-                    frameworkTcImportsCache.Downsize()
-                    scriptClosureCache.Resize(AnyCallerThread,newKeepStrongly=1, newKeepMax=1)
-                )
-        }
+    member _.DownsizeCaches() =
+        lock gate (fun () ->
+            parseCacheLock.AcquireLock (fun ltok -> 
+                checkFileInProjectCache.Resize(ltok, newKeepStrongly=1)
+                parseFileCache.Resize(ltok, newKeepStrongly=1))
+            incrementalBuildersCache.Resize(AnyCallerThread, newKeepStrongly=1, newKeepMax=1)
+            frameworkTcImportsCache.Downsize()
+            scriptClosureCache.Resize(AnyCallerThread,newKeepStrongly=1, newKeepMax=1)
+        )
          
     member _.FrameworkImportsCache = frameworkTcImportsCache
 
@@ -1195,29 +1189,24 @@ type FSharpChecker(legacyReferenceResolver,
     member ic.InvalidateAll() =
         ic.ClearCaches()
             
-    member _.ClearCachesAsync(?userOpName: string) =
+    member ic.ClearCaches() =
         let utok = AnyCallerThread
-        let userOpName = defaultArg userOpName "Unknown"
         braceMatchCache.Clear(utok)
-        backgroundCompiler.ClearCachesAsync(userOpName) 
-
-    member ic.ClearCaches(?userOpName) =
-        ic.ClearCachesAsync(?userOpName=userOpName) |> Async.Start // this cache clearance is not synchronous, it will happen when the background op gets run
+        backgroundCompiler.ClearCaches() 
 
     member _.CheckMaxMemoryReached() =
         if not maxMemoryReached && System.GC.GetTotalMemory(false) > int64 maxMB * 1024L * 1024L then 
             Trace.TraceWarning("!!!!!!!! MAX MEMORY REACHED, DOWNSIZING F# COMPILER CACHES !!!!!!!!!!!!!!!")
             // If the maxMB limit is reached, drastic action is taken
             //   - reduce strong cache sizes to a minimum
-            let userOpName = "MaxMemoryReached"
             maxMemoryReached <- true
             braceMatchCache.Resize(AnyCallerThread, newKeepStrongly=10)
-            backgroundCompiler.DownsizeCaches(userOpName) |> Async.RunSynchronously
+            backgroundCompiler.DownsizeCaches()
             maxMemEvent.Trigger( () )
 
     // This is for unit testing only
     member ic.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() =
-        ic.ClearCachesAsync() |> Async.RunSynchronously
+        ic.ClearCaches()
         System.GC.Collect()
         System.GC.WaitForPendingFinalizers() 
         FxResolver.ClearStaticCaches()
@@ -1229,7 +1218,7 @@ type FSharpChecker(legacyReferenceResolver,
         backgroundCompiler.InvalidateConfiguration(options, userOpName)
 
     /// Clear the internal cache of the given projects.
-    member _.ClearCache(options: FSharpProjectOptions seq, ?userOpName: string) =
+    member _.ClearCache(options: seq<FSharpProjectOptions>, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.ClearCache(options, userOpName)
 
