@@ -3686,6 +3686,16 @@ module Optimiations = begin
     let _ = check "opt.oi20c77,c" (uint64 3.9m) (3uL)
     let _ = check "opt.oi20c77.c" (nativeint 3.9m) (3n)
     let _ = check "opt.oi20c77/c" (unativeint 3.9m) (3un)
+    let _ = check "opt.oi20c77zc'" (Checked.int8 3.9m) (3y)
+    let _ = check "opt.oi20c77xc'" (Checked.uint8 3.9m) (3uy)
+    let _ = check "opt.oi20c77cc'" (Checked.int16 3.9m) (3s)
+    let _ = check "opt.oi20c77vc'" (Checked.uint16 3.9m) (3us)
+    let _ = check "opt.oi20c77bc'" (Checked.int32 3.9m) (3l)
+    let _ = check "opt.oi20c77nc'" (Checked.uint32 3.9m) (3ul)
+    let _ = check "opt.oi20c77mc'" (Checked.int64 3.9m) (3L)
+    let _ = check "opt.oi20c77,c'" (Checked.uint64 3.9m) (3uL)
+    let _ = check "opt.oi20c77.c'" (Checked.nativeint 3.9m) (3n)
+    let _ = check "opt.oi20c77/c'" (Checked.unativeint 3.9m) (3un)
 
 end
 

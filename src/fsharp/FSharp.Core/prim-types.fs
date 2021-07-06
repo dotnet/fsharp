@@ -4487,7 +4487,7 @@ namespace Microsoft.FSharp.Core
              when ^T : char       = (# "conv.u" value  : unativeint #)
              when ^T : unativeint = (# "" value  : unativeint #)
              when ^T : byte       = (# "conv.u" value  : unativeint #)
-             when ^T : decimal    = (# "conv.u" (Convert.ToUInt64 (# "" value : decimal #)) : unativeint #)
+             when ^T : decimal    = (# "conv.u" (uint64 (# "" value : decimal #)) : unativeint #)
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> unativeint) (value))
 
         [<NoDynamicInvocation(isLegacy=true)>]
@@ -4512,7 +4512,7 @@ namespace Microsoft.FSharp.Core
              when ^T : char       = (# "conv.u" value  : nativeint #)
              when ^T : unativeint = (# "" value  : nativeint #)
              when ^T : byte       = (# "conv.i" value  : nativeint #)
-             when ^T : decimal    = (# "conv.i" (Convert.ToInt64 (# "" value : decimal #)) : unativeint #)
+             when ^T : decimal    = (# "conv.i" (int64 (# "" value : decimal #)) : unativeint #)
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> nativeint) (value))
 
         [<CompiledName("ToString")>]
