@@ -38,8 +38,7 @@ type Context =
     | CtxtMatch of Position  
     | CtxtFor of Position  
     | CtxtWhile of Position  
-    | CtxtWhen of Position
-    /// A CtxtSeqBlock is guaranteed to be after this context.
+    | CtxtWhen of Position   
     | CtxtVanilla of Position * bool // boolean indicates if vanilla started with 'x = ...' or 'x.y = ...'
     | CtxtThen of Position  
     | CtxtElse of Position 
@@ -179,7 +178,7 @@ let infixTokenLength token =
     | INFIX_STAR_STAR_OP d -> d.Length
     | COLON_QMARK_GREATER -> 3
     | _ -> assert false; 1
-
+    
 /// Matches against a left-parenthesis-like token that is valid in expressions.
 let (|TokenLExprParen|_|) =
     function
@@ -202,12 +201,12 @@ let rec isIfBlockContinuator token =
     //    then ...
     //    elif ...
     //    else ... 
-    | THEN | ELSE | ELIF -> true
+    | THEN | ELSE | ELIF -> true  
     // Likewise 
     //    if ... then (
     //    ) elif begin 
     //    end else ... 
-    | END | RPAREN -> true
+    | END | RPAREN -> true  
     // The following arise during reprocessing of the inserted tokens, e.g. when we hit a DONE 
     | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true 
     | ODUMMY token -> isIfBlockContinuator token
@@ -234,9 +233,9 @@ let rec isTryBlockContinuator token =
     // These tokens may align with the "try" without closing the construct, e.g.
     //         try ...
     //         with ... 
-    | FINALLY | WITH -> true
+    | FINALLY | WITH -> true  
     // The following arise during reprocessing of the inserted tokens when we hit a DONE
-    | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true
+    | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true 
     | ODUMMY token -> isTryBlockContinuator token
     | _ -> false
 
@@ -419,9 +418,9 @@ let parenTokensBalance t1 t2 =
     | (INTERP_STRING_PART _, INTERP_STRING_PART _)
     | (INTERP_STRING_PART _, INTERP_STRING_END _)
     | (LBRACK_BAR, BAR_RBRACK)
-    | (LESS true, GREATER true)
-    | (BEGIN, END) -> true
-    | (LQUOTE q1, RQUOTE q2) when q1 = q2 -> true
+    | (LESS true, GREATER true) 
+    | (BEGIN, END) -> true 
+    | (LQUOTE q1, RQUOTE q2) when q1 = q2 -> true 
     | _ -> false
     
 /// Used to save some aspects of the lexbuffer state
@@ -703,7 +702,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     //
     // Undentation rules
     //--------------------------------------------------------------------------
-
+    
     let (|RelaxWhitespace2|_|) x = if lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace2 then Some x else None
     let pushCtxt tokenTup (newCtxt: Context) =
         let rec undentationLimit strict stack = 
@@ -712,121 +711,38 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
             // ignore Vanilla because a SeqBlock is always coming 
             | _, (CtxtVanilla _ :: rest) -> undentationLimit strict rest
-            | (_, (CtxtSeqBlock _ :: rest) | _, (CtxtParen _ :: rest)) when not strict
-                -> undentationLimit strict rest
+
+            | _, (CtxtSeqBlock _ :: rest) when not strict -> undentationLimit strict rest
+            | _, (CtxtParen _ :: rest) when not strict -> undentationLimit strict rest
 
             // 'begin match' limited by minimum of two  
             // '(match' limited by minimum of two  
-            | _, ((CtxtMatch _ as ctxt1) :: CtxtSeqBlock _ :: (CtxtParen ((BEGIN | LPAREN), _) as ctxt2) :: _rest)
-                -> if ctxt1.StartCol <= ctxt2.StartCol 
-                    then PositionWithColumn(ctxt1.StartPos, ctxt1.StartCol) 
-                    else PositionWithColumn(ctxt2.StartPos, ctxt2.StartCol)
+            | _, (((CtxtMatch _) as ctxt1) :: CtxtSeqBlock _ :: (CtxtParen ((BEGIN | LPAREN), _) as ctxt2) :: _rest)
+                      -> if ctxt1.StartCol <= ctxt2.StartCol 
+                         then PositionWithColumn(ctxt1.StartPos, ctxt1.StartCol) 
+                         else PositionWithColumn(ctxt2.StartPos, ctxt2.StartCol) 
 
-            // Beginning indentation by zero or more spaces -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
+             // 'let ... = function' limited by 'let', precisely  
+             // This covers the common form 
+             //                          
+             //     let f x = function   
+             //     | Case1 -> ...       
+             //     | Case2 -> ...       
+            | (CtxtMatchClauses _), (CtxtFunction _ :: CtxtSeqBlock _ :: (CtxtLetDecl _ as limitCtxt) :: _rest)
+                      -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
 
-            // MAJOR PERMITTED UNDENTATION This is allowing:
-            //     if x then y else
-            //     let x = 3 + 4
-            //     x + x 
-            // This is a serious thing to allow, but is required since there is no "return" in this language.
-            // Without it there is no way of escaping special cases in large bits of code without indenting the main case.
-            | CtxtSeqBlock _, (CtxtElse _ :: (CtxtIf _ as limitCtxt) :: _rest)
+            // Otherwise 'function ...' places no limit until we hit a CtxtLetDecl etc... (Recursive) 
+            | (CtxtMatchClauses _), (CtxtFunction _ :: rest)
+                      -> undentationLimit false rest
 
-            // Permitted inner-construct precise block alignment: 
-            //     interface ...
-            //     with ...
-            //     end
-            //     
-            //     type ...
-            //     with ...
-            //     end
-            | CtxtWithAsAugment _, ((CtxtInterfaceHead _ | CtxtMemberHead _ | CtxtException _ | CtxtTypeDefns _) as limitCtxt :: _rest)
-            
-            // Permitted inner-construct (e.g. "then" block and "else" block in overall 
-            // "if-then-else" block ) block alignment: 
-            //     if ... 
-            //     then expr
-            //     elif expr
-            //     else expr
-            | (CtxtIf _ | CtxtElse _ | CtxtThen _), (CtxtIf _ as limitCtxt) :: _rest
-                
-            // Permitted inner-construct precise block alignment: 
-            //     while  ...
-            //     do expr
-            //     done
-            | (CtxtDo _), ((CtxtFor _ | CtxtWhile _) as limitCtxt) :: _rest
-            
-            // 'try ... with' limited by 'try'
-            // Permitted undentation:
-            //     try
-            //         ...
-            //     with
-            //     | ...
-            // When RelaxWhitespace2 is available:
-            //     match
-            //         ...
-            //     with
-            //     | ...
+            // 'try ... with' limited by 'try'  
             | _, (CtxtMatchClauses _ :: (CtxtTry _ | RelaxWhitespace2 (CtxtMatch _) as limitCtxt) :: _rest)
+                      -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
 
-             // 'let ... = function' limited by 'let', precisely
-             // This covers the common form
-             //     let f x = function
-             //     | Case1 -> ...
-             //     | Case2 -> ...
-            | CtxtMatchClauses _, (CtxtFunction _ :: CtxtSeqBlock _ :: (CtxtLetDecl _ as limitCtxt) :: _rest)
-                -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
-                      
-            // Beginning recursive cases -> undentationLimit false rest
-
-            // Otherwise 'function ...' places no limit until we hit a CtxtLetDecl 'let x = ... function' etc... (Recursive) 
-            | CtxtMatchClauses _, (CtxtFunction _ :: rest)
-
-            // 'fun ->' places no limit until we hit a CtxtLetDecl 'let x = ... fun ->' etc... (Recursive) 
+            // 'fun ->' places no limit until we hit a CtxtLetDecl etc... (Recursive) 
             | _, (CtxtFun _ :: rest)
-
-            // Permit undentation via parentheses (or begin/end) following a 'then', 'else' or 'do':
-            //     if nr > 0 then (
-            //         nr <- nr - 1
-            //         acc <- d
-            //         i <- i - 1
-            //     ) else (
-            //         i <- -1
-            //     )
-
-            // PERMITTED UNDENTATION: Inner construct (then, with, else, do) that dangle, places no limit
-            // until we hit the corresponding leading construct CtxtIf, CtxtFor, CtxtWhile, CtxtVanilla etc...
-            //     e.g.
-            //         if ... then ...
-            //            expr
-            //         else
-            //            expr
-            //     rather than forcing 
-            //         if ...
-            //         then expr
-            //         else expr
-            //     Also ...... with
-            //           ...           <-- this is before the "with"
-            //         end
-
-            | _, ((CtxtWithAsAugment _ | CtxtThen _ | CtxtElse _ | CtxtDo _) :: rest)
-
-            // '... (function ->' places no limit until we hit a CtxtLetDecl 'let f = ...(function ->' etc. (Recursive)
-            //
-            //   e.g.
-            //        let fffffff() = function
-            //          | [] -> 0
-            //          | _ -> 1
-            //
-            //   Note this does not allow
-            //        let fffffff() = function _ ->
-            //           0
-            //   which is not a permitted undentation. This undentation would make no sense if there are multiple clauses in the 'function', which is, after all, what 'function' is really for
-            //        let fffffff() = function 1 ->
-            //           0
-            //          | 2 -> ...       <---- not allowed
-            | _, (CtxtFunction _ :: rest)
-            
+                      -> undentationLimit false rest
+                      
             // 'let ... = f ... begin'  limited by 'let' (given RelaxWhitespace2)
             // 'let ('  (pattern match) limited by 'let' (given RelaxWhitespace2)
             // 'let ['  (pattern match) limited by 'let' (given RelaxWhitespace2)
@@ -841,103 +757,159 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             // 'let x = { y =' limited by 'let'  (given RelaxWhitespace2) etc.
             // 'let x = {| y =' limited by 'let' (given RelaxWhitespace2) etc.
             | _, RelaxWhitespace2 (CtxtSeqBlock _ :: CtxtParen (TokenLExprParen, _) :: rest)
-            
-            // 'f ... {'     places no limit until we hit e.g. CtxtLetDecl 'let x = ... f ... {'     (given no RelaxWhitespace2, added in F# 2.0, see [RFC FS-1054] less strict indentation on common DSL pattern)
-            //                                                                                       (as part of FS-1054, the case (CtxtParen ((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtSeqBlock _ :: rest)) was added, rendering some cases below useless)
-            // 'f ... ['     places no limit until we hit e.g. CtxtLetDecl 'let x = ... f ... ['     (given no RelaxWhitespace2, added in F# 4.5 as part of [RFC FS-1054] less strict indentation on common DSL pattern)
-            // 'f ... [|'    places no limit until we hit e.g. CtxtLetDecl 'let x = ... f ... [|'    (given no RelaxWhitespace2, added in F# 4.5 as part of [RFC FS-1054] less strict indentation on common DSL pattern)
-            // 'f ... ('     is handled by RelaxWhitespace2 above
-            // 'f ... {|'    is handled by RelaxWhitespace2 above
-            // 'f ... begin' is handled by RelaxWhitespace2 above
-            // 'f ... Foo<'  is handled by RelaxWhitespace2 above
-            // 'f ... <@'    is handled by RelaxWhitespace2 above
-            // 'f ... <@@'   is handled by RelaxWhitespace2 above
-            | _, (CtxtParen ((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtSeqBlock _ :: rest) // This case was added in F# 4.5 with FS-1054
-            | _, (CtxtParen ((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest) // This case was added in F# 2.0, extended with FS-1054
-            | _, (CtxtSeqBlock _ :: CtxtParen((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest) // This case was added in F# 2.0, extended with FS-1054
-                -> undentationLimit false rest
-                
-            // Beginning indentation by at least one space -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1)
 
-            // 'module ... : sig'    limited by 'module'
-            // 'module ... : struct' limited by 'module'
-            // 'module ... : begin'  limited by 'module' (given no RelaxWhitespace2)
-            // 'if ... then begin'   limited by 'if' (given no RelaxWhitespace2)
-            // 'if ... then ('       limited by 'if' (given no RelaxWhitespace2)
-            // 'if ... then ['       limited by 'if' (never reached after F# 4.5 with FS-1054)
-            // 'if ... then {'       limited by 'if' (never reached after F# 4.5 with FS-1054)
-            // 'if ... then {|'      limited by 'if' (given no RelaxWhitespace2)
-            // 'if ... then [|'      limited by 'if' (never reached after F# 4.5 with FS-1054)
-            // 'if ... else begin'   limited by 'if' (given no RelaxWhitespace2)
-            // 'if ... else ('       limited by 'if' (given no RelaxWhitespace2)
-            // 'if ... else ['       limited by 'if' (never reached after F# 4.5 with FS-1054)
-            // 'if ... else {'       limited by 'if' (never reached after F# 4.5 with FS-1054)
-            // 'if ... else {|'      limited by 'if' (given no RelaxWhitespace2)
-            // 'if ... else [|'      limited by 'if' (never reached after F# 4.5 with FS-1054)
-            // 'if ... else [<'      limited by 'if' (always)
+            // 'f ...{' places no limit until we hit a CtxtLetDecl etc... 
+            // 'f ...[' places no limit until we hit a CtxtLetDecl etc... 
+            // 'f ...[|' places no limit until we hit a CtxtLetDecl etc... 
+            | _, (CtxtParen ((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtSeqBlock _ :: rest)
+            | _, (CtxtParen ((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
+            | _, (CtxtSeqBlock _ :: CtxtParen((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
+                      -> undentationLimit false rest
+
+            // MAJOR PERMITTED UNDENTATION This is allowing:
+            //   if x then y else
+            //   let x = 3 + 4
+            //   x + x  
+            // This is a serious thing to allow, but is required since there is no "return" in this language.
+            // Without it there is no way of escaping special cases in large bits of code without indenting the main case.
+            | CtxtSeqBlock _, (CtxtElse _ :: (CtxtIf _ as limitCtxt) :: _rest) 
+                      -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
+
+            // Permitted inner-construct precise block alignment: 
+            //           interface ...
+            //           with ... 
+            //           end 
+            //           
+            //           type ...
+            //           with ... 
+            //           end 
+            | CtxtWithAsAugment _, ((CtxtInterfaceHead _ | CtxtMemberHead _ | CtxtException _ | CtxtTypeDefns _) as limitCtxt :: _rest)
+                      -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol) 
+
+            // Permit undentation via parentheses (or begin/end) following a 'then', 'else' or 'do':
+            //        if nr > 0 then (  
+            //              nr <- nr - 1
+            //              acc <- d
+            //              i <- i - 1
+            //        ) else (
+            //              i <- -1
+            //        )
+
+            // PERMITTED UNDENTATION: Inner construct (then, with, else, do) that dangle, places no limit until we hit the corresponding leading construct CtxtIf, CtxtFor, CtxtWhile, CtxtVanilla etc... *)
+            //    e.g.   if ... then ...
+            //              expr
+            //           else
+            //              expr
+            //    rather than forcing 
+            //           if ... 
+            //           then expr
+            //           else expr
+            //   Also  ...... with
+            //           ...           <-- this is before the "with"
+            //         end
+
+            | _, ((CtxtWithAsAugment _ | CtxtThen _ | CtxtElse _ | CtxtDo _ ) :: rest)
+                      -> undentationLimit false rest
+
+
+            // '... (function ->' places no limit until we hit a CtxtLetDecl etc....  (Recursive)
+            //
+            //   e.g.
+            //        let fffffff() = function
+            //          | [] -> 0
+            //          | _ -> 1 
+            //
+            //   Note this does not allow
+            //        let fffffff() = function _ ->
+            //           0
+            //   which is not a permitted undentation. This undentation would make no sense if there are multiple clauses in the 'function', which is, after all, what 'function' is really for
+            //        let fffffff() = function 1 ->
+            //           0
+            //          | 2 -> ...       <---- not allowed
+            | _, (CtxtFunction _ :: rest)
+                      -> undentationLimit false rest
+
+            // 'module ... : sig'    limited by 'module' 
+            // 'module ... : struct' limited by 'module' 
+            // 'module ... : begin'  limited by 'module' 
+            // 'if ... then ('       limited by 'if' 
+            // 'if ... then {'       limited by 'if' 
+            // 'if ... then ['       limited by 'if' 
+            // 'if ... then [|'       limited by 'if' 
+            // 'if ... else ('       limited by 'if' 
+            // 'if ... else {'       limited by 'if' 
+            // 'if ... else ['       limited by 'if' 
+            // 'if ... else [|'       limited by 'if' 
             | _, (CtxtParen ((SIG | STRUCT | BEGIN), _) :: CtxtSeqBlock _ :: (CtxtModuleBody (_, false) as limitCtxt) :: _)
             | _, (CtxtParen ((BEGIN | LPAREN | LBRACK | LBRACE _ | LBRACE_BAR | LBRACK_BAR), _) :: CtxtSeqBlock _ :: CtxtThen _ :: (CtxtIf _ as limitCtxt) :: _)
             | _, (CtxtParen ((BEGIN | LPAREN | LBRACK | LBRACE _ | LBRACE_BAR | LBRACK_BAR | LBRACK_LESS), _) :: CtxtSeqBlock _ :: CtxtElse _ :: (CtxtIf _ as limitCtxt) :: _)
 
-            // 'f ... x = begin' in seqblock limited by 'f' (given no RelaxWhitespace2)
-            // 'f ... x = ('     in seqblock limited by 'f' (given no RelaxWhitespace2)
-            // 'f ... x = Foo<'  in seqblock limited by 'f' (given no RelaxWhitespace2)
-            // 'f ... x = ['     in seqblock limited by 'f' (never reached after F# 4.5 with FS-1054)
-            // 'f ... x = [|'    in seqblock limited by 'f' (never reached after F# 4.5 with FS-1054)
+            // 'f ... ('  in seqblock     limited by 'f' 
+            // 'f ... {'  in seqblock     limited by 'f'  NOTE: this is covered by the more generous case above 
+            // 'f ... ['  in seqblock     limited by 'f' 
+            // 'f ... [|' in seqblock      limited by 'f' 
+            // 'f ... Foo<' in seqblock      limited by 'f' 
             | _, (CtxtParen ((BEGIN | LPAREN | LESS true | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: (CtxtSeqBlock _ as limitCtxt) :: _)
-            
-            // REVIEW: document these (given no RelaxWhitespace2)
-            | _, (CtxtSeqBlock _ :: CtxtParen((BEGIN | LPAREN | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: (CtxtSeqBlock _ as limitCtxt) :: _)
-            | (CtxtSeqBlock _), (CtxtParen ((BEGIN | LPAREN | LBRACE _ | LBRACE_BAR | LBRACK | LBRACK_BAR), _) :: CtxtSeqBlock _ :: ((CtxtTypeDefns _ | CtxtLetDecl _ | CtxtMemberBody _ | CtxtWithAsLet _) as limitCtxt) :: _)
 
-            // 'type C = class ... '     limited by 'type'
-            // 'type C = interface ... ' limited by 'type'
-            // 'type C = struct ... '    limited by 'type'
+            // 'type C = class ... '       limited by 'type' 
+            // 'type C = interface ... '       limited by 'type' 
+            // 'type C = struct ... '       limited by 'type' 
             | _, (CtxtParen ((CLASS | STRUCT | INTERFACE), _) :: CtxtSeqBlock _ :: (CtxtTypeDefns _ as limitCtxt) ::  _)
                 -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1) 
-                
-            // Beginning indentation by at least one space when lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace
-            //           -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1)
-            // The following 3 rules were added in F# 4.7 with [FS-1070] Offside relaxations for construct and member definitions
-            // 'type C(x:int,
-            //      y:int' limited by 'type' (given RelaxWhitespace but not RelaxWhitespace2)
-            // The 'type C(
-            //          x:int' case is handled by the RelaxWhitespace2 rule above
-            | _, (CtxtSeqBlock _ :: CtxtParen(LPAREN, _) :: (CtxtTypeDefns _ as limitCtxt) :: _)
-            // 'static member C(x:int,
-            //     y:int' limited by 'static', likewise others (given RelaxWhitespace but not RelaxWhitespace2)
-            // The 'static member C(
-            //          x:int' case is handled by the RelaxWhitespace2 rule above
-            | _, (CtxtSeqBlock _ :: CtxtParen(LPAREN, _) :: (CtxtMemberHead _ as limitCtxt) :: _)
-            // 'static member P with get() = ' limited by 'static', likewise others (given RelaxWhitespace)
-            | _, (CtxtWithAsLet _ :: (CtxtMemberHead _ as limitCtxt) :: _)
-                when lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace
-                -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1)
 
-            // When it doesn't match a special rule...
+            // 'type C(' limited by 'type'
+            | _, (CtxtSeqBlock _ :: CtxtParen(LPAREN, _) :: (CtxtTypeDefns _ as limitCtxt) :: _ )
+            // 'static member C(' limited by 'static', likewise others
+            | _, (CtxtSeqBlock _ :: CtxtParen(LPAREN, _) :: (CtxtMemberHead _ as limitCtxt) :: _ )
+            // 'static member P with get() = ' limited by 'static', likewise others
+            | _, (CtxtWithAsLet _ :: (CtxtMemberHead _ as limitCtxt) :: _ )
+                 when lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace
+                 -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1) 
 
-            // These contexts all require indentation by at least one space
+            // REVIEW: document these 
+            | _, (CtxtSeqBlock _ :: CtxtParen((BEGIN | LPAREN | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: (CtxtSeqBlock _ as limitCtxt) :: _)
+            | (CtxtSeqBlock _), (CtxtParen ((BEGIN | LPAREN | LBRACE _ | LBRACE_BAR | LBRACK | LBRACK_BAR), _) :: CtxtSeqBlock _ :: ((CtxtTypeDefns _ | CtxtLetDecl _ | CtxtMemberBody _ | CtxtWithAsLet _) as limitCtxt) :: _)
+                      -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1) 
+
+            // Permitted inner-construct (e.g. "then" block and "else" block in overall 
+            // "if-then-else" block ) block alignment: 
+            //           if ... 
+            //           then expr
+            //           elif expr  
+            //           else expr  
+            | (CtxtIf _ | CtxtElse _ | CtxtThen _), (CtxtIf _ as limitCtxt) :: _rest  
+                      -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
+
+            // Permitted inner-construct precise block alignment: 
+            //           while  ... 
+            //           do expr
+            //           done   
+            | (CtxtDo _), ((CtxtFor _ | CtxtWhile _) as limitCtxt) :: _rest  
+                      -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
+
+
+            // These contexts all require indentation by at least one space 
             | _, ((CtxtInterfaceHead _ | CtxtNamespaceHead _ | CtxtModuleHead _ | CtxtException _ | CtxtModuleBody (_, false) | CtxtIf _ | CtxtWithAsLet _ | CtxtLetDecl _ | CtxtMemberHead _ | CtxtMemberBody _) as limitCtxt :: _) 
-                -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1) 
+                      -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1) 
 
-            // These contexts can have their contents exactly aligning
+            // These contexts can have their contents exactly aligning 
             | _, ((CtxtParen _ | CtxtFor _ | CtxtWhen _ | CtxtWhile _ | CtxtTypeDefns _ | CtxtMatch _ | CtxtModuleBody (_, true) | CtxtNamespaceBody _ | CtxtTry _ | CtxtMatchClauses _ | CtxtSeqBlock _) as limitCtxt :: _)
-                -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol) 
+                      -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol) 
        
         match newCtxt with 
-        // Don't bother to check pushes of Vanilla blocks since we've
+        // Don't bother to check pushes of Vanilla blocks since we've 
         // always already pushed a SeqBlock at this position.
-        | CtxtVanilla _
+        | CtxtVanilla _ 
         // String interpolation inner expressions are not limited (e.g. multiline strings)
         | CtxtParen((INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _),_) -> ()
-        | _ ->
+        | _ -> 
             let p1 = undentationLimit true offsideStack
             let c2 = newCtxt.StartCol
-            if c2 < p1.Column then
-                warn tokenTup
-                    (if debug then
-                        sprintf "possible incorrect indentation: this token is offside of context at position %s, newCtxt = %A, stack = %A, newCtxtPos = %s, c1 = %d, c2 = %d"
-                            (warningStringOfPosition p1.Position) newCtxt offsideStack (stringOfPos (newCtxt.StartPos)) p1.Column c2
+            if c2 < p1.Column then 
+                warn tokenTup 
+                    (if debug then 
+                        sprintf "possible incorrect indentation: this token is offside of context at position %s, newCtxt = %A, stack = %A, newCtxtPos = %s, c1 = %d, c2 = %d" 
+                            (warningStringOfPosition p1.Position) newCtxt offsideStack (stringOfPos (newCtxt.StartPos)) p1.Column c2 
                      else
                         FSComp.SR.lexfltTokenIsOffsideOfContextStartedEarlier(warningStringOfPosition p1.Position))
         let newOffsideStack = newCtxt :: offsideStack
@@ -1686,7 +1658,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 replaceCtxt tokenTup (CtxtSeqBlock (FirstInSeqBlock, offsidePos, addBlockEnd))
                 // No change to offside stack: another statement block starts...
                 insertTokenFromPrevPosToCurrentPos OBLOCKSEP
-
+                
         //  Offside rule for CtxtLetDecl 
         // let .... = 
         //    ...
