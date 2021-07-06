@@ -626,6 +626,65 @@ let LocalValueShadowsArgument2 x =
             null // breakpoint 2
     ()
 
+module InlinedCode =
+    // MANUAL TEST: check you can place breakpoints in this method and hit them
+    // in both Debug and Release code
+    let inline bodyRunner z body =
+        let x = 1 + z
+        printfn "running"
+        body x
+        body x
+
+    let test() =
+        let bodyWrapper =
+            let x = 1 + System.Random().Next()
+            bodyRunner 3 (fun n ->
+                // MANUAL TEST: check you can place breakpoint here and hit it in both Debug and Release code
+                printfn "line1, x = %d" x
+                // MANUAL TEST: check you can place breakpoint here and hit it in both Debug and Release code
+                printfn "line2, n = %d" n)
+
+        let bodyWrapper2 =
+            // TEST: check you can place breakpoint here and hit it in both Debug and Release code
+            let x = 1 + System.Random().Next()
+            bodyRunner 3 <| (fun n ->
+                // MANUAL TEST: check you can place breakpoint here and hit it in both Debug and Release code
+                printfn "line1, x = %d" x
+                // MANUAL TEST: check you can place breakpoint here and hit it in both Debug and Release code
+                printfn "line2, n = %d" n)
+        ()
+
+module Pipelined =
+    let testListPipeline() =
+        let data = [ 1 .. 5 ]
+    
+        // MANUAL TEST: check stepping through this looks ok
+        let newData =
+            data
+            |> List.filter (fun x -> 
+                  // MANUAL TEST: check you can place breakpoint here and hit it in both Debug and Release code
+                  x > 3)
+            |> List.map (fun x -> 
+                  // MANUAL TEST: check you can place breakpoint here and hit it in both Debug and Release code
+                  x * x)
+        
+        printfn "%A" newData
+
+    let testArrayPipeline() =
+            let data = [| 1 .. 5 |]
+    
+            let newData =
+                data
+                |> Array.filter (fun x -> 
+                    // MANUAL TEST: check you can place breakpoint here and hit it in both Debug and Release code
+                    x > 3)
+                |> Array.map (fun x -> 
+                    // MANUAL TEST: check you can place breakpoint here and hit it in both Debug code
+                    // TODO: surprisingly no breakpoint hit here in release code
+                    x * x)
+        
+            printfn "%A" newData
+
 TailcallRecursionTest1 3
 TailcallRecursionTest2 (U2(3,4))
 SteppingMatch01 (Choice1Of2 3)
@@ -705,3 +764,6 @@ InnerFunctionDefinitionHadTwoBreakpoints "aaaa" |> ignore
 InnerRecursiveFunctionDefinitionHadTwoBreakpoints "aaaa" |> ignore
 LocalValueShadowsArgument1 "123"
 LocalValueShadowsArgument2 "123"
+InlinedCode.test()
+Pipelined.testListPipeline()
+Pipelined.testArrayPipeline()

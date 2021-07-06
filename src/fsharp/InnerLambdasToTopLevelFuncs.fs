@@ -967,12 +967,13 @@ module Pass4_RewriteAssembly =
     // pass4: lowertop - convert_vterm_bind on TopLevel binds
     //-------------------------------------------------------------------------
 
-    let ConvertBind g (TBind(v, repr, _) as bind)  =
+    let AdjustBindToTopVal g (TBind(v, repr, _))  =
         match v.ValReprInfo with
-        | None -> v.SetValReprInfo (Some (InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v repr ))
+        | None -> 
+            v.SetValReprInfo (Some (InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v repr ))
+            // Things that don't have an arity from type inference but are top-level are compiler-generated
+            v.SetIsCompilerGenerated(true)
         | Some _ -> ()
-
-        bind
 
     //-------------------------------------------------------------------------
     // pass4: transBind (translate)
@@ -1035,6 +1036,9 @@ module Pass4_RewriteAssembly =
         | None      -> List.empty           // no env for this mutual binding
         | Some envp -> envp.ep_pack // environment pack bindings
 
+    let forceTopBindToHaveArity penv (bind: Binding) =
+        if penv.topValS.Contains(bind.Var) then AdjustBindToTopVal penv.g bind
+
     let TransBindings xisRec penv (binds: Bindings) =
         let tlrBs, nonTlrBs = binds |> List.partition (fun b -> Zset.contains b.Var penv.tlrS)
         let fclass = BindingGroupSharingSameReqdItems tlrBs
@@ -1045,12 +1049,9 @@ module Pass4_RewriteAssembly =
         // QUERY: we repeat this logic in LowerCallsAndSeqs.  Do we really need to do this here?
         // QUERY: yes and no - if we don't, we have an unrealizable term, and many decisions must
         // QUERY: correlate with LowerCallsAndSeqs.
-        let forceTopBindToHaveArity (bind: Binding) =
-            if penv.topValS.Contains(bind.Var) then ConvertBind penv.g bind
-            else bind
 
-        let nonTlrBs = nonTlrBs |> List.map forceTopBindToHaveArity
-        let tlrRebinds = tlrRebinds |> List.map forceTopBindToHaveArity
+        nonTlrBs |> List.iter (forceTopBindToHaveArity penv)
+        tlrRebinds |> List.iter (forceTopBindToHaveArity penv)
         // assemble into replacement bindings
         let bindAs, rebinds =
             match xisRec with
@@ -1067,7 +1068,7 @@ module Pass4_RewriteAssembly =
         // Is it a val app, where the val f is TLR with arity wf?
         // CLEANUP NOTE: should be using a mkApps to make all applications
         match fx with
-        | Expr.Val (fvref: ValRef, _, m) when
+        | Expr.Val (fvref: ValRef, _, vm) when
                 (Zset.contains fvref.Deref penv.tlrS) &&
                 (let wf = Zmap.force fvref.Deref penv.arityM ("TransApp - wf", nameOfVal)
                  IsArityMet fvref wf tys args) ->
@@ -1078,9 +1079,9 @@ module Pass4_RewriteAssembly =
                    let envp = Zmap.force fc penv.envPackM ("TransApp - envp", string)
                    let fHat = Zmap.force f  penv.fHatM ("TransApp - fHat", nameOfVal)
                    let tys  = (List.map mkTyparTy envp.ep_etps) @ tys
-                   let aenvExprs = List.map (exprForVal m) envp.ep_aenvs
+                   let aenvExprs = List.map (exprForVal vm) envp.ep_aenvs
                    let args = aenvExprs @ args
-                   mkApps penv.g ((exprForVal m fHat, fHat.Type), [tys], args, m) (* change, direct fHat call with closure (reqdTypars, aenvs) *)
+                   mkApps penv.g ((exprForVal vm fHat, fHat.Type), [tys], args, m) (* change, direct fHat call with closure (reqdTypars, aenvs) *)
         | _ ->
             if isNil tys && isNil args then
                 fx
