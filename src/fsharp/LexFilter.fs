@@ -179,6 +179,8 @@ let infixTokenLength token =
     | COLON_QMARK_GREATER -> 3
     | _ -> assert false; 1
     
+// LBRACK_LESS and GREATER_RBRACK are not here because adding them in these active patterns
+// causes more offside warnings, while removing them doesn't add offside warnings in attributes.
 /// Matches against a left-parenthesis-like token that is valid in expressions.
 let (|TokenLExprParen|_|) =
     function
