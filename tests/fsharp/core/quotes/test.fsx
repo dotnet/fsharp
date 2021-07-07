@@ -3403,6 +3403,8 @@ module WitnessTests =
               <@@ 1.0f + 4.0f @@>, box 5f
               <@@ 1.0 + 4.0 @@>, box 5.
               <@@ 1m + 4m @@>, box 5m
+              <@@ 1m<m> + 4m<m> @@>, box 5m
+              <@@ 1I + 4I @@>, box 5I
               <@@ '1' + '\004' @@>, box '5'
               <@@ "abc" + "def" @@>, box "abcdef"
               <@@ LanguagePrimitives.GenericOne<nativeint> + LanguagePrimitives.GenericOne<nativeint> @@>, box 2n
@@ -3434,6 +3436,8 @@ module WitnessTests =
               <@@ 4.0f - 1.0f @@>, box 3f
               <@@ 4.0 - 1.0 @@>, box 3.
               <@@ 4m - 1m @@>, box 3m
+              <@@ 4m<m> - 1m<m> @@>, box 3m
+              <@@ 4I - 1I @@>, box 3I
               <@@ '4' - '\001' @@>, box '3'
               <@@ LanguagePrimitives.GenericOne<nativeint> - LanguagePrimitives.GenericOne<nativeint> @@>, box 0n
               <@@ LanguagePrimitives.GenericOne<unativeint> - LanguagePrimitives.GenericOne<unativeint> @@>, box 0un
@@ -3463,6 +3467,8 @@ module WitnessTests =
               <@@ 2.0f * 4.0f @@>, box 8f
               <@@ 2.0 * 4.0 @@>, box 8.
               <@@ 2m * 4m @@>, box 8m
+              <@@ 2m<m> * 4m<m^2> @@>, box 8m
+              <@@ 2I * 4I @@>, box 8I
               <@@ LanguagePrimitives.GenericOne<nativeint> * LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
               <@@ LanguagePrimitives.GenericOne<unativeint> * LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
               <@@ Checked.(*) 2y 4y @@>, box 8y
@@ -3490,6 +3496,8 @@ module WitnessTests =
               <@@ 6.0f / 3.0f @@>, box 2f
               <@@ 6.0 / 3.0 @@>, box 2.
               <@@ 6m / 3m @@>, box 2m
+              <@@ 6m<m> / 3m</m> @@>, box 2m
+              <@@ 6I / 3I @@>, box 2I
               <@@ LanguagePrimitives.GenericOne<nativeint> / LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
               <@@ LanguagePrimitives.GenericOne<unativeint> / LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
 
@@ -3504,6 +3512,8 @@ module WitnessTests =
               <@@ 9.0f % 4.0f @@>, box 1f
               <@@ 9.0 % 4.0 @@>, box 1.
               <@@ 9m % 4m @@>, box 1m
+              <@@ 9m<m> % 4m<m> @@>, box 1m
+              <@@ 9I % 4I @@>, box 1I
               <@@ LanguagePrimitives.GenericOne<nativeint> % LanguagePrimitives.GenericOne<nativeint> @@>, box 0n
               <@@ LanguagePrimitives.GenericOne<unativeint> % LanguagePrimitives.GenericOne<unativeint> @@>, box 0un
 
@@ -3518,6 +3528,8 @@ module WitnessTests =
               <@@ +(1f) @@>, box 1f
               <@@ +(1.) @@>, box 1.
               <@@ +(1m) @@>, box 1m
+              <@@ +(1m<m>) @@>, box 1m
+              <@@ +(1I) @@>, box 1I
               <@@ +(LanguagePrimitives.GenericOne<nativeint>) @@>, box 1n
               <@@ +(LanguagePrimitives.GenericOne<unativeint>) @@>, box 1un
 
@@ -3528,6 +3540,8 @@ module WitnessTests =
               <@@ -(1f) @@>, box -1f
               <@@ -(1.) @@>, box -1.
               <@@ -(1m) @@>, box -1m
+              <@@ -(1m<m>) @@>, box -1m
+              <@@ -(1I) @@>, box -1I
               <@@ -(LanguagePrimitives.GenericOne<nativeint>) @@>, box -1n
               <@@ Checked.(~-) (1y) @@>, box -1y
               <@@ Checked.(~-) (1s) @@>, box -1s
@@ -3536,10 +3550,13 @@ module WitnessTests =
               <@@ Checked.(~-) (1f) @@>, box -1f
               <@@ Checked.(~-) (1.) @@>, box -1.
               <@@ Checked.(~-) (1m) @@>, box -1m
+              <@@ Checked.(~-) (1m<m>) @@>, box -1m
+              <@@ Checked.(~-) (1I) @@>, box -1I
               <@@ Checked.(~-) (LanguagePrimitives.GenericOne<nativeint>) @@>, box -1n
 
               <@@ 4f ** 3f @@>, box 64f
               <@@ 4. ** 3. @@>, box 64.
+              <@@ 4I ** 3 @@>, box 64I
 
               <@@ 1y <<< 3 @@>, box 8y
               <@@ 1uy <<< 3 @@>, box 8uy
@@ -3549,6 +3566,7 @@ module WitnessTests =
               <@@ 1u <<< 3 @@>, box 8u
               <@@ 1L <<< 3 @@>, box 8L
               <@@ 1UL <<< 3 @@>, box 8UL
+              <@@ 1I <<< 3 @@>, box 8I
               <@@ LanguagePrimitives.GenericOne<nativeint> <<< 3 @@>, box 8n
               <@@ LanguagePrimitives.GenericOne<unativeint> <<< 3 @@>, box 8un
 
@@ -3560,6 +3578,7 @@ module WitnessTests =
               <@@ 1u >>> 3 @@>, box 0u
               <@@ 1L >>> 3 @@>, box 0L
               <@@ 1UL >>> 3 @@>, box 0UL
+              <@@ 1I >>> 3 @@>, box 0I
               <@@ LanguagePrimitives.GenericOne<nativeint> >>> 3 @@>, box 0n
               <@@ LanguagePrimitives.GenericOne<unativeint> >>> 3 @@>, box 0un
               
@@ -3571,6 +3590,7 @@ module WitnessTests =
               <@@ 1u &&& 3u @@>, box 1u
               <@@ 1L &&& 3L @@>, box 1L
               <@@ 1UL &&& 3UL @@>, box 1UL
+              <@@ 1I &&& 3I @@>, box 1I
               <@@ LanguagePrimitives.GenericOne<nativeint> &&& LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
               <@@ LanguagePrimitives.GenericOne<unativeint> &&& LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
 
@@ -3582,6 +3602,7 @@ module WitnessTests =
               <@@ 1u ||| 3u @@>, box 3u
               <@@ 1L ||| 3L @@>, box 3L
               <@@ 1UL ||| 3UL @@>, box 3UL
+              <@@ 1I ||| 3I @@>, box 3I
               <@@ LanguagePrimitives.GenericOne<nativeint> ||| LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
               <@@ LanguagePrimitives.GenericOne<unativeint> ||| LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
 
@@ -3593,6 +3614,7 @@ module WitnessTests =
               <@@ 1u ^^^ 3u @@>, box 2u
               <@@ 1L ^^^ 3L @@>, box 2L
               <@@ 1UL ^^^ 3UL @@>, box 2UL
+              <@@ 1I ^^^ 3I @@>, box 2I
               <@@ LanguagePrimitives.GenericOne<nativeint> ^^^ LanguagePrimitives.GenericOne<nativeint> @@>, box 0n
               <@@ LanguagePrimitives.GenericOne<unativeint> ^^^ LanguagePrimitives.GenericOne<unativeint> @@>, box 0un
 
@@ -3618,6 +3640,8 @@ module WitnessTests =
               <@@ byte '\003' @@>, box 3uy
               <@@ byte 3.0f @@>, box 3uy
               <@@ byte 3.0 @@>, box 3uy
+              <@@ byte 3.0<m> @@>, box 3uy
+              <@@ byte 3I @@>, box 3uy
               <@@ byte LanguagePrimitives.GenericOne<nativeint> @@>, box 1uy
               <@@ byte LanguagePrimitives.GenericOne<unativeint> @@>, box 1uy
               <@@ byte 3.0M @@>, box 3uy
@@ -3633,6 +3657,8 @@ module WitnessTests =
               <@@ uint8 '\003' @@>, box 3uy
               <@@ uint8 3.0f @@>, box 3uy
               <@@ uint8 3.0 @@>, box 3uy
+              <@@ uint8 3.0<m> @@>, box 3uy
+              <@@ uint8 3I @@>, box 3uy
               <@@ uint8 LanguagePrimitives.GenericOne<nativeint> @@>, box 1uy
               <@@ uint8 LanguagePrimitives.GenericOne<unativeint> @@>, box 1uy
               <@@ uint8 3.0M @@>, box 3uy
@@ -3648,6 +3674,8 @@ module WitnessTests =
               <@@ Checked.byte '\003' @@>, box 3uy
               <@@ Checked.byte 3.0f @@>, box 3uy
               <@@ Checked.byte 3.0 @@>, box 3uy
+              <@@ Checked.byte 3.0<m> @@>, box 3uy
+              <@@ Checked.byte 3I @@>, box 3uy
               <@@ Checked.byte LanguagePrimitives.GenericOne<nativeint> @@>, box 1uy
               <@@ Checked.byte LanguagePrimitives.GenericOne<unativeint> @@>, box 1uy
               <@@ Checked.byte 3.0M @@>, box 3uy
@@ -3663,6 +3691,8 @@ module WitnessTests =
               <@@ Checked.uint8 '\003' @@>, box 3uy
               <@@ Checked.uint8 3.0f @@>, box 3uy
               <@@ Checked.uint8 3.0 @@>, box 3uy
+              <@@ Checked.uint8 3.0<m> @@>, box 3uy
+              <@@ Checked.uint8 3I @@>, box 3uy
               <@@ Checked.uint8 LanguagePrimitives.GenericOne<nativeint> @@>, box 1uy
               <@@ Checked.uint8 LanguagePrimitives.GenericOne<unativeint> @@>, box 1uy
               <@@ Checked.uint8 3.0M @@>, box 3uy
@@ -3679,6 +3709,8 @@ module WitnessTests =
               <@@ sbyte '\003' @@>, box 3y
               <@@ sbyte 3.0f @@>, box 3y
               <@@ sbyte 3.0 @@>, box 3y
+              <@@ sbyte 3.0<m> @@>, box 3y
+              <@@ sbyte 3I @@>, box 3y
               <@@ sbyte LanguagePrimitives.GenericOne<nativeint> @@>, box 1y
               <@@ sbyte LanguagePrimitives.GenericOne<unativeint> @@>, box 1y
               <@@ sbyte 3.0M @@>, box 3y
@@ -3694,6 +3726,8 @@ module WitnessTests =
               <@@ int8 '\003' @@>, box 3y
               <@@ int8 3.0f @@>, box 3y
               <@@ int8 3.0 @@>, box 3y
+              <@@ int8 3.0<m> @@>, box 3y
+              <@@ int8 3I @@>, box 3y
               <@@ int8 LanguagePrimitives.GenericOne<nativeint> @@>, box 1y
               <@@ int8 LanguagePrimitives.GenericOne<unativeint> @@>, box 1y
               <@@ int8 3.0M @@>, box 3y
@@ -3709,6 +3743,8 @@ module WitnessTests =
               <@@ Checked.sbyte '\003' @@>, box 3y
               <@@ Checked.sbyte 3.0f @@>, box 3y
               <@@ Checked.sbyte 3.0 @@>, box 3y
+              <@@ Checked.sbyte 3.0<m> @@>, box 3y
+              <@@ Checked.sbyte 3I @@>, box 3y
               <@@ Checked.sbyte LanguagePrimitives.GenericOne<nativeint> @@>, box 1y
               <@@ Checked.sbyte LanguagePrimitives.GenericOne<unativeint> @@>, box 1y
               <@@ Checked.sbyte 3.0M @@>, box 3y
@@ -3724,6 +3760,8 @@ module WitnessTests =
               <@@ Checked.int8 '\003' @@>, box 3y
               <@@ Checked.int8 3.0f @@>, box 3y
               <@@ Checked.int8 3.0 @@>, box 3y
+              <@@ Checked.int8 3.0<m> @@>, box 3y
+              <@@ Checked.int8 3I @@>, box 3y
               <@@ Checked.int8 LanguagePrimitives.GenericOne<nativeint> @@>, box 1y
               <@@ Checked.int8 LanguagePrimitives.GenericOne<unativeint> @@>, box 1y
               <@@ Checked.int8 3.0M @@>, box 3y
@@ -3740,6 +3778,8 @@ module WitnessTests =
               <@@ int16 '\003' @@>, box 3s
               <@@ int16 3.0f @@>, box 3s
               <@@ int16 3.0 @@>, box 3s
+              <@@ int16 3.0<m> @@>, box 3s
+              <@@ int16 3I @@>, box 3s
               <@@ int16 LanguagePrimitives.GenericOne<nativeint> @@>, box 1s
               <@@ int16 LanguagePrimitives.GenericOne<unativeint> @@>, box 1s
               <@@ int16 3.0M @@>, box 3s
@@ -3755,6 +3795,8 @@ module WitnessTests =
               <@@ Checked.int16 '\003' @@>, box 3s
               <@@ Checked.int16 3.0f @@>, box 3s
               <@@ Checked.int16 3.0 @@>, box 3s
+              <@@ Checked.int16 3.0<m> @@>, box 3s
+              <@@ Checked.int16 3I @@>, box 3s
               <@@ Checked.int16 LanguagePrimitives.GenericOne<nativeint> @@>, box 1s
               <@@ Checked.int16 LanguagePrimitives.GenericOne<unativeint> @@>, box 1s
               <@@ Checked.int16 3.0M @@>, box 3s
@@ -3771,6 +3813,8 @@ module WitnessTests =
               <@@ uint16 '\003' @@>, box 3us
               <@@ uint16 3.0f @@>, box 3us
               <@@ uint16 3.0 @@>, box 3us
+              <@@ uint16 3.0<m> @@>, box 3us
+              <@@ uint16 3I @@>, box 3us
               <@@ uint16 LanguagePrimitives.GenericOne<nativeint> @@>, box 1us
               <@@ uint16 LanguagePrimitives.GenericOne<unativeint> @@>, box 1us
               <@@ uint16 3.0M @@>, box 3us
@@ -3786,6 +3830,8 @@ module WitnessTests =
               <@@ Checked.uint16 '\003' @@>, box 3us
               <@@ Checked.uint16 3.0f @@>, box 3us
               <@@ Checked.uint16 3.0 @@>, box 3us
+              <@@ Checked.uint16 3.0<m> @@>, box 3us
+              <@@ Checked.uint16 3I @@>, box 3us
               <@@ Checked.uint16 LanguagePrimitives.GenericOne<nativeint> @@>, box 1us
               <@@ Checked.uint16 LanguagePrimitives.GenericOne<unativeint> @@>, box 1us
               <@@ Checked.uint16 3.0M @@>, box 3us
@@ -3802,6 +3848,8 @@ module WitnessTests =
               <@@ int '\003' @@>, box 3
               <@@ int 3.0f @@>, box 3
               <@@ int 3.0 @@>, box 3
+              <@@ int 3.0<m> @@>, box 3
+              <@@ int 3I @@>, box 3
               <@@ int LanguagePrimitives.GenericOne<nativeint> @@>, box 1
               <@@ int LanguagePrimitives.GenericOne<unativeint> @@>, box 1
               <@@ int 3.0M @@>, box 3
@@ -3817,6 +3865,8 @@ module WitnessTests =
               <@@ int32 '\003' @@>, box 3
               <@@ int32 3.0f @@>, box 3
               <@@ int32 3.0 @@>, box 3
+              <@@ int32 3.0<m> @@>, box 3
+              <@@ int32 3I @@>, box 3
               <@@ int32 LanguagePrimitives.GenericOne<nativeint> @@>, box 1
               <@@ int32 LanguagePrimitives.GenericOne<unativeint> @@>, box 1
               <@@ int32 3.0M @@>, box 3
@@ -3832,6 +3882,8 @@ module WitnessTests =
               <@@ Checked.int '\003' @@>, box 3
               <@@ Checked.int 3.0f @@>, box 3
               <@@ Checked.int 3.0 @@>, box 3
+              <@@ Checked.int 3.0<m> @@>, box 3
+              <@@ Checked.int 3I @@>, box 3
               <@@ Checked.int LanguagePrimitives.GenericOne<nativeint> @@>, box 1
               <@@ Checked.int LanguagePrimitives.GenericOne<unativeint> @@>, box 1
               <@@ Checked.int 3.0M @@>, box 3
@@ -3847,6 +3899,8 @@ module WitnessTests =
               <@@ Checked.int32 '\003' @@>, box 3
               <@@ Checked.int32 3.0f @@>, box 3
               <@@ Checked.int32 3.0 @@>, box 3
+              <@@ Checked.int32 3.0<m> @@>, box 3
+              <@@ Checked.int32 3I @@>, box 3
               <@@ Checked.int32 LanguagePrimitives.GenericOne<nativeint> @@>, box 1
               <@@ Checked.int32 LanguagePrimitives.GenericOne<unativeint> @@>, box 1
               <@@ Checked.int32 3.0M @@>, box 3
@@ -3863,6 +3917,8 @@ module WitnessTests =
               <@@ uint '\003' @@>, box 3u
               <@@ uint 3.0f @@>, box 3u
               <@@ uint 3.0 @@>, box 3u
+              <@@ uint 3.0<m> @@>, box 3u
+              <@@ uint 3I @@>, box 3u
               <@@ uint LanguagePrimitives.GenericOne<nativeint> @@>, box 1u
               <@@ uint LanguagePrimitives.GenericOne<unativeint> @@>, box 1u
               <@@ uint 3.0M @@>, box 3u
@@ -3878,6 +3934,8 @@ module WitnessTests =
               <@@ uint32 '\003' @@>, box 3u
               <@@ uint32 3.0f @@>, box 3u
               <@@ uint32 3.0 @@>, box 3u
+              <@@ uint32 3.0<m> @@>, box 3u
+              <@@ uint32 3I @@>, box 3u
               <@@ uint32 LanguagePrimitives.GenericOne<nativeint> @@>, box 1u
               <@@ uint32 LanguagePrimitives.GenericOne<unativeint> @@>, box 1u
               <@@ uint32 3.0M @@>, box 3u
@@ -3893,6 +3951,8 @@ module WitnessTests =
               <@@ Checked.uint32 '\003' @@>, box 3u
               <@@ Checked.uint32 3.0f @@>, box 3u
               <@@ Checked.uint32 3.0 @@>, box 3u
+              <@@ Checked.uint32 3.0<m> @@>, box 3u
+              <@@ Checked.uint32 3I @@>, box 3u
               <@@ Checked.uint32 LanguagePrimitives.GenericOne<nativeint> @@>, box 1u
               <@@ Checked.uint32 LanguagePrimitives.GenericOne<unativeint> @@>, box 1u
               <@@ Checked.uint32 3.0M @@>, box 3u
@@ -3909,6 +3969,8 @@ module WitnessTests =
               <@@ int64 '\003' @@>, box 3L
               <@@ int64 3.0f @@>, box 3L
               <@@ int64 3.0 @@>, box 3L
+              <@@ int64 3.0<m> @@>, box 3L
+              <@@ int64 3I @@>, box 3L
               <@@ int64 LanguagePrimitives.GenericOne<nativeint> @@>, box 1L
               <@@ int64 LanguagePrimitives.GenericOne<unativeint> @@>, box 1L
               <@@ int64 3.0M @@>, box 3L
@@ -3924,6 +3986,8 @@ module WitnessTests =
               <@@ Checked.int64 '\003' @@>, box 3L
               <@@ Checked.int64 3.0f @@>, box 3L
               <@@ Checked.int64 3.0 @@>, box 3L
+              <@@ Checked.int64 3.0<m> @@>, box 3L
+              <@@ Checked.int64 3I @@>, box 3L
               <@@ Checked.int64 LanguagePrimitives.GenericOne<nativeint> @@>, box 1L
               <@@ Checked.int64 LanguagePrimitives.GenericOne<unativeint> @@>, box 1L
               <@@ Checked.int64 3.0M @@>, box 3L
@@ -3940,6 +4004,8 @@ module WitnessTests =
               <@@ uint64 '\003' @@>, box 3UL
               <@@ uint64 3.0f @@>, box 3UL
               <@@ uint64 3.0 @@>, box 3UL
+              <@@ uint64 3.0<m> @@>, box 3UL
+              <@@ uint64 3I @@>, box 3UL
               <@@ uint64 LanguagePrimitives.GenericOne<nativeint> @@>, box 1UL
               <@@ uint64 LanguagePrimitives.GenericOne<unativeint> @@>, box 1UL
               <@@ uint64 3.0M @@>, box 3UL
@@ -3955,6 +4021,8 @@ module WitnessTests =
               <@@ Checked.uint64 '\003' @@>, box 3UL
               <@@ Checked.uint64 3.0f @@>, box 3UL
               <@@ Checked.uint64 3.0 @@>, box 3UL
+              <@@ Checked.uint64 3.0<m> @@>, box 3UL
+              <@@ Checked.uint64 3I @@>, box 3UL
               <@@ Checked.uint64 LanguagePrimitives.GenericOne<nativeint> @@>, box 1UL
               <@@ Checked.uint64 LanguagePrimitives.GenericOne<unativeint> @@>, box 1UL
               <@@ Checked.uint64 3.0M @@>, box 3UL
@@ -3971,6 +4039,7 @@ module WitnessTests =
               <@@ char '3' @@>, box '3'
               <@@ char 51.0f @@>, box '3'
               <@@ char 51.0 @@>, box '3'
+              <@@ char 51.0<m> @@>, box '3'
               <@@ char LanguagePrimitives.GenericOne<nativeint> @@>, box '\001'
               <@@ char LanguagePrimitives.GenericOne<unativeint> @@>, box '\001'
               <@@ char 51.0M @@>, box '3'
@@ -3986,6 +4055,7 @@ module WitnessTests =
               <@@ Checked.char '3' @@>, box '3'
               <@@ Checked.char 51.0f @@>, box '3'
               <@@ Checked.char 51.0 @@>, box '3'
+              <@@ Checked.char 51.0<m> @@>, box '3'
               <@@ Checked.char LanguagePrimitives.GenericOne<nativeint> @@>, box '\001'
               <@@ Checked.char LanguagePrimitives.GenericOne<unativeint> @@>, box '\001'
               <@@ Checked.char 51.0M @@>, box '3'
@@ -4002,6 +4072,7 @@ module WitnessTests =
               <@@ nativeint '\003' @@>, box 3n
               <@@ nativeint 3.0f @@>, box 3n
               <@@ nativeint 3.0 @@>, box 3n
+              <@@ nativeint 3.0<m> @@>, box 3n
               <@@ nativeint LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
               <@@ nativeint LanguagePrimitives.GenericOne<unativeint> @@>, box 1n
               <@@ nativeint 3.0M @@>, box 3n
@@ -4017,6 +4088,7 @@ module WitnessTests =
               <@@ Checked.nativeint '\003' @@>, box 3n
               <@@ Checked.nativeint 3.0f @@>, box 3n
               <@@ Checked.nativeint 3.0 @@>, box 3n
+              <@@ Checked.nativeint 3.0<m> @@>, box 3n
               <@@ Checked.nativeint LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
               <@@ Checked.nativeint LanguagePrimitives.GenericOne<unativeint> @@>, box 1n
               <@@ Checked.nativeint 3.0M @@>, box 3n
@@ -4033,6 +4105,7 @@ module WitnessTests =
               <@@ unativeint '\003' @@>, box 3un
               <@@ unativeint 3.0f @@>, box 3un
               <@@ unativeint 3.0 @@>, box 3un
+              <@@ unativeint 3.0<m> @@>, box 3un
               <@@ unativeint LanguagePrimitives.GenericOne<nativeint> @@>, box 1un
               <@@ unativeint LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
               <@@ unativeint 3.0M @@>, box 3un
@@ -4048,6 +4121,7 @@ module WitnessTests =
               <@@ Checked.unativeint '\003' @@>, box 3un
               <@@ Checked.unativeint 3.0f @@>, box 3un
               <@@ Checked.unativeint 3.0 @@>, box 3un
+              <@@ Checked.unativeint 3.0<m> @@>, box 3un
               <@@ Checked.unativeint LanguagePrimitives.GenericOne<nativeint> @@>, box 1un
               <@@ Checked.unativeint LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
               <@@ Checked.unativeint 3.0M @@>, box 3un
@@ -4064,6 +4138,8 @@ module WitnessTests =
               <@@ single '\003' @@>, box 3f
               <@@ single 3.0f @@>, box 3f
               <@@ single 3.0 @@>, box 3f
+              <@@ single 3.0<m> @@>, box 3f
+              <@@ single 3I @@>, box 3f
               <@@ single LanguagePrimitives.GenericOne<nativeint> @@>, box 1f
               <@@ single LanguagePrimitives.GenericOne<unativeint> @@>, box 1f
               <@@ single 3.0M @@>, box 3f
@@ -4079,6 +4155,8 @@ module WitnessTests =
               <@@ float32 '\003' @@>, box 3f
               <@@ float32 3.0f @@>, box 3f
               <@@ float32 3.0 @@>, box 3f
+              <@@ float32 3.0<m> @@>, box 3f
+              <@@ float32 3I @@>, box 3f
               <@@ float32 LanguagePrimitives.GenericOne<nativeint> @@>, box 1f
               <@@ float32 LanguagePrimitives.GenericOne<unativeint> @@>, box 1f
               <@@ float32 3.0M @@>, box 3f
@@ -4095,6 +4173,8 @@ module WitnessTests =
               <@@ double '\003' @@>, box 3.
               <@@ double 3.0f @@>, box 3.
               <@@ double 3.0 @@>, box 3.
+              <@@ double 3.0<m> @@>, box 3.
+              <@@ double 3I @@>, box 3.
               <@@ double LanguagePrimitives.GenericOne<nativeint> @@>, box 1.
               <@@ double LanguagePrimitives.GenericOne<unativeint> @@>, box 1.
               <@@ double 3.0M @@>, box 3.
@@ -4110,6 +4190,8 @@ module WitnessTests =
               <@@ float '\003' @@>, box 3.
               <@@ float 3.0f @@>, box 3.
               <@@ float 3.0 @@>, box 3.
+              <@@ float 3.0<m> @@>, box 3.
+              <@@ float 3I @@>, box 3.
               <@@ float LanguagePrimitives.GenericOne<nativeint> @@>, box 1.
               <@@ float LanguagePrimitives.GenericOne<unativeint> @@>, box 1.
               <@@ float 3.0M @@>, box 3.
@@ -4126,34 +4208,65 @@ module WitnessTests =
               <@@ decimal '\003' @@>, box 3m
               <@@ decimal 3.0f @@>, box 3m
               <@@ decimal 3.0 @@>, box 3m
+              <@@ decimal 3.0<m> @@>, box 3m
+              <@@ decimal 3I @@>, box 3m
               <@@ decimal LanguagePrimitives.GenericOne<nativeint> @@>, box 1m
               <@@ decimal LanguagePrimitives.GenericOne<unativeint> @@>, box 1m
               <@@ decimal 3.0M @@>, box 3m
               <@@ decimal "3" @@>, box 3m
 
+              <@@ LanguagePrimitives.GenericZero<byte> @@>, box 0uy
+              <@@ LanguagePrimitives.GenericZero<uint8> @@>, box 0uy
+              <@@ LanguagePrimitives.GenericZero<sbyte> @@>, box 0y
+              <@@ LanguagePrimitives.GenericZero<int8> @@>, box 0y
+              <@@ LanguagePrimitives.GenericZero<int16> @@>, box 0s
+              <@@ LanguagePrimitives.GenericZero<uint16> @@>, box 0us
               <@@ LanguagePrimitives.GenericZero<int> @@>, box 0
+              <@@ LanguagePrimitives.GenericZero<int32> @@>, box 0
+              <@@ LanguagePrimitives.GenericZero<uint> @@>, box 0u
+              <@@ LanguagePrimitives.GenericZero<uint32> @@>, box 0u
               <@@ LanguagePrimitives.GenericZero<int64> @@>, box 0L
               <@@ LanguagePrimitives.GenericZero<uint64> @@>, box 0UL
+              <@@ LanguagePrimitives.GenericZero<bigint> @@>, box 0I
               <@@ LanguagePrimitives.GenericZero<char> @@>, box '\000'
               <@@ LanguagePrimitives.GenericZero<nativeint> @@>, box 0n
               <@@ LanguagePrimitives.GenericZero<unativeint> @@>, box 0un
               <@@ LanguagePrimitives.GenericZero<float32> @@>, box 0f
               <@@ LanguagePrimitives.GenericZero<float> @@>, box 0.
+              <@@ LanguagePrimitives.GenericZero<decimal> @@>, box 0m
+              <@@ LanguagePrimitives.GenericZero<decimal<m>> @@>, box 0m
+
+              <@@ LanguagePrimitives.GenericOne<byte> @@>, box 1uy
+              <@@ LanguagePrimitives.GenericOne<uint8> @@>, box 1uy
+              <@@ LanguagePrimitives.GenericOne<sbyte> @@>, box 1y
+              <@@ LanguagePrimitives.GenericOne<int8> @@>, box 1y
+              <@@ LanguagePrimitives.GenericOne<int16> @@>, box 1s
+              <@@ LanguagePrimitives.GenericOne<uint16> @@>, box 1us
               <@@ LanguagePrimitives.GenericOne<int> @@>, box 1
+              <@@ LanguagePrimitives.GenericOne<int32> @@>, box 1
+              <@@ LanguagePrimitives.GenericOne<uint> @@>, box 1u
+              <@@ LanguagePrimitives.GenericOne<uint32> @@>, box 1u
               <@@ LanguagePrimitives.GenericOne<int64> @@>, box 1L
               <@@ LanguagePrimitives.GenericOne<uint64> @@>, box 1UL
+              <@@ LanguagePrimitives.GenericOne<bigint> @@>, box 1I
               <@@ LanguagePrimitives.GenericOne<char> @@>, box '\001'
               <@@ LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
               <@@ LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
               <@@ LanguagePrimitives.GenericOne<float32> @@>, box 1f
               <@@ LanguagePrimitives.GenericOne<float> @@>, box 1.
+              <@@ LanguagePrimitives.GenericOne<decimal> @@>, box 1m
+              <@@ LanguagePrimitives.GenericOne<decimal<m>> @@>, box 1m
+
               <@@ List.sum [ 1; 2 ] @@>, box 3
+              <@@ List.sum [ 1I; 2I ] @@>, box 3I
               <@@ List.sum [ 1.0f; 2.0f ] @@>, box 3f
               <@@ List.sum [ 1.0; 2.0 ] @@>, box 3.
               <@@ List.sum [ 1.0M; 2.0M ] @@>, box 3m
+              <@@ List.sum [ 1.0M<m>; 2.0M<m> ] @@>, box 3m
               <@@ List.average [ 1.0; 2.0 ] @@>, box 1.5
               <@@ List.average [ 1.0f; 2.0f ] @@>, box 1.5f
               <@@ List.average [ 1.0M; 2.0M ] @@>, box 1.5m 
+              <@@ List.average [ 1.0M<m>; 2.0M<m> ] @@>, box 1.5m 
               
               <@@ Nullable.byte (Nullable<_> 3uy) @@>, box 3uy
               <@@ Nullable.byte (Nullable<_> 3y) @@>, box 3uy
@@ -4166,6 +4279,8 @@ module WitnessTests =
               <@@ Nullable.byte (Nullable<_> '\003') @@>, box 3uy
               <@@ Nullable.byte (Nullable<_> 3.0f) @@>, box 3uy
               <@@ Nullable.byte (Nullable<_> 3.0) @@>, box 3uy
+              <@@ Nullable.byte (Nullable<_> 3.0<m>) @@>, box 3uy
+              <@@ Nullable.byte (Nullable<_> 3I) @@>, box 3uy
               <@@ Nullable.byte (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1uy
               <@@ Nullable.byte (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1uy
               <@@ Nullable.byte (Nullable<_> 3.0M) @@>, box 3uy
@@ -4180,6 +4295,8 @@ module WitnessTests =
               <@@ Nullable.uint8 (Nullable<_> '\003') @@>, box 3uy
               <@@ Nullable.uint8 (Nullable<_> 3.0f) @@>, box 3uy
               <@@ Nullable.uint8 (Nullable<_> 3.0) @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> 3.0<m>) @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> 3I) @@>, box 3uy
               <@@ Nullable.uint8 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1uy
               <@@ Nullable.uint8 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1uy
               <@@ Nullable.uint8 (Nullable<_> 3.0M) @@>, box 3uy
@@ -4195,6 +4312,8 @@ module WitnessTests =
               <@@ Nullable.sbyte (Nullable<_> '\003') @@>, box 3y
               <@@ Nullable.sbyte (Nullable<_> 3.0f) @@>, box 3y
               <@@ Nullable.sbyte (Nullable<_> 3.0) @@>, box 3y
+              <@@ Nullable.sbyte (Nullable<_> 3.0<m>) @@>, box 3y
+              <@@ Nullable.sbyte (Nullable<_> 3I) @@>, box 3y
               <@@ Nullable.sbyte (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1y
               <@@ Nullable.sbyte (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1y
               <@@ Nullable.sbyte (Nullable<_> 3.0M) @@>, box 3y
@@ -4209,6 +4328,8 @@ module WitnessTests =
               <@@ Nullable.int8 (Nullable<_> '\003') @@>, box 3y
               <@@ Nullable.int8 (Nullable<_> 3.0f) @@>, box 3y
               <@@ Nullable.int8 (Nullable<_> 3.0) @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> 3.0<m>) @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> 3I) @@>, box 3y
               <@@ Nullable.int8 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1y
               <@@ Nullable.int8 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1y
               <@@ Nullable.int8 (Nullable<_> 3.0M) @@>, box 3y
@@ -4224,6 +4345,8 @@ module WitnessTests =
               <@@ Nullable.int16 (Nullable<_> '\003') @@>, box 3s
               <@@ Nullable.int16 (Nullable<_> 3.0f) @@>, box 3s
               <@@ Nullable.int16 (Nullable<_> 3.0) @@>, box 3s
+              <@@ Nullable.int16 (Nullable<_> 3.0<m>) @@>, box 3s
+              <@@ Nullable.int16 (Nullable<_> 3I) @@>, box 3s
               <@@ Nullable.int16 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1s
               <@@ Nullable.int16 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1s
               <@@ Nullable.int16 (Nullable<_> 3.0M) @@>, box 3s
@@ -4239,6 +4362,8 @@ module WitnessTests =
               <@@ Nullable.uint16 (Nullable<_> '\003') @@>, box 3us
               <@@ Nullable.uint16 (Nullable<_> 3.0f) @@>, box 3us
               <@@ Nullable.uint16 (Nullable<_> 3.0) @@>, box 3us
+              <@@ Nullable.uint16 (Nullable<_> 3.0<m>) @@>, box 3us
+              <@@ Nullable.uint16 (Nullable<_> 3I) @@>, box 3us
               <@@ Nullable.uint16 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1us
               <@@ Nullable.uint16 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1us
               <@@ Nullable.uint16 (Nullable<_> 3.0M) @@>, box 3us
@@ -4254,6 +4379,8 @@ module WitnessTests =
               <@@ Nullable.int (Nullable<_> '\003') @@>, box 3
               <@@ Nullable.int (Nullable<_> 3.0f) @@>, box 3
               <@@ Nullable.int (Nullable<_> 3.0) @@>, box 3
+              <@@ Nullable.int (Nullable<_> 3.0<m>) @@>, box 3
+              <@@ Nullable.int (Nullable<_> 3I) @@>, box 3
               <@@ Nullable.int (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1
               <@@ Nullable.int (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1
               <@@ Nullable.int (Nullable<_> 3.0M) @@>, box 3
@@ -4268,6 +4395,8 @@ module WitnessTests =
               <@@ Nullable.int32 (Nullable<_> '\003') @@>, box 3
               <@@ Nullable.int32 (Nullable<_> 3.0f) @@>, box 3
               <@@ Nullable.int32 (Nullable<_> 3.0) @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> 3.0<m>) @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> 3I) @@>, box 3
               <@@ Nullable.int32 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1
               <@@ Nullable.int32 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1
               <@@ Nullable.int32 (Nullable<_> 3.0M) @@>, box 3
@@ -4283,6 +4412,8 @@ module WitnessTests =
               <@@ Nullable.uint (Nullable<_> '\003') @@>, box 3u
               <@@ Nullable.uint (Nullable<_> 3.0f) @@>, box 3u
               <@@ Nullable.uint (Nullable<_> 3.0) @@>, box 3u
+              <@@ Nullable.uint (Nullable<_> 3.0<m>) @@>, box 3u
+              <@@ Nullable.uint (Nullable<_> 3I) @@>, box 3u
               <@@ Nullable.uint (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1u
               <@@ Nullable.uint (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1u
               <@@ Nullable.uint (Nullable<_> 3.0M) @@>, box 3u
@@ -4297,6 +4428,8 @@ module WitnessTests =
               <@@ Nullable.uint32 (Nullable<_> '\003') @@>, box 3u
               <@@ Nullable.uint32 (Nullable<_> 3.0f) @@>, box 3u
               <@@ Nullable.uint32 (Nullable<_> 3.0) @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> 3.0<m>) @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> 3I) @@>, box 3u
               <@@ Nullable.uint32 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1u
               <@@ Nullable.uint32 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1u
               <@@ Nullable.uint32 (Nullable<_> 3.0M) @@>, box 3u
@@ -4312,6 +4445,8 @@ module WitnessTests =
               <@@ Nullable.int64 (Nullable<_> '\003') @@>, box 3L
               <@@ Nullable.int64 (Nullable<_> 3.0f) @@>, box 3L
               <@@ Nullable.int64 (Nullable<_> 3.0) @@>, box 3L
+              <@@ Nullable.int64 (Nullable<_> 3.0<m>) @@>, box 3L
+              <@@ Nullable.int64 (Nullable<_> 3I) @@>, box 3L
               <@@ Nullable.int64 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1L
               <@@ Nullable.int64 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1L
               <@@ Nullable.int64 (Nullable<_> 3.0M) @@>, box 3L
@@ -4327,6 +4462,8 @@ module WitnessTests =
               <@@ Nullable.uint64 (Nullable<_> '\003') @@>, box 3UL
               <@@ Nullable.uint64 (Nullable<_> 3.0f) @@>, box 3UL
               <@@ Nullable.uint64 (Nullable<_> 3.0) @@>, box 3UL
+              <@@ Nullable.uint64 (Nullable<_> 3.0<m>) @@>, box 3UL
+              <@@ Nullable.uint64 (Nullable<_> 3I) @@>, box 3UL
               <@@ Nullable.uint64 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1UL
               <@@ Nullable.uint64 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1UL
               <@@ Nullable.uint64 (Nullable<_> 3.0M) @@>, box 3UL
@@ -4342,6 +4479,7 @@ module WitnessTests =
               <@@ Nullable.char (Nullable<_> '3') @@>, box '3'
               <@@ Nullable.char (Nullable<_> 51.0f) @@>, box '3'
               <@@ Nullable.char (Nullable<_> 51.0) @@>, box '3'
+              <@@ Nullable.char (Nullable<_> 51.0<m>) @@>, box '3'
               <@@ Nullable.char (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box '\001'
               <@@ Nullable.char (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box '\001'
               <@@ Nullable.char (Nullable<_> 51.0M) @@>, box '3'
@@ -4357,6 +4495,8 @@ module WitnessTests =
               <@@ Nullable.single (Nullable<_> '\003') @@>, box 3f
               <@@ Nullable.single (Nullable<_> 3.0f) @@>, box 3f
               <@@ Nullable.single (Nullable<_> 3.0) @@>, box 3f
+              <@@ Nullable.single (Nullable<_> 3.0<m>) @@>, box 3f
+              <@@ Nullable.single (Nullable<_> 3I) @@>, box 3f
               <@@ Nullable.single (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1f
               <@@ Nullable.single (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1f
               <@@ Nullable.single (Nullable<_> 3.0M) @@>, box 3f
@@ -4371,6 +4511,8 @@ module WitnessTests =
               <@@ Nullable.float32 (Nullable<_> '\003') @@>, box 3f
               <@@ Nullable.float32 (Nullable<_> 3.0f) @@>, box 3f
               <@@ Nullable.float32 (Nullable<_> 3.0) @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> 3.0<m>) @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> 3I) @@>, box 3f
               <@@ Nullable.float32 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1f
               <@@ Nullable.float32 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1f
               <@@ Nullable.float32 (Nullable<_> 3.0M) @@>, box 3f
@@ -4386,6 +4528,8 @@ module WitnessTests =
               <@@ Nullable.double (Nullable<_> '\003') @@>, box 3.
               <@@ Nullable.double (Nullable<_> 3.0f) @@>, box 3.
               <@@ Nullable.double (Nullable<_> 3.0) @@>, box 3.
+              <@@ Nullable.double (Nullable<_> 3.0<m>) @@>, box 3.
+              <@@ Nullable.double (Nullable<_> 3I) @@>, box 3.
               <@@ Nullable.double (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1.
               <@@ Nullable.double (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1.
               <@@ Nullable.double (Nullable<_> 3.0M) @@>, box 3.
@@ -4400,6 +4544,8 @@ module WitnessTests =
               <@@ Nullable.float (Nullable<_> '\003') @@>, box 3.
               <@@ Nullable.float (Nullable<_> 3.0f) @@>, box 3.
               <@@ Nullable.float (Nullable<_> 3.0) @@>, box 3.
+              <@@ Nullable.float (Nullable<_> 3.0<m>) @@>, box 3.
+              <@@ Nullable.float (Nullable<_> 3I) @@>, box 3.
               <@@ Nullable.float (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1.
               <@@ Nullable.float (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1.
               <@@ Nullable.float (Nullable<_> 3.0M) @@>, box 3.
@@ -4415,6 +4561,8 @@ module WitnessTests =
               <@@ Nullable.decimal (Nullable<_> '\003') @@>, box 3m
               <@@ Nullable.decimal (Nullable<_> 3.0f) @@>, box 3m
               <@@ Nullable.decimal (Nullable<_> 3.0) @@>, box 3m
+              <@@ Nullable.decimal (Nullable<_> 3.0<m>) @@>, box 3m
+              <@@ Nullable.decimal (Nullable<_> 3I) @@>, box 3m
               <@@ Nullable.decimal (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1m
               <@@ Nullable.decimal (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1m
               <@@ Nullable.decimal (Nullable<_> 3.0M) @@>, box 3m
@@ -4430,6 +4578,8 @@ module WitnessTests =
               <@@ Nullable<_> 1.0f ?+ 4.0f @@>, box 5f
               <@@ Nullable<_> 1.0 ?+ 4.0 @@>, box 5.
               <@@ Nullable<_> 1m ?+ 4m @@>, box 5m
+              <@@ Nullable<_> 1m<m> ?+ 4m<m> @@>, box 5m
+              <@@ Nullable<_> 1I ?+ 4I @@>, box 5I
               <@@ Nullable<_> '1' ?+ '\004' @@>, box '5'
               <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?+ LanguagePrimitives.GenericOne<nativeint> @@>, box 2n
               <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?+ LanguagePrimitives.GenericOne<unativeint> @@>, box 2un
@@ -4445,6 +4595,8 @@ module WitnessTests =
               <@@ 1.0f +? Nullable<_> 4.0f @@>, box 5f
               <@@ 1.0 +? Nullable<_> 4.0 @@>, box 5.
               <@@ 1m +? Nullable<_> 4m @@>, box 5m
+              <@@ 1m<m> +? Nullable<_> 4m<m> @@>, box 5m
+              <@@ 1I +? Nullable<_> 4I @@>, box 5I
               <@@ '1' +? Nullable<_> '\004' @@>, box '5'
               <@@ LanguagePrimitives.GenericOne<nativeint> +? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box 2n
               <@@ LanguagePrimitives.GenericOne<unativeint> +? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box 2un
@@ -4460,6 +4612,8 @@ module WitnessTests =
               <@@ Nullable<_> 1.0f ?+? Nullable<_> 4.0f @@>, box 5f
               <@@ Nullable<_> 1.0 ?+? Nullable<_> 4.0 @@>, box 5.
               <@@ Nullable<_> 1m ?+? Nullable<_> 4m @@>, box 5m
+              <@@ Nullable<_> 1m<m> ?+? Nullable<_> 4m<m> @@>, box 5m
+              <@@ Nullable<_> 1I ?+? Nullable<_> 4I @@>, box 5I
               <@@ Nullable<_> '1' ?+? Nullable<_> '\004' @@>, box '5'
               <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box 2n
               <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box 2un
@@ -4514,6 +4668,8 @@ module WitnessTests =
               <@@ 3f = 3f @@>, box true
               <@@ 3. = 3. @@>, box true
               <@@ 3m = 3m @@>, box true
+              <@@ 3m<m> = 3m<m> @@>, box true
+              <@@ 3I = 3I @@>, box true
               <@@ "3" = "3" @@>, box true
               <@@ [3] = [3] @@>, box false // Unlike the F# structural operator, it translates to a reference equality check in Linq Expressions. Need to consider whether this is desirable.
               <@@ [|3|] = [|3|] @@>, box false // Unlike the F# structural operator, it translates to a reference equality check in Linq Expressions. Need to consider whether this is desirable.
@@ -4533,6 +4689,8 @@ module WitnessTests =
               <@@ 3f <> 3f @@>, box false
               <@@ 3. <> 3. @@>, box false
               <@@ 3m <> 3m @@>, box false
+              <@@ 3m<m> <> 3m<m> @@>, box false
+              <@@ 3I <> 3I @@>, box false
               <@@ "3" <> "3" @@>, box false
               <@@ [3] <> [3] @@>, box true // Unlike the F# structural operator, it translates to a reference equality check in Linq Expressions. Need to consider whether this is desirable.
               <@@ [|3|] <> [|3|] @@>, box true // Unlike the F# structural operator, it translates to a reference equality check in Linq Expressions. Need to consider whether this is desirable.
@@ -4552,6 +4710,8 @@ module WitnessTests =
               <@@ 3f <= 3f @@>, box true
               <@@ 3. <= 3. @@>, box true
               <@@ 3m <= 3m @@>, box true
+              <@@ 3m<m> <= 3m<m> @@>, box true
+              <@@ 3I <= 3I @@>, box true
               <@@ "3" <= "3" @@>, box true
               <@@ [3] <= [3] @@>, box true
               <@@ [|3|] <= [|3|] @@>, box true
@@ -4570,6 +4730,8 @@ module WitnessTests =
               <@@ 3f < 3f @@>, box false
               <@@ 3. < 3. @@>, box false
               <@@ 3m < 3m @@>, box false
+              <@@ 3m<m> < 3m<m> @@>, box false
+              <@@ 3I < 3I @@>, box false
               <@@ "3" < "3" @@>, box false
               <@@ [3] < [3] @@>, box false
               <@@ [|3|] < [|3|] @@>, box false
@@ -4588,6 +4750,8 @@ module WitnessTests =
               <@@ 3f >= 3f @@>, box true
               <@@ 3. >= 3. @@>, box true
               <@@ 3m >= 3m @@>, box true
+              <@@ 3m<m> >= 3m<m> @@>, box true
+              <@@ 3I >= 3I @@>, box true
               <@@ "3" >= "3" @@>, box true
               <@@ [3] >= [3] @@>, box true
               <@@ [|3|] >= [|3|] @@>, box true
@@ -4606,6 +4770,8 @@ module WitnessTests =
               <@@ 3f > 3f @@>, box false
               <@@ 3. > 3. @@>, box false
               <@@ 3m > 3m @@>, box false
+              <@@ 3m<m> > 3m<m> @@>, box false
+              <@@ 3I > 3I @@>, box false
               <@@ "3" > "3" @@>, box false
               <@@ [3] > [3] @@>, box false
               <@@ [|3|] > [|3|] @@>, box false
@@ -4621,6 +4787,8 @@ module WitnessTests =
               <@@ Nullable<_> 1.0f ?= 1.0f @@>, box true
               <@@ Nullable<_> 1.0 ?= 1.0 @@>, box true
               <@@ Nullable<_> 1m ?= 1m @@>, box true
+              <@@ Nullable<_> 1m<m> ?= 1m<m> @@>, box true
+              <@@ Nullable<_> 1I ?= 1I @@>, box true
               <@@ Nullable<_> '1' ?= '1' @@>, box true
               <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?= LanguagePrimitives.GenericOne<nativeint> @@>, box true
               <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?= LanguagePrimitives.GenericOne<unativeint> @@>, box true
@@ -4636,6 +4804,8 @@ module WitnessTests =
               <@@ 1.0f =? Nullable<_> 1.0f @@>, box true
               <@@ 1.0 =? Nullable<_> 1.0 @@>, box true
               <@@ 1m =? Nullable<_> 1m @@>, box true
+              <@@ 1m<m> =? Nullable<_> 1m<m> @@>, box true
+              <@@ 1I =? Nullable<_> 1I @@>, box true
               <@@ '1' =? Nullable<_> '1' @@>, box true
               <@@ LanguagePrimitives.GenericOne<nativeint> =? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box true
               <@@ LanguagePrimitives.GenericOne<unativeint> =? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box true
@@ -4651,6 +4821,8 @@ module WitnessTests =
               <@@ Nullable<_> 1.0f ?=? Nullable<_> 1.0f @@>, box true
               <@@ Nullable<_> 1.0 ?=? Nullable<_> 1.0 @@>, box true
               <@@ Nullable<_> 1m ?=? Nullable<_> 1m @@>, box true
+              <@@ Nullable<_> 1m<m> ?=? Nullable<_> 1m<m> @@>, box true
+              <@@ Nullable<_> 1I ?=? Nullable<_> 1I @@>, box true
               <@@ Nullable<_> '1' ?=? Nullable<_> '1' @@>, box true
               <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?=? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box true
               <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?=? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box true
@@ -4669,6 +4841,8 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?<> 3f @@>, box false
               <@@ Nullable<_> 3. ?<> 3. @@>, box false
               <@@ Nullable<_> 3m ?<> 3m @@>, box false
+              <@@ Nullable<_> 3m<m> ?<> 3m<m> @@>, box false
+              <@@ Nullable<_> 3I ?<> 3I @@>, box false
               
               <@@ 3y <>? Nullable<_> 3y @@>, box false
               <@@ 3uy <>? Nullable<_> 3uy @@>, box false
@@ -4684,6 +4858,8 @@ module WitnessTests =
               <@@ 3f <>? Nullable<_> 3f @@>, box false
               <@@ 3. <>? Nullable<_> 3. @@>, box false
               <@@ 3m <>? Nullable<_> 3m @@>, box false
+              <@@ 3m<m> <>? Nullable<_> 3m<m> @@>, box false
+              <@@ 3I <>? Nullable<_> 3I @@>, box false
               
               <@@ Nullable<_> 3y ?<>? Nullable<_> 3y @@>, box false
               <@@ Nullable<_> 3uy ?<>? Nullable<_> 3uy @@>, box false
@@ -4699,6 +4875,8 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?<>? Nullable<_> 3f @@>, box false
               <@@ Nullable<_> 3. ?<>? Nullable<_> 3. @@>, box false
               <@@ Nullable<_> 3m ?<>? Nullable<_> 3m @@>, box false
+              <@@ Nullable<_> 3m<m> ?<>? Nullable<_> 3m<m> @@>, box false
+              <@@ Nullable<_> 3I ?<>? Nullable<_> 3I @@>, box false
               
               <@@ Nullable<_> 3y ?<= 3y @@>, box true
               <@@ Nullable<_> 3uy ?<= 3uy @@>, box true
@@ -4714,6 +4892,8 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?<= 3f @@>, box true
               <@@ Nullable<_> 3. ?<= 3. @@>, box true
               <@@ Nullable<_> 3m ?<= 3m @@>, box true
+              <@@ Nullable<_> 3m<m> ?<= 3m<m> @@>, box true
+              <@@ Nullable<_> 3I ?<= 3I @@>, box true
 
               <@@ 3y <=? Nullable<_> 3y @@>, box true
               <@@ 3uy <=? Nullable<_> 3uy @@>, box true
@@ -4729,6 +4909,8 @@ module WitnessTests =
               <@@ 3f <=? Nullable<_> 3f @@>, box true
               <@@ 3. <=? Nullable<_> 3. @@>, box true
               <@@ 3m <=? Nullable<_> 3m @@>, box true
+              <@@ 3m<m> <=? Nullable<_> 3m<m> @@>, box true
+              <@@ 3I <=? Nullable<_> 3I @@>, box true
 
               <@@ Nullable<_> 3y ?<=? Nullable<_> 3y @@>, box true
               <@@ Nullable<_> 3uy ?<=? Nullable<_> 3uy @@>, box true
@@ -4744,6 +4926,8 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?<=? Nullable<_> 3f @@>, box true
               <@@ Nullable<_> 3. ?<=? Nullable<_> 3. @@>, box true
               <@@ Nullable<_> 3m ?<=? Nullable<_> 3m @@>, box true
+              <@@ Nullable<_> 3m<m> ?<=? Nullable<_> 3m<m> @@>, box true
+              <@@ Nullable<_> 3I ?<=? Nullable<_> 3I @@>, box true
 
               <@@ Nullable<_> 3y ?< 3y @@>, box false
               <@@ Nullable<_> 3uy ?< 3uy @@>, box false
@@ -4759,6 +4943,8 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?< 3f @@>, box false
               <@@ Nullable<_> 3. ?< 3. @@>, box false
               <@@ Nullable<_> 3m ?< 3m @@>, box false
+              <@@ Nullable<_> 3m<m> ?< 3m<m> @@>, box false
+              <@@ Nullable<_> 3I ?< 3I @@>, box false
 
               <@@ 3y <? Nullable<_> 3y @@>, box false
               <@@ 3uy <? Nullable<_> 3uy @@>, box false
@@ -4774,6 +4960,8 @@ module WitnessTests =
               <@@ 3f <? Nullable<_> 3f @@>, box false
               <@@ 3. <? Nullable<_> 3. @@>, box false
               <@@ 3m <? Nullable<_> 3m @@>, box false
+              <@@ 3m<m> <? Nullable<_> 3m<m> @@>, box false
+              <@@ 3I <? Nullable<_> 3I @@>, box false
 
               <@@ Nullable<_> 3y ?<? Nullable<_> 3y @@>, box false
               <@@ Nullable<_> 3uy ?<? Nullable<_> 3uy @@>, box false
@@ -4789,6 +4977,8 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?<? Nullable<_> 3f @@>, box false
               <@@ Nullable<_> 3. ?<? Nullable<_> 3. @@>, box false
               <@@ Nullable<_> 3m ?<? Nullable<_> 3m @@>, box false
+              <@@ Nullable<_> 3m<m> ?<? Nullable<_> 3m<m> @@>, box false
+              <@@ Nullable<_> 3I ?<? Nullable<_> 3I @@>, box false
 
               <@@ Nullable<_> 3y ?>= 3y @@>, box true
               <@@ Nullable<_> 3uy ?>= 3uy @@>, box true
@@ -4804,6 +4994,8 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?>= 3f @@>, box true
               <@@ Nullable<_> 3. ?>= 3. @@>, box true
               <@@ Nullable<_> 3m ?>= 3m @@>, box true
+              <@@ Nullable<_> 3m<m> ?>= 3m<m> @@>, box true
+              <@@ Nullable<_> 3I ?>= 3I @@>, box true
 
               <@@ 3y >=? Nullable<_> 3y @@>, box true
               <@@ 3uy >=? Nullable<_> 3uy @@>, box true
@@ -4819,6 +5011,8 @@ module WitnessTests =
               <@@ 3f >=? Nullable<_> 3f @@>, box true
               <@@ 3. >=? Nullable<_> 3. @@>, box true
               <@@ 3m >=? Nullable<_> 3m @@>, box true
+              <@@ 3m<m> >=? Nullable<_> 3m<m> @@>, box true
+              <@@ 3I >=? Nullable<_> 3I @@>, box true
 
               <@@ Nullable<_> 3y ?>=? Nullable<_> 3y @@>, box true
               <@@ Nullable<_> 3uy ?>=? Nullable<_> 3uy @@>, box true
@@ -4834,6 +5028,8 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?>=? Nullable<_> 3f @@>, box true
               <@@ Nullable<_> 3. ?>=? Nullable<_> 3. @@>, box true
               <@@ Nullable<_> 3m ?>=? Nullable<_> 3m @@>, box true
+              <@@ Nullable<_> 3m<m> ?>=? Nullable<_> 3m<m> @@>, box true
+              <@@ Nullable<_> 3I ?>=? Nullable<_> 3I @@>, box true
 
               <@@ Nullable<_> 3y ?> 3y @@>, box false
               <@@ Nullable<_> 3uy ?> 3uy @@>, box false
@@ -4849,6 +5045,8 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?> 3f @@>, box false
               <@@ Nullable<_> 3. ?> 3. @@>, box false
               <@@ Nullable<_> 3m ?> 3m @@>, box false
+              <@@ Nullable<_> 3m<m> ?> 3m<m> @@>, box false
+              <@@ Nullable<_> 3I ?> 3I @@>, box false
 
               <@@ 3y >? Nullable<_> 3y @@>, box false
               <@@ 3uy >? Nullable<_> 3uy @@>, box false
@@ -4864,6 +5062,8 @@ module WitnessTests =
               <@@ 3f >? Nullable<_> 3f @@>, box false
               <@@ 3. >? Nullable<_> 3. @@>, box false
               <@@ 3m >? Nullable<_> 3m @@>, box false
+              <@@ 3m<m> >? Nullable<_> 3m<m> @@>, box false
+              <@@ 3I >? Nullable<_> 3I @@>, box false
 
               <@@ Nullable<_> 3y ?>? Nullable<_> 3y @@>, box false
               <@@ Nullable<_> 3uy ?>? Nullable<_> 3uy @@>, box false
@@ -4879,6 +5079,8 @@ module WitnessTests =
               <@@ Nullable<_> 3f ?>? Nullable<_> 3f @@>, box false
               <@@ Nullable<_> 3. ?>? Nullable<_> 3. @@>, box false
               <@@ Nullable<_> 3m ?>? Nullable<_> 3m @@>, box false
+              <@@ Nullable<_> 3m<m> ?>? Nullable<_> 3m<m> @@>, box false
+              <@@ Nullable<_> 3I ?>? Nullable<_> 3I @@>, box false
             |]
 
        tests |> Array.map (fun (test, eval) -> 
