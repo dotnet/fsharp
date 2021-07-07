@@ -4515,7 +4515,9 @@ module WitnessTests =
               <@@ 3. = 3. @@>, box true
               <@@ 3m = 3m @@>, box true
               <@@ "3" = "3" @@>, box true
-              <@@ [3] = [3] @@>, box true
+              <@@ [3] = [3] @@>, box false // Unlike the F# structural operator, it translates to a reference equality check in Linq Expressions. Need to consider whether this is desirable.
+              <@@ [|3|] = [|3|] @@>, box false // Unlike the F# structural operator, it translates to a reference equality check in Linq Expressions. Need to consider whether this is desirable.
+              <@@ seq { 3 } = seq { 3 } @@>, box false // Reference equality
               
               <@@ 3y <> 3y @@>, box false
               <@@ 3uy <> 3uy @@>, box false
@@ -4532,7 +4534,9 @@ module WitnessTests =
               <@@ 3. <> 3. @@>, box false
               <@@ 3m <> 3m @@>, box false
               <@@ "3" <> "3" @@>, box false
-              <@@ [3] <> [3] @@>, box false
+              <@@ [3] <> [3] @@>, box true // Unlike the F# structural operator, it translates to a reference equality check in Linq Expressions. Need to consider whether this is desirable.
+              <@@ [|3|] <> [|3|] @@>, box true // Unlike the F# structural operator, it translates to a reference equality check in Linq Expressions. Need to consider whether this is desirable.
+              <@@ seq { 3 } <> seq { 3 } @@>, box true // Reference equality
 
               <@@ 3y <= 3y @@>, box true
               <@@ 3uy <= 3uy @@>, box true
@@ -4550,6 +4554,7 @@ module WitnessTests =
               <@@ 3m <= 3m @@>, box true
               <@@ "3" <= "3" @@>, box true
               <@@ [3] <= [3] @@>, box true
+              <@@ [|3|] <= [|3|] @@>, box true
 
               <@@ 3y < 3y @@>, box false
               <@@ 3uy < 3uy @@>, box false
@@ -4567,6 +4572,7 @@ module WitnessTests =
               <@@ 3m < 3m @@>, box false
               <@@ "3" < "3" @@>, box false
               <@@ [3] < [3] @@>, box false
+              <@@ [|3|] < [|3|] @@>, box false
 
               <@@ 3y >= 3y @@>, box true
               <@@ 3uy >= 3uy @@>, box true
@@ -4584,6 +4590,7 @@ module WitnessTests =
               <@@ 3m >= 3m @@>, box true
               <@@ "3" >= "3" @@>, box true
               <@@ [3] >= [3] @@>, box true
+              <@@ [|3|] >= [|3|] @@>, box true
 
               <@@ 3y > 3y @@>, box false
               <@@ 3uy > 3uy @@>, box false
@@ -4601,6 +4608,7 @@ module WitnessTests =
               <@@ 3m > 3m @@>, box false
               <@@ "3" > "3" @@>, box false
               <@@ [3] > [3] @@>, box false
+              <@@ [|3|] > [|3|] @@>, box false
               
               <@@ Nullable<_> 1y ?= 1y @@>, box true
               <@@ Nullable<_> 1uy ?= 1uy @@>, box true
