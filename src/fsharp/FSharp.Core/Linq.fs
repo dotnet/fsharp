@@ -662,7 +662,7 @@ module LeafExpressionConverter =
         let e1' = if addConvertLeft  then Expression.Convert(e1, typedefof<Nullable<int>>.MakeGenericType [| e1.Type |]) |> asExpr else e1
         let e2' = if addConvertRight then Expression.Convert(e2, typedefof<Nullable<int>>.MakeGenericType [| e2.Type |]) |> asExpr else e2
         try exprErasedConstructor(e1', e2', false, null) with _ ->
-            // LINQ Expressions' arithmetic operators do not handle byte, sbyte and char. In this case, use the F# operator as the user-defined method.
+            // LINQ Expressions cannot recognize boolean operators on F# types that are not defined on the types themselves. In this case, use the F# operator as the user-defined method.
             exprErasedConstructor(e1, e2, false, method)
         |> asExpr
     and transConv (inp: Expr) env isChecked x =
