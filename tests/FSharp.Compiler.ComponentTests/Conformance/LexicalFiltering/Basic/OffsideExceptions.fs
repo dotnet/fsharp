@@ -196,6 +196,20 @@ type __() =
         |> typecheck
         |> shouldSucceed
         |> ignore
+    [<Fact>]
+    let RelaxWhitespace2_AllowedBefore10() =
+        Fsx """
+module [<
+ Experimental "a"
+>] A = type [<
+        Experimental "b"
+        >] B() = let [<
+                  Experimental "c"
+                  >] c = 1
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
 
     [<Fact>]
     let RelaxWhitespace2_Neg1() =
