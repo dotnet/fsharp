@@ -460,3 +460,4 @@ let assertRange
     : unit =
     Assert.AreEqual(Position.mkPos expectedStartLine expectedStartColumn, actualRange.Start)
     Assert.AreEqual(Position.mkPos expectedEndLine expectedEndColumn, actualRange.End)
+
