@@ -3607,108 +3607,6 @@ module WitnessTests =
               <@@ ~~~LanguagePrimitives.GenericOne<nativeint> @@>, box ~~~1n
               <@@ ~~~LanguagePrimitives.GenericOne<unativeint> @@>, box ~~~1un
 
-              <@@ 3y = 3y @@>, box true
-              <@@ 3uy = 3uy @@>, box true
-              <@@ 3s = 3s @@>, box true
-              <@@ 3us = 3us @@>, box true
-              <@@ 3 = 3 @@>, box true
-              <@@ 3u = 3u @@>, box true
-              <@@ 3L = 3L @@>, box true
-              <@@ 3UL = 3UL @@>, box true
-              <@@ '3' = '3' @@>, box true
-              <@@ LanguagePrimitives.GenericOne<nativeint> = LanguagePrimitives.GenericOne<nativeint> @@>, box true
-              <@@ LanguagePrimitives.GenericOne<unativeint> = LanguagePrimitives.GenericOne<unativeint> @@>, box true
-              <@@ 3f = 3f @@>, box true
-              <@@ 3. = 3. @@>, box true
-              <@@ 3m = 3m @@>, box true
-              <@@ "3" = "3" @@>, box true
-              <@@ [3] = [3] @@>, box true
-              
-              <@@ 3y <> 3y @@>, box false
-              <@@ 3uy <> 3uy @@>, box false
-              <@@ 3s <> 3s @@>, box false
-              <@@ 3us <> 3us @@>, box false
-              <@@ 3 <> 3 @@>, box false
-              <@@ 3u <> 3u @@>, box false
-              <@@ 3L <> 3L @@>, box false
-              <@@ 3UL <> 3UL @@>, box false
-              <@@ '3' <> '3' @@>, box false
-              <@@ LanguagePrimitives.GenericOne<nativeint> <> LanguagePrimitives.GenericOne<nativeint> @@>, box false
-              <@@ LanguagePrimitives.GenericOne<unativeint> <> LanguagePrimitives.GenericOne<unativeint> @@>, box false
-              <@@ 3f <> 3f @@>, box false
-              <@@ 3. <> 3. @@>, box false
-              <@@ 3m <> 3m @@>, box false
-              <@@ "3" <> "3" @@>, box false
-              <@@ [3] <> [3] @@>, box false
-
-              <@@ 3y <= 3y @@>, box true
-              <@@ 3uy <= 3uy @@>, box true
-              <@@ 3s <= 3s @@>, box true
-              <@@ 3us <= 3us @@>, box true
-              <@@ 3 <= 3 @@>, box true
-              <@@ 3u <= 3u @@>, box true
-              <@@ 3L <= 3L @@>, box true
-              <@@ 3UL <= 3UL @@>, box true
-              <@@ '3' <= '3' @@>, box true
-              <@@ LanguagePrimitives.GenericOne<nativeint> <= LanguagePrimitives.GenericOne<nativeint> @@>, box true
-              <@@ LanguagePrimitives.GenericOne<unativeint> <= LanguagePrimitives.GenericOne<unativeint> @@>, box true
-              <@@ 3f <= 3f @@>, box true
-              <@@ 3. <= 3. @@>, box true
-              <@@ 3m <= 3m @@>, box true
-              <@@ "3" <= "3" @@>, box true
-              <@@ [3] <= [3] @@>, box true
-
-              <@@ 3y < 3y @@>, box false
-              <@@ 3uy < 3uy @@>, box false
-              <@@ 3s < 3s @@>, box false
-              <@@ 3us < 3us @@>, box false
-              <@@ 3 < 3 @@>, box false
-              <@@ 3u < 3u @@>, box false
-              <@@ 3L < 3L @@>, box false
-              <@@ 3UL < 3UL @@>, box false
-              <@@ '3' < '3' @@>, box false
-              <@@ LanguagePrimitives.GenericOne<nativeint> < LanguagePrimitives.GenericOne<nativeint> @@>, box false
-              <@@ LanguagePrimitives.GenericOne<unativeint> < LanguagePrimitives.GenericOne<unativeint> @@>, box false
-              <@@ 3f < 3f @@>, box false
-              <@@ 3. < 3. @@>, box false
-              <@@ 3m < 3m @@>, box false
-              <@@ "3" < "3" @@>, box false
-              <@@ [3] < [3] @@>, box false
-
-              <@@ 3y >= 3y @@>, box true
-              <@@ 3uy >= 3uy @@>, box true
-              <@@ 3s >= 3s @@>, box true
-              <@@ 3us >= 3us @@>, box true
-              <@@ 3 >= 3 @@>, box true
-              <@@ 3u >= 3u @@>, box true
-              <@@ 3L >= 3L @@>, box true
-              <@@ 3UL >= 3UL @@>, box true
-              <@@ '3' >= '3' @@>, box true
-              <@@ LanguagePrimitives.GenericOne<nativeint> >= LanguagePrimitives.GenericOne<nativeint> @@>, box true
-              <@@ LanguagePrimitives.GenericOne<unativeint> >= LanguagePrimitives.GenericOne<unativeint> @@>, box true
-              <@@ 3f >= 3f @@>, box true
-              <@@ 3. >= 3. @@>, box true
-              <@@ 3m >= 3m @@>, box true
-              <@@ "3" >= "3" @@>, box true
-              <@@ [3] >= [3] @@>, box true
-
-              <@@ 3y > 3y @@>, box false
-              <@@ 3uy > 3uy @@>, box false
-              <@@ 3s > 3s @@>, box false
-              <@@ 3us > 3us @@>, box false
-              <@@ 3 > 3 @@>, box false
-              <@@ 3u > 3u @@>, box false
-              <@@ 3L > 3L @@>, box false
-              <@@ 3UL > 3UL @@>, box false
-              <@@ '3' > '3' @@>, box false
-              <@@ LanguagePrimitives.GenericOne<nativeint> > LanguagePrimitives.GenericOne<nativeint> @@>, box false
-              <@@ LanguagePrimitives.GenericOne<unativeint> > LanguagePrimitives.GenericOne<unativeint> @@>, box false
-              <@@ 3f > 3f @@>, box false
-              <@@ 3. > 3. @@>, box false
-              <@@ 3m > 3m @@>, box false
-              <@@ "3" > "3" @@>, box false
-              <@@ [3] > [3] @@>, box false
-
               <@@ byte 3uy @@>, box 3uy
               <@@ byte 3y @@>, box 3uy
               <@@ byte 3s @@>, box 3uy
@@ -4565,6 +4463,144 @@ module WitnessTests =
               <@@ Nullable<_> '1' ?+? Nullable<_> '\004' @@>, box '5'
               <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box 2n
               <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box 2un
+            |]
+
+       tests |> Array.map (fun (test, eval) -> 
+           begin
+               printfn "--> Checking we can evaluate %A" test
+               let res = FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation test
+               let b = res = eval
+               if b then printfn "--- Success, it is %A which is equal to %A" res eval
+               else printfn "!!! FAILURE, it is %A which is not equal to %A" res eval
+               b
+           end
+           &&
+           match test with
+           | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) ->
+               minfo1.IsStatic && 
+               minfo2.IsStatic && 
+               minfo2.Name = minfo1.Name + "$W" &&
+    (*
+               (printfn "checking minfo2.GetParameters().Length = %d..." (minfo2.GetParameters().Length); true) &&
+               minfo2.GetParameters().Length = 3 && 
+               (printfn "checking witnessArgs.Length..."; true) &&
+               witnessArgs.Length = 1 &&
+               (printfn "checking args.Length..."; true) &&
+               args.Length = 2 &&
+               (printfn "witnessArgs..."; true) &&
+               (match witnessArgs with [ Lambda _ ] -> true | _ -> false) &&
+               (printfn "args..."; true) &&
+               (match args with [ _; _ ] -> true | _ -> false)
+               *)
+               (printfn "<-- Successfully checked with Quotations.Patterns.(|CallWithWitnesses|_|)"; true)
+               || (printfn "<-- FAILURE, failed after matching with Quotations.Patterns.(|CallWithWitnesses|_|)"; true)
+           | _ ->
+               printfn "<!! FAILURE, it did not match Quotations.Patterns.(|CallWithWitnesses|_|)"
+               false) |> Array.forall id) // Don't short circuit on a failed test
+               
+    test "check non-CallWithWitnesses operators"       
+        (let tests = [|
+              <@@ 3y = 3y @@>, box true
+              <@@ 3uy = 3uy @@>, box true
+              <@@ 3s = 3s @@>, box true
+              <@@ 3us = 3us @@>, box true
+              <@@ 3 = 3 @@>, box true
+              <@@ 3u = 3u @@>, box true
+              <@@ 3L = 3L @@>, box true
+              <@@ 3UL = 3UL @@>, box true
+              <@@ '3' = '3' @@>, box true
+              <@@ LanguagePrimitives.GenericOne<nativeint> = LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ LanguagePrimitives.GenericOne<unativeint> = LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ 3f = 3f @@>, box true
+              <@@ 3. = 3. @@>, box true
+              <@@ 3m = 3m @@>, box true
+              <@@ "3" = "3" @@>, box true
+              <@@ [3] = [3] @@>, box true
+              
+              <@@ 3y <> 3y @@>, box false
+              <@@ 3uy <> 3uy @@>, box false
+              <@@ 3s <> 3s @@>, box false
+              <@@ 3us <> 3us @@>, box false
+              <@@ 3 <> 3 @@>, box false
+              <@@ 3u <> 3u @@>, box false
+              <@@ 3L <> 3L @@>, box false
+              <@@ 3UL <> 3UL @@>, box false
+              <@@ '3' <> '3' @@>, box false
+              <@@ LanguagePrimitives.GenericOne<nativeint> <> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ LanguagePrimitives.GenericOne<unativeint> <> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ 3f <> 3f @@>, box false
+              <@@ 3. <> 3. @@>, box false
+              <@@ 3m <> 3m @@>, box false
+              <@@ "3" <> "3" @@>, box false
+              <@@ [3] <> [3] @@>, box false
+
+              <@@ 3y <= 3y @@>, box true
+              <@@ 3uy <= 3uy @@>, box true
+              <@@ 3s <= 3s @@>, box true
+              <@@ 3us <= 3us @@>, box true
+              <@@ 3 <= 3 @@>, box true
+              <@@ 3u <= 3u @@>, box true
+              <@@ 3L <= 3L @@>, box true
+              <@@ 3UL <= 3UL @@>, box true
+              <@@ '3' <= '3' @@>, box true
+              <@@ LanguagePrimitives.GenericOne<nativeint> <= LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ LanguagePrimitives.GenericOne<unativeint> <= LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ 3f <= 3f @@>, box true
+              <@@ 3. <= 3. @@>, box true
+              <@@ 3m <= 3m @@>, box true
+              <@@ "3" <= "3" @@>, box true
+              <@@ [3] <= [3] @@>, box true
+
+              <@@ 3y < 3y @@>, box false
+              <@@ 3uy < 3uy @@>, box false
+              <@@ 3s < 3s @@>, box false
+              <@@ 3us < 3us @@>, box false
+              <@@ 3 < 3 @@>, box false
+              <@@ 3u < 3u @@>, box false
+              <@@ 3L < 3L @@>, box false
+              <@@ 3UL < 3UL @@>, box false
+              <@@ '3' < '3' @@>, box false
+              <@@ LanguagePrimitives.GenericOne<nativeint> < LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ LanguagePrimitives.GenericOne<unativeint> < LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ 3f < 3f @@>, box false
+              <@@ 3. < 3. @@>, box false
+              <@@ 3m < 3m @@>, box false
+              <@@ "3" < "3" @@>, box false
+              <@@ [3] < [3] @@>, box false
+
+              <@@ 3y >= 3y @@>, box true
+              <@@ 3uy >= 3uy @@>, box true
+              <@@ 3s >= 3s @@>, box true
+              <@@ 3us >= 3us @@>, box true
+              <@@ 3 >= 3 @@>, box true
+              <@@ 3u >= 3u @@>, box true
+              <@@ 3L >= 3L @@>, box true
+              <@@ 3UL >= 3UL @@>, box true
+              <@@ '3' >= '3' @@>, box true
+              <@@ LanguagePrimitives.GenericOne<nativeint> >= LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ LanguagePrimitives.GenericOne<unativeint> >= LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ 3f >= 3f @@>, box true
+              <@@ 3. >= 3. @@>, box true
+              <@@ 3m >= 3m @@>, box true
+              <@@ "3" >= "3" @@>, box true
+              <@@ [3] >= [3] @@>, box true
+
+              <@@ 3y > 3y @@>, box false
+              <@@ 3uy > 3uy @@>, box false
+              <@@ 3s > 3s @@>, box false
+              <@@ 3us > 3us @@>, box false
+              <@@ 3 > 3 @@>, box false
+              <@@ 3u > 3u @@>, box false
+              <@@ 3L > 3L @@>, box false
+              <@@ 3UL > 3UL @@>, box false
+              <@@ '3' > '3' @@>, box false
+              <@@ LanguagePrimitives.GenericOne<nativeint> > LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ LanguagePrimitives.GenericOne<unativeint> > LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ 3f > 3f @@>, box false
+              <@@ 3. > 3. @@>, box false
+              <@@ 3m > 3m @@>, box false
+              <@@ "3" > "3" @@>, box false
+              <@@ [3] > [3] @@>, box false
               
               <@@ Nullable<_> 1y ?= 1y @@>, box true
               <@@ Nullable<_> 1uy ?= 1uy @@>, box true
@@ -4849,27 +4885,11 @@ module WitnessTests =
            &&
            match test with
            | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) ->
-               minfo1.IsStatic && 
-               minfo2.IsStatic && 
-               minfo2.Name = minfo1.Name + "$W" &&
-    (*
-               (printfn "checking minfo2.GetParameters().Length = %d..." (minfo2.GetParameters().Length); true) &&
-               minfo2.GetParameters().Length = 3 && 
-               (printfn "checking witnessArgs.Length..."; true) &&
-               witnessArgs.Length = 1 &&
-               (printfn "checking args.Length..."; true) &&
-               args.Length = 2 &&
-               (printfn "witnessArgs..."; true) &&
-               (match witnessArgs with [ Lambda _ ] -> true | _ -> false) &&
-               (printfn "args..."; true) &&
-               (match args with [ _; _ ] -> true | _ -> false)
-               *)
-               (printfn "<-- Successfully checked with Quotations.Patterns.(|CallWithWitnesses|_|)"; true)
-               || (printfn "<-- FAILURE, failed after matching with Quotations.Patterns.(|CallWithWitnesses|_|)"; true)
+               printfn "<!! FAILURE, it matched Quotations.Patterns.(|CallWithWitnesses|_|)"
+               false
            | _ ->
-               printfn "<!! FAILURE, it did not match Quotations.Patterns.(|CallWithWitnesses|_|)"
+               printfn "<-- Success, it did not match Quotations.Patterns.(|CallWithWitnesses|_|)"
                false) |> Array.forall id) // Don't short circuit on a failed test
-
 module MoreWitnessTests =
 
     open System.Runtime.CompilerServices
