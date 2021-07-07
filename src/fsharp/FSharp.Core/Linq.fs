@@ -405,61 +405,61 @@ module LeafExpressionConverter =
             | MakeDecimalQ (_, _, [Int32 lo; Int32 med; Int32 hi; Bool isNegative; Byte scale]) ->
                 Expression.Constant (new System.Decimal(lo, med, hi, isNegative, scale)) |> asExpr
 
-            | NegQ (_, m, [x]) -> transUnaryOp env x Expression.Negate m
-            | PlusQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Add m
-            | MinusQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Subtract m
-            | MultiplyQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Multiply m
-            | DivideQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Divide m
-            | ModuloQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Modulo m
+            | NegQ (_, _, [x]) -> transUnaryOp inp env x Expression.Negate (methodhandleof (fun x -> LanguagePrimitives.UnaryNegationDynamic x))
+            | PlusQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Add (methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y))
+            | MinusQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Subtract (methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y))
+            | MultiplyQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Multiply (methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y))
+            | DivideQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Divide (methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y))
+            | ModuloQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Modulo (methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y))
 
-            | ShiftLeftQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.LeftShift m
-            | ShiftRightQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.RightShift m
-            | BitwiseAndQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.And m
-            | BitwiseOrQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Or m
-            | BitwiseXorQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.ExclusiveOr m
-            | BitwiseNotQ (_, m, [x]) -> transUnaryOp env x Expression.Not m
+            | ShiftLeftQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.LeftShift (methodhandleof (fun (x, y) -> LanguagePrimitives.LeftShiftDynamic x y))
+            | ShiftRightQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.RightShift (methodhandleof (fun (x, y) -> LanguagePrimitives.RightShiftDynamic x y))
+            | BitwiseAndQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.And (methodhandleof (fun (x, y) -> LanguagePrimitives.BitwiseAndDynamic x y))
+            | BitwiseOrQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Or (methodhandleof (fun (x, y) -> LanguagePrimitives.BitwiseOrDynamic x y))
+            | BitwiseXorQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.ExclusiveOr (methodhandleof (fun (x, y) -> LanguagePrimitives.ExclusiveOrDynamic x y))
+            | BitwiseNotQ (_, _, [x]) -> transUnaryOp inp env x Expression.Not (methodhandleof (fun x -> LanguagePrimitives.LogicalNotDynamic x))
             
-            | CheckedNeg (_, m, [x]) -> transUnaryOp env x Expression.NegateChecked m
-            | CheckedPlusQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.AddChecked m
-            | CheckedMinusQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.SubtractChecked m
-            | CheckedMultiplyQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.MultiplyChecked m
+            | CheckedNeg (_, _, [x]) -> transUnaryOp inp env x Expression.NegateChecked (methodhandleof (fun x -> LanguagePrimitives.CheckedUnaryNegationDynamic x))
+            | CheckedPlusQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.AddChecked (methodhandleof (fun (x, y) -> LanguagePrimitives.CheckedAdditionDynamic x y))
+            | CheckedMinusQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.SubtractChecked (methodhandleof (fun (x, y) -> LanguagePrimitives.CheckedSubtractionDynamic x y))
+            | CheckedMultiplyQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.MultiplyChecked (methodhandleof (fun (x, y) -> LanguagePrimitives.CheckedMultiplyDynamic x y))
             
-            | NullablePlusQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 true Expression.Add m
-            | PlusNullableQ (_, m, [x1; x2]) -> transBinOp env true x1 x2 false Expression.Add m
-            | NullablePlusNullableQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Add m
+            | NullablePlusQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 true Expression.Add (methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y))
+            | PlusNullableQ (_, _, [x1; x2]) -> transBinOp inp env true x1 x2 false Expression.Add (methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y))
+            | NullablePlusNullableQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Add (methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y))
             
-            | NullableMinusQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 true Expression.Subtract m
-            | MinusNullableQ (_, m, [x1; x2]) -> transBinOp env true x1 x2 false Expression.Subtract m
-            | NullableMinusNullableQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Subtract m
+            | NullableMinusQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 true Expression.Subtract (methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y))
+            | MinusNullableQ (_, _, [x1; x2]) -> transBinOp inp env true x1 x2 false Expression.Subtract (methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y))
+            | NullableMinusNullableQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Subtract (methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y))
             
-            | NullableMultiplyQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 true Expression.Multiply m
-            | MultiplyNullableQ (_, m, [x1; x2]) -> transBinOp env true x1 x2 false Expression.Multiply m
-            | NullableMultiplyNullableQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Multiply m
+            | NullableMultiplyQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 true Expression.Multiply (methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y))
+            | MultiplyNullableQ (_, _, [x1; x2]) -> transBinOp inp env true x1 x2 false Expression.Multiply (methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y))
+            | NullableMultiplyNullableQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Multiply (methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y))
             
-            | NullableDivideQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 true Expression.Divide m
-            | DivideNullableQ (_, m, [x1; x2]) -> transBinOp env true x1 x2 false Expression.Divide m
-            | NullableDivideNullableQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Divide m
+            | NullableDivideQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 true Expression.Divide (methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y))
+            | DivideNullableQ (_, _, [x1; x2]) -> transBinOp inp env true x1 x2 false Expression.Divide (methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y))
+            | NullableDivideNullableQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Divide (methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y))
             
-            | NullableModuloQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 true Expression.Modulo m
-            | ModuloNullableQ (_, m, [x1; x2]) -> transBinOp env true x1 x2 false Expression.Modulo m
-            | NullableModuloNullableQ (_, m, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Modulo m
+            | NullableModuloQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 true Expression.Modulo (methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y))
+            | ModuloNullableQ (_, _, [x1; x2]) -> transBinOp inp env true x1 x2 false Expression.Modulo (methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y))
+            | NullableModuloNullableQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Modulo (methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y))
 
-            | ConvNullableCharQ (_, m, [x]) | ConvNullableDecimalQ (_, m, [x]) | ConvNullableFloatQ (_, m, [x]) | ConvNullableDoubleQ (_, m, [x]) -> transConv inp env false x m
-            | ConvNullableFloat32Q (_, m, [x]) | ConvNullableSingleQ (_, m, [x]) | ConvNullableSByteQ (_, m, [x]) | ConvNullableInt8Q (_, m, [x]) -> transConv inp env false x m
-            | ConvNullableInt16Q (_, m, [x]) | ConvNullableInt32Q (_, m, [x]) | ConvNullableIntQ (_, m, [x]) | ConvNullableInt64Q (_, m, [x]) -> transConv inp env false x m
-            | ConvNullableByteQ (_, m, [x]) | ConvNullableUInt8Q (_, m, [x]) | ConvNullableUInt16Q (_, m, [x]) | ConvNullableUInt32Q (_, m, [x]) -> transConv inp env false x m
-            | ConvNullableUInt64Q (_, m, [x]) | ConvNullableIntPtrQ (_, m, [x]) | ConvNullableUIntPtrQ (_, m, [x]) -> transConv inp env false x m
+            | ConvNullableCharQ (_, _, [x]) | ConvNullableDecimalQ (_, _, [x]) | ConvNullableFloatQ (_, _, [x]) | ConvNullableDoubleQ (_, _, [x]) -> transConv inp env false x
+            | ConvNullableFloat32Q (_, _, [x]) | ConvNullableSingleQ (_, _, [x]) | ConvNullableSByteQ (_, _, [x]) | ConvNullableInt8Q (_, _, [x]) -> transConv inp env false x
+            | ConvNullableInt16Q (_, _, [x]) | ConvNullableInt32Q (_, _, [x]) | ConvNullableIntQ (_, _, [x]) | ConvNullableInt64Q (_, _, [x]) -> transConv inp env false x
+            | ConvNullableByteQ (_, _, [x]) | ConvNullableUInt8Q (_, _, [x]) | ConvNullableUInt16Q (_, _, [x]) | ConvNullableUInt32Q (_, _, [x]) -> transConv inp env false x
+            | ConvNullableUInt64Q (_, _, [x]) | ConvNullableIntPtrQ (_, _, [x]) | ConvNullableUIntPtrQ (_, _, [x]) -> transConv inp env false x
 
-            | ConvCharQ (_, m, [x]) | ConvDecimalQ (_, m, [x]) | ConvFloatQ (_, m, [x]) | ConvDoubleQ (_, m, [x]) -> transConv inp env false x m
-            | ConvFloat32Q (_, m, [x]) | ConvSingleQ (_, m, [x]) | ConvSByteQ (_, m, [x]) | ConvInt8Q (_, m, [x]) -> transConv inp env false x m
-            | ConvInt16Q (_, m, [x]) | ConvInt32Q (_, m, [x]) | ConvIntQ (_, m, [x]) | ConvInt64Q (_, m, [x]) -> transConv inp env false x m
-            | ConvByteQ (_, m, [x]) | ConvUInt8Q (_, m, [x]) | ConvUInt16Q (_, m, [x]) | ConvUInt32Q (_, m, [x]) -> transConv inp env false x m
-            | ConvUInt64Q (_, m, [x]) | ConvIntPtrQ (_, m, [x]) | ConvUIntPtrQ (_, m, [x]) -> transConv inp env false x m
+            | ConvCharQ (_, _, [x]) | ConvDecimalQ (_, _, [x]) | ConvFloatQ (_, _, [x]) | ConvDoubleQ (_, _, [x]) -> transConv inp env false x
+            | ConvFloat32Q (_, _, [x]) | ConvSingleQ (_, _, [x]) | ConvSByteQ (_, _, [x]) | ConvInt8Q (_, _, [x]) -> transConv inp env false x
+            | ConvInt16Q (_, _, [x]) | ConvInt32Q (_, _, [x]) | ConvIntQ (_, _, [x]) | ConvInt64Q (_, _, [x]) -> transConv inp env false x
+            | ConvByteQ (_, _, [x]) | ConvUInt8Q (_, _, [x]) | ConvUInt16Q (_, _, [x]) | ConvUInt32Q (_, _, [x]) -> transConv inp env false x
+            | ConvUInt64Q (_, _, [x]) | ConvIntPtrQ (_, _, [x]) | ConvUIntPtrQ (_, _, [x]) -> transConv inp env false x
 
-            | CheckedConvCharQ (_, m, [x]) | CheckedConvSByteQ (_, m, [x]) | CheckedConvInt8Q (_, m, [x]) | CheckedConvInt16Q (_, m, [x]) -> transConv inp env true x m
-            | CheckedConvInt32Q (_, m, [x]) | CheckedConvInt64Q (_, m, [x]) | CheckedConvByteQ (_, m, [x]) | CheckedConvUInt8Q (_, m, [x]) -> transConv inp env true x m
-            | CheckedConvUInt16Q (_, m, [x]) | CheckedConvUInt32Q (_, m, [x]) | CheckedConvUInt64Q (_, m, [x]) | CheckedConvIntPtrQ (_, m, [x]) -> transConv inp env true x m
-            | CheckedConvUIntPtrQ (_, m, [x]) -> transConv inp env true x m
+            | CheckedConvCharQ (_, _, [x]) | CheckedConvSByteQ (_, _, [x]) | CheckedConvInt8Q (_, _, [x]) | CheckedConvInt16Q (_, _, [x]) -> transConv inp env true x
+            | CheckedConvInt32Q (_, _, [x]) | CheckedConvInt64Q (_, _, [x]) | CheckedConvByteQ (_, _, [x]) | CheckedConvUInt8Q (_, _, [x]) -> transConv inp env true x
+            | CheckedConvUInt16Q (_, _, [x]) | CheckedConvUInt32Q (_, _, [x]) | CheckedConvUInt64Q (_, _, [x]) | CheckedConvIntPtrQ (_, _, [x]) -> transConv inp env true x
+            | CheckedConvUIntPtrQ (_, _, [x]) -> transConv inp env true x
 
             | ArrayLookupQ (_, [_; _; _], [x1; x2]) ->
                 Expression.ArrayIndex(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
@@ -636,29 +636,44 @@ module LeafExpressionConverter =
     and failConvert inp =
             raise (new NotSupportedException(Printf.sprintf "Could not convert the following F# Quotation to a LINQ Expression Tree\n--------\n%A\n-------------\n" inp))
 
-    and transUnaryOp env x (exprErasedConstructor: _ * _ -> _) method =
+    and transUnaryOp inp env x (exprErasedConstructor: _ * _ -> _) fallback =
         let e = ConvExprToLinqInContext env x
         try exprErasedConstructor(e, null) with _ ->
             // LINQ Expressions' arithmetic operators do not handle byte, sbyte and char. In this case, use the F# operator as the user-defined method.
-            exprErasedConstructor(e, method)
+            let nullableUnderlyingType (exp: Expr) = match Nullable.GetUnderlyingType exp.Type with null -> exp.Type | t -> t
+            let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
+            exprErasedConstructor(e, method.MakeGenericMethod [| nullableUnderlyingType x; nullableUnderlyingType inp |])
         |> asExpr
-    and transBinOp env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ -> _) method =
+    and transBinOp inp env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ -> _) fallback =
+        let e1 = ConvExprToLinqInContext env x1
+        let e2 = ConvExprToLinqInContext env x2
+        let e1 = if addConvertLeft  then Expression.Convert(e1, typedefof<Nullable<int>>.MakeGenericType [| e1.Type |]) |> asExpr else e1
+        let e2 = if addConvertRight then Expression.Convert(e2, typedefof<Nullable<int>>.MakeGenericType [| e2.Type |]) |> asExpr else e2
+        try exprErasedConstructor(e1, e2, null) with _ ->
+            // LINQ Expressions' arithmetic operators do not handle byte, sbyte and char. In this case, use the F# operator as the user-defined method.
+            let nullableUnderlyingType (exp: Expr) = match Nullable.GetUnderlyingType exp.Type with null -> exp.Type | t -> t
+            let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
+            exprErasedConstructor(e1, e2, method.MakeGenericMethod [| nullableUnderlyingType x1; nullableUnderlyingType x2; nullableUnderlyingType inp |])
+        |> asExpr
+    // Boolean equality / comparison operators do not take witnesses and the referenced methods are callable directly
+    and transBoolOp env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ * _ -> _) method =
         let e1 = ConvExprToLinqInContext env x1
         let e2 = ConvExprToLinqInContext env x2
         let e1' = if addConvertLeft  then Expression.Convert(e1, typedefof<Nullable<int>>.MakeGenericType [| e1.Type |]) |> asExpr else e1
         let e2' = if addConvertRight then Expression.Convert(e2, typedefof<Nullable<int>>.MakeGenericType [| e2.Type |]) |> asExpr else e2
-        try exprErasedConstructor(e1', e2', null) with _ ->
+        try exprErasedConstructor(e1', e2', false, null) with _ ->
             // LINQ Expressions' arithmetic operators do not handle byte, sbyte and char. In this case, use the F# operator as the user-defined method.
-            exprErasedConstructor(e1, e2, method)
+            exprErasedConstructor(e1, e2, false, method)
         |> asExpr
-    and transBoolOp env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ * _ -> _) =
-        transBinOp env addConvertLeft x1 x2 addConvertRight (fun (left, right, method) -> exprErasedConstructor(left, right, false, method))
-    and transConv (inp: Expr) env isChecked x method =
+    and transConv (inp: Expr) env isChecked x =
         let e = ConvExprToLinqInContext env x
         let exprErasedConstructor: _ * _ * _ -> _ = if isChecked then Expression.ConvertChecked else Expression.Convert
         try exprErasedConstructor(e, inp.Type, null) with _ ->
             // LINQ Expressions' arithmetic operators do not handle byte, sbyte and char. In this case, use the F# operator as the user-defined method.
-            exprErasedConstructor(e, inp.Type, method)
+            let nullableUnderlyingType (exp: Expr) = match Nullable.GetUnderlyingType exp.Type with null -> exp.Type | t -> t
+            // The dynamic implementations of checked conversion operators refer to LanguagePrimitives.ExplicitDynamic which is unchecked! This is a bug and should definitely be fixed.
+            let method = Reflection.MethodInfo.GetMethodFromHandle (methodhandleof (fun x -> LanguagePrimitives.ExplicitDynamic x)) :?> Reflection.MethodInfo
+            exprErasedConstructor(e, inp.Type, method.MakeGenericMethod [| nullableUnderlyingType x; nullableUnderlyingType inp |])
         |> asExpr
 
     and ConvObjArg env objOpt coerceTo : Expression =
