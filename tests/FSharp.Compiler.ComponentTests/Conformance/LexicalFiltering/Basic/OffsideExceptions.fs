@@ -201,7 +201,7 @@ type __() =
         Fsx """
 module [<
  Experimental "a"
->] A = type [<
+ >] A = type [<
         Experimental "b"
         >] B() = let [<
                   Experimental "c"
