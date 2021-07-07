@@ -3014,7 +3014,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u" (convPrim<_,float> value) : unativeint #) 
                 elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.u" (convPrim<_,float32> value) : unativeint #) 
                 elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u" (convPrim<_,char> value) : unativeint #) 
-                elif typeeq<'T, decimal> then convPrim<_,'U> (# "conv.u" (Decimal.op_Explicit (convPrim<_,decimal> value) : uint64) #)
+                elif typeeq<'T, decimal> then convPrim<_,'U> (# "conv.u" (Decimal.op_Explicit (convPrim<_,decimal> value) : uint64) : unativeint #)
                 elif typeeq<'T, string> then convPrim<_,'U> (ParseUIntPtr (convPrim<_,string> value)) 
                 else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
             elif typeeq<'U, nativeint> then 
@@ -3031,7 +3031,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, float> then convPrim<_,'U> (# "conv.i" (convPrim<_,float> value) : nativeint #) 
                 elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.i" (convPrim<_,float32> value) : nativeint #) 
                 elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u" (convPrim<_,char> value) : nativeint #) 
-                elif typeeq<'T, decimal> then convPrim<_,'U> (# "conv.i" (Decimal.op_Explicit (convPrim<_,decimal> value) : int64) #)
+                elif typeeq<'T, decimal> then convPrim<_,'U> (# "conv.i" (Decimal.op_Explicit (convPrim<_,decimal> value) : int64) : nativeint #)
                 elif typeeq<'T, string> then convPrim<_,'U> (ParseIntPtr (convPrim<_,string> value)) 
                 else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
             elif typeeq<'U, char> then 

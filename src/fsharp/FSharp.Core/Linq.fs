@@ -371,7 +371,7 @@ module LeafExpressionConverter =
             | GreaterEqQ (_, m, [x1; x2]) -> transBoolOp env false x1 x2 false Expression.GreaterThanOrEqual m
             | LessQ (_, m, [x1; x2]) -> transBoolOp env false x1 x2 false Expression.LessThan m
             | LessEqQ (_, m, [x1; x2]) -> transBoolOp env false x1 x2 false Expression.LessThanOrEqual m
-            | NotQ (_, _, [x1])   -> Expression.Not(ConvExprToLinqInContext env x1) |> asExpr
+            | NotQ (_, _, [x1]) -> Expression.Not(ConvExprToLinqInContext env x1) |> asExpr
 
             | StaticEqualsQ (_, m, [x1; x2]) -> transBoolOp env false x1 x2 false Expression.Equal m
             | StaticNotEqQ (_, m, [x1; x2]) -> transBoolOp env false x1 x2 false Expression.NotEqual m
