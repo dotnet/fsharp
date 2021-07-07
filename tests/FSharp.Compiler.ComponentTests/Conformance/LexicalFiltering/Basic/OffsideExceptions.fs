@@ -202,10 +202,10 @@ type __() =
 module [<
  Experimental "a"
  >] A = type [<
-        Experimental "b"
-        >] B() = let [<
-                  Experimental "c"
-                  >] c = 1
+         Experimental "b"
+         >] B() = let [<
+                   Experimental "c"
+                   >] c = 1
         """
         |> typecheck
         |> shouldSucceed
