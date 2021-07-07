@@ -816,9 +816,6 @@ let ``Test max memory gets triggered`` () =
 
 
 [<Test>]
-#if NETCOREAPP
-[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
-#endif
 let ``In-memory cross-project references to projects using generative type provides should fallback to on-disk references`` () =
     // The type provider and its dependency are compiled as part of the solution build
 #if DEBUG
