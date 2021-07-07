@@ -652,7 +652,7 @@ module LeafExpressionConverter =
             exprErasedConstructor(e1, e2, method)
         |> asExpr
     and transBoolOp env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ * _ -> _) =
-        transBinOp env addConvertLeft x1 x2 addConvertRight (fun (left, right, methodInfo) -> exprErasedConstructor(left, right, false, methodInfo))
+        transBinOp env addConvertLeft x1 x2 addConvertRight (fun (left, right, method) -> exprErasedConstructor(left, right, false, method))
     and transConv (inp: Expr) env isChecked x method =
         let e = ConvExprToLinqInContext env x
         let exprErasedConstructor: _ * _ * _ -> _ = if isChecked then Expression.ConvertChecked else Expression.Convert
