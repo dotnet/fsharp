@@ -108,13 +108,27 @@ namespace Microsoft.FSharp.Control
                         | Some cont ->
                             storedCont <- None
                             action <- cont
-                    // Let the exception propagate all the way to the trampoline to get a full .StackTrace entry
+                    
+                    // Catch exceptions at the trampoline to get a full .StackTrace entry
+                    // This is because of this problem https://stackoverflow.com/questions/5301535/exception-call-stack-truncated-without-any-re-throwing
+                    // where only a limited number of stack frames are included in the .StackTrace property 
+                    // of a .NET exception when it is thrown, up to the first catch handler.
+                    //
+                    // So when running async code, there aren't any intermediate catch handlers (though there
+                    // may be intermediate try/finally frames), there is just this one catch handler at the
+                    // base of the stack.
+                    //
+                    // If an exception is thrown we must have storedExnCont via OnExceptionRaised.
                     with exn ->
                         match storedExnCont with
                         | None ->
-                             // Note, the exception escapes the trampoline. This should not happen since all
-                             // exception-generating code shuld use ProtectCode.
-                             reraise()
+                            // Here, the exception escapes the trampoline. This should not happen since all
+                            // exception-generating code should use ProtectCode. However some
+                            // direct uses of combinators (not using async {...}) may cause
+                            // code to execute unprotected, e.g. async.While((fun () -> failwith ".."), ...) executes the first
+                            // guardExpr unprotected.
+                            reraise()
+
                         | Some econt ->
                             storedExnCont <- None
                             let edi = ExceptionDispatchInfo.RestoreOrCapture exn
@@ -1453,13 +1467,16 @@ namespace Microsoft.FSharp.Control
 
         static member Choice(computations: Async<'T option> seq) : Async<'T option> =
             MakeAsyncWithCancelCheck (fun ctxt ->
+                // manually protect eval of seq
                 let result =
-                    try Seq.toArray computations |> Choice1Of2
-                    with exn -> ExceptionDispatchInfo.RestoreOrCapture exn |> Choice2Of2
+                    try
+                        Choice1Of2 (Seq.toArray computations)
+                    with exn ->
+                        Choice2Of2 (ExceptionDispatchInfo.RestoreOrCapture exn)
 
                 match result with
                 | Choice2Of2 edi -> ctxt.econt edi
-                | Choice1Of2 [||] -> ctxt.cont None
+                | Choice1Of2 [| |] -> ctxt.cont None
                 | Choice1Of2 computations ->
                      let ctxt = DelimitSyncContext ctxt
                      ctxt.ProtectCode (fun () ->
@@ -1605,7 +1622,7 @@ namespace Microsoft.FSharp.Control
                         ctxt.token.Register(Action(fun () ->
                             if latch.Enter() then
                                 // Make sure we're not cancelled again
-                                DisposeCancellationRegistration &registration 
+                                DisposeCancellationRegistration &registration
 
                                 UnregisterWaitHandle &rwh
 
