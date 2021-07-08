@@ -3420,6 +3420,8 @@ module WitnessTests =
               <@@ Checked.(+) 1.0f 4.0f @@>, box 5f
               <@@ Checked.(+) 1.0 4.0 @@>, box 5.
               <@@ Checked.(+) 1m 4m @@>, box 5m
+              <@@ Checked.(+) 1m<m> 4m<m> @@>, box 5m
+              <@@ Checked.(+) 1I 4I @@>, box 5I
               <@@ Checked.(+) '1' '\004' @@>, box '5'
               <@@ Checked.(+) "abc" "def" @@>, box "abcdef"
               <@@ Checked.(+) LanguagePrimitives.GenericOne<nativeint> LanguagePrimitives.GenericOne<nativeint> @@>, box 2n
@@ -3452,6 +3454,8 @@ module WitnessTests =
               <@@ Checked.(-) 4.0f 1.0f @@>, box 3f
               <@@ Checked.(-) 4.0 1.0 @@>, box 3.
               <@@ Checked.(-) 4m 1m @@>, box 3m
+              <@@ Checked.(-) 4m<m> 1m<m> @@>, box 3m
+              <@@ Checked.(-) 4I 1I @@>, box 3I
               <@@ Checked.(-) '4' '\001' @@>, box '3'
               <@@ Checked.(-) LanguagePrimitives.GenericOne<nativeint> LanguagePrimitives.GenericOne<nativeint> @@>, box 0n
               <@@ Checked.(-) LanguagePrimitives.GenericOne<unativeint> LanguagePrimitives.GenericOne<unativeint> @@>, box 0un
@@ -3482,6 +3486,8 @@ module WitnessTests =
               <@@ Checked.(*) 2.0f 4.0f @@>, box 8f
               <@@ Checked.(*) 2.0 4.0 @@>, box 8.
               <@@ Checked.(*) 2m 4m @@>, box 8m
+              <@@ Checked.(*) 2m<m^2> 4m<m> @@>, box 8m
+              <@@ Checked.(*) 2I 4I @@>, box 8I
               <@@ Checked.(*) LanguagePrimitives.GenericOne<nativeint> LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
               <@@ Checked.(*) LanguagePrimitives.GenericOne<unativeint> LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
 
@@ -4255,7 +4261,7 @@ module WitnessTests =
               <@@ LanguagePrimitives.GenericOne<float32> @@>, box 1f
               <@@ LanguagePrimitives.GenericOne<float> @@>, box 1.
               <@@ LanguagePrimitives.GenericOne<decimal> @@>, box 1m
-              <@@ LanguagePrimitives.GenericOne<decimal<m>> @@>, box 1m
+              //<@@ LanguagePrimitives.GenericOne<decimal<m>> @@>, box 1m // Doesn't typecheck
 
               <@@ List.sum [ 1; 2 ] @@>, box 3
               <@@ List.sum [ 1I; 2I ] @@>, box 3I
