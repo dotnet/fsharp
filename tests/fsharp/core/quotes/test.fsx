@@ -5105,7 +5105,7 @@ module WitnessTests =
                false
            | _ ->
                printfn "<-- Success, it did not match Quotations.Patterns.(|CallWithWitnesses|_|)"
-               false) |> Array.forall id) // Don't short circuit on a failed test
+               true) |> Array.forall id) // Don't short circuit on a failed test
 module MoreWitnessTests =
 
     open System.Runtime.CompilerServices
