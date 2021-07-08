@@ -933,27 +933,28 @@ namespace Microsoft.FSharp.Control
                 ctxt.cont ()
 
         // Helper to attach continuation to the given task, which is assumed not to be completed.
-        // When the task completes the continuation will be run asynchronously in the thread pool
-        // with trampoline protection.
+        // When the task completes the continuation will be run synchronously on the thread
+        // completing the task. This will install a new trampoline on that thread and continue the
+        // execution of the async there.
         [<DebuggerHidden>]
         let AttachContinuationToTask (task: Task<'T>) (ctxt: AsyncActivation<'T>)  =
             task.ContinueWith(Action<Task<'T>>(fun completedTask -> 
                 ctxt.trampolineHolder.ExecuteWithTrampoline (fun () ->
                     OnTaskCompleted completedTask ctxt)
-                |> unfake))
+                |> unfake), TaskContinuationOptions.ExecuteSynchronously)
             |> ignore
             |> fake
 
         // Helper to attach continuation to the given task, which is assumed not to be completed
-        // When the task completes the continuation will be run asynchronously in the thread pool
-        // with trampoline protection.
+        // When the task completes the continuation will be run synchronously on the thread
+        // completing the task. This will install a new trampoline on that thread and continue the
+        // execution of the async there.
         [<DebuggerHidden>]
         let AttachContinuationToUnitTask (task: Task) (ctxt: AsyncActivation<unit>) =
             task.ContinueWith(Action<Task>(fun completedTask ->
                 ctxt.trampolineHolder.ExecuteWithTrampoline (fun () ->
                     OnUnitTaskCompleted completedTask ctxt)
-                |> unfake
-            ))
+                |> unfake), TaskContinuationOptions.ExecuteSynchronously)
             |> ignore 
             |> fake
 
