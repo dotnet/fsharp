@@ -6,6 +6,7 @@ module internal Microsoft.VisualStudio.FSharp.Editor.Extensions
 open System
 open System.IO
 open System.Collections.Immutable
+open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
@@ -294,13 +295,16 @@ module Exception =
 
 type Async with
     static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
-        let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-        let ts = TaskCompletionSource<'T>()
-        let task = ts.Task
-        Async.StartWithContinuations(
-            computation,
-            (fun k -> ts.SetResult k),
-            (fun exn -> ts.SetException exn),
-            (fun _ -> ts.SetCanceled()),
-            cancellationToken)
-        task.Result
+        match SynchronizationContext.Current with 
+        | null ->
+            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+            let ts = TaskCompletionSource<'T>()
+            let task = ts.Task
+            Async.StartWithContinuations(
+                computation,
+                (fun k -> ts.SetResult k),
+                (fun exn -> ts.SetException exn),
+                (fun _ -> ts.SetCanceled()),
+                cancellationToken)
+            task.Result
+        | _ -> Async.RunSynchronously(computation, ?cancellationToken=cancellationToken)
