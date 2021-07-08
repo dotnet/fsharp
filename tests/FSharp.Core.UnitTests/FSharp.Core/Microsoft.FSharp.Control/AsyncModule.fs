@@ -193,7 +193,7 @@ type AsyncModule() =
     member this.AwaitIAsyncResult() =
 
         let beginOp, endOp, cancelOp = Async.AsBeginEnd(fun() -> getTicksTask)
-        (*
+
         // Begin the async operation and wait
         let operationIAR = beginOp ((), new AsyncCallback(fun iar -> ()), null)
         match Async.AwaitIAsyncResult(operationIAR) |> Async.RunSynchronously with
@@ -208,7 +208,7 @@ type AsyncModule() =
         match result with
         | true  -> ()
         | false -> Assert.Fail("Timed out. Expected to succeed.")
-        *)
+
         // Now with a timeout
         let operationIAR = beginOp ((), new AsyncCallback(fun iar -> ()), null)
         let result = Async.AwaitIAsyncResult(operationIAR, 1) |> Async.RunSynchronously
