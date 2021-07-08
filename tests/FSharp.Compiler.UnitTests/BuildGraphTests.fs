@@ -71,7 +71,7 @@ module BuildGraphTests =
 
         let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode))
 
-        Async.RunImmediateExceptOnUI(work)
+        Async.RunImmediate(work)
         |> ignore
 
         Assert.shouldBe 1 computationCount
@@ -84,7 +84,7 @@ module BuildGraphTests =
 
         let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode))
 
-        let result = Async.RunImmediateExceptOnUI(work)
+        let result = Async.RunImmediate(work)
 
         Assert.shouldNotBeEmpty result
         Assert.shouldBe requests result.Length
@@ -116,7 +116,7 @@ module BuildGraphTests =
         
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunImmediateExceptOnUI(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode)))
+        Async.RunImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode)))
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -140,7 +140,7 @@ module BuildGraphTests =
 
         let ex =
             try
-                NodeCode.RunImmediateExceptOnUI(work, ct = cts.Token)
+                NodeCode.RunImmediate(work, ct = cts.Token)
                 |> ignore
                 failwith "Should have canceled"
             with
@@ -170,7 +170,7 @@ module BuildGraphTests =
 
         let ex =
             try
-                NodeCode.RunImmediateExceptOnUI(graphNode.GetOrComputeValue(), ct = cts.Token)
+                NodeCode.RunImmediate(graphNode.GetOrComputeValue(), ct = cts.Token)
                 |> ignore
                 failwith "Should have canceled"
             with

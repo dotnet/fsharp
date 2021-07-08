@@ -19,20 +19,17 @@ open FsUnit
 open NUnit.Framework
 
 type Async with
-    static member RunImmediateExceptOnUI (computation: Async<'T>, ?cancellationToken ) =
-            match SynchronizationContext.Current with 
-            | null ->
-                let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-                let ts = TaskCompletionSource<'T>()
-                let task = ts.Task
-                Async.StartWithContinuations(
-                    computation,
-                    (fun k -> ts.SetResult k),
-                    (fun exn -> ts.SetException exn),
-                    (fun _ -> ts.SetCanceled()),
-                    cancellationToken)
-                task.Result
-            | _ -> Async.RunSynchronously(computation, ?cancellationToken=cancellationToken)
+    static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
+        let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+        let ts = TaskCompletionSource<'T>()
+        let task = ts.Task
+        Async.StartWithContinuations(
+            computation,
+            (fun k -> ts.SetResult k),
+            (fun exn -> ts.SetException exn),
+            (fun _ -> ts.SetCanceled()),
+            cancellationToken)
+        task.Result
 
 #if NETCOREAPP
 let readRefs (folder : string) (projectFile: string) =
@@ -82,14 +79,14 @@ type TempFile(ext, contents: string) =
 
 let getBackgroundParseResultsForScriptText (input: string) =
     use file =  new TempFile("fsx", input)
-    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString input) |> Async.RunImmediateExceptOnUI
-    checker.GetBackgroundParseResultsForFileInProject(file.Name, checkOptions)  |> Async.RunImmediateExceptOnUI
+    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString input) |> Async.RunImmediate
+    checker.GetBackgroundParseResultsForFileInProject(file.Name, checkOptions)  |> Async.RunImmediate
 
 
 let getBackgroundCheckResultsForScriptText (input: string) =
     use file =  new TempFile("fsx", input)
-    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString input) |> Async.RunImmediateExceptOnUI
-    checker.GetBackgroundCheckResultsForFileInProject(file.Name, checkOptions) |> Async.RunImmediateExceptOnUI
+    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString input) |> Async.RunImmediate
+    checker.GetBackgroundCheckResultsForFileInProject(file.Name, checkOptions) |> Async.RunImmediate
 
 
 let sysLib nm =
@@ -189,7 +186,7 @@ let mkTestFileAndOptions source additionalArgs =
     fileName, options
 
 let parseAndCheckFile fileName source options =
-    match checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunImmediateExceptOnUI with
+    match checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunImmediate with
     | parseResults, FSharpCheckFileAnswer.Succeeded(checkResults) -> parseResults, checkResults
     | _ -> failwithf "Parsing aborted unexpectedly..."
 
@@ -214,12 +211,12 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
                 Directory.Delete(path, true)
 
 #else
-    let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) |> Async.RunImmediateExceptOnUI
+    let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) |> Async.RunImmediate
     //printfn "projectOptions = %A" projectOptions
 #endif
 
     let projectOptions = { projectOptions with OtherOptions = Array.append opts projectOptions.OtherOptions }
-    let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, projectOptions) |> Async.RunImmediateExceptOnUI
+    let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, projectOptions) |> Async.RunImmediate
 
     // if parseResult.Errors.Length > 0 then
     //     printfn "---> Parse Input = %A" input
@@ -239,7 +236,7 @@ let parseSourceCode (name: string, code: string) =
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
-    let parseResults = checker.ParseFile(filePath, SourceText.ofString code, options) |> Async.RunImmediateExceptOnUI
+    let parseResults = checker.ParseFile(filePath, SourceText.ofString code, options) |> Async.RunImmediate
     parseResults.ParseTree
 
 let matchBraces (name: string, code: string) =
@@ -249,7 +246,7 @@ let matchBraces (name: string, code: string) =
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
-    let braces = checker.MatchBraces(filePath, SourceText.ofString code, options) |> Async.RunImmediateExceptOnUI
+    let braces = checker.MatchBraces(filePath, SourceText.ofString code, options) |> Async.RunImmediate
     braces
 
 
