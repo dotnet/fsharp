@@ -7,7 +7,6 @@ open System.IO
 open System.Reflection
 open System.Collections.Immutable
 open System.Diagnostics
-open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp

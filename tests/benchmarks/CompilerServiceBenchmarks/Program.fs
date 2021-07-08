@@ -1,16 +1,11 @@
 ﻿open System
 open System.IO
 open System.Text
-open System.Threading
 open System.Threading.Tasks
-open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.Syntax
-open FSharp.Compiler.Symbols
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.CodeAnalysis.Text

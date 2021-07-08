@@ -2,7 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
-open System.Threading
 open System.Threading.Tasks
 
 [<RequireQualifiedAccess>]
