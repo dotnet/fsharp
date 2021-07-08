@@ -129,7 +129,7 @@ type internal FSharpLanguageServiceTestable() as this =
     member this.OnProjectCleaned(projectSite:IProjectSite) = 
         let enableInMemoryCrossProjectReferences = true
         let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, serviceProvider.Value, "" , false)
-        this.FSharpChecker.NotifyProjectCleaned(checkOptions) |> Async.RunImmediate
+        this.FSharpChecker.NotifyProjectCleaned(checkOptions) |> Async.RunImmediateExceptOnUI
 
     member this.OnActiveViewChanged(textView) =
         bgRequests.OnActiveViewChanged(textView)

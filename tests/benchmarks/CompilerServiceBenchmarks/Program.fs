@@ -1,6 +1,7 @@
 ﻿open System
 open System.IO
 open System.Text
+open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CodeAnalysis
@@ -89,7 +90,7 @@ type SourceText with
 module Helpers =
 
     type Async with
-        static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
+        static member RunImmediateExceptOnUI (computation: Async<'T>, ?cancellationToken ) =
             match SynchronizationContext.Current with 
             | null ->
                 let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
@@ -195,10 +196,10 @@ type CompilerService() =
         | None ->
             let options, _ =
                 checkerOpt.Value.GetProjectOptionsFromScript("decentlySizedStandAloneFile.fsx", SourceText.ofString decentlySizedStandAloneFile)
-                |> Async.RunImmediate
+                |> Async.RunImmediateExceptOnUI
             let _, checkResult =                                                                
                 checkerOpt.Value.ParseAndCheckFileInProject("decentlySizedStandAloneFile.fsx", 0, SourceText.ofString decentlySizedStandAloneFile, options)
-                |> Async.RunImmediate
+                |> Async.RunImmediateExceptOnUI
             decentlySizedStandAloneFileCheckResultOpt <- Some checkResult
         | _ -> ()
 
@@ -208,7 +209,7 @@ type CompilerService() =
         | None, _ -> failwith "no checker"
         | _, None -> failwith "no source"
         | Some(checker), Some(source) ->
-            let results = checker.ParseFile("CheckExpressions.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunImmediate
+            let results = checker.ParseFile("CheckExpressions.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunImmediateExceptOnUI
             if results.ParseHadErrors then failwithf "parse had errors: %A" results.Diagnostics
 
     [<IterationCleanup(Target = "ParsingTypeCheckerFs")>]
@@ -218,7 +219,7 @@ type CompilerService() =
         | Some(checker) ->
             checker.InvalidateAll()
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-            checker.ParseFile("dummy.fs", SourceText.ofString "dummy", parsingOptions) |> Async.RunImmediate |> ignore
+            checker.ParseFile("dummy.fs", SourceText.ofString "dummy", parsingOptions) |> Async.RunImmediateExceptOnUI |> ignore
             ClearAllILModuleReaderCache()
 
     [<Benchmark>]
@@ -289,7 +290,7 @@ type CompilerService() =
         | Some checker ->
             let parseResult, checkResult =                                                                
                 checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString (File.ReadAllText(file)), options)
-                |> Async.RunImmediate
+                |> Async.RunImmediateExceptOnUI
 
             if parseResult.Diagnostics.Length > 0 then
                 failwithf "%A" parseResult.Diagnostics
@@ -360,7 +361,7 @@ type CompilerService() =
             | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
             | FSharpCheckFileAnswer.Succeeded results ->
                 let sourceLines = decentlySizedStandAloneFile.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
-                let ranges = SimplifyNames.getSimplifiableNames(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunImmediate
+                let ranges = SimplifyNames.getSimplifiableNames(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunImmediateExceptOnUI
                 ignore ranges                
             ()
         | _ -> failwith "oopsie"
@@ -373,7 +374,7 @@ type CompilerService() =
             | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
             | FSharpCheckFileAnswer.Succeeded results ->
                 let sourceLines = decentlySizedStandAloneFile.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
-                let decls = UnusedOpens.getUnusedOpens(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunImmediate
+                let decls = UnusedOpens.getUnusedOpens(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunImmediateExceptOnUI
                 ignore decls              
             ()
         | _ -> failwith "oopsie"
@@ -385,7 +386,7 @@ type CompilerService() =
             match checkResult with
             | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
             | FSharpCheckFileAnswer.Succeeded results ->
-                let decls = UnusedDeclarations.getUnusedDeclarations(results, true) |> Async.RunImmediate
+                let decls = UnusedDeclarations.getUnusedDeclarations(results, true) |> Async.RunImmediateExceptOnUI
                 ignore decls // should be 16                
             ()
         | _ -> failwith "oopsie"

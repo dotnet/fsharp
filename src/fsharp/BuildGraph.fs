@@ -105,7 +105,7 @@ type NodeCode private () =
     static let cancellationToken =
         Node(wrapThreadStaticInfo Async.CancellationToken)
 
-    static member RunImmediate (computation: NodeCode<'T>, ct: CancellationToken) =
+    static member RunImmediateExceptOnUI (computation: NodeCode<'T>, ct: CancellationToken) =
         let errorLogger = CompileThreadStatic.ErrorLogger
         let phase = CompileThreadStatic.BuildPhase
         try
@@ -125,7 +125,7 @@ type NodeCode private () =
             raise(ex.InnerExceptions.[0])
 
     static member RunImmediateWithoutCancellation (computation: NodeCode<'T>) =
-        NodeCode.RunImmediate(computation, CancellationToken.None)
+        NodeCode.RunImmediateExceptOnUI(computation, CancellationToken.None)
 
     static member StartAsTask_ForTesting (computation: NodeCode<'T>, ?ct: CancellationToken) =
         let errorLogger = CompileThreadStatic.ErrorLogger

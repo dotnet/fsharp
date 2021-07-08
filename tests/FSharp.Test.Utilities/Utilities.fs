@@ -20,7 +20,7 @@ open NUnit.Framework
 module Utilities =
 
     type Async with
-        static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
+        static member RunImmediateExceptOnUI (computation: Async<'T>, ?cancellationToken ) =
             match SynchronizationContext.Current with 
             | null ->
                 let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken

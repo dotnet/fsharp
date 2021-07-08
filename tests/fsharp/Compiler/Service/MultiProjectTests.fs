@@ -63,7 +63,7 @@ let test() =
             |> SourceText.ofString
         let _, checkAnswer = 
             CompilerAssert.Checker.ParseAndCheckFileInProject("test.fs", 0, fsText, fsOptions)
-            |> Async.RunImmediate
+            |> Async.RunImmediateExceptOnUI
 
 
         match checkAnswer with
@@ -76,7 +76,7 @@ let test() =
         try
             let result, _ =
                 checker.Compile([|"fsc.dll";filePath;$"-o:{ outputFilePath }";"--deterministic+";"--optimize+";"--target:library"|])
-                |> Async.RunImmediate
+                |> Async.RunImmediateExceptOnUI
 
             if result.Length > 0 then
                 failwith "Compilation has errors."
@@ -162,7 +162,7 @@ let x = Script1.x
 
             let checkProjectResults = 
                 checker.ParseAndCheckProject(fsOptions1)
-                |> Async.RunImmediate
+                |> Async.RunImmediateExceptOnUI
 
             Assert.IsEmpty(checkProjectResults.Diagnostics)
 
@@ -176,7 +176,7 @@ let y = Script1.y
 
             let checkProjectResults = 
                 checker.ParseAndCheckProject(fsOptions1)
-                |> Async.RunImmediate
+                |> Async.RunImmediateExceptOnUI
 
             Assert.IsNotEmpty(checkProjectResults.Diagnostics)
 
@@ -190,7 +190,7 @@ let y = 1
 
             let checkProjectResults = 
                 checker.ParseAndCheckProject(fsOptions1)
-                |> Async.RunImmediate
+                |> Async.RunImmediateExceptOnUI
 
             Assert.IsEmpty(checkProjectResults.Diagnostics)
 

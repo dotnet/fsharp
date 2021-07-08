@@ -19,7 +19,7 @@ open FsUnit
 open NUnit.Framework
 
 type Async with
-    static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
+    static member RunImmediateExceptOnUI (computation: Async<'T>, ?cancellationToken ) =
             match SynchronizationContext.Current with 
             | null ->
                 let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
@@ -82,14 +82,14 @@ type TempFile(ext, contents: string) =
 
 let getBackgroundParseResultsForScriptText (input: string) =
     use file =  new TempFile("fsx", input)
-    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString input) |> Async.RunImmediate
-    checker.GetBackgroundParseResultsForFileInProject(file.Name, checkOptions)  |> Async.RunImmediate
+    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString input) |> Async.RunImmediateExceptOnUI
+    checker.GetBackgroundParseResultsForFileInProject(file.Name, checkOptions)  |> Async.RunImmediateExceptOnUI
 
 
 let getBackgroundCheckResultsForScriptText (input: string) =
     use file =  new TempFile("fsx", input)
-    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString input) |> Async.RunImmediate
-    checker.GetBackgroundCheckResultsForFileInProject(file.Name, checkOptions) |> Async.RunImmediate
+    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString input) |> Async.RunImmediateExceptOnUI
+    checker.GetBackgroundCheckResultsForFileInProject(file.Name, checkOptions) |> Async.RunImmediateExceptOnUI
 
 
 let sysLib nm =
@@ -189,7 +189,7 @@ let mkTestFileAndOptions source additionalArgs =
     fileName, options
 
 let parseAndCheckFile fileName source options =
-    match checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunImmediate with
+    match checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunImmediateExceptOnUI with
     | parseResults, FSharpCheckFileAnswer.Succeeded(checkResults) -> parseResults, checkResults
     | _ -> failwithf "Parsing aborted unexpectedly..."
 
@@ -214,12 +214,12 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
                 Directory.Delete(path, true)
 
 #else
-    let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) |> Async.RunImmediate
+    let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) |> Async.RunImmediateExceptOnUI
     //printfn "projectOptions = %A" projectOptions
 #endif
 
     let projectOptions = { projectOptions with OtherOptions = Array.append opts projectOptions.OtherOptions }
-    let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, projectOptions) |> Async.RunImmediate
+    let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, projectOptions) |> Async.RunImmediateExceptOnUI
 
     // if parseResult.Errors.Length > 0 then
     //     printfn "---> Parse Input = %A" input
@@ -239,7 +239,7 @@ let parseSourceCode (name: string, code: string) =
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
-    let parseResults = checker.ParseFile(filePath, SourceText.ofString code, options) |> Async.RunImmediate
+    let parseResults = checker.ParseFile(filePath, SourceText.ofString code, options) |> Async.RunImmediateExceptOnUI
     parseResults.ParseTree
 
 let matchBraces (name: string, code: string) =
@@ -249,7 +249,7 @@ let matchBraces (name: string, code: string) =
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
-    let braces = checker.MatchBraces(filePath, SourceText.ofString code, options) |> Async.RunImmediate
+    let braces = checker.MatchBraces(filePath, SourceText.ofString code, options) |> Async.RunImmediateExceptOnUI
     braces
 
 
