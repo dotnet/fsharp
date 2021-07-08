@@ -1041,13 +1041,15 @@ namespace Microsoft.FSharp.Control
             |> ignore 
             |> fake
 
-        let DisposeRegistration (registration: byref<CancellationTokenRegistration option>) =
+        /// Removes a registration places on a cancellation token
+        let DisposeCancellationRegistration (registration: byref<CancellationTokenRegistration option>) =
             match registration with
             | Some r ->
                 registration <- None
                 r.Dispose()
             | None -> ()
 
+        /// Cleans up a Timer, helper for Async.Sleep
         let DisposeTimer (timer: byref<Timer option>) =
             match timer with
             | None -> ()
@@ -1055,6 +1057,7 @@ namespace Microsoft.FSharp.Control
                 timer <- None
                 t.Dispose()
 
+        /// Unregisters a RegisteredWaitHandle, helper for AwaitWaitHandle
         let UnregisterWaitHandle (rwh: byref<RegisteredWaitHandle option>) =
             match rwh with
             | None -> ()
@@ -1062,6 +1065,7 @@ namespace Microsoft.FSharp.Control
                 r.Unregister null |> ignore
                 rwh <- None
 
+        /// Unregisters a delegate handler, helper for AwaitEvent
         let RemoveHandler (event: IEvent<_, _>) (del: byref<'Delegate option>) =
             match del with
             | Some d -> 
@@ -1113,10 +1117,10 @@ namespace Microsoft.FSharp.Control
                      completedSynchronously <- false
 
              interface System.IAsyncResult with
-                  member x.IsCompleted = result.ResultAvailable
-                  member x.CompletedSynchronously = completedSynchronously
-                  member x.AsyncWaitHandle = result.GetWaitHandle()
-                  member x.AsyncState = state
+                  member _.IsCompleted = result.ResultAvailable
+                  member _.CompletedSynchronously = completedSynchronously
+                  member _.AsyncWaitHandle = result.GetWaitHandle()
+                  member _.AsyncState = state
 
              interface System.IDisposable with
                  member x.Dispose() = x.Close()
@@ -1469,7 +1473,7 @@ namespace Microsoft.FSharp.Control
                     ctxt.token.Register(Action(fun () ->
                         if latch.Enter() then
                             // Make sure we're not cancelled again
-                            DisposeRegistration &registration 
+                            DisposeCancellationRegistration &registration 
                             DisposeTimer &timer
                             ctxt.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxt.ccont(OperationCanceledException(ctxt.token))) |> unfake)
                     ) |> Some
@@ -1477,7 +1481,7 @@ namespace Microsoft.FSharp.Control
                     timer <- new Timer(TimerCallback(fun _ ->
                                         if latch.Enter() then
                                             // Ensure cancellation is not possible beyond this point
-                                            DisposeRegistration &registration 
+                                            DisposeCancellationRegistration &registration 
                                             DisposeTimer &timer
                                             // Now we're done, so call the continuation
                                             ctxt.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxt.cont()) |> unfake),
@@ -1485,7 +1489,7 @@ namespace Microsoft.FSharp.Control
                 with exn ->
                     if latch.Enter() then
                         // Ensure cancellation is not possible beyond this point
-                        DisposeRegistration &registration 
+                        DisposeCancellationRegistration &registration 
                         // Prepare to call exception continuation
                         edi <- ExceptionDispatchInfo.RestoreOrCapture exn
 
@@ -1522,7 +1526,7 @@ namespace Microsoft.FSharp.Control
                         ctxt.token.Register(Action(fun () ->
                             if latch.Enter() then
                                 // Make sure we're not cancelled again
-                                DisposeRegistration &registration 
+                                DisposeCancellationRegistration &registration 
 
                                 UnregisterWaitHandle &rwh
 
@@ -1535,7 +1539,7 @@ namespace Microsoft.FSharp.Control
                                         callBack=WaitOrTimerCallback(fun _ timeOut ->
                                                     if latch.Enter() then
                                                         // Ensure cancellation is not possible beyond this point
-                                                        DisposeRegistration &registration 
+                                                        DisposeCancellationRegistration &registration 
                                                         UnregisterWaitHandle &rwh
                                                         // Call the success continuation
                                                         ctxt.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxt.cont (not timeOut)) |> unfake),
@@ -1546,7 +1550,7 @@ namespace Microsoft.FSharp.Control
                     with exn ->
                         if latch.Enter() then
                             // Ensure cancellation is not possible beyond this point
-                            DisposeRegistration &registration 
+                            DisposeCancellationRegistration &registration 
                             // Prepare to call exception continuation
                             edi <- ExceptionDispatchInfo.RestoreOrCapture exn
 
@@ -1617,13 +1621,12 @@ namespace Microsoft.FSharp.Control
                 let resultCell = new ResultCell<_>()
 
                 let latch = Latch()
-
                 let mutable registration: CancellationTokenRegistration option = None
                 registration <-
                     ct.Register(Action(fun () ->
                         if latch.Enter() then
                             // Make sure we're not cancelled again
-                            DisposeRegistration &registration 
+                            DisposeCancellationRegistration &registration 
 
                             // Call the cancellation function. Ignore any exceptions from the
                             // cancellation function.
@@ -1642,7 +1645,7 @@ namespace Microsoft.FSharp.Control
                         if not iar.CompletedSynchronously then
                             if latch.Enter() then
                                 // Ensure cancellation is not possible beyond this point
-                                DisposeRegistration &registration 
+                                DisposeCancellationRegistration &registration 
 
                                 // Run the endAction and collect its result.
                                 let res =
@@ -1658,7 +1661,7 @@ namespace Microsoft.FSharp.Control
                 let (iar:IAsyncResult) = beginAction (callback, (null:obj))
                 if iar.CompletedSynchronously then
                     // Ensure cancellation is not possible beyond this point
-                    DisposeRegistration &registration 
+                    DisposeCancellationRegistration &registration 
                     return endAction iar
                 else
                     // Note: ok to use "NoDirectCancel" here because cancellation has been registered above
@@ -1698,7 +1701,7 @@ namespace Microsoft.FSharp.Control
                     ct.Register(Action(fun () ->
                         if latch.Enter() then
                             // Make sure we're not cancelled again
-                            DisposeRegistration &registration 
+                            DisposeCancellationRegistration &registration 
 
                             // Stop listening to events
                             RemoveHandler event &del
@@ -1718,7 +1721,7 @@ namespace Microsoft.FSharp.Control
                     FuncDelegate<'T>.Create<'Delegate>(fun eventArgs ->
                         if latch.Enter() then
                             // Ensure cancellation is not possible beyond this point
-                            DisposeRegistration &registration 
+                            DisposeCancellationRegistration &registration 
 
                             // Stop listening to events
                             RemoveHandler event &del
@@ -1784,7 +1787,7 @@ namespace Microsoft.FSharp.Control
                     ct.Register(Action(fun () ->
                             if latch.Enter() then
                                 // Make sure we're not cancelled again
-                                DisposeRegistration &registration 
+                                DisposeCancellationRegistration &registration 
                                 try
                                     interruption ()
                                 with _ -> ()))
@@ -1797,7 +1800,7 @@ namespace Microsoft.FSharp.Control
                             if not ct.IsCancellationRequested then
                                 if latch.Enter() then
                                     // Ensure cancellation is not possible beyond this point
-                                    DisposeRegistration &registration }
+                                    DisposeCancellationRegistration &registration }
                 return disposer
             }
 
