@@ -40,9 +40,6 @@ namespace Microsoft.FSharp.Control
 
         let associationTable = ConditionalWeakTable<exn, ExceptionDispatchInfo>()
 
-        [<Literal>]
-        let bindLimitBeforeHijack = 300
-
         type ExceptionDispatchInfo with
 
             member edi.GetAssociatedSourceException() =
@@ -78,6 +75,9 @@ namespace Microsoft.FSharp.Control
 
     [<AllowNullLiteral>]
     type Trampoline() =
+
+        [<Literal>]
+        static let bindLimitBeforeHijack = 300
 
         [<ThreadStatic; DefaultValue>]
         static val mutable private thisThreadHasTrampoline: bool
@@ -680,6 +680,35 @@ namespace Microsoft.FSharp.Control
             else
                 unitAsync
 
+#if REDUCED_ALLOCATIONS_BUT_RUNS_SLOWER
+        /// Implement the while loop construct of async computation expressions
+        ///   - Initial cancellation check before each execution of guard
+        ///   - No initial hijack check before each execution of guard
+        ///   - No cancellation check before each execution of the body after guard
+        ///   - Hijack check before each execution of the body after guard (see Invoke)
+        ///   - Cancellation check after guard fails (see OnSuccess)
+        ///   - Hijack check after guard fails (see OnSuccess)
+        ///   - Apply 'guardFunc' with exception protection (see ProtectCode)
+        //
+        // Note: There are allocations during loop set up, but no allocations during iterations of the loop
+            // One allocation for While async
+            // One allocation for While async context function
+            MakeAsync (fun ctxtGuard -> 
+               // One allocation for ctxtLoop reference cell
+               let mutable ctxtLoop = Unchecked.defaultof<_>
+               // One allocation for While recursive closure
+               let rec WhileLoop () =
+                   if ctxtGuard.IsCancellationRequested then
+                       ctxtGuard.OnCancellation ()
+                   elif ctxtGuard.ProtectCode guardFunc then
+                       Invoke computation ctxtLoop
+                   else
+                       ctxtGuard.OnSuccess ()
+               // One allocation for While body activation context
+               ctxtLoop <- ctxtGuard.WithContinuation(WhileLoop)
+               WhileLoop ()) 
+#endif
+
         /// Implement the for loop construct of async commputation expressions
         ///   - No initial cancellation check before GetEnumerator call.
         ///   - No initial cancellation check before entering protection of implied try/finally
@@ -698,6 +727,30 @@ namespace Microsoft.FSharp.Control
                 CreateWhileAsync
                     (fun () -> ie.MoveNext())
                     (CreateDelayAsync (fun () -> computation ie.Current)))
+
+#if REDUCED_ALLOCATIONS_BUT_RUNS_SLOWER
+            CreateUsingAsync (source.GetEnumerator()) (fun ie ->
+                // One allocation for While async
+                // One allocation for While async context function
+                MakeAsync (fun ctxtGuard -> 
+                   // One allocation for ctxtLoop reference cell
+                   let mutable ctxtLoop = Unchecked.defaultof<_>
+                   // Two allocations for protected functions
+                   let guardFunc() = ie.MoveNext()
+                   let currentFunc() = ie.Current
+                   // One allocation for ForLoop recursive closure
+                   let rec ForLoop () =
+                       if ctxtGuard.IsCancellationRequested then
+                           ctxtGuard.OnCancellation ()
+                       elif ctxtGuard.ProtectCode guardFunc then
+                           let x = ctxtGuard.ProtectCode currentFunc
+                           CallThenInvoke ctxtLoop x computation 
+                       else
+                           ctxtGuard.OnSuccess ()
+                   // One allocation for loop activation context
+                   ctxtLoop <- ctxtGuard.WithContinuation(ForLoop)
+                   ForLoop ())) 
+#endif
 
         ///   - Initial cancellation check
         ///   - Call syncCtxt.Post with exception protection. THis may fail as it is arbitrary user code
