@@ -3199,7 +3199,7 @@ and CombineMatchInfos dinfo tinfo =
     { TotalSize = dinfo.TotalSize + tinfo.TotalSize
       FunctionSize = dinfo.FunctionSize + tinfo.FunctionSize
       HasEffect = dinfo.HasEffect || tinfo.HasEffect
-      MightMakeCriticalTailcall=tinfo.MightMakeCriticalTailcall // discard tailcall info from decision tree since it's not in tailcall position
+      MightMakeCriticalTailcall= dinfo.MightMakeCriticalTailcall || tinfo.MightMakeCriticalTailcall
       Info= UnknownValue }
 
 and RebuildOptimizedMatch (spMatch, exprm, m, ty, dtree, tgs, dinfo, tinfos) = 
