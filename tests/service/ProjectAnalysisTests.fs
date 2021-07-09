@@ -3312,7 +3312,6 @@ let ``Test Project23 property`` () =
          ("Value", ["member"; "prop"; "extmem"]);
          ("set_Value", ["member"; "extmem"; "setter"]);
          ("x", []);
-         ("_arg1", ["compgen"]);
          ("Value", ["member"; "prop"; "extmem"])]
 
 [<Test>]
