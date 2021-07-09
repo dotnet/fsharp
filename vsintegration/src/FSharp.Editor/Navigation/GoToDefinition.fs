@@ -473,7 +473,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                         }
 
                     let span =
-                        match Async.RunSynchronously(goToAsync, cancellationToken = cancellationToken) with
+                        match Async.RunImmediate(goToAsync, cancellationToken = cancellationToken) with
                         | Some span -> span
                         | _ -> TextSpan()
 
