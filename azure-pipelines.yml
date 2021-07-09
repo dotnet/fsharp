@@ -475,4 +475,4 @@ stages:
       insertTargetBranch: main
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
-      completeInsertion: 'false'
+      completeInsertion: 'auto'
