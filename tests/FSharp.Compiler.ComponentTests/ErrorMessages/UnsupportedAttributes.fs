@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-#if NETCOREAPP
 namespace FSharp.Compiler.ComponentTests.ErrorMessages
 
+#if NETCOREAPP
 open Xunit
 open FSharp.Test.Utilities.Compiler
 
