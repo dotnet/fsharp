@@ -294,11 +294,16 @@ namespace Microsoft.FSharp.Control
         /// cancellation and trampoline hijacking.
         //   - Cancellation check
         //   - Hijack check
-        member ctxt.OnSuccess result =
+        //
+        // Note, this must make tailcalls, 
+        static member Success (ctxt: AsyncActivation<'T>) result =
             if ctxt.IsCancellationRequested then
                 ctxt.OnCancellation ()
             else
                 ctxt.HijackCheckThenCall ctxt.cont result
+
+        // For backwards API Compat
+        member ctxt.OnSuccess result = AsyncActivation.Success result
 
         /// Save the exception continuation during propagation of an exception, or prior to raising an exception
         member _.OnExceptionRaised() =
@@ -569,7 +574,7 @@ namespace Microsoft.FSharp.Control
         ///   - Hijack check (see OnSuccess)
         let inline CreateReturnAsync res =
             // Note: this code ends up in user assemblies via inlining
-            MakeAsync (fun ctxt -> ctxt.OnSuccess res)
+            MakeAsync (fun ctxt -> AsyncActivation.Success ctxt res)
 
         /// Runs the first process, takes its result, applies f and then runs the new process produced.
         ///   - Initial cancellation check (see Bind)
