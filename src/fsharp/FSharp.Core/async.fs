@@ -156,27 +156,45 @@ namespace Microsoft.FSharp.Control
             assert storedExnCont.IsNone
             storedExnCont <- Some action
 
-    type TrampolineHolder() as this =
+    type TrampolineHolder() =
         let mutable trampoline = null
 
-        // Preallocate this delegate and keep it in the trampoline holder.
-        let sendOrPostCallbackWithTrampoline =
-            SendOrPostCallback (fun o ->
-                let f = unbox<unit -> AsyncReturn> o
-                // Reminder: the ignore below ignores an AsyncReturn.
-                this.ExecuteWithTrampoline f |> ignore)
+        // On-demand allocate this delegate and keep it in the trampoline holder.
+        let mutable sendOrPostCallbackWithTrampoline : SendOrPostCallback = null
+        let getSendOrPostCallbackWithTrampoline(this: TrampolineHolder) =
+            match sendOrPostCallbackWithTrampoline with 
+            | null ->
+                sendOrPostCallbackWithTrampoline <- 
+                    SendOrPostCallback (fun o ->
+                    let f = unbox<unit -> AsyncReturn> o
+                    // Reminder: the ignore below ignores an AsyncReturn.
+                    this.ExecuteWithTrampoline f |> ignore)
+            | _ -> ()
+            sendOrPostCallbackWithTrampoline
 
-        // Preallocate this delegate and keep it in the trampoline holder.
-        let waitCallbackForQueueWorkItemWithTrampoline =
-            WaitCallback (fun o ->
-                let f = unbox<unit -> AsyncReturn> o
-                this.ExecuteWithTrampoline f |> ignore)
+        // On-demand allocate this delegate and keep it in the trampoline holder.
+        let mutable waitCallbackForQueueWorkItemWithTrampoline : WaitCallback = null
+        let getWaitCallbackForQueueWorkItemWithTrampoline(this: TrampolineHolder) =
+            match waitCallbackForQueueWorkItemWithTrampoline with 
+            | null ->
+                waitCallbackForQueueWorkItemWithTrampoline <-
+                    WaitCallback (fun o ->
+                        let f = unbox<unit -> AsyncReturn> o
+                        this.ExecuteWithTrampoline f |> ignore)
+            | _ -> ()
+            waitCallbackForQueueWorkItemWithTrampoline
 
-        // Preallocate this delegate and keep it in the trampoline holder.
-        let threadStartCallbackForStartThreadWithTrampoline =
-            ParameterizedThreadStart (fun o ->
-                let f = unbox<unit -> AsyncReturn> o
-                this.ExecuteWithTrampoline f |> ignore)
+        // On-demand allocate this delegate and keep it in the trampoline holder.
+        let mutable threadStartCallbackForStartThreadWithTrampoline : ParameterizedThreadStart = null
+        let getThreadStartCallbackForStartThreadWithTrampoline(this: TrampolineHolder) =
+            match threadStartCallbackForStartThreadWithTrampoline with 
+            | null ->
+                threadStartCallbackForStartThreadWithTrampoline <-
+                    ParameterizedThreadStart (fun o ->
+                        let f = unbox<unit -> AsyncReturn> o
+                        this.ExecuteWithTrampoline f |> ignore)
+            | _ -> ()
+            threadStartCallbackForStartThreadWithTrampoline
 
         /// Execute an async computation after installing a trampoline on its synchronous stack.
         [<DebuggerHidden>]
@@ -184,12 +202,12 @@ namespace Microsoft.FSharp.Control
             trampoline <- Trampoline()
             trampoline.Execute firstAction
 
-        member _.PostWithTrampoline (syncCtxt: SynchronizationContext)  (f: unit -> AsyncReturn) =
-            syncCtxt.Post (sendOrPostCallbackWithTrampoline, state=(f |> box))
+        member this.PostWithTrampoline (syncCtxt: SynchronizationContext)  (f: unit -> AsyncReturn) =
+            syncCtxt.Post (getSendOrPostCallbackWithTrampoline(this), state=(f |> box))
             AsyncReturn.Fake()
 
-        member _.QueueWorkItemWithTrampoline (f: unit -> AsyncReturn) =
-            if not (ThreadPool.QueueUserWorkItem(waitCallbackForQueueWorkItemWithTrampoline, f |> box)) then
+        member this.QueueWorkItemWithTrampoline (f: unit -> AsyncReturn) =
+            if not (ThreadPool.QueueUserWorkItem(getWaitCallbackForQueueWorkItemWithTrampoline(this), f |> box)) then
                 failwith "failed to queue user work item"
             AsyncReturn.Fake()
 
@@ -199,8 +217,8 @@ namespace Microsoft.FSharp.Control
             | _ -> this.PostWithTrampoline syncCtxt f
 
         // This should be the only call to Thread.Start in this library. We must always install a trampoline.
-        member _.StartThreadWithTrampoline (f: unit -> AsyncReturn) =
-            Thread(threadStartCallbackForStartThreadWithTrampoline, IsBackground=true).Start(f|>box)
+        member this.StartThreadWithTrampoline (f: unit -> AsyncReturn) =
+            Thread(getThreadStartCallbackForStartThreadWithTrampoline(this), IsBackground=true).Start(f|>box)
             AsyncReturn.Fake()
 
         /// Save the exception continuation during propagation of an exception, or prior to raising an exception
@@ -287,23 +305,26 @@ namespace Microsoft.FSharp.Control
             contents.aux.ccont (OperationCanceledException (contents.aux.token))
 
         /// Check for trampoline hijacking.
-        member inline _.HijackCheckThenCall cont arg =
-            contents.aux.trampolineHolder.HijackCheckThenCall cont arg
+        // Note, this must make tailcalls, so may not be an instance member taking a byref argument,
+        /// nor call any members taking byref arguments.
+        static member inline HijackCheckThenCall (ctxt: AsyncActivation<'T>) cont arg =
+            ctxt.aux.trampolineHolder.HijackCheckThenCall cont arg
 
         /// Call the success continuation of the asynchronous execution context after checking for
         /// cancellation and trampoline hijacking.
         //   - Cancellation check
         //   - Hijack check
         //
-        // Note, this must make tailcalls, 
+        // Note, this must make tailcalls, so may not be an instance member taking a byref argument.
         static member Success (ctxt: AsyncActivation<'T>) result =
             if ctxt.IsCancellationRequested then
                 ctxt.OnCancellation ()
             else
-                ctxt.HijackCheckThenCall ctxt.cont result
+                AsyncActivation<'T>.HijackCheckThenCall ctxt ctxt.cont result
 
         // For backwards API Compat
-        member ctxt.OnSuccess result = AsyncActivation.Success result
+        [<Obsolete("Call Success instead")>]
+        member ctxt.OnSuccess (result: 'T) = AsyncActivation<'T>.Success ctxt result
 
         /// Save the exception continuation during propagation of an exception, or prior to raising an exception
         member _.OnExceptionRaised() =
@@ -386,7 +407,7 @@ namespace Microsoft.FSharp.Control
         // Note: direct calls to this function may end up in user assemblies via inlining
         [<DebuggerHidden>]
         let Invoke (computation: Async<'T>) (ctxt: AsyncActivation<_>) : AsyncReturn =
-            ctxt.HijackCheckThenCall computation.Invoke ctxt
+            AsyncActivation<'T>.HijackCheckThenCall ctxt computation.Invoke ctxt
 
         /// Apply 'userCode' to 'arg'. If no exception is raised then call the normal continuation.  Used to implement
         /// 'finally' and 'when cancelled'.
@@ -406,7 +427,7 @@ namespace Microsoft.FSharp.Control
                     ctxt.OnExceptionRaised()
 
             if ok then
-                ctxt.HijackCheckThenCall ctxt.cont result
+                AsyncActivation<'T>.HijackCheckThenCall ctxt ctxt.cont result
             else
                 fake()
 
@@ -471,7 +492,7 @@ namespace Microsoft.FSharp.Control
             if ok then
                 match resOpt with
                 | None ->
-                    ctxt.HijackCheckThenCall ctxt.econt edi
+                    AsyncActivation<'T>.HijackCheckThenCall ctxt ctxt.econt edi
                 | Some res ->
                     Invoke res ctxt
             else
