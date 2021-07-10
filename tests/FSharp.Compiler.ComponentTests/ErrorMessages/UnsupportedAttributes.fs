@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
+#if NETCOREAPP
 namespace FSharp.Compiler.ComponentTests.ErrorMessages
 
 open Xunit
@@ -51,3 +52,4 @@ type C() =
               Message =
                "This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect." }
         ]
+#endif

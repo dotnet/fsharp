@@ -1640,10 +1640,7 @@ and CheckDecisionTreeTest cenv env m discrim =
     | DecisionTreeTest.Error _ -> ()
 
 and CheckAttrib cenv env (Attrib(tcref, _, args, props, _, _, m)) =
-    if [
-        cenv.g.attrib_ModuleInitializerAttribute
-        cenv.g.attrib_CallerArgumentExpressionAttribute
-    ] |> List.exists (function Some attrib -> tyconRefEq cenv.g attrib.TyconRef tcref | None -> false) then
+    if List.exists (tyconRefEq cenv.g tcref) cenv.g.attribs_Unsupported then
         warning(Error(FSComp.SR.unsupportedAttribute(), m))
     props |> List.iter (fun (AttribNamedArg(_, _, _, expr)) -> CheckAttribExpr cenv env expr)
     args |> List.iter (CheckAttribExpr cenv env)
