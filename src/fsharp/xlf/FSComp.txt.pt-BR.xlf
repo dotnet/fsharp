@@ -4564,7 +4564,7 @@
       </trans-unit>
       <trans-unit id="optsCopyrightCommunity">
         <source>Freely distributed under the MIT Open Source License.  https://github.com/Microsoft/visualfsharp/blob/master/License.txt</source>
-        <target state="translated">Distribuído gratuitamente sob a Licença de Software Livre do MIT.  https://github.com/Microsoft/visualfsharp/blob/master/License.txt</target>
+        <target state="translated">Distribuído gratuitamente sob a Licença de Código Aberto do MIT.  https://github.com/Microsoft/visualfsharp/blob/master/License.txt</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNameOfOutputFile">
