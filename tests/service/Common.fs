@@ -6,6 +6,7 @@ open System.Diagnostics
 open System.IO
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO

@@ -921,46 +921,60 @@ namespace Microsoft.FSharp.Control
             |> unfake
             task
 
-        // Helper to attach continuation to the given task.
+        // Call the appropriate continuation on completion of a task
         [<DebuggerHidden>]
-        let taskContinueWith (task: Task<'T>) (ctxt: AsyncActivation<'T>)  =
-
-            let continuation (completedTask: Task<_>) : unit =
-                ctxt.trampolineHolder.ExecuteWithTrampoline (fun () ->
-                    if completedTask.IsCanceled then
-                        let edi = ExceptionDispatchInfo.Capture(TaskCanceledException completedTask)
-                        ctxt.econt edi
-                    elif completedTask.IsFaulted then
-                        let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
-                        ctxt.econt edi
-                    else
-                        ctxt.cont completedTask.Result) |> unfake
-
-            if task.IsCompleted then
-                continuation task |> fake
+        let OnTaskCompleted (completedTask: Task<'T>) (ctxt: AsyncActivation<'T>)  =
+            assert completedTask.IsCompleted
+            if completedTask.IsCanceled then
+                let edi = ExceptionDispatchInfo.Capture(TaskCanceledException completedTask)
+                ctxt.econt edi
+            elif completedTask.IsFaulted then
+                let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
+                ctxt.econt edi
             else
-                task.ContinueWith(Action<Task<'T>>(continuation), TaskContinuationOptions.ExecuteSynchronously)
-                |> ignore |> fake
+                ctxt.cont completedTask.Result
 
+        // Call the appropriate continuation on completion of a task.  A cancelled task
+        // calls the exception continuation with TaskCanceledException, since it may not represent cancellation of
+        // the overall async (they may be governed by different cancellation tokens, or
+        // the task may not have a cancellation token at all).
         [<DebuggerHidden>]
-        let taskContinueWithUnit (task: Task) (ctxt: AsyncActivation<unit>) =
-
-            let continuation (completedTask: Task) : unit =
-                ctxt.trampolineHolder.ExecuteWithTrampoline (fun () ->
-                    if completedTask.IsCanceled then
-                        let edi = ExceptionDispatchInfo.Capture(TaskCanceledException(completedTask))
-                        ctxt.econt edi
-                    elif completedTask.IsFaulted then
-                        let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
-                        ctxt.econt edi
-                    else
-                        ctxt.cont ()) |> unfake
-
-            if task.IsCompleted then
-                continuation task |> fake
+        let OnUnitTaskCompleted (completedTask: Task) (ctxt: AsyncActivation<unit>)  =
+            assert completedTask.IsCompleted
+            if completedTask.IsCanceled then
+                let edi = ExceptionDispatchInfo.Capture(TaskCanceledException(completedTask))
+                ctxt.econt edi
+            elif completedTask.IsFaulted then
+                let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
+                ctxt.econt edi
             else
-                task.ContinueWith(Action<Task>(continuation), TaskContinuationOptions.ExecuteSynchronously)
-                |> ignore |> fake
+                ctxt.cont ()
+
+        // Helper to attach continuation to the given task, which is assumed not to be completed.
+        // When the task completes the continuation will be run synchronously on the thread
+        // completing the task. This will install a new trampoline on that thread and continue the
+        // execution of the async there.
+        [<DebuggerHidden>]
+        let AttachContinuationToTask (task: Task<'T>) (ctxt: AsyncActivation<'T>)  =
+            task.ContinueWith(Action<Task<'T>>(fun completedTask -> 
+                ctxt.trampolineHolder.ExecuteWithTrampoline (fun () ->
+                    OnTaskCompleted completedTask ctxt)
+                |> unfake), TaskContinuationOptions.ExecuteSynchronously)
+            |> ignore
+            |> fake
+
+        // Helper to attach continuation to the given task, which is assumed not to be completed
+        // When the task completes the continuation will be run synchronously on the thread
+        // completing the task. This will install a new trampoline on that thread and continue the
+        // execution of the async there.
+        [<DebuggerHidden>]
+        let AttachContinuationToUnitTask (task: Task) (ctxt: AsyncActivation<unit>) =
+            task.ContinueWith(Action<Task>(fun completedTask ->
+                ctxt.trampolineHolder.ExecuteWithTrampoline (fun () ->
+                    OnUnitTaskCompleted completedTask ctxt)
+                |> unfake), TaskContinuationOptions.ExecuteSynchronously)
+            |> ignore 
+            |> fake
 
         [<Sealed; AutoSerializable(false)>]
         type AsyncIAsyncResult<'T>(callback: System.AsyncCallback, state:obj) =
@@ -1693,15 +1707,15 @@ namespace Microsoft.FSharp.Control
 
         static member AwaitTask (task:Task<'T>) : Async<'T> =
             if task.IsCompleted then
-                CreateProtectedAsync (fun ctxt -> taskContinueWith task ctxt)
+                MakeAsync (fun ctxt -> OnTaskCompleted task ctxt)
             else
-                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWith task ctxt)
+                CreateDelimitedUserCodeAsync (fun ctxt -> AttachContinuationToTask task ctxt)
 
         static member AwaitTask (task:Task) : Async<unit> =
             if task.IsCompleted then
-                CreateProtectedAsync (fun ctxt -> taskContinueWithUnit task ctxt)
+                MakeAsync (fun ctxt -> OnUnitTaskCompleted task ctxt)
             else
-                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWithUnit task ctxt)
+                CreateDelimitedUserCodeAsync (fun ctxt -> AttachContinuationToUnitTask task ctxt)
 
     module CommonExtensions =
 
