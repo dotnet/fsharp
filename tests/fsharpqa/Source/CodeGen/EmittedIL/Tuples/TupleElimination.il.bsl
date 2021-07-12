@@ -41,13 +41,13 @@
   // Offset: 0x00000230 Length: 0x0000007B
 }
 .module TupleElimination.exe
-// MVID: {60CB69C6-DFDD-92DF-A745-0383C669CB60}
+// MVID: {60D46F2D-DFDD-92DF-A745-03832D6FD460}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06AF0000
+// Image base: 0x06A70000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -98,11 +98,11 @@
     IL_000a:  callvirt   instance bool class [mscorlib]System.Collections.Generic.Dictionary`2<int32,int32>::TryGetValue(!0,
                                                                                                                          !1&)
     IL_000f:  stloc.2
-    .line 10,10 : 5,6 ''
+    .line 10,10 : 5,8 ''
     IL_0010:  ldloc.2
     IL_0011:  call       void TupleElimination::p@5<bool>(!!0)
     IL_0016:  nop
-    .line 11,11 : 5,6 ''
+    .line 11,11 : 5,8 ''
     IL_0017:  ldloc.1
     IL_0018:  call       void TupleElimination::p@5<int32>(!!0)
     IL_001d:  nop
@@ -118,15 +118,15 @@
     IL_002f:  newobj     instance void class [mscorlib]System.Tuple`2<bool,int64>::.ctor(!0,
                                                                                          !1)
     IL_0034:  stloc.s    t
-    .line 15,15 : 5,6 ''
+    .line 15,15 : 5,8 ''
     IL_0036:  ldloc.s    V_4
     IL_0038:  call       void TupleElimination::p@5<bool>(!!0)
     IL_003d:  nop
-    .line 16,16 : 5,6 ''
+    .line 16,16 : 5,8 ''
     IL_003e:  ldloc.3
     IL_003f:  call       void TupleElimination::p@5<int64>(!!0)
     IL_0044:  nop
-    .line 21,21 : 5,6 ''
+    .line 21,21 : 5,9 ''
     IL_0045:  ldloc.s    t
     IL_0047:  call       void TupleElimination::p@5<class [mscorlib]System.Tuple`2<bool,int64>>(!!0)
     IL_004c:  nop

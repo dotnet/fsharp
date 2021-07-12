@@ -6963,28 +6963,38 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
         UnifyTypes cenv env m printerTupleTy printerTupleTyRequired
 
         // Type check the expressions filling the holes
-        let flexes = argTys |> List.map (fun _ -> false)
-        let fillExprs, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys synFillExprs
 
-        let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
+        if List.isEmpty synFillExprs then
+            let str = mkString g m printfFormatString
 
-        let argsExpr = mkArray (g.obj_ty, fillExprsBoxed, m)
-        let percentATysExpr =
-            if percentATys.Length = 0 then
-                mkNull m (mkArrayType g g.system_Type_ty)
+            if isString then
+                str, tpenv
             else
-                let tyExprs = percentATys |> Array.map (mkCallTypeOf g m) |> Array.toList
-                mkArray (g.system_Type_ty, tyExprs, m)
-
-        let fmtExpr = MakeMethInfoCall cenv.amap m newFormatMethod [] [mkString g m printfFormatString; argsExpr; percentATysExpr]
-
-        if isString then
-            TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
-                // Make the call to sprintf
-                mkCall_sprintf g m printerTy fmtExpr [], tpenv
-            )
+                mkCallNewFormat cenv.g m printerTy printerArgTy printerResidueTy printerResultTy printerTupleTy str, tpenv
         else
-            fmtExpr, tpenv
+            // Type check the expressions filling the holes
+            let flexes = argTys |> List.map (fun _ -> false)
+            let fillExprs, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys synFillExprs
+
+            let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
+
+            let argsExpr = mkArray (g.obj_ty, fillExprsBoxed, m)
+            let percentATysExpr =
+                if percentATys.Length = 0 then
+                    mkNull m (mkArrayType g g.system_Type_ty)
+                else
+                    let tyExprs = percentATys |> Array.map (mkCallTypeOf g m) |> Array.toList
+                    mkArray (g.system_Type_ty, tyExprs, m)
+
+            let fmtExpr = MakeMethInfoCall cenv.amap m newFormatMethod [] [mkString g m printfFormatString; argsExpr; percentATysExpr]
+
+            if isString then
+                TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
+                    // Make the call to sprintf
+                    mkCall_sprintf g m printerTy fmtExpr [], tpenv
+                )
+            else
+                fmtExpr, tpenv
 
     // The case for $"..." used as type FormattableString or IFormattable
     | Choice2Of2 createFormattableStringMethod ->
