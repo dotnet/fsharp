@@ -31,6 +31,7 @@ buildUnexpectedTypeArgs,"The non-generic type '%s' does not expect any type argu
 returnUsedInsteadOfReturnBang,"Consider using 'return!' instead of 'return'."
 yieldUsedInsteadOfYieldBang,"Consider using 'yield!' instead of 'yield'."
 tupleRequiredInAbstractMethod,"\nA tuple type is required for one or more arguments. Consider wrapping the given arguments in additional parentheses or review the definition of the interface."
+202,unsupportedAttribute,"This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect."
 203,buildInvalidWarningNumber,"Invalid warning number '%s'"
 204,buildInvalidVersionString,"Invalid version string '%s'"
 205,buildInvalidVersionFile,"Invalid version file '%s'"
