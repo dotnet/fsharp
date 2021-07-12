@@ -1,11 +1,11 @@
 ﻿open System
 open System.IO
 open System.Text
-open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.SourceCodeServices
+open System.Threading.Tasks
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
-open FSharp.Compiler.Range
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.CodeAnalysis.Text
@@ -84,6 +84,19 @@ type SourceText with
 [<AutoOpen>]
 module Helpers =
 
+    type Async with
+        static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
+            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+            let ts = TaskCompletionSource<'T>()
+            let task = ts.Task
+            Async.StartWithContinuations(
+                computation,
+                (fun k -> ts.SetResult k),
+                (fun exn -> ts.SetException exn),
+                (fun _ -> ts.SetCanceled()),
+                cancellationToken)
+            task.Result
+    
     let createProject name referencedProjects =
         let tmpPath = Path.GetTempPath()
         let file = Path.Combine(tmpPath, Path.ChangeExtension(name, ".fs"))
@@ -95,14 +108,13 @@ module Helpers =
                 Array.append [|"--optimize+"; "--target:library" |] (referencedProjects |> Array.ofList |> Array.map (fun x -> "-r:" + x.ProjectFileName))
             ReferencedProjects =
                 referencedProjects
-                |> List.map (fun x -> (x.ProjectFileName, x))
+                |> List.map (fun x -> FSharpReferencedProject.CreateFSharp (x.ProjectFileName, x))
                 |> Array.ofList
             IsIncompleteTypeCheckEnvironment = false
             UseScriptResolutionRules = false
             LoadTime = DateTime()
             UnresolvedReferences = None
             OriginalLoadReferences = []
-            ExtraProjectInfo = None
             Stamp = Some 0L (* set the stamp to 0L on each run so we don't evaluate the whole project again *)
         }
 
@@ -137,7 +149,7 @@ type CompilerService() =
         {
             SourceFiles = [|"CheckExpressions.fs"|]
             ConditionalCompilationDefines = []
-            ErrorSeverityOptions = FSharpDiagnosticSeverityOptions.Default
+            ErrorSeverityOptions = FSharpDiagnosticOptions.Default
             IsInteractive = false
             LightSyntax = None
             CompilingFsLib = false
@@ -176,10 +188,10 @@ type CompilerService() =
         | None ->
             let options, _ =
                 checkerOpt.Value.GetProjectOptionsFromScript("decentlySizedStandAloneFile.fsx", SourceText.ofString decentlySizedStandAloneFile)
-                |> Async.RunSynchronously
+                |> Async.RunImmediate
             let _, checkResult =                                                                
                 checkerOpt.Value.ParseAndCheckFileInProject("decentlySizedStandAloneFile.fsx", 0, SourceText.ofString decentlySizedStandAloneFile, options)
-                |> Async.RunSynchronously
+                |> Async.RunImmediate
             decentlySizedStandAloneFileCheckResultOpt <- Some checkResult
         | _ -> ()
 
@@ -189,8 +201,8 @@ type CompilerService() =
         | None, _ -> failwith "no checker"
         | _, None -> failwith "no source"
         | Some(checker), Some(source) ->
-            let results = checker.ParseFile("CheckExpressions.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunSynchronously
-            if results.ParseHadErrors then failwithf "parse had errors: %A" results.Errors
+            let results = checker.ParseFile("CheckExpressions.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunImmediate
+            if results.ParseHadErrors then failwithf "parse had errors: %A" results.Diagnostics
 
     [<IterationCleanup(Target = "ParsingTypeCheckerFs")>]
     member __.ParsingTypeCheckerFsSetup() =
@@ -199,7 +211,7 @@ type CompilerService() =
         | Some(checker) ->
             checker.InvalidateAll()
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-            checker.ParseFile("dummy.fs", SourceText.ofString "dummy", parsingOptions) |> Async.RunSynchronously |> ignore
+            checker.ParseFile("dummy.fs", SourceText.ofString "dummy", parsingOptions) |> Async.RunImmediate |> ignore
             ClearAllILModuleReaderCache()
 
     [<Benchmark>]
@@ -270,17 +282,17 @@ type CompilerService() =
         | Some checker ->
             let parseResult, checkResult =                                                                
                 checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString (File.ReadAllText(file)), options)
-                |> Async.RunSynchronously
+                |> Async.RunImmediate
 
-            if parseResult.Errors.Length > 0 then
-                failwithf "%A" parseResult.Errors
+            if parseResult.Diagnostics.Length > 0 then
+                failwithf "%A" parseResult.Diagnostics
 
             match checkResult with
             | FSharpCheckFileAnswer.Aborted -> failwith "aborted"
             | FSharpCheckFileAnswer.Succeeded checkFileResult ->
 
-                if checkFileResult.Errors.Length > 0 then
-                    failwithf "%A" checkFileResult.Errors
+                if checkFileResult.Diagnostics.Length > 0 then
+                    failwithf "%A" checkFileResult.Diagnostics
 
     [<IterationSetup(Target = "TypeCheckFileWith100ReferencedProjects")>]
     member this.TypeCheckFileWith100ReferencedProjectsSetup() =
@@ -290,11 +302,13 @@ type CompilerService() =
         )
 
         this.TypeCheckFileWith100ReferencedProjectsOptions.ReferencedProjects
-        |> Seq.iter (fun (_, referencedProjectOptions) ->
-            referencedProjectOptions.SourceFiles
-            |> Seq.iter (fun file ->
-                File.WriteAllText(file, generateSourceCode (Path.GetFileNameWithoutExtension(file)))
-            )
+        |> Seq.iter (function
+            | FSharpReferencedProject.FSharpReference(_, referencedProjectOptions) ->
+                referencedProjectOptions.SourceFiles
+                |> Seq.iter (fun file ->
+                    File.WriteAllText(file, generateSourceCode (Path.GetFileNameWithoutExtension(file)))
+                )
+            | _ -> ()
         )
 
         this.TypeCheckFileWith100ReferencedProjectsRun()
@@ -315,11 +329,13 @@ type CompilerService() =
         )
 
         this.TypeCheckFileWith100ReferencedProjectsOptions.ReferencedProjects
-        |> Seq.iter (fun (_, referencedProjectOptions) ->
-            referencedProjectOptions.SourceFiles
-            |> Seq.iter (fun file ->
-                try File.Delete(file) with | _ -> ()
-            )
+        |> Seq.iter (function
+            | FSharpReferencedProject.FSharpReference(_, referencedProjectOptions) ->
+                referencedProjectOptions.SourceFiles
+                |> Seq.iter (fun file ->
+                    try File.Delete(file) with | _ -> ()
+                )
+            | _ -> ()
         )
 
         match checkerOpt with
@@ -337,7 +353,7 @@ type CompilerService() =
             | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
             | FSharpCheckFileAnswer.Succeeded results ->
                 let sourceLines = decentlySizedStandAloneFile.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
-                let ranges = SimplifyNames.getSimplifiableNames(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
+                let ranges = SimplifyNames.getSimplifiableNames(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunImmediate
                 ignore ranges                
             ()
         | _ -> failwith "oopsie"
@@ -350,7 +366,7 @@ type CompilerService() =
             | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
             | FSharpCheckFileAnswer.Succeeded results ->
                 let sourceLines = decentlySizedStandAloneFile.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
-                let decls = UnusedOpens.getUnusedOpens(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
+                let decls = UnusedOpens.getUnusedOpens(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunImmediate
                 ignore decls              
             ()
         | _ -> failwith "oopsie"
@@ -362,7 +378,7 @@ type CompilerService() =
             match checkResult with
             | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
             | FSharpCheckFileAnswer.Succeeded results ->
-                let decls = UnusedDeclarations.getUnusedDeclarations(results, true) |> Async.RunSynchronously
+                let decls = UnusedDeclarations.getUnusedDeclarations(results, true) |> Async.RunImmediate
                 ignore decls // should be 16                
             ()
         | _ -> failwith "oopsie"

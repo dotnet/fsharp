@@ -67,6 +67,7 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.BuildGraph
 
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
@@ -1144,7 +1145,7 @@ type internal FsiDynamicCompiler
         errorLogger.AbortOnError(fsiConsoleOutput);
 
         ReportTime tcConfig "Assembly refs Normalised";
-        let mainmod3 = Morphs.morphILScopeRefsInILModuleMemoized ilGlobals (NormalizeAssemblyRefs (ctok, ilGlobals, tcImports)) ilxMainModule
+        let mainmod3 = Morphs.morphILScopeRefsInILModuleMemoized (NormalizeAssemblyRefs (ctok, ilGlobals, tcImports)) ilxMainModule
         errorLogger.AbortOnError(fsiConsoleOutput);
 
 #if DEBUG
@@ -1571,7 +1572,7 @@ type internal FsiDynamicCompiler
           let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
           let closure =
-              LoadClosure.ComputeClosureOfScriptFiles(ctok, tcConfig,
+              LoadClosure.ComputeClosureOfScriptFiles(tcConfig,
                  sourceFiles, CodeContext.CompilationAndEvaluation,
                  lexResourceManager, fsiOptions.DependencyProvider)
 
@@ -1661,7 +1662,7 @@ type internal FsiDynamicCompiler
             let moduleOrNamespace, v, impl = mkBoundValueTypedImpl istate.tcGlobals range0 qualifiedName.Text name ty
             let tcEnvAtEndOfLastInput =
                 CheckDeclarations.AddLocalSubModule tcGlobals amap range0 istate.tcState.TcEnvFromImpls moduleOrNamespace
-                |> CheckExpressions.AddLocalVal TcResultsSink.NoSink range0 v
+                |> CheckExpressions.AddLocalVal tcGlobals TcResultsSink.NoSink range0 v
 
             // Generate IL for the given typled impl and create new interactive state.
             let ilxGenerator = istate.ilxGenerator
@@ -1898,7 +1899,7 @@ module internal MagicAssemblyResolution =
 
                    // OK, try to resolve as an existing DLL in the resolved reference set.  This does unification by assembly name
                    // once an assembly has been referenced.
-                   let searchResult = tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName (ctok, simpleAssemName)
+                   let searchResult = tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName (simpleAssemName)
 
                    match searchResult with
                    | Some r -> OkResult ([], Choice1Of2 r)
@@ -1940,7 +1941,7 @@ module internal MagicAssemblyResolution =
 #endif
 
                    // As a last resort, try to find the reference without an extension
-                   match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, ILAssemblyRef.Create(simpleAssemName,None,None,false,None,None)) with
+                   match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ILAssemblyRef.Create(simpleAssemName,None,None,false,None,None)) with
                    | Some(resolvedPath) ->
                        OkResult([],Choice1Of2 resolvedPath)
                    | None ->
@@ -2002,10 +2003,11 @@ type internal FsiStdinLexerProvider
         LightSyntaxStatus (initialLightSyntaxStatus, false (* no warnings *))
 
     let isFeatureSupported featureId = tcConfigB.langVersion.SupportsFeature featureId
+    let checkLanguageFeatureErrorRecover = ErrorLogger.checkLanguageFeatureErrorRecover tcConfigB.langVersion
 
     let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) readF =
         UnicodeLexing.FunctionAsLexbuf
-          (isFeatureSupported, (fun (buf: char[], start, len) ->
+          (true, isFeatureSupported, checkLanguageFeatureErrorRecover, (fun (buf: char[], start, len) ->
             //fprintf fsiConsoleOutput.Out "Calling ReadLine\n"
             let inputOption = try Some(readF()) with :? EndOfStreamException -> None
             inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add (t + "\n"))
@@ -2043,6 +2045,7 @@ type internal FsiStdinLexerProvider
         tokenizer
 
     let isFeatureSupported featureId = tcConfigB.langVersion.SupportsFeature featureId
+    let checkLanguageFeatureErrorRecover = ErrorLogger.checkLanguageFeatureErrorRecover tcConfigB.langVersion
 
     // Create a new lexer to read stdin
     member _.CreateStdinLexer (errorLogger) =
@@ -2061,12 +2064,12 @@ type internal FsiStdinLexerProvider
 
     // Create a new lexer to read an "included" script file
     member _.CreateIncludedScriptLexer (sourceFileName, reader, errorLogger) =
-        let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(isFeatureSupported, reader)
+        let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(true, isFeatureSupported, checkLanguageFeatureErrorRecover, reader)
         CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger)
 
     // Create a new lexer to read a string
     member this.CreateStringLexer (sourceFileName, source, errorLogger) =
-        let lexbuf = UnicodeLexing.StringAsLexbuf(isFeatureSupported, source)
+        let lexbuf = UnicodeLexing.StringAsLexbuf(true, isFeatureSupported, checkLanguageFeatureErrorRecover, source)
         CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger)
 
     member _.ConsoleInput = fsiConsoleInput
@@ -2125,13 +2128,14 @@ type internal FsiInteractionProcessor
             istate, CompletedWithReportedError e
 
     let isFeatureSupported featureId = tcConfigB.langVersion.SupportsFeature featureId
+    let checkLanguageFeatureErrorRecover = ErrorLogger.checkLanguageFeatureErrorRecover tcConfigB.langVersion
 
     let rangeStdin = rangeN Lexhelp.stdinMockFilename 0
 
     let ChangeDirectory (path:string) m =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
         let path = tcConfig.MakePathAbsolute path
-        if Directory.Exists(path) then
+        if FileSystem.DirectoryExistsShim(path) then
             tcConfigB.implicitIncludeDir <- path
         else
             error(Error(FSIstrings.SR.fsiDirectoryDoesNotExist(path),m))
@@ -2222,26 +2226,26 @@ type internal FsiInteractionProcessor
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger)
                 fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs)
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("load", sourceFiles, m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("load", ParsedHashDirectiveArguments sourceFiles, m), _) ->
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger)
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("reference" | "r"), [path], m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveArguments [path], m), _) ->
                 packageManagerDirective Directive.Resolution path m
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("i", [path], m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("i", ParsedHashDirectiveArguments [path], m), _) ->
                 packageManagerDirective Directive.Include path m
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("I", [path], m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("I", ParsedHashDirectiveArguments [path], m), _) ->
                 tcConfigB.AddIncludePath (m, path, tcConfig.implicitIncludeDir)
                 fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiDidAHashI(tcConfig.MakePathAbsolute path))
                 istate, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("cd", [path], m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("cd", ParsedHashDirectiveArguments [path], m), _) ->
                 ChangeDirectory path m
                 istate, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("silentCd", [path], m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("silentCd", ParsedHashDirectiveArguments [path], m), _) ->
                 ChangeDirectory path m
                 fsiConsolePrompt.SkipNext() (* "silent" directive *)
                 istate, Completed None
@@ -2256,14 +2260,14 @@ type internal FsiInteractionProcessor
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
                 {istate with timing = not istate.timing}, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("time", [("on" | "off") as v], _), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("time", ParsedHashDirectiveArguments [("on" | "off") as v], _), _) ->
                 if v <> "on" then
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff())
                 else
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
                 {istate with timing = (v = "on")}, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("nowarn", numbers, m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("nowarn", ParsedHashDirectiveArguments numbers, m), _) ->
                 List.iter (fun (d:string) -> tcConfigB.TurnWarningOff(m, d)) numbers
                 istate, Completed None
 
@@ -2292,7 +2296,7 @@ type internal FsiInteractionProcessor
                 fsiOptions.ShowHelp(m)
                 istate, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(c, arg, m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(c, ParsedHashDirectiveArguments arg, m), _) ->
                 warning(Error((FSComp.SR.fsiInvalidDirective(c, String.concat " " arg)), m))
                 istate, Completed None
         )
@@ -2472,7 +2476,7 @@ type internal FsiInteractionProcessor
               // An included script file may contain maybe several interaction blocks.
               // We repeatedly parse and process these, until an error occurs.
 
-                use fileStream = FileSystem.OpenFileForReadShim(sourceFile).AsStream()
+                use fileStream = FileSystem.OpenFileForReadShim(sourceFile)
                 use reader = fileStream.GetReader(tcConfigB.inputCodePage, false)
 
                 let tokenizer = fsiStdinLexerProvider.CreateIncludedScriptLexer (sourceFile, reader, errorLogger)
@@ -2536,7 +2540,7 @@ type internal FsiInteractionProcessor
         use _unwind1 = ErrorLogger.PushThreadBuildPhaseUntilUnwind(ErrorLogger.BuildPhase.Interactive)
         use _unwind2 = ErrorLogger.PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
-        let lexbuf = UnicodeLexing.StringAsLexbuf(isFeatureSupported, sourceText)
+        let lexbuf = UnicodeLexing.StringAsLexbuf(true, isFeatureSupported, checkLanguageFeatureErrorRecover, sourceText)
         let tokenizer = fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, errorLogger)
         currState
         |> InteractiveCatch errorLogger (fun istate ->
@@ -2553,7 +2557,7 @@ type internal FsiInteractionProcessor
         use _unwind1 = ErrorLogger.PushThreadBuildPhaseUntilUnwind(ErrorLogger.BuildPhase.Interactive)
         use _unwind2 = ErrorLogger.PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
-        let lexbuf = UnicodeLexing.StringAsLexbuf(isFeatureSupported, sourceText)
+        let lexbuf = UnicodeLexing.StringAsLexbuf(true, isFeatureSupported, checkLanguageFeatureErrorRecover, sourceText)
         let tokenizer = fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, errorLogger)
         currState
         |> InteractiveCatch errorLogger (fun istate ->
@@ -2670,11 +2674,11 @@ type internal FsiInteractionProcessor
         let names  = names |> List.filter (fun name -> name.StartsWithOrdinal(stem))
         names
 
-    member _.ParseAndCheckInteraction (ctok, legacyReferenceResolver, istate, text:string) =
+    member _.ParseAndCheckInteraction (legacyReferenceResolver, istate, text:string) =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
-        fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
+        fsiInteractiveChecker.ParseAndCheckInteraction(SourceText.ofString text)
 
 
 //----------------------------------------------------------------------------
@@ -2820,7 +2824,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
       match fsiOptions.WriteReferencesAndExit with
       | Some outFile ->
           let tcConfig = tcConfigP.Get(ctokStartup)
-          let references, _unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(ctokStartup, tcConfig)
+          let references, _unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(tcConfig)
           let lines = [ for r in references -> r.resolvedPath ]
           FileSystem.OpenFileForWriteShim(outFile).WriteAllLines(lines)
           exit 0
@@ -2861,13 +2865,15 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let (tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolvedReferences) =
         try
             let tcConfig = tcConfigP.Get(ctokStartup)
-            checker.FrameworkImportsCache.Get (ctokStartup, tcConfig) |> Cancellable.runWithoutCancellation
+            checker.FrameworkImportsCache.Get (tcConfig)
+            |> NodeCode.RunImmediateWithoutCancellation
         with e ->
             stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 
     let tcImports =
       try
-          TcImports.BuildNonFrameworkTcImports(ctokStartup, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, fsiOptions.DependencyProvider) |> Cancellable.runWithoutCancellation
+          TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, fsiOptions.DependencyProvider) 
+          |> NodeCode.RunImmediateWithoutCancellation
       with e ->
           stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 
@@ -2888,7 +2894,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | Some assembly -> Some (Choice2Of2 assembly)
         | None ->
 #endif
-        match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef (ctok, aref) with
+        match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef (aref) with
         | Some resolvedPath -> Some (Choice1Of2 resolvedPath)
         | None -> None
 
@@ -2946,8 +2952,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         fsiInteractionProcessor.CompletionsForPartialLID (fsiInteractionProcessor.CurrentState, longIdent)  |> Seq.ofList
 
     member x.ParseAndCheckInteraction(code) =
-        let ctok = AssumeCompilationThreadWithoutEvidence ()
-        fsiInteractionProcessor.ParseAndCheckInteraction (ctok, legacyReferenceResolver, fsiInteractionProcessor.CurrentState, code)
+        fsiInteractionProcessor.ParseAndCheckInteraction (legacyReferenceResolver, fsiInteractionProcessor.CurrentState, code)
         |> Cancellable.runWithoutCancellation
 
     member x.InteractiveChecker = checker

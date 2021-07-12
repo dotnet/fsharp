@@ -170,9 +170,12 @@ let GetScopedPragmasForHashDirective hd =
     [ match hd with
       | ParsedHashDirective("nowarn", numbers, m) ->
           for s in numbers do
-          match GetWarningNumber(m, s) with
-            | None -> ()
-            | Some n -> yield ScopedPragma.WarningOff(m, n)
+              match s with
+              | ParsedHashDirectiveArgument.SourceIdentifier _ -> ()
+              | ParsedHashDirectiveArgument.String (s, _, _) ->
+                  match GetWarningNumber(m, s) with
+                  | None -> ()
+                  | Some n -> yield ScopedPragma.WarningOff(m, n)
       | _ -> () ]
 
 let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, ParsedImplFile (hashDirectives, impls)) =
@@ -286,11 +289,13 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
         let filteringErrorLogger = GetErrorLoggerFilteringByScopedPragmas(false, scopedPragmas, errorLogger)
         delayLogger.CommitDelayedDiagnostics filteringErrorLogger
 
+type Tokenizer = unit -> Parser.token
+
 // Show all tokens in the stream, for testing purposes
-let ShowAllTokensAndExit (shortFilename, tokenizer: LexFilter.LexFilter, lexbuf: LexBuffer<char>) =
+let ShowAllTokensAndExit (shortFilename, tokenizer: Tokenizer, lexbuf: LexBuffer<char>) =
     while true do
         printf "tokenize - getting one token from %s\n" shortFilename
-        let t = tokenizer.GetToken()
+        let t = tokenizer ()
         printf "tokenize - got %s @ %a\n" (Parser.token_to_string t) outputRange lexbuf.LexemeRange
         match t with
         | Parser.EOF _ -> exit 0
@@ -298,11 +303,11 @@ let ShowAllTokensAndExit (shortFilename, tokenizer: LexFilter.LexFilter, lexbuf:
         if lexbuf.IsPastEndOfStream then printf "!!! at end of stream\n"
 
 // Test one of the parser entry points, just for testing purposes
-let TestInteractionParserAndExit (tokenizer: LexFilter.LexFilter, lexbuf: LexBuffer<char>) =
+let TestInteractionParserAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>) =
     while true do
-        match (Parser.interaction (fun _ -> tokenizer.GetToken()) lexbuf) with
+        match (Parser.interaction (fun _ -> tokenizer ()) lexbuf) with
         | ParsedScriptInteraction.Definitions(l, m) -> printfn "Parsed OK, got %d defs @ %a" l.Length outputRange m
-        | ParsedScriptInteraction.HashDirective (_, m) -> printfn "Parsed OK, got hash @ %a" outputRange m
+        | ParsedScriptInteraction.HashDirective(_, m) -> printfn "Parsed OK, got hash @ %a" outputRange m
     exit 0
 
 // Report the statistics for testing purposes
@@ -366,10 +371,14 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
             Lexhelp.usingLexbufForParsing (lexbuf, filename) (fun lexbuf ->
 
                 // Set up the LexFilter over the token stream
-                let tokenizer = LexFilter.LexFilter(lightStatus, tcConfig.compilingFslib, Lexer.token lexargs skipWhitespaceTokens, lexbuf)
+                let tokenizer,tokenizeOnly =
+                    match tcConfig.tokenize with
+                    | Unfiltered -> (fun () -> Lexer.token lexargs skipWhitespaceTokens lexbuf), true
+                    | Only ->       LexFilter.LexFilter(lightStatus, tcConfig.compilingFslib, Lexer.token lexargs skipWhitespaceTokens, lexbuf).GetToken, true
+                    | _ ->          LexFilter.LexFilter(lightStatus, tcConfig.compilingFslib, Lexer.token lexargs skipWhitespaceTokens, lexbuf).GetToken, false
 
                 // If '--tokenize' then show the tokens now and exit
-                if tcConfig.tokenizeOnly then
+                if tokenizeOnly then
                     ShowAllTokensAndExit(shortFilename, tokenizer, lexbuf)
 
                 // Test hook for one of the parser entry points
@@ -377,7 +386,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
                     TestInteractionParserAndExit (tokenizer, lexbuf)
 
                 // Parse the input
-                let res = ParseInput((fun _ -> tokenizer.GetToken()), errorLogger, lexbuf, None, filename, isLastCompiland)
+                let res = ParseInput((fun _ -> tokenizer ()), errorLogger, lexbuf, None, filename, isLastCompiland)
 
                 // Report the statistics for testing purposes
                 if tcConfig.reportNumDecls then
@@ -404,11 +413,12 @@ let checkInputFile (tcConfig: TcConfig) filename =
 
 let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked) =
     // Get a stream reader for the file
-    use fileStream = FileSystem.OpenFileForReadShim(filename).AsStream()
+    use fileStream = FileSystem.OpenFileForReadShim(filename)
     use reader = fileStream.GetReader(tcConfig.inputCodePage, retryLocked)
 
     // Set up the LexBuffer for the file
-    let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(tcConfig.langVersion.SupportsFeature, reader)
+    let checkLanguageFeatureErrorRecover = ErrorLogger.checkLanguageFeatureErrorRecover tcConfig.langVersion
+    let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFslib, tcConfig.langVersion.SupportsFeature, checkLanguageFeatureErrorRecover, reader)
 
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
@@ -512,7 +522,7 @@ let ProcessMetaCommandsFromInput
         let mutable matchedm = range0
         try
             match hash with
-            | ParsedHashDirective("I", args, m) ->
+            | ParsedHashDirective("I", ParsedHashDirectiveArguments args, m) ->
                 if not canHaveScriptMetaCommands then
                     errorR(HashIncludeNotAllowedInNonScript m)
                 match args with
@@ -523,18 +533,18 @@ let ProcessMetaCommandsFromInput
                 | _ ->
                     errorR(Error(FSComp.SR.buildInvalidHashIDirective(), m))
                     state
-            | ParsedHashDirective("nowarn",numbers,m) ->
+            | ParsedHashDirective("nowarn", ParsedHashDirectiveArguments numbers,m) ->
                 List.fold (fun state d -> nowarnF state (m,d)) state numbers
 
-            | ParsedHashDirective(("reference" | "r"), args, m) ->
+            | ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveArguments args, m) ->
                 matchedm<-m
                 ProcessDependencyManagerDirective Directive.Resolution args m state
 
-            | ParsedHashDirective(("i"), args, m) ->
+            | ParsedHashDirective(("i"), ParsedHashDirectiveArguments args, m) ->
                 matchedm<-m
                 ProcessDependencyManagerDirective Directive.Include args m state
 
-            | ParsedHashDirective("load", args, m) ->
+            | ParsedHashDirective("load", ParsedHashDirectiveArguments args, m) ->
                 if not canHaveScriptMetaCommands then
                     errorR(HashDirectiveNotAllowedInNonScript m)
                 match args with
@@ -544,7 +554,7 @@ let ProcessMetaCommandsFromInput
                 | _ ->
                    errorR(Error(FSComp.SR.buildInvalidHashloadDirective(), m))
                 state
-            | ParsedHashDirective("time", args, m) ->
+            | ParsedHashDirective("time", ParsedHashDirectiveArguments args, m) ->
                 if not canHaveScriptMetaCommands then
                     errorR(HashDirectiveNotAllowedInNonScript m)
                 match args with
@@ -755,9 +765,9 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
       tcsCcuSig = Construct.NewEmptyModuleOrNamespaceType Namespace }
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
-let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput, skipImplIfSigExists: bool) =
+let TypeCheckOneInput (checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput, skipImplIfSigExists: bool) =
 
-    eventually {
+    cancellable {
         try
           CheckSimulateException tcConfig
 
@@ -826,7 +836,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
                     let dummyImplFile = TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap [])
 
                     (EmptyTopAttrs, dummyImplFile, Unchecked.defaultof<_>, tcImplEnv, false)
-                    |> Eventually.Done
+                    |> Cancellable.ret
                   else
                     TypeCheckOneImplFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
 
@@ -876,17 +886,14 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
     }
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
-let TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp =
+let TypeCheckOneInputEntry (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp =
     // 'use' ensures that the warning handler is restored at the end
     use unwindEL = PushErrorLoggerPhaseUntilUnwind(fun oldLogger -> GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput inp, oldLogger) )
     use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
 
     RequireCompilationThread ctok
-    TypeCheckOneInputEventually (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp, false)
-        |> Eventually.force CancellationToken.None
-        |> function
-           | ValueOrCancelled.Value v -> v
-           | ValueOrCancelled.Cancelled ce ->  raise ce // this condition is unexpected, since CancellationToken.None was passed
+    TypeCheckOneInput (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp, false)
+        |> Cancellable.runWithoutCancellation
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
 let TypeCheckMultipleInputsFinish(results, tcState: TcState) =
@@ -897,29 +904,30 @@ let TypeCheckMultipleInputsFinish(results, tcState: TcState) =
     let tcEnvAtEndOfLastFile = (match tcEnvsAtEndFile with h :: _ -> h | _ -> tcState.TcEnvFromSignatures)
     (tcEnvAtEndOfLastFile, topAttrs, implFiles, ccuSigsForFiles), tcState
 
-let TypeCheckOneInputAndFinishEventually(checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
-    eventually {
+let TypeCheckOneInputAndFinish(checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
+    cancellable {
         Logger.LogBlockStart LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
-        let! results, tcState = TypeCheckOneInputEventually(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input, false)
+        let! results, tcState = TypeCheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input, false)
         let result = TypeCheckMultipleInputsFinish([results], tcState)
         Logger.LogBlockStop LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
         return result
     }
 
 let TypeCheckClosedInputSetFinish (declaredImpls: TypedImplFile list, tcState) =
-    // Publish the latest contents to the CCU
-    tcState.tcsCcu.Deref.Contents <- Construct.NewCcuContents ILScopeRef.Local range0 tcState.tcsCcu.AssemblyName tcState.tcsCcuSig
+    // Latest contents to the CCU
+    let ccuContents = Construct.NewCcuContents ILScopeRef.Local range0 tcState.tcsCcu.AssemblyName tcState.tcsCcuSig
 
     // Check all interfaces have implementations
     tcState.tcsRootSigs |> Zmap.iter (fun qualNameOfFile _ ->
       if not (Zset.contains qualNameOfFile tcState.tcsRootImpls) then
         errorR(Error(FSComp.SR.buildSignatureWithoutImplementation(qualNameOfFile.Text), qualNameOfFile.Range)))
 
-    tcState, declaredImpls
+    tcState, declaredImpls, ccuContents
 
 let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
-    let results, tcState = (tcState, inputs) ||> List.mapFold (TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt))
+    let results, tcState = (tcState, inputs) ||> List.mapFold (TypeCheckOneInputEntry (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt))
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState = TypeCheckMultipleInputsFinish(results, tcState)
-    let tcState, declaredImpls = TypeCheckClosedInputSetFinish (implFiles, tcState)
+    let tcState, declaredImpls, ccuContents = TypeCheckClosedInputSetFinish (implFiles, tcState)
+    tcState.Ccu.Deref.Contents <- ccuContents
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile

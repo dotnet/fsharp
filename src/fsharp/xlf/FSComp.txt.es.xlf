@@ -92,9 +92,19 @@
         <target state="translated">expresiones de cálculo aplicativas</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAttributesToRightOfModuleKeyword">
+        <source>attributes to the right of the 'module' keyword</source>
+        <target state="translated">atributos a la derecha de la palabra clave “módulo”</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">consumo de miembros de interfaz predeterminados</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDiscardUseValue">
+        <source>discard pattern in use binding</source>
+        <target state="translated">descartar enlace de patrón en uso</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
@@ -132,6 +142,11 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
+        <source>non-variable patterns to the right of 'as' patterns</source>
+        <target state="translated">patrones no variables a la derecha de los patrones "as"</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">interoperabilidad opcional que admite valores NULL</target>
@@ -152,6 +167,11 @@
         <target state="translated">administración de paquetes</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePrintfBinaryFormat">
+        <source>binary formatting for integers</source>
+        <target state="translated">formato binario para enteros</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
         <target state="translated">relajación de espacio en blanco</target>
@@ -165,6 +185,11 @@
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolación de cadena</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStructActivePattern">
+        <source>struct representation for active patterns</source>
+        <target state="translated">representación de struct para modelos activos</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -249,7 +274,7 @@
       </trans-unit>
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
-        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <target state="translated">Imprimir las interfaces deducidas de todos los archivos de compilación en los archivos de signatura asociados</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -274,7 +299,7 @@
       </trans-unit>
       <trans-unit id="optsWin32icon">
         <source>Specify a Win32 icon file (.ico)</source>
-        <target state="new">Specify a Win32 icon file (.ico)</target>
+        <target state="translated">Especificar un archivo de icono Win32 (.ico)</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -339,7 +364,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedNoHost">
         <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
-        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <target state="translated">No se pudo determinar el SDK de .NET para este script. No se encontró dotnet.exe. Asegúrese de tener instalado un SDK de .NET.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
@@ -390,6 +415,11 @@
       <trans-unit id="tcInvalidAlignmentInInterpolatedString">
         <source>Invalid alignment in interpolated string</source>
         <target state="translated">Alineación no válida en la cadena interpolada</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidStructReturn">
+        <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
+        <target state="translated">El uso de «[&lt;Struct&gt;]» en valores, funciones y métodos solo se permite en definiciones de modelos activos parciales.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
@@ -575,6 +605,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">Considere la posibilidad de usar "return!" en lugar de "return".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unsupportedAttribute">
+        <source>This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</source>
+        <target state="new">This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</target>
         <note />
       </trans-unit>
       <trans-unit id="useSdkRefs">

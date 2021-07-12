@@ -102,7 +102,9 @@ module rec Compiler =
     let private getSource (src: TestType) : string =
         match src with
         | Text t -> t
-        | Path p -> FileSystem.OpenFileForReadShim(p).AsStream().ReadAllText()
+        | Path p ->
+            use stream = FileSystem.OpenFileForReadShim(p)
+            stream.ReadAllText()
 
     let private fsFromString (source: string) (kind: SourceKind) : FSharpCompilationSource =
         match source with
@@ -440,10 +442,10 @@ module rec Compiler =
 
     let run (result: TestResult) : TestResult =
         match result with
-        | Failure f -> failwith (sprintf "Compilation should be successfull in order to run.\n Errors: %A" (f.Diagnostics))
+        | Failure f -> failwith (sprintf "Compilation should be successful in order to run.\n Errors: %A" (f.Diagnostics))
         | Success s ->
             match s.OutputPath with
-            | None -> failwith "Compilation didn't produce any output. Unable to run. (did you forget to set output type to Exe?)"
+            | None -> failwith "Compilation didn't produce any output. Unable to run. (Did you forget to set output type to Exe?)"
             | Some p ->
                 let (exitCode, output, errors) = CompilerAssert.ExecuteAndReturnResult (p, s.Dependencies, false)
                 let executionResult = { s with Output = Some (ExecutionOutput { ExitCode = exitCode; StdOut = output; StdErr = errors }) }

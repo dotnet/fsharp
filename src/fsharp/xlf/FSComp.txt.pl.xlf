@@ -92,9 +92,19 @@
         <target state="translated">praktyczne wyrażenia obliczeniowe</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAttributesToRightOfModuleKeyword">
+        <source>attributes to the right of the 'module' keyword</source>
+        <target state="translated">atrybuty po prawej stronie słowa kluczowego "module"</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">domyślne użycie składowej interfejsu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDiscardUseValue">
+        <source>discard pattern in use binding</source>
+        <target state="translated">odrzuć wzorzec w powiązaniu użycia</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
@@ -132,6 +142,11 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
+        <source>non-variable patterns to the right of 'as' patterns</source>
+        <target state="translated">stałe wzorce po prawej stronie wzorców typu „as”</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">opcjonalna międzyoperacyjność dopuszczająca wartość null</target>
@@ -152,6 +167,11 @@
         <target state="translated">zarządzanie pakietami</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePrintfBinaryFormat">
+        <source>binary formatting for integers</source>
+        <target state="translated">formatowanie danych binarnych dla liczb całkowitych</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
         <target state="translated">rozluźnianie reguł dotyczących odstępów</target>
@@ -165,6 +185,11 @@
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolacja ciągu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStructActivePattern">
+        <source>struct representation for active patterns</source>
+        <target state="translated">reprezentacja struktury aktywnych wzorców</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -249,7 +274,7 @@
       </trans-unit>
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
-        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <target state="translated">Drukowanie wywnioskowanych interfejsów wszystkich plików kompilacji do skojarzonych plików sygnatur</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -274,7 +299,7 @@
       </trans-unit>
       <trans-unit id="optsWin32icon">
         <source>Specify a Win32 icon file (.ico)</source>
-        <target state="new">Specify a Win32 icon file (.ico)</target>
+        <target state="translated">Określ plik ikony systemu Win32 (ico)</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -339,7 +364,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedNoHost">
         <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
-        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <target state="translated">Nie można określić zestawu .NET SDK dla tego skryptu. Nie można odnaleźć pliku dotnet.exe. Upewnij się, że zestaw .NET SDK jest zainstalowany.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
@@ -390,6 +415,11 @@
       <trans-unit id="tcInvalidAlignmentInInterpolatedString">
         <source>Invalid alignment in interpolated string</source>
         <target state="translated">Nieprawidłowe wyrównanie w ciągu interpolowanym</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidStructReturn">
+        <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
+        <target state="translated">Używanie elementu "[&lt;Struct&gt;]" na wartościach, funkcjach i metodach jest dozwolone tylko w definicjach częściowo aktywnego wzorca</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
@@ -575,6 +605,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">Rozważ użycie polecenia „return!” zamiast „return”.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unsupportedAttribute">
+        <source>This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</source>
+        <target state="new">This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</target>
         <note />
       </trans-unit>
       <trans-unit id="useSdkRefs">
@@ -7449,7 +7484,7 @@
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="translated">Wskaźnik byref zwracany przez funkcję lub metodę jest niejawnie wyłuskiwany w języku F# 4.5 i nowszych. Aby uzyskać wartość zwracaną jako wskaźnik, użyj operatora address-of, np. „&amp;f(x)” lub „&amp;obj.Method(argument1, argument2)”.</target>
+        <target state="translated">Wskaźnik byref zwracany przez funkcję lub metodę jest niejawnie wyłuskiwany w języku F# 4.5 i nowszych. Aby uzyskać wartość zwracaną jako wskaźnik, użyj operatora address-of, np. „&amp;f(x)” lub „&amp;obj.Method(arg1, arg2)”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">

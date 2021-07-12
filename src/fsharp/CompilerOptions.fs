@@ -183,7 +183,7 @@ module ResponseFile =
             | s -> Some (ResponseFileLine.CompilerOptionSpec (s.Trim()))
 
         try
-            use stream = FileSystem.OpenFileForReadShim(path).AsReadOnlyStream()
+            use stream = FileSystem.OpenFileForReadShim(path)
             use reader = new StreamReader(stream, true)
             let data =
                 seq { while not reader.EndOfStream do yield reader.ReadLine () }
@@ -1139,9 +1139,14 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
 
     CompilerOption
        ("tokenize", tagNone,
-        OptionUnit (fun () -> tcConfigB.tokenizeOnly <- true),
+        OptionUnit (fun () -> tcConfigB.tokenize <- TokenizeOption.Only),
         Some(InternalCommandLineOption("--tokenize", rangeCmdArgs)), None)
 
+    CompilerOption
+       ("tokenize-unfiltered", tagNone,
+        OptionUnit (fun () -> tcConfigB.tokenize <- TokenizeOption.Unfiltered),
+        Some(InternalCommandLineOption("--tokenize-unfiltered", rangeCmdArgs)), None)
+    
     CompilerOption
        ("testInteractionParser", tagNone,
         OptionUnit (fun () -> tcConfigB.testInteractionParser <- true),
@@ -1263,9 +1268,7 @@ let compilingFsLibFlag (tcConfigB: TcConfigBuilder) =
         ("compiling-fslib", tagNone,
          OptionUnit (fun () ->
             tcConfigB.compilingFslib <- true
-            tcConfigB.TurnWarningOff(rangeStartup, "42")
-            ErrorLogger.reportLibraryOnlyFeatures <- false
-            IlxSettings.ilxCompilingFSharpCoreLib <- true),
+            tcConfigB.TurnWarningOff(rangeStartup, "42")),
          Some(InternalCommandLineOption("--compiling-fslib", rangeCmdArgs)), None)
 
 let compilingFsLib20Flag =

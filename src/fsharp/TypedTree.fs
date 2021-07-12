@@ -158,7 +158,7 @@ type ValFlags(flags: int64) =
 
     member x.IsCompilerGenerated =      (flags       &&&                     0b00000000000000001000L) <> 0x0L
 
-    member x.SetIsCompilerGenerated isCompGen = 
+    member x.WithIsCompilerGenerated isCompGen = 
             let flags =                 (flags       &&&                  ~~~0b00000000000000001000L) |||
                                         (match isCompGen with
                                           | false           ->               0b00000000000000000000L
@@ -2833,6 +2833,10 @@ type Val =
             | slotsig :: _ -> slotsig.Name
             | _ -> x.val_logical_name
 
+    // Set the logical name of the value
+    member x.SetLogicalName(nm) = 
+        x.val_logical_name <- nm
+
     member x.ValCompiledName =
         match x.val_opt_data with
         | Some optData -> optData.val_compiled_name
@@ -2897,6 +2901,8 @@ type Val =
         DemangleOperatorName x.CoreDisplayName
 
     member x.SetValRec b = x.val_flags <- x.val_flags.WithRecursiveValInfo b 
+
+    member x.SetIsCompilerGenerated(v) = x.val_flags <- x.val_flags.WithIsCompilerGenerated(v) 
 
     member x.SetIsMemberOrModuleBinding() = x.val_flags <- x.val_flags.WithIsMemberOrModuleBinding 
 
@@ -4272,18 +4278,20 @@ type DecisionTreeTest =
     /// Test if the input to a decision tree is an instance of the given type 
     | IsInst of source: TType * target: TType
 
-    /// Test.ActivePatternCase(activePatExpr, activePatResTys, activePatIdentity, idx, activePatInfo)
+    /// Test.ActivePatternCase(activePatExpr, activePatResTys, isStructRetTy, activePatIdentity, idx, activePatInfo)
     ///
     /// Run the active pattern and bind a successful result to a 
     /// variable in the remaining tree. 
     ///     activePatExpr -- The active pattern function being called, perhaps applied to some active pattern parameters.
     ///     activePatResTys -- The result types (case types) of the active pattern.
+    ///     isStructRetTy -- Is the active pattern a struct return
     ///     activePatIdentity -- The value and the types it is applied to. If there are any active pattern parameters then this is empty. 
     ///     idx -- The case number of the active pattern which the test relates to.
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of
         activePatExpr: Expr *        
         activePatResTys: TTypes *
+        isStructRetTy: bool *
         activePatIdentity: (ValRef * TypeInst) option *
         idx: int *
         activePatternInfo: ActivePatternInfo
@@ -4333,16 +4341,19 @@ type Binding =
 /// integer indicates which choice in the target set is being selected by this item. 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type ActivePatternElemRef = 
-    | APElemRef of activePatternInfo: ActivePatternInfo * activePatternVal: ValRef * caseIndex: int 
+    | APElemRef of activePatternInfo: ActivePatternInfo * activePatternVal: ValRef * caseIndex: int * isStructRetTy: bool
 
     /// Get the full information about the active pattern being referred to
-    member x.ActivePatternInfo = (let (APElemRef(info, _, _)) = x in info)
+    member x.ActivePatternInfo = (let (APElemRef(info, _, _, _)) = x in info)
 
     /// Get a reference to the value for the active pattern being referred to
-    member x.ActivePatternVal = (let (APElemRef(_, vref, _)) = x in vref)
+    member x.ActivePatternVal = (let (APElemRef(_, vref, _, _)) = x in vref)
+
+    /// Get a reference to the value for the active pattern being referred to
+    member x.IsStructReturn = (let (APElemRef(_, _, _, isStructRetTy)) = x in isStructRetTy)
 
     /// Get the index of the active pattern element within the overall active pattern 
-    member x.CaseIndex = (let (APElemRef(_, _, n)) = x in n)
+    member x.CaseIndex = (let (APElemRef(_, _, n, _)) = x in n)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4632,7 +4643,7 @@ type TOp =
     | Array
 
     /// Constant byte arrays (used for parser tables and other embedded data)
-    | Bytes of byte[] 
+    | Bytes of byte[]
 
     /// Constant uint16 arrays (used for parser tables)
     | UInt16s of uint16[] 
@@ -5232,6 +5243,11 @@ type CcuThunk =
     
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
+
+    /// Used at the end of comppiling an assembly to get a frozen, final stable CCU
+    /// for the compilation which we no longer mutate.
+    member x.CloneWithFinalizedContents(ccuContents) =
+        { x with target = { x.target with Contents = ccuContents } }
 
     override ccu.ToString() = ccu.AssemblyName
 
