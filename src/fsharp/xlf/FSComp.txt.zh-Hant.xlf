@@ -94,7 +94,7 @@
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
         <source>attributes to the right of the 'module' keyword</source>
-        <target state="new">attributes to the right of the 'module' keyword</target>
+        <target state="translated">'module' 關鍵字右邊的屬性</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -605,6 +605,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">請考慮使用 'return!'，而不使用 'return'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unsupportedAttribute">
+        <source>This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</source>
+        <target state="translated">F# 編譯器目前不支援此屬性。套用此屬性並不會達到預期的效果。</target>
         <note />
       </trans-unit>
       <trans-unit id="useSdkRefs">
