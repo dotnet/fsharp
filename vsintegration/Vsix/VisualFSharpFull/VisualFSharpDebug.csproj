@@ -8,6 +8,7 @@
     <PackageTargetFallback>netcoreapp1.0</PackageTargetFallback>
     <IsShipping>true</IsShipping>
     <DependencyTargetFramework>net472</DependencyTargetFramework>
+    <DeployExtension>true</DeployExtension>
   </PropertyGroup>
 
   <Import Project="VisualFSharp.Core.targets" />
