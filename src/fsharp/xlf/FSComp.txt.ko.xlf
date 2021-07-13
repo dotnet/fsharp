@@ -607,6 +607,11 @@
         <target state="translated">'return'이 아니라 'return!'를 사용하세요.</target>
         <note />
       </trans-unit>
+      <trans-unit id="unsupportedAttribute">
+        <source>This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</source>
+        <target state="translated">이 특성은 현재 F# 컴파일러에서 지원되지 않습니다. 이 특성을 적용해도 의도한 효과를 얻을 수 없습니다.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="useSdkRefs">
         <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
         <target state="translated">기본적으로 활성화되는 참조 어셈블리를 .NET Framework 참조에 사용합니다(사용 가능한 경우).</target>

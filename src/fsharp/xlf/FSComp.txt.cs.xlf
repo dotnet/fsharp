@@ -607,6 +607,11 @@
         <target state="translated">Zvažte použití parametru return! namísto return.</target>
         <note />
       </trans-unit>
+      <trans-unit id="unsupportedAttribute">
+        <source>This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</source>
+        <target state="translated">Kompilátor F# aktuálně nepodporuje tento atribut. Jeho použití nebude mít zamýšlený účinek.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="useSdkRefs">
         <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
         <target state="translated">Pro odkazy na rozhraní .NET používejte referenční sestavení, pokud jsou k dispozici (ve výchozím nastavení povolené).</target>

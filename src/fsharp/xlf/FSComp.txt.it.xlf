@@ -607,6 +607,11 @@
         <target state="translated">Provare a usare 'return!' invece di 'return'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="unsupportedAttribute">
+        <source>This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</source>
+        <target state="translated">Questo attributo non è attualmente supportato dal compilatore F #. L'applicazione non riuscirà a ottenere l'effetto previsto.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="useSdkRefs">
         <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
         <target state="translated">Usa gli assembly di riferimento per i riferimenti a .NET Framework quando disponibili (abilitato per impostazione predefinita).</target>

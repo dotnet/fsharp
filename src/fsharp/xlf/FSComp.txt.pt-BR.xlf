@@ -607,6 +607,11 @@
         <target state="translated">Considere usar 'return!' em vez de 'return'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="unsupportedAttribute">
+        <source>This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</source>
+        <target state="translated">Este atributo atualmente não é suportado pelo compilador F#. A sua aplicação não alcançará o efeito pretendido.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="useSdkRefs">
         <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
         <target state="translated">Use assemblies de referência para referências do .NET Framework quando disponível (habilitado por padrão).</target>
@@ -4559,7 +4564,7 @@
       </trans-unit>
       <trans-unit id="optsCopyrightCommunity">
         <source>Freely distributed under the MIT Open Source License.  https://github.com/Microsoft/visualfsharp/blob/master/License.txt</source>
-        <target state="translated">Distribuído gratuitamente sob a Licença de Software Livre do MIT.  https://github.com/Microsoft/visualfsharp/blob/master/License.txt</target>
+        <target state="translated">Distribuído gratuitamente sob a Licença de Código Aberto do MIT.  https://github.com/Microsoft/visualfsharp/blob/master/License.txt</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNameOfOutputFile">
