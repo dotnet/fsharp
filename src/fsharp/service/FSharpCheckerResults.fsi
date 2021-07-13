@@ -434,8 +434,6 @@ type public FSharpCheckProjectResults =
     /// in the documentation for compiler service.
     member DependencyFiles: string[]
 
-    member internal RawFSharpAssemblyData : IRawFSharpAssemblyData option
-
     // Internal constructor.
     internal new : 
         projectFileName:string *
@@ -446,9 +444,8 @@ type public FSharpCheckProjectResults =
                  TcImports *
                  CcuThunk *
                  ModuleOrNamespaceType *
-                 TcSymbolUses list *
+                 Choice<IncrementalBuilder, TcSymbolUses> *
                  TopAttribs option *
-                 IRawFSharpAssemblyData option *
                  ILAssemblyRef *
                  AccessorDomain *
                  TypedImplFile list option *

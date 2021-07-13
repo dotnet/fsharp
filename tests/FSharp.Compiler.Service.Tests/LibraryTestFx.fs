@@ -74,5 +74,5 @@ module SurfaceArea =
             .WriteAllText(actual)
 
           failwith
-            $@"surface area defined in\n\n{expectedFile}\n\ndoesn't match actual in\n\n{actualFile}\n\nCompare the files and adjust accordingly.
+            $"surface area defined in\n\n{expectedFile}\n\ndoesn't match actual in\n\n{actualFile}\n\nCompare the files and adjust accordingly.
             {diff}"

@@ -130,8 +130,12 @@ let checkExprOp (lexbuf:UnicodeLexing.Lexbuf) =
 let unexpectedChar lexbuf =
     LEX_FAILURE (FSComp.SR.lexUnexpectedChar(lexeme lexbuf))
 
+/// Arbitrary value
+[<Literal>]
+let StringCapacity = 100
+
 let startString args (lexbuf: UnicodeLexing.Lexbuf) =
-    let buf = ByteBuffer.Create 100
+    let buf = ByteBuffer.Create StringCapacity
     let m = lexbuf.LexemeRange
     let startp = lexbuf.StartPos
     let fin =
@@ -208,8 +212,8 @@ let shouldStartFile args lexbuf (m:range) err tok =
     if (m.StartColumn <> 0 || m.StartLine <> 1) then fail args lexbuf err tok
     else tok
 
-let evalIfDefExpression startPos reportLibraryOnlyFeatures isFeatureSupported args (lookup:string->bool) (lexed:string) =
-    let lexbuf          = LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, isFeatureSupported, lexed.ToCharArray ())
+let evalIfDefExpression startPos reportLibraryOnlyFeatures isFeatureSupported errorIfFeatureUnsupported args (lookup:string->bool) (lexed:string) =
+    let lexbuf          = LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, isFeatureSupported, errorIfFeatureUnsupported, lexed.ToCharArray ())
     lexbuf.StartPos     <- startPos
     lexbuf.EndPos       <- startPos
     let tokenStream     = FSharp.Compiler.PPLexer.tokenstream args
@@ -934,7 +938,7 @@ rule token args skip = parse
    { let m = lexbuf.LexemeRange
      let lookup id = List.contains id args.defines
      let lexed = lexeme lexbuf
-     let isTrue = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.SupportsFeature args lookup lexed
+     let isTrue = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.SupportsFeature lexbuf.CheckLanguageFeatureErrorRecover args lookup lexed
      args.ifdefStack <- (IfDefIf,m) :: args.ifdefStack
 
      // Get the token; make sure it starts at zero position & return
@@ -1584,7 +1588,7 @@ and tripleQuoteStringInComment n m args skip = parse
 
 and mlOnly m args skip = parse
  | "\""
-     { let buf = ByteBuffer.Create 100
+     { let buf = ByteBuffer.Create StringCapacity
        let m2 = lexbuf.LexemeRange
        let _ = singleQuoteString (buf, LexerStringFinisher.Default, m2, LexerStringKind.String, args) skip lexbuf
        if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))

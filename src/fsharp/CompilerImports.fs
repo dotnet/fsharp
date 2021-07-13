@@ -90,9 +90,11 @@ let PickleToResource inMem file (g: TcGlobals) scope rName p x =
     let bytes = pickleObjWithDanglingCcus inMem file g scope p x
     let byteStorage =
         if inMem then
-            ByteStorage.FromByteArrayAndCopy(bytes, useBackingMemoryMappedFile = true)
+            ByteStorage.FromMemoryAndCopy(bytes.AsMemory(), useBackingMemoryMappedFile = true)
         else
-            ByteStorage.FromByteArray(bytes)
+            ByteStorage.FromByteArray(bytes.AsMemory().ToArray())
+
+    (bytes :> IDisposable).Dispose()
 
     { Name = rName
       Location = ILResourceLocation.Local(byteStorage)
@@ -1633,19 +1635,20 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             | Some ilb -> 
                 return! ilb.EvaluateRawContents()
             | None -> 
-                return None
+                return ProjectAssemblyDataResult.Unavailable true
           }
 
         // If we have a project reference but did not get any valid contents,
         //     just return None and do not attempt to read elsewhere.
-        if contentsOpt.IsNone && r.ProjectReference.IsSome then
+        match contentsOpt with 
+        | ProjectAssemblyDataResult.Unavailable false ->
             return None
-        else
+        | _ ->
 
         let assemblyData =
             match contentsOpt with
-            | Some ilb -> ilb
-            | None ->
+            | ProjectAssemblyDataResult.Available ilb -> ilb
+            | ProjectAssemblyDataResult.Unavailable _ ->
                 let ilModule, ilAssemblyRefs = tcImports.OpenILBinaryModule(ctok, filename, m)
                 RawFSharpAssemblyDataBackedByFileOnDisk (ilModule, ilAssemblyRefs) :> IRawFSharpAssemblyData
 

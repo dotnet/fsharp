@@ -39,6 +39,8 @@ type LanguageFeature =
     | StructActivePattern
     | PrintfBinaryFormat
     | UseBindingValueDiscard
+    | NonVariablePatternsToRightOfAsPatterns
+    | AttributesToRightOfModuleKeyword
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -83,6 +85,8 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.StructActivePattern, previewVersion
             LanguageFeature.PrintfBinaryFormat, previewVersion
             LanguageFeature.UseBindingValueDiscard, previewVersion
+            LanguageFeature.NonVariablePatternsToRightOfAsPatterns, previewVersion
+            LanguageFeature.AttributesToRightOfModuleKeyword, previewVersion
         ]
 
     let specified =
@@ -159,6 +163,8 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.StructActivePattern -> FSComp.SR.featureStructActivePattern()
         | LanguageFeature.PrintfBinaryFormat -> FSComp.SR.featurePrintfBinaryFormat()
         | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue()
+        | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns()
+        | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =
