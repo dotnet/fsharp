@@ -218,12 +218,18 @@ let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualT
             | minfo :: _ -> 
                 Some (minfo, (reqdTy, reqdTy2, fun denv -> 
                          let reqdTy2Text, actualTyText, _cxs = NicePrint.minimalStringsOfTwoTypes denv reqdTy2 actualTy
-                         errorR(Error(FSComp.SR.tcAmbiguousImplicitConversion(actualTyText, reqdTy2Text), m))))
+                         let implicitsText = NicePrint.multiLineStringOfMethInfos infoReader m denv implicits
+                         errorR(Error(FSComp.SR.tcAmbiguousImplicitConversion(actualTyText, reqdTy2Text, implicitsText), m))))
             | _ -> None
         else
             None
     else
         None
+
+[<RequireQualifiedAccess>]
+type TypeDirectedConversion =
+    | BuiltIn
+    | Implicit of MethInfo
 
 [<RequireQualifiedAccess>]
 type TypeDirectedConversionUsed =
@@ -243,9 +249,14 @@ let MapCombineTDC2D mapper xs ys =
 let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad isConstraint (reqdTy: TType) actualTy m =
     let g = infoReader.g
 
-    let warn denv =
+    let warn info denv =
         let reqdTyText, actualTyText, _cxs = NicePrint.minimalStringsOfTwoTypes denv reqdTy actualTy
-        Error(FSComp.SR.tcImplicitConversionUsed(actualTyText, reqdTyText), m)
+        match info with
+        | TypeDirectedConversion.BuiltIn ->
+            Error(FSComp.SR.tcImplicitConversionUsed(actualTyText, reqdTyText), m)
+        | TypeDirectedConversion.Implicit convMeth ->
+            let methText = NicePrint.stringOfMethInfo infoReader m denv convMeth
+            Error(FSComp.SR.tcImplicitConversionUsed2(methText, actualTyText, reqdTyText), m)
 
     if isConstraint then 
         reqdTy, TypeDirectedConversionUsed.No, None
@@ -262,17 +273,21 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
 
     // Adhoc int32 --> int64
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-       g.int32_ty, TypeDirectedConversionUsed.Yes(warn), None
+       g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn), None
+
+    // Adhoc int32 --> nativeint
+    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.nativeint_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
+       g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn), None
 
     // Adhoc int32 --> float64
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-       g.int32_ty, TypeDirectedConversionUsed.Yes(warn), None
+       g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn), None
 
     // Adhoc based on op_Implicit, perhaps returing a new equational type constraint to 
     // eliminate articifical constrained type variables.
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
          match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
-         | Some (_minfo, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn), Some eqn
+         | Some (minfo, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn (TypeDirectedConversion.Implicit minfo)), Some eqn
          | None -> reqdTy, TypeDirectedConversionUsed.No, None
 
     else reqdTy, TypeDirectedConversionUsed.No, None
@@ -1203,6 +1218,10 @@ let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap infoReade
    // Adhoc int32 --> int64
    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
        mkCallToInt64Operator g m actualTy expr
+
+   // Adhoc int32 --> nativeint
+   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.nativeint_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
+       mkCallToIntPtrOperator g m actualTy expr
 
    // Adhoc int32 --> float64
    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
