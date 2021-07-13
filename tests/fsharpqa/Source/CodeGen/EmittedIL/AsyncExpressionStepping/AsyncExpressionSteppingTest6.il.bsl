@@ -36,13 +36,13 @@
   // Offset: 0x000002A0 Length: 0x000000BE
 }
 .module AsyncExpressionSteppingTest6.dll
-// MVID: {60EDC4FE-6394-4FAD-A745-0383FEC4ED60}
+// MVID: {60EDFA6D-6394-4FAD-A745-03836DFAED60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x063E0000
+// Image base: 0x071A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -80,16 +80,17 @@
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn 
               Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
       {
-        // Code size       13 (0xd)
+        // Code size       15 (0xf)
         .maxstack  8
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
         .line 10,10 : 17,25 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\AsyncExpressionStepping\\AsyncExpressionSteppingTest6.fs'
         IL_0000:  ldarg.1
         IL_0001:  ldarg.0
         IL_0002:  ldfld      int32 AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f2@10-1'::'value'
-        IL_0007:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::Success(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!0>,
+        IL_0007:  tail.
+        IL_0009:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::Success(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!0>,
                                                                                                                                                                        !0)
-        IL_000c:  ret
+        IL_000e:  ret
       } // end of method 'f2@10-1'::Invoke
 
     } // end of class 'f2@10-1'
@@ -189,15 +190,16 @@
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn 
               Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
       {
-        // Code size       13 (0xd)
+        // Code size       15 (0xf)
         .maxstack  8
         .line 20,20 : 17,25 ''
         IL_0000:  ldarg.1
         IL_0001:  ldarg.0
         IL_0002:  ldfld      int32 AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@20-5'::'value'
-        IL_0007:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::Success(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!0>,
+        IL_0007:  tail.
+        IL_0009:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::Success(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!0>,
                                                                                                                                                                        !0)
-        IL_000c:  ret
+        IL_000e:  ret
       } // end of method 'f3@20-5'::Invoke
 
     } // end of class 'f3@20-5'
