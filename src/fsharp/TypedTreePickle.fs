@@ -1195,10 +1195,10 @@ let [<Literal>] itag_ldelem_any    = 59
 let [<Literal>] itag_stelem_any    = 60
 let [<Literal>] itag_unbox_any     = 61
 let [<Literal>] itag_ldlen_multi   = 62
-let [<Literal>] itag_initobj       = 63   // currently unused, added for forward compat, see https://visualfsharp.codeplex.com/SourceControl/network/forks/jackpappas/fsharpcontrib/contribution/7134
-let [<Literal>] itag_initblk       = 64   // currently unused, added for forward compat
-let [<Literal>] itag_cpobj         = 65   // currently unused, added for forward compat
-let [<Literal>] itag_cpblk         = 66   // currently unused, added for forward compat
+let [<Literal>] itag_initobj       = 63
+let [<Literal>] itag_initblk       = 64
+let [<Literal>] itag_cpobj         = 65
+let [<Literal>] itag_cpblk         = 66
 
 let simple_instrs =
     [ itag_add, AI_add

@@ -639,7 +639,7 @@
       </trans-unit>
       <trans-unit id="unsupportedAttribute">
         <source>This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</source>
-        <target state="new">This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</target>
+        <target state="translated">Bu öznitelik şu anda F# derleyici tarafından desteklenmiyor. Özniteliğin uygulanması istenen etkiyi sağlamaz.</target>
         <note />
       </trans-unit>
       <trans-unit id="useSdkRefs">

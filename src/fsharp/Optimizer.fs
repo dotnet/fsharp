@@ -103,7 +103,7 @@ type ExprValueInfo =
   ///             the number of args in each bunch. NOTE: This include type arguments.
   ///    expr: The value, a lambda term.
   ///    ty: The type of lambda term
-  | CurriedLambdaValue of id: Unique * arity: int * size: int * value: Expr * TType
+  | CurriedLambdaValue of id: Unique * arity: int * size: int * lambdaExpr: Expr * lambdaExprTy: TType
 
   /// ConstExprValue(size, value)
   | ConstExprValue of size: int * value: Expr
@@ -252,7 +252,7 @@ and SizeOfValueInfo x =
     | TupleValue vinfos
     | RecdValue (_, vinfos)
     | UnionCaseValue (_, vinfos) -> 1 + SizeOfValueInfos vinfos
-    | CurriedLambdaValue(_lambdaId, _arities, _bsize, _expr, _ety) -> 1
+    | CurriedLambdaValue _ -> 1
     | ConstExprValue (_size, _) -> 1
 
 let [<Literal>] minDepthForASizeNode = 5  // for small vinfos do not record size info, save space
@@ -279,7 +279,7 @@ let BoundValueInfoBySize vinfo =
             | UnionCaseValue (ucr, vinfos) -> UnionCaseValue (ucr, Array.map (bound (depth-1)) vinfos)
             | ConstValue _ -> x
             | UnknownValue -> x
-            | CurriedLambdaValue(_lambdaId, _arities, _bsize, _expr, _ety) -> x
+            | CurriedLambdaValue _ -> x
             | ConstExprValue (_size, _) -> x
     let maxDepth = 6 (* beware huge constants! *)
     let trimDepth = 3
@@ -2557,6 +2557,13 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
         let argsR, arginfos = OptimizeExprsThenConsiderSplits cenv env args 
         OptimizeExprOpFallback cenv env (TOp.TraitCall traitInfo, [], argsR, m) arginfos UnknownValue 
 
+and CopyExprForInlining cenv expr m = 
+    // Debug points are erased when doing cross-assembly inlining
+    // Locals are marked compiler generated when doing cross-assembly inlining
+    expr
+    |> copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated
+    |> remarkExpr m
+
 /// Make optimization decisions once we know the optimization information
 /// for a value
 and TryOptimizeVal cenv env (vOpt: ValRef option, mustInline, valInfoForVal, m) = 
@@ -2579,9 +2586,10 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, mustInline, valInfoForVal, m) 
               // If we have proven 'v = compilerGeneratedValue'
               // and 'v' is being eliminated in favour of 'compilerGeneratedValue'
               // then replace the name of 'compilerGeneratedValue'
-              // by 'v' and mark it not compiler generated so we preserve good debugging and names
+              // by 'v' and mark it not compiler generated so we preserve good debugging and names.
+              // Don't do this for things represented statically as it may publish multiple values with the same name.
               match vOpt with 
-              | Some v when not v.IsCompilerGenerated && vR.IsCompilerGenerated -> 
+              | Some v when not v.IsCompilerGenerated && vR.IsCompilerGenerated && not vR.IsCompiledAsTopLevel  && not v.IsCompiledAsTopLevel -> 
                   vR.Deref.SetIsCompilerGenerated(false)
                   vR.Deref.SetLogicalName(v.LogicalName)
               | _ -> ()
@@ -2591,7 +2599,8 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, mustInline, valInfoForVal, m) 
         Some (remarkExpr m (copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated expr))
 
     | CurriedLambdaValue (_, _, _, expr, _) when mustInline ->
-        Some (remarkExpr m (copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated expr))
+        let exprCopy = CopyExprForInlining cenv expr m
+        Some exprCopy
 
     | TupleValue _ | UnionCaseValue _ | RecdValue _ when mustInline ->
         failwith "tuple, union and record values cannot be marked 'inline'"
@@ -2948,7 +2957,8 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
 
         // Inlining lambda 
   (* ---------- printf "Inlining lambda near %a = %s\n" outputRange m (showL (exprL f2)) (* JAMES: *) ----------*)
-        let f2R = remarkExpr m (copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated f2)
+        let f2R = CopyExprForInlining cenv f2 m
+
         // Optimizing arguments after inlining
 
         // REVIEW: this is a cheapshot way of optimizing the arg expressions as well without the restriction of recursive  
@@ -2962,6 +2972,16 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
           
     | _ -> None
 
+/// When optimizing a function in an application, use the whole range including arguments for the range
+/// to apply to 'inline' code
+and OptimizeFuncInApplication cenv env f0 mWithArgs =
+    let f0 = stripExpr f0
+    match f0 with
+    | Expr.Val (v, _vFlags, _) -> 
+        OptimizeVal cenv env f0 (v, mWithArgs)
+    | _ ->
+        OptimizeExpr cenv env f0
+
 /// Optimize/analyze an application of a function to type and term arguments
 and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
     // trying to devirtualize
@@ -2970,7 +2990,7 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
         // devirtualized
         res
     | None -> 
-    let newf0, finfo = OptimizeExpr cenv env f0
+    let newf0, finfo = OptimizeFuncInApplication cenv env f0 m
     match TryInlineApplication cenv env finfo (tyargs, args, m) with 
     | Some res -> 
         // inlined
@@ -3639,7 +3659,8 @@ let rec u_ExprInfo st =
         | 6 -> u_tup2 u_int u_expr st |> (fun (a, b) -> ConstExprValue (a, b))
         | 7 -> u_tup2 u_tcref (u_array loop) st |> (fun (a, b) -> RecdValue (a, b))
         | _ -> failwith "loop"
-    MakeSizedValueInfo (loop st) (* calc size of unpicked ExprValueInfo *)
+    // calc size of unpicked ExprValueInfo
+    MakeSizedValueInfo (loop st)
 
 and u_ValInfo st = 
     let a, b = u_tup2 u_ExprInfo u_bool st

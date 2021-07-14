@@ -296,6 +296,7 @@ module public StreamExtensions =
         member ReadAllText : ?encoding: Encoding -> string
         member ReadLines : ?encoding: Encoding -> string seq
         member ReadAllLines : ?encoding: Encoding -> string array
+        member WriteAllText : text: string -> unit
         member AsByteMemory : unit -> ByteMemory
 
 [<AutoOpen>]

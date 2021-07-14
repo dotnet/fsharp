@@ -31,6 +31,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\fsharp\TestHelpers.fs" Link="TestHelpers.fs" />
     <Compile Include="TestFrameworkHelpers.fs" />
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />
@@ -40,6 +41,7 @@
     <Compile Include="FSharp.Core\OperatorsModule1.fs" />
     <Compile Include="FSharp.Core\OperatorsModule2.fs" />
     <Compile Include="FSharp.Core\OperatorsModuleChecked.fs" />
+    <Compile Include="FSharp.Core\NativeInterop.fs" />
 
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
