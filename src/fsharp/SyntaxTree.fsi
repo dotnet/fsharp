@@ -2019,7 +2019,7 @@ type SynModuleOrNamespaceSig =
     member Range: range
 
 /// Represents a parsed hash directive argument
-[<NoEquality; NoComparison>]
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedHashDirectiveArgument =
     | String of value: string * stringKind: SynStringKind * range: Range
     | SourceIdentifier of constant: string * value: string * range: Range

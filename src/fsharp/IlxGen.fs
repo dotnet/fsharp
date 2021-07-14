@@ -4127,7 +4127,6 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
             | I_stobj (a, b, ILType.TypeVar _), [tyarg] -> I_stobj (a, b, tyarg)
             | I_ldtoken (ILToken.ILType (ILType.TypeVar _)), [tyarg] -> I_ldtoken (ILToken.ILType tyarg)
             | I_sizeof (ILType.TypeVar _), [tyarg] -> I_sizeof tyarg
-            // currently unused, added for forward compat, see https://visualfsharp.codeplex.com/SourceControl/network/forks/jackpappas/fsharpcontrib/contribution/7134
             | I_cpobj (ILType.TypeVar _), [tyarg] -> I_cpobj tyarg
             | I_initobj (ILType.TypeVar _), [tyarg] -> I_initobj tyarg
             | I_ldfld (al, vol, fspec), _ -> I_ldfld (al, vol, modFieldSpec fspec)

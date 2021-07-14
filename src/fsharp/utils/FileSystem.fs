@@ -353,7 +353,6 @@ module MemoryMappedFileExtensions =
             let length = int64 bytes.Length
             trymmf length
                 (fun stream ->
-                    stream.SetLength(stream.Length + length)
                     let span = Span<byte>(stream.PositionPointer |> NativePtr.toVoidPtr, int length)
                     bytes.Span.CopyTo(span)
                     stream.Position <- stream.Position + length
@@ -415,6 +414,7 @@ type DefaultAssemblyLoader() =
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type IFileSystem =
+    // note: do not add members if you can put generic implementation under StreamExtensions below.
     abstract AssemblyLoader: IAssemblyLoader
     abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
@@ -436,6 +436,7 @@ type IFileSystem =
     abstract EnumerateFilesShim: path: string * pattern: string -> string seq
     abstract EnumerateDirectoriesShim: path: string -> string seq
     abstract IsStableFileHeuristic: fileName: string -> bool
+    // note: do not add members if you can put generic implementation under StreamExtensions below.
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type DefaultFileSystem() as this =
@@ -696,6 +697,10 @@ module public StreamExtensions =
         member s.ReadAllLines(?encoding: Encoding) : string array =
             let encoding = defaultArg encoding Encoding.UTF8
             s.ReadLines(encoding) |> Seq.toArray
+
+        member s.WriteAllText(text: string) =
+            use writer = new StreamWriter(s)
+            writer.Write text
 
         /// If we are working with the view stream from mmf, we wrap it in RawByteMemory (which does zero copy, bu just using handle from the views stream).
         /// However, when we use any other stream (FileStream, MemoryStream, etc) - we just read everything from it and expose via ByteArrayMemory.

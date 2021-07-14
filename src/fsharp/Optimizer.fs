@@ -99,13 +99,13 @@ type ExprValueInfo =
 
   | ConstValue of Const * TType
 
-  /// CurriedLambdaValue(id, arity, size, lambdaExpression, isCrossAssembly, ty)
+  /// CurriedLambdaValue(id, arity, size, lambdaExpression, ty)
   ///    
   ///    arities: The number of bunches of untupled args and type args, and 
   ///             the number of args in each bunch. NOTE: This include type arguments.
   ///    expr: The value, a lambda term.
   ///    ty: The type of lambda term
-  | CurriedLambdaValue of id: Unique * arity: int * size: int * lambdaExpr: Expr * isCrossAssembly: bool * lambdaExprTy: TType
+  | CurriedLambdaValue of id: Unique * arity: int * size: int * lambdaExpr: Expr * lambdaExprTy: TType
 
   /// ConstExprValue(size, value)
   | ConstExprValue of size: int * value: Expr
@@ -204,7 +204,7 @@ let rec exprValueInfoL g exprVal =
     | TupleValue vinfos -> bracketL (exprValueInfosL g vinfos)
     | RecdValue (_, vinfos) -> braceL (exprValueInfosL g vinfos)
     | UnionCaseValue (ucr, vinfos) -> unionCaseRefL ucr ^^ bracketL (exprValueInfosL g vinfos)
-    | CurriedLambdaValue(_lambdaId, _arities, _bsize, expr, _isCrossAssembly, _ety) -> wordL (tagText "lam") ++ exprL expr (* (sprintf "lam(size=%d)" bsize) *)
+    | CurriedLambdaValue(_lambdaId, _arities, _bsize, expr, _ety) -> wordL (tagText "lam") ++ exprL expr (* (sprintf "lam(size=%d)" bsize) *)
     | ConstExprValue (_size, x) -> exprL x
 
 and exprValueInfosL g vinfos = commaListL (List.map (exprValueInfoL g) (Array.toList vinfos))
@@ -663,7 +663,7 @@ let (|StripConstValue|_|) ev =
 
 let (|StripLambdaValue|_|) ev = 
   match stripValue ev with 
-  | CurriedLambdaValue (id, arity, sz, expr, isCrossAssembly, ty) -> Some (id, arity, sz, expr, isCrossAssembly, ty)
+  | CurriedLambdaValue (id, arity, sz, expr, ty) -> Some (id, arity, sz, expr, ty)
   | _ -> None
 
 let destTupleValue ev = 
@@ -1066,7 +1066,7 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
             else ValValue (vref2, detailR)
 
         // Check for escape in lambda 
-        | CurriedLambdaValue (_, _, _, expr, _, _) | ConstExprValue(_, expr) when            
+        | CurriedLambdaValue (_, _, _, expr, _) | ConstExprValue(_, expr) when            
             (let fvs = freeInExpr CollectAll expr
              (isAssemblyBoundary && not (freeVarsAllPublic fvs)) || 
              Zset.exists hiddenVal fvs.FreeLocals ||
@@ -1160,7 +1160,7 @@ let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
               ValValue (v2, detailR)
         
           // Check for escape in lambda 
-          | CurriedLambdaValue (_, _, _, expr, _, _) | ConstExprValue(_, expr) when 
+          | CurriedLambdaValue (_, _, _, expr, _) | ConstExprValue(_, expr) when 
             (let fvs = freeInExpr (if isNil boundTyVars then CollectLocals else CollectTyparsAndLocals) expr
              (not (isNil boundVars) && List.exists (Zset.memberOf fvs.FreeLocals) boundVars) ||
              (not (isNil boundTyVars) && List.exists (Zset.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
@@ -1209,7 +1209,7 @@ let RemapOptimizationInfo g tmenv =
         | UnionCaseValue(cspec, vinfos) -> UnionCaseValue (remapUnionCaseRef tmenv.tyconRefRemap cspec, Array.map remapExprInfo vinfos)
         | SizeValue(_vdepth, vinfo) -> MakeSizedValueInfo (remapExprInfo vinfo)
         | UnknownValue -> UnknownValue
-        | CurriedLambdaValue (uniq, arity, sz, expr, isCrossAssembly, ty) -> CurriedLambdaValue (uniq, arity, sz, remapExpr g CloneAll tmenv expr, isCrossAssembly, remapPossibleForallTy g tmenv ty)  
+        | CurriedLambdaValue (uniq, arity, sz, expr, ty) -> CurriedLambdaValue (uniq, arity, sz, remapExpr g CloneAll tmenv expr, remapPossibleForallTy g tmenv ty)  
         | ConstValue (c, ty) -> ConstValue (c, remapPossibleForallTy g tmenv ty)
         | ConstExprValue (sz, expr) -> ConstExprValue (sz, remapExpr g CloneAll tmenv expr)
 
@@ -2599,17 +2599,17 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
         let argsR, arginfos = OptimizeExprsThenConsiderSplits cenv env args 
         OptimizeExprOpFallback cenv env (TOp.TraitCall traitInfo, [], argsR, m) arginfos UnknownValue 
 
-and CopyExprForInlining cenv isCrossAssembly isInlineIfLambda expr m = 
+and CopyExprForInlining cenv isInlineIfLambda expr m = 
     // 'InlineIfLambda' doesn't erase ranges, e.g. if the lambda is user code.
-    if isCrossAssembly && not isInlineIfLambda then
-        // Debug points are erased when doing cross-assembly inlining
-        // Locals are marked compiler generated when doing cross-assembly inlining
+    if isInlineIfLambda then
+        expr
+        |> copyExpr cenv.g CloneAll
+    else
+        // Debug points are erased when doing inlining
+        // Locals are marked compiler generated when doing inlining
         expr
         |> copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated
         |> remarkExpr m
-    else
-        expr
-        |> copyExpr cenv.g CloneAll
 
 /// Make optimization decisions once we know the optimization information
 /// for a value
@@ -2645,8 +2645,8 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, mustInline, inlineIfLambda, va
     | ConstExprValue(_size, expr) ->
         Some (remarkExpr m (copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated expr))
 
-    | CurriedLambdaValue (_, _, _, expr, isCrossAssembly, _) when mustInline || inlineIfLambda ->
-        let exprCopy = CopyExprForInlining cenv isCrossAssembly inlineIfLambda expr m
+    | CurriedLambdaValue (_, _, _, expr, _) when mustInline || inlineIfLambda ->
+        let exprCopy = CopyExprForInlining cenv inlineIfLambda expr m
         Some exprCopy
 
     | TupleValue _ | UnionCaseValue _ | RecdValue _ when mustInline ->
@@ -2946,7 +2946,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
 and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m) =
     // Considering inlining app 
     match finfo.Info with 
-    | StripLambdaValue (lambdaId, arities, size, f2, isCrossAssembly, f2ty) when
+    | StripLambdaValue (lambdaId, arities, size, f2, f2ty) when
        (// Considering inlining lambda 
         cenv.optimizing &&
         cenv.settings.InlineLambdas () &&
@@ -3007,7 +3007,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
 
         // Inlining lambda 
   (* ---------- printf "Inlining lambda near %a = %s\n" outputRange m (showL (exprL f2)) (* JAMES: *) ----------*)
-        let f2R = CopyExprForInlining cenv isCrossAssembly false f2 m
+        let f2R = CopyExprForInlining cenv false f2 m
 
         // Optimizing arguments after inlining
 
@@ -3271,14 +3271,14 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
         // can't inline any values with semi-recursive object references to self or base 
         let valu =   
           match baseValOpt with 
-          | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, false, ety) 
+          | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, ety) 
           | Some baseVal -> 
               let fvs = freeInExpr CollectLocals bodyR
               if fvs.UsesMethodLocalConstructs || fvs.FreeLocals.Contains baseVal then 
                   UnknownValue
               else 
                   let expr2 = mkMemberLambdas m tps ctorThisValOpt None vsl (bodyR, bodyty)
-                  CurriedLambdaValue (lambdaId, arities, bsize, expr2, false, ety) 
+                  CurriedLambdaValue (lambdaId, arities, bsize, expr2, ety) 
                   
         let estimatedSize = 
             match vspec with
@@ -3299,7 +3299,7 @@ and OptimizeNewDelegateExpr cenv env (lambdaId, vsl, body, remake) =
     let arities = vsl.Length
     let bsize = bodyinfo.TotalSize
     let exprR = remake bodyR
-    let valu = CurriedLambdaValue (lambdaId, arities, bsize, exprR, false, tyOfExpr cenv.g exprR) 
+    let valu = CurriedLambdaValue (lambdaId, arities, bsize, exprR, tyOfExpr cenv.g exprR) 
 
     exprR, { TotalSize=bsize + closureTotalSize (* estimate size of new syntactic closure - expensive, in contrast to a method *)
              FunctionSize=1 
@@ -3523,7 +3523,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         // Trim out optimization information for expressions that call protected members 
         let rec cut ivalue = 
             match ivalue with
-            | CurriedLambdaValue (_, arities, size, body, _, _) -> 
+            | CurriedLambdaValue (_, arities, size, body, _) -> 
                 if size > (cenv.settings.lambdaInlineThreshold + arities + 2) then 
                     // Discarding lambda for large binding 
                     UnknownValue 
@@ -3800,7 +3800,7 @@ let rec p_ExprValueInfo x st =
     | UnionCaseValue (a, b) ->
         p_byte 4 st
         p_tup2 p_ucref (p_array p_ExprValueInfo) (a, b) st
-    | CurriedLambdaValue (_, b, c, d, _isCrossAssembly, e) ->
+    | CurriedLambdaValue (_, b, c, d, e) ->
         p_byte 5 st
         p_tup4 p_int p_int p_expr p_ty (b, c, d, e) st
     | ConstExprValue (a, b) ->
@@ -3835,7 +3835,7 @@ let rec u_ExprInfo st =
         | 2 -> u_tup2 u_vref loop st |> (fun (a, b) -> ValValue (a, b))
         | 3 -> u_array loop st |> (fun a -> TupleValue a)
         | 4 -> u_tup2 u_ucref (u_array loop) st |> (fun (a, b) -> UnionCaseValue (a, b))
-        | 5 -> u_tup4 u_int u_int u_expr u_ty st |> (fun (b, c, d, e) -> CurriedLambdaValue (newUnique(), b, c, d, (* isCrossAssembly *) true, e))
+        | 5 -> u_tup4 u_int u_int u_expr u_ty st |> (fun (b, c, d, e) -> CurriedLambdaValue (newUnique(), b, c, d, e))
         | 6 -> u_tup2 u_int u_expr st |> (fun (a, b) -> ConstExprValue (a, b))
         | 7 -> u_tup2 u_tcref (u_array loop) st |> (fun (a, b) -> RecdValue (a, b))
         | _ -> failwith "loop"

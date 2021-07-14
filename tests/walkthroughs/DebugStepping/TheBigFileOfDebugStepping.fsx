@@ -737,8 +737,7 @@ let TaskBreakpoints1 () =
             return () }
 
 module InlinedCode =
-    // MANUAL TEST: check you can place breakpoints in this method and hit them
-    // in both Debug and Release code
+    // NOTE: you can't place breakpoints in this method and hit them in either Debug and Release code
     let inline bodyRunner z body =
         let x = 1 + z
         printfn "running"
