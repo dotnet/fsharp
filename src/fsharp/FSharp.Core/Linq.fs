@@ -137,9 +137,12 @@ module LeafExpressionConverter =
                           | TypeCode.UInt64 -> true
                           | _ -> false
     // https://github.com/dotnet/runtime/blob/afaf666eff08435123eb649ac138419f4c9b9344/src/libraries/System.Linq.Expressions/src/System/Linq/Expressions/BinaryExpression.cs#L1047
+    /// Can LINQ Expressions' BinaryExpression's eqaulity operations provide built-in structural equality from the types in question? Otherwise, use the F# operator as the user-defined method. 
+    let isLinqExpressionsStructurallyEquatable typ =
+        isLinqExpressionsNumeric typ || typ = typeof<bool> || getNonNullableType(typ).IsEnum
     /// Can LINQ Expressions' BinaryExpression's eqaulity operations provide built-in equality from the types in question? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsEquatable typ =
-        isLinqExpressionsNumeric typ || typ = typeof<obj> || typ = typeof<bool> || getNonNullableType(typ).IsEnum
+        isLinqExpressionsStructurallyEquatable typ || typ = typeof<obj>
 
     let SpecificCallToMethodInfo (minfo: System.Reflection.MethodInfo) =
         let isg1 = minfo.IsGenericMethod
@@ -437,12 +440,12 @@ module LeafExpressionConverter =
             | LessEqQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 false Expression.LessThanOrEqual m
             | NotQ (_, _, [x1]) -> Expression.Not(ConvExprToLinqInContext env x1) |> asExpr
 
-            | StaticEqualsQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsEquatable inp env false x1 x2 false Expression.Equal (methodhandleof (fun x -> LanguagePrimitives.EqualityDynamic x))
-            | StaticNotEqQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsEquatable inp env false x1 x2 false Expression.NotEqual (methodhandleof (fun x -> LanguagePrimitives.InequalityDynamic x))
-            | StaticGreaterQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsNumeric inp env false x1 x2 false Expression.GreaterThan (methodhandleof (fun x -> LanguagePrimitives.GreaterThanDynamic x))
-            | StaticGreaterEqQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsNumeric inp env false x1 x2 false Expression.GreaterThanOrEqual (methodhandleof (fun x -> LanguagePrimitives.GreaterThanOrEqualDynamic x))
-            | StaticLessQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsNumeric inp env false x1 x2 false Expression.LessThan (methodhandleof (fun x -> LanguagePrimitives.LessThanDynamic x))
-            | StaticLessEqQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsNumeric inp env false x1 x2 false Expression.LessThanOrEqual (methodhandleof (fun x -> LanguagePrimitives.LessThanOrEqualDynamic x))
+            | StaticEqualsQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsEquatable inp env x1 x2 Expression.Equal (methodhandleof (fun x -> LanguagePrimitives.EqualityDynamic x))
+            | StaticNotEqQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsEquatable inp env x1 x2 Expression.NotEqual (methodhandleof (fun x -> LanguagePrimitives.InequalityDynamic x))
+            | StaticGreaterQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsNumeric inp env x1 x2 Expression.GreaterThan (methodhandleof (fun x -> LanguagePrimitives.GreaterThanDynamic x))
+            | StaticGreaterEqQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsNumeric inp env x1 x2 Expression.GreaterThanOrEqual (methodhandleof (fun x -> LanguagePrimitives.GreaterThanOrEqualDynamic x))
+            | StaticLessQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsNumeric inp env x1 x2 Expression.LessThan (methodhandleof (fun x -> LanguagePrimitives.LessThanDynamic x))
+            | StaticLessEqQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsNumeric inp env x1 x2 Expression.LessThanOrEqual (methodhandleof (fun x -> LanguagePrimitives.LessThanOrEqualDynamic x))
 
             | NullableEqualsQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 true Expression.Equal m
             | NullableNotEqQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 true Expression.NotEqual m
@@ -719,22 +722,22 @@ module LeafExpressionConverter =
             let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
             exprErasedConstructor(e1, e2, method.MakeGenericMethod [| getNonNullableType x1.Type; getNonNullableType x2.Type; getNonNullableType inp.Type |])
         |> asExpr
-    // Boolean equality / comparison operators do not take witnesses and the referenced methods are callable directly
+    // The F# boolean structural equality / comparison operators do not take witnesses and the referenced methods are callable directly
     and transBoolOpNoWitness env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ * _ -> _) method =
         let e1 = ConvExprToLinqInContext env x1
         let e2 = ConvExprToLinqInContext env x2
         let e1' = if addConvertLeft  then Expression.Convert(e1, typedefof<Nullable<int>>.MakeGenericType [| e1.Type |]) |> asExpr else e1
         let e2' = if addConvertRight then Expression.Convert(e2, typedefof<Nullable<int>>.MakeGenericType [| e2.Type |]) |> asExpr else e2
-        try exprErasedConstructor(e1', e2', false, null) with _ ->
-            // LINQ Expressions cannot recognize boolean operators on F# types that are not defined on the types themselves. In this case, use the F# operator as the user-defined method.
+        if e1'.Type = e2'.Type && isLinqExpressionsStructurallyEquatable e1.Type then
+            // The false for (liftToNull: bool) indicates whether equality operators return a Nullable<bool> like in VB.NET (null when either argument is null) instead of bool like in C# (nulls equate to nulls). F# follows C# here.
+            exprErasedConstructor(e1', e2', false, null)
+        else
             exprErasedConstructor(e1, e2, false, method)
         |> asExpr
     // But the static boolean operators do take witnesses!
-    and transBoolOp linqExpressionsCondition inp env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ * _ -> _) fallback =
+    and transBoolOp linqExpressionsCondition inp env x1 x2 (exprErasedConstructor: _ * _ * _ * _ -> _) fallback =
         let e1 = ConvExprToLinqInContext env x1
         let e2 = ConvExprToLinqInContext env x2
-        let e1 = if addConvertLeft  then Expression.Convert(e1, typedefof<Nullable<int>>.MakeGenericType [| e1.Type |]) |> asExpr else e1
-        let e2 = if addConvertRight then Expression.Convert(e2, typedefof<Nullable<int>>.MakeGenericType [| e2.Type |]) |> asExpr else e2
         if e1.Type = e2.Type && linqExpressionsCondition e1.Type then
             // The false for (liftToNull: bool) indicates whether equality operators return a Nullable<bool> like in VB.NET (null when either argument is null) instead of bool like in C# (nulls equate to nulls). F# follows C# here.
             exprErasedConstructor(e1, e2, false, null)

@@ -4980,9 +4980,10 @@ module WitnessTests =
               <@@ 3m<m> = 3m<m> @@>, box true
               <@@ 3I = 3I @@>, box true
               <@@ "3" = "3" @@>, box true
-              <@@ [3] = [3] @@>, box false // Unlike the F# structural operator, it translates to a reference equality check in Linq Expressions. Need to consider whether this is desirable.
-              <@@ [|3|] = [|3|] @@>, box false // Unlike the F# structural operator, it translates to a reference equality check in Linq Expressions. Need to consider whether this is desirable.
+              <@@ [3] = [3] @@>, box true
+              <@@ [|3|] = [|3|] @@>, box true
               <@@ seq { 3 } = seq { 3 } @@>, box false // Reference equality
+              <@@ obj() = obj() @@>, box false
               
               <@@ 3y <> 3y @@>, box false
               <@@ 3uy <> 3uy @@>, box false
@@ -5001,9 +5002,10 @@ module WitnessTests =
               <@@ 3m<m> <> 3m<m> @@>, box false
               <@@ 3I <> 3I @@>, box false
               <@@ "3" <> "3" @@>, box false
-              <@@ [3] <> [3] @@>, box true // Unlike the F# structural operator, it translates to a reference equality check in Linq Expressions. Need to consider whether this is desirable.
-              <@@ [|3|] <> [|3|] @@>, box true // Unlike the F# structural operator, it translates to a reference equality check in Linq Expressions. Need to consider whether this is desirable.
+              <@@ [3] <> [3] @@>, box false
+              <@@ [|3|] <> [|3|] @@>, box false
               <@@ seq { 3 } <> seq { 3 } @@>, box true // Reference equality
+              <@@ obj() <> obj() @@>, box true
 
               <@@ 3y <= 3y @@>, box true
               <@@ 3uy <= 3uy @@>, box true
