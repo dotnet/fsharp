@@ -317,21 +317,21 @@ module Query =
 
     // Match 'f x'
     let (|SpecificCall1|_|) q =
-       let (|CallQ|_|) = (|SpecificCallToMethod|_|) q
+       let (|CallQ|_|) = (|SpecificCallToGenericMethod|_|) q
        function
        | CallQ (Some builderObj, tyargs, [arg1]) -> Some(builderObj, tyargs, arg1)
        | _ -> None
 
     // Match 'f x y' or 'f (x, y)'
     let (|SpecificCall2|_|) q =
-       let (|CallQ|_|) = (|SpecificCallToMethod|_|) q
+       let (|CallQ|_|) = (|SpecificCallToGenericMethod|_|) q
        function
        | CallQ (Some builderObj, tyargs, [arg1; arg2]) -> Some(builderObj, tyargs, arg1, arg2)
        | _ -> None
 
     // Match 'f x y z' or 'f (x, y, z)'
     let (|SpecificCall3|_|) q =
-       let (|CallQ|_|) = (|SpecificCallToMethod|_|) q
+       let (|CallQ|_|) = (|SpecificCallToGenericMethod|_|) q
        function
        | CallQ (Some builderObj, tyargs, [arg1; arg2; arg3]) -> Some(builderObj, tyargs, arg1, arg2, arg3)
        | _ -> None
@@ -1040,19 +1040,19 @@ module Query =
             | MacroReduction reduced -> Some (walk reduced)
             | _ -> None)
 
-    let (|CallQueryBuilderRunQueryable|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b :QueryBuilder, v) -> b.Run v))
+    let (|CallQueryBuilderRunQueryable|_|) : Quotations.Expr -> _ = (|SpecificCallToGenericMethod|_|) (methodhandleof (fun (b :QueryBuilder, v) -> b.Run v))
 
-    let (|CallQueryBuilderRunValue|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b : QueryBuilder, v: Expr<'a>) -> b.Run v) : 'a)
+    let (|CallQueryBuilderRunValue|_|) : Quotations.Expr -> _ = (|SpecificCallToGenericMethod|_|) (methodhandleof (fun (b : QueryBuilder, v: Expr<'a>) -> b.Run v) : 'a)
 
-    let (|CallQueryBuilderRunEnumerable|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b : QueryBuilder, v: Expr<QuerySource<_, IEnumerable>> ) -> b.Run v))
+    let (|CallQueryBuilderRunEnumerable|_|) : Quotations.Expr -> _ = (|SpecificCallToGenericMethod|_|) (methodhandleof (fun (b : QueryBuilder, v: Expr<QuerySource<_, IEnumerable>> ) -> b.Run v))
 
-    let (|CallQueryBuilderFor|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b:QueryBuilder, source: QuerySource<int, _>, body) -> b.For(source, body)))
+    let (|CallQueryBuilderFor|_|) : Quotations.Expr -> _ = (|SpecificCallToGenericMethod|_|) (methodhandleof (fun (b:QueryBuilder, source: QuerySource<int, _>, body) -> b.For(source, body)))
 
     let (|CallQueryBuilderYield|_|) : Quotations.Expr -> _ = (|SpecificCall1|_|) (methodhandleof (fun (b:QueryBuilder, value) -> b.Yield value))
 
-    let (|CallQueryBuilderYieldFrom|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b:QueryBuilder, values) -> b.YieldFrom values))
+    let (|CallQueryBuilderYieldFrom|_|) : Quotations.Expr -> _ = (|SpecificCallToGenericMethod|_|) (methodhandleof (fun (b:QueryBuilder, values) -> b.YieldFrom values))
 
-    let (|CallQueryBuilderZero|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b:QueryBuilder) -> b.Zero()))
+    let (|CallQueryBuilderZero|_|) : Quotations.Expr -> _ = (|SpecificCallToGenericMethod|_|) (methodhandleof (fun (b:QueryBuilder) -> b.Zero()))
 
     let (|CallQueryBuilderSourceIQueryable|_|) : Quotations.Expr -> _ = (|SpecificCall1|_|) (methodhandleof (fun (b:QueryBuilder, value: IQueryable<_>) -> b.Source value))
 
@@ -1118,11 +1118,11 @@ module Query =
 
     let (|CallSkipWhile|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1, arg2) -> query.SkipWhile(arg1, arg2)))
 
-    let (|CallJoin|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (query:QueryBuilder, arg1, arg2, arg3, arg4, arg5) -> query.Join(arg1, arg2, arg3, arg4, arg5)))
+    let (|CallJoin|_|) = (|SpecificCallToGenericMethod|_|) (methodhandleof (fun (query:QueryBuilder, arg1, arg2, arg3, arg4, arg5) -> query.Join(arg1, arg2, arg3, arg4, arg5)))
 
-    let (|CallGroupJoin|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (query:QueryBuilder, arg1, arg2, arg3, arg4, arg5) -> query.GroupJoin(arg1, arg2, arg3, arg4, arg5)))
+    let (|CallGroupJoin|_|) = (|SpecificCallToGenericMethod|_|) (methodhandleof (fun (query:QueryBuilder, arg1, arg2, arg3, arg4, arg5) -> query.GroupJoin(arg1, arg2, arg3, arg4, arg5)))
 
-    let (|CallLeftOuterJoin|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (query:QueryBuilder, arg1, arg2, arg3, arg4, arg5) -> query.LeftOuterJoin(arg1, arg2, arg3, arg4, arg5)))
+    let (|CallLeftOuterJoin|_|) = (|SpecificCallToGenericMethod|_|) (methodhandleof (fun (query:QueryBuilder, arg1, arg2, arg3, arg4, arg5) -> query.LeftOuterJoin(arg1, arg2, arg3, arg4, arg5)))
 
     let (|CallAverageBy|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1: QuerySource<double, _>, arg2:(double->double)) -> query.AverageBy(arg1, arg2)))
 
