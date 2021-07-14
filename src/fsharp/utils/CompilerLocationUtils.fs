@@ -199,8 +199,12 @@ module internal FSharpEnvironment =
             match probePoint with
             | Some p when safeExists (Path.Combine(p,"FSharp.Core.dll")) -> Some p
             | _ ->
-                    // For the prototype compiler, we can just use the current domain
-                    tryCurrentDomain()
+                let fallback() =
+                    let d = Assembly.GetExecutingAssembly()
+                    Some (Path.GetDirectoryName d.Location)
+                match tryCurrentDomain() with
+                | None -> fallback()
+                | Some path -> Some path
         with e -> None
 
 #if !FX_NO_WIN_REGISTRY
