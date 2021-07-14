@@ -629,7 +629,7 @@
       </trans-unit>
       <trans-unit id="unsupportedAttribute">
         <source>This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</source>
-        <target state="new">This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</target>
+        <target state="translated">Kompilátor F# aktuálně nepodporuje tento atribut. Jeho použití nebude mít zamýšlený účinek.</target>
         <note />
       </trans-unit>
       <trans-unit id="useSdkRefs">

@@ -2766,7 +2766,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let currentDirectory = Directory.GetCurrentDirectory()
     let tryGetMetadataSnapshot = (fun _ -> None)
 
-    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
+    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
 
     let legacyReferenceResolver =
         match legacyReferenceResolver with

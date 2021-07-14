@@ -162,7 +162,7 @@ Where `<version>` corresponds to the latest Visual Studio version on your machin
 
 ## Additional resources
 
-The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](https://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html). Please read and contribute to that guide.
+The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](https://github.com/dotnet/fsharp/blob/main/docs/compiler-guide.md). Please read and contribute to that guide.
 
 See the "Debugging The Compiler" section of this [article](https://medium.com/@willie.tetlow/f-mentorship-week-1-36f51d3812d4) for some examples.
 
