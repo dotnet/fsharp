@@ -432,7 +432,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
-    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
+    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
 
     let tcConfigB =
        TcConfigBuilder.CreateNew(legacyReferenceResolver,
@@ -607,7 +607,7 @@ let main1OfAst
 
     let directoryBuildingFrom = Directory.GetCurrentDirectory()
 
-    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
+    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
 
     let tcConfigB =
         TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir,

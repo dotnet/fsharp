@@ -29,6 +29,7 @@ type LanguageFeature =
     | PrintfBinaryFormat
     | UseBindingValueDiscard
     | NonVariablePatternsToRightOfAsPatterns
+    | AttributesToRightOfModuleKeyword
 
 /// LanguageVersion management
 type LanguageVersion =
