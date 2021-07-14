@@ -78,8 +78,27 @@ module LeafExpressionConverter =
     
     let getNonNullableType typ = match Nullable.GetUnderlyingType typ with null -> typ | t -> t
 
+    // https://github.com/dotnet/runtime/blob/fa779e8cb2b5868a0ac2fd4215f39ffb91f0dab0/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L72
+    /// Can LINQ Expressions' BinaryExpression's (Left/Right)Shift construct a SimpleBinaryExpression from the type in question? Otherwise, use the F# operator as the user-defined method. 
+    let isLinqExpressionsInteger typ =
+        let typ = getNonNullableType typ
+        not typ.IsEnum &&
+        match Type.GetTypeCode typ with
+        | TypeCode.Byte
+        | TypeCode.SByte
+        | TypeCode.Int16
+        | TypeCode.Int32
+        | TypeCode.Int64
+        | TypeCode.UInt16
+        | TypeCode.UInt32
+        | TypeCode.UInt64 -> true
+        | _ -> false
+    // https://github.com/dotnet/runtime/blob/fa779e8cb2b5868a0ac2fd4215f39ffb91f0dab0/src/libraries/System.Linq.Expressions/src/System/Linq/Expressions/BinaryExpression.cs#L2226
+    /// Can LINQ Expressions' BinaryExpression's (Left/Right)Shift construct a SimpleBinaryExpression from the type in question? Otherwise, use the F# operator as the user-defined method. 
+    let isLinqExpressionsSimpleShift left right =
+        isLinqExpressionsInteger left && getNonNullableType right = typeof<int>
     // https://github.com/dotnet/runtime/blob/cf7e7a46f8a4a6225a8f1e059a846ccdebf0454c/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L110
-    /// Can LINQ Expressions' (UnaryExpression/BinaryExpression)'s arithmetic operations construct a (SimpleBinaryExpression/UnaryExpression) from the types in question? Otherwise, use the F# operator as the user-defined method. 
+    /// Can LINQ Expressions' (UnaryExpression/BinaryExpression)'s arithmetic operations construct a (SimpleBinaryExpression/UnaryExpression) from the type in question? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsArithmeticType typ =
         let typ = getNonNullableType typ
         not typ.IsEnum &&
@@ -94,7 +113,7 @@ module LeafExpressionConverter =
         | TypeCode.UInt64 -> true
         | _ -> false
     // https://github.com/dotnet/runtime/blob/7bd472498e690e9421df86d5a9d728faa939742c/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L132
-    /// Can LINQ Expressions' UnaryExpression.(Checked)Negate construct a UnaryExpression from the types in question? Otherwise, use the F# operator as the user-defined method. 
+    /// Can LINQ Expressions' UnaryExpression.(Checked)Negate construct a UnaryExpression from the type in question? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsArithmeticTypeButNotUnsignedInt typ =
         isLinqExpressionsArithmeticType typ &&
         let typ = getNonNullableType typ
@@ -105,7 +124,7 @@ module LeafExpressionConverter =
         | TypeCode.UInt64 -> false
         | _ -> true
     // https://github.com/dotnet/runtime/blob/7bd472498e690e9421df86d5a9d728faa939742c/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L149
-    /// Can LINQ Expressions' UnaryExpression.Not construct a UnaryExpression from the types in question? Otherwise, use the F# operator as the user-defined method. 
+    /// Can LINQ Expressions' (UnaryExpression.Not/BinaryExpression.Binary(And/Or/ExclusiveOr)) construct a (UnaryExpression/SimpleBinaryExpression) from the type in question? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsIntegerOrBool typ =
         let typ = getNonNullableType typ
         not typ.IsEnum &&
@@ -121,7 +140,7 @@ module LeafExpressionConverter =
         | TypeCode.Byte -> true
         | _ -> false
     // https://github.com/dotnet/runtime/blob/7bd472498e690e9421df86d5a9d728faa939742c/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L47
-    /// Can LINQ Expressions' BinaryExpression's comparison operations construct a (SimpleBinaryExpression/LogicalBinaryExpression) from the types in question? Otherwise, use the F# operator as the user-defined method. 
+    /// Can LINQ Expressions' BinaryExpression's comparison operations construct a (SimpleBinaryExpression/LogicalBinaryExpression) from the type in question? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsNumeric typ =
         let typ = getNonNullableType typ
         not typ.IsEnum &&
@@ -139,13 +158,85 @@ module LeafExpressionConverter =
         | TypeCode.UInt64 -> true
         | _ -> false
     // https://github.com/dotnet/runtime/blob/afaf666eff08435123eb649ac138419f4c9b9344/src/libraries/System.Linq.Expressions/src/System/Linq/Expressions/BinaryExpression.cs#L1047
-    /// Can LINQ Expressions' BinaryExpression's eqaulity operations provide built-in structural equality from the types in question? Otherwise, use the F# operator as the user-defined method. 
+    /// Can LINQ Expressions' BinaryExpression's equality operations provide built-in structural equality from the type in question? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsStructurallyEquatable typ =
         isLinqExpressionsNumeric typ || typ = typeof<bool> || getNonNullableType(typ).IsEnum
-    /// Can LINQ Expressions' BinaryExpression's eqaulity operations provide built-in equality from the types in question? Otherwise, use the F# operator as the user-defined method. 
+    // https://github.com/dotnet/runtime/blob/4c92aef2b08f9c4374c520e7e664a44f1ad8ce56/src/libraries/System.Linq.Expressions/src/System/Linq/Expressions/BinaryExpression.cs#L1221
+    /// Can LINQ Expressions' BinaryExpression's comparison operations provide built-in comparison from the type in question? Otherwise, use the F# operator as the user-defined method. 
+    let isLinqExpressionsComparable = isLinqExpressionsNumeric
+    /// Can LINQ Expressions' BinaryExpression's equality operations provide built-in equality from the type in question? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsEquatable typ =
         isLinqExpressionsStructurallyEquatable typ || typ = typeof<obj>
+    /// Can LINQ Expressions' BinaryExpression's conversion operations provide built-in conversion from source to dest? Otherwise, use the F# operator as the user-defined method. 
+    let isLinqExpressionsConvertible source dest =
+        // https://github.com/dotnet/runtime/blob/4c92aef2b08f9c4374c520e7e664a44f1ad8ce56/src/libraries/System.Linq.Expressions/src/System/Linq/Expressions/UnaryExpression.cs#L757
+        // expression.Type.HasIdentityPrimitiveOrNullableConversionTo(type) || expression.Type.HasReferenceConversionTo(type))
+        // In other words, source.HasIdentityPrimitiveOrNullableConversionTo dest || source.HasReferenceConversionTo dest
+        
+        // https://github.com/dotnet/runtime/blob/4c92aef2b08f9c4374c520e7e664a44f1ad8ce56/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L532
+        let isConvertible typ =
+            let typ = getNonNullableType typ
+            typ.IsEnum ||
+            match Type.GetTypeCode typ with
+            | TypeCode.Boolean
+            | TypeCode.Byte
+            | TypeCode.SByte
+            | TypeCode.Int16
+            | TypeCode.Int32
+            | TypeCode.Int64
+            | TypeCode.UInt16
+            | TypeCode.UInt32
+            | TypeCode.UInt64
+            | TypeCode.Single
+            | TypeCode.Double
+            | TypeCode.Char -> true
+            | _ -> false
+        // https://github.com/dotnet/runtime/blob/4c92aef2b08f9c4374c520e7e664a44f1ad8ce56/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L229
+        // HasIdentityPrimitiveOrNullableConversionTo
+        getNonNullableType(source).IsEquivalentTo dest
+        || dest.IsEquivalentTo(getNonNullableType source)
+        || isConvertible source && isConvertible dest
+           && (getNonNullableType dest <> typeof<bool> || source.IsEnum && source.GetEnumUnderlyingType() = typeof<bool>)
 
+        ||
+        // https://github.com/dotnet/runtime/blob/4c92aef2b08f9c4374c520e7e664a44f1ad8ce56/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L260
+        // HasReferenceConversionTo
+        let rec hasReferenceConversionTo source dest =
+        
+            // { if (source == typeof(void) || dest == typeof(void)) return false; } invalidates an identity conversion. This is handled by the IsEquivalentTo check above.
+            let nnSourceType, nnDestType = getNonNullableType source, getNonNullableType dest
+
+            // Down conversion
+            nnSourceType.IsAssignableFrom nnDestType
+            // Up conversion
+            || nnDestType.IsAssignableFrom nnSourceType
+ 
+            // Interface conversion
+            || source.IsInterface || dest.IsInterface
+
+            // Variant delegate conversion
+            ||  // https://github.com/dotnet/runtime/blob/4c92aef2b08f9c4374c520e7e664a44f1ad8ce56/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L458
+                // IsLegalExplicitVariantDelegateConversion
+                let isDelegate (t: Type) = t.IsSubclassOf typeof<MulticastDelegate>
+                isDelegate source && isDelegate dest && source.IsGenericType && dest.IsGenericType
+                &&
+                let genericDelegate = source.GetGenericTypeDefinition()
+                dest.GetGenericTypeDefinition() = genericDelegate
+                &&
+                (source.GetGenericArguments(), dest.GetGenericArguments(), genericDelegate.GetGenericArguments())
+                |||> Array.forall3 (fun sourceArgument destArgument genericParameter ->
+                    // If the arguments are identical then this one is automatically good, so skip it.
+                    sourceArgument.IsEquivalentTo destArgument
+                    ||
+                    match genericParameter.GenericParameterAttributes &&& GenericParameterAttributes.VarianceMask with
+                    | GenericParameterAttributes.None -> false
+                    | GenericParameterAttributes.Covariant -> hasReferenceConversionTo sourceArgument destArgument
+                    | GenericParameterAttributes.Contravariant -> not (sourceArgument.IsValueType || destArgument.IsValueType)
+                    | x -> failwith $"Unexpected GenericParameterAttributes variance: {x}"
+                )
+            // TODO: Is expanding this worth it?
+            // || (source.IsArray || dest.IsArray) && StrictHasReferenceConversionTo(source, dest, true)
+        hasReferenceConversionTo source dest
     let SpecificCallToMethodInfo (minfo: System.Reflection.MethodInfo) =
         let isg1 = minfo.IsGenericMethod
         let gmd = if isg1 then minfo.GetGenericMethodDefinition() else null
@@ -432,84 +523,84 @@ module LeafExpressionConverter =
                  Expression.Add(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2, StringConcat) |> asExpr
 
             | GenericEqualityQ (_, m, [x1; x2])
-            | EqualsQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 false Expression.Equal m
-            | NotEqQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 false Expression.NotEqual m
-            | GreaterQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 false Expression.GreaterThan m
-            | GreaterEqQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 false Expression.GreaterThanOrEqual m
-            | LessQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 false Expression.LessThan m
-            | LessEqQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 false Expression.LessThanOrEqual m
+            | EqualsQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsStructurallyEquatable env false x1 x2 false Expression.Equal m
+            | NotEqQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsStructurallyEquatable env false x1 x2 false Expression.NotEqual m
+            | GreaterQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env false x1 x2 false Expression.GreaterThan m
+            | GreaterEqQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env false x1 x2 false Expression.GreaterThanOrEqual m
+            | LessQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env false x1 x2 false Expression.LessThan m
+            | LessEqQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env false x1 x2 false Expression.LessThanOrEqual m
             | NotQ (_, _, [x1]) -> Expression.Not(ConvExprToLinqInContext env x1) |> asExpr
 
             | StaticEqualsQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsEquatable inp env x1 x2 Expression.Equal (methodhandleof (fun (x, y) -> LanguagePrimitives.EqualityDynamic x y))
             | StaticNotEqQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsEquatable inp env x1 x2 Expression.NotEqual (methodhandleof (fun (x, y) -> LanguagePrimitives.InequalityDynamic x y))
-            | StaticGreaterQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsNumeric inp env x1 x2 Expression.GreaterThan (methodhandleof (fun (x, y) -> LanguagePrimitives.GreaterThanDynamic x y))
-            | StaticGreaterEqQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsNumeric inp env x1 x2 Expression.GreaterThanOrEqual (methodhandleof (fun (x, y) -> LanguagePrimitives.GreaterThanOrEqualDynamic x y))
-            | StaticLessQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsNumeric inp env x1 x2 Expression.LessThan (methodhandleof (fun (x, y) -> LanguagePrimitives.LessThanDynamic x y))
-            | StaticLessEqQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsNumeric inp env x1 x2 Expression.LessThanOrEqual (methodhandleof (fun (x, y) -> LanguagePrimitives.LessThanOrEqualDynamic x y))
+            | StaticGreaterQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsComparable inp env x1 x2 Expression.GreaterThan (methodhandleof (fun (x, y) -> LanguagePrimitives.GreaterThanDynamic x y))
+            | StaticGreaterEqQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsComparable inp env x1 x2 Expression.GreaterThanOrEqual (methodhandleof (fun (x, y) -> LanguagePrimitives.GreaterThanOrEqualDynamic x y))
+            | StaticLessQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsComparable inp env x1 x2 Expression.LessThan (methodhandleof (fun (x, y) -> LanguagePrimitives.LessThanDynamic x y))
+            | StaticLessEqQ (_, _, [x1; x2]) -> transBoolOp isLinqExpressionsComparable inp env x1 x2 Expression.LessThanOrEqual (methodhandleof (fun (x, y) -> LanguagePrimitives.LessThanOrEqualDynamic x y))
 
-            | NullableEqualsQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 true Expression.Equal m
-            | NullableNotEqQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 true Expression.NotEqual m
-            | NullableGreaterQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 true Expression.GreaterThan m
-            | NullableGreaterEqQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 true Expression.GreaterThanOrEqual m
-            | NullableLessQ  (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 true Expression.LessThan m
-            | NullableLessEqQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 true Expression.LessThanOrEqual m
+            | NullableEqualsQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsStructurallyEquatable env false x1 x2 true Expression.Equal m
+            | NullableNotEqQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsStructurallyEquatable env false x1 x2 true Expression.NotEqual m
+            | NullableGreaterQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env false x1 x2 true Expression.GreaterThan m
+            | NullableGreaterEqQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env false x1 x2 true Expression.GreaterThanOrEqual m
+            | NullableLessQ  (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env false x1 x2 true Expression.LessThan m
+            | NullableLessEqQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env false x1 x2 true Expression.LessThanOrEqual m
 
-            | EqualsNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness env true x1 x2 false Expression.Equal m
-            | NotEqNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness env true x1 x2 false Expression.NotEqual m
-            | GreaterNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness env true x1 x2 false Expression.GreaterThan m
-            | GreaterEqNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness env true x1 x2 false Expression.GreaterThanOrEqual m
-            | LessNullableQ  (_, m, [x1; x2]) -> transBoolOpNoWitness env true x1 x2 false Expression.LessThan m
-            | LessEqNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness env true x1 x2 false Expression.LessThanOrEqual m
+            | EqualsNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsStructurallyEquatable env true x1 x2 false Expression.Equal m
+            | NotEqNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsStructurallyEquatable env true x1 x2 false Expression.NotEqual m
+            | GreaterNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env true x1 x2 false Expression.GreaterThan m
+            | GreaterEqNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env true x1 x2 false Expression.GreaterThanOrEqual m
+            | LessNullableQ  (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env true x1 x2 false Expression.LessThan m
+            | LessEqNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env true x1 x2 false Expression.LessThanOrEqual m
 
-            | NullableEqualsNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 false Expression.Equal m
-            | NullableNotEqNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 false Expression.NotEqual m
-            | NullableGreaterNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 false Expression.GreaterThan m
-            | NullableGreaterEqNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 false Expression.GreaterThanOrEqual m
-            | NullableLessNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 false Expression.LessThan m
-            | NullableLessEqNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness env false x1 x2 false Expression.LessThanOrEqual m
+            | NullableEqualsNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsStructurallyEquatable env false x1 x2 false Expression.Equal m
+            | NullableNotEqNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsStructurallyEquatable env false x1 x2 false Expression.NotEqual m
+            | NullableGreaterNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env false x1 x2 false Expression.GreaterThan m
+            | NullableGreaterEqNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env false x1 x2 false Expression.GreaterThanOrEqual m
+            | NullableLessNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env false x1 x2 false Expression.LessThan m
+            | NullableLessEqNullableQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsComparable env false x1 x2 false Expression.LessThanOrEqual m
             
             // Detect the F# quotation encoding of decimal literals
             | MakeDecimalQ (_, _, [Int32 lo; Int32 med; Int32 hi; Bool isNegative; Byte scale]) ->
                 Expression.Constant (new System.Decimal(lo, med, hi, isNegative, scale)) |> asExpr
 
             | NegQ (_, _, [x]) -> transUnaryOp isLinqExpressionsArithmeticTypeButNotUnsignedInt inp env x Expression.Negate (methodhandleof (fun x -> LanguagePrimitives.UnaryNegationDynamic x))
-            | PlusQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Add (methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y))
-            | MinusQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Subtract (methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y))
-            | MultiplyQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Multiply (methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y))
-            | DivideQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Divide (methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y))
-            | ModuloQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Modulo (methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y))
+            | PlusQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 false Expression.Add (methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y))
+            | MinusQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 false Expression.Subtract (methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y))
+            | MultiplyQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 false Expression.Multiply (methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y))
+            | DivideQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 false Expression.Divide (methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y))
+            | ModuloQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 false Expression.Modulo (methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y))
 
-            | ShiftLeftQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.LeftShift (methodhandleof (fun (x, y) -> LanguagePrimitives.LeftShiftDynamic x y))
-            | ShiftRightQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.RightShift (methodhandleof (fun (x, y) -> LanguagePrimitives.RightShiftDynamic x y))
-            | BitwiseAndQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.And (methodhandleof (fun (x, y) -> LanguagePrimitives.BitwiseAndDynamic x y))
-            | BitwiseOrQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Or (methodhandleof (fun (x, y) -> LanguagePrimitives.BitwiseOrDynamic x y))
-            | BitwiseXorQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.ExclusiveOr (methodhandleof (fun (x, y) -> LanguagePrimitives.ExclusiveOrDynamic x y))
+            | ShiftLeftQ (_, _, [x1; x2]) -> transShiftOp inp env false x1 x2 false Expression.LeftShift (methodhandleof (fun (x, y) -> LanguagePrimitives.LeftShiftDynamic x y))
+            | ShiftRightQ (_, _, [x1; x2]) -> transShiftOp inp env false x1 x2 false Expression.RightShift (methodhandleof (fun (x, y) -> LanguagePrimitives.RightShiftDynamic x y))
+            | BitwiseAndQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsIntegerOrBool inp env false x1 x2 false Expression.And (methodhandleof (fun (x, y) -> LanguagePrimitives.BitwiseAndDynamic x y))
+            | BitwiseOrQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsIntegerOrBool inp env false x1 x2 false Expression.Or (methodhandleof (fun (x, y) -> LanguagePrimitives.BitwiseOrDynamic x y))
+            | BitwiseXorQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsIntegerOrBool inp env false x1 x2 false Expression.ExclusiveOr (methodhandleof (fun (x, y) -> LanguagePrimitives.ExclusiveOrDynamic x y))
             | BitwiseNotQ (_, _, [x]) -> transUnaryOp isLinqExpressionsIntegerOrBool inp env x Expression.Not (methodhandleof (fun x -> LanguagePrimitives.LogicalNotDynamic x))
             
             | CheckedNeg (_, _, [x]) -> transUnaryOp isLinqExpressionsArithmeticTypeButNotUnsignedInt inp env x Expression.NegateChecked (methodhandleof (fun x -> LanguagePrimitives.CheckedUnaryNegationDynamic x))
-            | CheckedPlusQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.AddChecked (methodhandleof (fun (x, y) -> LanguagePrimitives.CheckedAdditionDynamic x y))
-            | CheckedMinusQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.SubtractChecked (methodhandleof (fun (x, y) -> LanguagePrimitives.CheckedSubtractionDynamic x y))
-            | CheckedMultiplyQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.MultiplyChecked (methodhandleof (fun (x, y) -> LanguagePrimitives.CheckedMultiplyDynamic x y))
+            | CheckedPlusQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 false Expression.AddChecked (methodhandleof (fun (x, y) -> LanguagePrimitives.CheckedAdditionDynamic x y))
+            | CheckedMinusQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 false Expression.SubtractChecked (methodhandleof (fun (x, y) -> LanguagePrimitives.CheckedSubtractionDynamic x y))
+            | CheckedMultiplyQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 false Expression.MultiplyChecked (methodhandleof (fun (x, y) -> LanguagePrimitives.CheckedMultiplyDynamic x y))
             
-            | NullablePlusQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 true Expression.Add (methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y))
-            | PlusNullableQ (_, _, [x1; x2]) -> transBinOp inp env true x1 x2 false Expression.Add (methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y))
-            | NullablePlusNullableQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Add (methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y))
+            | NullablePlusQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 true Expression.Add (methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y))
+            | PlusNullableQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env true x1 x2 false Expression.Add (methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y))
+            | NullablePlusNullableQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 false Expression.Add (methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y))
             
-            | NullableMinusQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 true Expression.Subtract (methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y))
-            | MinusNullableQ (_, _, [x1; x2]) -> transBinOp inp env true x1 x2 false Expression.Subtract (methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y))
-            | NullableMinusNullableQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Subtract (methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y))
+            | NullableMinusQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 true Expression.Subtract (methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y))
+            | MinusNullableQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env true x1 x2 false Expression.Subtract (methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y))
+            | NullableMinusNullableQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 false Expression.Subtract (methodhandleof (fun (x, y) -> LanguagePrimitives.SubtractionDynamic x y))
             
-            | NullableMultiplyQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 true Expression.Multiply (methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y))
-            | MultiplyNullableQ (_, _, [x1; x2]) -> transBinOp inp env true x1 x2 false Expression.Multiply (methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y))
-            | NullableMultiplyNullableQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Multiply (methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y))
+            | NullableMultiplyQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 true Expression.Multiply (methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y))
+            | MultiplyNullableQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env true x1 x2 false Expression.Multiply (methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y))
+            | NullableMultiplyNullableQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 false Expression.Multiply (methodhandleof (fun (x, y) -> LanguagePrimitives.MultiplyDynamic x y))
             
-            | NullableDivideQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 true Expression.Divide (methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y))
-            | DivideNullableQ (_, _, [x1; x2]) -> transBinOp inp env true x1 x2 false Expression.Divide (methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y))
-            | NullableDivideNullableQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Divide (methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y))
+            | NullableDivideQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 true Expression.Divide (methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y))
+            | DivideNullableQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env true x1 x2 false Expression.Divide (methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y))
+            | NullableDivideNullableQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 false Expression.Divide (methodhandleof (fun (x, y) -> LanguagePrimitives.DivisionDynamic x y))
             
-            | NullableModuloQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 true Expression.Modulo (methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y))
-            | ModuloNullableQ (_, _, [x1; x2]) -> transBinOp inp env true x1 x2 false Expression.Modulo (methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y))
-            | NullableModuloNullableQ (_, _, [x1; x2]) -> transBinOp inp env false x1 x2 false Expression.Modulo (methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y))
+            | NullableModuloQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 true Expression.Modulo (methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y))
+            | ModuloNullableQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env true x1 x2 false Expression.Modulo (methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y))
+            | NullableModuloNullableQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 false Expression.Modulo (methodhandleof (fun (x, y) -> LanguagePrimitives.ModulusDynamic x y))
 
             | ConvNullableCharQ (_, _, [x]) | ConvNullableDecimalQ (_, _, [x]) | ConvNullableFloatQ (_, _, [x]) | ConvNullableDoubleQ (_, _, [x]) -> transConv inp env false x
             | ConvNullableFloat32Q (_, _, [x]) | ConvNullableSingleQ (_, _, [x]) | ConvNullableSByteQ (_, _, [x]) | ConvNullableInt8Q (_, _, [x]) -> transConv inp env false x
@@ -711,24 +802,35 @@ module LeafExpressionConverter =
             let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
             exprErasedConstructor(e, method.MakeGenericMethod [| getNonNullableType x.Type; getNonNullableType inp.Type |])
         |> asExpr
-    and transBinOp inp env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ -> _) fallback =
+    and transShiftOp inp env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ -> _) fallback =
         let e1 = ConvExprToLinqInContext env x1
         let e2 = ConvExprToLinqInContext env x2
         let e1 = if addConvertLeft  then Expression.Convert(e1, typedefof<Nullable<int>>.MakeGenericType [| e1.Type |]) |> asExpr else e1
         let e2 = if addConvertRight then Expression.Convert(e2, typedefof<Nullable<int>>.MakeGenericType [| e2.Type |]) |> asExpr else e2
-        if e1.Type = e2.Type && isLinqExpressionsArithmeticType e1.Type then
+        if e1.Type = e2.Type && isLinqExpressionsSimpleShift e1.Type e2.Type then
+            exprErasedConstructor(e1, e2, null)
+        else
+            let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
+            exprErasedConstructor(e1, e2, method.MakeGenericMethod [| getNonNullableType x1.Type; getNonNullableType x2.Type; getNonNullableType inp.Type |])
+        |> asExpr
+    and transBinOp linqExpressionsCondition inp env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ -> _) fallback =
+        let e1 = ConvExprToLinqInContext env x1
+        let e2 = ConvExprToLinqInContext env x2
+        let e1 = if addConvertLeft  then Expression.Convert(e1, typedefof<Nullable<int>>.MakeGenericType [| e1.Type |]) |> asExpr else e1
+        let e2 = if addConvertRight then Expression.Convert(e2, typedefof<Nullable<int>>.MakeGenericType [| e2.Type |]) |> asExpr else e2
+        if e1.Type = e2.Type && linqExpressionsCondition e1.Type then
             exprErasedConstructor(e1, e2, null)
         else
             let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
             exprErasedConstructor(e1, e2, method.MakeGenericMethod [| getNonNullableType x1.Type; getNonNullableType x2.Type; getNonNullableType inp.Type |])
         |> asExpr
     // The F# boolean structural equality / comparison operators do not take witnesses and the referenced methods are callable directly
-    and transBoolOpNoWitness env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ * _ -> _) method =
+    and transBoolOpNoWitness linqExpressionsCondition env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ * _ -> _) method =
         let e1 = ConvExprToLinqInContext env x1
         let e2 = ConvExprToLinqInContext env x2
         let e1' = if addConvertLeft  then Expression.Convert(e1, typedefof<Nullable<int>>.MakeGenericType [| e1.Type |]) |> asExpr else e1
         let e2' = if addConvertRight then Expression.Convert(e2, typedefof<Nullable<int>>.MakeGenericType [| e2.Type |]) |> asExpr else e2
-        if e1'.Type = e2'.Type && isLinqExpressionsStructurallyEquatable e1.Type then
+        if e1'.Type = e2'.Type && linqExpressionsCondition e1.Type then
             // The false for (liftToNull: bool) indicates whether equality operators return a Nullable<bool> like in VB.NET (null when either argument is null) instead of bool like in C# (nulls equate to nulls). F# follows C# here.
             exprErasedConstructor(e1', e2', false, null)
         else
@@ -748,12 +850,12 @@ module LeafExpressionConverter =
     and transConv (inp: Expr) env isChecked x =
         let e = ConvExprToLinqInContext env x
         let exprErasedConstructor: _ * _ * _ -> _ = if isChecked then Expression.ConvertChecked else Expression.Convert
-        try exprErasedConstructor(e, inp.Type, null) with _ ->
-            // LINQ Expressions' arithmetic operators do not handle byte, sbyte and char. In this case, use the F# operator as the user-defined method.
-            let nullableUnderlyingType (exp: Expr) = match Nullable.GetUnderlyingType exp.Type with null -> exp.Type | t -> t
+        if isLinqExpressionsConvertible e.Type inp.Type then
+            exprErasedConstructor(e, inp.Type, null)
+        else
             // The dynamic implementations of checked conversion operators refer to LanguagePrimitives.ExplicitDynamic which is unchecked! This is a bug and should definitely be fixed.
             let method = Reflection.MethodInfo.GetMethodFromHandle (methodhandleof (fun x -> LanguagePrimitives.ExplicitDynamic x)) :?> Reflection.MethodInfo
-            exprErasedConstructor(e, inp.Type, method.MakeGenericMethod [| nullableUnderlyingType x; nullableUnderlyingType inp |])
+            exprErasedConstructor(e, inp.Type, method.MakeGenericMethod [| getNonNullableType x.Type; getNonNullableType inp.Type |])
         |> asExpr
 
     and ConvObjArg env objOpt coerceTo : Expression =
