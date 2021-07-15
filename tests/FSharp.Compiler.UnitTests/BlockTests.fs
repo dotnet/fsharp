@@ -2,7 +2,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open Xunit
-open FSharp.Test.Utilities
+open FSharp.Test
 open Internal.Utilities.Library
 
 module BlockTests =

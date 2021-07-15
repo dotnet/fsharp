@@ -20,6 +20,7 @@ open Scripting
 open SingleTest
 
 open FSharp.Compiler.IO
+open FSharp.Test.Utilities
 
 #if !NETCOREAPP
 // All tests which do a manual invoke of the F# compiler are disabled
@@ -33,7 +34,6 @@ let FSC_BASIC = FSC_OPT_PLUS_DEBUG
 let FSI_BASIC = FSI_FILE
 #endif
 
-let inline getTestsDirectory dir = __SOURCE_DIRECTORY__ ++ dir
 let testConfig = getTestsDirectory >> testConfig
 
 [<Test>]
