@@ -52,7 +52,7 @@ module Utilities =
         stream.CopyTo(memoryStream)
         bytes
 
-    let inline getTestsDirectory dir = __SOURCE_DIRECTORY__ ++ dir
+    let inline getTestsDirectory src dir = src ++ dir
 
     let private getOrCreateResource (resource: byref<byte[]>) (name: string) =
         match resource with
