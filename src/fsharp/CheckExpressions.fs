@@ -6963,7 +6963,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
         if isFSharpObjModelTy cenv.g overallTy then errorR(Error(FSComp.SR.tcTypeIsNotARecordTypeNeedConstructor(), mWholeExpr))
         elif not (isRecdTy cenv.g overallTy) then errorR(Error(FSComp.SR.tcTypeIsNotARecordType(), mWholeExpr))
 
-    let superInitOpt, tpenv =
+    let superInitExprOpt , tpenv =
         match inherits, GetSuperTypeOfType cenv.g cenv.amap mWholeExpr overallTy with
         | Some (superTy, arg, m, _, _), Some realSuperTy ->
             // Constructor expression, with an explicit 'inheritedTys clause. Check the inherits clause.
@@ -6982,9 +6982,9 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
     let expr, tpenv = TcRecordConstruction cenv overallTy env tpenv optOrigExprInfo overallTy fldsList mWholeExpr
 
     let expr =
-        match superInitOpt with
+        match superInitExprOpt  with
         | _ when isStructTy cenv.g overallTy -> expr
-        | Some superInit -> mkCompGenSequential mWholeExpr superInit expr
+        | Some superInitExpr  -> mkCompGenSequential mWholeExpr superInitExpr  expr
         | None -> expr
     expr, tpenv
 
@@ -9392,6 +9392,8 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
         let argAndRetAttribs = ArgAndRetAttribs(argAttribs, retAttribs)
 
+        // See RFC FS-1087, the 'Zero' method of a builder may have 'DefaultValueAttribute' indicating it should
+        // always be used for empty branches of if/then/else and others
         let isZeroMethod =
             match declKind, pat with
             | ModuleOrMemberBinding, SynPat.Named(id, _, _, _) when id.idText = "Zero" -> 

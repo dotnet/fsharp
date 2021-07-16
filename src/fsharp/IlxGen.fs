@@ -5290,8 +5290,7 @@ and GetIlxClosureInfo cenv m boxity isLocalTypeFunc canUseStaticField thisVars e
     let returnTy =
       match expr with
       | Expr.Lambda (_, _, _, _, _, _, returnTy) | Expr.TyLambda (_, _, _, _, returnTy) -> returnTy
-      | Expr.Obj (_, ty, _, _, _, _, _) -> ty
-      | _ -> tyOfExpr g expr //failwith "GetIlxClosureInfo: not a lambda expression"
+      | _ -> tyOfExpr g expr
 
     // Determine the structure of the closure. We do this before analyzing free variables to
     // determine the taken argument names.

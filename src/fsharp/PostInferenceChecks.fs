@@ -1628,10 +1628,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
 
 and CheckLambdas isTop (memberVal: Val option) cenv env inlined topValInfo alwaysCheckNoReraise expr mOrig ety context =
     let g = cenv.g
-    let memInfo = 
-        memberVal |> Option.bind (fun v -> 
-
-            v.MemberInfo)
+    let memInfo = memberVal |> Option.bind (fun v -> v.MemberInfo)
 
     // The topValInfo here says we are _guaranteeing_ to compile a function value 
     // as a .NET method with precisely the corresponding argument counts. 
