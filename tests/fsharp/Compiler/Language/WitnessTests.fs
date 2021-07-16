@@ -3,8 +3,9 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.Test.Utilities.Compiler
-open FSharp.Tests
+open FSharp.Test
+open FSharp.Test.Utilities
+open FSharp.Test.Compiler
 
 #if !NETCOREAPP
 
@@ -13,7 +14,7 @@ module WitnessTests =
 
     [<Test>]
     let ``Witness expressions are created as a result of compiling the type provider tests`` () =
-        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+        let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
         Fsx (sprintf """
 #load @"%s"
         """ (dir ++ "provider.fsx"))

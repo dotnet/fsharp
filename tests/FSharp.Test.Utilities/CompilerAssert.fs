@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Test.Utilities
+namespace FSharp.Test
 
 open System
 open System.IO
@@ -15,7 +15,7 @@ open FSharp.Compiler.Text
 open System.Runtime.Loader
 #endif
 open NUnit.Framework
-open FSharp.Test.Utilities.Utilities
+open FSharp.Test.Utilities
 open TestFramework
 
 [<Sealed>]

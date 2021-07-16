@@ -2,7 +2,7 @@
 
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
-open FSharp.Test.Utilities
+open FSharp.Test
 open NUnit.Framework
 
 [<TestFixture>]
