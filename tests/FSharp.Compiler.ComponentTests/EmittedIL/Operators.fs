@@ -2,8 +2,8 @@
 namespace FSharp.Compiler.ComponentTests.EmittedIL
 
 open Xunit
-open FSharp.Test.Utilities.Compiler
-open FSharp.Test.Utilities.Xunit.Attributes
+open FSharp.Test.Compiler
+open FSharp.Test.Xunit.Attributes
 
 module Operators =
 

@@ -6,7 +6,7 @@ open System
 open System.Text
 
 open Xunit
-open FSharp.Test.Utilities
+open FSharp.Test
 
 open Internal.Utilities
 open Internal.Utilities.Text.Lexing
