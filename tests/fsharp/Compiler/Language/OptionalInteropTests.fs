@@ -4,9 +4,9 @@ namespace FSharp.Compiler.UnitTests
 
 open System.Collections.Immutable
 open NUnit.Framework
+open FSharp.Test
 open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Utilities
-open FSharp.Test.Utilities.Compiler
+open FSharp.Test.Compiler
 open FSharp.Compiler.Diagnostics
 open Microsoft.CodeAnalysis
 
