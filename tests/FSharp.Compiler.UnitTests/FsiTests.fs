@@ -3,7 +3,7 @@ open System
 open System.IO
 open FSharp.Compiler.Interactive.Shell
 open Xunit
-open FSharp.Test.Utilities
+open FSharp.Test
 
 [<Collection("SingleThreaded")>]
 module FsiTests =

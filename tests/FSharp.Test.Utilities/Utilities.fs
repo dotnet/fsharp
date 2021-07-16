@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Test.Utilities
+namespace FSharp.Test
 
 open System
 open System.IO
@@ -10,7 +10,6 @@ open System.Diagnostics
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
-open FSharp.Test.Utilities
 open TestFramework
 open NUnit.Framework
 
@@ -52,6 +51,8 @@ module Utilities =
         use memoryStream = new MemoryStream (bytes)
         stream.CopyTo(memoryStream)
         bytes
+
+    let inline getTestsDirectory src dir = src ++ dir
 
     let private getOrCreateResource (resource: byref<byte[]>) (name: string) =
         match resource with

@@ -17,6 +17,7 @@ open TestFramework
 open Scripting
 open SingleTest
 open HandleExpects
+open FSharp.Test
 
 #if NETCOREAPP
 // Use these lines if you want to test CoreCLR
@@ -31,7 +32,7 @@ let FSI_BASIC = FSI_FILE
 #endif
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
-let inline getTestsDirectory dir = __SOURCE_DIRECTORY__ ++ dir
+let inline getTestsDirectory dir = FSharp.Test.Utilities.getTestsDirectory __SOURCE_DIRECTORY__ dir
 let singleTestBuildAndRun = getTestsDirectory >> singleTestBuildAndRun
 let singleTestBuildAndRunVersion = getTestsDirectory >> singleTestBuildAndRunVersion
 let testConfig = getTestsDirectory >> testConfig
