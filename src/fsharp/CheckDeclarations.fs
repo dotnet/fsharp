@@ -1299,7 +1299,7 @@ module IncrClassChecking =
 
                 (isPriorToSuperInit, (fun e -> 
                      let e = match adjustSafeInitFieldExprOpt with None -> e | Some ae -> mkCompGenSequential m ae e
-                     mkSequential DebugPointAtSequential.Both m assignExpr e)), []
+                     mkSequential DebugPointAtSequential.SuppressNeither m assignExpr e)), []
 
         /// Work out the implicit construction side effects of a 'let', 'let rec' or 'do' 
         /// binding in the implicit class construction sequence 
@@ -1327,7 +1327,7 @@ module IncrClassChecking =
 
               | IncrClassDo (doExpr, isStatic) -> 
                   let doExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst doExpr
-                  let binder = (fun e -> mkSequential DebugPointAtSequential.Both doExpr.Range doExpr e)
+                  let binder = (fun e -> mkSequential DebugPointAtSequential.SuppressNeither doExpr.Range doExpr e)
                   let isPriorToSuperInit = false
                   if isStatic then 
                       ([(isPriorToSuperInit, binder)], [], []), reps
@@ -1347,7 +1347,7 @@ module IncrClassChecking =
                       | Some v -> 
                         let setExpr = mkRefCellSet g m ctorInfo.InstanceCtorThisVal.Type (exprForVal m v) (exprForVal m ctorInfo.InstanceCtorThisVal)
                         let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst setExpr
-                        let binder = (fun e -> mkSequential DebugPointAtSequential.Both setExpr.Range setExpr e)
+                        let binder = (fun e -> mkSequential DebugPointAtSequential.SuppressNeither setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit, binder) ]
 
@@ -1361,7 +1361,7 @@ module IncrClassChecking =
                       | SafeInitField (rfref, _) ->  
                         let setExpr = mkRecdFieldSetViaExprAddr (exprForVal m thisVal, rfref, thisTyInst, mkOne g m, m)
                         let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst setExpr
-                        let binder = (fun e -> mkSequential DebugPointAtSequential.Both setExpr.Range setExpr e)
+                        let binder = (fun e -> mkSequential DebugPointAtSequential.SuppressNeither setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit, binder)  
                       | NoSafeInitInfo ->  
@@ -1448,7 +1448,7 @@ module IncrClassChecking =
                     | _ -> 
                         inheritsExpr
 
-                let spAtSuperInit = (if inheritsIsVisible then DebugPointAtSequential.Both else DebugPointAtSequential.StmtOnly)
+                let spAtSuperInit = (if inheritsIsVisible then DebugPointAtSequential.SuppressNeither else DebugPointAtSequential.SuppressStmt)
                 mkSequential spAtSuperInit m inheritsExpr ctorBody
 
             // Add the normal <let/do bindings> 
@@ -5662,7 +5662,8 @@ let emptyTcEnv g =
       eModuleOrNamespaceTypeAccumulator = ref (Construct.NewEmptyModuleOrNamespaceType Namespace)
       eFamilyType = None
       eCtorInfo = None
-      eCallerMemberName = None }
+      eCallerMemberName = None 
+      eLambdaArgInfos = [] }
 
 let CreateInitialTcEnv(g, amap, scopem, assemblyName, ccus) =
     (emptyTcEnv g, ccus) ||> List.fold (fun env (ccu, autoOpens, internalsVisible) -> 
