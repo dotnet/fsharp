@@ -372,11 +372,6 @@
         <target state="translated">アルゴリズム '{0}' はサポートされていません</target>
         <note />
       </trans-unit>
-      <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
-        <source>#i is not supported by the registered PackageManagers</source>
-        <target state="translated">登録された PackageManager によって、#i はサポートされていません</target>
-        <note />
-      </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
         <source>A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
         <target state="new">A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</target>
@@ -415,6 +410,11 @@
       <trans-unit id="reprResumableCodeValueHasNoDefinition">
         <source>The resumable code value(s) '{0}' does not have a definition</source>
         <target state="new">The resumable code value(s) '{0}' does not have a definition</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
+        <source>#i is not supported by the registered PackageManagers</source>
+        <target state="translated">登録された PackageManager によって、#i はサポートされていません</target>
         <note />
       </trans-unit>
       <trans-unit id="reprStateMachineInvalidForm">
